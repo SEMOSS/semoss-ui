@@ -11,7 +11,7 @@ import {
     styled,
     MenuItem,
     Button,
-} from '@mui/material';
+} from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import {
     KeyboardArrowDownRounded,

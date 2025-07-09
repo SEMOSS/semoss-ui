@@ -1,4 +1,4 @@
-import { Stack, styled, IconButton } from '@mui/material';
+import { styled, Stack, IconButton } from '@semoss/ui';
 import { Close } from '@mui/icons-material';
 
 const StyledRightMenu = styled('div')(({ theme }) => ({

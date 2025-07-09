@@ -1,9 +1,7 @@
 import { Env, InsightProvider } from '@semoss/sdk/react';
 
+import { styled, ThemeProvider, Notification } from '@semoss/ui';
 import { Router } from '@/pages';
-import { Theme } from '@/components/common';
-import { styled } from '@mui/material';
-import { Notification } from './components/common/Notification';
 
 if (process.env.NODE_ENV !== 'production') {
     Env.update({
@@ -23,13 +21,13 @@ const StyledMain = styled('div')(({ theme }) => ({
 export const App = () => {
     return (
         <InsightProvider>
-            <Theme>
+            <ThemeProvider>
                 <Notification>
                     <StyledMain>
                         <Router />
                     </StyledMain>
                 </Notification>
-            </Theme>
+            </ThemeProvider>
         </InsightProvider>
     );
 };

@@ -7,7 +7,7 @@ import {
 } from 'react-router-dom';
 import { createHashHistory } from 'history';
 import { useInsight } from '@semoss/sdk/react';
-import { styled, CircularProgress } from '@mui/material';
+import { styled, CircularProgress } from '@semoss/ui';
 
 import { AuthenticatedLayout } from './AuthenticatedLayout';
 import { LoginPage } from './LoginPage';
@@ -15,7 +15,6 @@ import { MainLayout } from './MainLayout';
 import { NewRoomPage } from './NewRoomPage';
 import { RoomPage } from './RoomPage';
 import { DiscoverPage } from './DiscoverPage';
-import { CreateAgent } from './CreateAgent';
 
 const StyledContainer = styled('div')(() => ({
     display: 'flex',
@@ -64,7 +63,6 @@ export const Router = () => {
                         <Route path="new" element={<NewRoomPage />} />
                         <Route path="room/:roomId" element={<RoomPage />} />
                         <Route path="agents" element={<DiscoverPage />} />
-                        <Route path="agents/new" element={<CreateAgent />} />
                         <Route
                             path="*"
                             element={<Navigate to="new" replace />}

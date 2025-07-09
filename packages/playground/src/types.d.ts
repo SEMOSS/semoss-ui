@@ -44,56 +44,6 @@ export interface Tool {
     name: string;
 }
 
-export type MessageResponse =
-    | MessageContentResponse
-    | MessageCodeResponse
-    | MessageFunctionResponse
-    | MessageAppResponse
-    | MessageConclusionResponse;
-
-export interface MessageContentResponse {
-    type: 'CONTENT';
-    content: string;
-}
-
-export interface MessageConclusionResponse {
-    type: 'CONCLUSION';
-}
-
-export interface MessageCodeResponse {
-    type: 'CODE';
-    name: string;
-    content: string;
-}
-
-export interface MessageFunctionResponse {
-    id: string;
-    type: 'FUNCTION';
-    name: string;
-    functionId: string;
-    tool_name: string;
-    tool_id: string;
-    parameters: MessageParameters;
-    content: string;
-}
-
-export interface MessageAppResponse {
-    type: 'APP' | 'PROJECT';
-    name: string;
-    id: string;
-    tool_name: string;
-    tool_id: string;
-    parameters: MessageParameters;
-    // TODO: Maybe update content to MCP Response --> https://modelcontextprotocol.io/docs/concepts/architecture
-    content: string;
-}
-
-export type MessageParameters = {
-    name: string;
-    type: 'String';
-    value: unknown;
-}[];
-
 /**
  * Item from the prompt library
  */
@@ -121,3 +71,78 @@ export type FileObj =
           //   arrayBuffer?: string;
       }
     | Record<string, never>;
+
+/**
+ * Messages from the backend
+ */
+export type PixelMessage =
+    | InputTextPixelMessage
+    | InputToolExecPixelMessage
+    | ResponseTextPixelMessage
+    | ResponseToolPixelMessage;
+
+interface AbstractPixelMessage {
+    type: string;
+    messageId: string;
+    visible: boolean;
+    dateCreated: string;
+    ornaments: {
+        chunks: unknown[];
+    };
+}
+
+interface InputTextPixelMessage extends AbstractPixelMessage {
+    type: 'INPUT_TEXT';
+    visible: true;
+    inputUIPrompt: string;
+}
+
+interface InputToolExecPixelMessage extends AbstractPixelMessage {
+    type: 'INPUT_TOOL_EXEC';
+    visible: false;
+    toolResponse: {
+        /** tool execution id */
+        id: string;
+
+        /**  TBD? **/
+        name: string;
+
+        /** THIS IS A STRING, but ONLY in playground we parse as an app */
+        /** THIS IS THE FINAL STATE OF A TOOL (what was actually ran) */
+        arguments: {
+            /** App ID */
+            id: string;
+
+            /** Parameters for app */
+            map: Record<string, unknown>;
+        };
+    };
+}
+
+interface ResponseTextPixelMessage extends AbstractPixelMessage {
+    type: 'RESPONSE_TEXT';
+    visible: true;
+    content: string;
+}
+
+interface ResponseToolPixelMessage extends AbstractPixelMessage {
+    type: 'RESPONSE_TOOL';
+    visible: true;
+    toolResponse: {
+        /** tool execution id */
+        id: string;
+
+        /**  TBD? **/
+        name: string;
+
+        /** THIS IS A STRING, but ONLY in playground we parse as an app */
+        /** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
+        arguments: {
+            /** App ID */
+            id: string;
+
+            /** Parameters for app */
+            map: Record<string, unknown>;
+        };
+    };
+}

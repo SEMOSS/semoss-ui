@@ -1,6 +1,6 @@
-import { Stack, Typography, TextField } from '@mui/material';
+import { Stack, Typography, TextField } from '@semoss/ui';
 
-import { FileDropzone } from '@/components';
+import { FileDropzone } from '@semoss/ui';
 
 export interface NewKnowledgeData {
     name: string;

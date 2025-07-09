@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const webpack = require('webpack');
 const path = require('path');
-const fs = require('fs');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const dotenv = require('dotenv');
@@ -21,8 +20,8 @@ const config = {
         hints: false,
     },
     output: {
-        path: path.resolve(__dirname, '../portals'),
-        filename: '[name].[contenthash].js',
+        path: path.resolve(__dirname, 'dist'),
+        filename: isProduction ? '[name].[contenthash].js' : '[name].js',
         clean: true,
     },
     devServer: {

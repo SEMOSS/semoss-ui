@@ -1,4 +1,5 @@
 import { observer } from 'mobx-react-lite';
+import { useEffect } from 'react';
 import {
     styled,
     Stack,
@@ -7,29 +8,22 @@ import {
     Typography,
     CircularProgress,
     Tooltip,
-} from '@mui/material';
+} from '@semoss/ui';
 import { Resizable } from 're-resizable';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     AccessTimeOutlined,
     DownloadRounded,
-    FileOpenRounded,
     TuneRounded,
 } from '@mui/icons-material';
-
+import { useNotification } from '@semoss/ui';
 import { useChat } from '@/hooks';
 import {
     RoomAppComponent,
-    RoomCodeComponent,
-    RoomVectorFileComponent,
     RoomControlsComponent,
-    RoomFunctionComponent,
     RoomInputComponent,
     RoomMessageComponent,
-    ChainOfThoughtMessageComponent,
 } from '@/components';
-import { useNotification } from '@/components/common';
-import { useEffect } from 'react';
 
 const StyledPage = styled(Stack)(() => ({
     width: '100%',
@@ -110,10 +104,12 @@ export const RoomPage = observer(() => {
                 </Stack>
                 <Typography
                     variant={'body2'}
-                    flex={1}
-                    textAlign={'center'}
-                    textOverflow={'hidden'}
                     noWrap={true}
+                    sx={{
+                        flex: 1,
+                        textAlign: 'center',
+                        textOverflow: 'hidden',
+                    }}
                 >
                     {room?.metadata?.name}
                 </Typography>
@@ -130,33 +126,6 @@ export const RoomPage = observer(() => {
                             }}
                         >
                             <DownloadRounded fontSize="small" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Toggle Artifacts">
-                        <IconButton
-                            size="small"
-                            color={
-                                room.sidebar.isOpen &&
-                                room.sidebar.options.type === 'CODE'
-                                    ? 'primary'
-                                    : 'default'
-                            }
-                            onClick={() => {
-                                // toggle open / closed based on the state
-                                if (
-                                    room.sidebar.isOpen &&
-                                    room.sidebar.options.type === 'CODE'
-                                ) {
-                                    room.closeSidebar();
-                                } else {
-                                    room.openSidebar({
-                                        type: 'CODE',
-                                        name: '',
-                                    });
-                                }
-                            }}
-                        >
-                            <FileOpenRounded fontSize="small" />
                         </IconButton>
                     </Tooltip>
                     <Tooltip title="Toggle Chat History">
@@ -204,23 +173,13 @@ export const RoomPage = observer(() => {
                         <Container maxWidth="md">
                             <Stack direction={'column'} spacing={3}>
                                 {room.history.map((m, mIdx) => {
-                                    if (room.options.chainOfThought) {
-                                        return (
-                                            <ChainOfThoughtMessageComponent
-                                                room={room}
-                                                message={m}
-                                                key={mIdx}
-                                            />
-                                        );
-                                    } else {
-                                        return (
-                                            <RoomMessageComponent
-                                                room={room}
-                                                message={m}
-                                                key={mIdx}
-                                            />
-                                        );
-                                    }
+                                    return (
+                                        <RoomMessageComponent
+                                            room={room}
+                                            message={m}
+                                            key={mIdx}
+                                        />
+                                    );
                                 })}
                             </Stack>
                         </Container>
@@ -258,15 +217,6 @@ export const RoomPage = observer(() => {
                     >
                         {room.sidebar.options.type === 'CONTROLS' && (
                             <RoomControlsComponent room={room} />
-                        )}
-                        {room.sidebar.options.type === 'CODE' && (
-                            <RoomCodeComponent room={room} />
-                        )}
-                        {room.sidebar.options.type === 'VECTOR_FILE' && (
-                            <RoomVectorFileComponent room={room} />
-                        )}
-                        {room.sidebar.options.type === 'FUNCTION' && (
-                            <RoomFunctionComponent room={room} />
                         )}
                         {room.sidebar.options.type === 'APP' && (
                             <RoomAppComponent room={room} />

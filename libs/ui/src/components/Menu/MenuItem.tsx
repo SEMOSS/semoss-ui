@@ -1,4 +1,7 @@
-import { MenuItem as MuiMenuItem, SxProps } from "@mui/material";
+import {
+    MenuItem as MuiMenuItem,
+    MenuItemProps as MuiMenuItemProps,
+} from "@mui/material";
 
 export interface MenuItemProps {
     /**
@@ -7,6 +10,11 @@ export interface MenuItemProps {
      * @default false
      */
     autoFocus?: boolean;
+
+    /**
+     * Title of the item
+     */
+    title?: string;
 
     /**
      * content to render
@@ -49,18 +57,20 @@ export interface MenuItemProps {
      */
     selected?: boolean;
 
-    /** value of item */
-    value: any;
+    /**
+     * Value of item
+     */
+    value?: any;
 
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
-    sx?: SxProps;
-
-    title?: string;
+    sx?: MuiMenuItemProps["sx"];
 }
 
-export const MenuItem = (props: MenuItemProps) => {
-    const { sx } = props;
-    return <MuiMenuItem sx={sx} {...props} />;
+export const MenuItem: React.FC<MenuItemProps> = ({
+    children,
+    ...otherProps
+}) => {
+    return <MuiMenuItem {...otherProps}>{children}</MuiMenuItem>;
 };

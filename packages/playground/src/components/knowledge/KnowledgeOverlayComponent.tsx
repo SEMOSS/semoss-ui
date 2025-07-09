@@ -1,19 +1,16 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
     Button,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogTitle,
+    Modal,
     IconButton,
     Stack,
     TextField,
     Typography,
     MenuItem,
     CircularProgress,
-    ListItemText,
-} from '@mui/material';
+} from '@semoss/ui';
 import { AddRounded, Close } from '@mui/icons-material';
+import { useNotification } from '@semoss/ui';
 
 import { Engine, Knowledge } from '@/types';
 import { usePixel } from '@/hooks';
@@ -23,7 +20,6 @@ import {
     NewKnowledgeData,
 } from './NewKnowledgeComponent';
 import { ExistingKnowledgeComponent } from './ExistingKnowledgeComponent';
-import { useNotification } from '../common';
 import { useInsight } from '@semoss/sdk/react';
 
 const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || '';
@@ -251,7 +247,7 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
         };
 
         return (
-            <Dialog
+            <Modal
                 open={true}
                 onClose={() => onClose(false)}
                 aria-labelledby="attach knowledge"
@@ -260,15 +256,15 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
                 fullWidth={true}
                 scroll="paper"
             >
-                <DialogTitle>
+                <Modal.Title>
                     <Stack direction="row" justifyContent="space-between">
                         <Typography variant="h6">Add Knowledge</Typography>
                         <IconButton size="small" onClick={() => onClose(false)}>
                             <Close />
                         </IconButton>
                     </Stack>
-                </DialogTitle>
-                <DialogContent>
+                </Modal.Title>
+                <Modal.Content>
                     <Stack spacing={3}>
                         <Stack spacing={2}>
                             <Typography
@@ -369,8 +365,8 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
                             />
                         ) : null}
                     </Stack>
-                </DialogContent>
-                <DialogActions>
+                </Modal.Content>
+                <Modal.Actions>
                     <Button variant="text" onClick={() => onClose(false)}>
                         Cancel
                     </Button>
@@ -389,7 +385,7 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
                     >
                         {newEngineData ? <>Add</> : <>Select</>}
                     </Button>
-                </DialogActions>
-            </Dialog>
+                </Modal.Actions>
+            </Modal>
         );
     };

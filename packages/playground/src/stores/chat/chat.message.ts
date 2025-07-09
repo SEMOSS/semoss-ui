@@ -1,4 +1,3 @@
-import { MessageResponse } from '@/types';
 import { makeAutoObservable } from 'mobx';
 
 export interface ChatMessageInterface {
@@ -8,17 +7,35 @@ export interface ChatMessageInterface {
     messageId: string;
 
     /**
-     * Question that was asked to the agent
+     * Track if it is an input or an output
      */
-    question: string;
+    type: 'AGENT' | 'USER';
 
     /**
-     * Response by the agent. Can be a string, artifact, or tool response
+     * Content that was shown
      */
-    response: MessageResponse[];
+    content:
+        | {
+              type: 'TEXT';
+
+              /** Text associated with the message */
+              text: string;
+          }
+        | {
+              type: 'APP';
+
+              /** Name of the tool */
+              name: string;
+
+              /** App ID */
+              id: string;
+
+              /** Parameters for app */
+              map: Record<string, unknown>;
+          };
 
     /**
-     * Sources used in the response
+     * Sources in the response
      */
     sources: string[];
 
@@ -40,16 +57,16 @@ export interface ChatMessageInterface {
 export class ChatMessage {
     private _store: ChatMessageInterface = {
         messageId: '',
-        question: '',
-        response: [],
+        type: 'AGENT',
+        content: {
+            type: 'TEXT',
+            text: '',
+        },
         sources: [],
         rating: null,
     };
 
-    constructor(question: ChatMessageInterface['question']) {
-        // set the initial question
-        this._store.question = question;
-
+    constructor() {
         // make it observable
         makeAutoObservable(this);
     }
@@ -65,47 +82,17 @@ export class ChatMessage {
     }
 
     /**
-     * Get the question
+     * Get the type
      */
-    get question() {
-        return this._store.question;
+    get type() {
+        return this._store.type;
     }
 
     /**
-     * Get the response of the message
+     * Get the content of the message
      */
-    get response() {
-        return this._store.response;
-    }
-
-    /**
-     * Get as text
-     */
-    get responseText(): string {
-        return this._store.response
-            .map((r) => {
-                if (r.type === 'CONTENT') {
-                    return r.content;
-                } else if (r.type === 'CODE') {
-                    return r.content;
-                } else if (r.type === 'FUNCTION') {
-                    return r.content || '';
-                } else if (r.type === 'APP' || r.type === 'PROJECT') {
-                    return r.content || '';
-                } else if (r.type === 'CONCLUSION') {
-                    return '';
-                }
-
-                return '';
-            })
-            .join('\n');
-    }
-
-    /**
-     * Get the rating/user feedback of the message
-     */
-    get rating() {
-        return this._store.rating;
+    get content() {
+        return this._store.content;
     }
 
     /**
@@ -113,6 +100,13 @@ export class ChatMessage {
      */
     get sources() {
         return this._store.sources;
+    }
+
+    /**
+     * Get the rating/user feedback of the message
+     */
+    get rating() {
+        return this._store.rating;
     }
 
     /** Actions */
@@ -126,17 +120,19 @@ export class ChatMessage {
     }
 
     /**
-     * Save the associated rating
+     * Update the type of the message
      */
-    saveRating(rating: ChatMessageInterface['rating']) {
-        this._store.rating = rating;
+    updateType(type: ChatMessageInterface['type']) {
+        this._store.type = type;
     }
 
     /**
      * Save the associated rating
      */
-    saveResponse(response: ChatMessageInterface['response']) {
-        this._store.response = response;
+    updateContent(content: ChatMessageInterface['content']) {
+        this._store.content = {
+            ...content,
+        };
     }
 
     /**
@@ -144,5 +140,12 @@ export class ChatMessage {
      */
     updateSources(sources: ChatMessageInterface['sources']) {
         this._store.sources = sources;
+    }
+
+    /**
+     * Save the associated rating
+     */
+    saveRating(rating: ChatMessageInterface['rating']) {
+        this._store.rating = rating;
     }
 }

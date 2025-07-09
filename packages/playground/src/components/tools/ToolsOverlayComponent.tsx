@@ -4,11 +4,7 @@ import {
     styled,
     Button,
     CircularProgress,
-    Dialog,
-    DialogActions,
-    DialogContent,
-    DialogContentText,
-    DialogTitle,
+    Modal,
     Grid,
     IconButton,
     MenuItem,
@@ -18,12 +14,12 @@ import {
     Link,
     Chip,
     Checkbox,
-} from '@mui/material';
+} from '@semoss/ui';
+import { Search } from '@semoss/ui';
 import { Close } from '@mui/icons-material';
 
 import LOGO from '@/assets/img/logo.svg';
 import { App, Engine, Tool } from '@/types';
-import { Search } from '@/components';
 
 const PLATFORM_LINK = process.env.PLATFORM_LINK;
 const ENDPOINT = process.env.ENDPOINT;
@@ -241,8 +237,24 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
         setUpdatedTools(updated);
     };
 
+    /**
+     * Select a tool and update the arraw
+     */
+    const onToolDelete = (t: Tool) => {
+        // get the key
+        const toolKey = getToolKey(t);
+
+        // copy for react
+        const updated = { ...updatedTools };
+
+        // remove it
+        delete updated[toolKey];
+
+        setUpdatedTools(updated);
+    };
+
     return (
-        <Dialog
+        <Modal
             open={true}
             onClose={() => onClose(false)}
             aria-labelledby="select tool"
@@ -251,17 +263,17 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
             fullWidth={true}
             scroll="paper"
         >
-            <DialogTitle>
+            <Modal.Title>
                 <Stack direction="row" justifyContent="space-between">
                     <Typography variant="h6">Add Tools</Typography>
                     <IconButton size="small" onClick={() => onClose(false)}>
                         <Close />
                     </IconButton>
                 </Stack>
-            </DialogTitle>
-            <DialogContent>
+            </Modal.Title>
+            <Modal.Content>
                 <Stack direction={'column'} spacing={2}>
-                    <DialogContentText>
+                    <Modal.ContentText>
                         Add existing or create{' '}
                         <Link
                             variant="inherit"
@@ -273,7 +285,7 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                         tools for the agent. The agent will use tools to
                         interact with external sources to help perform actions
                         and answer questions.
-                    </DialogContentText>
+                    </Modal.ContentText>
                     <Stack direction={'row'} width={'100%'} spacing={3}>
                         <Search
                             label="Search"
@@ -417,9 +429,9 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                                         key={t.id}
                                         label={t.name}
                                         size={'small'}
-                                        onDelete={(t) => {
+                                        onDelete={() => {
                                             // should delete since it is selected
-                                            onToolSelect(t);
+                                            onToolDelete(t);
                                         }}
                                     />
                                 ))}
@@ -427,8 +439,8 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                         </>
                     )}
                 </Stack>
-            </DialogContent>
-            <DialogActions>
+            </Modal.Content>
+            <Modal.Actions>
                 <Button variant="text" onClick={() => onClose(false)}>
                     Cancel
                 </Button>
@@ -443,7 +455,7 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                 >
                     Save
                 </Button>
-            </DialogActions>
-        </Dialog>
+            </Modal.Actions>
+        </Modal>
     );
 };

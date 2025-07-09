@@ -1,23 +1,20 @@
 import { observer } from 'mobx-react-lite';
 import {
     Avatar,
-    Button,
     Divider,
     IconButton,
     Stack,
     styled,
     Typography,
-} from '@mui/material';
+} from '@semoss/ui';
 import {
     AppsRounded,
-    CodeRounded,
     CopyAllOutlined,
-    FunctionsRounded,
     ThumbDownOffAltOutlined,
     ThumbUpAltOutlined,
 } from '@mui/icons-material';
+import { Chip, Markdown, useNotification } from '@semoss/ui';
 import { useInsight } from '@semoss/sdk/react';
-import { Chip, Markdown, useNotification } from '@/components';
 import { ChatRoom, ChatMessage } from '@/stores';
 
 const StyledUserMessage = styled(Stack)(({ theme }) => ({
@@ -97,9 +94,9 @@ export const RoomMessageComponent: React.FC<RoomMessageComponentProps> =
          * Copy the text
          * @param text - text to copy
          */
-        const copyMessage = () => {
+        const copyMessage = (text: string) => {
             try {
-                navigator.clipboard.writeText(message.responseText);
+                navigator.clipboard.writeText(text);
 
                 notification.add({
                     color: 'success',
@@ -133,268 +130,136 @@ export const RoomMessageComponent: React.FC<RoomMessageComponentProps> =
             }
         };
 
-        return (
-            <Stack direction={'column'} spacing={3}>
+        if (message.type === 'USER') {
+            return (
                 <StyledUserMessage
                     direction={'row'}
                     alignItems={'flex-start'}
                     spacing={1}
                 >
-                    <StyledAvatar alt="user initials">{initials}</StyledAvatar>
-                    <Typography variant="body1" marginTop={0.5}>
-                        {message.question}
+                    <StyledAvatar>{initials}</StyledAvatar>
+                    <Typography variant="body1" sx={{ marginTop: 0.5 }}>
+                        {message.content.type === 'TEXT'
+                            ? message.content.text
+                            : ''}
                     </Typography>
                 </StyledUserMessage>
-                {message.response.length > 0 ? (
-                    <StyledAgentResponse direction={'column'} spacing={1}>
-                        {message.response.map((r, rIdx) => {
-                            if (r.type === 'CONTENT') {
-                                return (
-                                    <Markdown key={rIdx}>{r.content}</Markdown>
-                                );
-                            } else if (r.type === 'CODE') {
-                                const isSelected =
-                                    room.sidebar.isOpen &&
-                                    room.sidebar.options.type === 'CODE' &&
-                                    room.sidebar.options.name === r.name;
+            );
+        }
 
-                                return (
-                                    <StyledSidebarOpen
-                                        key={rIdx}
-                                        isSelected={isSelected}
-                                        direction={'row'}
-                                        alignItems={'center'}
-                                        spacing={2}
-                                        onClick={() => {
-                                            // toggle open / closed based on the state
-                                            if (isSelected) {
-                                                room.closeSidebar();
-                                            } else {
-                                                room.openSidebar({
-                                                    type: 'CODE',
-                                                    name: r.name,
-                                                });
-                                            }
-                                        }}
-                                    >
-                                        <CodeRounded fontSize="medium" />
-                                        <Stack
-                                            direction={'column'}
-                                            spacing={1}
-                                            flex={1}
-                                        >
-                                            <Typography
-                                                variant="subtitle2"
-                                                textOverflow={'ellipsis'}
-                                            >
-                                                {r.name}
-                                            </Typography>
-                                            <Typography variant="caption">
-                                                Click to Open
-                                            </Typography>
-                                        </Stack>
-                                    </StyledSidebarOpen>
-                                );
-                            } else if (r.type === 'FUNCTION') {
-                                const isSelected =
-                                    room.sidebar.isOpen &&
-                                    room.sidebar.options.type === 'FUNCTION' &&
-                                    room.sidebar.options.response.id === r.id;
+        return (
+            <StyledAgentResponse direction={'column'} spacing={1}>
+                {message.content.type === 'TEXT' ? (
+                    <Markdown>{message.content.text}</Markdown>
+                ) : null}
 
-                                return (
-                                    <>
-                                        <StyledSidebarOpen
-                                            key={rIdx}
-                                            isSelected={isSelected}
-                                            direction={'row'}
-                                            alignItems={'center'}
-                                            spacing={2}
-                                            onClick={() => {
-                                                // toggle open / closed based on the state
-                                                if (isSelected) {
-                                                    room.closeSidebar();
-                                                } else {
-                                                    room.openSidebar({
-                                                        type: 'FUNCTION',
-                                                        response: r,
-                                                    });
-                                                }
-                                            }}
-                                        >
-                                            <FunctionsRounded fontSize="medium" />
-                                            <Stack
-                                                direction={'column'}
-                                                spacing={1}
-                                                flex={1}
-                                            >
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    textOverflow={'ellipsis'}
-                                                >
-                                                    {r.name}
-                                                </Typography>
-                                                <Typography variant="caption">
-                                                    Click to Open
-                                                </Typography>
-                                            </Stack>
-                                        </StyledSidebarOpen>
-                                        {r.content !== null && (
-                                            <Markdown>{r.content}</Markdown>
-                                        )}
-                                    </>
-                                );
-                            } else if (
-                                r.type === 'APP' ||
-                                r.type === 'PROJECT'
-                            ) {
-                                const isSelected =
-                                    room.sidebar.isOpen &&
-                                    room.sidebar.options.type === 'APP' &&
-                                    room.sidebar.options.response.id === r.id;
-
-                                return (
-                                    <>
-                                        <StyledSidebarOpen
-                                            key={rIdx}
-                                            isSelected={isSelected}
-                                            direction={'row'}
-                                            alignItems={'center'}
-                                            spacing={2}
-                                            onClick={() => {
-                                                // toggle open / closed based on the state
-                                                if (isSelected) {
-                                                    room.closeSidebar();
-                                                } else {
-                                                    room.openSidebar({
-                                                        type: 'APP',
-                                                        response: r,
-                                                    });
-                                                }
-                                            }}
-                                        >
-                                            <AppsRounded fontSize="medium" />
-                                            <Stack
-                                                direction={'column'}
-                                                spacing={1}
-                                                flex={1}
-                                            >
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    textOverflow={'ellipsis'}
-                                                >
-                                                    {r.name}
-                                                </Typography>
-                                                <Typography variant="caption">
-                                                    Click to Open
-                                                </Typography>
-                                            </Stack>
-                                        </StyledSidebarOpen>
-                                        {r.content !== null && (
-                                            <Markdown>{r.content}</Markdown>
-                                        )}
-                                    </>
-                                );
-                            } else if (r.type === 'CONCLUSION') {
-                                return (
-                                    <Button
-                                        key={rIdx}
-                                        onClick={() => {
-                                            room.askModel(
-                                                'Based on the previous results give me an answer',
-                                                {
-                                                    ...room.options,
-                                                    chainOfThought: false,
-                                                },
-                                            );
-                                        }}
-                                    >
-                                        Get Result
-                                    </Button>
-                                );
+                {message.content.type === 'APP' ? (
+                    <StyledSidebarOpen
+                        isSelected={
+                            room.sidebar.isOpen &&
+                            room.sidebar.options.type === 'APP' &&
+                            room.sidebar.options.messageId === message.messageId
+                        }
+                        direction={'row'}
+                        alignItems={'center'}
+                        spacing={2}
+                        onClick={() => {
+                            if (message.content.type !== 'APP') {
+                                return;
                             }
+
+                            // toggle open / closed based on the state
+                            if (
+                                room.sidebar.isOpen &&
+                                room.sidebar.options.type === 'APP' &&
+                                room.sidebar.options.messageId ===
+                                    message.messageId
+                            ) {
+                                room.closeSidebar();
+                            } else {
+                                room.openSidebar({
+                                    type: 'APP',
+                                    messageId: message.messageId,
+                                    toolName: message.content.name,
+                                    toolId: message.content.id,
+                                    toolParameters: message.content.map,
+                                });
+                            }
+                        }}
+                    >
+                        <AppsRounded fontSize="medium" />
+                        <Stack direction={'column'} spacing={1} flex={1}>
+                            <Typography
+                                variant="subtitle2"
+                                sx={{
+                                    textOverflow: 'ellipsis',
+                                }}
+                            >
+                                {message.content.name}
+                            </Typography>
+                            <Typography variant="caption">
+                                Click to Open
+                            </Typography>
+                        </Stack>
+                    </StyledSidebarOpen>
+                ) : null}
+                {message.sources.length > 0 ? (
+                    <Stack direction={'row'} spacing={1} flexWrap={'wrap'}>
+                        {message.sources.map((s, sIdx) => {
+                            return (
+                                <Chip key={sIdx} label={s} color={'default'} />
+                            );
                         })}
-                        {message.sources.length > 0 ? (
+                    </Stack>
+                ) : null}
+                <StyledHover>
+                    <div>
+                        <Divider />
+                        <Stack
+                            direction={'row'}
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                        >
+                            &nbsp;
                             <Stack
                                 direction={'row'}
+                                alignItems={'center'}
                                 spacing={1}
-                                flexWrap={'wrap'}
                             >
-                                {message.sources.map((s, sIdx) => {
-                                    const isSelected =
-                                        room.sidebar.isOpen &&
-                                        room.sidebar.options.type ===
-                                            'VECTOR_FILE' &&
-                                        room.sidebar.options.name === s;
-
-                                    return (
-                                        <Chip
-                                            key={sIdx}
-                                            label={s}
-                                            color={
-                                                isSelected
-                                                    ? 'primary'
-                                                    : 'default'
-                                            }
-                                            onClick={() => {
-                                                // toggle open / closed based on the state
-                                                if (isSelected) {
-                                                    room.closeSidebar();
-                                                } else {
-                                                    room.openSidebar({
-                                                        type: 'VECTOR_FILE',
-                                                        name: s,
-                                                        engine: room.options
-                                                            ?.knowledge?.id,
-                                                    });
-                                                }
-                                            }}
-                                        />
-                                    );
-                                })}
-                            </Stack>
-                        ) : null}
-                        <StyledHover>
-                            <div>
-                                <Divider />
-                                <Stack
-                                    direction={'row'}
-                                    alignItems={'center'}
-                                    justifyContent={'space-between'}
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        recordFeedback(false);
+                                    }}
                                 >
-                                    &nbsp;
-                                    <Stack
-                                        direction={'row'}
-                                        alignItems={'center'}
-                                        spacing={1}
-                                    >
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => {
-                                                recordFeedback(false);
-                                            }}
-                                        >
-                                            <ThumbDownOffAltOutlined fontSize="small" />
-                                        </IconButton>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => {
-                                                recordFeedback(true);
-                                            }}
-                                        >
-                                            <ThumbUpAltOutlined fontSize="small" />
-                                        </IconButton>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => copyMessage()}
-                                        >
-                                            <CopyAllOutlined fontSize="small" />
-                                        </IconButton>
-                                    </Stack>
-                                </Stack>
-                            </div>
-                        </StyledHover>
-                    </StyledAgentResponse>
-                ) : null}
-            </Stack>
+                                    <ThumbDownOffAltOutlined fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        recordFeedback(true);
+                                    }}
+                                >
+                                    <ThumbUpAltOutlined fontSize="small" />
+                                </IconButton>
+
+                                <IconButton
+                                    size="small"
+                                    disabled={message.content.type !== 'TEXT'}
+                                    onClick={() => {
+                                        if (message.content.type !== 'TEXT') {
+                                            return;
+                                        }
+
+                                        copyMessage(message.content.text);
+                                    }}
+                                >
+                                    <CopyAllOutlined fontSize="small" />
+                                </IconButton>
+                            </Stack>
+                        </Stack>
+                    </div>
+                </StyledHover>
+            </StyledAgentResponse>
         );
     });

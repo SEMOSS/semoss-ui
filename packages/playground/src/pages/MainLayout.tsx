@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Outlet } from 'react-router-dom';
-import { styled, Stack } from '@mui/material';
+import { styled, Stack } from '@semoss/ui';
 import { useInsight } from '@semoss/sdk/react';
 
 import { ChatStore } from '@/stores';

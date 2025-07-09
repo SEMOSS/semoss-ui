@@ -12,11 +12,7 @@ import {
     MenuItem,
     Drawer,
     Avatar,
-    ListItem,
-    ListItemText,
-    ListItemButton,
-    ListItemIcon,
-} from '@mui/material';
+} from '@semoss/ui';
 import { useInsight } from '@semoss/sdk/react';
 import {
     Add,
@@ -93,6 +89,19 @@ const StyledSidebar = styled(Drawer)(() => ({
     ],
 }));
 
+const StyledNavHeaderLink = styled(Link)(({ theme }) => ({
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+    gap: theme.spacing(1),
+    '&:hover': {
+        background: theme.palette.action.hover,
+    },
+}));
+
 const StyledSidebarHeader = styled(Stack)(({ theme }) => ({
     paddingTop: theme.spacing(3),
     paddingRight: theme.spacing(2),
@@ -121,20 +130,26 @@ const StyledList = styled(List)(() => ({
     padding: 0,
 }));
 
-const StyledListItem = styled(ListItem)(({ theme }) => ({
+const StyledListItem = styled(List.Item)(({ theme }) => ({
     gap: theme.spacing(1),
     padding: theme.spacing(1),
 }));
 
-const StyledListItemButton = styled(ListItemButton)(({ theme }) => ({
+const StyledListItemButton = styled(List.ItemButton)(({ theme }) => ({
     flexGrow: '0',
     gap: theme.spacing(1),
     padding: theme.spacing(1),
-})) as unknown as typeof ListItemButton;
+})) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(ListItemIcon)(() => ({
+const StyledListItemIcon = styled(List.Icon)(() => ({
     width: '28px',
     minWidth: 'auto',
+}));
+
+const StyledLink = styled(Link)(({ theme }) => ({
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
 }));
 
 const StyledPublicOutlined = styled(PublicOutlined)(({ theme }) => ({
@@ -199,7 +214,7 @@ export const Sidebar = observer(() => {
                         <img src={LOGO} aria-label={APP_NAME} />
                     )}
                     <Stack flex={1}>&nbsp;</Stack>
-                    <StyledAvatar alt="user initials">{initials}</StyledAvatar>
+                    <StyledAvatar>{initials}</StyledAvatar>
                     <IconButton onClick={() => setIsOpen(true)} size="medium">
                         <MenuRounded fontSize="inherit" />
                     </IconButton>
@@ -227,35 +242,13 @@ export const Sidebar = observer(() => {
                     justifyContent={'flex-start'}
                     spacing={1}
                 >
-                    <Stack
-                        to={'/'}
-                        aria-label={'Go Home'}
-                        component={Link}
-                        direction={'row'}
-                        alignItems={'center'}
-                        flex={1}
-                    >
+                    <StyledNavHeaderLink to={'/'} aria-label={'Go Home'}>
                         {LOGO_FULL_PATH ? (
                             <img src={LOGO_FULL_PATH} aria-label={APP_NAME} />
                         ) : (
                             <img src={LOGO_FULL} aria-label={APP_NAME} />
                         )}
-                    </Stack>
-
-                    {/* <Box
-                        flex={1}
-                        textOverflow={'hidden'}
-                        component={Link}
-                        to={'/'}
-                        aria-label={'Go Home'}
-                        sx={{
-                            color: 'inherit',
-                            textDecoration: 'none',
-                            cursor: 'pointer',
-                        }}
-                    >
-                        {APP_NAME}
-                    </Box> */}
+                    </StyledNavHeaderLink>
                     <IconButton
                         size="small"
                         onClick={() => {
@@ -279,22 +272,24 @@ export const Sidebar = observer(() => {
                     spacing={2}
                     overflow={'hidden'}
                 >
-                    <StyledButton
-                        component={Link}
+                    <StyledLink
                         to={'/new'}
                         aria-label={'New room'}
                         replace={true}
-                        variant={'text'}
-                        color={'primary'}
-                        fullWidth={true}
-                        startIcon={<Add />}
                     >
-                        New Chat
-                    </StyledButton>
+                        <StyledButton
+                            variant={'text'}
+                            color={'primary'}
+                            fullWidth={true}
+                            startIcon={<Add />}
+                        >
+                            New Chat
+                        </StyledButton>
+                    </StyledLink>
                     <StyledList dense={true} aria-label="open chat rooms">
                         <Stack direction={'column'} spacing={2}>
                             <StyledListItem>
-                                <ListItemText>Today</ListItemText>
+                                <List.ItemText>Today</List.ItemText>
                             </StyledListItem>
                             {chat.todayRooms.map((roomId) => {
                                 return (
@@ -302,7 +297,7 @@ export const Sidebar = observer(() => {
                                 );
                             })}
                             <StyledListItem>
-                                <ListItemText>Previous</ListItemText>
+                                <List.ItemText>Previous</List.ItemText>
                             </StyledListItem>
                             {chat.previousRooms.map((roomId) => {
                                 return (
@@ -311,17 +306,16 @@ export const Sidebar = observer(() => {
                             })}
                         </Stack>
                     </StyledList>
-                    <StyledListItemButton
-                        component={Link}
-                        to={'/agents'}
-                        aria-label={'Discover Agents'}
-                        dense={true}
-                    >
-                        <StyledListItemIcon>
-                            <StyledPublicOutlined fontSize="medium" />
-                        </StyledListItemIcon>
-                        <Typography variant="subtitle2">Discover</Typography>
-                    </StyledListItemButton>
+                    <StyledLink to={'/agents'} aria-label={'Discover Agents'}>
+                        <StyledListItemButton dense={true}>
+                            <StyledListItemIcon>
+                                <StyledPublicOutlined fontSize="medium" />
+                            </StyledListItemIcon>
+                            <Typography variant="subtitle2">
+                                Discover
+                            </Typography>
+                        </StyledListItemButton>
+                    </StyledLink>
                     <Stack
                         direction={'row'}
                         alignItems={'center'}
@@ -334,13 +328,13 @@ export const Sidebar = observer(() => {
                             flex={1}
                             spacing={1}
                         >
-                            <StyledAvatar alt="user initials">
-                                {initials}
-                            </StyledAvatar>
+                            <StyledAvatar>{initials}</StyledAvatar>
                             <Typography
-                                flex={1}
-                                textOverflow={'ellipsis'}
                                 variant="subtitle2"
+                                sx={{
+                                    flex: 1,
+                                    textOverflow: 'ellipsis',
+                                }}
                             >
                                 {userName}
                             </Typography>
@@ -363,9 +357,9 @@ export const Sidebar = observer(() => {
                         </IconButton>
                         <Menu
                             id="settings-menu"
-                            MenuListProps={{
-                                'aria-labelledby': 'long-button',
-                            }}
+                            // MenuListProps={{
+                            //     'aria-labelledby': 'long-button',
+                            // }}
                             anchorEl={settingsMenuAnchorEle}
                             open={isSettingsMenuOpen}
                             onClose={() => {

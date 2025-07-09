@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
+
 import {
     styled,
     Alert,
@@ -10,44 +12,166 @@ import {
     LinearProgress,
     TextField,
     Typography,
-    Paper,
     Divider,
-} from '@mui/material';
+    Box,
+    Modal,
+} from '@semoss/ui';
 import { useInsight } from '@semoss/sdk/react';
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    padding: theme.spacing(4),
-    maxWidth: '600px',
-    width: '100%',
-}));
+import LOGO_FULL from '@/assets/img/logo_full.svg';
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
-    padding: theme.spacing(4),
-    width: '100%',
-}));
+const APP_NAME = process.env.APP_NAME ? process.env.APP_NAME : '';
+const LOGO_FULL_PATH = process.env.LOGO_FULL_PATH
+    ? process.env.LOGO_FULL_PATH
+    : '';
 
-const StyledAction = styled(Button)(({ theme }) => ({
+const StyledMain = styled('div')(({ theme }) => ({
     display: 'flex',
-    alignItems: 'center',
-    gap: theme.spacing(0.5),
-    padding: theme.spacing(1),
+    flexDirection: 'column',
+    height: '100vh',
+    width: '100vw',
+    background: theme.palette.background.paper,
+}));
+
+const StyledRow = styled('div')(() => ({
+    flex: '1',
+    display: 'flex',
+    flexDirection: 'row',
+    position: 'relative',
+    width: '100%',
     overflow: 'hidden',
 }));
 
-const StyledActionImage = styled('img')(({ theme }) => ({
-    height: theme.spacing(4),
+const StyledProgress = styled(LinearProgress)(() => ({
+    width: '100%',
 }));
 
-const StyledActionText = styled('span')(() => ({
-    flex: '1',
+const StyledScroll = styled('div')(({ theme }) => ({
+    flexShrink: 0,
+    position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    zIndex: 1,
+    background: theme.palette.background.paper,
+    overflowY: 'auto',
+    overflowX: 'hidden',
+    [theme.breakpoints.down('md')]: {
+        height: '100%',
+        width: '100%',
+    },
 }));
+
+const StyledContent = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    gap: theme.spacing(3),
+    width: '610px',
+    marginTop: theme.spacing(18), // 144px
+    marginBottom: theme.spacing(2), // 16px
+    marginLeft: theme.spacing(13.5), // 108px
+    marginRight: theme.spacing(13.5), // 108px
+    [theme.breakpoints.down('md')]: {
+        margin: 0,
+        padding: theme.spacing(4),
+        maxWidth: '610px',
+        width: '100%',
+    },
+}));
+
+const StyledGradient = styled('div')(({ theme }) => ({
+    height: '100%',
+    width: theme.spacing(42), // 336px
+    background:
+        'linear-gradient(90deg, #FFF 0%, rgba(255, 255, 255, 0.00) 100%)',
+    zIndex: 1,
+}));
+
+const StyledImageHolder = styled('div')(() => ({
+    position: 'absolute',
+    top: '0px',
+    right: '0px',
+    bottom: '0px',
+    overflow: 'hidden',
+    zIndex: 0,
+}));
+
+const StyledImage = styled('img')(() => ({
+    height: '100%',
+    // width: '100%',
+    objectFit: 'cover',
+}));
+
+const StyledAction = styled(Button)({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+});
+
+const StyledActionBox = styled('div')({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '16px',
+    padding: '4px',
+});
+
+// const StyledActionImage = styled('img')(({ theme }) => ({
+//     height: theme.spacing(3),
+// }));
+
+const StyledActionText = styled('span')(() => ({
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '24px',
+    letterSpacing: '0.4px',
+    color: '#000',
+}));
+
+const StyledDivider = styled(Divider)({
+    background: 'transparent',
+});
+
+const StyledDividerBox = styled(Box)({
+    color: '#000',
+    fontFeatureSettings: '"clig" off, "liga" off',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 700,
+    lineHeight: '150%' /* 24px */,
+    letterSpacing: ' 0.15px',
+});
+
+const StyledLogoContainer = styled(Stack)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
+}));
+
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
+}));
+
+const StyledInstructions = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(4),
+}));
+
+interface TypeUserLogin {
+    USERNAME: string;
+    PASSWORD: string;
+    REMEMBER_LOGIN: boolean;
+    OTP_CONFIRM: string;
+}
 
 /**
  * LoginPage
  */
-export const LoginPage = () => {
+export const LoginPage = observer(() => {
     const { system, actions, isAuthorized } = useInsight();
+    const location = useLocation();
 
+    const [forgotPassword, setForgotPassword] = useState(false);
     const [snackbar, setSnackbar] = useState<{
         open: boolean;
         message: string;
@@ -64,108 +188,10 @@ export const LoginPage = () => {
         defaultValues: {
             USERNAME: '',
             PASSWORD: '',
+            REMEMBER_LOGIN: false,
+            OTP_CONFIRM: '',
         },
     });
-
-    const location = useLocation();
-
-    // get the path the user is coming from
-    const path = (location.state as { from: Location })?.from?.pathname || '/';
-    /**
-     * Allow the user to login
-     */
-    const login = handleSubmit(
-        async (data: { USERNAME: string; PASSWORD: string }) => {
-            // reset error
-            setError('');
-
-            // turn on loading
-            setIsLoading(true);
-
-            if (!data.USERNAME || !data.PASSWORD) {
-                setError('Username and Password is Required');
-
-                // turn of loading
-                setIsLoading(false);
-                return;
-            }
-
-            actions
-                .login({
-                    type: 'native',
-                    username: data.USERNAME,
-                    password: data.PASSWORD,
-                })
-                .then(() => {
-                    setSnackbar({
-                        open: true,
-                        message: `Successfully logged in`,
-                        color: 'success',
-                    });
-                })
-                .catch((error) => {
-                    let message = '';
-                    if (error.message) {
-                        message = error.message;
-                    } else {
-                        message = 'Invalid username/password';
-                    }
-
-                    setError(message);
-
-                    setSnackbar({
-                        open: true,
-                        message: message,
-                        color: 'error',
-                    });
-                })
-                .finally(() => {
-                    // turn of loading
-                    setIsLoading(false);
-                });
-        },
-    );
-
-    /**
-     * Login with oauth
-     * @param provider - provider to oauth with
-     */
-    const oauth = async (provider: string) => {
-        // turn on loading
-        setIsLoading(true);
-
-        await actions
-            .login({
-                type: 'oauth',
-                provider: provider,
-            })
-            .then(() => {
-                // turn off loading
-                setIsLoading(false);
-
-                setSnackbar({
-                    open: true,
-                    message: `Successfully logged in`,
-                    color: 'success',
-                });
-            })
-            .catch((error) => {
-                // turn off loading
-                setIsLoading(false);
-
-                setError(error.message);
-
-                setSnackbar({
-                    open: true,
-                    message: error.message,
-                    color: 'error',
-                });
-            });
-    };
-
-    if (isAuthorized) {
-        return <Navigate to={path} replace />;
-    }
 
     // get a map of all providers
     const availableProvidersMap: Record<
@@ -194,6 +220,86 @@ export const LoginPage = () => {
     // check if it requires username or password
     const hasUsernamePassword = isNative;
 
+    /**
+     * Allow the user to login
+     */
+    const login = handleSubmit(
+        async (data: TypeUserLogin): Promise<TypeUserLogin> => {
+            // turn on loading
+            setIsLoading(true);
+
+            if (!data.USERNAME || !data.PASSWORD) {
+                setError('Username and Password is Required');
+                return;
+            }
+
+            await actions
+                .login({
+                    type: 'native',
+                    username: data.USERNAME,
+                    password: data.PASSWORD,
+                })
+                .then(() => {
+                    // noop
+                })
+                .catch((error) => {
+                    setError(error.message);
+                })
+                .finally(() => {
+                    // turn off loading
+                    setIsLoading(false);
+                });
+        },
+    );
+
+    /**
+     * Login with oauth
+     * @param provider - provider to oauth with
+     */
+    const oauth = async (provider: string) => {
+        // turn on loading
+        setIsLoading(true);
+
+        await actions
+            .login({
+                type: 'oauth',
+                provider: provider,
+            })
+            .then(() => {
+                // turn off loading
+                setIsLoading(false);
+
+                // noop
+                // (handled  by the configStore)
+
+                setSnackbar({
+                    open: true,
+                    message: `Successfully logged in`,
+                    color: 'success',
+                });
+            })
+            .catch((error) => {
+                // turn off loading
+                setIsLoading(false);
+
+                setError(error.message);
+
+                setSnackbar({
+                    open: true,
+                    message: error.message,
+                    color: 'error',
+                });
+            });
+    };
+
+    // get the path the user is coming from
+    const path = (location.state as { from: Location })?.from?.pathname || '/';
+
+    // navigate if already logged in
+    if (isAuthorized) {
+        return <Navigate to={path} replace />;
+    }
+
     return (
         <>
             <Snackbar
@@ -212,110 +318,185 @@ export const LoginPage = () => {
                     {snackbar.message}
                 </Alert>
             </Snackbar>
-
-            <Stack alignItems={'center'} justifyContent={'center'}>
-                <StyledContainer>
-                    <StyledPaper variant={'elevation'} elevation={2} square>
-                        <Stack spacing={3}>
-                            <Typography component="h1" variant="h5">
-                                Login
-                            </Typography>
+            <StyledMain>
+                <StyledRow>
+                    <StyledScroll>
+                        <StyledContent>
+                            <div>
+                                <StyledLogoContainer
+                                    direction={'row'}
+                                    alignItems={'center'}
+                                    spacing={1}
+                                >
+                                    {LOGO_FULL_PATH ? (
+                                        <img
+                                            src={LOGO_FULL_PATH}
+                                            aria-label={APP_NAME}
+                                        />
+                                    ) : (
+                                        <img
+                                            src={LOGO_FULL}
+                                            aria-label={APP_NAME}
+                                        />
+                                    )}
+                                </StyledLogoContainer>
+                                <StyledTitle variant="h4">Welcome!</StyledTitle>
+                                <StyledInstructions variant="body1">
+                                    Log in below
+                                </StyledInstructions>
+                            </div>
                             {error && <Alert color="error">{error}</Alert>}
-                            {isNative && (
-                                <>
-                                    <Stack spacing={2}>
-                                        <Controller
-                                            name={'USERNAME'}
-                                            control={control}
-                                            rules={{ required: true }}
-                                            render={({ field }) => {
-                                                return (
-                                                    <TextField
-                                                        label="Username"
-                                                        variant="outlined"
-                                                        fullWidth
-                                                        value={
-                                                            field.value
-                                                                ? field.value
-                                                                : ''
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.onChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                );
-                                            }}
-                                        />
-                                        <Controller
-                                            name={'PASSWORD'}
-                                            control={control}
-                                            rules={{ required: true }}
-                                            render={({ field }) => {
-                                                return (
-                                                    <TextField
-                                                        label="Password"
-                                                        variant="outlined"
-                                                        type="password"
-                                                        fullWidth
-                                                        value={
-                                                            field.value
-                                                                ? field.value
-                                                                : ''
-                                                        }
-                                                        onChange={(e) =>
-                                                            field.onChange(
-                                                                e.target.value,
-                                                            )
-                                                        }
-                                                    />
-                                                );
-                                            }}
-                                        />
-                                        <Button
-                                            fullWidth
-                                            variant={'contained'}
-                                            onClick={login}
-                                        >
-                                            SIGN IN
-                                        </Button>
-                                    </Stack>
-                                </>
-                            )}
+                            <form>
+                                <Stack spacing={2}>
+                                    {hasUsernamePassword && (
+                                        <>
+                                            <Controller
+                                                name={'USERNAME'}
+                                                control={control}
+                                                rules={{
+                                                    required: true,
+                                                }}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <TextField
+                                                            label="Username"
+                                                            variant="outlined"
+                                                            fullWidth
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                field.onChange(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            inputProps={{
+                                                                'data-testid':
+                                                                    'loginPage-textField-username',
+                                                            }}
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                            <Controller
+                                                name={'PASSWORD'}
+                                                control={control}
+                                                rules={{
+                                                    required: true,
+                                                }}
+                                                render={({ field }) => {
+                                                    return (
+                                                        <TextField
+                                                            label="Password"
+                                                            variant="outlined"
+                                                            type="password"
+                                                            fullWidth
+                                                            value={
+                                                                field.value
+                                                                    ? field.value
+                                                                    : ''
+                                                            }
+                                                            onChange={(e) =>
+                                                                field.onChange(
+                                                                    e.target
+                                                                        .value,
+                                                                )
+                                                            }
+                                                            inputProps={{
+                                                                'data-testid':
+                                                                    'loginPage-textField-password',
+                                                            }}
+                                                        />
+                                                    );
+                                                }}
+                                            />
+                                            <Button
+                                                fullWidth
+                                                variant={'contained'}
+                                                onClick={login}
+                                                type="submit"
+                                                data-testid={
+                                                    'loginPage-button-login'
+                                                }
+                                            >
+                                                Login
+                                            </Button>
+                                        </>
+                                    )}
 
-                            {isNative && hasOAuth && (
-                                <>
-                                    <Divider />
-                                </>
-                            )}
-                            {system.config.availableProviders.map((p) => {
-                                // skip ones that aren't oauth
-                                if (!p.isOauth) {
-                                    return null;
-                                }
+                                    {hasUsernamePassword && hasOAuth && (
+                                        <>
+                                            <StyledDivider>
+                                                <StyledDividerBox>
+                                                    or
+                                                </StyledDividerBox>
+                                            </StyledDivider>
+                                        </>
+                                    )}
+                                    {system.config.availableProviders.map(
+                                        (p) => {
+                                            // skip ones that aren't oauth
+                                            if (!p.isOauth) {
+                                                return null;
+                                            }
 
-                                return (
-                                    <StyledAction
-                                        variant="outlined"
-                                        key={p.provider}
-                                        title={p.name}
-                                        onClick={() => {
-                                            oauth(p.provider);
-                                        }}
-                                        fullWidth
-                                    >
-                                        <StyledActionText>
-                                            {p.name}
-                                        </StyledActionText>
-                                    </StyledAction>
-                                );
-                            })}
-                        </Stack>
-                    </StyledPaper>
-                    {isLoading && <LinearProgress />}
-                </StyledContainer>
-            </Stack>
+                                            return (
+                                                <StyledAction
+                                                    key={p.provider}
+                                                    variant="outlined"
+                                                    onClick={() => {
+                                                        oauth(p.provider);
+                                                    }}
+                                                    fullWidth
+                                                >
+                                                    <StyledActionBox>
+                                                        {/* <StyledActionImage
+                                                                    src={MS}
+                                                                /> */}
+                                                        <StyledActionText>
+                                                            {p.name}
+                                                        </StyledActionText>
+                                                    </StyledActionBox>
+                                                </StyledAction>
+                                            );
+                                        },
+                                    )}
+                                </Stack>
+                            </form>
+                        </StyledContent>
+                    </StyledScroll>
+                    <StyledGradient />
+                    <StyledImageHolder>&nbsp;</StyledImageHolder>
+                </StyledRow>
+                {isLoading && <StyledProgress />}
+            </StyledMain>
+            <Modal
+                open={forgotPassword}
+                maxWidth={'md'}
+                onClose={() => {
+                    setForgotPassword(false);
+                }}
+            >
+                <Modal.Title>Forgot your password?</Modal.Title>
+                <Modal.Content>
+                    <Box>
+                        Please contact your administrator to reset password.
+                    </Box>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button
+                        variant={'outlined'}
+                        onClick={() => {
+                            setForgotPassword(false);
+                        }}
+                    >
+                        Ok
+                    </Button>
+                </Modal.Actions>
+            </Modal>
         </>
     );
-};
+});

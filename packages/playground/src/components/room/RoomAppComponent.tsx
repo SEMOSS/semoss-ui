@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Box, Stack, Typography, CircularProgress } from '@mui/material';
+import {
+    Typography,
+    CircularProgress,
+    Stack,
+    useNotification,
+} from '@semoss/ui';
 
 import { ChatRoom } from '@/stores';
-import { useNotification, RightMenu } from '@/components';
-import { MessageAppResponse } from '@/types';
+import { RightMenu } from '@/components';
 
 const PLATFORM_LINK = process.env.PLATFORM_LINK;
 
@@ -21,23 +25,18 @@ export const RoomAppComponent: React.FC<RoomAppComponentProps> = observer(
         const notification = useNotification();
 
         // TODO: clean-up
-        const response: MessageAppResponse | null =
-            room.sidebar.options.type === 'APP'
-                ? room.sidebar.options.response
-                : null;
+        const options =
+            room.sidebar.options.type === 'APP' ? room.sidebar.options : null;
 
-        const [parameters, setParameters] = useState(response.parameters);
-
-        const [appOutput, setAppOutput] = useState(null);
-        const [appUrl, setAppUrl] = useState('');
-        const [loading, setLoading] = useState(true);
+        const [url, setUrl] = useState<string>('');
+        const [loading, setLoading] = useState<boolean>(true);
 
         useEffect(() => {
             const handleMessage = async (
                 event: MessageEvent<{ data: Record<string, unknown> }>,
             ) => {
                 try {
-                    await room.processAppResponse(response, event.data.data);
+                    await room.processAppResponse();
                 } catch (e) {
                     notification.add({
                         message: e.message,
@@ -50,37 +49,31 @@ export const RoomAppComponent: React.FC<RoomAppComponentProps> = observer(
 
             // TODO: Env specific
             // let url = `http://localhost:9090/SemossWeb/packages/client/dist/#/s/${response.id}`;
-            let url = `${PLATFORM_LINK}s/${response.id}`;
+            let url = `${PLATFORM_LINK}s/${options.toolId}`;
 
-            // TODO: CLeanup code below
-            const paramsToFill = [];
-            response.parameters.forEach((p) => {
-                if (p.value !== 'undefined' || !p.value) {
-                    paramsToFill.push(p);
+            const params = [];
+            for (const [key, value] of Object.entries(options.toolParameters)) {
+                if (typeof value !== 'undefined') {
+                    params.push(`${key}=${value}`);
                 }
-            });
-
-            if (paramsToFill.length === 1) {
-                url += `?${paramsToFill[0].name}=${paramsToFill[0].value}`;
-            } else if (paramsToFill.length > 1) {
-                url += `?`;
-
-                paramsToFill.forEach((p, i) => {
-                    url += `${paramsToFill[i].name}=${paramsToFill[i].value}`;
-                    if (i !== paramsToFill.length - 1) {
-                        url += '&';
-                    }
-                });
             }
 
-            setAppUrl(url);
+            if (params.length > 0) {
+                url += `?${params.concat('&')}`;
+            }
+
+            setUrl(url);
 
             window.addEventListener('message', handleMessage);
 
             return () => {
                 window.removeEventListener('message', handleMessage);
             };
-        }, []);
+        }, [options]);
+
+        if (!options) {
+            return;
+        }
 
         return (
             <RightMenu
@@ -89,45 +82,35 @@ export const RoomAppComponent: React.FC<RoomAppComponentProps> = observer(
                     <Typography
                         variant={'body1'}
                         fontWeight={'bold'}
-                        flex={1}
                         noWrap={true}
+                        sx={{
+                            flex: 1,
+                        }}
                     >
-                        {response.name}
+                        {options.toolName}
                     </Typography>
                 }
                 onClose={() => room.closeSidebar()}
             >
-                {appOutput ? (
-                    <Stack>{JSON.stringify(appOutput)}</Stack>
-                ) : appUrl ? (
-                    <Box position="relative" width={'100%'} height={'100%'}>
-                        {loading && (
-                            <Box
-                                position={'absolute'}
-                                top={0}
-                                bottom={0}
-                                width="100%"
-                                height="100%"
-                                display="flex"
-                                justifyContent={'center'}
-                                alignItems={'center'}
-                                bgcolor={'rgba(255, 255, 255, 0.5)'}
-                                zIndex={1}
-                            >
-                                <CircularProgress color={'info'} />
-                            </Box>
-                        )}
-                        <iframe
-                            src={appUrl}
-                            frameBorder="0"
-                            style={{
-                                width: '100%',
-                                height: '100%',
-                            }}
-                            onLoad={() => setLoading(false)}
-                        ></iframe>
-                    </Box>
-                ) : null}
+                {loading && (
+                    <Stack
+                        alignItems={'center'}
+                        justifyContent={'center'}
+                        height={'100%'}
+                        width={'100%'}
+                    >
+                        <CircularProgress color={'info'} />
+                    </Stack>
+                )}
+                <iframe
+                    src={url}
+                    frameBorder="0"
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                    }}
+                    onLoad={() => setLoading(false)}
+                ></iframe>
             </RightMenu>
         );
     },

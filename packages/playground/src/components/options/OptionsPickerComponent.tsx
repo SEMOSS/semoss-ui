@@ -9,8 +9,7 @@ import {
     Popover,
     TextField,
     Slider,
-    PopoverOrigin,
-} from '@mui/material';
+} from '@semoss/ui';
 import { PsychologyOutlined } from '@mui/icons-material';
 
 import { ChatRoom } from '@/stores';
@@ -45,12 +44,18 @@ interface OptionsPickerComponentProps {
     /**
      * Set popover anchorOrigin prop
      */
-    anchorOrigin?: PopoverOrigin;
+    anchorOrigin?: {
+        vertical: 'top' | 'center' | 'bottom' | number;
+        horizontal: 'left' | 'center' | 'right' | number;
+    };
 
     /**
      * Set popover transformOrigin prop
      */
-    transformOrigin?: PopoverOrigin;
+    transformOrigin?: {
+        vertical: 'top' | 'center' | 'bottom' | number;
+        horizontal: 'left' | 'center' | 'right' | number;
+    };
 }
 
 const marks = [
@@ -112,7 +117,13 @@ export const OptionsPickerComponent: React.FC<OptionsPickerComponentProps> =
                     transformOrigin={transformOrigin}
                 >
                     <StyledPopoverContent>
-                        <Typography variant="subtitle2" my={1}>
+                        <Typography
+                            variant="subtitle2"
+                            sx={{
+                                marginTop: 1,
+                                marginBottom: 1,
+                            }}
+                        >
                             Token Length:
                         </Typography>
                         <TextField
@@ -132,7 +143,13 @@ export const OptionsPickerComponent: React.FC<OptionsPickerComponentProps> =
                             variant="outlined"
                             fullWidth={true}
                         />
-                        <Typography variant="subtitle2" my={1}>
+                        <Typography
+                            variant="subtitle2"
+                            sx={{
+                                marginTop: 1,
+                                marginBottom: 1,
+                            }}
+                        >
                             Temperature:
                         </Typography>
                         <Slider

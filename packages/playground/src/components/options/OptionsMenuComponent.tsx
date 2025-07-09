@@ -7,11 +7,9 @@ import {
     Button,
     IconButton,
     List,
-    ListItem,
-    ListItemText,
     Checkbox,
     FormControlLabel,
-} from '@mui/material';
+} from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { Delete } from '@mui/icons-material';
 
@@ -54,8 +52,10 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                     <Typography
                         variant={'body1'}
                         fontWeight={'bold'}
-                        flex={1}
                         noWrap={true}
+                        sx={{
+                            flex: 1,
+                        }}
                     >
                         Chat Controls
                     </Typography>
@@ -103,7 +103,7 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                     </Stack>
                     <List dense={true}>
                         {options.knowledge ? (
-                            <ListItem
+                            <List.Item
                                 dense={true}
                                 secondaryAction={
                                     <IconButton
@@ -122,20 +122,22 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                                     </IconButton>
                                 }
                             >
-                                <ListItemText
+                                <List.ItemText
                                     primary={options.knowledge.name}
                                 />
-                            </ListItem>
+                            </List.Item>
                         ) : (
-                            <ListItem dense={true}>
+                            <List.Item dense={true}>
                                 <Typography
                                     variant="caption"
-                                    textAlign={'center'}
-                                    width={'100%'}
+                                    sx={{
+                                        width: '100%',
+                                        textAlign: 'center',
+                                    }}
                                 >
                                     No knowledge added
                                 </Typography>
-                            </ListItem>
+                            </List.Item>
                         )}
                     </List>
                 </Stack>
@@ -170,7 +172,7 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                             {options.tools.length ? (
                                 options.tools.map((t, tIdx) => {
                                     return (
-                                        <ListItem
+                                        <List.Item
                                             key={t.id}
                                             dense={true}
                                             secondaryAction={
@@ -200,20 +202,22 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                                                 </IconButton>
                                             }
                                         >
-                                            <ListItemText primary={t.name} />
-                                        </ListItem>
+                                            <List.ItemText primary={t.name} />
+                                        </List.Item>
                                     );
                                 })
                             ) : (
-                                <ListItem dense={true}>
+                                <List.Item dense={true}>
                                     <Typography
                                         variant="caption"
-                                        textAlign={'center'}
-                                        width={'100%'}
+                                        sx={{
+                                            width: '100%',
+                                            textAlign: 'center',
+                                        }}
                                     >
                                         No tools added
                                     </Typography>
-                                </ListItem>
+                                </List.Item>
                             )}
                         </List>
                     </Stack>

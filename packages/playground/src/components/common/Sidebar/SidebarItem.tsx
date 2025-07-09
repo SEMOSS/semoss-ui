@@ -1,14 +1,7 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
-    CircularProgress,
-    Menu,
-    MenuItem,
-} from '@mui/material';
+import { styled, List, CircularProgress, Menu, MenuItem } from '@semoss/ui';
+import { useNotification } from '@semoss/ui';
 import {
     ChatBubbleOutlineOutlined,
     MoreVertOutlined,
@@ -16,17 +9,22 @@ import {
 import { useParams, Link, useNavigate } from 'react-router-dom';
 
 import { useChat } from '@/hooks';
-import { useNotification } from '@/components/common';
 
-const StyledListItemButton = styled(ListItemButton, {
+const StyledLink = styled(Link)(({ theme }) => ({
+    color: 'inherit',
+    textDecoration: 'none',
+    cursor: 'pointer',
+}));
+
+const StyledListItemButton = styled(List.ItemButton, {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{ selected: boolean }>(({ theme, selected }) => ({
     gap: theme.spacing(1),
     padding: theme.spacing(1),
     backgroundColor: selected ? theme.palette.secondary.selected : undefined,
-})) as unknown as typeof ListItemButton;
+})) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(ListItemIcon)(() => ({
+const StyledListItemIcon = styled(List.Icon)(() => ({
     width: '28px',
     minWidth: 'auto',
 }));
@@ -63,115 +61,107 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
     const isSettingsMenuOpen = Boolean(chatMenu);
 
     // set the name of the room
-    let name = '';
+    let name = 'Untitled';
     if (room.metadata && room.metadata.name) {
         name = room.metadata.name;
     }
 
-    if (!name) {
-        for (const m of room.history) {
-            if (m.question) {
-                name = m.question;
-                break;
-            }
-        }
-    }
-
     return (
-        <StyledListItemButton
-            component={Link}
-            to={`/room/${roomId}`}
-            selected={activeRoomId === roomId}
-            aria-label={'Select a room'}
-            dense={true}
-        >
-            <StyledListItemIcon>
-                <StyledChatBubbleOutlineOutlined fontSize="small" />
-            </StyledListItemIcon>
-            <ListItemText
-                primary={name}
-                primaryTypographyProps={{
-                    variant: 'subtitle2',
-                    noWrap: true,
-                }}
-            />
-            {room.isLoading && (
+        <StyledLink to={`/room/${roomId}`} aria-label={'Select a room'}>
+            <StyledListItemButton
+                selected={activeRoomId === roomId}
+                dense={true}
+            >
                 <StyledListItemIcon>
-                    <CircularProgress
-                        color={'inherit'}
-                        size={'20px'}
-                    ></CircularProgress>
+                    <StyledChatBubbleOutlineOutlined fontSize="small" />
                 </StyledListItemIcon>
-            )}
-            <StyledListItemIcon
-                id="settings-control"
-                aria-controls={isSettingsMenuOpen ? 'settings-menu' : undefined}
-                aria-label="settings"
-                aria-expanded={isSettingsMenuOpen ? 'true' : undefined}
-                aria-haspopup="true"
-                onClick={(e) => {
-                    setChatMenu(e.currentTarget);
-                }}
-            >
-                <StyledMoreVertOutlined />
-            </StyledListItemIcon>
-            <Menu
-                id="settings-menu"
-                MenuListProps={{
-                    'aria-labelledby': 'long-button',
-                }}
-                anchorEl={chatMenu}
-                open={isSettingsMenuOpen}
-                onClose={() => {
-                    setChatMenu(null);
-                }}
-            >
-                <MenuItem
-                    disabled={!!room}
+                <List.ItemText
+                    primary={name}
+                    primaryTypographyProps={{
+                        variant: 'subtitle2',
+                        noWrap: true,
+                    }}
+                />
+                {room.isLoading && (
+                    <StyledListItemIcon>
+                        <CircularProgress
+                            color={'inherit'}
+                            size={'20px'}
+                        ></CircularProgress>
+                    </StyledListItemIcon>
+                )}
+                <StyledListItemIcon
+                    id="settings-control"
+                    aria-controls={
+                        isSettingsMenuOpen ? 'settings-menu' : undefined
+                    }
+                    aria-label="settings"
+                    aria-expanded={isSettingsMenuOpen ? 'true' : undefined}
+                    aria-haspopup="true"
                     onClick={(e) => {
-                        try {
-                            // stop the event propagation
-                            e.stopPropagation();
-
-                            room.downloadHistory();
-
-                            // close it
-                            setChatMenu(null);
-                        } catch (e) {
-                            notification.add({
-                                color: 'error',
-                                message: e.message,
-                            });
-                        }
+                        setChatMenu(e.currentTarget);
                     }}
                 >
-                    Download
-                </MenuItem>
-                <MenuItem
-                    onClick={(e) => {
-                        try {
-                            // stop the event propagation
-                            e.stopPropagation();
-
-                            // close it
-                            chat.closeRoom(roomId);
-
-                            // close it
-                            setChatMenu(null);
-
-                            // navigate to new
-                            navigate('new');
-                        } catch (e) {
-                            notification.add({
-                                color: 'error',
-                                message: e.message,
-                            });
-                        }
+                    <StyledMoreVertOutlined />
+                </StyledListItemIcon>
+                <Menu
+                    id="settings-menu"
+                    // MenuListProps={{
+                    //     'aria-labelledby': 'long-button',
+                    // }}
+                    anchorEl={chatMenu}
+                    open={isSettingsMenuOpen}
+                    onClose={() => {
+                        setChatMenu(null);
                     }}
                 >
-                    Delete
-                </MenuItem>
-            </Menu>
-        </StyledListItemButton>
+                    <MenuItem
+                        disabled={!!room}
+                        onClick={(e) => {
+                            try {
+                                // stop the event propagation
+                                e.stopPropagation();
+
+                                room.downloadHistory();
+
+                                // close it
+                                setChatMenu(null);
+                            } catch (e) {
+                                notification.add({
+                                    color: 'error',
+                                    message: e.message,
+                                });
+                            }
+                        }}
+                    >
+                        Download
+                    </MenuItem>
+                    <MenuItem
+                        onClick={(e) => {
+                            try {
+                                // stop the event propagation
+                                e.stopPropagation();
+
+                                // close it
+                                chat.closeRoom(roomId);
+
+                                // close it
+                                setChatMenu(null);
+
+                                // navigate to new
+                                navigate('new');
+                            } catch (e) {
+                                notification.add({
+                                    color: 'error',
+                                    message: e.message,
+                                });
+                            }
+                        }}
+                    >
+                        Delete
+                    </MenuItem>
+                </Menu>
+            </StyledListItemButton>
+        </StyledLink>
     );
 });

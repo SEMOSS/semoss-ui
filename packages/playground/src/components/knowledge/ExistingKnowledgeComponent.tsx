@@ -1,33 +1,22 @@
 import React from 'react';
-import {
-    styled,
-    Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableContainer,
-    TableHead,
-    TableRow,
-    Typography,
-    CircularProgress,
-} from '@mui/material';
+import { styled, Stack, Table, Typography, CircularProgress } from '@semoss/ui';
+import { usePixel } from '@semoss/sdk/react';
 
 import { Engine } from '@/types';
-import { usePixel } from '@/hooks';
 
 const StyledTableHolder = styled(Stack)(({ theme }) => ({
     height: '376px',
     width: '100%',
 }));
 
-const StyledTableCell = styled(TableCell)(() => ({
-    '&.name': {
+const StyledTableCell = styled(Table.Cell)(() => ({
+    '&[data-col="name"]': {
         '& > p': {
             width: '200px',
         },
     },
-    '&.date': {},
-    '&.size': {
+    '&[data-col="date"]': {},
+    '&[data-col="size"]': {
         width: '80px',
     },
 }));
@@ -57,7 +46,12 @@ export const ExistingKnowledgeComponent: React.FC<ExistingKnowledgeComponentProp
 
         return (
             <>
-                <Typography variant="body2" color={'text.secondary'}>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: 'text.secondary',
+                    }}
+                >
                     {engine?.description}
                 </Typography>
                 <StyledTableHolder direction={'column'} spacing={2}>
@@ -73,26 +67,26 @@ export const ExistingKnowledgeComponent: React.FC<ExistingKnowledgeComponentProp
                         </Stack>
                     )}
                     {getFiles.status !== 'LOADING' && (
-                        <TableContainer sx={{ flex: 1 }}>
+                        <Table.Container sx={{ flex: 1 }}>
                             <Table stickyHeader size="small" sx={{ flex: 1 }}>
-                                <TableHead>
-                                    <TableRow>
-                                        <StyledTableCell className="name">
+                                <Table.Head>
+                                    <Table.Row>
+                                        <StyledTableCell data-col="name">
                                             Name
                                         </StyledTableCell>
-                                        <StyledTableCell className="date">
+                                        <StyledTableCell data-col="date">
                                             Date Modified
                                         </StyledTableCell>
-                                        <StyledTableCell className="size">
+                                        <StyledTableCell data-col="size">
                                             Size
                                         </StyledTableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
+                                    </Table.Row>
+                                </Table.Head>
+                                <Table.Body>
                                     {getFiles.data?.map((f, fIdx) => {
                                         return (
-                                            <TableRow key={fIdx} hover={true}>
-                                                <StyledTableCell className="name">
+                                            <Table.Row key={fIdx}>
+                                                <StyledTableCell data-col="name">
                                                     <Typography
                                                         variant="body2"
                                                         noWrap={true}
@@ -100,18 +94,18 @@ export const ExistingKnowledgeComponent: React.FC<ExistingKnowledgeComponentProp
                                                         {f.fileName}
                                                     </Typography>
                                                 </StyledTableCell>
-                                                <StyledTableCell className="date">
+                                                <StyledTableCell data-col="date">
                                                     {f.lastModified}
                                                 </StyledTableCell>
-                                                <StyledTableCell className="size">
+                                                <StyledTableCell data-col="size">
                                                     {f.fileSize}
                                                 </StyledTableCell>
-                                            </TableRow>
+                                            </Table.Row>
                                         );
                                     })}
-                                </TableBody>
+                                </Table.Body>
                             </Table>
-                        </TableContainer>
+                        </Table.Container>
                     )}
                 </StyledTableHolder>
             </>

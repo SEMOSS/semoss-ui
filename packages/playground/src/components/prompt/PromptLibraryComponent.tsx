@@ -7,16 +7,15 @@ import {
     MenuItem,
     Grid,
     Chip,
-    DialogTitle,
-    Dialog,
     IconButton,
-    DialogContent,
+    Modal,
     CircularProgress,
-} from '@mui/material';
+} from '@semoss/ui';
+import { usePixel } from '@semoss/sdk/react';
+import { Search } from '@semoss/ui';
 import { Close } from '@mui/icons-material';
 import { Prompt } from '@/types';
-import { useDebounceValue, usePixel } from '@/hooks';
-import { Search } from '@/components';
+import { useDebounceValue } from '@/hooks';
 
 const StyledHolder = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -89,7 +88,7 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
     );
 
     return (
-        <Dialog
+        <Modal
             open={true}
             onClose={() => onClose(false)}
             aria-labelledby="select tool"
@@ -98,15 +97,15 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
             fullWidth={true}
             scroll="paper"
         >
-            <DialogTitle>
+            <Modal.Title>
                 <Stack direction="row" justifyContent="space-between">
                     <Typography variant="h6">Select Prompt</Typography>
                     <IconButton size="small" onClick={() => onClose(false)}>
                         <Close />
                     </IconButton>
                 </Stack>
-            </DialogTitle>
-            <DialogContent>
+            </Modal.Title>
+            <Modal.Content>
                 <Stack direction={'column'} spacing={2} py={1}>
                     <Stack direction={'row'} width={'100%'} spacing={2}>
                         <Search
@@ -135,11 +134,11 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
                             onChange={(e) => setFilter(e.target.value)}
                         >
                             <MenuItem value={''}>All</MenuItem>
-                            {getAllTags.data.map((t, tIdx) => {
+                            {getAllTags.data.map((t, tIdx) => (
                                 <MenuItem key={tIdx} value={t.METAVALUE}>
-                                    {t}
-                                </MenuItem>;
-                            })}
+                                    {t.METAVALUE}
+                                </MenuItem>
+                            ))}
                         </TextField>
                     </Stack>
                     <StyledHolder>
@@ -209,7 +208,7 @@ export const PromptLibraryComponent: React.FC<PromptLibraryComponentProps> = ({
                         )}
                     </StyledHolder>
                 </Stack>
-            </DialogContent>
-        </Dialog>
+            </Modal.Content>
+        </Modal>
     );
 };

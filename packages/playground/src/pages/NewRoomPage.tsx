@@ -4,11 +4,10 @@ import {
     styled,
     Typography,
     Button,
-    Unstable_Grid2 as Grid,
+    Grid,
     Chip,
     Stack,
     Container,
-    Paper,
     IconButton,
     TextField,
     Tooltip,
@@ -18,7 +17,7 @@ import {
     Badge,
     CircularProgress,
     Link,
-} from '@mui/material';
+} from '@semoss/ui';
 import { Resizable } from 're-resizable';
 import {
     ArrowForward,
@@ -29,13 +28,12 @@ import {
     SendRounded,
     TuneRounded,
 } from '@mui/icons-material';
+import { Alert, useNotification } from '@semoss/ui';
+import { useInsight } from '@semoss/sdk/react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Alert,
-    AlertTitle,
     KnowledgeOverlayComponent,
     ToolsOverlayComponent,
-    useNotification,
     OptionsPickerComponent,
     OptionsMenuComponent,
     PromptLibraryComponent,
@@ -43,7 +41,6 @@ import {
 import { useChat, usePixel } from '@/hooks';
 import { ChatRoom } from '@/stores';
 import { TEMPERATURE, TOKEN_LENGTH } from '@/constants';
-import { useInsight } from '@semoss/sdk/react';
 import { Prompt } from '@/types';
 
 const APP_DESCRIPTION = process.env.APP_DESCRIPTION
@@ -69,7 +66,7 @@ const StyledHolder = styled('div')(({ theme }) => ({
     height: '98px',
 }));
 
-const StyledItem = styled(Paper, {
+const StyledItem = styled('div', {
     shouldForwardProp: (prop) => prop !== 'disabled',
 })<{ disabled?: boolean }>(({ theme, disabled }) => ({
     padding: theme.spacing(2),
@@ -341,7 +338,7 @@ export const NewRoomPage = observer(() => {
                                     }
                                     color="info"
                                 >
-                                    <AlertTitle>Agent Tools</AlertTitle>
+                                    <Alert.Title>Agent Tools</Alert.Title>
                                     Explore tools for file search, code, and
                                     function calling.{' '}
                                     <StyledLink

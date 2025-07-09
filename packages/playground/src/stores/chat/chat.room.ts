@@ -1,16 +1,9 @@
 import { makeAutoObservable, runInAction } from 'mobx';
-import { download, Env, runPixel } from '@semoss/sdk/react';
+import { download, runPixel } from '@semoss/sdk/react';
 
 import { TEMPERATURE, TOKEN_LENGTH } from '@/constants';
-import {
-    Knowledge,
-    MessageAppResponse,
-    MessageFunctionResponse,
-    MessageParameters,
-    MessageResponse,
-    Tool,
-} from '@/types';
-import { ChatMessage } from '@/stores';
+import { Knowledge, PixelMessage, Tool } from '@/types';
+import { ChatMessage } from './chat.message';
 
 export interface ChatRoomInterface {
     /**
@@ -111,21 +104,11 @@ export interface ChatRoomInterface {
                   type: 'CONTROLS';
               }
             | {
-                  type: 'CODE';
-                  name: string;
-              }
-            | {
-                  type: 'VECTOR_FILE';
-                  name: string;
-                  engine: string;
-              }
-            | {
-                  type: 'FUNCTION';
-                  response: MessageFunctionResponse;
-              }
-            | {
                   type: 'APP';
-                  response: MessageAppResponse;
+                  messageId: string;
+                  toolName: string;
+                  toolId: string;
+                  toolParameters: Record<string, unknown>;
               };
     };
 }
@@ -222,31 +205,6 @@ export class ChatRoom {
     }
 
     /**
-     * Get the the artifacts as a map
-     */
-    get artifacts() {
-        return this._store.history.reduce((acc, val) => {
-            val.response.map((r) => {
-                if (r.type === 'CODE') {
-                    acc[r.name] = {
-                        name: r.name,
-                        content: r.content,
-                    };
-                }
-            });
-
-            return acc;
-        }, {} as Record<string, { name: string; content: string }>);
-    }
-
-    /**
-     * Get the the artifacts as a list
-     */
-    get artifactsList() {
-        return Object.values(this.artifacts);
-    }
-
-    /**
      * Get the sidbar information
      */
     get sidebar() {
@@ -299,28 +257,10 @@ export class ChatRoom {
             // turn on the loading screen
             this.setIsLoading(true);
 
-            // initialize a new insight
-            this._insightID = 'new';
-            await this.runPixel(`SetContext('${Env.APP}')`);
-
             // wait for the pixel to run
-            const response = await this.runPixel<
-                [
-                    {
-                        message_id: string;
-                        room_id: string;
-                        model_id: string;
-                        model_params: string;
-                        context: string;
-                        question: string;
-                        response: string;
-                        user_id: string;
-                        date_created: string;
-                        comment: string;
-                        rating: string;
-                    }[],
-                ]
-            >(`GetRoomMessages(roomId=["${this._store.roomId}"]);`);
+            const response = await runPixel<[PixelMessage[]]>(
+                `GetRoomMessages(roomId=["${this._store.roomId}"]);`,
+            );
 
             const { output, operationType } = response.pixelReturn[0];
 
@@ -329,69 +269,70 @@ export class ChatRoom {
                 throw new Error(output as unknown as string);
             }
 
-            runInAction(() => {
-                for (const r of output) {
-                    // create a new message
-                    const m = new ChatMessage(r.question);
+            const history: ChatMessage[] = [];
+            const messages: Record<string, ChatMessage> = {};
 
-                    //parse the response
-                    const responseObj = JSON.parse(r.response);
+            for (const r of output) {
+                let isNew = false;
 
-                    if (
-                        responseObj?.messageType === 'TOOL' &&
-                        responseObj?.response?.name === 'function_engine'
-                    ) {
-                        const toolInfo = JSON.parse(
-                            responseObj?.response?.arguments,
-                        );
+                // check if the message exists and create a new one if it doesn't
+                let message = messages[r.messageId];
+                if (!message) {
+                    message = new ChatMessage();
 
-                        //convert response arguments to MessageParameters type
-                        const toolParams = [];
-                        if (toolInfo?.map) {
-                            Object.keys(toolInfo.map).map((param) => {
-                                toolParams.push({
-                                    name: param,
-                                    type: 'string',
-                                    value: toolInfo.map[param],
-                                });
-                            });
-                        }
-
-                        m.saveResponse([
-                            {
-                                id: toolInfo.id,
-                                type: 'FUNCTION',
-                                name: responseObj.response.name, //To Do: return the tool name
-                                functionId: r.message_id,
-                                tool_name: responseObj.response.name,
-                                tool_id: responseObj.response.id,
-                                parameters: toolParams,
-                                content: '',
-                            },
-                        ]);
-                    } else {
-                        m.saveResponse([
-                            {
-                                type: 'CONTENT',
-                                content: responseObj.response,
-                            },
-                        ]);
-                    }
-
-                    // save the responses
-                    m.saveId(r.message_id);
-                    m.saveRating(
-                        typeof r.rating === 'boolean'
-                            ? { positive: r.rating, comment: r.comment }
-                            : null,
-                    );
-
-                    // add to the log
-                    this._store.history.push(m);
+                    // mark as new
+                    isNew = true;
                 }
-            });
+
+                // update the id
+                message.saveId(r.messageId);
+
+                if (r.type === 'INPUT_TEXT') {
+                    message.updateType('USER');
+                    message.updateContent({
+                        type: 'TEXT',
+                        text: r.inputUIPrompt,
+                    });
+                } else if (r.type === 'INPUT_TOOL_EXEC') {
+                    message.updateType('AGENT');
+                    message.updateContent({
+                        type: 'APP',
+                        name: r.toolResponse.name,
+                        id: r.toolResponse.arguments.id,
+                        map: r.toolResponse.arguments.map,
+                    });
+                } else if (r.type === 'RESPONSE_TEXT') {
+                    message.updateType('AGENT');
+                    message.updateContent({
+                        type: 'TEXT',
+                        text: r.content,
+                    });
+                } else if (r.type === 'RESPONSE_TOOL') {
+                    message.updateType('AGENT');
+                    message.updateContent({
+                        type: 'APP',
+                        name: r.toolResponse.name,
+                        id: r.toolResponse.arguments.id,
+                        map: r.toolResponse.arguments.map,
+                    });
+                }
+
+                // update sources if it exists
+                if (r.ornaments && r.ornaments.chunks) {
+                    message.updateSources(r.ornaments.chunks as string[]);
+                }
+
+                // store it
+                messages[message.messageId] = message;
+
+                // only add if it is visible and new
+                if (r.visible && isNew) {
+                    history.push(message);
+                }
+            }
 
             runInAction(() => {
+                this._store.history = history;
                 this._store.isInitialized = true;
             });
         } finally {
@@ -408,235 +349,235 @@ export class ChatRoom {
         question: string,
         options?: Partial<ChatRoomInterface['options']>,
     ): Promise<void> => {
-        try {
-            if (!this._store.modelId) {
-                throw new Error('Model is required');
-            }
+        console.error('FIX');
+        //         try {
+        //             if (!this._store.modelId) {
+        //                 throw new Error('Model is required');
+        //             }
 
-            if (!question) {
-                throw new Error('Question is required');
-            }
+        //             if (!question) {
+        //                 throw new Error('Question is required');
+        //             }
 
-            // turn on the loading screen
-            this.setIsLoading(true);
+        //             // turn on the loading screen
+        //             this.setIsLoading(true);
 
-            // options to use with the ask
-            if (options) {
-                this.setOptions(options);
-            }
+        //             // options to use with the ask
+        //             if (options) {
+        //                 this.setOptions(options);
+        //             }
 
-            // create a new message
-            const message = new ChatMessage(question);
+        //             // create a new message
+        //             const message = new ChatMessage();
 
-            // add it to the log
-            this._store.history.push(message);
+        //             // temp message
+        //             message.saveId(`TEMP`);
+        //             message.updateType('USER');
+        //             message.updateContent({
+        //                 type: 'TEXT',
+        //                 text: question,
+        //             });
 
-            // if there are vector dbs query that and get the content
-            let knowledge: {
-                score: number;
-                percent: string;
-                source: string;
-                content: string;
-            }[] = [];
-            if (this._store.options.knowledge) {
-                knowledge = await this.askVectorCatalog(
-                    this._store.options.knowledge.id,
-                    question,
-                );
-            }
+        //             // add it to the log
+        //             this._store.history.push(message);
 
-            // build the context if it is there
-            let context = '';
-            if (this._store.options?.instructions) {
-                context = this._store.options?.instructions;
-            }
+        //             // if there are vector dbs query that and get the content
+        //             let knowledge: {
+        //                 score: number;
+        //                 percent: string;
+        //                 source: string;
+        //                 content: string;
+        //             }[] = [];
+        //             if (this._store.options.knowledge) {
+        //                 knowledge = await this.askVectorCatalog(
+        //                     this._store.options.knowledge.id,
+        //                     question,
+        //                 );
+        //             }
 
-            // build the full prompt
-            let prompt = '';
-            if (knowledge.length) {
-                prompt = `
-Answer the question
+        //             // build the context if it is there
+        //             let context = '';
+        //             if (this._store.options?.instructions) {
+        //                 context = this._store.options?.instructions;
+        //             }
 
-question:${question}
+        //             // build the full prompt
+        //             let prompt = '';
+        //             if (knowledge.length) {
+        //                 prompt = `
+        // Answer the question
 
-based on the provided context. The context is presented as an array [{"content":"", "source": ""}]. Only use information from this context.
+        // question:${question}
 
-context:${JSON.stringify(
-                    knowledge.map((k) => {
-                        return {
-                            content: k.content,
-                            source: k.source,
-                        };
-                    }),
-                )}`;
-            } else {
-                prompt = question;
-            }
+        // based on the provided context. The context is presented as an array [{"content":"", "source": ""}]. Only use information from this context.
 
-            // // reset the typewriter
-            // message.resetTypewriter('');
+        // context:${JSON.stringify(
+        //                     knowledge.map((k) => {
+        //                         return {
+        //                             content: k.content,
+        //                             source: k.source,
+        //                         };
+        //                     }),
+        //                 )}`;
+        //             } else {
+        //                 prompt = question;
+        //             }
 
-            // // start collecting
-            // isCollecting = true;
+        //             // // reset the typewriter
+        //             // message.resetTypewriter('');
 
-            // // initial delay collecting the partial
-            // setTimeout(() => collectMessage(message), 500);
+        //             // // start collecting
+        //             // isCollecting = true;
 
-            // get a list of engine ids
-            const engines: string[] = this._store.options.tools.reduce(
-                (acc, val) => {
-                    if (val.type === 'FUNCTION' || val.type === 'DATABASE') {
-                        acc.push(val.id);
-                    }
+        //             // // initial delay collecting the partial
+        //             // setTimeout(() => collectMessage(message), 500);
 
-                    return acc;
-                },
-                [],
-            );
+        //             // get a list of engine ids
+        //             const engines: string[] = this._store.options.tools.reduce(
+        //                 (acc, val) => {
+        //                     if (val.type === 'FUNCTION' || val.type === 'DATABASE') {
+        //                         acc.push(val.id);
+        //                     }
 
-            // get a list of app ids
-            const apps: string[] = this._store.options.tools.reduce(
-                (acc, val) => {
-                    if (val.type === 'APP') {
-                        acc.push(val.id);
-                    }
+        //                     return acc;
+        //                 },
+        //                 [],
+        //             );
 
-                    return acc;
-                },
-                [],
-            );
+        //             // get a list of app ids
+        //             const apps: string[] = this._store.options.tools.reduce(
+        //                 (acc, val) => {
+        //                     if (val.type === 'APP') {
+        //                         acc.push(val.id);
+        //                     }
 
-            // wait for the pixel to run
-            const response = await this.runPixel<
-                [
-                    {
-                        messageId: string;
-                        response: MessageResponse[];
-                    },
-                ]
-            >(
-                `AskRoomPrompt(
-roomId=["${this._store.roomId}"],
-project_tools=${JSON.stringify(apps)},
-engine_tools=${JSON.stringify(engines)},
-modelId=["${this._store.modelId}"],
-${context ? `context=["<encode>${context}</encode>"],` : ''} 
-question=["<encode>${prompt}</encode>"], 
-paramValues=[${JSON.stringify({
-                    max_new_tokens: this._store.options.tokenLength,
-                    temperature: this._store.options.temperature,
-                })}],
-execute_tool=[${this._store.options.autoExecute}],
-chain_of_thought=[${this._store.options.chainOfThought}]
-);`,
-            );
+        //                     return acc;
+        //                 },
+        //                 [],
+        //             );
 
-            const { output, operationType } = response.pixelReturn[0];
+        //             // wait for the pixel to run
+        //             const response = await runPixel<
+        //                 [
+        //                     {
+        //                         messageId: string;
+        //                         response: PixelMessage[];
+        //                     },
+        //                 ]
+        //             >(
+        //                 `AskRoomPrompt(
+        // roomId=["${this._store.roomId}"],
+        // project_tools=${JSON.stringify(apps)},
+        // engine_tools=${JSON.stringify(engines)},
+        // modelId=["${this._store.modelId}"],
+        // ${context ? `context=["<encode>${context}</encode>"],` : ''}
+        // question=["<encode>${prompt}</encode>"],
+        // paramValues=[${JSON.stringify({
+        //                     max_new_tokens: this._store.options.tokenLength,
+        //                     temperature: this._store.options.temperature,
+        //                 })}],
+        // execute_tool=[${this._store.options.autoExecute}],
+        // chain_of_thought=[${this._store.options.chainOfThought}]
+        // );`,
+        //             );
 
-            // throw errors
-            if (operationType.indexOf('ERROR') > -1) {
-                throw new Error(output as unknown as string);
-            }
+        //             const { output, operationType } = response.pixelReturn[0];
 
-            // update the id
-            message.saveId(output.messageId);
+        //             // throw errors
+        //             if (operationType.indexOf('ERROR') > -1) {
+        //                 throw new Error(output as unknown as string);
+        //             }
 
-            // save the new options
-            await this.runPixel<
-                [
-                    {
-                        updated: boolean;
-                    },
-                ]
-            >(
-                `UpdateRoomOptions(roomId='${
-                    this.roomId
-                }', roomOptions=[${JSON.stringify(this.options)}]);`,
-            );
+        //             // update the id
+        //             message.saveId(output.messageId);
 
-            //TODO: Modify later
-            if (
-                this._store.options.chainOfThought === true &&
-                this._store.options.autoExecute === false
-            ) {
-                const conclusion = [...output.response];
-                conclusion.push({
-                    type: 'CONCLUSION',
-                });
-                message.saveResponse(conclusion);
-            } else {
-                // finish based on the full response
-                message.saveResponse(output.response);
-            }
+        //             // save the new options
+        //             await runPixel<
+        //                 [
+        //                     {
+        //                         updated: boolean;
+        //                     },
+        //                 ]
+        //             >(
+        //                 `UpdateRoomOptions(roomId='${
+        //                     this.roomId
+        //                 }', roomOptions=[${JSON.stringify(this.options)}]);`,
+        //             );
 
-            // TODO: sync with backend
-            // update the sources
-            const sourceMap = {};
-            for (const k of knowledge) {
-                sourceMap[k.source] = true;
-            }
-            message.updateSources(Object.keys(sourceMap));
-        } finally {
-            // turn off the loading screen
-            this.setIsLoading(false);
-        }
+        //             //TODO: Modify later
+        //             if (
+        //                 this._store.options.chainOfThought === true &&
+        //                 this._store.options.autoExecute === false
+        //             ) {
+        //                 const conclusion = [...output.response];
+        //                 conclusion.push({
+        //                     type: 'CONCLUSION',
+        //                 });
+        //                 message.saveResponse(conclusion);
+        //             } else {
+        //                 // finish based on the full response
+        //                 message.saveResponse(output.response);
+        //             }
+
+        //             // TODO: sync with backend
+        //             // update the sources
+        //             const sourceMap = {};
+        //             for (const k of knowledge) {
+        //                 sourceMap[k.source] = true;
+        //             }
+        //             message.updateSources(Object.keys(sourceMap));
+        //         } finally {
+        //             // turn off the loading screen
+        //             this.setIsLoading(false);
+        //         }
     };
 
     /**
      * Process a App response
      */
-    processAppResponse = async (
-        messageResponse: MessageAppResponse | MessageFunctionResponse,
-        appOutputs: Record<string, unknown>,
-    ) => {
-        // TODO: Or do we want to pass these outputs to the model for verification
-        // TODO: Do you want me to just fill in the tool params And call AddToolResponse?
-        messageResponse.content = JSON.stringify(appOutputs);
-    };
-
-    /**
-     * Process a tool response
-     * @param question - user message
-     */
-    processToolResponse = async (
-        messageResponse: MessageAppResponse | MessageFunctionResponse,
-        updatedParameters: MessageParameters,
-    ): Promise<void> => {
-        try {
-            // turn on the loading screen
-            this.setIsLoading(true);
-
-            // update the parameters
-            const parameters: Record<string, unknown> =
-                updatedParameters.reduce((acc, val) => {
-                    acc[val.name] = val.value;
-                    return acc;
-                }, {});
-
-            // wait for the pixel to run
-            const response = await this.runPixel<[{ response: string }]>(
-                `AddToolResponse(
-engine=["${this._store.modelId}"],
-tool_name=["${messageResponse.tool_name}"],
-tool_id=["${messageResponse.id}"],
-tool_call_id=["${messageResponse.tool_id}"],
-tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
-);`,
-            );
-
-            const { output, operationType } = response.pixelReturn[0];
-
-            // throw errors
-            if (operationType.indexOf('ERROR') > -1) {
-                throw new Error(output as unknown as string);
-            }
-
-            // update the content>
-            messageResponse.content = output.response;
-        } finally {
-            // turn off the loading screen
-            this.setIsLoading(false);
-        }
+    processAppResponse = async () => {
+        //         // TODO: Or do we want to pass these outputs to the model for verification
+        //         // TODO: Do you want me to just fill in the tool params And call AddToolResponse?
+        //         messageResponse.content = JSON.stringify(appOutputs);
+        //     };
+        //     /**
+        //      * Process a tool response
+        //      * @param question - user message
+        //      */
+        //     processToolResponse = async (
+        //         messageResponse: MessageAppResponse | MessageFunctionResponse,
+        //         updatedParameters: MessageParameters,
+        //     ): Promise<void> => {
+        //         try {
+        //             // turn on the loading screen
+        //             this.setIsLoading(true);
+        //             // update the parameters
+        //             const parameters: Record<string, unknown> =
+        //                 updatedParameters.reduce((acc, val) => {
+        //                     acc[val.name] = val.value;
+        //                     return acc;
+        //                 }, {});
+        //             // wait for the pixel to run
+        //             const response = await runPixel<[{ response: string }]>(
+        //                 `AddToolResponse(
+        // engine=["${this._store.modelId}"],
+        // tool_name=["${messageResponse.tool_name}"],
+        // tool_id=["${messageResponse.id}"],
+        // tool_call_id=["${messageResponse.tool_id}"],
+        // tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
+        // );`,
+        //             );
+        //             const { output, operationType } = response.pixelReturn[0];
+        //             // throw errors
+        //             if (operationType.indexOf('ERROR') > -1) {
+        //                 throw new Error(output as unknown as string);
+        //             }
+        //             // update the content>
+        //             messageResponse.content = output.response;
+        //         } finally {
+        //             // turn off the loading screen
+        //             this.setIsLoading(false);
+        //         }
     };
 
     /**
@@ -652,7 +593,7 @@ tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
     ): Promise<void> => {
         try {
             // wait for the pixel to run
-            const response = await this.runPixel<[boolean]>(
+            const response = await runPixel<[boolean]>(
                 `SubmitRoomFeedback(messageId = ["${messageId}"], text=["${comment}"], rating=[${rating}]);`,
             );
 
@@ -680,47 +621,32 @@ tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
      *
      * @param messageId
      */
-    rewriteMessage = async (messageId: string): Promise<void> => {
-        try {
-            // turn on the loading screen
-            this.setIsLoading(true);
-
-            console.log(`TODO ::: Rewrite ${messageId}`);
-        } finally {
-            // turn off the loading screen
-            this.setIsLoading(false);
-        }
-    };
-
-    /**
-     *
-     * @param messageId
-     */
     downloadHistory = async (): Promise<void> => {
-        try {
-            // turn on the loading screen
-            this.setIsLoading(true);
+        console.error('Fix');
+        //         try {
+        //             // turn on the loading screen
+        //             this.setIsLoading(true);
 
-            const html = this._store.history
-                .map((h) => {
-                    return `
-<div>${h.question}</div>
-<div>${h.responseText}</div>
-`;
-                })
-                .join('\n');
+        //             const html = this._store.history
+        //                 .map((h) => {
+        //                     return `
+        // <div>${h.question}</div>
+        // <div>${h.responseText}</div>
+        // `;
+        //                 })
+        //                 .join('\n');
 
-            // wait for the pixel to run
-            const { pixelReturn } = await this.runPixel<[string]>(
-                `ToPdf( html=["<encode>${html}</encode>"]);`,
-            );
+        //             // wait for the pixel to run
+        //             const { pixelReturn } = await runPixel<[string]>(
+        //                 `ToPdf( html=["<encode>${html}</encode>"]);`,
+        //             );
 
-            // get the output
-            this.download(pixelReturn[0].output);
-        } finally {
-            // turn off the loading screen
-            this.setIsLoading(false);
-        }
+        //             // get the output
+        //             this.download(pixelReturn[0].output);
+        //         } finally {
+        //             // turn off the loading screen
+        //             this.setIsLoading(false);
+        //         }
     };
 
     /**
@@ -755,25 +681,25 @@ tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
         this._store.isLoading = isLoading;
     }
 
-    /**
-     * Run a pixel
-     * @param pixel - pixel
-     */
-    private runPixel = async <O extends [] | unknown[]>(pixel: string) => {
-        // get the response
-        const response = await runPixel<O>(pixel, this._insightID);
+    // /**
+    //  * Run a pixel
+    //  * @param pixel - pixel
+    //  */
+    // private runPixel = async <O extends [] | unknown[]>(pixel: string) => {
+    //     // get the response
+    //     const response = await runPixel<O>(pixel, this._insightID);
 
-        if (response.errors.length > 0) {
-            throw new Error(response.errors.join(''));
-        }
+    //     if (response.errors.length > 0) {
+    //         throw new Error(response.errors.join(''));
+    //     }
 
-        // store the new insight id
-        runInAction(() => {
-            this._insightID = response.insightId;
-        });
+    //     // store the new insight id
+    //     runInAction(() => {
+    //         this._insightID = response.insightId;
+    //     });
 
-        return response;
-    };
+    //     return response;
+    // };
 
     /**
      * Download a file
@@ -793,7 +719,7 @@ tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
     private askVectorCatalog = async (id: string, question: string) => {
         const pixel = `VectorDatabaseQuery(engine=["${id}"] , command=["<encode>${question}</encode>"], limit=[5])`;
 
-        const response = await this.runPixel<
+        const response = await runPixel<
             [
                 {
                     Score: number;
