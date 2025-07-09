@@ -585,8 +585,6 @@ for (const testData of testsData) {
 
             expect(newState.version).toBe("1.0.0-alpha.11");
 
-            console.log({ aggregate: newState.blocks.block1.data.aggregate });
-
             expect(newState.blocks.block1.data.aggregate).toEqual({
                 Label: {
                     F1: "",
@@ -654,6 +652,69 @@ for (const testData of testsData) {
                 Value: {
                     F1V1: "Average",
                     F2V2: "Average",
+                },
+            });
+        });
+
+        it("should migrate from 1.0.0-alpha.10 to 1.0.0-alpha.11; aggregateFormatter3 (echart-scatter-plots OR echart-stack-chart)", async ({
+            skip,
+        }) => {
+            const initialState = {
+                blocks: {
+                    block1: {
+                        widget: "e-chart",
+                        data: {
+                            variation: "echart-scatter-plots",
+                            option: {
+                                _state: {
+                                    fields: {
+                                        f1: ["f1-1", "f1-2"],
+                                        f2: ["f2-1", "f2-2"],
+                                        f1DataType: ["STRING"],
+                                        f2DataType: ["NUMBER"],
+                                    },
+                                },
+                            },
+                            aggregate: null,
+                        },
+                    },
+                },
+                version: "1.0.0-alpha.10",
+            };
+
+            // skip test if the starting currentState version does not match the test version condition
+            if (initialState.version !== "1.0.0-alpha.10") {
+                skip();
+            }
+            vi.doMock("@/store/state/migration/StateVersion", () => {
+                return {
+                    STATE_VERSION: "1.0.0-alpha.11", // mock latest state version
+                };
+            });
+            const { MigrationManager } = await import(
+                "@/store/state/migration/MigrationManager"
+            );
+            const { STATE_VERSION } = await import(
+                "@/store/state/migration/StateVersion"
+            );
+            const migrationManager = new MigrationManager();
+
+            expect(initialState.version).toBe("1.0.0-alpha.10");
+
+            const newState = await migrationManager.run(initialState);
+
+            expect(newState.version).toBe("1.0.0-alpha.11");
+
+            // console.log({ newState });
+
+            expect(newState.blocks.block1.data.aggregate).toEqual({
+                f1: {
+                    "f1-1": "",
+                    "f1-2": "",
+                },
+                f2: {
+                    "f2-1": "Average",
+                    "f2-2": "Count",
                 },
             });
         });
