@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import {
@@ -16,7 +16,7 @@ import {
     TextField,
     useNotification,
 } from "@semoss/ui";
-import { usePixel } from "@semoss/sdk/react";
+import { usePixel, upload } from "@semoss/sdk/react";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { BaseSettingSection, InputSettings } from "../../block-settings";
@@ -69,10 +69,11 @@ const SelectedItem = ({ file, setData }) => {
             <StyledListItem>
                 <ListItemText>{file.fileName}</ListItemText>
                 <IconButton
+                    data-testid="remove-image"
                     edge="end"
                     aria-label="delete"
                     onClick={() => {
-                        setData("file", null);
+                        setData("src", "");
                     }}
                 >
                     <DeleteIcon color="error" />
@@ -91,12 +92,11 @@ const SelectImage = ({ data, imageFiles, setData }) => {
         const selectedName = e.target.value;
         const selectedFile = imageFiles.find((f) => f.name === selectedName);
         if (selectedFile) {
-            setData("src", "");
-            setData("title", "");
-            setData("file", {
+            setData("src", {
                 fileLocation: selectedFile.path,
                 fileName: selectedFile.name,
             });
+            setData("title", "");
         }
     };
     return (
@@ -105,8 +105,9 @@ const SelectImage = ({ data, imageFiles, setData }) => {
                 label="Select Image"
                 size="small"
                 fullWidth
-                value={(data.file?.fileName ?? "") as string}
+                value={(data.src?.fileName ?? "") as string}
                 onChange={onImageChange}
+                data-testid="select-image"
             >
                 {imageFiles?.map((file) => (
                     <Select.Item key={file.name} value={file.name}>
@@ -118,31 +119,27 @@ const SelectImage = ({ data, imageFiles, setData }) => {
     );
 };
 
-const AppImageTab = ({ id, data, setData, appId }) => {
-    const { uploadFile } = useBlock(id);
+const AppImageTab = ({ id, data, setData, appId, insightId }) => {
     const notification = useNotification();
     const [isLoading, setIsLoading] = useState(false);
-    const getAssetsApp = usePixel<{ status: string; data: any }>(
+    const getAssets = usePixel<{ status: string; data: any }>(
         `BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
     );
     const imageFiles =
-        getAssetsApp.status === "SUCCESS"
-            ? getImageFiles(getAssetsApp.data)
-            : [];
+        getAssets.status === "SUCCESS" ? getImageFiles(getAssets.data) : [];
     const addFile = async (file: File) => {
         try {
             setIsLoading(true);
 
-            let upload = null;
-            upload = await uploadFile(file, appId, "version/assets/"); // portals
-            setData("src", "");
+            let uploadRes = null;
+            uploadRes = await upload(file, insightId, appId, "version/assets/");
             setData("title", "");
-            setData("file", upload[0]);
+            setData("src", uploadRes[0]);
             notification.add({
                 color: "success",
                 message: "Image uploaded successfully",
             });
-            if (!upload) {
+            if (!uploadRes) {
                 throw new Error("Error missing uploading image");
             }
         } catch (e) {
@@ -158,8 +155,8 @@ const AppImageTab = ({ id, data, setData, appId }) => {
     if (isLoading) {
         return <Typography variant="body1">Loading...</Typography>;
     }
-    if (data.file) {
-        return <SelectedItem file={data.file} setData={setData} />;
+    if (data?.src instanceof Object) {
+        return <SelectedItem file={data.src} setData={setData} />;
     }
     return (
         <>
@@ -167,6 +164,7 @@ const AppImageTab = ({ id, data, setData, appId }) => {
                 imageFiles={imageFiles}
                 data={data}
                 setData={setData}
+                data-testid="select-image"
             />
             <Typography variant="body1" align="center">
                 Or
@@ -175,29 +173,38 @@ const AppImageTab = ({ id, data, setData, appId }) => {
                 description="Upload your image here"
                 extensions={imageExtensions}
                 multiple={false}
-                value={data.file}
-                id={`upload_image_${id}`}
+                id={id}
                 onChange={addFile}
+                data-testid="upload-image"
             />
         </>
     );
 };
 
 const InsightImageTab = ({ insightId, data, setData }: TabRenderProps) => {
-    const getAssetsApp = usePixel<{ status: string; data: any }>(
+    const getAssets = usePixel<{ status: string; data: any }>(
         `BrowseAsset(filePath=["/"] );`,
         {},
         insightId,
     );
     const imageFiles =
-        getAssetsApp.status === "SUCCESS"
-            ? getImageFiles(getAssetsApp.data)
-            : [];
+        getAssets.status === "SUCCESS" ? getImageFiles(getAssets.data) : [];
 
-    return !data?.file ? (
-        <SelectImage imageFiles={imageFiles} data={data} setData={setData} />
+    if (!data?.src) {
+        return (
+            <SelectImage
+                imageFiles={imageFiles}
+                data={data}
+                setData={setData}
+                data-testid="select-image"
+            />
+        );
+    }
+
+    return data.src instanceof Object ? (
+        <SelectedItem file={data.src} setData={setData} />
     ) : (
-        <SelectedItem file={data.file} setData={setData} />
+        <SelectImage imageFiles={imageFiles} data={data} setData={setData} />
     );
 };
 
@@ -217,8 +224,8 @@ const tabConfig = [
         tooltip: "Add image from external link",
         render: ({ id, data, setData }: TabRenderProps) => (
             <>
-                {data.file ? (
-                    <SelectedItem file={data.file} setData={setData} />
+                {data.src instanceof Object ? (
+                    <SelectedItem file={data.src} setData={setData} />
                 ) : (
                     <>
                         <BaseSettingSection label={"Image URL"}>
@@ -232,12 +239,14 @@ const tabConfig = [
                                 size="small"
                                 variant="outlined"
                                 autoComplete="off"
+                                data-testid="image-url"
                             />
                         </BaseSettingSection>
                         <InputSettings
                             id={id}
                             label="Description"
                             path="title"
+                            data-testid="image-description"
                         />
                         <BaseSettingSection label="If Image is Unavailable">
                             <Select
@@ -249,6 +258,7 @@ const tabConfig = [
                                 }}
                                 size="small"
                                 variant="outlined"
+                                data-testid="image-unavailable"
                             >
                                 <Select.Item value="placeholder">
                                     Add placeholder text
@@ -260,11 +270,12 @@ const tabConfig = [
                         </BaseSettingSection>
                     </>
                 )}
-                {!data.file && data.unavailable === "placeholder" && (
+                {data.unavailable === "placeholder" && (
                     <InputSettings
                         id={id}
                         label="Enter Placeholder Text"
                         path="placeholderText"
+                        data-testid="image-placeholder-text"
                     />
                 )}
             </>
@@ -284,6 +295,19 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
         setBlockData(path, value, true);
     };
 
+    const tabContent = useMemo(
+        () =>
+            tabConfig[value]?.render?.({
+                id,
+                data,
+                setData,
+                appId: appId || "",
+                insightId: insightId || "",
+            }),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [value],
+    );
+
     return (
         <Box sx={{ width: "100%" }}>
             <Tabs
@@ -300,6 +324,7 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
                         bottom: "unset",
                     },
                 }}
+                data-testid="image-tabs"
             >
                 {tabConfig.map((tab) => (
                     <Tab
@@ -316,13 +341,14 @@ const GeneralSettings: React.FC<GeneralSettingsProps> = observer(({ id }) => {
                 ))}
             </Tabs>
             <Stack flexDirection={"column"} marginTop={2}>
-                {tabConfig[value].render({
+                {/* {tabConfig[value].render({
                     id,
                     data,
                     setData,
                     appId: appId || "",
                     insightId: insightId || "",
-                })}
+                })} */}
+                {tabContent}
             </Stack>
         </Box>
     );

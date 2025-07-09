@@ -4,7 +4,6 @@ import { AspectRatio, FitScreen, ImageAspectRatio } from "@mui/icons-material";
 import { BlockConfig } from "../../../store";
 import { ImageBlockDef, ImageBlock } from "./ImageBlock";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { InputSettings } from "../../block-settings";
 import { ButtonGroupSettings, SelectInputSettings } from "../../block-settings";
 import {
     buildDimensionsSection,
@@ -30,7 +29,6 @@ export const config: BlockConfig<ImageBlockDef> = {
         src: "",
         title: "",
         show: "true",
-        file: null,
         unavailable: "",
         placeholderText: "",
     },
@@ -53,24 +51,6 @@ export const config: BlockConfig<ImageBlockDef> = {
                 },
             ],
         },
-        // children: [
-        //     {
-        //         description: "Image Source",
-        //         render: ({ id }) => (
-        //             <InputSettings id={id} label="Image URL" path="src" />
-        //         ),
-        //     },
-        //     {
-        //         description: "Description",
-        //         render: ({ id }) => (
-        //             <InputSettings
-        //                 id={id}
-        //                 label="Description"
-        //                 path="title"
-        //             />
-        //         ),
-        //     },
-        // ],
         {
             name: "Conditional",
             children: [...buildShowField()],

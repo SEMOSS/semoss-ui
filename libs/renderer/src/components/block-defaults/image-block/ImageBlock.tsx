@@ -11,11 +11,10 @@ export interface ImageBlockDef extends BlockDef<"image"> {
     widget: "image";
     data: {
         style: CSSProperties;
-        src: string;
+        src: string | { fileName: string; fileLocation: string };
         title: string;
         show: string;
         unavailable: string;
-        file: { fileName: string; fileLocation: string } | null;
         placeholderText: string;
     };
     slots: never;
@@ -64,65 +63,72 @@ const AddImageText = styled(Typography)(({ theme }) => ({
 export const ImageBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, listeners } = useBlock<ImageBlockDef>(id);
     const { appId } = useParams();
-    const { file } = data;
+    const { src, style: dataStyle, title, unavailable, placeholderText } = data;
+
     const [imgStyle, setImgStyle] = useState(null);
+    const [status, setStatus] = useState({ isLoading: false, hasError: false });
+
+    const isObj = src instanceof Object;
 
     const getImage = usePixel(
-        file?.fileLocation
-            ? `GetAppAssetsBase64(filePath=["/${file?.fileName}"], project=["${appId}"])` //file location need to do as forward slash
+        isObj && src?.fileLocation
+            ? `GetAppAssetsBase64(filePath=["/${src?.fileName}"], project=["${appId}"])`
             : "",
     );
 
+    // Handle image loading and error
     useEffect(() => {
-        if (file?.fileLocation && getImage && getImage.status === "SUCCESS") {
-            let mimeType = "image/png";
-            let url = "";
-            if (file?.fileName) {
-                mimeType = getMimeType(file.fileName);
-            }
+        if (isObj && src?.fileLocation && getImage?.status === "SUCCESS") {
+            setStatus({ isLoading: false, hasError: false });
             if (typeof getImage.data === "string") {
-                url = `data:${mimeType};base64,${getImage.data}`;
-            } else if (getImage.data instanceof ArrayBuffer) {
-                const uint8Array = new Uint8Array(getImage.data);
-                let binary = "";
-                for (let i = 0; i < uint8Array.byteLength; i++) {
-                    binary += String.fromCharCode(uint8Array[i]);
-                }
-                url = `data:${mimeType};base64,${btoa(binary)}`;
-            }
-            if (url) {
+                const mimeType = getMimeType(src?.fileName);
+                const url = `data:${mimeType};base64,${getImage.data}`;
                 setImgStyle({
                     backgroundImage: `url('${url}')`,
+                    cursor: "pointer",
                 });
             }
-        } else if (data.src) {
+        } else if (src && typeof src === "string") {
+            setStatus({ isLoading: true, hasError: false });
+
             const img = new globalThis.Image();
             img.onload = () => {
-                setImgStyle({
-                    backgroundImage: `url('${data.src}')`,
-                });
+                setStatus({ isLoading: false, hasError: false });
+                setImgStyle({ backgroundImage: `url('${src}')` });
             };
             img.onerror = () => {
-                setImgStyle(null);
+                setStatus({ isLoading: false, hasError: true });
+                setImgStyle(dataStyle);
             };
-            img.src = data.src;
+            img.src = src;
         } else {
-            setImgStyle(null);
+            setImgStyle(dataStyle);
         }
-    }, [data.src, getImage.status]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [getImage.status, isObj ? src.fileName : src]);
 
     useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
-        }
+        listeners.preProcess?.();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const style = imgStyle ? { ...data.style, ...imgStyle } : data.style;
+    const style = imgStyle ? { ...dataStyle, ...imgStyle } : dataStyle;
+
+    const { isLoading, hasError } = status;
 
     return (
-        <Tooltip title={data.src ? data?.title : ""}>
-            <div style={style} {...attrs} tabIndex={0}>
-                {!data.src && !imgStyle && (
+        <Tooltip title={title}>
+            <div
+                style={style}
+                {...attrs}
+                aria-label={title || "Tooltip"}
+                tabIndex={0}
+            >
+                {isLoading && (
+                    <Typography variant="body2">Loading...</Typography>
+                )}
+
+                {!style.backgroundImage && !src && (
                     <Stack
                         alignItems="center"
                         justifyContent="center"
@@ -132,23 +138,24 @@ export const ImageBlock: BlockComponent = observer(({ id }) => {
                     >
                         <StyledImage
                             src={ImageSkeleton as string}
-                            alt={data?.title || "Image"}
+                            alt={title || "Image"}
                         />
                         <AddImageText variant="body2">Add image</AddImageText>
                     </Stack>
                 )}
-                {data.src && !imgStyle ? (
-                    data.unavailable === "default" ? (
+
+                {src &&
+                    hasError &&
+                    (unavailable === "default" ? (
                         <StyledImage
                             src={ImageSkeleton as string}
-                            alt={data?.title || "Image"}
+                            alt={title || "Image"}
                         />
                     ) : (
                         <Typography variant="body2">
-                            {data.placeholderText || "Image not available"}
+                            {placeholderText || "Image not available"}
                         </Typography>
-                    )
-                ) : null}
+                    ))}
             </div>
         </Tooltip>
     );

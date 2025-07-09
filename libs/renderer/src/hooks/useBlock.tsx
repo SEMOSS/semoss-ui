@@ -55,17 +55,13 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
      * Upload a file to the insight
      * @param file - file(s) to upload to the insight
      */
-    uploadFile: (
-        file: File | File[],
-        projectId?: string,
-        path?: string,
-    ) => Promise<
+    uploadFile: (file: File | File[]) => Promise<
         | {
               fileName: string;
               fileLocation: string;
           }[]
         | false
-    >;
+    >;  
 }
 
 /**
@@ -144,8 +140,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
     const uploadFile = useCallback(
         async (
             file: File | File[],
-            projectId = "",
-            path = "",
         ): Promise<
             | {
                   fileName: string;
@@ -160,7 +154,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
             const f = Array.isArray(file) ? file : [file];
 
             // upload the file
-            return await upload(f, state.insightId, projectId, path);
+            return await upload(f, state.insightId, "", "");
         },
         [],
     );
