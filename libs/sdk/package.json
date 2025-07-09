@@ -7,12 +7,12 @@
     "types": "./dist/types/index.d.ts",
     "exports": {
         ".": {
-            "default": "./dist/index.mjs",
-            "types": "./dist/types/index.d.ts"
+            "types": "./dist/types/index.d.ts",
+            "default": "./dist/index.mjs"
         },
         "./react": {
-            "default": "./dist/js-frameworks/react/index.mjs",
-            "types": "./dist/types/js-frameworks/react/index.d.ts"
+            "types": "./dist/types/js-frameworks/react/index.d.ts",
+            "default": "./dist/js-frameworks/react/index.mjs"
         }
     },
     "files": [

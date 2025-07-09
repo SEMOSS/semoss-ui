@@ -8,10 +8,7 @@ import {
     Typography,
     Divider,
     Modal,
-    ModalContent,
 } from '@semoss/ui';
-import { ModalTitle } from '@semoss/ui/src/components/Modal/ModalTitle';
-import { ModalActions } from '@semoss/ui/src/components/Modal/ModalActions';
 
 interface SyncChangesModalProps {
     open: boolean;
@@ -77,8 +74,8 @@ export const SyncChangesModal: React.FC<SyncChangesModalProps> = ({
                 },
             }}
         >
-            <ModalTitle>Sync Changes</ModalTitle>
-            <ModalContent>
+            <Modal.Title>Sync Changes</Modal.Title>
+            <Modal.Content>
                 <Typography variant="caption">
                     Select tables and views below to sync with external database
                     changes.
@@ -179,8 +176,8 @@ export const SyncChangesModal: React.FC<SyncChangesModalProps> = ({
                         </Stack>
                     </Stack>
                 </Stack>
-            </ModalContent>
-            <ModalActions>
+            </Modal.Content>
+            <Modal.Actions>
                 <Button onClick={onClose} variant="text">
                     Cancel
                 </Button>
@@ -194,7 +191,7 @@ export const SyncChangesModal: React.FC<SyncChangesModalProps> = ({
                 >
                     Apply
                 </Button>
-            </ModalActions>
+            </Modal.Actions>
         </Modal>
     );
 };

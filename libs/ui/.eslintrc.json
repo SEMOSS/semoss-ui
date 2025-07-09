@@ -5,24 +5,41 @@
         "plugin:react-hooks/recommended",
         "plugin:@typescript-eslint/recommended",
         "prettier",
-        "plugin:prettier/recommended"
+        "plugin:prettier/recommended",
+        "plugin:storybook/recommended"
     ],
-    "ignorePatterns": ["!**/*", "dist"],
+    "ignorePatterns": [
+        "!**/*",
+        "dist"
+    ],
     "overrides": [
         {
-            "files": ["*.ts", "*.tsx", "*.js", "*.jsx"],
+            "files": [
+                "*.ts",
+                "*.tsx",
+                "*.js",
+                "*.jsx"
+            ],
             "rules": {}
         },
         {
-            "files": ["*.ts", "*.tsx"],
+            "files": [
+                "*.ts",
+                "*.tsx"
+            ],
             "rules": {}
         },
         {
-            "files": ["*.js", "*.jsx"],
+            "files": [
+                "*.js",
+                "*.jsx"
+            ],
             "rules": {}
         },
         {
-            "files": ["**/*.stories.*"],
+            "files": [
+                "**/*.stories.*"
+            ],
             "rules": {
                 "import/no-anonymous-default-export": "off"
             }
@@ -44,12 +61,16 @@
             "jsx": true
         }
     },
-
     "rules": {
         "react/prop-types": "off",
         "react/jsx-uses-react": "off",
         "react/react-in-jsx-scope": "off",
-        "prettier/prettier": ["error", { "endOfLine": "auto" }]
+        "prettier/prettier": [
+            "error",
+            {
+                "endOfLine": "auto"
+            }
+        ]
         // TODO: Fix across component library
         // "@typescript-eslint/no-explicit-any": "error"
     }
