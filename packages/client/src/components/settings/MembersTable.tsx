@@ -321,6 +321,7 @@ export const MembersTable = (props: MembersTableProps) => {
                   permission: 'OWNER',
               },
               status: 'SUCCESS',
+              refresh: () => null,
           };
 
     // TODO: NEEDS FIX ^
@@ -476,6 +477,7 @@ export const MembersTable = (props: MembersTableProps) => {
                 // refresh the members
                 getMembers.refresh();
                 allAuthorsResponse.refresh();
+                userDetails.refresh();
 
                 onChange();
             } else {
@@ -980,13 +982,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
-                                                                        (isLastAuthor(
+                                                                        isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                            (userPermission ===
-                                                                                'Editor' &&
-                                                                                user.permission ===
-                                                                                    'OWNER') ||
+                                                                        (((userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                             !configStore.isEngineOperationAvailable(
                                                                                 type,
                                                                                 'access',
@@ -996,20 +998,20 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             )
                                                                                 ?.priority >
                                                                                 2) &&
-                                                                        !adminMode
+                                                                            !adminMode)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
-                                                                        (isLastAuthor(
+                                                                        isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                            (userPermission ===
-                                                                                'Editor' &&
-                                                                                user.permission ===
-                                                                                    'OWNER') ||
+                                                                        (((userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                             !configStore.isEngineOperationAvailable(
                                                                                 type,
                                                                                 'access',
@@ -1022,7 +1024,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             readOnlyRestricted(
                                                                                 user,
                                                                             )) &&
-                                                                        !adminMode
+                                                                            !adminMode)
                                                                     }
                                                                 />
                                                             </RadioGroup>
@@ -1199,6 +1201,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         // refresh
                         getMembers.refresh();
                         allAuthorsResponse.refresh();
+                        userDetails.refresh();
                     }
                 }}
             />
