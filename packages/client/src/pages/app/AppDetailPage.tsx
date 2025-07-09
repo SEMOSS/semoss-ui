@@ -94,12 +94,6 @@ const PageBody = styled('div')(({ theme }) => ({
     flexDirection: 'column',
 }));
 
-const SectionHeading = styled(Typography)(({ theme }) => ({
-    fontSize: 20,
-    fontWeight: '500',
-    marginBottom: theme.spacing(1),
-}));
-
 const TitleSection = styled('section')(({ theme }) => ({
     display: 'flex',
     gap: theme.spacing(2),
@@ -123,28 +117,10 @@ const TitleSectionBodyWrapper = styled('div')({
     justifyContent: 'center',
 });
 
-const TitleSectionBody = styled(Typography)(({ theme }) => ({
-    alignItems: 'center',
-    color: theme.palette.secondary.dark,
-    display: 'flex',
-    gap: '0.25rem',
-}));
-
 const TagsBodyWrapper = styled('div')({
     display: 'flex',
     flexWrap: 'wrap',
     gap: '0.6rem',
-});
-
-const StyledSection = styled('section')(({ theme }) => ({
-    paddingBottom: theme.spacing(3),
-}));
-
-const DependenciesHeadingWrapper = styled('div')({
-    alignItems: 'start',
-    display: 'flex',
-    justifyContent: 'space-between',
-    position: 'relative',
 });
 
 const StyledContentContainer = styled(Box)(({ theme }) => ({
@@ -214,6 +190,7 @@ export const AppDetailPage = () => {
     const [values, setValues] = useState<DetailsForm>(
         AppDetailsFormValues.detailsForm,
     );
+    const [pendingRequest, setPendingRequest] = useState(false);
 
     const markdownRef = useRef<HTMLElement>(null);
     const tagsRef = useRef<HTMLElement>(null);
@@ -236,7 +213,6 @@ export const AppDetailPage = () => {
     }, []);
 
     const { monolithStore, configStore } = useRootStore();
-    const navigate = useNavigate();
     const notification = useNotification();
     const { appId } = useParams();
 
@@ -255,6 +231,31 @@ export const AppDetailPage = () => {
             fetchSimilarApps();
         }
     };
+    // This runs ONLY when `appId` changes — not when dependencies change
+    useEffect(() => {
+        if (appId) {
+            const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
+
+            monolithStore
+                .runQuery(requested)
+                .then((response) => {
+                    console.log('pendingUserAccessPixel response', response);
+
+                    const output = response?.pixelReturn?.[0]?.output;
+                    if (Array.isArray(output) && output.length > 0) {
+                        setPendingRequest(true);
+                    } else {
+                        setPendingRequest(false);
+                    }
+                })
+                .catch((error) => {
+                    console.error('pendingUserAccessPixel error', error);
+                    setPendingRequest(false); // fallback in case of error
+                });
+        }
+    }, [appId]);
+
+    console.log(pendingRequest, ' pendingRequest');
 
     async function getPermission() {
         const { permission: role } =
@@ -663,7 +664,9 @@ export const AppDetailPage = () => {
                                                     />
                                                 ) : null
                                             }
-                                            disabled={responseStatus}
+                                            disabled={
+                                                responseStatus || pendingRequest
+                                            }
                                             variant={
                                                 responseStatus
                                                     ? 'outlined'
@@ -680,7 +683,7 @@ export const AppDetailPage = () => {
                                                 'app-detail-access-btn'
                                             }
                                         >
-                                            {responseStatus
+                                            {responseStatus || pendingRequest
                                                 ? 'Pending Access'
                                                 : permission === 'discoverable'
                                                 ? 'Request Access'
