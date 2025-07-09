@@ -297,6 +297,11 @@ export type CellComponent<D extends CellDef = CellDef> =
         isExpanded?: boolean;
         /** Model to use for code help */
         agentModelEngine?: string;
+        /**
+         * Height of the cell
+         * This is used to calculate the height of the cell in the view
+         */
+        cellHeight?: number;
     }>;
 
 /**

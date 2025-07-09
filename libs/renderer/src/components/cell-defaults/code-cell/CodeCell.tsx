@@ -110,10 +110,12 @@ export interface CodeCellDef extends CellDef<"code"> {
 const StyledContent = styled("div")(({ theme }) => ({
     position: "relative",
     width: "100%",
+    height: "100%",
 }));
 
 const StyledContainer = styled("div")(({ theme }) => ({
     width: "98%",
+    height: "100%",
 }));
 
 // track completion providers outside of render context
@@ -134,7 +136,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     const diffEditorRef = useRef(null);
 
-    const { cell, isExpanded, agentModelEngine } = props;
+    const { cell, isExpanded, agentModelEngine, cellHeight } = props;
     const { state } = useBlocks();
     const notification = useNotification();
 
@@ -702,7 +704,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             ) : (
                                 <Editor
                                     width="100%"
-                                    height={getHeight()}
+                                    height={cellHeight ?? getHeight()}
                                     language={
                                         EDITOR_TYPE[cell.parameters.type].language
                                     }
@@ -795,7 +797,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                 <Editor
                                     key={count}
                                     width="100%"
-                                    height={getHeight()}
+                                    height={cellHeight ?? getHeight()}
                                     language={
                                         EDITOR_TYPE[cell.parameters.type].language
                                     }
