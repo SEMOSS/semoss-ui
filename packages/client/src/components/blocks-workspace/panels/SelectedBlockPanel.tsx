@@ -326,7 +326,9 @@ export const SelectedBlockPanel = observer(() => {
     const getBlockDisplay = () => {
         if (block) {
             return block.data?.variation
-                ? (block.data.variation as string).replaceAll('-', ' ')
+                ? (block.data.variation as string)
+                      .replace('echart-', '')
+                      .replaceAll('-', ' ')
                 : block.widget.replaceAll('-', ' ');
         } else {
             return '';

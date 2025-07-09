@@ -211,7 +211,7 @@ export const DataTabStyling = observer(
             let parsedValue = JSON.parse(computedValue);
             const formattedArray = chart.map((item, index) => {
                 let value;
-                if (data.variation === "echart-bar-graph") {
+                if (data.variation === "echart-bar-chart") {
                     value = parsedValue[chart[index].label]?.pixelname;
                 }
                 else if (data.variation === "echart-gantt-chart") {

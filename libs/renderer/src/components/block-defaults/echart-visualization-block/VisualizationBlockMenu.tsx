@@ -135,7 +135,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
             <StyledContainer>
                 {selectedTab === "Data" && (
                     <StyledSubSection>
-                        {data.variation === "echart-bar-graph" && (
+                        {data.variation === "echart-bar-chart" && (
                             <FrameOperations
                                 id={id}
                                 updateFrame={updateFrame}
@@ -146,7 +146,7 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                                 selectedItem={handleSelectedItem}
                             />
                         )}
-                        {data.variation === "echart-line-graph" && (
+                        {data.variation === "echart-line-chart" && (
                             <FrameOperations
                                 id={id}
                                 updateFrame={updateFrame}
@@ -242,8 +242,8 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
                 <AIGenerationSettings
                     id={id}
                     path="option"
-                    appendPrompt={"An EChart graph"}
-                    placeholder="Ex: Generate a E-Chart bar graph."
+                    appendPrompt={"An Bar chart"}
+                    placeholder="Ex: Generate a Bar chart."
                     valueAsObject
                 />
             )}
