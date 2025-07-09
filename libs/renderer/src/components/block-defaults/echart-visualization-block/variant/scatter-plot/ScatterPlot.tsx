@@ -36,6 +36,7 @@ export interface EchartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: EChartColumns[];
+        aggregate: Record<string, any>;
         contextMenu: {
             hideUnfilter: boolean;
             hideFilter: boolean;
@@ -56,7 +57,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     } | null>(null);
 
     const frame = useFrame(data?.frame?.name, {
-        selector: getSelector(data),
+        selector: getSelector(data, data?.aggregate),
     });
     function debounce(fn, delay) {
         let timer;

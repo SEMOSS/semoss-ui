@@ -28,7 +28,7 @@ export const ReadDiabetesRecordTemplate: Template = {
                         },
                     },
                     {
-                        id: '13466',
+                        id: '18553',
                         widget: 'code',
                         parameters: {
                             code: 'output',
@@ -51,7 +51,7 @@ export const ReadDiabetesRecordTemplate: Template = {
                         },
                     },
                     {
-                        id: '18427',
+                        id: '90194',
                         widget: 'code',
                         parameters: {
                             code: "unique_row_id = FRAME_90193['DIABETES_UNIQUE_ROW_ID'].to_list();",
@@ -59,7 +59,7 @@ export const ReadDiabetesRecordTemplate: Template = {
                         },
                     },
                     {
-                        id: '1354',
+                        id: '90195',
                         widget: 'code',
                         parameters: {
                             code: 'unique_row_id',
@@ -88,7 +88,12 @@ export const ReadDiabetesRecordTemplate: Template = {
                     },
                     text: 'Read Diabetes record',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--9892',
             },
             'text--3468': {
@@ -108,7 +113,12 @@ export const ReadDiabetesRecordTemplate: Template = {
                     },
                     text: ' {{response.output}} ',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'text--3468',
             },
             'select--9417': {
@@ -138,14 +148,21 @@ export const ReadDiabetesRecordTemplate: Template = {
                     required: false,
                 },
                 listeners: {
-                    onChange: [
-                        {
-                            payload: {
-                                queryId: 'get-data',
+                    onChange: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'get-data',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'select--9417',
             },
@@ -173,43 +190,61 @@ export const ReadDiabetesRecordTemplate: Template = {
                     loading: '{{response-sheet.isLoading}}',
                 },
                 listeners: {
-                    onPageLoad: [
-                        {
-                            payload: {
-                                queryId: 'on-page-load',
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'on-page-load',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
                 },
                 id: 'page-1',
             },
         },
         variables: {
+            'page-load-query': {
+                to: 'on-page-load',
+                type: 'query',
+            },
             'row-ids': {
                 to: 'on-page-load',
                 type: 'cell',
-                cellId: '1354',
+                cellId: '90195',
             },
             response: {
                 to: 'get-data',
                 type: 'cell',
-                cellId: '13466',
+                cellId: '18553',
             },
             'selected-id': {
                 to: 'select--9417',
                 type: 'block',
             },
-            'page-load-query': {
-                type: 'query',
-                to: 'on-page-load',
-            },
             'response-sheet': {
-                type: 'query',
                 to: 'get-data',
+                type: 'query',
+            },
+            'get-data--18552': {
+                type: 'cell',
+                to: 'get-data',
+                cellId: '18552',
+            },
+            'on-page-load--90193': {
+                type: 'cell',
+                to: 'on-page-load',
+                cellId: '90193',
+            },
+            'on-page-load--90194': {
+                type: 'cell',
+                to: 'on-page-load',
+                cellId: '90194',
             },
         },
         executionOrder: ['on-page-load', 'get-data'],
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.10',
     },
 };

@@ -1,22 +1,27 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
-    ChangeCircleOutlined,
     Code,
     ImportExport,
     KeyboardArrowDown,
     KeyboardArrowUp,
+    MoreVert,
     TextFields,
+    Close,
+    SearchOutlined,
 } from '@mui/icons-material';
 
 import {
     styled,
     Button,
-    Divider,
     MenuProps,
     Menu,
     Stack,
     Modal,
+    TextField,
+    InputAdornment,
+    IconButton,
+    Typography,
 } from '@semoss/ui';
 import {
     useBlocks,
@@ -31,16 +36,11 @@ import {
     DataImportFormModal,
     NewCellAction,
 } from '@semoss/renderer';
-
 import { ModelBrain } from '@/assets/img/ModelBrain';
 
 const StyledButton = styled(Button)(({ theme }) => ({
     color: theme.palette.text.secondary,
     backgroundColor: 'unset!important',
-}));
-
-const StyledDivider = styled(Divider)(() => ({
-    flexGrow: 1,
 }));
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -58,6 +58,7 @@ const StyledMenu = styled((props: MenuProps) => (
 ))(({ theme }) => ({
     '& .MuiPaper-root': {
         marginTop: theme.spacing(1),
+        borderRadius: '0px',
     },
     '.MuiList-root': {
         padding: 0,
@@ -66,6 +67,7 @@ const StyledMenu = styled((props: MenuProps) => (
 
 const StyledMenuItem = styled(Menu.Item)(() => ({
     textTransform: 'capitalize',
+    fontSize: '16px',
 }));
 
 const StyledBorderDiv = styled('div')(({ theme }) => ({
@@ -73,6 +75,9 @@ const StyledBorderDiv = styled('div')(({ theme }) => ({
     padding: '8px 16px',
     borderRadius: '8px',
 }));
+const MenuSectionRoot = styled('li')({
+    listStyle: 'none',
+});
 
 interface AddCellOption {
     display: string;
@@ -81,6 +86,7 @@ interface AddCellOption {
     options?: {
         display: string;
         defaultCellType: DefaultCellDefinitions['widget'];
+        disabled?: boolean;
     }[];
     disabled?: boolean;
 }
@@ -96,12 +102,35 @@ const Transformations = Array.from(Object.values(TransformationCells)).map(
 
 const DataImportDropdownOptions = [
     {
-        display: `From Data Catalog`,
+        display: 'From Data Catalog',
         defaultCellType: null,
     },
     {
-        display: `From CSV`,
+        display: 'Custom Import (SQL)',
+        defaultCellType: 'query-import',
+    },
+    {
+        display: 'From CSV',
         defaultCellType: null,
+        disabled: true,
+    },
+];
+
+const OtherOptions = [
+    {
+        display: 'Send Email',
+        defaultCellType: 'send-email',
+    },
+];
+
+const DataOptions = [
+    {
+        display: 'Filter Data',
+        defaultCellType: 'filter-data',
+    },
+    {
+        display: 'Unfilter Data',
+        defaultCellType: `unfilter-data`,
     },
 ];
 
@@ -111,9 +140,14 @@ const AddCellOptions: Record<string, AddCellOption> = {
         defaultCellType: 'code',
         icon: <Code />,
     },
-    'query-import': {
-        display: 'Query Import',
-        defaultCellType: 'query-import',
+    'import-data': {
+        display: 'Import Data',
+        icon: <ImportExport />,
+        options: DataImportDropdownOptions,
+        disabled: false,
+    },
+    data: {
+        display: 'Data Filters',
         icon: (
             <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -137,27 +171,35 @@ const AddCellOptions: Record<string, AddCellOption> = {
                 </defs>
             </svg>
         ),
+        options: DataOptions,
     },
     transformation: {
         display: 'Transformation',
-        icon: <ChangeCircleOutlined />,
+        icon: (
+            <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M9.9987 3.33203V0.832031L6.66536 4.16536L9.9987 7.4987V4.9987C12.757 4.9987 14.9987 7.24036 14.9987 9.9987C14.9987 10.8404 14.7904 11.6404 14.4154 12.332L15.632 13.5487C16.282 12.5237 16.6654 11.307 16.6654 9.9987C16.6654 6.31536 13.682 3.33203 9.9987 3.33203ZM9.9987 14.9987C7.24036 14.9987 4.9987 12.757 4.9987 9.9987C4.9987 9.15703 5.20703 8.35703 5.58203 7.66536L4.36536 6.4487C3.71536 7.4737 3.33203 8.69036 3.33203 9.9987C3.33203 13.682 6.31536 16.6654 9.9987 16.6654V19.1654L13.332 15.832L9.9987 12.4987V14.9987Z"
+                    fill="#757575"
+                />
+            </svg>
+        ),
         options: Transformations,
-    },
-    'import-data': {
-        display: 'Import Data',
-        icon: <ImportExport />,
-        options: DataImportDropdownOptions,
-        disabled: false,
-    },
-    text: {
-        display: 'Text',
-        icon: <TextFields />,
-        disabled: true,
     },
     llm: {
         display: 'LLM',
         defaultCellType: 'llm',
         icon: <ModelBrain color={'#666666'} width={'20'} height={'20'} />,
+    },
+    others: {
+        display: '',
+        icon: <MoreVert />,
+        options: OtherOptions,
     },
 };
 
@@ -170,12 +212,87 @@ export const NotebookAddCell = observer(
         const open = Boolean(anchorEl);
         const { query, previousCellId = '' } = props;
         const { state, notebook } = useBlocks();
+        const [searchQuery, setSearchQuery] = useState('');
 
-        /** Create a New Cell and Add to Notebook */
+        /**
+         * @description - organizes transformation menu in a ds to map
+         */
+        const TransformationCategories = useMemo(() => {
+            const categories = {
+                Text: [],
+                'Data & Time': [],
+                Numeric: [],
+                Column: [],
+            } as Record<string, typeof Transformations>;
+
+            Transformations.forEach((transformation) => {
+                switch (transformation.display) {
+                    case 'Uppercase':
+                        categories.Text.push(transformation);
+                        break;
+                    case 'Date Difference':
+                    case 'Timestamp':
+                        categories['Data & Time'].push(transformation);
+                        break;
+                    case 'Cumulative Sum':
+                    case 'Encode Column':
+                        categories.Numeric.push(transformation);
+                        break;
+                    case 'Update Row':
+                    case 'Change Column Type':
+                    case 'Join':
+                    case 'Collapse':
+                        categories.Column.push(transformation);
+                        break;
+                    default:
+                        break;
+                }
+            });
+
+            return categories;
+        }, [TransformationCells]);
+
+        /**
+         * filters transformations based on search term
+         */
+        const filteredCategories = Object.entries(TransformationCategories)
+            .map(([category, transformations]) => {
+                const filteredTransformations = searchQuery
+                    ? transformations.filter((t) =>
+                          t.display
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase()),
+                      )
+                    : transformations;
+
+                return {
+                    category,
+                    transformations: filteredTransformations,
+                };
+            })
+            .filter(({ transformations }) => transformations.length > 0);
+
+        /**
+         * @description - sets search term in state
+         * @param event
+         */
+        const handleSearchChange = (event) => {
+            setSearchQuery(event.target.value);
+        };
+
+        /**
+         * @description - clears search term in state
+         */
+        const clearSearch = () => {
+            setSearchQuery('');
+        };
+
+        /**
+         * @description - Create a New Cell and Add to Notebook
+         *
+         */
         const appendCell = (widget: string) => {
             try {
-                const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
                 const config: NewCellAction['payload']['config'] = {
                     widget: DefaultCells[widget].widget,
                     parameters: DefaultCells[widget].parameters,
@@ -184,7 +301,9 @@ export const NotebookAddCell = observer(
                 if (widget === QueryImportCellConfig.widget) {
                     config.parameters = {
                         ...DefaultCells[widget].parameters,
-                        frameVariableName: `FRAME_${newCellId}`,
+                        frameVariableName: `FRAME_${Math.floor(
+                            Math.random() * 100000,
+                        )}`,
                     };
                 }
 
@@ -204,15 +323,14 @@ export const NotebookAddCell = observer(
                 }
 
                 // copy and add the step
-                state.dispatch({
+                const newCellId = state.dispatch({
                     message: ActionMessages.NEW_CELL,
                     payload: {
                         queryId: query.id,
-                        cellId: newCellId,
                         previousCellId: previousCellId,
                         config: config as Omit<CellStateConfig, 'id'>,
                     },
-                });
+                }) as string;
 
                 state.dispatch({
                     message: ActionMessages.ADD_VARIABLE,
@@ -232,10 +350,12 @@ export const NotebookAddCell = observer(
 
         return (
             <>
-                {/* Dropdown for All Add Cell Option Sets */}
-
-                <Stack direction={'row'} alignItems={'center'} gap={1}>
-                    <StyledDivider />
+                <Stack
+                    direction={'row'}
+                    alignItems={'center'}
+                    gap={1}
+                    justifyContent={'center'}
+                >
                     <StyledBorderDiv>
                         {AddCellOptions &&
                             Object.entries(AddCellOptions).map((add, i) => {
@@ -258,16 +378,32 @@ export const NotebookAddCell = observer(
                                                 appendCell(
                                                     value.defaultCellType,
                                                 );
+                                                setSelectedAddCell(add[0]);
                                             }
                                         }}
+                                        sx={{
+                                            ...((value.options
+                                                ? selectedAddCell === add[0] &&
+                                                  open
+                                                : selectedAddCell ===
+                                                  add[0]) && {
+                                                backgroundColor:
+                                                    '#EBF4FE !important',
+                                                color: '#212121 !important',
+                                            }),
+                                        }}
                                         endIcon={
-                                            Array.isArray(value.options) &&
-                                            (selectedAddCell == add[0] &&
-                                            open ? (
-                                                <KeyboardArrowDown />
-                                            ) : (
+                                            add[0] === 'others' ||
+                                            add[0] ===
+                                                'code' ? null : Array.isArray(
+                                                  value.options,
+                                              ) &&
+                                              selectedAddCell === add[0] &&
+                                              open ? (
                                                 <KeyboardArrowUp />
-                                            ))
+                                            ) : (
+                                                <KeyboardArrowDown />
+                                            )
                                         }
                                     >
                                         {value.display}
@@ -275,7 +411,6 @@ export const NotebookAddCell = observer(
                                 );
                             })}
                     </StyledBorderDiv>
-                    <StyledDivider />
                     <StyledMenu
                         anchorEl={anchorEl}
                         open={
@@ -286,7 +421,117 @@ export const NotebookAddCell = observer(
                             setAnchorEl(null);
                         }}
                     >
-                        {selectedAddCell === 'transformation' &&
+                        {selectedAddCell === 'data' && // Ensure we are showing the options for "Data"
+                            DataOptions.map(
+                                ({ display, defaultCellType }, index) => {
+                                    return (
+                                        <StyledMenuItem
+                                            key={index}
+                                            value={display}
+                                            onClick={() => {
+                                                appendCell(defaultCellType); // Append selected cell
+                                                setAnchorEl(null); // Close the menu
+                                            }}
+                                        >
+                                            {display}
+                                        </StyledMenuItem>
+                                    );
+                                },
+                            )}
+
+                        {selectedAddCell === 'transformation' && (
+                            <>
+                                {/* Search Input with Clear Icon */}
+
+                                <TextField
+                                    placeholder="Search"
+                                    size="small"
+                                    sx={{
+                                        padding: '8px',
+                                        borderRadius: '8px',
+                                        width: '211px',
+                                    }}
+                                    value={searchQuery}
+                                    onChange={handleSearchChange}
+                                    InputProps={{
+                                        startAdornment: (
+                                            <InputAdornment position="start">
+                                                <SearchOutlined />
+                                            </InputAdornment>
+                                        ),
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    size="small"
+                                                    onClick={clearSearch}
+                                                >
+                                                    <Close />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <Stack
+                                    sx={{
+                                        maxHeight: '300px',
+                                        overflowY: 'auto',
+                                    }}
+                                >
+                                    {/* Menu Section */}
+                                    {filteredCategories.map(
+                                        (
+                                            { category, transformations },
+                                            index,
+                                        ) => (
+                                            <MenuSectionRoot key={index}>
+                                                <StyledMenuItem
+                                                    value={category}
+                                                    disabled
+                                                >
+                                                    <Typography
+                                                        variant={'button'}
+                                                        sx={{
+                                                            fontSize: '14px',
+                                                        }}
+                                                    >
+                                                        {category}
+                                                    </Typography>
+                                                </StyledMenuItem>
+                                                {transformations.map(
+                                                    (
+                                                        transformation,
+                                                        tIndex,
+                                                    ) => (
+                                                        <StyledMenuItem
+                                                            value={
+                                                                transformation.display
+                                                            }
+                                                            key={tIndex}
+                                                            onClick={() => {
+                                                                appendCell(
+                                                                    transformation.defaultCellType,
+                                                                );
+                                                                setAnchorEl(
+                                                                    null,
+                                                                );
+                                                                setSearchQuery(
+                                                                    '',
+                                                                );
+                                                            }}
+                                                        >
+                                                            {
+                                                                transformation.display
+                                                            }
+                                                        </StyledMenuItem>
+                                                    ),
+                                                )}
+                                            </MenuSectionRoot>
+                                        ),
+                                    )}
+                                </Stack>
+                            </>
+                        )}
+                        {selectedAddCell === 'others' &&
                             Array.from(
                                 AddCellOptions[selectedAddCell]?.options || [],
                                 ({ display, defaultCellType }, index) => {
@@ -310,16 +555,25 @@ export const NotebookAddCell = observer(
                                 {Array.from(
                                     AddCellOptions[selectedAddCell]?.options ||
                                         [],
-                                    ({ display }, index) => {
+                                    (
+                                        { display, defaultCellType, disabled },
+                                        index,
+                                    ) => {
                                         return (
                                             <StyledMenuItem
                                                 key={index}
                                                 value={display}
-                                                disabled={display == 'From CSV'} // temporary
+                                                disabled={disabled}
                                                 onClick={() => {
-                                                    setIsDataImportModalOpen(
-                                                        true,
-                                                    );
+                                                    if (!defaultCellType) {
+                                                        setIsDataImportModalOpen(
+                                                            true,
+                                                        );
+                                                    } else {
+                                                        appendCell(
+                                                            defaultCellType,
+                                                        );
+                                                    }
                                                     setAnchorEl(null);
                                                 }}
                                             >

@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Paper, Table } from "@mui/material";
+import { Table } from "@mui/material";
 import { TableHead } from "@mui/material";
-import { styled, TableContainer } from "@mui/material";
+import { styled } from "@mui/material";
 import { TableRow, TableCell, TableBody } from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import ReactECharts from "echarts-for-react";
 
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
@@ -72,19 +72,40 @@ export const Gantt = observer(
         //table reference variable to align series name with fiscal axis
         const tableRef = useRef(null);
         const [seriesNameCol, setSeriesNameCol] = useState(70);
+
+        /**
+         * Builds a dynamic query string based on the provided input data.
+         * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+         * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+         */
+        const buildDynamicQuery = (
+            inputData: [string, Record<string, string | undefined>][],
+        ): string => {
+            const selectParts: string[] = [];
+            const aliasParts: string[] = [];
+            const groupByParts: string[] = [];
+
+            inputData.forEach(([_, fields]) => {
+                for (const field in fields) {
+                    const rawAgg = fields[field];
+                    aliasParts.push(field);
+
+                    if (rawAgg) {
+                        const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                        selectParts.push(`${cleanedAgg}(${field})`);
+                    } else {
+                        selectParts.push(field);
+                        groupByParts.push(field); // Only unaggregated fields are grouped
+                    }
+                }
+            });
+
+            return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+                ", ",
+            )}]) | Group(${groupByParts.join(", ")})`;
+        };
         //selector to fetch data from the frame
-        let selector = "";
-        if (data.columns !== undefined) {
-            selector = `Select(${data.columns
-                .map((item, index) => {
-                    return item.selector;
-                })
-                .join(",")}).as([${data.columns
-                .map((item, index) => {
-                    return item.name;
-                })
-                .join(",")}])`;
-        }
+        let selector = buildDynamicQuery(Object.entries(data?.aggregate ?? {}));
         //frame object to get the data from the frame
         const frame = useFrame(data.frame?.name, {
             selector: selector,
@@ -171,13 +192,13 @@ export const Gantt = observer(
                 const toolTipData = Object.keys(
                     option["customSettings"]["columnDetails"],
                 ).filter((item) => item === "tooltip");
-                toolTipData.forEach((item, index) => {
-                    option["customSettings"]["columnDetails"][item].forEach(
-                        (item) => {
-                            toolTipSelected.push(item.name);
-                        },
-                    );
-                });
+                // toolTipData.forEach((item, index) => {
+                //     option["customSettings"]["columnDetails"][item].forEach(
+                //         (item) => {
+                //             toolTipSelected.push(item.name);
+                //         },
+                //     );
+                // });
                 legendShow =
                     option["customSettings"]?.["gantttools"]?.["showLegend"] ||
                     false;

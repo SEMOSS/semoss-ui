@@ -70,12 +70,18 @@ export { default as THEME_ACTIVE } from './Theme_Active.png';
 export { default as THEME_HOVER } from './Theme_Hover.png';
 export { default as SIDEBAR_MENU_ACTIVE } from './Sidebar_Menu_Active.png';
 export { default as SIDEBAR_MENU_HOVER } from './Sidebar_Menu_Hover.png';
-export { default as SWITCH_ACTIVE } from './Switch_Active.png';
-export { default as SWITCH_HOVER } from './Switch_Hover.png';
 export { default as DIVIDER_ACTIVE } from './Divider_Active.png';
 export { default as DIVIDER_HOVER } from './Divider_Hover.png';
 export { default as SLIDER_ACTIVE } from './Slider_Active.png';
 export { default as SLIDER_HOVER } from './Slider_Hover.png';
+export { default as RATING_ACTIVE } from './Rating_Active.png';
+export { default as RATING_HOVER } from './Rating_Hover.png';
+export { default as SWITCH_ACTIVE } from './Switch_Active.png';
+export { default as SWITCH_HOVER } from './Switch_Hover.png';
+export { default as VEGA_ACTIVE } from './Vega_Active.png';
+export { default as VEGA_HOVER } from './Vega_Hover.png';
+export { default as TIME_PICKER_ACTIVE } from './Timepicker_Active.png';
+export { default as TIME_PICKER_HOVER } from './Timepicker_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
@@ -104,3 +110,5 @@ export { default as GANTT_CHART_ACTIVE } from './Gantt_Chart_Active.png';
 export { default as GANTT_CHART_HOVER } from './Gantt_Chart_Hover.png';
 export { default as DENDROGRAM_CHART_ACTIVE } from './Dendrogram_Active.png';
 export { default as DENDROGRAM_CHART_HOVER } from './Dendrogram_Hover.png';
+export { default as VISUALIZATION_FILTER_ACTIVE } from './Viz_Filter_Active.png';
+export { default as VISUALIZATION_FILTER_HOVER } from './Viz_Filter_Hover.png';

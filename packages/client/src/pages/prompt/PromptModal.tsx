@@ -227,7 +227,12 @@ export const PromptModal = (props: PromptModalProps) => {
                 </StyledStack>
             </Modal.Content>
             <Modal.Actions>
-                <Button onClick={() => onClose(false)}>Cancel</Button>
+                <Button
+                    onClick={() => onClose(false)}
+                    data-testid={'prompt-modal-cancel-btn'}
+                >
+                    Cancel
+                </Button>
                 <Button
                     color={'primary'}
                     variant={'contained'}
@@ -239,6 +244,7 @@ export const PromptModal = (props: PromptModalProps) => {
                         }
                     }}
                     disabled={disableCreate()}
+                    data-testid={'prompt-modal-save-btn'}
                 >
                     Save
                 </Button>

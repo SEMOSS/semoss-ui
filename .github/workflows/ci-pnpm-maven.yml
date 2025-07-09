@@ -18,7 +18,9 @@ env:
     RELEASE: ${{ vars.RELEASE }}
     MAVEN_REPO_TOKEN: ${{ vars.MAVEN_REPO_TOKEN }}
     MAVEN_REPO_TOKEN_PASS: ${{ vars.MAVEN_REPO_TOKEN_PASS }}
-
+    MAVEN_CENTRAL_PORTAL_REPO_USERNAME: ${{ vars.MAVEN_CENTRAL_PORTAL_REPO_USERNAME }}
+    MAVEN_CENTRAL_PORTAL_REPO_PASSWORD: ${{ vars.MAVEN_CENTRAL_PORTAL_REPO_PASSWORD }}
+    
 jobs:
     pnpm_build_dev:
         runs-on: self-hosted
@@ -28,6 +30,37 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
+            
+            # https://github.com/SEMOSS/bi/issues/1
+            - name: Delete contents of legacy folder
+              run: |
+                  echo "Remove and recreate the legacy folder"
+                  rm -rf legacy
+                  mkdir legacy
+                  ls -als
+
+            - name: Download contents of SEMOSS/bi project
+              run: |
+                  echo "Download SEMOSS/bi as a zip file"
+                  mkdir -p tmp
+                  curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+                  echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+                  unzip tmp/main.zip -d tmp/
+                  echo "Delete the playsheet folder from semoss/bi files"
+                  rm -rf tmp/bi-main/playsheet/
+                  ls -als tmp/bi-main/
+                  echo "Remove zip file"
+                  rm tmp/main.zip
+            
+            - name: Move SEMOSS/bi files into the legacy folder
+              run: |
+                  echo "Move contents of SEMOSS/bi into legacy folder"
+                  cp -r tmp/bi-main/. legacy/
+                  echo "Delete tmp folder"
+                  rm -rf tmp/
+                  echo "list files under legacy folder"
+                  ls -als legacy
+                   
 
             - name: Cache node modules and Maven repository
               uses: actions/cache@v4
@@ -44,7 +77,7 @@ jobs:
               run: |
                   apt-get update
                   apt-get install -y maven
-                  npm install -g pnpm@8
+                  npm install -g pnpm@10.10
                   pnpm install
 
             - name: Build
@@ -95,17 +128,42 @@ jobs:
             #           index.html
             #       key: ${{ github.ref_name }}
 
+            - name: Delete contents of legacy folder
+              run: |
+                  echo "Remove and recreate the legacy folder"
+                  rm -rf legacy
+                  mkdir legacy
+                  ls -als
+
+            - name: Download contents of SEMOSS/bi project
+              run: |
+                  echo "Download SEMOSS/bi as a zip file"
+                  mkdir -p tmp
+                  curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+                  echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+                  unzip tmp/main.zip -d tmp/
+                  echo "Delete the playsheet folder from semoss/bi files"
+                  rm -rf tmp/bi-main/playsheet/
+                  ls -als tmp/bi-main/
+                  echo "Remove zip file"
+                  rm tmp/main.zip
+            
+            - name: Move SEMOSS/bi files into the legacy folder
+              run: |
+                  echo "Move contents of SEMOSS/bi into legacy folder"
+                  cp -r tmp/bi-main/. legacy/
+                  echo "Delete tmp folder"
+                  rm -rf tmp/
+                  echo "list files under legacy folder"
+                  ls -als legacy
+
             - name: Install dependencies
               run: |
                   echo "Event Name: ${{ github.event_name }}"
                   echo "Release: ${{ vars.RELEASE }}"
                   apt-get update
-                  apt-get install -y maven gnupg2
-                  echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg2 --batch --import
-                  echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
-                  cat ~/.gnupg/gpg.conf
-                  gpg2 --refresh-key
-                  npm install -g pnpm@8
+                  apt-get install -y maven
+                  npm install -g pnpm@10.10
                   pnpm install
 
             - name: Build
@@ -179,11 +237,8 @@ jobs:
                   echo "Event Name: ${{ github.event_name }}"
                   echo "Release: ${{ vars.RELEASE }}"
                   apt-get update
-                  apt-get install -y maven gnupg2
-                  echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg2 --batch --import
-                  echo "keyserver keyserver.ubuntu.com" > ~/.gnupg/gpg.conf
-                  gpg2 --refresh-key
-                  npm install -g pnpm@8
+                  apt-get install -y maven
+                  npm install -g pnpm@10.10
                   pnpm install
 
             - name: Build
@@ -191,6 +246,37 @@ jobs:
                   NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
               run: npx nx run-many -t build -p @semoss/client @semoss/legacy --verbose
 
+            - name: Download contents of SEMOSS/bi project
+              run: |
+                  echo "Download SEMOSS/bi as a zip file"
+                  mkdir -p tmp
+                  curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+                  echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+                  unzip tmp/main.zip -d tmp/
+                  echo "Delete the playsheet folder from semoss/bi files"
+                  rm -rf tmp/bi-main/playsheet/
+                  ls -als tmp/bi-main/
+                  echo "Remove zip file"
+                  rm tmp/main.zip
+            
+            - name: Move SEMOSS/bi files into the legacy folder
+              run: |
+                  echo "Move contents of SEMOSS/bi into legacy folder"
+                  cp -r tmp/bi-main/. legacy/
+                  echo "Delete tmp folder"
+                  rm -rf tmp/
+                  echo "list files under legacy folder"
+                  ls -als legacy
+
+            - name: Install dependencies
+              run: |
+                  echo "Event Name: ${{ github.event_name }}"
+                  echo "Release: ${{ vars.RELEASE }}"
+                  apt-get update
+                  apt-get install -y maven
+                  npm install -g pnpm@10.10
+                  pnpm install
+                  
             - name: Deploy with Maven
               shell: bash
               run: |

@@ -22,8 +22,41 @@ const WrappedTemplate = (args) => {
 export const Default = BaseTemplate.bind({});
 
 Default.args = {
-    code: `1+1`,
-    language: null,
+    code: `// Using 'typeof' to infer types
+const person = { name: "Alice", age: 30 };
+type PersonType = typeof person;  // { name: string; age: number }
+// 'satisfies' to ensure a type matches but allows more specific types
+type Animal = { name: string };
+const dog = { name: "Buddy", breed: "Golden Retriever" } satisfies Animal;
+// Generics with 'extends' and default values
+function identity<T extends number | string = string>(arg: T): T {
+  return arg;
+}
+let str = identity();  // Default type is string
+let num = identity(42);  // T inferred as number
+// 'extends' with interface and class
+interface HasLength {
+  length: number;
+}
+// Using 'typeof' to infer types
+const person = { name: "Alice", age: 30 };
+type PersonType = typeof person;  // { name: string; age: number }
+// 'satisfies' to ensure a type matches but allows more specific types
+type Animal = { name: string };
+const dog = { name: "Buddy", breed: "Golden Retriever" } satisfies Animal;
+// Generics with 'extends' and default values
+function identity<T extends number | string = string>(arg: T): T {
+  return arg;
+}
+let str = identity();  // Default type is string
+let num = identity(42);  // T inferred as number
+// 'extends' with interface and class
+interface HasLength {
+  length: number;
+}
+`,
+    language: "javascript",
+    theme: "light",
 };
 export const Wrapped = WrappedTemplate.bind({});
 

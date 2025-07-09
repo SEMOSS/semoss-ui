@@ -36,10 +36,14 @@ import {
 } from "./flip-card-block";
 
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
+import {
+    config as GridDynamicFrameBlockConfig,
+    GridDynamicFrameBlockDef,
+} from "./grid-dynamic-frame-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
-import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
+import { config as IconBlockConfig, IconBlockDef } from "./icon-block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
@@ -97,6 +101,10 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
+import {
+    config as VisualizationFilterBlockConfig,
+    VisualizationFilterBlockDef,
+} from "./visualization-filter-block";
 
 // import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
 // import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
@@ -147,7 +155,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | TimePickerBlockDef
-    | ThemeBlockDef;
+    | VisualizationFilterBlockDef
+    | GridDynamicFrameBlockDef;
 // | BodyBlockDef
 // | DividerBlockDef
 // | FooterBlockDef
@@ -197,6 +206,8 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
+    [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
+    [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig
     // [StepperBlockConfig.widget]: StepperBlockConfig,
     // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
@@ -239,4 +250,6 @@ export {
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
     FlipCardBlockConfig,
+    VisualizationFilterBlockConfig,
+    GridDynamicFrameBlockConfig
 };

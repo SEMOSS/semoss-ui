@@ -19,6 +19,7 @@ export enum ActionMessages {
     SET_QUERY = "SET_QUERY",
     NEW_QUERY = "NEW_QUERY",
     NEW_CELL = "NEW_CELL",
+    MOVE_CELL = "MOVE_CELL",
     DELETE_QUERY = "DELETE_QUERY",
     DELETE_CELL = "DELETE_CELL",
     UPDATE_QUERY = "UPDATE_QUERY",
@@ -35,6 +36,8 @@ export enum ActionMessages {
    RUN_QUERY = "RUN_QUERY",
    DISPATCH_EVENT = "DISPATCH_EVENT",
    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
+   RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+   DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 }
 
 export type Actions =
@@ -50,11 +53,14 @@ export type Actions =
     | UpdateQueryAction
     | RunQueryAction
     | NewCellAction
+    | MoveCellAction
     | DeleteCellAction
     | UpdateCellAction
     | RunCellAction
+    | RunMarkdownCellAction
     | DispatchEventAction
     | DispatchOutputsEventAction
+    | DispatchOpenEventAction
     | AddVariableAction
     | RenameVariableAction
     | EditVariableAction
@@ -76,6 +82,14 @@ export interface SetStateAction extends Action {
 export interface DispatchOutputsEventAction extends Action {
     message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
     payload: {};
+}
+
+export interface DispatchOpenEventAction extends Action {
+    message: ActionMessages.DISPATCH_OPEN_EVENT;
+    payload: {
+        destinationType: string;
+        destination: string;
+    };
 }
 
 export interface AddBlockAction extends Action {
@@ -153,6 +167,7 @@ export interface SetListenerAction extends Action {
         id: string;
         listener: string;
         actions: ListenerActions[];
+        type: "sync" | "async"
     };
 }
 
@@ -195,13 +210,30 @@ export interface RunCellAction extends Action {
     };
 }
 
+export interface RunMarkdownCellAction extends Action {
+    message: ActionMessages.RUN_MARKDOWN_CELL;
+    payload: {
+        queryId: string;
+        cellId: string;
+        marked: boolean;
+    };
+}
+
 export interface NewCellAction extends Action {
     message: ActionMessages.NEW_CELL;
     payload: {
         queryId: string;
-        cellId: string;
         previousCellId: string;
         config: Omit<CellStateConfig, "id">;
+    };
+}
+
+export interface MoveCellAction extends Action {
+    message: ActionMessages.MOVE_CELL;
+    payload: {
+        queryId: string;
+        activeCellId: string;
+        overCellId: string;
     };
 }
 

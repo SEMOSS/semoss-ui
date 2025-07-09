@@ -9,7 +9,7 @@ import {
     getPixelConsole,
     getPixelAsyncResult,
     runPixelAsync,
-} from "@semoss/sdk";
+} from "@semoss/sdk/react";
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
     /** Id of the cell */
@@ -356,7 +356,17 @@ export class CellState<D extends CellDef = CellDef> {
             const raw: string | string[] = this.toPixel();
 
             // Determine if multiple pixels need to be ran.
-            if (typeof raw === "string") {
+            if (this._store.parameters.type === "markdown") {
+                // set the value
+                this._update("parameters.marked", true);
+
+                runInAction(() => {
+                    // store the operation and output
+                    this._store.operation = ["MARKDOWN"];
+                    // save the last output
+                    this._store.output = this._store.parameters.code;
+                });
+            } else if (typeof raw === "string") {
                 const { opType, output } = await this.runPixel(raw);
 
                 runInAction(() => {

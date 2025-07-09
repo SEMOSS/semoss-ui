@@ -1,7 +1,11 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
-import { runPixel, download } from "@semoss/sdk";
-import { cancellablePromise, getValueByPath, syncronousPromise } from "../../utility";
+import { runPixel, download } from "@semoss/sdk/react";
+import {
+    cancellablePromise,
+    getValueByPath,
+    syncronousPromise,
+} from "../../utility";
 
 import {
     ActionMessages,
@@ -52,6 +56,9 @@ interface StateStoreInterface {
 
     /** Order of how we consume app as API */
     executionOrder: string[];
+
+    /** Graph to track nodes and edges based on {{}} */
+    dependencyGraph: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -85,6 +92,7 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         executionOrder: [],
+        dependencyGraph: {},
     };
 
     /**
@@ -117,6 +125,10 @@ export class StateStore {
 
         // set the initial state after reactive to invoke it
         this.setState(config.state, config.initialParams);
+
+        // console.log(this.toJSON())
+        // const r = this.buildDependencyGraph(this._store, {}, [])
+        // console.log(r);
     }
 
     /**
@@ -335,7 +347,7 @@ export class StateStore {
         Object.entries(this._store.variables).forEach((keyValue) => {
             const variable = keyValue[1];
 
-            if (variable.to === pointer && !cellId) {
+            if (variable.to === pointer && !cellId && !variable.cellId) {
                 alias = keyValue[0];
             } else if (variable.to === pointer && variable.cellId === cellId) {
                 alias = keyValue[0];
@@ -404,9 +416,9 @@ export class StateStore {
 
                 this.deleteBlockData(id, path);
             } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions } = action.payload;
+                const { id, listener, actions, type } = action.payload;
 
-                this.setListener(id, listener, actions);
+                this.setListener(id, listener, actions, type);
             } else if (ActionMessages.NEW_QUERY === action.message) {
                 const { queryId, config } = action.payload;
 
@@ -424,10 +436,13 @@ export class StateStore {
 
                 return this.runQuery(queryId);
             } else if (ActionMessages.NEW_CELL === action.message) {
-                const { queryId, cellId, config, previousCellId } =
-                    action.payload;
+                const { queryId, config, previousCellId } = action.payload;
 
-                this.newCell(queryId, cellId, config, previousCellId);
+                return this.newCell(queryId, config, previousCellId);
+            } else if (ActionMessages.MOVE_CELL === action.message) {
+                const { queryId, activeCellId, overCellId } = action.payload;
+
+                this.moveCell(queryId, activeCellId, overCellId);
             } else if (ActionMessages.DELETE_CELL === action.message) {
                 const { queryId, cellId } = action.payload;
 
@@ -444,9 +459,18 @@ export class StateStore {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+            } else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+                const { queryId, cellId, marked } = action.payload;
 
-                this.dispatchOutputsEvent()
+                this.runMarkdownCell(queryId, cellId, marked);
+            } else if (
+                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+            ) {
+                this.dispatchOutputsEvent();
+            } else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const { destinationType, destination } = action.payload;
+
+                this.dispatchOpenEvent(destinationType, destination);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
                 const { id, alias } = action.payload;
 
@@ -495,51 +519,69 @@ export class StateStore {
         }
     };
 
-    
     /**
-     * TODO: Accidently commited, work to handly sync and async events. John
-     * Used in useBlock
-     * @param action 
-     * @returns 
+     * TODO: Needs to get folded into code above --> useBlock.tsx
+     * @param action
+     * @returns
      */
-    dispatchEventAction = async (action: Actions) => {
+    dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                // const run = async () => {
-                //     setTimeout(() => {
-                //         debugger
-                //         return queryId
-                //     }, 3000)
-                // }
+                const run = () =>
+                    new Promise(async (resolve) => {
+                        await this.runQuery(queryId, type);
+                        resolve(this._store.queries[queryId].output);
+                    });
 
-                // return await run()
-                // debugger
-                // const o = await this.runQuery(queryId);
-                // debugger
-                // Return the promise to resolve to caller
+                return await run();
+            } else if (ActionMessages.RUN_CELL === action.message) {
+                const { queryId, cellId } = action.payload;
 
-                // return o
-            }else if (ActionMessages.DISPATCH_EVENT === action.message) {
+                const run = () =>
+                    new Promise(async (resolve) => {
+                        await this.runCell(queryId, cellId, type);
+
+                        resolve(
+                            this._store.queries[queryId].cells[cellId].output,
+                        );
+                    });
+                return await run();
+            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
+            } else if (
+                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+            ) {
+                this.dispatchOutputsEvent();
+            } else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const { destinationType, destination } = action.payload;
 
-                this.dispatchOutputsEvent()
+                this.dispatchOpenEvent(destinationType, destination);
             }
         } catch (e) {
             console.error(e);
         }
-    }
+    };
 
     /** Variable Methods */
     /**
      * TODO: Clean this fn up (split out iterator parsing?)
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string, id?: string): unknown => {
+    parseVariable = (
+        expression: string,
+        id?: string,
+        _depth: number = 0,
+        _seen: Set<string> = new Set(),
+    ): unknown => {
+        if (_depth > 10) return expression;
+        if (_seen.has(expression)) return expression;
+
+        _seen.add(expression);
+
         // trim the whitespace
         let cleaned = expression.trim();
 
@@ -575,7 +617,14 @@ export class StateStore {
                         }
                     }
 
-                    const variable = expression.match(/\$(.*?)\./)[1];
+                    let variable;
+
+                    if (expression.includes(".")) {
+                        variable = expression.match(/\$(.*?)\./)[1];
+                    } else {
+                        variable = expression.match(/^\$(\w+)/)?.[1];
+                    }
+
                     const stripped = iteratorList.slice(2, -2);
 
                     // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
@@ -611,7 +660,7 @@ export class StateStore {
                 // const pointer = isArray ? path[0] : null;
 
                 // Special syntax to parse by cell order
-                const isNumber = !isNaN(parseFloat(path));
+                const isNumber = !isNaN(parseFloat(path[1]));
 
                 if (isNumber) {
                     let q;
@@ -619,13 +668,13 @@ export class StateStore {
                     // TODO: Problem we want to reference cells by a special syntax
                     // I don't want to change ids to be numbered for cells,
                     // i think we are good with our id generation
-                    if (this._store.variables[path]) {
-                        const variable = this._store.variables[path];
+                    if (this._store.variables[pointer]) {
+                        const variable = this._store.variables[path[0]];
                         if (variable.type === "query") {
                             q = this._store.queries[variable.to];
                         }
-                    } else if (this._store.queries[path]) {
-                        q = this._store.queries[path];
+                    } else if (this._store.queries[pointer]) {
+                        q = this._store.queries[pointer];
                     }
 
                     if (q) {
@@ -673,6 +722,18 @@ export class StateStore {
                     // TODO: Check this, protects for false values
                     // (query.isLoading tied to a block.label **bad use-case)
                     if (value !== undefined && value !== null) {
+                        // RECURSIVE: If value is another {{var}}, resolve again
+                        if (
+                            typeof value === "string" &&
+                            value.trim().match(/^{{.*}}$/)
+                        ) {
+                            return this.parseVariable(
+                                value,
+                                id,
+                                _depth + 1,
+                                _seen,
+                            );
+                        }
                         combinedValues += ` ${value}`;
                     }
                 } else {
@@ -786,7 +847,7 @@ export class StateStore {
         // add the data
         block.data = json.data;
 
-        if(json.widget === "page") {
+        if (json.widget === "page") {
             // Defaulting the route to the block id
             block.data.route = id;
         }
@@ -803,7 +864,10 @@ export class StateStore {
             if (json.slots[slot]) {
                 block.slots[slot] = {
                     name: slot,
-                    children: json.slots[slot].map((child) => {
+                    children: (Array.isArray(json.slots[slot])
+                        ? json.slots[slot]
+                        : json.slots[slot]["children"]
+                    ).map((child) => {
                         // form the parent object
                         const parent = { id: id, slot: slot };
 
@@ -907,6 +971,17 @@ export class StateStore {
         }
 
         return false;
+    };
+
+    extractDependenciesFromString = (str) => {
+        const regex = /{{\s*([\w_]+)\s*}}/g;
+        let match,
+            deps = [];
+        while ((match = regex.exec(str)) !== null) {
+            deps.push(match[1]);
+        }
+
+        return deps;
     };
 
     /**
@@ -1084,6 +1159,59 @@ export class StateStore {
 
         // store the version or the one we currently are on
         this._store.version = state.version ? state.version : STATE_VERSION;
+    };
+
+    private buildDependencyGraph = (json, nodes = {}, edges = []) => {
+        if (typeof json === "object" && json !== null) {
+            for (const [key, value] of Object.entries(json)) {
+                // If the key is 'id', treat it as a node
+                if (key === "id" && typeof value === "string") {
+                    if (!nodes[value]) {
+                        nodes[value] = {
+                            id: value,
+                            data: { label: value },
+                            position: {
+                                x: Math.random() * 400,
+                                y: Math.random() * 400,
+                            },
+                        };
+                    }
+                }
+                // If value is a string, look for dependencies
+                if (typeof value === "string") {
+                    const deps = this.extractDependenciesFromString(value);
+                    if (json.id && deps.length) {
+                        deps.forEach((dep) => {
+                            if (!nodes[dep]) {
+                                nodes[dep] = {
+                                    id: dep,
+                                    data: { label: dep },
+                                    position: {
+                                        x: Math.random() * 400,
+                                        y: Math.random() * 400,
+                                    },
+                                };
+                            }
+                            edges.push({
+                                id: `e${json.id}-${dep}`,
+                                source: json.id,
+                                target: dep,
+                            });
+                        });
+                    }
+                }
+                // Recurse into objects/arrays
+                if (typeof value === "object") {
+                    this.buildDependencyGraph(value, nodes, edges);
+                }
+            }
+        } else if (Array.isArray(json)) {
+            json.forEach((item) =>
+                this.buildDependencyGraph(item, nodes, edges),
+            );
+        }
+
+        return { nodes: Object.values(nodes), edges };
     };
 
     /**
@@ -1332,8 +1460,12 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
+        type: "sync" | "async",
     ): void => {
-        this._store.blocks[id].listeners[listener] = actions;
+        this._store.blocks[id].listeners[listener] = {
+            type: type,
+            order: actions,
+        };
     };
 
     /**
@@ -1361,26 +1493,25 @@ export class StateStore {
                 id: queryId,
                 type: "query",
                 to: queryId,
-                isOutput: true
-            }
-        })
+                isOutput: true,
+            },
+        });
 
         Object.entries(this._store.queries[queryId].cells).forEach((c) => {
             // Automate variable creation for notebook and new cell
-            const cId = c[0]
+            const cId = c[0];
             this.dispatch({
                 message: ActionMessages.ADD_VARIABLE,
                 payload: {
                     id: `${queryId}--${cId}`,
                     type: "cell",
                     to: queryId,
-                    cellId: cId
-                }
-            })
-        })
+                    cellId: cId,
+                },
+            });
+        });
 
         this._store.executionOrder.push(queryId);
-
 
         return queryId;
     };
@@ -1401,7 +1532,7 @@ export class StateStore {
         Object.entries(this._store.variables).forEach((keyValue) => {
             const id = keyValue[0];
             const variable = keyValue[1];
-            if (variable.type === "query") {
+            if (variable.type === "query" || variable.type === "cell") {
                 if (variable.to === queryId) {
                     delete this._store.variables[id];
                 }
@@ -1430,7 +1561,7 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string): void => {
+    private runQuery = (queryId: string, type?: "sync" | "async"): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
@@ -1438,56 +1569,40 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the query
-            await q._run();
+        let p;
+        let sync;
 
-            // turn it off
-            return true;
-        });
+        if (!type || type === "async") {
+            sync = false;
+        } else {
+            sync = true;
+        }
 
-        p.promise
-            .then(() => {
-                // noop
-            })
-            .catch((e) => {
-                console.error("ERROR:", e);
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await q._run();
+                return true;
             });
+        } else {
+            p = cancellablePromise(async () => {
+                await q._run();
+                return true;
+            });
+        }
+        if (sync) {
+            return p.promise;
+        } else {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
-
-        // TODO: John accidentally pushed, need to fix sync and async events on blocks
-        // Wait till whole query resolves
-        //
-        // let p;
-        // let sync = true;
-        // if (sync) {
-        //     p = syncronousPromise(async () => {
-        //         await q._run();
-        //         return true;
-        //     })
-        // } else {
-        //     p = cancellablePromise(async () => {
-        //         await q._run()
-        //         return true
-        //     })
-        // }
-        // if(sync) {
-        //     return p.promise
-        // } else  {
-        //     p.promise
-        //         .then((resp) => {
-        //             // noop
-        //         })
-        //         .catch((e) => {
-        //             console.error("ERROR:", e);
-        //         });
-        // }
-
-        // save the promise
-        // this._utils.queryPromises[key] = p;
     };
 
     /**
@@ -1499,15 +1614,32 @@ export class StateStore {
      */
     private newCell = (
         queryId: string,
-        cellId: string,
         config: Omit<CellStateConfig, "id">,
         previousCellId: string,
-    ): void => {
+    ): string => {
         // get the query
         const q = this._store.queries[queryId];
 
         // add the cell
-        q._addCell(cellId, config, previousCellId);
+        return q._addCell(config, previousCellId) as string;
+    };
+
+    /**
+     * Move a cell
+     * @param queryId - id of the updated query
+     * @param activeCellId - id of the active cell
+     * @param overCellId - id of the cell we are moving over
+     */
+    private moveCell = (
+        queryId: string,
+        activeCellId: string,
+        overCellId: string,
+    ): void => {
+        // get the query
+        const q = this._store.queries[queryId];
+
+        // move the cell
+        q._moveCell(activeCellId, overCellId);
     };
 
     /**
@@ -1535,11 +1667,8 @@ export class StateStore {
 
         // always have at least one cell
         if (q.list.length === 0) {
-            const newCellId = `${Math.floor(Math.random() * 100000)}`;
-
             this.newCell(
                 queryId,
-                newCellId,
                 {
                     parameters: {
                         code: "",
@@ -1577,7 +1706,11 @@ export class StateStore {
      * @param queryId - id of the updated query
      * @param cellId - id of the deleted cell
      */
-    private runCell = (queryId: string, cellId: string): void => {
+    private runCell = (
+        queryId: string,
+        cellId: string,
+        type?: string,
+    ): void => {
         const q = this._store.queries[queryId];
         const c = q.getCell(cellId);
 
@@ -1586,27 +1719,55 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the cell
-            await c._run();
+        let p;
+        let sync;
 
-            // turn it off
-            return true;
-        });
+        if (!type || type === "async") {
+            sync = false;
+        } else {
+            sync = true;
+        }
 
-        p.promise
-            .then(() => {
-                // noop
-            })
-            .catch((e) => {
-                console.error("ERROR:", e);
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await c._run();
+                return true;
             });
+        } else {
+            p = cancellablePromise(async () => {
+                // run the cell
+                await c._run();
+                // turn it off
+                return true;
+            });
+        }
+
+        if (sync) {
+            return p.promise;
+        } else {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
     };
 
+    private runMarkdownCell = (
+        queryId: string,
+        cellId: string,
+        marked: boolean,
+    ): void => {
+        const q = this._store.queries[queryId];
+        const c = q.getCell(cellId);
+        // make the cell as marked
+        this._store.queries[queryId].cells[cellId].parameters.marked = marked;
+    };
     /**
      * Dispatch a custom event
      * @param name - name of the event
@@ -1624,26 +1785,74 @@ export class StateStore {
         window.dispatchEvent(event);
     };
 
+    private dispatchOpenEvent = (
+        destinationType: string,
+        destination: string,
+    ): void => {
+        const event = new CustomEvent("OPEN_EVENT", {
+            detail: { destinationType, destination },
+        });
+
+        if (this.mode === "interactive") {
+            if (destinationType === "Internal") {
+                const hash = window.location.hash;
+                // Match either #/s/:id/ or #/:id/view
+                const appPageMatch = hash.match(/^#\/app\/([^/]+)/);
+                const sharePageMatch = hash.match(/^#\/s\/([^/]+)/);
+
+                if (appPageMatch || sharePageMatch) {
+                    const base = appPageMatch
+                        ? appPageMatch[0]
+                        : sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
+
+                    const pageBlocks = this.getAllBlocksOfType("page");
+
+                    const urlPageRouteMatch = pageBlocks.find(
+                        (page) => page.data.route === destination,
+                    );
+
+                    if (urlPageRouteMatch) {
+                        const newHash = destination.startsWith("/")
+                            ? base.replace(/\/$/, "") + destination
+                            : base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
+
+                        window.location.hash = newHash;
+                    }
+
+                    return;
+                }
+                4;
+            } else if (destinationType === "External") {
+                window.location.href = destination;
+            }
+        }
+
+        // dispatch the event to the window
+        window.dispatchEvent(event);
+    };
+
     /**
-     * 
+     *
      * Dispatch an event
      * @param detail - payload associated with event
      */
     private dispatchOutputsEvent = (): void => {
-
-        let outputMap = {};
+        const outputMap = {};
 
         Object.keys(this._store.variables).forEach((k) => {
-            if(this._store.variables[k].isOutput) {
-                outputMap[k] = this.parseVariable(`{{${k}}}`)
+            if (this._store.variables[k].isOutput) {
+                outputMap[k] = this.parseVariable(`{{${k}}}`);
             }
-        })
+        });
 
         // Communication with Iframe
-        window.parent.postMessage({
-            type: "DISPATCH_APP_OUTPUTS",
-            data: outputMap
-        }, '*') // --> Cross Origin Communications
+        window.parent.postMessage(
+            {
+                type: "DISPATCH_APP_OUTPUTS",
+                data: outputMap,
+            },
+            "*",
+        ); // --> Cross Origin Communications
     };
 
     // -----------------------------------
