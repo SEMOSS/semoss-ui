@@ -265,17 +265,15 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
             return;
         }
 
-        const dbIds: string[] = [];
-        const dbDisplay = {};
-        myDbs.data.forEach((db) => {
-            dbIds.push(db.app_id);
-            dbDisplay[db.app_id] = db.app_name;
-        });
-        setCfgLibraryDatabases({
-            loading: false,
-            ids: dbIds,
-            display: dbDisplay,
-        });
+    // Prepare database IDs and display mapping
+    const dbIds = myDbs.data.map(db => db.app_id);
+    const dbDisplay = Object.fromEntries(myDbs.data.map(db => [db.app_id, db.app_name]));
+
+    setCfgLibraryDatabases({
+        loading: false,
+        ids: dbIds,
+        display: dbDisplay,
+    });
         if (!cell.parameters.databaseId && dbIds.length) {
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
@@ -293,23 +291,23 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
             dbName:
                 dbDisplay?.[cell.parameters.databaseId] || dbDisplay[dbIds[0]],
         });
-        /**
-         * Retrieves a list of models from the user's engine list
-         * and populates the model detail state with the first model's id
-         */
-        const getMyModels = async () => {
-            const myModels = await state.runSideEffect(
-                `MyEngines(engineTypes=['MODEL']);`,
-            );
-            const modelsData: any = myModels.pixelReturn[0].output;
-            setModelDetail({
-                loading: false,
-                modelData: modelsData,
-                selectedModel: modelsData[0].app_id,
-            });
-        };
         getMyModels();
     }, [myDbs.status, myDbs.data]);
+    /**
+     * Retrieves a list of models from the user's engine list
+     * and populates the model detail state with the first model's id
+     */
+    const getMyModels = async () => {
+        const myModels = await state.runSideEffect(
+            `MyEngines(engineTypes=['MODEL']);`,
+        );
+        const modelsData: any = myModels.pixelReturn[0].output;
+        setModelDetail({
+            loading: false,
+            modelData: modelsData,
+            selectedModel: modelsData[0].app_id,
+        });
+    };
     /**
      * Runs the frame creation query with the selected database
      * Retrieves the column names and data types for the selected database
@@ -321,65 +319,82 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
             return;
         }
         removeDynamicFrameAndQuery();
-        let columnNames = [],
-            columnAlias = [];
-        await runPixel(
-            `META|GetDatabaseTableStructure(database=["${databaseDetails.dbId}"]);META|GetDatabaseMetamodel( database=[ "${databaseDetails.dbId}" ], options=["dataTypes","positions"])`,
-        ).then((res) => {
-            let output: any = res.pixelReturn[0]?.output || [];
-            output.forEach((item, index) => {
-                columnAlias.push(item[4]);
-            });
-            let metaModelOutput: any = res.pixelReturn[1]?.output || [];
-            if (metaModelOutput.hasOwnProperty("dataTypes")) {
-                columnNames = Object.keys(metaModelOutput.dataTypes) || [];
+        let columnNames: string[] = [],
+            columnAlias: string[] = [];
+        try {
+        const res = await runPixel(
+            `META|GetDatabaseTableStructure(database=["${databaseDetails.dbId}"]);
+             META|GetDatabaseMetamodel(database=["${databaseDetails.dbId}"], options=["dataTypes","positions"])`
+        );
+            const output: any = res.pixelReturn[0]?.output || [];
+            columnAlias = output.map(item => item[4]);
+
+            const metaModelOutput: any = res.pixelReturn[1]?.output || {};
+            if (metaModelOutput.dataTypes && typeof metaModelOutput.dataTypes === "object") {
+                columnNames = Object.keys(metaModelOutput.dataTypes);
             }
-        });
-        let gridQuery =
-            columnNames.length > 0
-                ? sanitizeQuery("Select (" +
-                  columnNames.join(",") +
-                  ") .as ([" +
-                  columnAlias.join(",") +
-                  "])")
-                : sanitizeQuery(`Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`);
+        } catch (error) {
+            // Optionally handle/log error
+            console.error("Error in runFrameCreationQuery:", error);
+        }
+
+        const gridQuery = columnNames.length > 0
+            ? sanitizeQuery(`Select (${columnNames.join(",")}) .as ([${columnAlias.join(",")}])`)
+            : sanitizeQuery(`Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`);
+
         const insightId = state.insightId;
-        let query = `Database( database=["${databaseDetails.dbId}"] ) | ${gridQuery} | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] )`;
-        runPixel(query, insightId).then((res) => {});
+        const query = `Database(database=["${databaseDetails.dbId}"]) | ${gridQuery} | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${cell.parameters.frameVariableName}"])])`;
+
+        try {
+            await runPixel(query, insightId);
+        } catch (error) {
+            console.error("Error running frame creation query:", error);
+        }
     };
     /**
      * When NLPQuery3 query run and is successful, this use effect will trigger new Run cell to fetch the data from frame
      */
     useEffect(() => {
-        if (cell.isSuccessful) {
-            let output = (cell.output as any)?.output || {};
-            if (output.hasOwnProperty("Query")) {
-                state.dispatch({
-                    message: ActionMessages.UPDATE_CELL,
-                    payload: {
-                        queryId: cell.query.id,
-                        cellId: cell.id,
-                        path: "parameters.dataFrameId",
-                        value: output.frame,
-                    },
-                });
-                state.dispatch({
-                    message: ActionMessages.UPDATE_CELL,
-                    payload: {
-                        queryId: cell.query.id,
-                        cellId: cell.id,
-                        path: "parameters.dataFrameQuery",
-                        value: sanitizeQuery(output.Query),
-                    },
-                });
-                state.dispatch({
-                    message: ActionMessages.RUN_CELL,
-                    payload: {
-                        queryId: cell.query.id,
-                        cellId: cell.id,
-                    },
-                });
-            }
+        if (!cell.isSuccessful) return;
+
+        const output = (cell.output as any)?.output || {};
+        if (!output || typeof output !== "object" || !output.hasOwnProperty("Query")) return;
+
+        // Update dataFrameId if present
+        if (output.frame) {
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: "parameters.dataFrameId",
+                    value: output.frame,
+                },
+            });
+        }
+
+        // Update dataFrameQuery if present and valid
+        if (typeof output.Query === "string") {
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                    path: "parameters.dataFrameQuery",
+                    value: sanitizeQuery(output.Query),
+                },
+            });
+        }
+
+        // Trigger RUN_CELL only if both frame and Query are present
+        if (output.frame && typeof output.Query === "string") {
+            state.dispatch({
+                message: ActionMessages.RUN_CELL,
+                payload: {
+                    queryId: cell.query.id,
+                    cellId: cell.id,
+                },
+            });
         }
     }, [cell.isExecuted, cell.isLoading, cell.isSuccessful]);
     /**
