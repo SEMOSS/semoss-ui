@@ -10,12 +10,7 @@
         "module": "esnext",
         "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
-        "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
-
-        /* incremental */
-        "incremental": true,
-        "tsBuildInfoFile": "./dist/.tsbuildinfo",
 
         /* Emit */
         "declaration": true,

@@ -3,21 +3,19 @@
     "version": "1.0.0-beta.1",
     "description": "",
     "type": "module",
-    "main": "./dist/index.umd.cjs",
-    "module": "./dist/index.js",
+    "main": "./dist/index.mjs",
+    "module": "./dist/index.mjs",
     "types": "./dist/types/index.d.ts",
     "exports": {
         ".": {
-            "types": "./dist/types/index.d.ts",
-            "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "default": "./dist/index.mjs",
+            "types": "./dist/types/index.d.ts"
         }
     },
     "scripts": {
-        "output-types": "tsc -b --extendedDiagnostics",
-        "dev": "vite build --watch",
-        "build": "tsc -b && vite build",
-        "type-check": "tsc --pretty --noEmit",
+        "dev": "rollup -w -c",
+        "build": "rollup -c --environment NODE_ENV:production",
+        "build:dev": "rollup -c",
         "lint": "eslint . --fix",
         "format": "prettier . --write --plugin-search-dir=.",
         "test": "vitest --watch=false --passWithNoTests --changed",
@@ -38,6 +36,12 @@
     },
     "devDependencies": {
         "@monaco-editor/react": "^4.5.1",
+        "@rollup/plugin-commonjs": "28.0.6",
+        "@rollup/plugin-image": "^3.0.3",
+        "@rollup/plugin-json": "^6.1.0",
+        "@rollup/plugin-node-resolve": "16.0.1",
+        "@rollup/plugin-terser": "^0.4.4",
+        "@rollup/plugin-typescript": "12.1.4",
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.2.0",
         "@textea/json-viewer": "^4.0.0",
@@ -46,7 +50,6 @@
         "@types/react-dom": "18.3.0",
         "@typescript-eslint/eslint-plugin": "5.59.11",
         "@typescript-eslint/parser": "5.59.11",
-        "@vitejs/plugin-react": "^4.6.0",
         "dompurify": "^2.3.10",
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
@@ -65,10 +68,12 @@
         "react-markdown": "9.0.1",
         "react-vega": "^7.6.0",
         "remark-gfm": "^4.0.0",
+        "rollup": "4.44.2",
+        "rollup-plugin-delete": "3.0.1",
+        "tslib": "2.5.3",
         "typescript": "~5.5.2",
         "vega": "^5.27.0",
         "vega-lite": "^5.16.3",
-        "vite": "^7.0.0",
         "vitest": "^3.2.0"
     },
     "peerDependencies": {

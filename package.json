@@ -4,11 +4,12 @@
     "description": "SEMOSS Analytics Platform",
     "scripts": {
         "prepare": "husky install",
-        "fix": "turbo run lint format",
         "dev": "turbo run dev",
         "dev:client": "turbo run dev --filter=@semoss/client",
         "lint": "turbo run lint",
         "build": "turbo run build",
+        "build:dev": "turbo run build:dev",
+        "fix": "turbo run lint format",
         "format": "turbo run format",
         "test": "vitest --watch=false --passWithNoTests --changed",
         "test:browser": "vitest --watch --ui --pool=forks"
@@ -28,7 +29,6 @@
         "jsdom": "~22.1.0",
         "lint-staged": "^13.2.2",
         "prettier": "^2.6.2",
-        "rollup": "^4.14.0",
         "turbo": "^2.5.4",
         "typescript": "~5.5.2"
     },

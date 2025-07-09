@@ -10,7 +10,6 @@
         "module": "esnext",
         "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
-        "allowImportingTsExtensions": true,
         "resolveJsonModule": true,
 
         /* Skip */
