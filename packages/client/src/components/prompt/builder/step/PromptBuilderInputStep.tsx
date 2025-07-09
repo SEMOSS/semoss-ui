@@ -371,7 +371,7 @@ export const PromptBuilderInputStep = (props: {
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
-                <Typography variant="h5">Set Inputs</Typography>
+                <Typography variant="h6">Set Inputs</Typography>
                 <Typography variant="body1">
                     Click on a word or consecutive words to set it as a
                     user-defined input. Click a defined input to deselect it.
