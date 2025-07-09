@@ -9,14 +9,9 @@ import {
     TextField,
     useNotification,
 } from '@semoss/ui';
-import {
-    Paths,
-    PathValue,
-    useBlocks,
-    useBlockSettings,
-    Block,
-    BlockDef,
-} from '@semoss/renderer';
+import { Paths, PathValue, useBlocks, Block, BlockDef } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { runPixel, usePixel } from '@semoss/sdk/react';
 
 type CfgLibraryEngineState = {

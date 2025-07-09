@@ -7,7 +7,6 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
@@ -15,6 +14,7 @@ import {
 import { upload } from '@semoss/sdk/react';
 
 import { BaseSettingSection } from '../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
 
 interface UploadSettingsProps<D extends BlockDef = BlockDef> {
     /**

@@ -15,14 +15,13 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../BaseSettingSection';
-
+import { useBlockSettings } from '@/hooks';
 import VeritcalPaddingIcon from '../../../../../assets/block-settings/VerticalPaddingIcon.svg';
 import HorizontalPaddingIcon from '../../../../../assets/block-settings/HorizontalPaddingIcon.svg';
 import BottomPaddingIcon from '../../../../../assets/block-settings/BottomPaddingIcon.svg';

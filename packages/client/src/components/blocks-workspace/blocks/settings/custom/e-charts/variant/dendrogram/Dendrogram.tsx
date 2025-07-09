@@ -7,12 +7,12 @@ import { EChartsOption } from 'echarts';
 
 import { styled } from '@semoss/ui';
 import {
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
     useFrame,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { VizBlockContextMenu } from '../../VizBlockContextMenu';
 import { DendrogramChartField } from './DendrogramChartField';
 

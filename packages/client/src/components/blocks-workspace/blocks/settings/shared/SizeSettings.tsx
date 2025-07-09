@@ -14,13 +14,14 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
+
 
 /**
  * Used for any style settings that utilize a size number, ex width and height

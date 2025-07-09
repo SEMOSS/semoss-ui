@@ -20,13 +20,13 @@ import {
     BoxTwo,
 } from '@semoss/ui';
 import {
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     GridBlockColumn,
     GridBlockDef,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../../../settings/BaseSettingSection';
 import { GridBlockColumnSettingsItem } from './GridBlockColumnSettingsItem';
 

@@ -12,7 +12,6 @@ import {
     Typography,
 } from '@semoss/ui';
 import {
-    useBlockSettings,
     GridBlockColumn,
     Paths,
     PathValue,
@@ -22,6 +21,7 @@ import {
     HeaderBackgroundSettings,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ColorPickerSettingsNew } from '../../../shared/ColorPickerSettingsNew';
 
 export interface HeaderStylingProps<D extends BlockDef = GridBlockDef> {

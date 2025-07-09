@@ -7,11 +7,13 @@ import {
     Paths,
     PathValue,
     useBlock,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
+
 
 /**
  * Used in the DistinctPathButtonGroupSettings

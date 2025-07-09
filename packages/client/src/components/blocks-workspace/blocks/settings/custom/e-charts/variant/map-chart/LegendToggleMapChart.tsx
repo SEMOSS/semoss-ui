@@ -6,11 +6,13 @@ import { styled, Switch, Typography } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     Block,
     Paths,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
+
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

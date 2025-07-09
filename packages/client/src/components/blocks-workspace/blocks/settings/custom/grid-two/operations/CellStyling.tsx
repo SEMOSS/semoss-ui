@@ -13,7 +13,6 @@ import {
 } from '@semoss/ui';
 
 import {
-    useBlockSettings,
     GridBlockColumn,
     Paths,
     PathValue,
@@ -23,6 +22,7 @@ import {
     CellBackgroundSettings,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ColorPickerSettingsNew } from '../../../../settings/shared/ColorPickerSettingsNew';
 
 export interface CellStylingProps<D extends BlockDef = GridBlockDef> {

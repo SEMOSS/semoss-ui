@@ -33,7 +33,6 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     ActionMessages,
     Block,
     BlockDef,
@@ -45,6 +44,7 @@ import {
     VariableType,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ModelBrain } from '../../../../../assets/ModelBrain';
 import { Database } from '../../../../../assets/Database';
 import { AddVariable } from '../../../../../assets/AddVariable';

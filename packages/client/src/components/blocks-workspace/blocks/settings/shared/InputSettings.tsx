@@ -6,13 +6,13 @@ import { TextField } from '@semoss/ui';
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
 
 interface InputSettingsProps<D extends BlockDef = BlockDef> {
     /**

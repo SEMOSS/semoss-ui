@@ -15,12 +15,12 @@ import { BoxTwo, Button, IconButton, Stack, TextField } from '@semoss/ui';
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../BaseSettingSection';
 
 interface OptionsSettingsProps<D extends BlockDef = BlockDef> {

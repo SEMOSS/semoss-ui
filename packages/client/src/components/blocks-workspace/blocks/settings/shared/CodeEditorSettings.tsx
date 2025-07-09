@@ -9,7 +9,6 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
@@ -17,6 +16,8 @@ import {
     DefaultBlocks,
     BLOCK_TYPE_INPUT,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import('@monaco-editor/react'));

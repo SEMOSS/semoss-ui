@@ -5,7 +5,6 @@ import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
 import { CheckboxTwo, Button, styled, TextField, Typography } from '@semoss/ui';
 import {
-    useBlockSettings,
     GridBlockColumn,
     Paths,
     PathValue,
@@ -14,6 +13,8 @@ import {
     GridBlockDef,
     ChartTitleSettings,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { ColorPickerSettingsNew } from '../../../../settings/shared/ColorPickerSettingsNew';
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {

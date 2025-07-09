@@ -3,8 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 
 import { AutocompleteTwo, TextField, styled } from '@semoss/ui';
-import { useBlockSettings, useBlocks, getValueByPath } from '@semoss/renderer';
+import { useBlocks, getValueByPath } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../../../../settings';
 
 const GroupHeader = styled('div')(({ theme }) => ({

@@ -7,10 +7,11 @@ import { styled, Switch, Typography } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 //the wrapper container for holding legend tool
 const StyledContainer = styled('div')<{

@@ -18,8 +18,9 @@ import {
     BlockDef,
     ListenerActions,
     useBlocks,
-    useBlockSettings,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 const StyledSpacer = styled('div')(() => ({
     flex: 1,

@@ -14,11 +14,12 @@ import {
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface ColorPickerSettingProps<D extends BlockDef = BlockDef> {
     /**

@@ -27,7 +27,6 @@ import {
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     Paths,
     getValueByPath,
     useBlocksPixel,
@@ -36,6 +35,7 @@ import {
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BAR_CHART_DATA } from '../Visualization.constants';
 import { DataTabStyling } from './bar-chart/DataTabStyling';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';

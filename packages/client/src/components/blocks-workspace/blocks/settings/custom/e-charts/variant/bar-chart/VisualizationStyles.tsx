@@ -7,7 +7,6 @@ import { Slider, styled, TextField, ToggleTabsGroup } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     getValueByPath,
@@ -15,6 +14,7 @@ import {
     EchartVisualizationBlockConfig,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
 

@@ -14,11 +14,12 @@ import {
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     PathValue,
     Paths,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { FontFamily, Pie_Alignment } from '../../Visualization.constants';
 import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
 

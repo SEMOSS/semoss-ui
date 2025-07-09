@@ -7,11 +7,11 @@ import { Button, Select, styled, TextField, Typography } from '@semoss/ui';
 import {
     BlockDef,
     PathValue,
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
 
 //Styled select with custom styling

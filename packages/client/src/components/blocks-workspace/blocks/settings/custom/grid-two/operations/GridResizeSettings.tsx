@@ -10,7 +10,6 @@ import {
     Typography,
 } from '@semoss/ui';
 import {
-    useBlockSettings,
     GridBlockColumn,
     Paths,
     PathValue,
@@ -20,6 +19,8 @@ import {
     useBlocks,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 /**
  * Used for any style settings that utilize a size number, ex width and height
  * Supports % and px units for size

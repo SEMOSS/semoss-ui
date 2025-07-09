@@ -11,10 +11,10 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { IconSelectSettings, inputOptions } from './IconSelectSettings';
 

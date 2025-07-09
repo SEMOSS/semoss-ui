@@ -1,12 +1,9 @@
 import { useState, useEffect } from 'react';
 
 import { Stack, styled, ToggleTabsGroup } from '@semoss/ui';
-import {
-    useBlockSettings,
-    BlockComponent,
-    EchartVisualizationBlockDef,
-} from '@semoss/renderer';
+import { BlockComponent, EchartVisualizationBlockDef } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { FrameOperations } from './variant/FrameOperations';
 import { GanttFrameSection } from './variant/Gantt/GanttFrameSection';
 import { AIGenerationSettings, JsonSettings } from '../../shared';

@@ -8,10 +8,11 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     BlockDef,
     Block,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
 import { SwitchSettings } from '../../settings/shared/SwitchSettings';
 import {

@@ -13,7 +13,6 @@ import {
     TextField,
 } from '@semoss/ui';
 import {
-    useBlockSettings,
     Paths,
     PathValue,
     Block,
@@ -21,6 +20,7 @@ import {
     RadioBlockDef,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { InputSettings } from '../../settings';
 import { buildListener, buildShowField } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';

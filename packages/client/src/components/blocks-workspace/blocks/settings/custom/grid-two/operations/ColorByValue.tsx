@@ -17,7 +17,6 @@ import {
     Typography,
 } from '@semoss/ui';
 import {
-    useBlockSettings,
     GridBlockColumn,
     Paths,
     PathValue,
@@ -29,6 +28,7 @@ import {
     useFrame,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ColorPickerWithSwatch } from '../../../../settings/shared/ColorPickerWithSwatch';
 
 export interface ColorByValueProps {

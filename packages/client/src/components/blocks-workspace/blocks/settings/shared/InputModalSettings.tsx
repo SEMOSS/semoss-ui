@@ -15,13 +15,13 @@ import {
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
 
 interface InputModalSettingsProps<D extends BlockDef = BlockDef> {
     /**

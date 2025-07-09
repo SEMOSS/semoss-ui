@@ -3,8 +3,7 @@ import { BlurLinear } from '@mui/icons-material';
 
 import { Select, MenuItem } from '@semoss/ui';
 
-import { useBlockSettings } from '@semoss/renderer';
-
+import { useBlockSettings } from '@/hooks';
 import { buildListener, buildShowField } from '../block-defaults.shared';
 import { BLOCK_TYPE_INPUT } from '../block-defaults.constants';
 import {

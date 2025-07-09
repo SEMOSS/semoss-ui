@@ -4,13 +4,14 @@ import { observer } from 'mobx-react-lite';
 import { styled, Switch, Typography } from '@semoss/ui';
 
 import {
-    useBlockSettings,
     Paths,
     PathValue,
     Block,
     BlockDef,
     GridBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;

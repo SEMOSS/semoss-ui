@@ -13,13 +13,14 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     EchartVisualizationBlockDef,
     EchartVisualizationBlockConfig,
     getValueByPath,
     Block,
     Paths,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

@@ -6,13 +6,13 @@ import { MenuItem, Select, Stack, Typography } from '@semoss/ui';
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
 import {
     FourByFourIcon,
     OneByThreeIcon,

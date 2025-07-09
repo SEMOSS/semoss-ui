@@ -8,10 +8,11 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { IconButton, MenuItem, Select, styled } from '@semoss/ui';
 import {
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 const StyledMainContainer = styled('div')(({ theme }) => ({
     display: 'flex',

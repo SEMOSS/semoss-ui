@@ -2,7 +2,9 @@ import { useState, useRef } from 'react';
 import { Schema } from '@mui/icons-material';
 
 import { AutocompleteTwo, TextField } from '@semoss/ui';
+import { Paths, PathValue, Block, BlockDef } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { InputSettings } from '../../settings';
 import { buildListener, buildShowField } from '../block-defaults.shared';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
@@ -10,14 +12,6 @@ import { SwitchSettings } from '../../settings/shared/SwitchSettings';
 import { BaseSettingSection } from '../../settings/BaseSettingSection';
 import { QueryInputSettings } from '../../settings';
 import { BlockSettingsConfig } from '../settings.types';
-
-import {
-    useBlockSettings,
-    Paths,
-    PathValue,
-    Block,
-    BlockDef,
-} from '@semoss/renderer';
 
 // Size options for both min and max width
 const WIDTH_OPTIONS = [

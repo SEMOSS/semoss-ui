@@ -100,7 +100,6 @@ export { DataImportFormModal } from "./components/shared/DataImportFormModal";
 export {
     useBlocks,
     useBlocksPixel,
-    useBlockSettings,
     useBlock,
     useFrame,
     useFrameHeaders,

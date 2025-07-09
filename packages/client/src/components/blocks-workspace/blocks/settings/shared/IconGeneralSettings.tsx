@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 
 import { Stack, Typography, Tooltip, Switch } from '@semoss/ui';
-import { useBlockSettings } from '@semoss/renderer';
 
 import { InputSettings, SelectInputSettings } from '../shared';
+import { useBlockSettings } from '@/hooks';
 
 const badgeColorOptions = [
     { value: 'primary', display: 'Primary' },

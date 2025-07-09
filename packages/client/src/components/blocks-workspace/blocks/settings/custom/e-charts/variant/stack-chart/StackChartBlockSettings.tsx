@@ -14,7 +14,6 @@ import {
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     Paths,
     getValueByPath,
     useBlocksPixel,
@@ -23,6 +22,7 @@ import {
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../../../../BaseSettingSection';
 
 const StyledStack = styled(Stack)(() => ({

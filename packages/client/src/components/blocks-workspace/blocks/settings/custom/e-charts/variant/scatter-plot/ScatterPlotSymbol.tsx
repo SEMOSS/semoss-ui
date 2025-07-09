@@ -6,11 +6,12 @@ import { MenuItem, Select, styled, TextField, Typography } from '@semoss/ui';
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     PathValue,
     Paths,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

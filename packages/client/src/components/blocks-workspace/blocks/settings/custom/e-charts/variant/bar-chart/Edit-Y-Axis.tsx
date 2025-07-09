@@ -10,15 +10,15 @@ import {
     Switch,
     Typography,
 } from '@semoss/ui';
-
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
     EchartVisualizationBlockConfig,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 //Axis div for switch type fields
 const StyledAxisDiv = styled('div')<{

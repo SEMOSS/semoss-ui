@@ -18,13 +18,14 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     getValueByPath,
     EchartVisualizationBlockDef,
     EchartVisualizationBlockConfig,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 import { Legend } from './Legend';
 import { EditXAxis } from './Edit-X-Axis';

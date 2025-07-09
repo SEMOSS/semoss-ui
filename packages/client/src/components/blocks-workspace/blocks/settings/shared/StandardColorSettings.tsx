@@ -10,11 +10,12 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface StandardColorSettingProps<D extends BlockDef = BlockDef> {
     /**

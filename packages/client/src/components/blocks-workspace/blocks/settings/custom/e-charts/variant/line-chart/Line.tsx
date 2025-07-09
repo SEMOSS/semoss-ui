@@ -5,12 +5,12 @@ import ReactECharts, { EChartsOption } from 'echarts-for-react';
 
 import { styled } from '@semoss/ui';
 import {
-    useBlockSettings,
     EchartVisualizationBlockDef,
     getValueByPath,
     useFrame,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { CustomContextMenu } from './CustomContextMenu';
 
 const StyledChartContainer = styled('div')(() => ({

@@ -27,7 +27,6 @@ import {
 } from '@semoss/ui';
 import {
     useBlocks,
-    useBlockSettings,
     ActionMessages,
     Block,
     BlockDef,
@@ -35,6 +34,7 @@ import {
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { ButtonGroupSettings, SizeSettings } from '../shared';
 

@@ -11,12 +11,13 @@ import {
 } from '@semoss/ui';
 import {
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     Paths,
     Block,
     PathValue,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

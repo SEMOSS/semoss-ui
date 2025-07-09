@@ -14,12 +14,12 @@ import {
 } from '@semoss/ui';
 import {
     useBlocks,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     BlockComponent,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { SizeSettings } from '../../shared';
 
 const StyledStack = styled(Stack)(() => ({

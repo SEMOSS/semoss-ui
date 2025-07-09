@@ -6,13 +6,13 @@ import { ButtonGroup, IconButton } from '@semoss/ui';
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
 
 /**
  * Used when buttons are thematically be grouped together and point to the same

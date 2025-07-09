@@ -14,7 +14,6 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     EchartVisualizationBlockDef,
@@ -22,6 +21,7 @@ import {
     useFrame,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { VizBlockContextMenu } from '../../VizBlockContextMenu';
 import { GANTT_CHART } from '../../Visualization.constants';
 

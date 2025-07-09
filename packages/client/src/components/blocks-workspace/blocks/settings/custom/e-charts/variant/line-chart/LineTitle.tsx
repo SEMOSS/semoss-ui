@@ -14,12 +14,12 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     Block,
     Paths,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import {
     FontFamily,
     FontWeights,

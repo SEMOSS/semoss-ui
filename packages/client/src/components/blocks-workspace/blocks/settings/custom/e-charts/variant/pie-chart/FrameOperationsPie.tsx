@@ -15,7 +15,6 @@ import {
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     PathValue,
     Paths,
     getValueByPath,
@@ -23,6 +22,8 @@ import {
     useFrameHeaders,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../../../../BaseSettingSection';
 
 interface FieldsSettingsProps<D extends BlockDef = BlockDef> {

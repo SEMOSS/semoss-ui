@@ -5,12 +5,13 @@ import { AutocompleteTwo, Button, Select, TextField, styled } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     EchartVisualizationBlockDef,
     getValueByPath,
     useFrameHeaders,
     useBlocksPixel
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface GanttFrameSectionProps {
     id: string;

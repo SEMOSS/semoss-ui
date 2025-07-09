@@ -14,8 +14,9 @@ import {
     Stack,
     styled,
 } from '@semoss/ui';
-import { useBlockSettings, GridBlockDef, PathValue } from '@semoss/renderer';
+import { GridBlockDef, PathValue } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { HeaderStyling } from './operations/HeaderStyling';
 import { CellStyling } from './operations/CellStyling';
 import { ChartTitle } from './operations/ChartTitle';

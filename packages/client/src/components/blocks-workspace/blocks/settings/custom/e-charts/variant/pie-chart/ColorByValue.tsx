@@ -4,14 +4,10 @@ import { Delete } from '@mui/icons-material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { InputTwo, Button, Select, styled, TextField, Table } from '@semoss/ui';
-import {
-    useBlockSettings,
-    useFrame,
-    EchartVisualizationBlockDef,
-    Paths,
-} from '@semoss/renderer';
+import { useFrame, EchartVisualizationBlockDef, Paths } from '@semoss/renderer';
 
 import CustomAccordianBlock from './CustomAccordianBlock';
+import { useBlockSettings } from '@/hooks';
 
 const StyledSelect = styled(Select)(() => ({
     width: '100%',

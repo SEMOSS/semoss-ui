@@ -34,10 +34,10 @@ import {
     ACTIONS_DISPLAY,
     BlockDef,
     ListenerActions,
-    useBlockSettings,
     useBlocks,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ListenerActionOverlay } from './ListenerActionOverlay';
 
 const StyledStatusIconContainer = styled('div')(() => ({

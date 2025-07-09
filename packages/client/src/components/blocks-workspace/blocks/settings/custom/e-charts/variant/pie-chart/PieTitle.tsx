@@ -15,16 +15,18 @@ import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     PathValue,
     Paths,
     getValueByPath,
 } from '@semoss/renderer';
+
 import {
     FontFamily,
     FontWeights,
     Title_Alignment,
 } from '../../Visualization.constants';
+import { useBlockSettings } from '@/hooks';
+
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

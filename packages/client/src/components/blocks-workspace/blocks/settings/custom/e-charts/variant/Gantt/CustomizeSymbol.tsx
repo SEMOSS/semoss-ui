@@ -16,13 +16,13 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     EchartVisualizationBlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../../../../BaseSettingSection';
 import { GANTT_CHART } from '../../Visualization.constants';
 

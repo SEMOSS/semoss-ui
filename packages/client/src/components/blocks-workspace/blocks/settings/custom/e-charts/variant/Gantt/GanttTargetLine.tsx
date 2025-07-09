@@ -7,10 +7,11 @@ import { Button, Switch, TextField, styled } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     EchartVisualizationBlockDef,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface GanttTargetLineProps {
     id: string;

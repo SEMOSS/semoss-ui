@@ -7,11 +7,13 @@ import { Switch, Tooltip, Typography, Stack, styled } from '@semoss/ui';
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
+
 interface SwitchSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

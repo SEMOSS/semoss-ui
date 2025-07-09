@@ -15,14 +15,13 @@ import {
     MenuItem,
 } from '@semoss/ui';
 
-import { useBlockSettings } from '@semoss/renderer';
 import {
     BaseSettingSection,
     ColorSettings,
     JsonSettings,
     SizeSettings,
 } from '../../settings';
-
+import { useBlockSettings } from '@/hooks';
 import { BLOCK_TYPE_THEME } from '../block-defaults.constants';
 import { BlockSettingsConfig } from '../settings.types';
 

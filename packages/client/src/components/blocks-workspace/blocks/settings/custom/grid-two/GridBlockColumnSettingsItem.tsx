@@ -2,11 +2,9 @@ import { observer } from 'mobx-react-lite';
 import { Delete } from '@mui/icons-material';
 
 import { IconButton, List } from '@semoss/ui';
-import {
-    GridBlockDef,
-    GridBlockColumn,
-    useBlockSettings,
-} from '@semoss/renderer';
+import { GridBlockDef, GridBlockColumn } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface GridBlockColumnSettingsItemProps {
     /** Id of the block */

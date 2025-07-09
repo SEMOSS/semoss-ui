@@ -7,7 +7,6 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     Block,
     BlockDef,
     copy,
@@ -15,6 +14,7 @@ import {
 
 import { BaseSettingSection } from '../BaseSettingSection';
 import { QuerySelectionSettings } from '../custom';
+import { useBlockSettings } from '@/hooks';
 
 interface SelectOptionsSettings<D extends BlockDef = BlockDef> {
     /**

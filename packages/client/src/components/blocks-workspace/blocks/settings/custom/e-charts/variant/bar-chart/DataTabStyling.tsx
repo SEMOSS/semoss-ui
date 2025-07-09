@@ -13,13 +13,13 @@ import { AutocompleteTwo, PopoverTwo, SwitchTwo } from '@semoss/ui';
 
 import {
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     getValueByPath,
     EchartVisualizationBlockDef
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { VisualMapConstant } from '../../VisualMapConstant';
 import { VisualMap } from '../../VisualMap';
 

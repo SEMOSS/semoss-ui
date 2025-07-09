@@ -9,10 +9,11 @@ import {
     Block,
     Paths,
     PathValue,
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { BAR_CHART_DATA } from '../../Visualization.constants';
 import { ECHART_BAR_COLOUR } from '../../Visualization.constants';
 

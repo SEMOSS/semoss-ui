@@ -14,7 +14,6 @@ import {
 } from '@semoss/ui';
 
 import {
-    useBlockSettings,
     GridBlockColumn,
     Paths,
     PathValue,
@@ -23,6 +22,8 @@ import {
     GridBlockDef,
     WrapTextSettings,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 export interface TitleStylingProps<D extends BlockDef = GridBlockDef> {
     id: string;

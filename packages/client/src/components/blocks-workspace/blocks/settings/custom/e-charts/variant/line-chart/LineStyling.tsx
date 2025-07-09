@@ -6,13 +6,13 @@ import { styled, TextField, Select, Typography } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     Block,
     Paths,
 } from '@semoss/renderer';
 
 import { Line_Curve_Type, Line_Type } from '../../Visualization.constants';
+import { useBlockSettings } from '@/hooks';
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

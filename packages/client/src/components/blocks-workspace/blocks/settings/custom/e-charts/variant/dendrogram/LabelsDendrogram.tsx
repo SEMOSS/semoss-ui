@@ -3,14 +3,10 @@ import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 
 import { Button, styled, Switch, TextField } from '@semoss/ui';
-import {
-    PathValue,
-    BlockDef,
-    useBlockSettings,
-    getValueByPath,
-} from '@semoss/renderer';
+import { PathValue, BlockDef, getValueByPath } from '@semoss/renderer';
 
 import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
+import { useBlockSettings } from '@/hooks';
 
 const StyledMainContainer = styled('div')<{
     display?: string;

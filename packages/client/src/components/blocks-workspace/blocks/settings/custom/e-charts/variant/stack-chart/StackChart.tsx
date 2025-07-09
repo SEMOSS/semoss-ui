@@ -7,8 +7,10 @@ import { CanvasRenderer } from 'echarts/renderers';
 import { TooltipComponent } from 'echarts/components';
 
 import { styled } from '@semoss/ui';
-import { useBlockSettings, useFrame, BlockComponent } from '@semoss/renderer';
+import { useFrame, BlockComponent } from '@semoss/renderer';
+
 import { ChartContextMenu } from '../bar-chart/ChartContextMenu';
+import { useBlockSettings } from '@/hooks';
 
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',

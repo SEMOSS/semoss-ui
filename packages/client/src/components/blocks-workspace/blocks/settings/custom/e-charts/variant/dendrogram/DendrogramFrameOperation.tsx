@@ -9,11 +9,12 @@ import {
 } from '@semoss/ui';
 import {
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 // a styled section to maintain the basic styles for every element in the component
 const StyledSubSection = styled('div')(() => ({

@@ -6,13 +6,15 @@ import { Button, Select, styled, Switch, TextField } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     EchartVisualizationBlockDef,
     getValueByPath,
     useFrame,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
+
 
 //Main container with padding and border
 const StyledMainContainer = styled('div')(() => ({

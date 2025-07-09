@@ -15,13 +15,13 @@ import {
 import {
     Block,
     BlockDef,
-    useBlockSettings,
     PathValue,
     Paths,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
+import { useBlockSettings } from '@/hooks';
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

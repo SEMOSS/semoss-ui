@@ -8,7 +8,6 @@ import { Autocomplete, IconButton, styled, TextField } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     EchartVisualizationBlockDef,
@@ -16,6 +15,8 @@ import {
     Block,
     Paths,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../../../../BaseSettingSection';
 import { Fields } from '../line-chart/Fields';
 

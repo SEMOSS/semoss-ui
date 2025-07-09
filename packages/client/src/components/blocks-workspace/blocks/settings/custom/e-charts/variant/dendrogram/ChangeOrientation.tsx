@@ -1,13 +1,12 @@
+import { ChangeEvent } from 'react';
 import { useState, useEffect, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
+
 import { Button, Select, styled, Typography, MenuItem } from '@semoss/ui';
-import { ChangeEvent } from 'react';
-import {
-    useBlockSettings,
-    getValueByPath,
-    EchartVisualizationBlockDef,
-} from '@semoss/renderer';
+import { getValueByPath, EchartVisualizationBlockDef } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 const StyledMainContainer = styled('div')<{
     display?: string;

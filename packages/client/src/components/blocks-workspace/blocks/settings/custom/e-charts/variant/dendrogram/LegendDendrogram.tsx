@@ -3,7 +3,9 @@ import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 
 import { styled, Typography, Switch } from '@semoss/ui';
-import { useBlockSettings, getValueByPath } from '@semoss/renderer';
+import { getValueByPath } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 const StyledMainContainer = styled('div')<{
     display?: string;

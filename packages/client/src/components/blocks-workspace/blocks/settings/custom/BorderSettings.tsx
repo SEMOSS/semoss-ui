@@ -20,10 +20,10 @@ import {
     Block,
     Paths,
     PathValue,
-    useBlockSettings,
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../BaseSettingSection';
 
 /**

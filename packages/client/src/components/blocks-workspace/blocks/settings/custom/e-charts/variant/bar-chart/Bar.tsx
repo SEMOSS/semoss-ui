@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
-import * as echarts from 'echarts/core';
 import EChartsReact from 'echarts-for-react';
 import { EChartsOption } from 'echarts';
 
 import { styled } from '@semoss/ui';
 import {
     getValueByPath,
-    useBlockSettings,
     useFrame,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { ChartContextMenu } from './ChartContextMenu';
 
 //Main Container for displaying Bar chart

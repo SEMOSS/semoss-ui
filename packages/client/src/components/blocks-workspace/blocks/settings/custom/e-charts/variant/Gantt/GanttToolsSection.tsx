@@ -15,11 +15,11 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     EchartVisualizationBlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { GanttTargetLine } from './GanttTargetLine';
 import { CustomizeSymbol } from './CustomizeSymbol';
 import { GanttLegend } from './GanttLegend';

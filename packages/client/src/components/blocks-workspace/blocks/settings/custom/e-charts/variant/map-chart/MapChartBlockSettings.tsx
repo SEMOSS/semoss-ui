@@ -13,7 +13,6 @@ import {
 } from '@semoss/ui';
 import {
     BlockDef,
-    useBlockSettings,
     EchartVisualizationBlockDef,
     getValueByPath,
     useBlocksPixel,
@@ -24,6 +23,8 @@ import {
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../../../../';
+import { useBlockSettings } from '@/hooks';
+
 interface MapChartBlockSettingsProps<D extends BlockDef = BlockDef> {
     /** Id of the block */
     id: string;

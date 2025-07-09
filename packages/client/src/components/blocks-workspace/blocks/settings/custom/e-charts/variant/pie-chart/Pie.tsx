@@ -6,11 +6,12 @@ import { EChartsOption } from 'echarts';
 
 import { styled } from '@semoss/ui';
 import {
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
     useFrame,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { CustomContextMenu } from './CustomContextMenu';
 
 const StyledChartContainer = styled('div')(() => ({

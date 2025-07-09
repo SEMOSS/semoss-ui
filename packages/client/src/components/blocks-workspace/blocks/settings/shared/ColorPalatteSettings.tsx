@@ -25,12 +25,13 @@ import {
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface ColorPalatteSettingProps<D extends BlockDef = BlockDef> {
     /**

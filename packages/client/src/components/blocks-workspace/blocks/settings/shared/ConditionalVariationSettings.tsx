@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 
-import { useBlockSettings } from '@semoss/renderer';
+import { useBlockSettings } from '@/hooks';
 
 interface ConditionalVariationSettingsProps {
     /**

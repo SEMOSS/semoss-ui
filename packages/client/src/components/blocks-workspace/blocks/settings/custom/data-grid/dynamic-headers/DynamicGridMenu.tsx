@@ -1,11 +1,12 @@
 import { AutocompleteTwo, Stack, TextField } from '@semoss/ui';
 
 import {
-    useBlockSettings,
     useBlocksPixel,
     BlockComponent,
     GridDynamicFrameBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 export const DynamicGridMenu: BlockComponent = ({ id }) => {
     const { data, setData } = useBlockSettings<GridDynamicFrameBlockDef>(id);

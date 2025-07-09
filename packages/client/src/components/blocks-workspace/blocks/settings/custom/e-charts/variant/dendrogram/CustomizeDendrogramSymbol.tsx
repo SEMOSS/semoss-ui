@@ -14,13 +14,14 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     useBlocksPixel,
     useFrameHeaders,
     getValueByPath,
     EchartVisualizationBlockDef,
     EchartVisualizationBlockConfig,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 const StyledMainContainer = styled('div')<{
     display?: string;

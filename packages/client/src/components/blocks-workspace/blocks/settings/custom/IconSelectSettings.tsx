@@ -7,7 +7,6 @@ import {
     Paths,
     PathValue,
     useBlocks,
-    useBlockSettings,
     ActionMessages,
     Block,
     BlockDef,
@@ -15,6 +14,7 @@ import {
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BaseSettingSection } from '../BaseSettingSection';
 import { iconMap } from '../../constants';
 

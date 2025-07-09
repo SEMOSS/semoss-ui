@@ -7,10 +7,11 @@ import { Button, Select, styled, Typography } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Visualization.constants';
 
 //styled select field with width to 100%

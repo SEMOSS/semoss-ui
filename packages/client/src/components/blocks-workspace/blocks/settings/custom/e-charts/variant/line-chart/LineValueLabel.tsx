@@ -14,12 +14,12 @@ import {
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     EchartVisualizationBlockDef,
     EchartVisualizationBlockConfig,
     getValueByPath,
 } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { BAR_CHART_DATA, LINE_CHART_DATA } from '../../Visualization.constants';
 import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
 

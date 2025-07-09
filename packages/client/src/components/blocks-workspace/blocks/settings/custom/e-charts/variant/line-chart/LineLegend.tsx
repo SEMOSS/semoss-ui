@@ -3,15 +3,15 @@ import { observer } from 'mobx-react-lite';
 import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 
 import { styled, Switch, Typography } from '@semoss/ui';
-
 import {
     PathValue,
     BlockDef,
-    useBlockSettings,
     getValueByPath,
     Block,
     Paths,
 } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**

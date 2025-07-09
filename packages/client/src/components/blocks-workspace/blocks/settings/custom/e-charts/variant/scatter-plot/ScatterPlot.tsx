@@ -8,8 +8,9 @@ import { TooltipComponent } from 'echarts/components';
 import { EChartsOption } from 'echarts';
 
 import { styled } from '@semoss/ui';
-import { useBlockSettings, useFrame, BlockComponent } from '@semoss/renderer';
+import { useFrame, BlockComponent } from '@semoss/renderer';
 
+import { useBlockSettings } from '@/hooks';
 import { getSelector } from './ScatterPlotSelector';
 import { processData } from './ScatterPlotProcessData';
 import { formatdatapoints } from './ScatterPlotTooltipData';

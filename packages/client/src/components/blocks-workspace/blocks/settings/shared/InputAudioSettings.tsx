@@ -9,13 +9,13 @@ import { IconButton, TextField, Box, Button } from '@semoss/ui';
 import {
     Paths,
     PathValue,
-    useBlockSettings,
     Block,
     BlockDef,
     getValueByPath,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../BaseSettingSection';
+import { useBlockSettings } from '@/hooks';
 
 interface InputAudioSettingsProps<D extends BlockDef = BlockDef> {
     /**

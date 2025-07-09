@@ -1,44 +1,49 @@
-import { useCallback } from "react";
+import { useCallback } from 'react';
 
-import { Paths, PathValue } from "../types";
-import { ActionMessages, Block, BlockDef, ListenerActions } from "../store";
-
-import { useBlocks } from "./useBlocks";
+import {
+    Paths,
+    PathValue,
+    ActionMessages,
+    Block,
+    BlockDef,
+    ListenerActions,
+    useBlocks,
+} from '@semoss/renderer';
 
 /**
  * useBlockSettingsReturn
  */
 interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
-    data: Block<D>["data"];
+    data: Block<D>['data'];
 
     /** Data for the block  */
-    listeners: Block<D>["listeners"];
+    listeners: Block<D>['listeners'];
 
     /**
      * Dispatch a message to set data
      * @param path - path of the data to set
      * @param value - value of the data to set
      */
-    setData: <P extends Paths<Block<D>["data"], 4>>(
+    setData: <P extends Paths<Block<D>['data'], 4>>(
         path: P,
-        value: PathValue<D["data"], P>,
+        value: PathValue<D['data'], P>,
     ) => void;
 
     /**
      * Dispatch a message to delete data
      * @param path - path of the data to delete
      */
-    deleteData: <P extends Paths<Block<D>["data"], 4>>(path: P) => void;
+    deleteData: <P extends Paths<Block<D>['data'], 4>>(path: P) => void;
 
     /**
      * Dispatch a message to set the listeners
      * @param listeners - listeners to attach to the block
      */
     setListener: (
-        listener: keyof Block<D>["listeners"],
+        listener: keyof Block<D>['listeners'],
         actions: ListenerActions[],
-        type?: "sync" | "async"
+        type?: 'sync' | 'async',
     ) => void;
 }
 
@@ -65,9 +70,9 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
      * @param value - value of the data to set
      */
     const setData = useCallback(
-        <P extends Paths<Block<D>["data"], 4>>(
+        <P extends Paths<Block<D>['data'], 4>>(
             path: P | null,
-            value: PathValue<Block<D>["data"], P>,
+            value: PathValue<Block<D>['data'], P>,
         ): void => {
             state.dispatch({
                 message: ActionMessages.SET_BLOCK_DATA,
@@ -86,7 +91,7 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
      * @param path - path of the data to delete
      */
     const deleteData = useCallback(
-        <P extends Paths<Block<D>["data"], 4>>(path: P | null): void => {
+        <P extends Paths<Block<D>['data'], 4>>(path: P | null): void => {
             state.dispatch({
                 message: ActionMessages.DELETE_BLOCK_DATA,
                 payload: {
@@ -106,9 +111,9 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
      */
     const setListener = useCallback(
         (
-            listener: keyof Block<D>["listeners"],
+            listener: keyof Block<D>['listeners'],
             actions: ListenerActions[],
-            type: "sync" | "async"
+            type: 'sync' | 'async',
         ): void => {
             state.dispatch({
                 message: ActionMessages.SET_LISTENER,
@@ -116,7 +121,7 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
                     id: id,
                     listener: listener as string,
                     actions: actions,
-                    type: type
+                    type: type,
                 },
             });
         },
