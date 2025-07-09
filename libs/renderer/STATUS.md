@@ -26,16 +26,6 @@ Then run:
 
 `pnpm run dev:client`
 
-**_Routes to test_**:
-
-Use - `http://localhost:9090/semoss-ui/packages/client/dist/#/app/5698389c-3ba8-4846-b915-d69b0245acc6`
-
-Share - `http://localhost:9090/semoss-ui/packages/client/dist/#/s/5698389c-3ba8-4846-b915-d69b0245acc6`
-
-Edit - `http://localhost:9090/semoss-ui/packages/client/dist/#/workspace/5698389c-3ba8-4846-b915-d69b0245acc6`
-
-Testing - `http://localhost:9090/semoss-ui/packages/client/dist/#/test-renderer`
-
 ## How to use as a lib
 
 When using the `<Renderer />` from the lib to view an app (interactive) - very easy to use just import Renderer and pass necessary props
