@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Stack, Typography, styled, useNotification } from '@semoss/ui';
-
-import { useDesigner } from '@/hooks';
-import { getRelativeSize, getBlockElement } from '@/stores';
-
 import { DragIndicator } from '@mui/icons-material';
 
+import { Stack, Typography, styled, useNotification } from '@semoss/ui';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
+
+import { BlockSettingsRegistry } from '../blocks-workspace/blocks';
+import { useDesigner } from '@/hooks';
+import { getRelativeSize, getBlockElement } from '@/stores';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'absolute',
@@ -61,7 +61,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
     const [local, setLocal] = useState(false);
 
     // get the store
-    const { registry, state } = useBlocks();
+    const { state } = useBlocks();
     const { designer } = useDesigner();
 
     // get the block
@@ -70,13 +70,17 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
 
     // check if it is draggable
     const isDraggable =
-        block && registry[block.widget] && block.widget !== 'page';
+        block && BlockSettingsRegistry[block.widget] && block.widget !== 'page';
 
     // check if all blocks are draggable
     const areAllBlocksDraggable = (): boolean => {
         return designer.selectedBlocks.every((id) => {
             const block = state.getBlock(id);
-            return block && registry[block.widget] && block.widget !== 'page';
+            return (
+                block &&
+                BlockSettingsRegistry[block.widget] &&
+                block.widget !== 'page'
+            );
         });
     };
 
@@ -101,7 +105,8 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                 },
                 designer.selectedBlocks.join(','),
                 designer.selectedBlocks.map(
-                    (id) => registry[state.getBlock(id).widget].icon,
+                    (id) =>
+                        BlockSettingsRegistry[state.getBlock(id).widget].icon,
                 ),
             );
 
@@ -127,7 +132,7 @@ export const SelectedMask = observer((props: SelectedMaskProps) => {
                     return true;
                 },
                 block.id,
-                registry[block.widget].icon,
+                BlockSettingsRegistry[block.widget].icon,
             );
 
             // Clear the hovered block

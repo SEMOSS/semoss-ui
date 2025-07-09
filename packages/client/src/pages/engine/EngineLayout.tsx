@@ -40,7 +40,6 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 
-
 const StyledContent = styled('div')(({ theme }) => ({
     width: '100%',
     padding: theme.spacing(2),
