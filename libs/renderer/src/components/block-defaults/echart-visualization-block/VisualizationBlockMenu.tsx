@@ -85,7 +85,7 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
     const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
-    const [selectedTab, setSelectedTab] = useState("Tools");
+    const [selectedTab, setSelectedTab] = useState("Data");
     const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
     const [forceRender, setForceRender] = useState(false);
     function updateFrame() {}

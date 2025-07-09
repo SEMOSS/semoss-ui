@@ -48,6 +48,10 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 200);
+
     /**
      * Upload a file to the server
      * @param file - file to upload to the server
@@ -92,6 +96,8 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             } else {
                 setData("value", fileLocations[0]);
             }
+
+            debouncedCallback();
         } catch (e) {
             console.error(e);
         } finally {
@@ -99,10 +105,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             setData("loading", false);
         }
     };
-
-    const debouncedCallback = debounced(() => {
-        listeners.onChange();
-    }, 200);
 
     return (
         <StyledTextField
@@ -132,7 +134,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
 
                 // upload the files
                 upload(Array.from(files));
-                debouncedCallback();
             }}
             {...attrs}
         />

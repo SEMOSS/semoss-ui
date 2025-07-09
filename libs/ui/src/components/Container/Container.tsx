@@ -2,6 +2,8 @@ import { ReactNode } from "react";
 import { Container as MuiContainer, SxProps, Breakpoint } from "@mui/material";
 
 export interface ContainerProps {
+    id?: string;
+
     //** children to be rendered */
     children?: ReactNode;
 
