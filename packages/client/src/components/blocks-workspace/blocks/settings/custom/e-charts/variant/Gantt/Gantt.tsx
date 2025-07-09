@@ -8,6 +8,7 @@ import {
     TableHeadTwo,
     TableRowTwo,
     TableBodyTwo,
+    TableCellTwo,
     styled,
 } from '@semoss/ui';
 import {
@@ -41,7 +42,7 @@ const StyledContainer = styled('div')(() => ({
 //styled span to render series name
 const StyledDataSpan = styled('span')(({}) => ({}));
 //styled table cell to have background color
-const StyledTableCell = styled(TableCell)<{ backgroundColor?: string }>(
+const StyledTableCell = styled(TableCellTwo)<{ backgroundColor?: string }>(
     ({ backgroundColor }) => ({
         backgroundColor: backgroundColor ?? '#fff',
         border: '1px solid #e6e6e6',

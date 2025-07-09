@@ -1,21 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import { computed } from "mobx";
-
-import { BlockComponent } from "../../../../../store";
-import { EchartVisualizationBlockDef } from "../..";
-import { CustomContextMenu } from "./CustomContextMenu";
-import { PathValue } from "../../../../../types";
-import { getValueByPath } from "../../../../../utility";
-import {
-    useBlock,
-    useFrame,
-    useBlocks,
-    useBlockSettings,
-} from "../../../../../hooks";
 import { EChartsOption } from "echarts";
+
+import { styled } from "@semoss/ui";
+
+import { useFrame, useBlockSettings } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
+import { EchartVisualizationBlockDef } from "../..";
+
+import { CustomContextMenu } from "./CustomContextMenu";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -87,7 +82,6 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     const frame = useFrame(data?.frame?.name, {
         selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
-
 
     /**
      * @description Trying out different approach for TrendLine, work in progress

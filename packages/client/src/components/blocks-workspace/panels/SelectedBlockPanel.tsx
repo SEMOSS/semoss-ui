@@ -21,7 +21,6 @@ import {
 import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
 
 import { BlockSettingsRegistry } from '../blocks';
-
 import { useDesigner } from '@/hooks';
 import { SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';

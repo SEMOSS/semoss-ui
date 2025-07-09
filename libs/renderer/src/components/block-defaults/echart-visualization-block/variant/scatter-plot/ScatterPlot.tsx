@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import EChartsReact from "echarts-for-react";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
+import { EChartsOption } from "echarts";
+
+import { styled } from "@semoss/ui";
 
 import { useBlockSettings, useFrame } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
+
 import { getSelector } from "./ScatterPlotSelector";
 import { processData } from "./ScatterPlotProcessData";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
-import { EChartsOption } from "echarts";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",

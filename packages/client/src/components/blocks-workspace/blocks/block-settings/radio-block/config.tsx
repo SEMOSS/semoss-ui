@@ -8,7 +8,7 @@ import {
     Stack,
     Button,
     IconButton,
-    Box,
+    BoxTwo,
     Typography,
     TextField,
 } from '@semoss/ui';
@@ -127,30 +127,30 @@ const OptionRow = ({
     onChange?: (field: 'label' | 'value', value: string) => void;
     onDelete?: () => void;
 }) => (
-    <Box sx={{ width: '100%', mb: 2 }}>
+    <BoxTwo sx={{ width: '100%', mb: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center">
-            <Box flex={1}>
+            <BoxTwo flex={1}>
                 <TextField
                     size="small"
                     value={label}
                     onChange={(e) => onChange?.('label', e.target.value)}
                     fullWidth
                 />
-            </Box>
-            <Box flex={1}>
+            </BoxTwo>
+            <BoxTwo flex={1}>
                 <TextField
                     size="small"
                     value={value}
                     onChange={(e) => onChange?.('value', e.target.value)}
                     fullWidth
                 />
-            </Box>
+            </BoxTwo>
 
             <IconButton onClick={onDelete} size="small">
                 <CloseIcon />
             </IconButton>
         </Stack>
-    </Box>
+    </BoxTwo>
 );
 
 export const config: BlockSettingsConfig = {
@@ -309,27 +309,27 @@ export const config: BlockSettingsConfig = {
                         };
                         // Find the current option object for the selected value
                         return (
-                            <Box sx={{ width: '100%' }}>
+                            <BoxTwo sx={{ width: '100%' }}>
                                 {/* Headers */}
-                                <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
-                                    <Box flex={1}>
+                                <BoxTwo sx={{ mb: 2, display: 'flex', gap: 2 }}>
+                                    <BoxTwo flex={1}>
                                         <Typography
                                             variant="caption"
                                             fontWeight="medium"
                                         >
                                             Label
                                         </Typography>
-                                    </Box>
-                                    <Box flex={1}>
+                                    </BoxTwo>
+                                    <BoxTwo flex={1}>
                                         <Typography
                                             variant="caption"
                                             fontWeight="medium"
                                         >
                                             Value
                                         </Typography>
-                                    </Box>
-                                    <Box width={40} />
-                                </Box>
+                                    </BoxTwo>
+                                    <BoxTwo width={40} />
+                                </BoxTwo>
 
                                 {/* Options */}
                                 {configOptions.map((option) => (
@@ -364,7 +364,7 @@ export const config: BlockSettingsConfig = {
 
                                 {/* Current Value Selection */}
                                 <BaseSettingSection label="Selected Value">
-                                    <Autocomplete
+                                    <AutocompleteTwo
                                         value={
                                             configOptions.find(
                                                 (opt) =>
@@ -400,7 +400,7 @@ export const config: BlockSettingsConfig = {
                                         fullWidth
                                     />
                                 </BaseSettingSection>
-                            </Box>
+                            </BoxTwo>
                         );
                     },
                 },

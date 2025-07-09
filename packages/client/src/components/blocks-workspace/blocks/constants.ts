@@ -1,8 +1,7 @@
 /* eslint-disable prettier/prettier */
 import * as Icons from "@mui/icons-material";
-import { SvgIconProps } from "@semoss/ui";
 
-export const iconMap: { [key: string]: React.ComponentType<SvgIconProps> } = {
+export const iconMap = {
     "Icon": Icons.InsertEmoticonOutlined,
     "Face": Icons.Face,
     "Home": Icons.HomeOutlined,

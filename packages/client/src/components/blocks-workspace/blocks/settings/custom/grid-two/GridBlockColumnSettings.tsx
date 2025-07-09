@@ -232,7 +232,7 @@ const SortableItems = ({
     };
 
     return (
-        <Box
+        <BoxTwo
             key={`action-${id}`}
             ref={setNodeRef}
             {...attributes}
@@ -240,6 +240,6 @@ const SortableItems = ({
             sx={style}
         >
             {children}
-        </Box>
+        </BoxTwo>
     );
 };

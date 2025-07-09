@@ -1,4 +1,4 @@
-import { TypeLlmConfig, TypeLlmComparisonForm } from "../../../types";
+import { TypeLlmConfig, TypeLlmComparisonForm } from '@semoss/renderer';
 
 /**
  * METHODS ==================================================================
@@ -31,7 +31,7 @@ export const modelEngineOutput = (
 // Generates a Unique ID/Name for a variant when created.
 export const generateVariantName = (currNames: string[]): string | null => {
     const modelled = currNames
-        .filter((name) => name.toLowerCase() !== "default")
+        .filter((name) => name.toLowerCase() !== 'default')
         .map((name) => name.toLowerCase())
         .sort();
 
@@ -64,10 +64,10 @@ export const emptyModel: TypeLlmConfig = {
 
 export const LlmComparisonFormDefaultValues: TypeLlmComparisonForm = {
     variants: {},
-    designerView: "allVariants",
+    designerView: 'allVariants',
     editorVariantName: null,
     editorVariant: null,
     showModelsInResponse: true,
-    orderType: "default",
+    orderType: 'default',
     sampleSize: 100,
 };

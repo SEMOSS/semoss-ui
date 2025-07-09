@@ -5,15 +5,10 @@ import { Autocomplete } from "@mui/material";
 import { TextField } from "@semoss/ui";
 
 import { BlockConfig, BlockDef, Block } from "../../../store";
-import { InputSettings } from "../../block-settings";
-import { buildListener, buildShowField } from "../block-defaults.shared";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { ModalBlockDef, ModalBlock } from "./ModalBlock";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { BaseSettingSection } from "../../block-settings/BaseSettingSection";
 import { useBlockSettings } from "../../../hooks";
 import { Paths, PathValue } from "../../../types";
-import { QueryInputSettings } from "../../block-settings";
 
 // Size options for both min and max width
 const WIDTH_OPTIONS = [
@@ -109,100 +104,4 @@ export const config: BlockConfig<ModalBlockDef> = {
         footer: [], // New slot for footer content
     },
     render: ModalBlock,
-    icon: Schema,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                {
-                    description: "Design Mode",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Design Mode"
-                            path="designMode"
-                            description="Enable to edit modal content"
-                        />
-                    ),
-                },
-                {
-                    description: "Title",
-                    render: ({ id }) => (
-                        <InputSettings
-                            id={id}
-                            label="Modal Title"
-                            path="title"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "Conditional",
-            children: [
-                ...buildShowField(),
-                {
-                    description: "Open",
-                    render: ({ id }) => (
-                        <QueryInputSettings
-                            id={id}
-                            label="Open Modal"
-                            path="open"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-        {
-            name: "On Close",
-            children: [...buildListener("onClose")],
-        },
-    ],
-    styleMenu: [
-        {
-            name: "Dimensions",
-            children: [
-                {
-                    description: "Full Width",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Full Width"
-                            path="fullWidth"
-                        />
-                    ),
-                },
-                {
-                    description: "Min Width",
-                    render: ({ id }) => (
-                        <BaseSettingSection label="Min Width">
-                            <SettingAutocomplete
-                                id={id}
-                                path="minWidth"
-                                options={WIDTH_OPTIONS}
-                                label="Min Width"
-                            />
-                        </BaseSettingSection>
-                    ),
-                },
-                {
-                    description: "Max Width",
-                    render: ({ id }) => (
-                        <BaseSettingSection label="Max Width">
-                            <SettingAutocomplete
-                                id={id}
-                                path="maxWidth"
-                                options={WIDTH_OPTIONS}
-                                label="Max Width"
-                            />
-                        </BaseSettingSection>
-                    ),
-                },
-            ],
-        },
-    ],
 };

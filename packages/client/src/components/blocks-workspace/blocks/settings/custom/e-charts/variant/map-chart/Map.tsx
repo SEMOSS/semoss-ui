@@ -15,12 +15,6 @@ import { processData } from './MapChartProcessData';
 import { formatdatapoints } from './MapChartTooltipData';
 import { VizBlockContextMenu } from '../../VizBlockContextMenu';
 
-const StyledChartContainer = styled('div')(() => ({
-    width: 'fit-content',
-    minWidth: '50px',
-    minHeight: '50px',
-}));
-
 const StyledNoDataContainer = styled('div', {
     shouldForwardProp: (prop) => prop !== 'error',
 })<{ error?: boolean }>(({ error = false, theme }) => ({
@@ -38,6 +32,7 @@ export interface EChartColumns {
 export interface EchartVisualizationBlockDef {
     widget: 'e-chart';
     data: {
+        // eslint-disable-next-line @typescript-eslint/ban-types
         option: {};
         frame: {
             name: string;
@@ -51,6 +46,7 @@ export interface EchartVisualizationBlockDef {
             hideExclude: boolean;
         };
     };
+    // eslint-disable-next-line @typescript-eslint/ban-types
     listeners: {};
     slots: never;
 }

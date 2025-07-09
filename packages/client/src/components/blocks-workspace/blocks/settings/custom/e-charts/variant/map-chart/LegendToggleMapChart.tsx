@@ -7,8 +7,6 @@ import {
     PathValue,
     BlockDef,
     useBlockSettings,
-    EchartVisualizationBlockDef,
-    EchartVisualizationBlockConfig,
     getValueByPath,
     Block,
     Paths,

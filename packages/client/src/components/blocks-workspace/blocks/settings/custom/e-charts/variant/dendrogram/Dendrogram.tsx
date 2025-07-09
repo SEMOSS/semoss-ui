@@ -10,6 +10,7 @@ import {
     useBlockSettings,
     getValueByPath,
     EchartVisualizationBlockDef,
+    useFrame,
 } from '@semoss/renderer';
 
 import { VizBlockContextMenu } from '../../VizBlockContextMenu';
@@ -171,26 +172,26 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         selector: selector,
     });
     function getSelectorData(header) {
-        let headerDataList =
+        const headerDataList =
             data.columns.find((item) => item.name == header)?.selector || '';
         return headerDataList;
     }
     function getColorData(currentIndex) {
-        let colorList = parsedJson?.color || [];
+        const colorList = parsedJson?.color || [];
         return colorList[currentIndex % colorList.length] || '#b0c4de';
     }
     const dataOption = useMemo(() => {
         let option = JSON.parse(computedValue);
 
-        let seriesIndex = option['series'].findIndex(
+        const seriesIndex = option['series'].findIndex(
             (item) => item.type === 'tree' && item.data.length,
         );
-        let dataColumns =
+        const dataColumns =
             data.columns?.find((item) => item.hasOwnProperty('isFacet')) || {};
         if (seriesIndex > -1) {
-            let data = option['series'][seriesIndex]['data'];
+            const data = option['series'][seriesIndex]['data'];
             // let updatedDataListres = getDataValuesUpdate(0,frame.data.headers.length, [{name: 'Root', children: [], childrenIndex: 0, itemStyle: {color: getColorData(0)}}], -1);
-            let updatedDataListresLoop = [
+            const updatedDataListresLoop = [
                 {
                     name: 'Root',
                     children: [],
@@ -238,9 +239,9 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 },
             };
         }
-        let legendData = ['Root', ...frame.data.headers];
+        const legendData = ['Root', ...frame.data.headers];
         if (option['legend']?.['show']) {
-            let legendSeries = legendData.map((item, index) => {
+            const legendSeries = legendData.map((item, index) => {
                 return {
                     name: item,
                     type: 'tree',

@@ -8,6 +8,8 @@ import {
     useBlockSettings,
     EchartVisualizationBlockDef,
     getValueByPath,
+    useFrameHeaders,
+    useBlocksPixel
 } from '@semoss/renderer';
 
 interface GanttFrameSectionProps {

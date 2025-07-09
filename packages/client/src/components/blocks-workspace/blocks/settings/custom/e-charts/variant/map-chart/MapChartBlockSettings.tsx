@@ -20,12 +20,10 @@ import {
     useFrameHeaders,
     Paths,
     Block,
+    GridBlockColumn,
 } from '@semoss/renderer';
 
 import { BaseSettingSection } from '../../../../';
-
-import { GridBlockColumn } from '../../../grid-block/grid-block.types';
-
 interface MapChartBlockSettingsProps<D extends BlockDef = BlockDef> {
     /** Id of the block */
     id: string;

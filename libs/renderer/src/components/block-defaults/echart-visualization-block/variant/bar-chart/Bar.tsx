@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
-import * as echarts from "echarts/core";
 import EChartsReact from "echarts-for-react";
+import { EChartsOption } from "echarts";
+
+import { styled } from "@semoss/ui";
+
+import { useBlockSettings, useFrame } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 import { ChartContextMenu } from "./ChartContextMenu";
-import { getValueByPath } from "../../../../../utility";
-import { useBlockSettings, useFrame } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { EChartsOption } from "echarts";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
