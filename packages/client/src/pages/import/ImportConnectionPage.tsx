@@ -6,6 +6,19 @@ import { useRootStore } from '@/hooks';
 
 import { useStepper } from '@/hooks';
 
+interface VectorDatabaseFields {
+    NAME: string;
+    VECTOR_TYPE: string;
+    EMBEDDER_ENGINE_ID: string;
+    INDEX_CLASSES: string;
+    CHUNKING_STRATEGY: string;
+    CONTENT_LENGTH: number;
+    CONTENT_OVERLAP: number;
+    KEEP_INPUT_OUTPUT: string;
+    DISTANCE_METHOD: string;
+    SPLITTING_OPTIONS?: string;
+}
+
 const StyledBox = styled(Box)(({ theme }) => ({
     // boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
     width: '100%',
@@ -35,7 +48,7 @@ export const ImportConnectionPage = () => {
     const formSubmit = async (values: {
         type: 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD';
         name: string;
-        fields: unknown[];
+        fields: VectorDatabaseFields;
         secondaryFields?: unknown[];
     }) => {
         // let pixel = ''; // 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD'
@@ -120,10 +133,11 @@ export const ImportConnectionPage = () => {
             if (values.fields['TAGS']) {
                 meta['tag'] = values.fields['TAGS'];
             }
+            const { SPLITTING_OPTIONS, ...filteredFields } = values.fields;
             const pixel = `
                 CreateVectorDatabaseEngine ( 
                     database=["${values.name}"], 
-                    conDetails=[${JSON.stringify(values.fields)}]
+                    conDetails=[${JSON.stringify(filteredFields)}]
                 ) ;
             `;
 
@@ -153,7 +167,8 @@ export const ImportConnectionPage = () => {
 
                     const secondaryPixel = `CreateEmbeddingsFromDocuments(
                         engine="${output.database_id}", 
-                        filePaths=["${upload[0].fileLocation}"]
+                        filePaths=["${upload[0].fileLocation}"],
+                        splitOptions="${SPLITTING_OPTIONS}"
                     );`;
 
                     monolithStore.runQuery(secondaryPixel).then((response) => {

@@ -13,6 +13,10 @@ import {
     Table,
     Typography,
     useNotification,
+    Stack,
+    Select,
+    MenuItem,
+    Box,
 } from '@semoss/ui';
 import { Add, Delete, SimCardDownload } from '@mui/icons-material';
 import { usePixel, useRootStore } from '@/hooks';
@@ -56,6 +60,12 @@ const StyledIcon = styled(Add)(({ theme }) => ({
 }));
 
 const StyledFileTable = styled(Table)({ backgroundColor: 'white' });
+
+const splittingOptions = [
+    { label: 'Tokens', value: 'Tokens' },
+    { label: 'Recursive', value: 'Recursive' },
+    { label: 'Semantic', value: 'Semantic' },
+];
 
 interface FileTableProps {
     /**
@@ -121,6 +131,8 @@ export const FileTable = (props: FileTableProps) => {
             label: 'Size',
         },
     ];
+
+    const [selectedSplitOptions, setSelectedSplitOptions] = useState('Tokens');
 
     //grabbing ID out of props
     const { id } = props;
@@ -227,7 +239,7 @@ export const FileTable = (props: FileTableProps) => {
 
             // Embedding the File
             const response = await monolithStore.runQuery(`
-                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
+                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}], splitOptions="${selectedSplitOptions}")
             `);
 
             const { output, operationType } = response.pixelReturn[0];
@@ -622,23 +634,55 @@ export const FileTable = (props: FileTableProps) => {
                             rules={{}}
                             render={({ field }) => {
                                 return (
-                                    <FileDropzone
-                                        multiple={true}
-                                        value={field.value}
-                                        extensions={[
-                                            '.pdf',
-                                            '.csv',
-                                            '.txt',
-                                            '.doc',
-                                            '.ppt',
-                                            '.docx',
-                                            '.pptx',
-                                        ]}
-                                        disabled={isLoading}
-                                        onChange={(newValues) => {
-                                            field.onChange(newValues);
-                                        }}
-                                    />
+                                    <Stack>
+                                        <Box>
+                                            <Select
+                                                sx={{
+                                                    mb: 2,
+                                                    '& .MuiInputBase-input': {
+                                                        padding: '15px',
+                                                    },
+                                                }}
+                                                size="small"
+                                                fullWidth
+                                                label="Select a Split Options"
+                                                value={selectedSplitOptions}
+                                                onChange={(e) =>
+                                                    setSelectedSplitOptions(
+                                                        e.target.value,
+                                                    )
+                                                }
+                                            >
+                                                {splittingOptions.map(
+                                                    (option) => (
+                                                        <MenuItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {option.label}
+                                                        </MenuItem>
+                                                    ),
+                                                )}
+                                            </Select>
+                                        </Box>
+                                        <FileDropzone
+                                            multiple={true}
+                                            value={field.value}
+                                            extensions={[
+                                                '.pdf',
+                                                '.csv',
+                                                '.txt',
+                                                '.doc',
+                                                '.ppt',
+                                                '.docx',
+                                                '.pptx',
+                                            ]}
+                                            disabled={isLoading}
+                                            onChange={(newValues) => {
+                                                field.onChange(newValues);
+                                            }}
+                                        />
+                                    </Stack>
                                 );
                             }}
                         />
