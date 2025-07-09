@@ -574,7 +574,7 @@ export class StateStore {
     parseVariable = (
         expression: string,
         id?: string,
-        _depth: number = 0,
+        _depth = 0,
         _seen: Set<string> = new Set(),
     ): unknown => {
         if (_depth > 10) return expression;
@@ -656,12 +656,9 @@ export class StateStore {
             .split(" ")
             .filter((item) => item?.length > 0)
             .forEach((path: string) => {
-                // const isArray = Array.isArray(path);
-                // const pointer = isArray ? path[0] : null;
-
+                const pointer = Array.isArray(path) ? path[0] : null;
                 // Special syntax to parse by cell order
                 const isNumber = !isNaN(parseFloat(path[1]));
-
                 if (isNumber) {
                     let q;
 
@@ -707,12 +704,21 @@ export class StateStore {
                     }
                 }
 
-                const variable = this._store.variables?.[path];
+                let variable = this._store.variables?.[path];
+                let fullPath;
+                if (
+                    !variable &&
+                    typeof path === "string" &&
+                    path.trim().match(/\./)
+                ) {
+                    fullPath = path.split(".");
+                    variable = this._store.variables?.[fullPath[0]];
+                }
                 if (variable) {
                     const value = this.getVariable(
                         variable.to,
                         variable.type,
-                        [path],
+                        fullPath ? fullPath : [path],
                         variable.cellId,
                         variable.type !== "cell" && variable.value
                             ? variable.value
@@ -722,19 +728,11 @@ export class StateStore {
                     // TODO: Check this, protects for false values
                     // (query.isLoading tied to a block.label **bad use-case)
                     if (value !== undefined && value !== null) {
-                        // RECURSIVE: If value is another {{var}}, resolve again
-                        if (
-                            typeof value === "string" &&
-                            value.trim().match(/^{{.*}}$/)
-                        ) {
-                            return this.parseVariable(
-                                value,
-                                id,
-                                _depth + 1,
-                                _seen,
-                            );
-                        }
-                        combinedValues += ` ${value}`;
+                        const newValue =
+                            typeof value === "object"
+                                ? JSON.stringify(value)
+                                : value;
+                        combinedValues += ` ${newValue ?? ""}`;
                     }
                 } else {
                     combinedValues += ` ${path}`;
