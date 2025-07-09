@@ -36,4 +36,6 @@ export const ACTIONS_DISPLAY = {
     [ActionMessages.RUN_CELL]: "Run Cell",
     [ActionMessages.DISPATCH_EVENT]: "Dispatch Event",
     [ActionMessages.DISPATCH_OUTPUTS_EVENT]: "Dispatch App Outputs",
+    [ActionMessages.COPY_TO_CLIPBOARD]: "Copy to Clipboard",
+    [ActionMessages.DISPATCH_OPEN_EVENT]: "Navigate",
 };

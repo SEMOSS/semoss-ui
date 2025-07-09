@@ -19,7 +19,7 @@ import { Ghost } from './Ghost';
 import { DeleteDuplicateMask } from './DeleteDuplicateMask';
 import { BlockSettingsMask } from './BlockSettingsMask';
 
-import { useBlocks } from '@semoss/renderer';
+import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     position: 'relative',
@@ -271,6 +271,53 @@ export const Screen = observer((props: ScreenProps) => {
     const isHoveredOverSelectedBlock = useMemo(() => {
         return designer.hovered == designer.selected;
     }, [designer.hovered, designer.selected, handleMouseOver]);
+
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                (event.ctrlKey || event.metaKey) &&
+                event.shiftKey &&
+                (event.key === 'x' || event.key === 'X')
+            ) {
+                if (designer.selected) {
+                    // Prevent deletion if id contains 'page'
+                    if (designer.selected.includes('page')) {
+                        return;
+                    }
+                    // Delete the selected block
+                    state.dispatch({
+                        message: ActionMessages.REMOVE_BLOCK,
+                        payload: {
+                            id: designer.selected,
+                            keep: false,
+                        },
+                    });
+                    designer.setSelected('');
+                } else if (designer.selectedBlocks.length > 0) {
+                    // Delete all multiselected blocks
+                    designer.selectedBlocks.forEach((id: string) => {
+                        if (!id.includes('page')) {
+                            state.dispatch({
+                                message: ActionMessages.REMOVE_BLOCK,
+                                payload: {
+                                    id: id,
+                                    keep: false,
+                                },
+                            });
+                        }
+                    });
+                    designer.addBlockToSelected('clear');
+                }
+                event.preventDefault();
+                event.stopPropagation();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [designer]);
 
     return (
         <StyledContainer ref={eleRef}>

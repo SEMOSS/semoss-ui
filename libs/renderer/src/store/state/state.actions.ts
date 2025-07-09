@@ -37,6 +37,8 @@ export enum ActionMessages {
    DISPATCH_EVENT = "DISPATCH_EVENT",
    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
    RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+   COPY_TO_CLIPBOARD = "COPY_TO_CLIPBOARD",
+   DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 }
 
 export type Actions =
@@ -59,11 +61,13 @@ export type Actions =
     | RunMarkdownCellAction
     | DispatchEventAction
     | DispatchOutputsEventAction
+    | DispatchOpenEventAction
     | AddVariableAction
     | RenameVariableAction
     | EditVariableAction
     | DeleteVariableAction
-    | SetSheetExecutionOrderAction;
+    | SetSheetExecutionOrderAction
+    | CopyToClipboardAction;
 
 export interface Action {
     message: string;
@@ -80,6 +84,21 @@ export interface SetStateAction extends Action {
 export interface DispatchOutputsEventAction extends Action {
     message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
     payload: {};
+}
+
+export interface CopyToClipboardAction extends Action {
+    message: ActionMessages.COPY_TO_CLIPBOARD;
+    payload: {
+        text: string;
+    };
+}
+
+export interface DispatchOpenEventAction extends Action {
+    message: ActionMessages.DISPATCH_OPEN_EVENT;
+    payload: {
+        destinationType: string;
+        destination: string;
+    };
 }
 
 export interface AddBlockAction extends Action {
