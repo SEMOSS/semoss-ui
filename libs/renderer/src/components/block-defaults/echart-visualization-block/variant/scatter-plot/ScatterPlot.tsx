@@ -9,7 +9,7 @@ import { EChartsOption } from "echarts";
 
 import { styled } from "@semoss/ui";
 
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+import { useFrame, useBlock } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
 
 import { getSelector } from "./ScatterPlotSelector";
@@ -50,7 +50,8 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
+
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

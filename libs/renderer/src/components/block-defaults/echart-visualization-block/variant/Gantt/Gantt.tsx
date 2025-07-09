@@ -12,7 +12,7 @@ import {
     styled,
 } from "@semoss/ui";
 
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
@@ -51,8 +51,8 @@ interface GanttProps {
 //Gantt chart main component
 export const Gantt = observer(
     <D extends BlockDef = BlockDef>({ id, updateChart }: GanttProps) => {
-        const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id); //Data for the current block
+        const { data } = useBlock<EchartVisualizationBlockDef>(id);
+
         //computed value to hold the most recent data
         const computedValue = useMemo(() => {
             return computed(() => {

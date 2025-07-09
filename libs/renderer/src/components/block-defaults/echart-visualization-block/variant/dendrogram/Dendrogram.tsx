@@ -7,7 +7,7 @@ import { EChartsOption } from "echarts";
 import { styled } from "@semoss/ui";
 
 import { getValueByPath } from "../../../../../utility";
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+import { useBlock, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
@@ -48,7 +48,8 @@ interface DendrogramProps {
 }
 
 export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number; //x axis position for the click/brush event
         mouseY: number; //y axis position for the click/brush event

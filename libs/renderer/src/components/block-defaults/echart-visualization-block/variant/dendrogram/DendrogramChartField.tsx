@@ -6,7 +6,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 import { IconButton, MenuItem, Select, styled } from "@semoss/ui";
 
-import { useBlockSettings } from "../../../../../hooks";
+import { useBlock } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { getValueByPath } from "@/utility";
@@ -29,8 +29,8 @@ const StyledSection = styled("div")<{ justifyContent: string }>(
 
 export const DendrogramChartField = observer(
     <D extends BlockDef = BlockDef>({ id, facetListData }) => {
-        const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id);
+        const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+
         const [dropDownValue, setDropDownValue] = useState("");
         const [facetList, setFacetList] = useState<string[]>([]);
         const [navigationDetails, setNavigationDetails] = useState({

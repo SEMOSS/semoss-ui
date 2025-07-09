@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { observer } from "mobx-react-lite";
@@ -6,7 +7,7 @@ import { EChartsOption } from "echarts";
 
 import { styled } from "@semoss/ui";
 
-import { useFrame, useBlockSettings } from "../../../../../hooks";
+import { useFrame, useBlock } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../..";
 
@@ -37,7 +38,7 @@ interface PieProps {
 }
 
 export const Pie = observer(({ id, updateJson }: PieProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

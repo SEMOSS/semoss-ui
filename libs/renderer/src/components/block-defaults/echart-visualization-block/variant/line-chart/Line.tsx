@@ -5,7 +5,7 @@ import ReactECharts, { EChartsOption } from "echarts-for-react";
 
 import { styled } from "@semoss/ui";
 
-import { useFrame, useBlockSettings } from "../../../../../hooks";
+import { useFrame, useBlock } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { CustomContextMenu } from "./CustomContextMenu";
@@ -26,7 +26,7 @@ interface LineProps {
     updateJson: (data: any, path: any) => void;
 }
 export const Line = observer(({ id, updateJson }: LineProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;

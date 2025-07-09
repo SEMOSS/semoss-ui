@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 
-import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
+import { useBlock, useBlocks } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { PathValue } from "../../../types";
 
@@ -87,9 +87,8 @@ export interface EchartVisualizationBlockDef {
 
 export const VisualizationBlock: BlockComponent = observer(
     <D extends BlockDef = BlockDef>({ id }) => {
-        const { data, attrs, listeners } =
+        const { data, setData, attrs, listeners } =
             useBlock<EchartVisualizationBlockDef>(id);
-        const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         const { state } = useBlocks();
 
         const elementRef = useRef<HTMLDivElement>(null);
