@@ -1,13 +1,11 @@
-import { styled, SxProps } from "@mui/material";
+import { styled, SxProps, useTheme } from "@mui/material";
 import { useEffect, useRef, useState } from "react";
-import {
-    getSingletonHighlighterCore,
-    createHighlighterCore,
-} from "@shikijs/core";
+import { createHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 
 //TODO: Dynamic import
-import shikijsTheme from "@shikijs/themes/github-light";
+import minLight from "@shikijs/themes/min-light";
+import gitHubDark from "@shikijs/themes/github-dark";
 
 import shikiLangJSX from "@shikijs/langs/jsx";
 import shikiLangTSX from "@shikijs/langs/tsx";
@@ -18,31 +16,11 @@ import shikiLangCSS from "@shikijs/langs/css";
 import shikiLangPython from "@shikijs/langs/python";
 import shikiLangJSON from "@shikijs/langs/json";
 import shikiLangJava from "@shikijs/langs/java";
-import gitHubDark from "@shikijs/themes/github-dark";
-import minLight from "@shikijs/themes/min-light";
-import { useTheme } from "@mui/material";
 
 const StyledCode = styled("code")(({ theme }) => ({
     ...theme.typography.body2,
     background: theme.palette.background.default,
     width: "100%",
-    "&.code-wrap-section pre": {
-        display: "flex",
-        position: "relative",
-        overflowX: "auto",
-        fontFamily: "monospace",
-        flexDirection: "row",
-        width: "inherit",
-        paddingLeft: "10px",
-        code: {
-            display: "flex",
-            width: "100%",
-            flexDirection: "column",
-            justifyContent: "flex-start",
-            alignItems: "baseline",
-            gap: "10px",
-        },
-    },
 }));
 
 export interface CodeProps {
@@ -65,7 +43,6 @@ export interface CodeProps {
         | "java"
         | "txt"
         | null;
-    theme?: string;
 
     /** custom style object */
     sx?: SxProps;
@@ -74,14 +51,13 @@ export interface CodeProps {
 export const Code: React.FC<CodeProps> = ({
     code = "",
     language = null,
-    theme = "light",
     sx,
 }) => {
     const { palette } = useTheme();
     // store the highlighted coe
     const [highlightedHtml, setHighlightedHTML] = useState<string>("");
     const highlighterRef = useRef(null);
-    const highLighterHtmlRef = useRef<HTMLDivElement>(null);
+
     // when it is a mounted, try to highlight
     useEffect(() => {
         let isMounted = true;
@@ -109,7 +85,7 @@ export const Code: React.FC<CodeProps> = ({
             });
 
             const html = await highlighterRef.current.codeToHtml(code, {
-                theme: palette.mode === "dark" ? "github-dark" : "min-light",
+                theme: palette.mode === "light" ? "min-light" : "github-dark",
                 lang: language,
                 structure: "inline",
             });
@@ -124,7 +100,7 @@ export const Code: React.FC<CodeProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [code, language]);
+    }, [code, palette.mode, language]);
 
     if (!highlightedHtml) {
         return <StyledCode sx={sx}>{code}</StyledCode>;
@@ -134,7 +110,6 @@ export const Code: React.FC<CodeProps> = ({
         <StyledCode
             sx={sx}
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
-            className="code-wrap-section"
         />
     );
 };
