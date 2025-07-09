@@ -324,9 +324,6 @@ export const MembersTable = (props: MembersTableProps) => {
               refresh: () => null,
           };
 
-    // TODO: NEEDS FIX ^
-    console.log('userDetails', userDetails);
-
     const allAuthorsResponse = useAPI(getAllAuthorsApi);
     const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
         [],
