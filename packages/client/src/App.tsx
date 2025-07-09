@@ -135,23 +135,20 @@ export const App = () => {
             if (!document) {
                 return;
             }
-
-            const env = JSON.parse(
-                document.getElementById('semoss-env')?.textContent || '',
-            ) as {
-                MODULE: string;
-            };
-
-            // update the enviornment variables with the module
-            if (env) {
-                Env.update({
-                    MODULE: env.MODULE,
-                });
+            const envElement = document.getElementById('semoss-env');
+            const envText = envElement?.textContent || '';
+            if (envText) {
+                const env = JSON.parse(envText) as { MODULE: string };
+                // update the environment variables with the module
+                if (env) {
+                    Env.update({
+                        MODULE: env.MODULE,
+                    });
+                }
             }
         } catch (e) {
             console.error(e);
         }
-
         // intialize it
         _store.configStore.initialize().then(() => {
             // set as enabled

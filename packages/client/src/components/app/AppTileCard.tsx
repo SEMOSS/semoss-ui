@@ -869,25 +869,28 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 </StyledFooter>
                             ) : (
                                 <StyledFooter>
-                                    <Link
-                                        href={href}
-                                        rel="noopener noreferrer"
-                                        color="inherit"
-                                        underline="none"
-                                        target="_blank"
+                                    <StyledOpenButton
+                                        onClick={(e) => {
+                                            e.preventDefault(); // Prevent <Link> navigation
+                                            e.stopPropagation(); // Prevent bubbling to <Link>
+
+                                            if (href) {
+                                                window.open(
+                                                    href,
+                                                    '_blank',
+                                                    'noopener,noreferrer',
+                                                );
+                                            }
+                                        }}
                                     >
-                                        <StyledOpenButton>
-                                            <StyledFooterDiv>
-                                                <ButtonName>
-                                                    Open App
-                                                </ButtonName>
-                                                <OpenInNewOutlined
-                                                    fontSize="small"
-                                                    style={{ color: '#fff' }}
-                                                />
-                                            </StyledFooterDiv>
-                                        </StyledOpenButton>
-                                    </Link>
+                                        <StyledFooterDiv>
+                                            <ButtonName>Open App</ButtonName>
+                                            <OpenInNewOutlined
+                                                fontSize="small"
+                                                style={{ color: '#fff' }}
+                                            />
+                                        </StyledFooterDiv>
+                                    </StyledOpenButton>
                                 </StyledFooter>
                             )}
                             {app.project_created_by !== 'SYSTEM' ? (
