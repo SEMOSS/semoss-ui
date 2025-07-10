@@ -1,19 +1,6 @@
 import { BlockConfig } from "../../../store";
-
-import {
-    buildLayoutSection,
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildBorderSection,
-    buildPositionSection,
-    buildListener,
-    buildShowField,
-} from "../block-defaults.shared";
-
 import { FlipCardBlockDef, FlipCardBlock } from "./FlipCardBlock";
-import { HighlightAlt } from "@mui/icons-material";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import { SwitchSettings, ColorSettings } from "../../block-settings/shared";
 
 // TODO:
 // -------------------------------------------------------------
@@ -50,63 +37,4 @@ export const config: BlockConfig<FlipCardBlockDef> = {
         back: [],
     },
     render: FlipCardBlock,
-    icon: HighlightAlt,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                {
-                    description: "Flip back",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Flip back"
-                            path="isFlipped"
-                            description="Enable to flip back the card"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-    ],
-    styleMenu: [
-        buildLayoutSection(),
-        buildPositionSection(),
-        buildSpacingSection(),
-        buildDimensionsSection(),
-        buildBorderSection(),
-        {
-            name: "Color",
-            children: [
-                {
-                    description: "Front Background Color",
-                    render: ({ id }) => (
-                        <ColorSettings
-                            id={id}
-                            label="Front Background Color"
-                            path="frontBgColor"
-                        />
-                    ),
-                },
-                {
-                    description: "Back Background Color",
-                    render: ({ id }) => (
-                        <ColorSettings
-                            id={id}
-                            label="Back Background Color"
-                            path="backBgColor"
-                        />
-                    ),
-                },
-            ],
-        },
-    ],
 };
