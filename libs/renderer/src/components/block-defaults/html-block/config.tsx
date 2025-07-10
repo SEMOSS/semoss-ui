@@ -1,10 +1,6 @@
 import { BlockConfig } from "../../../store";
 import { HTMLBlockDef, HTMLBlock } from "./HTMLBlock";
-import { Code } from "@mui/icons-material";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-// no longer using this it can be deleted
-// import { CodeEditorInput } from "../../block-settings/shared/CodeEditorInput";
-import { HTMLBlockMenu } from "./HTMLBlockMenu";
 
 // export the config for the block
 export const config: BlockConfig<HTMLBlockDef> = {
@@ -16,6 +12,4 @@ export const config: BlockConfig<HTMLBlockDef> = {
     listeners: {},
     slots: {},
     render: HTMLBlock,
-    icon: Code,
-    menu: HTMLBlockMenu,
 };

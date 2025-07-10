@@ -1,7 +1,7 @@
-import { CSSProperties, useEffect, useState } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
+import { useBlock, useBlocks } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Box, styled, Typography, useNotification } from "@semoss/ui";
 import FilterComponent from "./FilterComponent";
@@ -66,9 +66,8 @@ export interface VisualizationFilterBlockDef
 }
 
 export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, listeners } =
+    const { attrs, data, setData, listeners } =
         useBlock<VisualizationFilterBlockDef>(id);
-    const { setData } = useBlockSettings<VisualizationFilterBlockDef>(id);
     const notification = useNotification();
     const { state } = useBlocks();
     const blocks = state.blocks;

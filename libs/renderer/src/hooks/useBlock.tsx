@@ -8,7 +8,6 @@ import { ActionMessages, Block, BlockDef, ListenerActions } from "../store";
 import { copy } from "../utility";
 import { useBlocks } from "./useBlocks";
 
-
 /**
  * useBlockReturn
  */
@@ -167,7 +166,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
          * @param intercept - Intercept and modify an action
          */
         const dispatchAction = async (
-            actions: {order: ListenerActions[], type: 'sync' | 'async'},
+            actions: { order: ListenerActions[]; type: "sync" | "async" },
             intercept?: (action: ListenerActions) => ListenerActions | null,
         ) => {
             // ignore if static
@@ -188,7 +187,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
                 if (action === null) {
                     return;
                 }
-
                 await state.dispatchEventAction(action, actions.type);
             }
         };

@@ -98,7 +98,6 @@
         "@emotion/react": "^11.11.1",
         "@emotion/styled": "^11.11.0",
         "@mdi/js": "^6.9.96",
-        "@mdi/react": "^1.6.1",
         "@monaco-editor/react": "^4.5.1",
         "@mui/icons-material": "^5.11.16",
         "@mui/material": "^5.13.5",
@@ -118,8 +117,6 @@
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
         "monaco-editor": "^0.45.0",
-        "nanoid": "^5.0.6",
-        "node-sql-parser": "^4.18.0",
         "react": "18.3.1",
         "react-beautiful-dnd": "^13.1.1",
         "react-dom": "18.3.1",
@@ -129,7 +126,8 @@
         "react-vega": "^7.6.0",
         "remark-gfm": "^4.0.0",
         "vega": "^5.27.0",
-        "vega-lite": "^5.16.3"
+        "vega-lite": "^5.16.3",
+        "react-color": "^2.19.3"
     },
     "devDependencies": {
         "@babel/preset-react": "^7.25.9",

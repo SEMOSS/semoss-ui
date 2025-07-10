@@ -1,13 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { Button, styled } from '@semoss/ui';
-
-import { WelcomeModal } from '@/components/welcome';
-
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
-
 import { HelpRounded } from '@mui/icons-material';
+
+import { Button, Menu, styled } from '@semoss/ui';
+
 import { useRootStore } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -41,38 +37,9 @@ export const Help = observer((): JSX.Element => {
         setAnchorEl(null);
     };
 
-    const HELP = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        try {
-            if (theme && theme['THEME_MAP']) {
-                const themeMap = JSON.parse(theme['THEME_MAP'] as string);
-                return {
-                    order: themeMap['helpBannerOrder']
-                        ? themeMap['helpBannerOrder']
-                        : [],
-                    values: themeMap['helpBannerValues']
-                        ? themeMap['helpBannerValues']
-                        : {},
-                };
-            }
-            return {
-                order: [],
-                values: {},
-            };
-        } catch {
-            return {
-                order: [],
-                values: {},
-            };
-        }
-    }, []);
     return (
         <StyledContainer>
             <StyledButton
-                // aria-controls={open ? 'help-menu' : undefined}
-                // aria-haspopup="true"
-                // aria-expanded={open ? 'true' : undefined}
                 id="help-btn"
                 variant="outlined"
                 startIcon={<HelpRounded />}
@@ -83,8 +50,6 @@ export const Help = observer((): JSX.Element => {
                 Help
             </StyledButton>
             <Menu
-                // id="help-menu"
-                // aria-labelledby="help-btn"
                 anchorEl={anchorEl}
                 open={open}
                 onClose={handleHelpClose}
@@ -97,14 +62,15 @@ export const Help = observer((): JSX.Element => {
                     horizontal: 'right',
                 }}
             >
-                {HELP.order.map((key, i) => {
-                    const v = HELP.values[key];
+                {configStore.theme.helpBannerOrder.map((key, i) => {
+                    const v = configStore.theme.helpBannerValues[key];
 
                     if (v) {
                         return (
-                            <MenuItem
+                            <Menu.Item
                                 key={`${key}-${i}`}
                                 disabled={v.disabled ? v.disabled : false}
+                                value={null}
                             >
                                 <span>
                                     <StyledLink
@@ -115,30 +81,10 @@ export const Help = observer((): JSX.Element => {
                                         {v.label}
                                     </StyledLink>
                                 </span>
-                            </MenuItem>
+                            </Menu.Item>
                         );
                     }
                 })}
-                {/* <MenuItem>
-                    <span>
-                        <StyledLink
-                            href="https://workshop.cfg.deloitte.com/docs/category/app-creation-guides"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Tutorials
-                        </StyledLink>
-                    </span>
-                </MenuItem>
-                <MenuItem onClick={handleHelpClose} disabled>
-                    Platform Tour
-                </MenuItem>
-                <MenuItem onClick={handleHelpClose} disabled>
-                    Github
-                </MenuItem>
-                <MenuItem onClick={handleHelpClose} disabled>
-                    Feedback
-                </MenuItem> */}
             </Menu>
         </StyledContainer>
     );
