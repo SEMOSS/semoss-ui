@@ -1,22 +1,7 @@
 import { CSSProperties } from "react";
 import { BlockConfig } from "../../../store";
-import { FileCopyOutlined } from "@mui/icons-material";
-
-import {
-    buildLayoutSection,
-    buildColorSection,
-    buildTypographySection,
-    buildListener,
-} from "../block-defaults.shared";
-
 import { PageBlockDef, PageBlock } from "./PageBlock";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import {
-    BorderSettings,
-    InputSettings,
-    QuerySelectionSettings,
-    SizeSettings,
-} from "../../block-settings";
 
 export const DefaultStyles: CSSProperties = {
     display: "flex",
@@ -44,65 +29,4 @@ export const config: BlockConfig<PageBlockDef> = {
         content: [],
     },
     render: PageBlock,
-    icon: FileCopyOutlined,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                {
-                    description: "Route",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Route" path="route" />
-                    ),
-                },
-                {
-                    description: "Loading",
-                    render: ({ id }) => (
-                        <QuerySelectionSettings
-                            id={id}
-                            label="Loading"
-                            path="loading"
-                            queryPath="isLoading"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "on Page Load",
-            children: [...buildListener("onPageLoad")],
-        },
-    ],
-    styleMenu: [
-        buildLayoutSection(),
-        // root pages don't get margin for spacing
-        {
-            name: "Spacing",
-            children: [
-                {
-                    description: "Padding",
-                    render: ({ id }) => (
-                        <SizeSettings
-                            id={id}
-                            label="Padding"
-                            path="style.padding"
-                        />
-                    ),
-                },
-            ],
-        },
-        buildColorSection(),
-        {
-            name: "Border",
-            children: [
-                {
-                    description: "Border",
-                    render: ({ id }) => (
-                        <BorderSettings id={id} path="style.border" />
-                    ),
-                },
-            ],
-        },
-        buildTypographySection(),
-    ],
 };

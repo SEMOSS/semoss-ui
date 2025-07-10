@@ -1,6 +1,3 @@
-import { PanoramaOutlined } from "@mui/icons-material";
-import { AspectRatio, FitScreen, ImageAspectRatio } from "@mui/icons-material";
-
 import { BlockConfig } from "../../../store";
 import { ImageBlockDef, ImageBlock } from "./ImageBlock";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";

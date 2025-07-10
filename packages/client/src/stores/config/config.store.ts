@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 
 // TODO: Pull from sdk
 import { runPixelTwo } from '../../runPixelTwo';
+import { THEME } from '@/constants';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
 import { ALL_TYPES } from '@/types';
@@ -23,6 +24,8 @@ interface ConfigStoreInterface {
         email: string;
         admin: boolean;
     };
+    /** App Builder mode (local storage, based on userEpoch) */
+    globalSearch: string;
     /** Config information */
     config: {
         databaseMetaKeys: {
@@ -146,6 +149,7 @@ export class ConfigStore {
         authenticated: false,
         insightID: '',
         userEpoch: '',
+        globalSearch: '',
         user: {
             loggedIn: false,
             id: '',
@@ -233,6 +237,62 @@ export class ConfigStore {
      */
     get config() {
         return this._store.config;
+    }
+
+    /**
+     * Get the config
+     */
+    get theme(): {
+        name: string;
+        logo: string;
+        isLogoUrl: boolean;
+        cookiePolicyBannerReact: string;
+        cookiePolicyOrderReact: string[];
+        cookiePoliciesReact: unknown;
+        cookiePolicyModalBodyReact: string;
+        cookiePolicyModalHeaderReact: string;
+        cookiePolicyNoticePage: string;
+        helpBannerOrder: string[];
+        helpBannerValues: unknown;
+        privacyNoticePage: string;
+        termsHeaderReact: string;
+        termsReact: string;
+        materialTheme: unknown;
+    } {
+        const defaultTheme = {
+            name: THEME.name,
+            logo: THEME.logo,
+            isLogoUrl: false,
+            cookiePolicyBannerReact: '',
+            cookiePolicyOrderReact: [],
+            cookiePoliciesReact: {},
+            cookiePolicyModalBodyReact: '',
+            cookiePolicyModalHeaderReact: '',
+            cookiePolicyNoticePage: '',
+            helpBannerOrder: [],
+            helpBannerValues: {},
+            privacyNoticePage: '',
+            termsHeaderReact: '',
+            termsReact: '',
+            materialTheme: {},
+        };
+
+        let customTheme = {};
+        try {
+            if (
+                this._store.config.theme &&
+                this._store.config.theme['THEME_MAP']
+            ) {
+                customTheme = JSON.parse(
+                    this._store.config.theme['THEME_MAP'] as string,
+                );
+            }
+        } catch {}
+
+        return {
+            ...defaultTheme,
+            ...customTheme,
+        };
     }
 
     /**
@@ -420,6 +480,62 @@ export class ConfigStore {
                 this._store.status = 'ERROR';
             });
         }
+    }
+
+    setGlobalSearch(text = '') {
+        runInAction(() => {
+            this._store.globalSearch = text;
+        });
+    }
+
+    /**
+     * Add a recent search to localStorage.
+     * Stores up to 8 items, removes oldest if limit exceeded.
+     * If same id exists, remove it and add new at the end.
+     * @param recentSearch { label: string, id: string, type: string }
+     */
+    setRecentSearch(recentSearch: { label: string; id: string; type: string }) {
+        const key = `recent-searches--${this._store.userEpoch}`;
+        let recent: Array<{ label: string; id: string; type: string }> = [];
+
+        // Get existing searches
+        const item = localStorage.getItem(key);
+        if (item) {
+            try {
+                recent = JSON.parse(item);
+                // Remove if id already exists
+                recent = recent.filter((s) => s.id !== recentSearch.id);
+            } catch {
+                recent = [];
+            }
+        }
+
+        // Add new search at the end
+        recent.push(recentSearch);
+
+        // Keep only last 8
+        if (recent.length > 8) {
+            recent = recent.slice(recent.length - 8);
+        }
+
+        localStorage.setItem(key, JSON.stringify(recent));
+    }
+
+    /**
+     * Get recent searches from localStorage.
+     */
+    getRecentSearches(): Array<{ label: string; id: string; type: string }> {
+        const key = `recent-searches--${this._store.userEpoch}`;
+        const item = localStorage.getItem(key);
+
+        if (item) {
+            try {
+                return JSON.parse(item);
+            } catch {
+                return [];
+            }
+        }
+        return [];
     }
 
     /**
