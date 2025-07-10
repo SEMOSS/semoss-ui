@@ -126,7 +126,8 @@
         "react-vega": "^7.6.0",
         "remark-gfm": "^4.0.0",
         "vega": "^5.27.0",
-        "vega-lite": "^5.16.3"
+        "vega-lite": "^5.16.3",
+        "react-color": "^2.19.3"
     },
     "devDependencies": {
         "@babel/preset-react": "^7.25.9",
