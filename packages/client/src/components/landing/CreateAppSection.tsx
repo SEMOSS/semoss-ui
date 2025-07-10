@@ -1,6 +1,6 @@
 import FileUploadOutlined from '@mui/icons-material/FileUploadOutlined';
 
-import { Typography, Button, Box } from '@semoss/ui';
+import { Typography, Button, Box, styled } from '@semoss/ui';
 
 import Appagent from '../../assets/img/Appagent.svg';
 import Appcode from '../../assets/img/Appcode.svg';
@@ -11,7 +11,7 @@ const navCards = [
         title: 'Drag and drop blocks',
         description:
             'Drag and drop UI components to make your app come to life. Customize the design of your app in this low code environment.',
-        image: Appagent,
+        image: Appdragdrop,
         type: 'blocks',
         testId: 'new-app-drag-btn',
     },
@@ -27,19 +27,32 @@ const navCards = [
         title: 'Construct an agent',
         description:
             'Engineer a prompt to interact with your LLM. Structure the text and design inputs to generate the optimal AI response.',
-        image: Appdragdrop,
+        image: Appagent,
         type: 'agent',
         testId: 'new-app-agent-btn',
     },
 ];
 
+const StyledButton = styled(Button)(({})=>({
+        "&.app-navigation-buttons":{
+                    borderColor: '#C4C4C4',
+                    color: '#212121',
+                    borderRadius: '12px',
+                    padding: '4px 10px',
+                    alignSelf: 'flex-start',
+                    "> :hover":{
+                        background: "#F5F5F5",
+                        border: "#C4C4C4"
+                    }
+        }
+}));
+
 const NavCard = ({ title, description, type, image, setApp, testId }) => (
     <Box
         sx={{
-            border: '1px solid #e0e0e0',
             minWidth: '32%',
             borderRadius: 2,
-            boxShadow: 3,
+            boxShadow: '0px 5px 8px 0px rgba(0, 0, 0, 0.08)',
             padding: 2,
             display: 'flex',
             flexDirection: 'column',
@@ -57,16 +70,10 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
             </Typography>
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Button
+            <StyledButton
                 variant="outlined"
+                className="app-navigation-buttons"
                 data-testid={testId}
-                sx={{
-                    borderColor: '#C4C4C4',
-                    color: '#212121',
-                    borderRadius: '12px',
-                    padding: '10px 16px',
-                    alignSelf: 'flex-start',
-                }}
                 onClick={() => {
                     // Handle button click, e.g., navigate to a specific page
                     console.log(`Navigating to ${title}`);
@@ -74,7 +81,7 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
                 }}
             >
                 Get started
-            </Button>
+            </StyledButton>
             {image && (
                 <Box
                     sx={{

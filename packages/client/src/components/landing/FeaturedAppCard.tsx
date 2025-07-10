@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { ReactElement } from 'react';
 import { observer } from 'mobx-react-lite';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
@@ -6,19 +6,20 @@ import { Button, Box, Chip, Container, Typography, styled } from '@semoss/ui';
 
 const StyledOuterContainer = styled('div')(({ theme }) => ({
     display: 'flex',
-    flex: '1 1.5 50%',
+    // flex: '1 1.5 50%',
     borderRadius: '12px',
     background: '#FFF',
     boxShadow: '0px 5px 8px 0px rgba(0, 0, 0, 0.08)',
-    height: '204px',
+    minHeight: '204px',
 }));
 const StyledInnerContainer = styled('div')(({ theme }) => ({
     display: 'flex',
-    flex: '0.55 1 60%',
+    // flex: '0.55 1 75%',
     alignItems: 'center',
     padding: '16px',
     justifyContent: 'space-between',
     flexDirection: 'column',
+    width:"fill-available",
 }));
 
 const StyledContainerTitleSection = styled('div')(({ theme }) => ({
@@ -37,10 +38,12 @@ const StyledContainerContentSection = styled('div')(({ theme }) => ({
 const StyledContainerImageSection = styled('div')<{ backgroundImage: string }>(
     ({ theme, backgroundImage }) => ({
         display: 'flex',
-        flex: '0.45 1 40%',
+        // flex: '0.25 1 40%',
         backgroundImage: `${backgroundImage}`,
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
+        borderRadius: '12px',
+        minWidth:"204px",
     }),
 );
 
@@ -86,7 +89,7 @@ interface FeaturedAppCardProps {
     /**
      * Tagline
      */
-    tagline: string;
+    tagline: string | ReactElement;
 
     /**
      * the chip to display

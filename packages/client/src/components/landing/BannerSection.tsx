@@ -23,7 +23,15 @@ const StyledBannerText = styled(Typography)(({ theme }) => ({
     lineHeight: '150%' /* 24px */,
     letterSpacing: '0.15px',
     padding: '24px 0px',
-    width: '35%',
+    width: '50%',
+}));
+
+const StyledButton = styled(Button)(({})=>({
+    "&.MuiButtonBase-root":{
+        marginTop: 'auto',
+        borderRadius: '12px',
+        background: '#000',
+    },
 }));
 
 interface BannerSectionProps {
@@ -60,7 +68,7 @@ export const BannerSection = (props: BannerSectionProps) => {
             style={{
                 padding: '53px 21px',
                 backgroundImage: `url(${imageUrl})`,
-                height: '276px',
+                minHeight: '276px',
                 width: '100%',
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'cover',
@@ -73,19 +81,14 @@ export const BannerSection = (props: BannerSectionProps) => {
         >
             <StyledBannerTitle variant="h5">{tagline}</StyledBannerTitle>
             <StyledBannerText variant="body1">{description}</StyledBannerText>
-            <Button
+            <StyledButton
                 variant="contained"
                 size="large"
-                style={{
-                    marginTop: 'auto',
-                    borderRadius: '12px',
-                    background: '#000',
-                }}
                 onClick={(e) => navigate(link.to)}
                 endIcon={<ArrowForwardIcon style={{ color: '#fff' }} />}
             >
                 {link.label}
-            </Button>
+            </StyledButton>
         </div>
     );
 };
