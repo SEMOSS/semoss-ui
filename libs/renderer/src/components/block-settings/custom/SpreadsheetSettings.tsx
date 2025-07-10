@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from 'react';
-import { Autocomplete, TextField, Stack, Button } from '@semoss/ui';
+import { Autocomplete, TextField, Stack, Button,useNotification } from '@semoss/ui';
 import { useBlocks, useBlockSettings } from "../../../hooks";
 import { observer } from "mobx-react-lite";
 import { Controller, useForm } from 'react-hook-form';
@@ -8,6 +8,10 @@ import {
     BlockDef,
 } from "../../../store";
 import { Paths, PathValue } from "../../../types";
+import { useRootStore } from '@semoss/ui/hooks';
+import { Add, Delete } from '@mui/icons-material';
+
+//import { useRootStore } from 'client/src/hooks';
 
 interface SpreadsheetSettingsProps<D extends BlockDef = BlockDef> {
     id: string;
@@ -34,27 +38,31 @@ export const SpreadsheetSettings = observer(
             const [jiraData, setJiraData] = useState<any>(null);
             const { state } = useBlocks();
             const { data, setData } = useBlockSettings(id);
+            const { monolithStore,configStore } = useRootStore();
+            const [isLoading, setIsLoading] = useState(false);
+            const notification = useNotification();
+            console.log('hello123',configStore.store.config.loginDetails['GOOGLE']);
+            const [loggedInUser,setLoggedInUser]= useState('')
 
             const handleMouseDownChange = (event): void => {
                 let dropDownOption;
                 if(event && event.target && event.target.innerText === "Read Sheet") {
-                    console.log("Read Sheet clicked");
                     dropDownOption = "showReadSheetForm";
                 }
                 else if(event && event.target && event.target.innerText === "Write Sheet") {
                     dropDownOption = "showWriteSheetForm";
                 }
                 else if(event && event.target && event.target.innerText === "Update Sheet") {
-                    console.log("Update Sheet clicked");
                     dropDownOption = "showUpdateSheetForm";
                 }
-                else {
+                else if(event && event.target && event.target.innerText === "Delete Sheet") { 
                     dropDownOption = "showDeleteSheetForm";
                 }
-                //const dropDownOption = event.target.innerText === "Create new ticket" ? "showCreateJiraForm" : "listAllTickets";
+                else{
+                    dropDownOption = "showListedSheets";
+                }
                 paths.map(path=>{
                     const value = dropDownOption === path ? true : false;
-                    console.log(`Setting path ${path} to ${value}`);
                     setData(path, value as PathValue<D["data"], typeof path>);
                 })             
             };
@@ -84,17 +92,52 @@ export const SpreadsheetSettings = observer(
                 }
             }, [data.sheetConnectionValue, data.sheetActionValue]);
             
-
             const { getValues, handleSubmit, control, watch,reset } = useForm<SpreadsheetSettingsForm>({
                         defaultValues: {
                             SPREADSHEET_CONNECTION: '',
                             SPREADSHEET_ACTION: '',
                         },
+            });
+
+            const oauth = async (provider: string) => {
+                setIsLoading(true);
+                await configStore
+                    .oauth(provider)
+                    .then(async () => {
+                        setIsLoading(false);
+                        notification.add({
+                            color: 'success',
+                            message: `Successfully logged in`,
+                        });
+                        await configStore.initialize();
+                        setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
+                    })
+                    .catch((error) => {
+                        setIsLoading(false);
+                        notification.add({
+                            color: 'error',
+                            message: error.message,
+                        });
                     });
+            };
 
             return (
                 <Stack direction="column" spacing={2}>
-                    <Controller
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => {oauth('google')}}
+                        data-testid={'my-jira-profile-new-key-btn'}
+                    >
+                        Login google
+                    </Button>
+                    {loggedInUser && (
+                        <div>
+                            <span>Logged in as: </span>
+                            <h4>{configStore.store.config.loginDetails['GOOGLE'].name}</h4>
+                        </div>
+                    )}
+                    {/* <Controller
                         name="SPREADSHEET_CONNECTION"
                         control={control}
                         rules={{ required: true }}
@@ -122,7 +165,7 @@ export const SpreadsheetSettings = observer(
                                 />
                             </Stack>
                         )}
-                    />
+                    /> */}
                     <Controller
                         name="SPREADSHEET_ACTION"
                         control={control}
@@ -131,7 +174,7 @@ export const SpreadsheetSettings = observer(
                             <Stack spacing={1}>
                                 <div>Actions</div>
                                 <Autocomplete
-                                    options={[{ value: "Read Sheet" }, { value: "Write Sheet" },{ value: "Update Sheet" },{ value: "Delete Sheet" }]}
+                                    options={[{ value: "Read Sheet" }, { value: "Write Sheet" },{ value: "Update Sheet" },{ value: "Delete Sheet" },{ value: "List all Sheets" }]}
                                     getOptionLabel={(option) => option['value']}
                                     multiple={false}
                                     value={field.value || actionValue || null}
