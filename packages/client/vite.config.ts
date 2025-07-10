@@ -6,12 +6,14 @@ import { resolve } from 'node:path';
 const isProduction = process.env.NODE_ENV === 'production';
 
 export default defineConfig({
+    base: './',
     plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
     resolve: {
         alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
     },
     build: {
         minify: isProduction,
+        commonjsOptions: { transformMixedEsModules: true },
     },
     // test: {
     //     name: 'client',
