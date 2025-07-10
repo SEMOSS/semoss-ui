@@ -1464,6 +1464,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 showWriteForm: false,
                 showUpdateSheetForm: false,
                 showUpdateForm: false,
+                showListedSheets: false,
                 userId: '',
                 sheetConnectionValue: '',
                 sheetActionValue: '',

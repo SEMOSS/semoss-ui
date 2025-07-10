@@ -13,11 +13,16 @@ const StyledButton = styled(Button)(({ theme }) => ({
     marginTop: '20px !important',
 }));
 
+
 type FieldConfig = {
   name: string;
   label: string;
-  type?: "text" | "textarea";
+  type?: "text" | "textarea" | "autocomplete";
   required?: boolean;
+  options?: string[]; // for autocomplete
+  getOptionLabel?: (option: any) => string; // for autocomplete
+  isOptionEqualToValue?: (option: any, value: any) => boolean; // for autocomplete
+  multiple?: boolean; // for autocomplete
 };
 
 interface SpreadsheetFormProps {
@@ -39,24 +44,46 @@ export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset
             name={field.name}
             control={control}
             rules={{ required: field.required }}
-            render={({ field: controllerField }) =>
-              field.type === "textarea" ? (
-                <TextArea
-                  label={field.label}
-                  variant="outlined"
-                  value={controllerField.value || ''}
-                  onChange={controllerField.onChange}
-                  rows={3}
-                />
-              ) : (
-                <TextField
-                  label={field.label}
-                  value={controllerField.value || ''}
-                  onChange={controllerField.onChange}
-                  fullWidth
-                />
-              )
-            }
+            render={({ field: controllerField }) => {
+              if (field.type === "textarea") {
+                return (
+                  <TextArea
+                    label={field.label}
+                    variant="outlined"
+                    value={controllerField.value || ''}
+                    onChange={controllerField.onChange}
+                    rows={3}
+                  />
+                );
+              } else if (field.type === "autocomplete") {
+                return (
+                  <Autocomplete
+                    options={field.options || []}
+                    multiple={field.multiple}
+                    getOptionLabel={field.getOptionLabel || ((option) => option)}
+                    isOptionEqualToValue={field.isOptionEqualToValue || ((option, value) => option === value)}
+                    value={controllerField.value || (field.multiple ? [] : null)}
+                    onChange={(_event, newValue) => controllerField.onChange(newValue)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label={field.label}
+                        fullWidth
+                      />
+                    )}
+                  />
+                );
+              } else {
+                return (
+                  <TextField
+                    label={field.label}
+                    value={controllerField.value || ''}
+                    onChange={controllerField.onChange}
+                    fullWidth
+                  />
+                );
+              }
+            }}
           />
         ))}
       </Stack>

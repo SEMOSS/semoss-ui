@@ -1,3 +1,22 @@
+if (
+    typeof window !== 'undefined' &&
+    window.console &&
+    typeof window.console.error === 'function'
+) {
+    const originalError = window.console.error;
+    window.console.error = function (...args) {
+        if (
+            typeof args[0] === 'string' &&
+            args[0].includes(
+                "Cannot read properties of null (reading 'scrollTop')",
+            )
+        ) {
+            // Suppress this specific error
+            return;
+        }
+        originalError.apply(window.console, args);
+    };
+}
 import { Add, Delete } from '@mui/icons-material';
 
 import { useForm, Controller } from 'react-hook-form';
@@ -12,37 +31,38 @@ import {
     TextField,
     Paper,
     Modal,
-    Grid,
-    TextArea,
+    LinearProgress,
+    Snackbar,
+    Alert,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
 import { useState, useEffect } from 'react';
 
-const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+const StyledAccessTokensPaper = styled(Paper)(() => ({
     padding: '40px 30px 20px 28px',
 }));
 
-const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+const HeaderCell = styled(Table.Cell)(() => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
 }));
 
-const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const LeftHeaderCell = styled(Table.Cell)(() => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
     borderRadius: '20px 0 0 0',
     textAlign: 'center',
 }));
 
-const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const RightHeaderCell = styled(Table.Cell)(() => ({
     backgroundColor: '#f3f3f3',
     borderBottom: '1px solid #ccc',
     borderRadius: '0 20px 0 0',
     textAlign: 'center',
 }));
 
-const MessageDiv = styled('div')(({ theme }) => ({
+const MessageDiv = styled('div')(() => ({
     textAlign: 'center',
     marginTop: '100px',
     fontSize: '13px',
@@ -52,34 +72,46 @@ const MessageDiv = styled('div')(({ theme }) => ({
     margin: '75px auto 85px',
 }));
 
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+const StyledTableContainer = styled(Table.Container)(() => ({
     marginTop: '20px',
+}));
+
+const StyledProgress = styled(LinearProgress)(() => ({
+    width: '100%',
 }));
 
 interface SaveSheetDataForm {
     NAME: string;
     USERID: string;
-    SERVICEJSON: string;
 }
 
 export const GoogleSpreadsheetPage = () => {
     const notification = useNotification();
-    const { monolithStore } = useRootStore();
-
+    const { monolithStore, configStore } = useRootStore();
     const [addModal, setAddModal] = useState(false);
-    const [savedApiKeys, setSavedApiKeys] = useState([]);
+    const [savedConnections, setSavedConnections] = useState([]);
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    console.log('hello', configStore.store.config.loginDetails['GOOGLE']);
 
     const { control, reset, handleSubmit } = useForm<SaveSheetDataForm>({
         defaultValues: {
             NAME: '',
             USERID: '',
-            SERVICEJSON: '',
         },
     });
 
     useEffect(() => {
         getSavedSheetDatasQuery();
     }, []);
+
+    const escapePixelString = (str: string) => {
+        if (typeof str !== 'string') return '';
+        return str
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, "\\'")
+            .replace(/\"/g, '\\"');
+    };
 
     const getSavedSheetDatasQuery = async () => {
         const pixel = `META | GetGoogleProfile()`;
@@ -89,7 +121,7 @@ export const GoogleSpreadsheetPage = () => {
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
                 if (type.indexOf('ERROR') === -1 && output.length > 0) {
-                    setSavedApiKeys(output);
+                    setSavedConnections(output);
                 } else {
                     throw new Error(response.errors[0]);
                 }
@@ -99,7 +131,9 @@ export const GoogleSpreadsheetPage = () => {
             });
     };
     const SaveSheetData = async (data: SaveSheetDataForm) => {
-        const pixel = `META | SaveGoogleProfile(name='${data.NAME}', serviceJson='${data.SERVICEJSON}', username='${data.USERID}')`;
+        const safeName = escapePixelString(data.NAME);
+        const safeUserId = escapePixelString(data.USERID);
+        const pixel = `META | SaveGoogleProfile(name='${safeName}', username='${safeUserId}')`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -127,8 +161,9 @@ export const GoogleSpreadsheetPage = () => {
             });
     };
 
-    const DeleteAPIKey = async (primaryId: string) => {
-        const pixel = `META | Jira(command= "delete record for userid",userid="${primaryId}")`;
+    const DeleteConnection = async (userId: string) => {
+        const safeUserId = escapePixelString(userId);
+        const pixel = `META | Jira(command= "delete record for userid",userid="${safeUserId}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -140,7 +175,7 @@ export const GoogleSpreadsheetPage = () => {
                 ) {
                     notification.add({
                         color: 'success',
-                        message: 'Successfully deleted the API key.',
+                        message: 'Successfully deleted the connection.',
                     });
 
                     getSavedSheetDatasQuery();
@@ -161,20 +196,25 @@ export const GoogleSpreadsheetPage = () => {
         reset({});
     };
 
-    const copy = async (text: string) => {
-        try {
-            await navigator.clipboard.writeText(text);
-
-            notification.add({
-                color: 'success',
-                message: 'Successfully copied code',
+    const oauth = async (provider: string) => {
+        setIsLoading(true);
+        await configStore
+            .oauth(provider)
+            .then(async () => {
+                setIsLoading(false);
+                notification.add({
+                    color: 'success',
+                    message: `Successfully logged in`,
+                });
+                await configStore.initialize();
+            })
+            .catch((error) => {
+                setIsLoading(false);
+                notification.add({
+                    color: 'error',
+                    message: error.message,
+                });
             });
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: 'Unable to copy code',
-            });
-        }
     };
 
     return (
@@ -193,6 +233,16 @@ export const GoogleSpreadsheetPage = () => {
                     >
                         Add User
                     </Button>
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => {
+                            oauth('google');
+                        }}
+                        data-testid={'my-jira-profile-new-key-btn'}
+                    >
+                        Login google
+                    </Button>
                 </Stack>
 
                 <StyledTableContainer>
@@ -210,8 +260,8 @@ export const GoogleSpreadsheetPage = () => {
                             </Table.Row>
                         </Table.Head>
                         <Table.Body>
-                            {savedApiKeys.length !== 0
-                                ? savedApiKeys.map((k, idx) => {
+                            {savedConnections.length !== 0
+                                ? savedConnections.map((k, idx) => {
                                       return (
                                           <Table.Row key={idx}>
                                               <Table.Cell align={'center'}>
@@ -227,8 +277,11 @@ export const GoogleSpreadsheetPage = () => {
                                                   <IconButton
                                                       title="Delete"
                                                       onClick={() => {
-                                                          DeleteAPIKey(
-                                                              k.primaryId,
+                                                          //   DeleteAPIKey(
+                                                          //       k.primaryId,
+                                                          //   );
+                                                          setIsDeleteModalOpen(
+                                                              k.userName,
                                                           );
                                                       }}
                                                       data-testid={
@@ -245,7 +298,7 @@ export const GoogleSpreadsheetPage = () => {
                         </Table.Body>
                     </Table>
                 </StyledTableContainer>
-                {savedApiKeys.length === 0 && (
+                {savedConnections.length === 0 && (
                     <MessageDiv>
                         No Sheet Connections to display at this time
                         <br />
@@ -275,7 +328,7 @@ export const GoogleSpreadsheetPage = () => {
                                         return (
                                             <TextField
                                                 required
-                                                label="User Name"
+                                                label="Name"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -298,7 +351,7 @@ export const GoogleSpreadsheetPage = () => {
                                         return (
                                             <TextField
                                                 required
-                                                label="Sheet Name"
+                                                label="User Id"
                                                 value={
                                                     field.value
                                                         ? field.value
@@ -312,30 +365,6 @@ export const GoogleSpreadsheetPage = () => {
                                         );
                                     }}
                                 />
-
-                                <Controller
-                                    name={'SERVICEJSON'}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextArea
-                                                label="Service JSON"
-                                                variant="outlined"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                rows={3}
-                                            />
-                                        );
-                                    }}
-                                />
-
                                 <Stack direction="row" justifyContent={'start'}>
                                     <Button
                                         type="submit"
@@ -358,6 +387,32 @@ export const GoogleSpreadsheetPage = () => {
                     </Button>
                 </Modal.Actions>
             </Modal>
+            <Modal onClose={close} open={isDeleteModalOpen !== ''}>
+                <Modal.Content>
+                    <Modal.Title>Delete Job</Modal.Title>
+                    <Typography variant="body1">
+                        {`Are you sure you want to delete the ${isDeleteModalOpen} connection.This action is permanent.`}
+                    </Typography>
+                    <Modal.Actions>
+                        <Button
+                            variant="text"
+                            onClick={() => setIsDeleteModalOpen('')}
+                            data-testid={'delete-job-cancel-btn'}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            variant="contained"
+                            color="error"
+                            onClick={() => DeleteConnection(isDeleteModalOpen)}
+                            data-testid={'delete-job-delete-btn'}
+                        >
+                            Delete
+                        </Button>
+                    </Modal.Actions>
+                </Modal.Content>
+            </Modal>
+            {isLoading && <StyledProgress />}
         </Stack>
     );
 };
