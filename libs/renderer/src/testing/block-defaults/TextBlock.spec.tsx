@@ -56,8 +56,8 @@ describe("text block", () => {
             blocks: blocks,
         });
 
-        const textBlock = container.querySelector("[data-block='text2']");
-        expect(textBlock.innerHTML).equal("");
+        const textBlock = container.querySelector("[data-block='text2'] p");
+        expect(textBlock).not.toBeInTheDocument();
     });
 
     it("changes text type based on variant" , async () => {
