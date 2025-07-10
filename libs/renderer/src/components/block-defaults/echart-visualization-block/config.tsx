@@ -1,8 +1,5 @@
-import { Insights } from "@mui/icons-material";
-
 import { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_CHART } from "../block-defaults.constants";
-import { VisualizationBlockMenu } from "./VisualizationBlockMenu";
 import {
     VisualizationBlock,
     EchartVisualizationBlockDef,
@@ -47,6 +44,4 @@ export const config: BlockConfig<EchartVisualizationBlockDef> = {
     },
     slots: {},
     render: VisualizationBlock,
-    icon: Insights,
-    menu: VisualizationBlockMenu,
 };
