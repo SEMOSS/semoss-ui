@@ -234,7 +234,6 @@ const IconMapper = {
     'Connect to Model': <ConnectModel />,
     'Connect to Vector Database': <ConnectStorage />,
     'Connect to Function': <ConnectModel />,
-    // 'Upload Database': <UploadDb />,
 };
 
 interface ImportPageContentProps {
