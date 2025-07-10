@@ -68,6 +68,7 @@ export interface SpreadsheetBlockDef extends BlockDef<"spreadsheet"> {
         showUpdateForm: boolean;
         showDeleteSheetForm: boolean;
         showDeleteForm: boolean;
+        showListedSheets: boolean;
         userId: string;
         sheetConnectionValue: string;
         sheetActionValue: string;
@@ -86,75 +87,62 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     const [isDelete, setIsDelete] = useState(false);
     const [deleteText, setDeleteText] = useState('');
     const [deletePixelCall, setDeletePixelCall] = useState('');
+    const [titleSheetOptions, setTitleSheetOptions] = useState<string[]>(['parent1', 'parent2']);
+    const [sheetOptions, setSheetOptions] = useState<string[]>(['mysheet1', 'mysheet5']);
+    const [listedSheets, setListedSheets] = useState<string[]>(['sheet1', 'sheet2', 'sheet3']);
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
 
+    const escapePixelString = (str: string) => {
+        if (typeof str !== 'string') return '';
+        return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\"/g, '\\"');
+    }
+
     useEffect(() => {
-        // async function fetchJiraData() {
-        //     if(data.showDeleteSheetForm=== true) {
-
-
-        //     }
-        //     try {
-        //         const response = await runPixel<[string]>(
-        //             `META | Jira ( command = "get all projects", userid="${data.userId}" ) ;`,
-        //         );
-        //         const outputProjects = response.pixelReturn[0].output;
-        //         const type = response.pixelReturn[0].operationType;
-        //         if (type.indexOf('ERROR') === -1) {
-
-        //             setProjects(Array.isArray(outputProjects) ? outputProjects : [outputProjects]);
-        //         } else {
-        //             throw new Error(response.errors[0]);
-        //         }
-        //     } catch (error) {
-        //         console.error("Error fetching Jira projects:", error);
-        //     }
-        //     try {
-        //         const response = await runPixel<[string]>(
-        //             `META | Jira ( command = "type of issue", userid="${data.userId}" ) ;`,
-        //         );
-        //         const outputIssues = response.pixelReturn[0].output;
-        //         const type = response.pixelReturn[0].operationType;
-        //         if (type.indexOf('ERROR') === -1) {
-        //             console.log("Response from JiraGetIssues:", response);
-        //             setIssueTypes(Array.isArray(outputIssues) ? outputIssues : [outputIssues]);
-        //         } else {
-        //             throw new Error(response.errors[0]);
-        //         }
-        //     } catch (error) {
-        //         console.error("Error fetching Jira issue types:", error);
-        //     }
-        // }
-        // fetchJiraData();
+        const fetchSheetOptions = async () => {
+            const safeUserId = escapePixelString(data.userId);
+            try {
+                const response = await runPixel<[string]>(
+                    `META | GoogleSheet(command = "get sheet names",userid="${safeUserId}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`
+                );
+                const output = response.pixelReturn[0].output;
+                const type = response.pixelReturn[0].operationType;
+                if (type.indexOf('ERROR') === -1) {
+                    //setTitleSheetOptions(output.split(','));
+                    //setSheetOptions(output.split(','));
+                } else {
+                    throw new Error(output);
+                }
+            } catch (error) {
+                console.error("Error fetching sheet options:", error);
+            }
+        };
+        fetchSheetOptions();
     },[data.userId]);
 
-    // useEffect(()=>{
-    //     console.log('useEffect called with data:', data);
-    //     if(data.showReadSheetForm===true){
-    //         setControlForm(controlRead);
-    //         setSubmitHandler(() => (e: React.FormEvent<HTMLFormElement>) => {
-    //             handleWriteSubmit(onWriteSubmit)(e);
-    //         });
-    //     }else if(data.showWriteSheetForm===true){
-    //         setControlForm(controlWrite);
-    //         setSubmitHandler(() => (e: React.FormEvent<HTMLFormElement>) => {
-    //             handleWriteSubmit(onWriteSubmit)(e);
-    //         });
-
-    //     }else if(data.showUpdateSheetForm===true){  
-    //         setControlForm(controlUpdate);
-    //         setSubmitHandler(() => (e: React.FormEvent<HTMLFormElement>) => {
-    //             handleWriteSubmit(onWriteSubmit)(e);
-    //         });
-    //     } else{
-    //         setControlForm(controlDelete); 
-    //         setSubmitHandler(() => (e: React.FormEvent<HTMLFormElement>) => {
-    //             handleWriteSubmit(onWriteSubmit)(e);
-    //         });
-    //     }
-    // },[data.showReadSheetForm, data.showWriteSheetForm, data.showUpdateSheetForm, data.showDeleteSheetForm]);
+    useEffect(() => {
+        const fetchListedSheets = async () => {
+            const safeUserId = escapePixelString(data.userId);
+            try {
+                const response = await runPixel<[string]>(
+                    `META | GoogleSheet(command = "list sheets",userid="${safeUserId}");`
+                );
+                const output = response.pixelReturn[0].output;
+                const type = response.pixelReturn[0].operationType;
+                if (type.indexOf('ERROR') === -1) {
+                    setListedSheets(output.split(','));
+                } else {
+                    throw new Error(output);
+                }
+            } catch (error) {
+                console.error("Error fetching listed sheets:", error);
+            }
+        };
+        if(data.showListedSheets) {
+            fetchListedSheets();
+        }
+   });
 
     if (!data.isStreaming) displayTxt = textContent;
     const { getValues:getReadValues, handleSubmit:handleReadSubmit, control:controlRead,reset:resetRead } = useForm<showReadSheetForm>({
@@ -196,9 +184,13 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         });
 
     const onReadSubmit = handleReadSubmit(async (readData: showReadSheetForm) => {
+        const safeUserId = escapePixelString(data.userId);
+        const safeSheetName = escapePixelString(readData.SHEET_NAME);
+        const safeRowNumber = escapePixelString(readData.ROW_NUMBER);
+        const safeColumnNumber = escapePixelString(readData.COLUMN_NUMBER);
         try{
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "read",userid="${data.userId}",rowno="${readData.ROW_NUMBER}",columnno="${readData.COLUMN_NUMBER}",sheetName="${readData.SHEET_NAME}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
+                `META | GoogleSheet(command = "read",userid="${safeUserId}",rowno="${safeRowNumber}",columnno="${safeColumnNumber}",sheetName="${safeSheetName}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
             );
             const outputRead = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
@@ -218,8 +210,13 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
 
     const onWriteSubmit = async (writeData: showWriteSheetForm) => {
         try{
+            const safeUserId = escapePixelString(data.userId);
+            const safeSheetName = escapePixelString(writeData.SHEET_NAME);
+            const safeRowNumber = escapePixelString(writeData.ROW_NUMBER);
+            const safeColumnNumber = escapePixelString(writeData.COLUMN_NUMBER);
+            const writeDataContent = escapePixelString(writeData.CONTENT);
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "write",userid="${data.userId}",rowno="${writeData.ROW_NUMBER}",columnno="${writeData.COLUMN_NUMBER}",data="${writeData.CONTENT}",sheetName="${writeData.SHEET_NAME}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
+                `META | GoogleSheet(command = "write",userid="${safeUserId}",rowno="${safeRowNumber}",columnno="${safeColumnNumber}",data="${writeDataContent}",sheetName="${safeSheetName}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
             );
             const outputWrite = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
@@ -238,10 +235,14 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     };
 
     const onUpdateSubmit = handleUpdateSubmit(async (updateData: showUpdateSheetForm) => {
-        const updateValues = getUpdateValues();
         try{
+            const safeUserId = escapePixelString(data.userId);
+            const safeSheetName = escapePixelString(updateData.SHEET_NAME);
+            const safeRowNumber = escapePixelString(updateData.ROW_NUMBER);
+            const safeColumnNumber = escapePixelString(updateData.COLUMN_NUMBER);
+            const updateDataContent = escapePixelString(updateData.CONTENT);
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "update",userid="${data.userId}",rowno="${updateData.ROW_NUMBER}",columnno="${updateData.COLUMN_NUMBER}",data="${updateData.CONTENT}",sheetName="${updateData.SHEET_NAME}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
+                `META | GoogleSheet(command = "update",userid="${safeUserId}",rowno="${safeRowNumber}",columnno="${safeColumnNumber}",data="${updateDataContent}",sheetName="${safeSheetName}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
             );
             const outputUpdate = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
@@ -260,20 +261,24 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     });
 
     const onDeleteSubmit = handleDeleteSubmit(async (deleteData: showDeleteSheetForm) => {
-        console.log("Delete Data:", deleteData);
-        if(deleteData.SHEET_NAME !== '' &&  deleteData.ROW_NUMBER === '' && deleteData.COLUMN_NUMBER === '') {
-            console.log('hello1');
+        const safeUserId = escapePixelString(data.userId);
+        const safeTitleSheetName = escapePixelString(deleteData.TITLE_SHEET_NAME);
+        const safeSheetName = escapePixelString(deleteData.SHEET_NAME); 
+        const safeRowNumber = escapePixelString(deleteData.ROW_NUMBER);
+        const safeColumnNumber = escapePixelString(deleteData.COLUMN_NUMBER);
+        if(deleteData.TITLE_SHEET_NAME !=='' && deleteData.SHEET_NAME === '' &&  deleteData.ROW_NUMBER === '' && deleteData.COLUMN_NUMBER === '') {
+            setDeleteText(`Are you sure you want to delete the title sheet ${deleteData.TITLE_SHEET_NAME}? This action is permanent.`);
+            setDeletePixelCall(`META | GoogleSheet(command = "delete sheet",userid="${safeUserId}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c",sheetName="${safeSheetName}");`);
+        }
+        else if(deleteData.TITLE_SHEET_NAME !=='' && deleteData.SHEET_NAME !== '' &&  deleteData.ROW_NUMBER === '' && deleteData.COLUMN_NUMBER === '') {
             setDeleteText(`Are you sure you want to delete sheet ${deleteData.SHEET_NAME}? This action is permanent.`);
-            setDeletePixelCall(`META | GoogleSheet(command = "delete sheet",userid="${data.userId}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c",sheetName="${deleteData.SHEET_NAME}");`);
-        }else if(deleteData.SHEET_NAME !== '' && deleteData.ROW_NUMBER !== '' && deleteData.COLUMN_NUMBER !== '') {
-            console.log('hello2');
+            setDeletePixelCall(`META | GoogleSheet(command = "delete sheet",userid="${safeUserId}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c",sheetName="${safeSheetName}");`);
+        }else if(deleteData.TITLE_SHEET_NAME !=='' && deleteData.SHEET_NAME !== '' && deleteData.ROW_NUMBER !== '' && deleteData.COLUMN_NUMBER !== '') {
             setDeleteText(`Are you sure you want to delete the data in sheet ${deleteData.SHEET_NAME} at row ${deleteData.ROW_NUMBER} and column ${deleteData.COLUMN_NUMBER}? This action is permanent.`);
-            setDeletePixelCall(`META | GoogleSheet(command = "delete",userid="${data.userId}",rowno="${deleteData.ROW_NUMBER}",columnno="${deleteData.COLUMN_NUMBER}",sheetName="${deleteData.SHEET_NAME}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`);
+            setDeletePixelCall(`META | GoogleSheet(command = "delete",userid="${safeUserId}",rowno="${safeRowNumber}",columnno="${safeColumnNumber}",sheetName="${safeSheetName}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`);
         }else{
-            console.log('hello3');
             setDeleteText(`Please provide valid sheet name, row number and column number to delete the data.`);
         }
-        console.log("Delete Text:", deleteText);
         setIsDelete(true);
     });
 
@@ -313,7 +318,8 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                         <SpreadsheetForm
                             control={controlRead}
                             fields={[
-                            { name: "SHEET_NAME", label: "Sheet Name", required: true },
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
+                            { name: "SHEET_NAME", label: "Sheet Name", required: true ,type: "autocomplete", options:sheetOptions},
                             { name: "ROW_NUMBER", label: "Row Number", required: true },
                             { name: "COLUMN_NUMBER", label: "Column Number", required: true },
                             ]}
@@ -332,10 +338,11 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                         <SpreadsheetForm
                             control={controlWrite}
                             fields={[
-                            { name: "SHEET_NAME", label: "Sheet Name", required: true },
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
+                            { name: "SHEET_NAME", label: "Sheet Name", required: true,type: "autocomplete", options:sheetOptions },
                             { name: "ROW_NUMBER", label: "Row Number", required: true },
                             { name: "COLUMN_NUMBER", label: "Column Number", required: true },
-                            { name: "CONTENT", label: "Content", type: "textarea" },
+                            { name: "CONTENT", label: "Content", type: "textarea", required: true },
                             ]}
                             onSubmit={onWriteSubmit}
                             handleSubmit={handleWriteSubmit}
@@ -351,10 +358,11 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                         <SpreadsheetForm
                             control={controlUpdate}
                             fields={[
-                            { name: "SHEET_NAME", label: "Sheet Name", required: true },
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
+                            { name: "SHEET_NAME", label: "Sheet Name", required: true,type: "autocomplete", options:sheetOptions },
                             { name: "ROW_NUMBER", label: "Row Number", required: true },
                             { name: "COLUMN_NUMBER", label: "Column Number", required: true },
-                            { name: "CONTENT", label: "Content", type: "textarea" },
+                            { name: "CONTENT", label: "Content", type: "textarea" , required: true },
                             ]}
                             onSubmit={onUpdateSubmit}
                             handleSubmit={handleUpdateSubmit}
@@ -370,7 +378,8 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                         <SpreadsheetForm
                             control={controlDelete}
                             fields={[
-                            { name: "SHEET_NAME", label: "Sheet Name", required: true },
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions},
+                            { name: "SHEET_NAME", label: "Sheet Name", required: false,type: "autocomplete", options:sheetOptions },
                             { name: "ROW_NUMBER", label: "Row Number", required: false },
                             { name: "COLUMN_NUMBER", label: "Column Number", required: false },
                             ]}
@@ -384,6 +393,11 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                             <h3>{showResponseData}</h3>
                         </div>
                     )}
+                    {data.showListedSheets && (
+                        <div>
+                            Listed Sheets:
+                        </div>
+                    )}  
                     {isDelete &&(
                         <Modal onClose={close} open={isDelete}>
                             <Modal.Content>
