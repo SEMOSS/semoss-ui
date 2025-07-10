@@ -26,7 +26,7 @@ const emptyBuilder: JobBuilder = {
     name: '',
     pixel: '',
     tags: [],
-    cronExpression: '0 0 12 * * ?',
+    cronExpression: '0 0 12 ? * ?',
     cronTz: 'US/Eastern',
     smtpHost: '',
     smtpPort: '',
@@ -62,104 +62,51 @@ export const JobBuilderModal = (props: {
         }));
     };
 
+    // Helper to split and pad cron expression to 7 fields
+    const getCronFields = (cronExpr: string) => {
+        const fields = cronExpr.split(' ');
+        while (fields.length < 7) fields.push('*');
+        return fields.slice(0, 7);
+    };
+
     const isEditMode = useMemo(() => {
         return !!builder.id;
     }, [builder.id]);
 
+    // Set builder on open/edit, use initialBuilder.cronExpression as-is
     useEffect(() => {
-        const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
-        setBuilder(builderToSet);
-        const cronValues = builderToSet.cronExpression.split(' ');
-        if (cronValues.length < 6) {
-            // invalid cron syntax, send to standard builder
-            setFrequencyType('standard');
-            return;
-        } else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
-            // non-integer time values, must be custom
-            setFrequencyType('custom');
-            return;
-        }
-
-        if (
-            cronValues[3] == '*' &&
-            cronValues[4] == '*' &&
-            cronValues[5] == '*'
-        ) {
-            setFrequencyType('standard');
-            return;
-        } else if (cronValues[3] == '*' && cronValues[4] == '*') {
-            setFrequencyType('standard');
-            return;
-        } else if (cronValues[4] == '*' && cronValues[5] == '*') {
-            setFrequencyType('standard');
-            return;
-        } else if (cronValues[5] == '*') {
-            setFrequencyType('standard');
-            return;
+        if (initialBuilder) {
+            setBuilder(initialBuilder);
+            // Optionally set frequencyType based on cronExpression if needed
         } else {
-            setFrequencyType('custom');
-            return;
+            setBuilder(emptyBuilder);
         }
     }, [initialBuilder ? initialBuilder.id : null]);
 
+    const CRON_PATTERNS: RegExp[] = [
+  /^(\*|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:\-[0-9]|\-(?:[1-5][0-9]))?|(?:\,(?:[0-9]|(?:[1-5][0-9])))*))$/, // Seconds: 0-59
+  /^(\*|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:\-[0-9]|\-(?:[1-5][0-9]))?|(?:\,(?:[0-9]|(?:[1-5][0-9])))*))$/, // Minutes: 0-59
+  /^(\*|(?:\*|(?:\*|(?:[0-9]|1[0-9]|2[0-3])))\/(?:[0-9]|1[0-9]|2[0-3])|(?:[0-9]|1[0-9]|2[0-3])(?:(?:\-(?:[0-9]|1[0-9]|2[0-3]))?|(?:\,(?:[0-9]|1[0-9]|2[0-3]))*))$/, // Hours: 0-23
+  /^(\*|\?|L(?:W|\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:W|\/(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:(?:\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:\,(?:[1-9]|(?:[12][0-9])|3[01]))*))$/, // Day of Month: 1-31, ?
+  /^(\*|(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?:(?:\-(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?|(?:\,(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))*))$/, // Month: 1-12
+  /^(\*|\?|[0-6](?:L|\#[1-5])?|(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT)(?:(?:\-(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))?|(?:\,(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))*))$/, // Day of Week: 0-6, ?
+  /^(\*|(?:[1-9][0-9]{3})(?:(?:\-[1-9][0-9]{3})?|(?:\,[1-9][0-9]{3})*))$/, // Year: 1000-9999
+];
+
+    // Validation: 7-field cron, allow '?' for day of month (index 3)
     const isCronExpressionValid: boolean = useMemo(() => {
-        const cronValues = builder.cronExpression.split(' ');
-        if (cronValues.length < 6) {
-            // make sure it's valid cron syntax
+    const cronValues = getCronFields(builder.cronExpression);
+
+    if (cronValues.length !== 7) return false;
+
+    for (let i = 0; i < 7; i++) {
+        if (!CRON_PATTERNS[i].test(cronValues[i])) {
             return false;
         }
-        if (
-            cronValues[1] !== '*' &&
-            !(
-                !Number.isNaN(cronValues[1]) &&
-                parseInt(cronValues[1]) <= 59 &&
-                parseInt(cronValues[1]) >= 0
-            )
-        ) {
-            return false;
-        }
-        if (
-            cronValues[2] !== '*' &&
-            !(
-                !Number.isNaN(cronValues[2]) &&
-                parseInt(cronValues[2]) <= 23 &&
-                parseInt(cronValues[2]) >= 0
-            )
-        ) {
-            return false;
-        }
-        if (
-            cronValues[3] !== '*' &&
-            !(
-                !Number.isNaN(cronValues[3]) &&
-                parseInt(cronValues[3]) <= 31 &&
-                parseInt(cronValues[3]) >= 0
-            )
-        ) {
-            return false;
-        }
-        if (
-            cronValues[4] !== '*' &&
-            !(
-                !Number.isNaN(cronValues[4]) &&
-                parseInt(cronValues[4]) <= 12 &&
-                parseInt(cronValues[4]) >= 1
-            )
-        ) {
-            return false;
-        }
-        if (
-            cronValues[5] !== '?' &&
-            !(
-                !Number.isNaN(cronValues[5]) &&
-                parseInt(cronValues[5]) <= 6 &&
-                parseInt(cronValues[5]) >= 0
-            )
-        ) {
-            return false;
-        }
-        return true;
-    }, [builder.cronExpression]);
+    }
+
+    return true;
+}, [builder.cronExpression]);
 
     const isBaseFormValid: boolean = useMemo(() => {
         switch (builder.jobType) {
@@ -237,66 +184,65 @@ export const JobBuilderModal = (props: {
         builder.password,
     ]);
 
+    // Don't close modal before error notification
     const addJob = async () => {
         setIsLoading(true);
         try {
             const encode = getEncodeByJobType(builder);
             const response = await runPixelTwo(
-                `META|ScheduleJob(jobName=["${builder.name}"],${
-                    builder.tags.length
-                        ? ` jobTags=${JSON.stringify(builder.tags)},`
-                        : ''
-                } jobGroup=["defaultGroup"], cronExpression=["${
-                    builder.cronExpression
-                }"], cronTz=["${
-                    builder.cronTz
-                }"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${
-                    builder.jobType
-                }","jobName":"${builder.name}", "cronExpression":"${
-                    builder.cronExpression
-                }","cronTimeZone":"${builder.cronTz}","recipe":"${
-                    builder.pixel
-                }","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+                `META|ScheduleJob(jobName=["${builder.name}"],${builder.tags.length
+                    ? ` jobTags=${JSON.stringify(builder.tags)},`
+                    : ''
+                } jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${builder.cronTz}"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${builder.jobType}","jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}","cronTimeZone":"${builder.cronTz}","recipe":"${builder.pixel}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
             );
             if (response.errors.length) {
-                notification.add({
+                await notification.add({
                     color: 'error',
-                    message: response.errors.length[0],
+                    message: response.errors[0], // fixed typo: should be response.errors[0]
                 });
+                setIsLoading(false);
+                return; // Don't close modal
             }
         } catch (e) {
-            notification.add({
+            await notification.add({
                 color: 'error',
                 message: 'Unable to add job',
             });
+            setIsLoading(false);
+            return; // Don't close modal
         }
         getJobs();
         closeModal();
         setIsLoading(false);
     };
 
+    // Similar fix for updateJob
     const updateJob = async () => {
         setIsLoading(true);
-        const encode = getEncodeByJobType(builder);
-        await runPixelTwo(
-            `META|EditScheduledJob(jobId="${builder.id}",jobName="${
-                builder.name
-            }",${
-                builder.tags.length
+        try {
+            const encode = getEncodeByJobType(builder);
+            const response = await runPixelTwo(
+                `META|EditScheduledJob(jobId="${builder.id}",jobName="${builder.name}",${builder.tags.length
                     ? `jobTags=${JSON.stringify(builder.tags)},`
                     : ''
-            }jobGroup=["defaultGroup"],cronExpression="${
-                builder.cronExpression
-            } *",cronTz="${
-                builder.cronTz
-            }",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
-                builder.jobType
-            }", "jobName":"${builder.name}", "cronExpression":"${
-                builder.cronExpression
-            }", "cronTimeZone":"${
-                builder.cronTz
-            }"}',triggerOnLoad=[false],triggerNow=[false]);`,
-        );
+                }jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${builder.jobType}", "jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}", "cronTimeZone":"${builder.cronTz}"}',triggerOnLoad=[false],triggerNow=[false]);`,
+            );
+            if (response.errors.length) {
+                await notification.add({
+                    color: 'error',
+                    message: response.errors[0],
+                });
+                setIsLoading(false);
+                return;
+            }
+        } catch (e) {
+            await notification.add({
+                color: 'error',
+                message: 'Unable to update job',
+            });
+            setIsLoading(false);
+            return;
+        }
         getJobs();
         closeModal();
         setIsLoading(false);
@@ -310,17 +256,9 @@ export const JobBuilderModal = (props: {
     return (
         <Modal open={isOpen} maxWidth="md" fullWidth>
             <Modal.Title>
-                <Stack
-                    direction="row"
-                    justifyContent="space-between"
-                    alignItems="center"
-                >
+                <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <span>{isEditMode ? 'Edit' : 'Add'} Job</span>
-                    <IconButton
-                        aria-label="close"
-                        onClick={closeModal}
-                        data-testid={'job-builder-close-btn'}
-                    >
+                    <IconButton aria-label="close" onClick={closeModal} data-testid={'job-builder-close-btn'}>
                         <Close />
                     </IconButton>
                 </Stack>
@@ -331,88 +269,36 @@ export const JobBuilderModal = (props: {
                         label="Name"
                         size="small"
                         value={builder.name}
-                        onChange={(e) =>
-                            setBuilderField('name', e.target.value)
-                        }
+                        onChange={(e) => setBuilderField('name', e.target.value)}
                     />
-                    <JobTypesBuilder
-                        builder={builder}
-                        setBuilderField={setBuilderField}
-                    />
+                    <JobTypesBuilder builder={builder} setBuilderField={setBuilderField} />
                     <ToggleButtonGroup value={frequencyType} size="small">
-                        <ToggleButton
-                            value="standard"
-                            onClick={() => setFrequencyType('standard')}
-                            data-testid={'job-builder-standard-btn'}
-                        >
-                            Standard
-                        </ToggleButton>
-                        <ToggleButton
-                            value="custom"
-                            onClick={() => setFrequencyType('custom')}
-                            data-testid={'job-builder-custom-btn'}
-                        >
-                            Custom
-                        </ToggleButton>
+                        <ToggleButton value="standard" onClick={() => setFrequencyType('standard')} data-testid={'job-builder-standard-btn'}>Standard</ToggleButton>
+                        <ToggleButton value="custom" onClick={() => setFrequencyType('custom')} data-testid={'job-builder-custom-btn'}>Custom</ToggleButton>
                     </ToggleButtonGroup>
                     <AutocompleteTwo
                         value={builder.cronTz}
                         options={timezones}
-                        onChange={(_, value) =>
-                            setBuilderField('cronTz', value)
-                        }
+                        onChange={(_, value) => setBuilderField('cronTz', value)}
                         size="small"
-                        getOptionLabel={(option: string) =>
-                            option.replaceAll('_', ' ')
-                        }
-                        renderInput={(params) => (
-                            <TextField
-                                {...params}
-                                variant="outlined"
-                                label="Timezone"
-                            />
-                        )}
+                        getOptionLabel={(option: string) => option.replaceAll('_', ' ')}
+                        renderInput={(params) => <TextField {...params} variant="outlined" label="Timezone" />}
                     />
                     {frequencyType === 'standard' ? (
-                        <JobStandardFrequencyBuilder
-                            builder={builder}
-                            setBuilderField={setBuilderField}
-                        />
+                        <JobStandardFrequencyBuilder builder={builder} setBuilderField={setBuilderField} />
                     ) : (
-                        <JobCustomFrequencyBuilder
-                            builder={builder}
-                            setBuilderField={setBuilderField}
-                        />
+                        <JobCustomFrequencyBuilder builder={builder} setBuilderField={setBuilderField} />
                     )}
                 </Stack>
             </Modal.Content>
             <Modal.Actions>
-                <Stack
-                    direction="row"
-                    spacing={1}
-                    paddingX={2}
-                    paddingBottom={2}
-                >
-                    <Button
-                        type="button"
-                        disabled={isLoading}
-                        onClick={closeModal}
-                        data-testid={'job-builder-cancel-btn'}
-                    >
-                        Cancel
-                    </Button>
+                <Stack direction="row" spacing={1} paddingX={2} paddingBottom={2}>
+                    <Button type="button" disabled={isLoading} onClick={closeModal} data-testid={'job-builder-cancel-btn'}>Cancel</Button>
                     <Button
                         type="submit"
                         variant={'contained'}
-                        disabled={
-                            isLoading ||
-                            !isBaseFormValid ||
-                            !isCronExpressionValid ||
-                            !hasChanges
-                        }
-                        onClick={() => {
-                            isEditMode ? updateJob() : addJob();
-                        }}
+                        disabled={isLoading || !isBaseFormValid || !isCronExpressionValid || !hasChanges}
+                        onClick={() => { isEditMode ? updateJob() : addJob(); }}
                         loading={isLoading}
                         data-testid={'job-builder-add-save-btn'}
                     >
