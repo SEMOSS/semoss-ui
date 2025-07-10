@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { updateStatusBar } from './statusBar.js';
 
 /**
  * Get user input through VS Code input box
@@ -103,6 +104,9 @@ export async function storeSecrets(context) {
     // Set as current instance
     await context.secrets.store('CURRENT_INSTANCE_ALIAS', alias);
 
+    // Update status bar
+    await updateStatusBar(context);
+
     vscode.window.showInformationMessage(`Instance "${alias}" saved successfully!`);
 }
 
@@ -132,6 +136,7 @@ export async function selectInstance(context) {
 
     if (selected) {
         await context.secrets.store('CURRENT_INSTANCE_ALIAS', selected.label);
+        await updateStatusBar(context);
         vscode.window.showInformationMessage(`Switched to instance: ${selected.label}`);
         return true;
     }
@@ -189,6 +194,9 @@ export async function getSecrets(context) {
         await storeInstance(context, alias, { semossUrl, accessKey, privateKey });
         await context.secrets.store('CURRENT_INSTANCE_ALIAS', alias);
 
+        // Update status bar after migration
+        await updateStatusBar(context);
+
         // Clean up old storage
         await context.secrets.delete('ACCESS_KEY');
         await context.secrets.delete('PRIVATE_KEY');
@@ -236,6 +244,9 @@ export async function removeInstance(context) {
             if (currentAlias === selected.label) {
                 await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
             }
+
+            // Update the status bar to reflect the changes
+            await updateStatusBar(context);
 
             vscode.window.showInformationMessage(`Instance "${selected.label}" removed successfully!`);
         }

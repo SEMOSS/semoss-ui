@@ -1,6 +1,7 @@
 // CommonJS imports
 const vscode = require("vscode");
 const fs = require("fs");
+const path = require("path");
 const { storeSecrets, getSecrets, selectInstance, removeInstance, storeInstance, getStoredInstances } = require('./src/utils/secrets.js');
 const { setFolderPaths, getProjectId } = require('./src/utils/projectUtils.js');
 const { setDeployConfig, deployProject } = require('./src/utils/deploy.js');
@@ -77,8 +78,9 @@ async function activate(context) {
                     const currentAlias = await context.secrets.get('CURRENT_INSTANCE_ALIAS');
                     if (currentAlias === args.alias) {
                         await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
-                        await updateStatusBar(context);
                     }
+                    // Always update status bar after instance removal
+                    await updateStatusBar(context);
                     vscode.window.showInformationMessage(`Instance "${args.alias}" removed successfully!`);
                 } else {
                     vscode.window.showWarningMessage(`Instance "${args.alias}" not found.`);
@@ -145,12 +147,41 @@ async function activate(context) {
 
                 setFolderPaths(uri);
 
-
                 // Zip the project (json, smss, assets as assets.zip)
                 await zipProject();
 
-                // Configure deployment to use assets.zip
-                const outputZip = uri.fsPath + '/assets.zip';
+                // Find the zip file that was created (should be assets.zip, but let's be flexible)
+                const zipFiles = fs.readdirSync(uri.fsPath).filter(file => file.endsWith('.zip'));
+                let outputZip;
+
+                if (zipFiles.includes('assets.zip')) {
+                    // Prefer assets.zip if it exists (which it should after zipProject())
+                    outputZip = path.join(uri.fsPath, 'assets.zip');
+                } else if (zipFiles.length > 0) {
+                    // Use the first zip file found
+                    outputZip = path.join(uri.fsPath, zipFiles[0]);
+                    vscode.window.showInformationMessage(`Using zip file: ${zipFiles[0]}`);
+                } else {
+                    vscode.window.showErrorMessage('No zip file was created during the zip process.');
+                    return;
+                }
+
+                // Validate the zip file exists and is readable
+                if (!fs.existsSync(outputZip)) {
+                    vscode.window.showErrorMessage(`Zip file does not exist: ${path.basename(outputZip)}`);
+                    return;
+                }
+
+                // Check if file is not empty
+                const stats = fs.statSync(outputZip);
+                if (stats.size === 0) {
+                    vscode.window.showErrorMessage(`Zip file is empty: ${path.basename(outputZip)}`);
+                    return;
+                }
+
+                vscode.window.showInformationMessage(`Created and ready to deploy: ${path.basename(outputZip)} (${Math.round(stats.size / 1024)} KB)`);
+
+                // Configure deployment to use the found zip file
                 const encoded = Buffer.from(secrets.accessKey + ':' + secrets.privateKey).toString('base64');
                 const headers = { 'Authorization': 'Basic ' + encoded };
 
@@ -210,11 +241,50 @@ async function activate(context) {
                 }
             }
             try {
-                const outputZip = uri.fsPath + '/assets.zip';
+                // Find zip files in the directory
+                const zipFiles = fs.readdirSync(uri.fsPath).filter(file => file.endsWith('.zip'));
+                let outputZip;
+
+                if (zipFiles.length === 0) {
+                    vscode.window.showErrorMessage('No zip files found in the selected folder. Please create a zip file first using "Zip Only" command or manually.');
+                    return;
+                } else if (zipFiles.includes('assets.zip')) {
+                    // Prefer assets.zip if it exists
+                    outputZip = path.join(uri.fsPath, 'assets.zip');
+                    vscode.window.showInformationMessage('Using preferred zip file: assets.zip');
+                } else if (zipFiles.length === 1) {
+                    // If only one zip file exists (and it's not assets.zip), use it
+                    outputZip = path.join(uri.fsPath, zipFiles[0]);
+                    vscode.window.showInformationMessage(`Using zip file: ${zipFiles[0]}`);
+                } else {
+                    // Multiple zip files exist, let user choose
+                    const selectedZip = await vscode.window.showQuickPick(zipFiles, {
+                        placeHolder: 'Multiple zip files found. Select one to deploy:',
+                        canPickMany: false
+                    });
+                    if (!selectedZip) {
+                        vscode.window.showInformationMessage('Deploy cancelled.');
+                        return;
+                    }
+                    outputZip = path.join(uri.fsPath, selectedZip);
+                    vscode.window.showInformationMessage(`Selected zip file: ${selectedZip}`);
+                }
+
+                // Validate the zip file exists and is readable
                 if (!fs.existsSync(outputZip)) {
-                    vscode.window.showErrorMessage('No assets.zip present in the selected folder.');
+                    vscode.window.showErrorMessage(`Selected zip file does not exist: ${path.basename(outputZip)}`);
                     return;
                 }
+
+                // Check if file is not empty
+                const stats = fs.statSync(outputZip);
+                if (stats.size === 0) {
+                    vscode.window.showErrorMessage(`Selected zip file is empty: ${path.basename(outputZip)}`);
+                    return;
+                }
+
+                vscode.window.showInformationMessage(`Ready to deploy: ${path.basename(outputZip)} (${Math.round(stats.size / 1024)} KB)`);
+
                 const secrets = await getSecretsWithValidation(context);
                 if (!secrets) return;
 
@@ -275,8 +345,9 @@ async function activate(context) {
                         const currentAlias = await context.secrets.get('CURRENT_INSTANCE_ALIAS');
                         if (currentAlias === selected.label) {
                             await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
-                            await updateStatusBar(context);
                         }
+                        // Always update status bar after instance removal
+                        await updateStatusBar(context);
                         vscode.window.showInformationMessage(`Instance "${selected.label}" removed successfully!`);
                     }
                 }

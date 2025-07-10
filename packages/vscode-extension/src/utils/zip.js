@@ -122,45 +122,37 @@ async function zipProject(baseFolder) {
             await new Promise((resolve, reject) => {
                 // Create a file to stream archive data to
                 const writeStream = fs.createWriteStream(outputFilePath);
-                const archive = archiver('zip', { zlib: { level: 9 } }); // Best compression
+                const archive = archiver('zip', {});
 
-                archive.on('warning', (err) => {
-                    if (err.code === 'ENOENT') {
-                        console.warn('Archive warning:', err);
-                    } else {
-                        reject(err);
-                    }
-                });
-
+                // Handle any errors that occur
                 archive.on('error', (err) => {
+                    vscode.window.showErrorMessage('Failed to create archive');
                     reject(err);
                 });
 
-                archive.on('progress', (progressData) => {
-                    if (progressData.entries.total > 0) {
-                        const percent = Math.min(20, Math.floor((progressData.entries.processed / progressData.entries.total) * 20));
-                        progress.report({
-                            increment: percent,
-                            message: `Zipping files: ${progressData.entries.processed}/${progressData.entries.total}`
-                        });
-                    }
+                // Pipe archive data to the file
+                archive.pipe(writeStream);
+
+                // Append files, excluding unwanted files and directories
+                archive.glob('**/*', {
+                    cwd: folderToZip,
+                    dot: true,
+                    ignore: ['client/node_modules/**', '.DS_Store', '__MACOSX', '*.zip']
                 });
 
-                writeStream.on('close', () => {
-                    progress.report({ increment: 20, message: "Zip completed!" });
+                // Finalize the archive
+                archive.finalize();
+
+                // Listen for all archive data to be written
+                writeStream.on('finish', () => {
+                    progress.report({ increment: 40, message: "Zip completed!" });
                     resolve(outputFilePath);
                 });
 
                 writeStream.on('error', (err) => {
+                    vscode.window.showErrorMessage('Failed to write zip file');
                     reject(err);
                 });
-
-                archive.pipe(writeStream);
-
-                // Add the folder to zip at the top level
-                archive.directory(folderToZip, false);
-
-                archive.finalize();
             });
 
             vscode.window.showInformationMessage(`${zipFolderName} folder zipped as ${zipFileName} successfully!`);

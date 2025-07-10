@@ -3,6 +3,7 @@ const path = require("path");
 const { getSeparateChatbotHtml, mapMessageToCommand } = require("./ChatbotSeparateManager.js");
 const { getSecrets, getStoredInstances, storeInstance } = require("../../utils/secrets.js");
 const { createNewApp } = require("../../utils/createApp.js");
+const { updateStatusBar } = require("../../utils/statusBar.js");
 const fs = require("fs");
 
 function getWebviewContent(webview, context) {
@@ -177,6 +178,9 @@ class SemossChatbotViewProvider {
                                         // Set as current instance
                                         await this._context.secrets.store('CURRENT_INSTANCE_ALIAS', alias);
 
+                                        // Update status bar
+                                        await updateStatusBar(this._context);
+
                                         webviewView.webview.postMessage({
                                             type: 'response',
                                             status: 'success',
@@ -329,6 +333,8 @@ class SemossChatbotViewProvider {
                 if (currentAlias === alias) {
                     await this._context.secrets.delete('CURRENT_INSTANCE_ALIAS');
                 }
+                // Update the status bar to reflect the changes
+                await updateStatusBar(this._context);
                 webviewView.webview.postMessage({ type: 'response', status: 'success', text: `Instance "${alias}" removed successfully!`, hideLoading: true });
                 this._addMessageToHistory(`Instance "${alias}" removed successfully!`, 'bot', 'success');
                 return;
