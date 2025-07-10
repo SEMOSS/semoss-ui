@@ -291,7 +291,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
                             [
                                 ...steps,
                                 {
-                                    id: `${model.name}`,
+                                    id: model.id,
                                     title: model.name,
                                     description: `Fill out ${
                                         model.name
