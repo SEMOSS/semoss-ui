@@ -152,15 +152,15 @@ export const lightTheme: CustomThemeOptions = {
     palette: {
         mode: "light",
         primary: {
-            // SEMOSS BLUE
-            main: "#0471F0",
+            // SEMOSS BLACK
+            main: "#000000",
             dark: "#1260DD",
             light: "#22A4FF",
             // DELOITTE GREEN
             // main: "#26890D",
             // light: "#86BC25",
             // dark: "#046A38",
-            hover: "#F5F9FE",
+            hover: "#4A4949",
             selected: "#EBF4FE",
             border: "#9FCFFF",
         },
@@ -555,6 +555,9 @@ export const lightTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => ({
                     boxShadow: "none",
+                    "&:hover": {
+                        backgroundColor: "#4A4949",
+                    },
                 }),
             },
         },
