@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+# Linting @semoss/client
+# npx nx lint @semoss/client || {
+#   echo "ERROR: Linting issues were found in the packages/client. Please address them before proceeding."
+#   exit 1
+# }
+
 # Linting @semoss/ui
 pnpm run fix || {
   echo "ERROR: Linting issues were found. Please address them before proceeding."

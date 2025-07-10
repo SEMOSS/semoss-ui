@@ -1,9 +1,6 @@
 import { BlockConfig } from "../../../store";
 import { MermaidBlock, MermaidBlockDef } from "./MermaidBlock";
 import { BLOCK_TYPE_MERMAID } from "../block-defaults.constants";
-import { Schema } from "@mui/icons-material";
-import { CodeEditorSettings, QueryInputSettings } from "../../block-settings";
-import { MermaidBlockMenu } from "./MermaidBlockMenu";
 
 export const config: BlockConfig<MermaidBlockDef> = {
     widget: "mermaid",
@@ -14,6 +11,4 @@ export const config: BlockConfig<MermaidBlockDef> = {
     listeners: {},
     slots: {},
     render: MermaidBlock,
-    icon: Schema,
-    menu: MermaidBlockMenu,
 };
