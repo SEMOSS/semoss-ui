@@ -1,4 +1,4 @@
-import { useEffect, useState, useReducer } from 'react';
+import { useEffect, useState, useReducer, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
 import {
     Stack,
@@ -13,7 +13,7 @@ import {
 
 import { useNavigate } from 'react-router-dom';
 
-import { usePixel, useRootStore } from '@/hooks';
+import { useInfiniteScroll, usePixel, useRootStore } from '@/hooks';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { Help } from '@/components/help';
 import { Filterbox } from '@/components/ui';
@@ -157,6 +157,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
 
+    const [sortOrder, setSortOrder] = useState('ASC');
+    const [canCollect, setCanCollect] = useState(true);
+    const [offset, setOffset] = useState(0);
+
+    //** amount of items to be loaded */
+    const limit = 5;
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {
@@ -184,13 +190,18 @@ export const AppCatalogPage = observer((): JSX.Element => {
         'description',
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
-    )}], filterWord=["${search}"], onlyPortals=[true]);`;
+    )}], filterWord=["${search}"], onlyPortals=[true],limit=[${limit}], offset=[${offset}]);`;
 
     /**
      * @desc Get & Set Apps
      */
     const getApps = usePixel<AppMetadata[]>(pixel);
 
+    const HOOOK = useInfiniteScroll(
+        mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects',
+        '"tag","domain","data classification","data restrictions","description"',
+    );
+    console.log('HOOOK', HOOOK);
     useEffect(() => {
         if (getApps.status !== 'SUCCESS') {
             dispatch({
@@ -218,7 +229,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
         'description',
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
-    )}], filterWord=["${search}"], onlyFavorites=[true]);`;
+    )}], filterWord=["${search}"], onlyFavorites=[true],limit=[${limit}], offset=[${offset}]);`;
     const getFavoritedApps = usePixel(mode === 'Mine' && favoritePixel);
 
     useEffect(() => {

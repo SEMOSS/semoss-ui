@@ -12,6 +12,7 @@ import { useWorkspace } from './useWorkspace';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
 import { usePage } from './usePage';
+import { useInfiniteScroll } from './useInfiniteScroll';
 
 export {
     useAPI,
@@ -28,4 +29,5 @@ export {
     useDebounce,
     useDebounceValue,
     usePage,
+    useInfiniteScroll,
 };
