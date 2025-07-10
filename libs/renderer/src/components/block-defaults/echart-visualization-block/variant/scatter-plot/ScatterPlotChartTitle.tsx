@@ -2,9 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 
-import { styled, Switch, TextField, Typography } from "@semoss/ui";
+import { styled, TextField, Typography } from "@semoss/ui";
 
-import { useBlockSettings } from "../../../../../hooks";
+import { useBlock } from "../../../../../hooks";
 import { Block, BlockDef } from "../../../../../store";
 import { Paths, PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
@@ -39,7 +39,7 @@ const StyledAxisColDiv = styled("div")<{
 
 export const ScatterPlotChartTitle = observer(
     <D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings<D>(id);
+    const { data, setData} = useBlock<EchartVisualizationBlockDef>(id);
         const [value, setValue] = useState("");
         const [chartTitle, setChartTitle] = useState("");
         const computedValue = useMemo(() => {
