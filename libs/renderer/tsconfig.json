@@ -36,6 +36,6 @@
             "@semoss/sdk": ["../sdk/src/index.ts"]
         }
     },
-    "include": ["src", "global.d.ts", "example", "src/testing", "src/**/*", "../../packages/client/src/components/blocks-workspace/blocks/block-settings/image-block/GeneralSettings.tsx", "../../packages/client/src/components/blocks-workspace/blocks/block-settings/image-block/utils.ts"],
+    "include": ["src", "global.d.ts", "example", "src/testing", "src/**/*"],
     "exclude": ["dist", "node_modules"]
 }
