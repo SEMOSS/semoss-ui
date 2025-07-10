@@ -1,7 +1,7 @@
-import { usePixel } from "@semoss/sdk/react";
-import SelectedItem from "./SelectedItem";
-import SelectImage from "./SelectImage";
-import { getImageFiles } from "../utils";
+import { usePixel } from '@semoss/sdk/react';
+import SelectedItem from './SelectedItem';
+import SelectImage from './SelectImage';
+import { getImageFiles } from '../utils';
 
 const InsightTab = ({ insightId, data, setData }) => {
     const getAssets = usePixel<{ status: string; data: any }>(
@@ -10,7 +10,7 @@ const InsightTab = ({ insightId, data, setData }) => {
         insightId,
     );
     const imageFiles =
-        getAssets.status === "SUCCESS" ? getImageFiles(getAssets.data) : [];
+        getAssets.status === 'SUCCESS' ? getImageFiles(getAssets.data) : [];
 
     if (!data?.src) {
         return (

@@ -15,8 +15,6 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
     data: Block<D>["data"];
 
-    insightId: string;
-
     /** Listeners on the block  */
     listeners: Record<
         keyof Block<D>["listeners"],
@@ -61,7 +59,7 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
               fileLocation: string;
           }[]
         | false
-    >;  
+    >;
 }
 
 /**
@@ -225,7 +223,6 @@ export const useBlock = <D extends BlockDef = BlockDef>(
         attrs: {
             "data-block": block.id,
         },
-        insightId: state.insightId || "",
         setData: setData,
         deleteData: deleteData,
         uploadFile: uploadFile,

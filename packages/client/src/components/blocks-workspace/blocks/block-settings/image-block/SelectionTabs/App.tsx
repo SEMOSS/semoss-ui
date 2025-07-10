@@ -1,9 +1,9 @@
-import { useState } from "react";
-import { usePixel, upload } from "@semoss/sdk/react";
-import { getImageFiles, imageExtensions } from "../utils";
-import { Typography, FileDropzone, useNotification } from "@semoss/ui";
-import SelectedItem from "./SelectedItem";
-import SelectImage from "./SelectImage";
+import { useState } from 'react';
+import { usePixel, upload } from '@semoss/sdk/react';
+import { getImageFiles, imageExtensions } from '../utils';
+import { Typography, FileDropzone, useNotification } from '@semoss/ui';
+import SelectedItem from './SelectedItem';
+import SelectImage from './SelectImage';
 
 const AppTab = ({ id, data, setData, appId, insightId }) => {
     const notification = useNotification();
@@ -12,26 +12,26 @@ const AppTab = ({ id, data, setData, appId, insightId }) => {
         `BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
     );
     const imageFiles =
-        getAssets.status === "SUCCESS" ? getImageFiles(getAssets.data) : [];
+        getAssets.status === 'SUCCESS' ? getImageFiles(getAssets.data) : [];
     const addFile = async (file: File) => {
         try {
             setIsLoading(true);
 
             let uploadRes = null;
-            uploadRes = await upload(file, insightId, appId, "version/assets/");
-            setData("title", "");
-            setData("src", uploadRes[0]);
+            uploadRes = await upload(file, insightId, appId, 'version/assets/');
+            setData('title', '');
+            setData('src', uploadRes[0]);
             notification.add({
-                color: "success",
-                message: "Image uploaded successfully",
+                color: 'success',
+                message: 'Image uploaded successfully',
             });
             if (!uploadRes) {
-                throw new Error("Error missing uploading image");
+                throw new Error('Error missing uploading image');
             }
         } catch (e) {
             notification.add({
-                color: "error",
-                message: "Error uploading image",
+                color: 'error',
+                message: 'Error uploading image',
             });
             console.error(e);
         } finally {

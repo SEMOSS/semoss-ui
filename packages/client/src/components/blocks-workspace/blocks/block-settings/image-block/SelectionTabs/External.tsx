@@ -1,6 +1,6 @@
-import { BaseSettingSection, InputSettings } from "../../../block-settings";
-import { TextField, Select } from "@semoss/ui";
-import SelectedItem from "./SelectedItem";
+import { BaseSettingSection, InputSettings } from '../../../settings';
+import { TextField, Select } from '@semoss/ui';
+import SelectedItem from './SelectedItem';
 
 const ExternalTab = ({ id, data, setData }) => (
     <>
@@ -8,14 +8,14 @@ const ExternalTab = ({ id, data, setData }) => (
             <SelectedItem file={data.src} setData={setData} />
         ) : (
             <>
-                <BaseSettingSection label={"Image URL"}>
+                <BaseSettingSection label={'Image URL'}>
                     <TextField
                         fullWidth
-                        value={data.src ?? ""}
+                        value={data.src ?? ''}
                         onChange={(e) => {
-                            setData("src", e.target.value);
+                            setData('src', e.target.value);
                         }}
-                        type={"text"}
+                        type={'text'}
                         size="small"
                         variant="outlined"
                         autoComplete="off"
@@ -31,10 +31,10 @@ const ExternalTab = ({ id, data, setData }) => (
                 <BaseSettingSection label="If Image is Unavailable">
                     <Select
                         fullWidth
-                        value={data.unavailable ?? ""}
+                        value={data.unavailable ?? ''}
                         onChange={(e) => {
                             const value = e.target.value as string;
-                            setData("unavailable", value);
+                            setData('unavailable', value);
                         }}
                         size="small"
                         variant="outlined"
@@ -50,7 +50,7 @@ const ExternalTab = ({ id, data, setData }) => (
                 </BaseSettingSection>
             </>
         )}
-        {data.unavailable === "placeholder" && (
+        {data.unavailable === 'placeholder' && (
             <InputSettings
                 id={id}
                 label="Enter Placeholder Text"

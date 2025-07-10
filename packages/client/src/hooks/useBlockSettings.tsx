@@ -20,8 +20,6 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
     /** Data for the block  */
     listeners: Block<D>['listeners'];
 
-    insightId: string;
-
     /**
      * Dispatch a message to set data
      * @param path - path of the data to set
@@ -136,6 +134,5 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
         setData: setData,
         deleteData: deleteData,
         setListener: setListener,
-        insightId: state.insightId || "",
     };
 };

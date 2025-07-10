@@ -1,10 +1,10 @@
-import { useState, useMemo } from "react";
-import { observer } from "mobx-react-lite";
-import { Tab, Tabs, Stack, Tooltip } from "@semoss/ui";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import AppTab from "./App";
-import InsightTab from "./Insight";
-import ExternalTab from "./External";
+import { useState, useMemo } from 'react';
+import { observer } from 'mobx-react-lite';
+import { Tab, Tabs, Stack, Tooltip } from '@semoss/ui';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import AppTab from './App';
+import InsightTab from './Insight';
+import ExternalTab from './External';
 
 type TabRenderProps = {
     id: string;
@@ -17,15 +17,15 @@ type TabRenderProps = {
 
 const tabConfig = [
     {
-        label: "Insight",
-        tooltip: "Image generated when the app runs",
+        label: 'Insight',
+        tooltip: 'Image generated when the app runs',
         render: ({ insightId, data, setData }: TabRenderProps) => (
             <InsightTab insightId={insightId} data={data} setData={setData} />
         ),
     },
     {
-        label: "App",
-        tooltip: "Image stored in app assets",
+        label: 'App',
+        tooltip: 'Image stored in app assets',
         render: ({ id, data, setData, appId, insightId }: TabRenderProps) => (
             <AppTab
                 insightId={insightId}
@@ -37,8 +37,8 @@ const tabConfig = [
         ),
     },
     {
-        label: "External",
-        tooltip: "Add image from external link",
+        label: 'External',
+        tooltip: 'Add image from external link',
         render: ({ id, data, setData }: TabRenderProps) => (
             <ExternalTab id={id} data={data} setData={setData} />
         ),
@@ -62,10 +62,9 @@ const TabsComponent = observer(
                     id,
                     data,
                     setData: updateData,
-                    appId: appId || "",
-                    insightId: insightId || "",
+                    appId: appId || '',
+                    insightId: insightId || '',
                 }),
-            // eslint-disable-next-line react-hooks/exhaustive-deps
             [value, data],
         );
 
@@ -75,14 +74,14 @@ const TabsComponent = observer(
                     value={value}
                     onChange={handleChange}
                     sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
+                        display: 'flex',
+                        justifyContent: 'space-between',
                         minHeight: 36,
                     }}
                     TabIndicatorProps={{
                         sx: {
-                            top: "inherit",
-                            bottom: "unset",
+                            top: 'inherit',
+                            bottom: 'unset',
                         },
                     }}
                     data-testid="image-tabs"
@@ -101,7 +100,7 @@ const TabsComponent = observer(
                         />
                     ))}
                 </Tabs>
-                <Stack flexDirection={"column"} marginTop={2}>
+                <Stack flexDirection={'column'} marginTop={2}>
                     {tabContent}
                 </Stack>
             </>

@@ -1,17 +1,17 @@
-import { styled, Box, Typography, ListItemText, IconButton } from "@semoss/ui";
-import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import DeleteIcon from "@mui/icons-material/Delete";
+import { styled, Box, Typography, ListItemText, IconButton } from '@semoss/ui';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import DeleteIcon from '@mui/icons-material/Delete';
 
 const StyledListItem = styled(Box)(({ theme }) => ({
-    display: "flex",
-    alignItems: "center",
+    display: 'flex',
+    alignItems: 'center',
     gap: theme.spacing(1),
 }));
 
 const StyledInfo = styled(Typography)(({ theme }) => ({
     color: theme.palette.text.disabled,
-    display: "flex",
-    alignItems: "center",
+    display: 'flex',
+    alignItems: 'center',
     gap: theme.spacing(1),
     marginTop: 0,
 }));
@@ -26,7 +26,7 @@ const SelectedItem = ({ file, setData }) => {
                     edge="end"
                     aria-label="delete"
                     onClick={() => {
-                        setData("src", "");
+                        setData('src', '');
                     }}
                 >
                     <DeleteIcon color="error" />
