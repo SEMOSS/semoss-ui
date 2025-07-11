@@ -111,6 +111,7 @@ export interface AddBlockAction extends Action {
                   type: "after";
                   sibling: string;
               };
+        isCommunity?: boolean; // Optional flag to indicate if the block is community-based
     };
 }
 
@@ -176,6 +177,7 @@ export interface NewQueryAction extends Action {
     payload: {
         queryId: string;
         config: Omit<QueryStateConfig, "id">;
+        isCommunity?: boolean; // Optional flag to indicate if the query is community-based
     };
 }
 

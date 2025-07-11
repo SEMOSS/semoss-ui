@@ -149,8 +149,9 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
                   children: string[];
               }
           >;
-          /** For community block reference purpose */
-          referenceId?: string;
+
+          /** Mapping of community block ID to local block ID */
+          communityBlockMapping?: Record<string, string>;
       }
     : never;
 
