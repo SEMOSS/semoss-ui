@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
-import { styled } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import ReactECharts, { EChartsOption } from "echarts-for-react";
 
-import { useFrame, useBlocks, useBlockSettings } from "../../../../../hooks";
+import { styled } from "@semoss/ui";
+
+import { useFrame, useBlock } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { CustomContextMenu } from "./CustomContextMenu";
-import { getValueByPath } from "../../../../../utility";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "100%",
@@ -21,10 +22,11 @@ const StyledNoDataContainer = styled("div", {
 }));
 interface LineProps {
     id: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateJson: (data: any, path: any) => void;
 }
 export const Line = observer(({ id, updateJson }: LineProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
@@ -144,7 +146,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 resultData["xAxis"]["data"] = valuesDataSet.map((x) => x[0]);
                 valuesDataSet.map((x) => x.shift());
                 headersDataSet.shift();
-                const yAxisListLength = resultData["_state"]?.["fields"]?.["yAxis"].length;
+                const yAxisListLength =
+                    resultData["_state"]?.["fields"]?.["yAxis"].length;
                 for (let index = 0; index < yAxisListLength; index++) {
                     resultData["series"][index]["data"] = valuesDataSet.map(
                         (x) => {

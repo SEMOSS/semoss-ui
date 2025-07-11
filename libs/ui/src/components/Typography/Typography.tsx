@@ -38,7 +38,11 @@ export interface TypographyProps {
         | "button"
         | "overline";
     sx?: SxProps;
-    fontWeight?: "light" | "regular" | "medium" | "500" | "bold";
+
+    fontSize?: number;
+    //TODO:  WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM INTEGERS Ex: BOXSHADOWSETTINGS.tsx
+    fontWeight?: "light" | "regular" | "medium" | "500" | "bold" | number;
+    // TODO: WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM COLORS Ex: BOXSHADOWSETTINGS.tsx
     color?:
         | "inherit"
         | "primary"
@@ -47,7 +51,10 @@ export interface TypographyProps {
         | "error"
         | "info"
         | "warning"
-        | "disabled";
+        | "disabled"
+        | "textPrimary"
+        | string;
+
     noWrap?: MuiTypographyProps["noWrap"];
     title?: MuiTypographyProps["title"];
     id?: string;
