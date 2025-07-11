@@ -9,23 +9,29 @@ export type EngineContextType = {
     /** Type of the engine */
     type: ENGINE_TYPES;
 
-    /** ID of the engine to load */
-    id: string;
-
-    /** User's role associated with the engine */
-    role: Role;
-
-    /** refreshes meta vals for engine */
-    refresh: () => void;
-
-    /** Name of the engine */
+    /** Name of the type */
     name: string;
 
-    /** metavals to show on detail pages */
-    metaVals: Record<string, unknown>;
+    /** Path of the type */
+    path: string;
 
-    /** LLM models for the engine */
-    llmModels: Record<string, unknown>[];
+    /** Active engine information */
+    active: {
+        /** ID of the engine to load */
+        id: string;
+
+        /** User's role associated with the engine */
+        role: Role;
+
+        /** Name of the engine */
+        name: string;
+
+        /** metadata to show on detail pages */
+        metadata: Record<string, unknown>;
+
+        /** refreshes metadata for the active engine */
+        refresh: () => void;
+    };
 };
 
 /**

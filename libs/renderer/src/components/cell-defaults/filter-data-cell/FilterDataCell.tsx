@@ -28,7 +28,6 @@ import {
     CellState,
 } from "../../../store";
 import { useBlocks } from "../../../hooks";
-import { BaseSettingSection } from "../../../components/block-settings/BaseSettingSection";
 import { QueryImportCellDef } from "../query-import-cell";
 
 const StyledSelect = styled(Select)(() => ({
@@ -125,12 +124,36 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
          */
         const targetCell: CellState<QueryImportCellDef> = computed(() => {
             let c;
+            let cellId: number | null = null;
             Object.values(state.queries).forEach((query) => {
+                Object.entries(query.cells).forEach(
+                    ([key, value], cellIndex) => {
+                        const parsedId =
+                            value["parameters"]?.["frameVariableName"] || null;
+                        if (cellId || parsedId === null) return;
+
+                        const target = (parsedId as String)?.match(/\d+/);
+                        const targetID = target ? target[0] : null;
+                        if (
+                            targetID &&
+                            Number(targetID) ===
+                                Number(cell.parameters.targetCell.id) &&
+                            cellId === null
+                        ) {
+                            cellId = parseInt(key, 10);
+                        }
+                    },
+                );
+
                 if (query.cells[cell.parameters.targetCell.id]) {
                     c = query.cells[
                         cell.parameters.targetCell.id
                     ] as CellState<QueryImportCellDef>;
                 }
+                if (!query.cells[cell.parameters.targetCell.id] && cellId) {
+                    c = query.cells[cellId] as CellState<QueryImportCellDef>;
+                }
+                cellId = null;
             });
             return c;
         }).get();
@@ -157,7 +180,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             if (doesFrameExist && targetCell.isExecuted !== undefined) {
                 handleTargetCellChange();
             }
-        }, [targetCell?.isExecuted, doesFrameExist]);
+        }, [targetCell?.isExecuted, doesFrameExist, selectedFrame]);
         const myDbs =
             usePixel<{ app_id: string; app_name: string }[]>(`GetFrames();`);
         useEffect(() => {
@@ -165,7 +188,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                 return;
             }
             handleFrame();
-            let query = parseQuery(cell.parameters.filterQuery);
+            const query = parseQuery(cell.parameters.filterQuery);
             setRuleGroups(query);
         }, [myDbs.status]);
         useEffect(() => {
@@ -187,7 +210,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             const parsedRules = parseQuery(query);
             setRuleGroups(parsedRules);
             const getFrames = await state.runSideEffect("GetFrames();");
-            let list = getFrames["pixelReturn"][0]["output"] as string[];
+            const list = getFrames["pixelReturn"][0]["output"] as string[];
             if (list.length > 0) {
                 setFramelist((prev) => [...list]);
             }
@@ -206,7 +229,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             const response = await state.runSideEffect(
                 `META | Frame("${selectedFrame}") | QueryAll()| Limit(1000) | CollectAll()`,
             );
-            let responseData = response["pixelReturn"][0]["output"]["data"];
+            const responseData = response["pixelReturn"][0]["output"]["data"];
             const headers = response["pixelReturn"][0]["output"][
                 "headerInfo"
             ].map((element) => ({
@@ -297,7 +320,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                 if (expr.startsWith("(") && expr.endsWith(")")) {
                     expr = expr.slice(1, -1).trim();
                 }
-                let condition: "AND" | "OR" = "AND";
+                const condition: "AND" | "OR" = "AND";
                 const parts: (Rule | RuleGroup)[] = [];
                 let buffer = "";
                 let bracketCount = 0;
@@ -576,14 +599,14 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
         };
         async function handleFrame() {
             const getFrames = await state.runSideEffect("GetFrames();");
-            let list = getFrames["pixelReturn"][0]["output"] as string[];
+            const list = getFrames["pixelReturn"][0]["output"] as string[];
             if (list.length > 0) {
                 setFramelist((prev) => [...list]);
             }
         }
         async function handleFrameSelected(frameSelected) {
             setSelectedFrame(frameSelected);
-            let target = frameSelected.match(/\d+/);
+            const target = frameSelected.match(/\d+/);
             const targetID = target ? parseInt(target[0], 10) : null;
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
@@ -993,30 +1016,29 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
             <StyledContent>
                 <Stack direction="column" spacing={1}>
                     <MainContainer>
-                        <BaseSettingSection label="Frame">
-                            <Autocomplete
-                                fullWidth
-                                multiple={false}
-                                disabled={cell.isLoading}
-                                value={selectedFrame}
-                                options={framelist}
-                                getOptionLabel={(option) => {
-                                    return option;
-                                }}
-                                onChange={(e, value) => {
-                                    handleFrameSelected(value);
-                                }}
-                                freeSolo={false}
-                                renderInput={(params) => (
-                                    <TextField
-                                        {...params}
-                                        placeholder="Select Frame"
-                                        size="small"
-                                        variant="outlined"
-                                    />
-                                )}
-                            />
-                        </BaseSettingSection>
+                        <Autocomplete
+                            fullWidth
+                            label="Frame"
+                            multiple={false}
+                            disabled={cell.isLoading}
+                            value={selectedFrame}
+                            options={framelist}
+                            getOptionLabel={(option) => {
+                                return option;
+                            }}
+                            onChange={(e, value) => {
+                                handleFrameSelected(value);
+                            }}
+                            freeSolo={false}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Select Frame"
+                                    size="small"
+                                    variant="outlined"
+                                />
+                            )}
+                        />
                     </MainContainer>
                     <EmptyContainer>
                         {doesFrameExist &&

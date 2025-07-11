@@ -57,6 +57,7 @@ import { Panel } from '@/components/workspace';
 import { getBlockElement } from '@/stores';
 import DuplicateIcon from '../../../assets/img/Duplicate.svg';
 import DeleteOutlineOutlinedIcon from '@mui/icons-material/DeleteOutlineOutlined';
+import { BlockSettingsRegistry } from '../blocks';
 
 const customCollisionDetection = (args) => {
     const collisions = closestCenter(args);
@@ -237,7 +238,7 @@ const findNode = (
  */
 export const LayersPanel = observer((): JSX.Element => {
     // get the store
-    const { registry, state } = useBlocks();
+    const { state } = useBlocks();
     const { designer } = useDesigner();
     const notification = useNotification();
     const { workspace } = useWorkspace();
@@ -828,7 +829,7 @@ export const LayersPanel = observer((): JSX.Element => {
         }
         const variableName = state.getAlias(id);
         const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-        const WidgetIcon = registry[block.widget].icon;
+        const WidgetIcon = BlockSettingsRegistry[block.widget].icon;
         const children = [];
         for (const s in block.slots) {
             children.push(...block.slots[s].children);
@@ -922,7 +923,9 @@ export const LayersPanel = observer((): JSX.Element => {
                 onMouseOver={(e) => setPageHovered(block.id)}
                 onMouseLeave={(e) => setPageHovered('')}
             >
-                <Typography variant="subtitle1">/{id}</Typography>
+                <Typography variant="subtitle1">
+                    /{block.data.route as string}
+                </Typography>
                 {id == 'page-1' ? (
                     <StyledTreeItemIcon>
                         <Home />
@@ -982,7 +985,7 @@ export const LayersPanel = observer((): JSX.Element => {
             }
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -1096,7 +1099,7 @@ export const LayersPanel = observer((): JSX.Element => {
             let selectedNode: TabNode | null = null;
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -1161,7 +1164,7 @@ export const LayersPanel = observer((): JSX.Element => {
             let selectedNode: TabNode | null = null;
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
