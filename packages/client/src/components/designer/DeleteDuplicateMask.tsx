@@ -101,7 +101,9 @@ export const DeleteDuplicateMask = observer(
 
         const hasChildren = block?.slots?.children?.children?.length > 0;
         const isIterationOrContainer =
-            block.widget === 'iteration' || block.widget === 'container';
+            block == null
+                ? false
+                : block.widget === 'iteration' || block.widget === 'container';
         const isChangeable = hasChildren && block.widget !== 'container';
         // check if it is visible
         const isVisible =
