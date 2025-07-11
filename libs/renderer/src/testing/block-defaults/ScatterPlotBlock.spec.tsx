@@ -36,7 +36,7 @@ const blocks = {
                     position: "bottom",
                 },
                 xAxis: {
-                    name: "DemoX",
+                    name: ["DemoX"],
                     pixelName: "",
                     nameLocation: "middle",
                     show: true,
@@ -535,5 +535,41 @@ describe("Scatter Plot Block", async () => {
 
         // This will result in the data block 'show' property to be set to false
         expect(result.current.data.option.xAxis.show).toBe(false);
+    });
+
+    it("should check if Show Axis Title toggle can be toggled", async () => {
+        const { result } = renderHook(
+            () => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+            {
+                blocks,
+                renderEngineId: "scatter",
+                customChildren: (
+                    <EditXAxisScatterPlot id="scatter" path={"option"} />
+                ),
+            },
+        );
+        expect(result.current).toBeDefined();
+
+        const label = screen.queryByText("Show Axis Title");
+
+        const parentElem = label.parentElement;
+
+        const toggle = parentElem.querySelector('input[type="checkbox"]');
+
+        expect(toggle).toBeInTheDocument();
+
+        const xAxisTitle = result.current.data.option.xAxis.name;
+
+        console.log({ xAxisTitle });
+
+        expect(xAxisTitle).toContain("DemoX");
+
+        expect(toggle).toBeChecked();
+
+        fireEvent.click(toggle);
+
+        expect(toggle).not.toBeChecked();
+
+        expect(result.current.data.option.xAxis.name).toBe("");
     });
 });
