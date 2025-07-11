@@ -158,11 +158,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
     const [mode, setMode] = useState<MODE>('Mine');
 
     const [sortOrder, setSortOrder] = useState('ASC');
-    const [canCollect, setCanCollect] = useState(true);
-    const [offset, setOffset] = useState(0);
+    // const [canCollect, setCanCollect] = useState(true);
+    // const [offset, setOffset] = useState(0);
 
     //** amount of items to be loaded */
     const limit = 5;
+    const { offset, checkHasReached } = useInfiniteScroll({ limit });
+
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {
@@ -197,25 +199,24 @@ export const AppCatalogPage = observer((): JSX.Element => {
      */
     const getApps = usePixel<AppMetadata[]>(pixel);
 
-    const HOOOK = useInfiniteScroll(
-        mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects',
-        '"tag","domain","data classification","data restrictions","description"',
-    );
-    console.log('HOOOK', HOOOK);
     useEffect(() => {
         if (getApps.status !== 'SUCCESS') {
             dispatch({
                 type: 'field',
                 field: 'apps',
-                value: [],
+                value: offset ? apps : [],
             });
             return;
+        }
+
+        if (getApps.status === 'SUCCESS' && getApps.data instanceof Array) {
+            checkHasReached(getApps.data.length);
         }
 
         dispatch({
             type: 'field',
             field: 'apps',
-            value: getApps.data,
+            value: offset ? [...apps, ...getApps.data] : getApps.data,
         });
     }, [getApps.status, getApps.data]);
 

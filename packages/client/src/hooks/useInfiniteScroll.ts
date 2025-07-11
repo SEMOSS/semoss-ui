@@ -1,24 +1,35 @@
-import { useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { EngineContext } from '../contexts';
-import { useBlock, useBlocks } from '../../../../libs/renderer/src/hooks';
-import { usePixel } from './usePixel';
-import { AppMetadata } from '@/components/app';
-// const [isLoading, setIsLoading] = useState<boolean>(false);
-// const [sortOrder, setSortOrder] = useState('ASC');
-// const [canCollect, setCanCollect] = useState(true);
-// const [offset, setOffset] = useState(0);
-export function useInfiniteScroll(engine: string, metaKey: string) {
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [sortOrder, setSortOrder] = useState('ASC');
-    const [data, setData] = useState<AppMetadata[]>();
+import { useEffect, useRef, useState } from 'react';
+
+export function useInfiniteScroll({
+    limit = 10,
+    scrollElementId = null,
+}: {
+    limit?: number;
+    scrollElementId?: string;
+}) {
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
+
     let scrollEle, scrollTimeout, currentScroll, previousScroll;
-    const limit = 5;
     const offsetRef = useRef(0);
     offsetRef.current = offset;
     const canCollectRef = useRef(true);
     canCollectRef.current = canCollect;
+
+    const reset = () => {
+        setOffset(0);
+        setCanCollect(true);
+    };
+
+    const checkHasReached = (len: number) => {
+        if (len < limit) {
+            setCanCollect(false);
+        } else {
+            if (!canCollectRef.current) {
+                setCanCollect(true);
+            }
+        }
+    };
 
     const scrollAll = () => {
         currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
@@ -36,37 +47,27 @@ export function useInfiniteScroll(engine: string, metaKey: string) {
                 }
 
                 setOffset(offsetRef.current + limit);
+                offsetRef.current = offsetRef.current + limit;
             }, 500);
         }
 
         previousScroll = currentScroll;
     };
 
-    const Myprojects = usePixel<AppMetadata[]>(
-        engine
-            ? `${engine}(metaKeys = [${metaKey}], limit=[${limit}], offset=[${offset}]);`
-            : '',
-        {
-            silent: true,
-        },
-        // context.state.insightId,
-    );
     useEffect(() => {
-        if (Myprojects.status === 'SUCCESS') {
-            setData(Myprojects.data);
-        }
-    }, [Myprojects.status, Myprojects.data]);
-    /**
-     * @desc infinite scroll
-     */
-    useEffect(() => {
-        scrollEle = document.querySelector('#home__content');
+        reset();
+    }, [limit]);
 
-        scrollEle.addEventListener('scroll', scrollAll);
+    useEffect(() => {
+        scrollEle = document.querySelector(scrollElementId || '#home__content');
+
+        scrollEle?.addEventListener('scroll', scrollAll);
         return () => {
-            scrollEle.removeEventListener('scroll', scrollAll);
+            scrollEle?.removeEventListener('scroll', scrollAll);
         };
     }, [scrollEle]);
-    //);
-    return { data };
+
+    return { offset, canCollect, checkHasReached, reset };
 }
+
+export default useInfiniteScroll;
