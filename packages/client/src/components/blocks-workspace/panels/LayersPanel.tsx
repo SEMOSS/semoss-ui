@@ -1201,7 +1201,6 @@ export const LayersPanel = observer((): JSX.Element => {
         });
 
         if (typeof newPageId === 'string') {
-            console.log('newPageId', newPageId);
             const block = state.blocks[newPageId];
             handlePageSelection(block);
         } else {

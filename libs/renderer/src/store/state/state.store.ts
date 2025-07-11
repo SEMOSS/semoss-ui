@@ -818,7 +818,40 @@ export class StateStore {
      */
     private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
         // generate a new id
-        const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
+        let id: string;
+        if (json.widget === "page") {
+            // Find all page blocks and their numbers
+            const usedPageNumbers = new Set<number>();
+            Object.keys(this._store.blocks).forEach(blockId => {
+                const match = blockId.match(/^page--(\d+)$/);
+                if (match) {
+                    usedPageNumbers.add(Number(match[1]));
+                }
+            });
+            // Find the lowest available page number
+            let pageNum = 2; // Start from 2 to avoid conflicts with the default page
+            while (usedPageNumbers.has(pageNum)) {
+                pageNum++;
+            }
+            id = `page--${pageNum}`;
+        } else if (json.widget !== "page") {
+            // Global sequencing: find all block numbers used, regardless of page and widget type
+            const usedBlockNumbers = new Set<number>();
+            Object.values(this._store.blocks).forEach(block => {
+                if (block.widget !== "page") {
+                    const match = block.id.match(/^.+--(\d+)$/);
+                    if (match) {
+                        usedBlockNumbers.add(Number(match[1]));
+                    }
+                }
+            });
+            // Find the lowest available block number
+            let blockNum = 1;
+            while (usedBlockNumbers.has(blockNum)) {
+                blockNum++;
+            }
+            id = `${json.widget}--${blockNum}`;
+        }
 
         // create the block
         const block = {
