@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { Button, Stack, Typography, useNotification, Grid } from '@semoss/ui';
-import { Page } from '@/components/ui';
 import { useRootStore } from '@/hooks';
 import { PromptModal } from './PromptModal';
 import { PromptLibraryCards } from '../../components/prompt/library/PromptLibraryCards';
@@ -99,59 +97,52 @@ export const PromptPage = observer(() => {
     }
 
     return (
-        <Page
-            header={
-                <Stack>
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                        spacing={4}
-                    >
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={2}
+        <Stack direction="column" gap={2}>
+            <Stack>
+                <Stack
+                    direction="row"
+                    alignItems={'center'}
+                    justifyContent={'space-between'}
+                    spacing={4}
+                >
+                    <Stack direction="row" alignItems={'center'} spacing={2}>
+                        <Typography
+                            data-tour="app-library-title"
+                            variant={'h4'}
                         >
-                            <Typography
-                                data-tour="app-library-title"
-                                variant={'h4'}
-                            >
-                                Prompt Catalog
-                            </Typography>
-                        </Stack>
-                        <Button
-                            size={'large'}
-                            variant={'contained'}
-                            onClick={() => {
-                                setPromptMode('Add');
-                                setIsPromptModalOpen(true);
-                            }}
-                            aria-label={`Add Prompt`}
-                            data-testid={'prompt-page-add-btn'}
-                        >
-                            Add Prompt
-                        </Button>
-                    </Stack>
-                    <Stack
-                        direction="row"
-                        alignItems={'center'}
-                        justifyContent={'space-between'}
-                        spacing={4}
-                        sx={{ paddingTop: '10px' }}
-                    >
-                        <Typography variant={'subtitle1'}>
-                            Our prompt catalog is a versatile library of prompts
-                            designed for various use cases. It offers an
-                            abstracted interface, allowing developers and data
-                            scientists to easily select and integrate the right
-                            prompts into their applications. This flexibility
-                            ensures optimized workflows and improved outcomes.
+                            Prompt Catalog
                         </Typography>
                     </Stack>
+                    <Button
+                        size={'large'}
+                        variant={'contained'}
+                        onClick={() => {
+                            setPromptMode('Add');
+                            setIsPromptModalOpen(true);
+                        }}
+                        aria-label={`Add Prompt`}
+                        data-testid={'prompt-page-add-btn'}
+                    >
+                        Add Prompt
+                    </Button>
                 </Stack>
-            }
-        >
+                <Stack
+                    direction="row"
+                    alignItems={'center'}
+                    justifyContent={'space-between'}
+                    spacing={4}
+                    sx={{ paddingTop: '10px' }}
+                >
+                    <Typography variant={'subtitle1'}>
+                        Our prompt catalog is a versatile library of prompts
+                        designed for various use cases. It offers an abstracted
+                        interface, allowing developers and data scientists to
+                        easily select and integrate the right prompts into their
+                        applications. This flexibility ensures optimized
+                        workflows and improved outcomes.
+                    </Typography>
+                </Stack>
+            </Stack>
             <Grid container spacing={2}>
                 <Grid item xs={2}>
                     <PromptLibraryList
@@ -181,6 +172,6 @@ export const PromptPage = observer(() => {
                 }}
                 mode={promptMode}
             ></PromptModal>
-        </Page>
+        </Stack>
     );
 });

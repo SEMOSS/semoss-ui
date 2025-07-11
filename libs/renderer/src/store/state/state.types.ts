@@ -128,7 +128,10 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
           data: D["data"];
 
           /** Event listeners associated with the block */
-          listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: "sync"| "async"}>;
+          listeners: Record<
+              keyof D["listeners"],
+              { order: ListenerActions[]; type: "sync" | "async" }
+          >;
 
           /** Slots associated with the block */
           slots: Record<
@@ -154,7 +157,10 @@ export interface BlockDef<W extends string = string> {
     data: Record<string, unknown>;
 
     /** Listeners associated with the widget */
-    listeners: Record<string, {order: ListenerActions[], type: 'sync' | 'async'}>;
+    listeners: Record<
+        string,
+        { order: ListenerActions[]; type: "sync" | "async" }
+    >;
 
     /** Names of the slot associated with the widget */
     slots: Record<string, true>;
@@ -174,47 +180,16 @@ export interface BlockConfig<D extends BlockDef = BlockDef> {
     data: D["data"];
 
     /** Listeners associated with the block */
-    listeners: Record<keyof D["listeners"], {order: ListenerActions[], type: 'sync' | 'async'}>;
+    listeners: Record<
+        keyof D["listeners"],
+        { order: ListenerActions[]; type: "sync" | "async" }
+    >;
 
     /** Children associated with the block */
     slots: Record<keyof D["slots"], BlockJSON[]>;
 
     /** Render the block */
     render: BlockComponent;
-
-    /** Icon to render in the builder sidebar */
-    icon: React.FunctionComponent;
-
-    /** *new* custom menu */
-    menu?: BlockComponent;
-
-    /** Content Menu */
-    contentMenu?: {
-        name: string;
-        children: {
-            /** Description for the setting */
-            description: string;
-            /** Render the setting */
-            render: (props: {
-                /** Id of the block */
-                id: string;
-            }) => JSX.Element;
-        }[];
-    }[];
-
-    /** Style Menu */
-    styleMenu?: {
-        name: string;
-        children: {
-            /** Description for the setting */
-            description: string;
-            /** Render the setting */
-            render: (props: {
-                /** Id of the block */
-                id: string;
-            }) => JSX.Element;
-        }[];
-    }[];
 }
 
 /**
@@ -240,7 +215,10 @@ export type BlockJSON<
           data: T["data"];
 
           /** Event listeners associated with the widget */
-          listeners: Record<keyof T["listeners"], {order: ListenerActions[], type: "sync" | "async"}>;
+          listeners: Record<
+              keyof T["listeners"],
+              { order: ListenerActions[]; type: "sync" | "async" }
+          >;
 
           /** Slot information */
 

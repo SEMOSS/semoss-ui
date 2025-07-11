@@ -7,7 +7,6 @@ import {
     SearchOff,
 } from '@mui/icons-material';
 
-import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
 import {
     styled,
     Stack,
@@ -19,11 +18,14 @@ import {
     ToggleTabsGroup,
     AlertTitle,
 } from '@semoss/ui';
+import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
 
+import { BlockSettingsRegistry } from '../blocks';
 import { useDesigner } from '@/hooks';
 import { SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
+
 import MultiBlockIcon from '../../../assets/img/Multiple_Block.svg';
 import GroupIcon from '../../../assets/img/Group.svg';
 import VariationIcon from '../../../assets/img/VariationLogo.svg';
@@ -168,7 +170,7 @@ const StyledVariationIcon = styled('img')(({ theme }) => ({
 
 export const SelectedBlockPanel = observer(() => {
     const { designer } = useDesigner();
-    const { state, registry } = useBlocks();
+    const { state } = useBlocks();
     const notification = useNotification();
 
     const [contentAccordion, setContentAccordion] = useState<
@@ -192,11 +194,15 @@ export const SelectedBlockPanel = observer(() => {
 
     // get the content menu
     const contentMenu = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return [];
         }
 
-        const m = registry[block.widget]?.contentMenu ?? [];
+        const m = BlockSettingsRegistry[block.widget]?.contentMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -229,15 +235,19 @@ export const SelectedBlockPanel = observer(() => {
             });
         }
         return m;
-    }, [registry, block ? block.widget : '', search]);
+    }, [BlockSettingsRegistry, block ? block.widget : '', search]);
 
     // get the style menu
     const styleMenu = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return [];
         }
 
-        const m = registry[block.widget]?.styleMenu ?? [];
+        const m = BlockSettingsRegistry[block.widget]?.styleMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -270,30 +280,38 @@ export const SelectedBlockPanel = observer(() => {
             });
         }
         return m;
-    }, [registry, block ? block.widget : '', search]);
+    }, [BlockSettingsRegistry, block ? block.widget : '', search]);
 
     // new custom righthand menu content
     const menu = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return null;
         }
 
-        return registry[block.widget]?.menu ?? null;
-    }, [registry, block ? block.widget : '']);
+        return BlockSettingsRegistry[block.widget]?.menu ?? null;
+    }, [BlockSettingsRegistry, block ? block.widget : '']);
 
     // get the icon
     const icon = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return null;
         }
 
-        const w = registry[block.widget];
+        const w = BlockSettingsRegistry[block.widget];
         if (!w) {
             return null;
         }
 
         return w.icon;
-    }, [registry, block ? block.widget : '']);
+    }, [BlockSettingsRegistry, block ? block.widget : '']);
 
     /**
      * Copy text and add it to the clipboard

@@ -2,13 +2,11 @@ import { useEffect, useState } from 'react';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 import { useNotification, IconButton, Stack, Tooltip } from '@semoss/ui';
 import {
-    CloudSyncOutlined,
     CreateNewFolderOutlined,
     NoteAddOutlined,
     FileUpload,
     Refresh,
     PublishedWithChangesOutlined,
-    CoffeeRounded,
     CoffeeOutlined,
 } from '@mui/icons-material';
 import Typography from '@mui/material/Typography';
@@ -587,7 +585,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             }
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -636,7 +634,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             }
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -699,7 +697,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             let selectedNode: TabNode | null = null;
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
@@ -755,7 +753,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
             const nodesToBeRemoved: TabNode[] = [];
 
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }
