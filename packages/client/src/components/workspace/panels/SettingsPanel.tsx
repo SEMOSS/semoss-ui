@@ -15,6 +15,7 @@ import {
     PendingMembersTable,
     MembersTable,
     SettingsTiles,
+    DependencyList,
 } from '@/components/settings';
 import { AppSettings } from '@/components/app';
 import { SettingsContext } from '@/contexts';
@@ -40,7 +41,7 @@ const StyledContent = styled('div')(({ theme }) => ({
     flexShrink: '0',
 }));
 
-type VIEW = 'CURRENT' | 'PENDING' | 'APP';
+type VIEW = 'CURRENT' | 'PENDING' | 'APP' | 'DEPENDENCY';
 
 export const SettingsPanel = () => {
     const { configStore, monolithStore } = useRootStore();
@@ -168,6 +169,11 @@ export const SettingsPanel = () => {
                                     disabled={workspace.role === 'READ_ONLY'}
                                     value={'APP'}
                                 />
+                                <ToggleTabsGroup.Item
+                                    label="Dependency"
+                                    disabled={workspace.role === 'READ_ONLY'}
+                                    value={'DEPENDENCY'}
+                                />
                             </ToggleTabsGroup>
                             {view === 'CURRENT' && (
                                 <MembersTable
@@ -184,6 +190,9 @@ export const SettingsPanel = () => {
                             )}
                             {view === 'APP' && (
                                 <AppSettings id={workspace.appId} />
+                            )}
+                            {view === 'DEPENDENCY' && (
+                                <DependencyList id={workspace.appId} />
                             )}
                         </StyledContent>
                     </StyledContainer>
