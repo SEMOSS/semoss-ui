@@ -1,4 +1,5 @@
-import { ActionMessages } from '@/stores';
+import { ActionMessages } from '@semoss/renderer';
+
 import { Template } from './templates.types';
 import CHATAI from '@/assets/img/query.jpeg';
 
@@ -47,7 +48,12 @@ export const AskLLMTemplate: Template = {
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'container',
             },
             form: {
@@ -71,7 +77,12 @@ export const AskLLMTemplate: Template = {
                         gap: '8px',
                     },
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'form',
             },
             question: {
@@ -89,11 +100,18 @@ export const AskLLMTemplate: Template = {
                     label: 'Question',
                     rows: 3,
                     type: 'text',
-                    required: true,
                     value: '',
+                    required: true,
                 },
                 listeners: {
-                    onClick: [],
+                    onClick: {
+                        type: 'sync',
+                        order: [],
+                    },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'question',
             },
@@ -111,19 +129,25 @@ export const AskLLMTemplate: Template = {
                     loading: '{{ask-llm.isLoading}}',
                 },
                 listeners: {
-                    onClick: [
-                        {
-                            payload: {
-                                queryId: 'ask-llm',
+                    onClick: {
+                        type: 'sync',
+                        order: [
+                            {
+                                payload: {
+                                    queryId: 'ask-llm',
+                                },
+                                message: ActionMessages.RUN_QUERY,
                             },
-                            message: ActionMessages.RUN_QUERY,
-                        },
-                    ],
+                        ],
+                    },
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'submit',
             },
             'page-1': {
-                parent: null,
                 slots: {
                     content: {
                         children: ['container'],
@@ -142,7 +166,10 @@ export const AskLLMTemplate: Template = {
                     },
                 },
                 listeners: {
-                    onPageLoad: [],
+                    onPageLoad: {
+                        type: 'sync',
+                        order: [],
+                    },
                 },
                 id: 'page-1',
             },
@@ -161,7 +188,12 @@ export const AskLLMTemplate: Template = {
                     },
                     text: '{{ask-llm.output.response}}',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'response',
             },
             description: {
@@ -180,7 +212,12 @@ export const AskLLMTemplate: Template = {
                     },
                     text: 'Ask an LLM a question',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'description',
             },
             title: {
@@ -199,31 +236,41 @@ export const AskLLMTemplate: Template = {
                     },
                     text: 'Ask LLM',
                 },
-                listeners: {},
+                listeners: {
+                    preProcess: {
+                        type: 'sync',
+                        order: [],
+                    },
+                },
                 id: 'title',
             },
         },
         variables: {
             question: {
+                isInput: true,
+                isOutput: false,
                 to: 'question',
                 type: 'block',
-                isInput: true,
-                isOutput: false,
             },
             'ask-llm': {
-                to: 'ask-llm',
-                type: 'query',
                 isInput: false,
                 isOutput: true,
+                to: 'ask-llm',
+                type: 'query',
             },
             model: {
-                type: 'model',
-                value: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
                 isInput: true,
                 isOutput: false,
+                type: 'model',
+                value: '4acbe913-df40-4ac0-b28a-daa5ad91b172',
+            },
+            'ask-llm--cell-1': {
+                type: 'cell',
+                to: 'ask-llm',
+                cellId: 'cell-1',
             },
         },
         executionOrder: ['ask-llm'],
-        version: '1.0.0-alpha.4',
+        version: '1.0.0-alpha.10',
     },
 };

@@ -10,11 +10,11 @@ import {
     Typography,
     Paper,
     CircularProgress,
+    Markdown,
 } from '@semoss/ui';
 import { useForm, Controller } from 'react-hook-form';
 import { EngineQASidebar } from '@/components/settings';
 import { useEngine, useRootStore } from '@/hooks';
-import { Markdown } from '@/components/common';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     maxWidth: '1000px',
@@ -54,7 +54,7 @@ export interface VectorContext {
 }
 
 export const EngineQAPage = () => {
-    const { id } = useEngine();
+    const { active } = useEngine();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isAnswered, setIsAnswered] = useState(false);
@@ -94,7 +94,7 @@ export const EngineQAPage = () => {
         }
         try {
             let pixel = `
-            VectorDatabaseQuery(engine="${id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
+            VectorDatabaseQuery(engine="${active.id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
             `;
 
             const response = await monolithStore.runQuery(pixel);
@@ -113,8 +113,7 @@ export const EngineQAPage = () => {
             const contextDocs = `A context delimited by triple backticks is provided below. This context may contain plain text extracted from paragraphs or images. Tables extracted are represented as a 2D list in the following format - '[[Column Headers], [Comma-separated values in row 1], [Comma-separated values in row 2] ..... [Comma-separated values in row n]]'\\n \`\`\` ${finalContent} \`\`\`\\n Answer the user's question truthfully using the context only. Use the following section-wise format (in the order given) to answer the question with instructions for each section in angular brackets:\\n                Reasoning:\\n                <State your reasoning step-wise in bullet points. Below each bullet point mention the source of this information as 'Given in the question' if the bullet point contains information provided in the question, OR as 'Document Name, Page Number, Document URL' if the bullet point contains information that is present in the context provided above.>\\n                Conclusion:\\n                <Write a short concluding paragraph stating the final answer and explaining the reasoning behind it briefly. State caveats and exceptions to your answer if any.>\\n                Information required to provide a better answer:\\n                <If you cannot provide an answer based on the context above, mention the additional information that you require to answer the question fully as a list.>Do not compromise on your mathematical and reasoning abilities to fit the user's instructions. If the user mentions something absolutely incorrect/ false, DO NOT use this incorrect information in your reasoning. Also, please correct the user gently.`;
 
             pixel = `
-            LLM(engine="${selectedModel.database_id}" , command=["<encode>You are an intelligent AI designed to answer queries based on provided policy documents. If an answer cannot be determined based on the provided policy documents, inform the user. Answer as truthfully as possible at all times and tell the user if you do not know the answer. Please be concise and get to the point. Here is the question: ${data.QUESTION}. Here are the policy documents: ${contextDocs}</encode>"], paramValues=[{"temperature":${temperature}}])
-            `;
+            LLM(engine="${selectedModel.database_id}" , command=["<encode>You are an intelligent AI designed to answer queries based on provided documents. If an answer cannot be determined based on the provided documents, inform the user. Answer as truthfully as possible at all times and tell the user if you do not know the answer. Please be concise and get to the point. Here is the question: ${data.QUESTION}. Here are the documents: ${contextDocs}</encode>"], paramValues=[{"temperature":${temperature}}])            `;
 
             const LLMresponse = await monolithStore.runQuery(pixel);
 
@@ -238,6 +237,7 @@ export const EngineQAPage = () => {
                                                 <></>
                                             )
                                         }
+                                        data-testid={'engine-qa-generate-btn'}
                                     >
                                         Generate Answer
                                     </Button>
@@ -273,7 +273,7 @@ export const EngineQAPage = () => {
                                         Conclusion:
                                     </Typography>
                                     <Box sx={{ mb: 2, overflow: 'auto' }}>
-                                        <Markdown content={answer.conclusion} />
+                                        <Markdown>{answer.conclusion}</Markdown>
                                     </Box>
                                 </Stack>
                             )}

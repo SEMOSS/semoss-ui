@@ -1,4 +1,11 @@
 import { useEffect, useState } from 'react';
+import { AxiosResponse } from 'axios';
+import {
+    EditRounded,
+    RemoveRedEyeRounded,
+    ClearRounded,
+} from '@mui/icons-material';
+
 import {
     styled,
     Button,
@@ -16,19 +23,13 @@ import {
     TextField,
     Select,
 } from '@semoss/ui';
-import {
-    EditRounded,
-    RemoveRedEyeRounded,
-    ClearRounded,
-} from '@mui/icons-material';
-import { AxiosResponse } from 'axios';
 
 import { ALL_TYPES } from '@/types';
 import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
-
-import { useAPI, useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
+import { permissionPriorityMapper } from '@/utility/general';
 
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     maxWidth: '50rem',
@@ -61,17 +62,10 @@ const StyledOuterBox = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-// maps for permissions,
-const permissionMapper = {
-    1: 'Author', // BE: 'DISPLAY'
-    OWNER: 'Author', // BE: 'DISPLAY'
-    Author: 'OWNER', // DISPLAY: BE
-    2: 'Editor', // BE: 'DISPLAY'
-    EDIT: 'Editor', // BE: 'DISPLAY'
-    Editor: 'EDIT', // DISPLAY: BE
-    3: 'Read-Only', // BE: 'DISPLAY'
-    READ_ONLY: 'Read-Only', // BE: 'DISPLAY'
-    'Read-Only': 'READ_ONLY', // DISPLAY: BE
+const Setting_Role_Values: SETTINGS_ROLE[] = ['Author', 'Editor', 'Read-Only'];
+
+const validSetting = (value: unknown) => {
+    return Setting_Role_Values.includes(value as SETTINGS_ROLE);
 };
 
 const AUTOCOMPLETE_OFFSET = 0;
@@ -103,6 +97,11 @@ interface MembersAddOverlayProps {
      *
      */
     setAddModalUser?: React.Dispatch<React.SetStateAction<User>>;
+
+    /**
+     * User permission of the app or engine being edited
+     */
+    userPermission: SETTINGS_ROLE;
 
     /**
      * Called on close
@@ -139,6 +138,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
         type,
         id,
         open = false,
+        userPermission,
         onClose = () => null,
         user,
         setAddModalUser,
@@ -151,10 +151,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     /** Add Member State */
     const [selectedMembers, setSelectedMembers] = useState([]);
 
-    const [selectedRole, setSelectedRole] =
-        useState<SETTINGS_ROLE>('Read-Only');
+    const [selectedRole, setSelectedRole] = useState<SETTINGS_ROLE>(null);
     const [search, setSearch] = useState<string>('');
-    const [restriction, setRestriction] = useState<string>('');
+    const [restriction, setRestriction] = useState<string>('null');
     const [maxTokens, setMaxTokens] = useState<string>('');
     const [maxTime, setMaxTime] = useState<string>('');
     const [frequency, setFrequency] = useState<string>('');
@@ -182,9 +181,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const unitTypes: string[] = ['milliseconds'];
 
     useEffect(() => {
+        setSelectedRole('Read-Only');
         if (user) {
-            setSelectedRole(user?.permission as SETTINGS_ROLE);
-            setRestriction(user?.usage_restriction);
+            setSelectedRole(
+                permissionPriorityMapper(user?.permission)
+                    ?.permission as SETTINGS_ROLE,
+            );
+            setRestriction(
+                user?.usage_restriction !== undefined
+                    ? user?.usage_restriction
+                    : 'null',
+            );
             setMaxTokens(user?.max_tokens?.toString());
             setMaxTime(user?.max_response_time?.toString());
             setFrequency(user?.usage_frequency);
@@ -192,58 +199,94 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
         // reset on open or close
         setSelectedMembers([]);
-        setSelectedRole('Read-Only');
         setSearch('');
     }, [open]);
 
-    // TODO: Implement Lazy Loading
-    // get the api
-    const getMembersApi: Parameters<typeof useAPI>[0] =
-        type === 'DATABASE' ||
-        type === 'STORAGE' ||
-        type === 'MODEL' ||
-        type === 'VECTOR' ||
-        type === 'FUNCTION'
-            ? [
-                  'getEngineUsersNoCredentials',
-                  adminMode,
-                  id,
-                  AUTOCOMPLETE_LIMIT, // limit
-                  offset, // offset
-                  debouncedSearch ? debouncedSearch : undefined,
-              ]
-            : type === 'APP'
-            ? [
-                  'getProjectUsersNoCredentials',
-                  adminMode,
-                  id,
-                  AUTOCOMPLETE_LIMIT, // limit
-                  offset, // offset
-                  debouncedSearch ? debouncedSearch : undefined,
-              ]
-            : null;
-
-    const getMembers = useAPI(open ? getMembersApi : null);
-
-    const isLoading =
-        getMembers.status === 'INITIAL' || getMembers.status === 'LOADING';
-
     useEffect(() => {
-        if (getMembers.status === 'SUCCESS') {
-            if (getMembers.data.data.length < AUTOCOMPLETE_LIMIT) {
-                setInfiniteOn(false);
+        if (!open) return;
+
+        const cancelled = false;
+        setSearchLoading(true);
+
+        const fetchUsers = async () => {
+            try {
+                let all = [];
+                if (type === 'APP') {
+                    const [noCred, cred] = await Promise.all([
+                        monolithStore.getProjectUsersNoCredentials(
+                            adminMode,
+                            id,
+                            AUTOCOMPLETE_LIMIT,
+                            offset,
+                            debouncedSearch || '',
+                        ),
+                        monolithStore.getProjectUsers(
+                            adminMode,
+                            id,
+                            debouncedSearch || '',
+                            '', // permission
+                            offset,
+                            AUTOCOMPLETE_LIMIT,
+                        ),
+                    ]);
+                    all = [...(noCred?.data || []), ...(cred?.members || [])];
+                } else if (
+                    type === 'DATABASE' ||
+                    type === 'STORAGE' ||
+                    type === 'MODEL' ||
+                    type === 'VECTOR' ||
+                    type === 'FUNCTION'
+                ) {
+                    const [noCred, cred] = await Promise.all([
+                        monolithStore.getEngineUsersNoCredentials(
+                            adminMode,
+                            id,
+                            AUTOCOMPLETE_LIMIT,
+                            offset,
+                            debouncedSearch || '',
+                        ),
+                        monolithStore.getEngineUsers(
+                            adminMode,
+                            id,
+                            debouncedSearch || '',
+                            '', // permission
+                            offset,
+                            AUTOCOMPLETE_LIMIT,
+                        ),
+                    ]);
+                    all = [...(noCred?.data || []), ...(cred?.members || [])];
+                } else {
+                    setSearchLoading(false);
+                    return;
+                }
+
+                if (!cancelled) {
+                    if (all.length < AUTOCOMPLETE_LIMIT) setInfiniteOn(false);
+                    if (
+                        renderedMembers.length >= AUTOCOMPLETE_LIMIT &&
+                        offset > 0
+                    ) {
+                        setRenderedMembers((prev) => [...prev, ...all]);
+                    } else {
+                        setRenderedMembers(all);
+                    }
+                    setSearchLoading(false);
+                }
+            } catch (e) {
+                if (!cancelled) {
+                    notification.add({
+                        color: 'error',
+                        message: String(e),
+                    });
+                    setSearchLoading(false);
+                }
             }
-            if (renderedMembers.length >= AUTOCOMPLETE_LIMIT && offset > 0) {
-                setRenderedMembers((prev) => {
-                    return [...prev, ...getMembers.data.data];
-                });
-                setSearchLoading(false);
-            } else {
-                setRenderedMembers(getMembers.data.data);
-                setSearchLoading(false);
-            }
-        }
-    }, [getMembers.status]);
+        };
+
+        fetchUsers();
+    }, [open, debouncedSearch, offset, adminMode, id, type]);
+
+    const isLoading = searchLoading;
 
     const getAdditionalMembers = () => {
         setOffset(offset + AUTOCOMPLETE_LIMIT);
@@ -262,7 +305,9 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
             const requests = members.map((m) => {
                 const json = {
                     userid: m.id,
-                    permission: permissionMapper[selectedRole],
+                    permission: validSetting(selectedRole)
+                        ? permissionPriorityMapper(selectedRole)?.permission
+                        : selectedRole,
                 };
 
                 // FOR MODELS
@@ -281,16 +326,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 if (restriction === 'compute') {
                     json['maxResponseTime'] = Number(maxTime);
                 }
-
-                // usageRestriction:
-                //     restriction === 'null' ? null : restriction,
-                // usageFrequency: frequency,
-                // ...(restriction === 'token' && {
-                //     maxTokens: Number(maxTokens),
-                // }),
-                // ...(restriction === 'compute' && {
-                //     maxResponseTime: Number(maxTime),
-                // }),
 
                 return json;
             });
@@ -338,9 +373,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
                 success = true;
 
-                // refresh the members
-                getMembers.refresh();
-
                 onChange();
             } else {
                 notification.add({
@@ -373,7 +405,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 requests = selectedMembers.map((m) => {
                     return {
                         userid: m.id,
-                        permission: permissionMapper[selectedRole],
+                        permission:
+                            permissionPriorityMapper(selectedRole)?.permission,
                         email: m.email,
                         name: m.name,
                         type: m.type,
@@ -393,7 +426,8 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 requests = selectedMembers.map((m) => {
                     return {
                         userid: m.id,
-                        permission: permissionMapper[selectedRole],
+                        permission:
+                            permissionPriorityMapper(selectedRole)?.permission,
                         email: m.email,
                         name: m.name,
                         type: m.type,
@@ -474,7 +508,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
     const closeOverlay = (type: ALL_TYPES, isSuccess: boolean) => {
         if (type === 'MODEL') {
-            setRestriction('');
+            setRestriction('null');
             setFrequency('');
             setMaxTime('');
             setMaxTokens('');
@@ -541,16 +575,37 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         onChange={(event, newValue) => {
                             setSelectedMembers(newValue || []);
                         }}
+                        getOptionDisabled={(option) => !!option.permission}
                         renderOption={(props, option) => {
                             const { ...optionProps } = props;
+                            const hasPermission = !!option.permission;
                             return (
                                 <li key={option.id} {...optionProps}>
-                                    <MembersAddOverlayUser
-                                        name={option.name}
-                                        id={option.id}
-                                        email={option.email}
-                                        type={option.type}
-                                    />
+                                    <div
+                                        style={{
+                                            maxWidth: '85%',
+                                            overflow: 'hidden',
+                                        }}
+                                    >
+                                        <MembersAddOverlayUser
+                                            name={option.name}
+                                            id={option.id}
+                                            email={option.email}
+                                            type={option.type}
+                                        />
+                                    </div>
+
+                                    {hasPermission && (
+                                        <div
+                                            style={{
+                                                whiteSpace: 'nowrap',
+                                                display: 'inline-block',
+                                                fontSize: '12px',
+                                            }}
+                                        >
+                                            Already Added
+                                        </div>
+                                    )}
                                 </li>
                             );
                         }}
@@ -610,7 +665,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 <StyledSelection>
                     <RadioGroup
                         label={''}
-                        defaultValue={permissionMapper[user?.permission]}
+                        value={selectedRole}
                         onChange={(e) => {
                             const val = e.target.value;
                             if (val) {
@@ -661,6 +716,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         <RadioGroup.Item
                                             value="Author"
                                             label=""
+                                            disabled={
+                                                !adminMode &&
+                                                permissionPriorityMapper(
+                                                    userPermission,
+                                                )?.priority > 1
+                                            }
                                         />
                                     }
                                 />
@@ -676,13 +737,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '20px',
-                                                    height: '20px',
+                                                    width: '24px',
+                                                    height: '24px',
                                                     mt: '6px',
                                                     marginRight: '12px',
                                                     fontSize: '12px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
+                                                    maxWidth: '24px',
+                                                    display: 'flex', // Ensure the icon is displayed properly
+                                                    alignItems: 'center', // Center the icon vertically
+                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <EditRounded />
@@ -706,6 +771,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         <RadioGroup.Item
                                             value="Editor"
                                             label=""
+                                            disabled={
+                                                !adminMode &&
+                                                permissionPriorityMapper(
+                                                    userPermission,
+                                                )?.priority > 2
+                                            }
                                         />
                                     }
                                 />
@@ -721,13 +792,17 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         >
                                             <Icon
                                                 sx={{
-                                                    width: '20px',
-                                                    height: '20px',
-                                                    mt: '6px',
+                                                    width: '24px',
+                                                    height: '24px',
+                                                    mt: '0px',
                                                     marginRight: '12px',
-                                                    fontSize: '12px',
+                                                    fontSize: '24px',
                                                     fontWeight: 'bold',
                                                     color: 'rgba(0, 0, 0, .5)',
+                                                    maxWidth: '24px',
+                                                    display: 'flex', // Ensure the icon is displayed properly
+                                                    alignItems: 'center', // Center the icon vertically
+                                                    justifyContent: 'center',
                                                 }}
                                             >
                                                 <RemoveRedEyeRounded />
@@ -751,6 +826,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                                         <RadioGroup.Item
                                             value="Read-Only"
                                             label=""
+                                            disabled={
+                                                !adminMode &&
+                                                permissionPriorityMapper(
+                                                    userPermission,
+                                                )?.priority > 3
+                                            }
                                         />
                                     }
                                 />
@@ -767,6 +848,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                         <Stack direction={'column'} gap={1}>
                             <Select
                                 label="Limit Type"
+                                defaultValue={restriction}
                                 value={restriction}
                                 onChange={(e) => {
                                     setRestriction(e.target.value);

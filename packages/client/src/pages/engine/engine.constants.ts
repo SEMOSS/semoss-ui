@@ -1,7 +1,5 @@
 import {
-    Functions,
     Inventory2Outlined,
-    Polyline,
     SwitchAccessShortcutOutlined,
     TokenOutlined,
 } from '@mui/icons-material';
@@ -10,7 +8,7 @@ import { ENGINE_TYPES, Role } from '@/types';
 import { ModelBrain } from '@/assets/img/ModelBrain';
 import { Database } from '@/assets/img/Database';
 
-import { EngineIndexPage } from './EngineIndexPage';
+import { EngineOverviewPage } from './EngineOverviewPage';
 import { EngineMetadataPage } from './EngineMetadataPage';
 import { EngineSettingsPage } from './EngineSettingsPage';
 import { EngineFilePage } from './EngineFilePage';
@@ -48,10 +46,7 @@ export const ENGINE_ROUTES: {
         restrict: Role[] | false;
 
         /** Component to render */
-        component: React.FunctionComponent<{
-            /** Type of the engine */
-            type: ENGINE_TYPES;
-        }>;
+        component: React.FunctionComponent;
     }[];
 }[] = [
     {
@@ -65,7 +60,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -75,8 +70,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -99,7 +94,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -109,8 +104,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -133,7 +128,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -161,8 +156,8 @@ export const ENGINE_ROUTES: {
             //     restrict: ['EDIT', 'OWNER'],
             // },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -185,7 +180,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {
@@ -195,8 +190,20 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
+                name: 'Q&A',
+                path: 'qa',
+                component: EngineQAPage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
+            {
+                name: 'Access Control',
+                path: 'access-control',
                 component: EngineSettingsPage,
                 restrict: ['EDIT', 'OWNER'],
             },
@@ -204,18 +211,6 @@ export const ENGINE_ROUTES: {
                 name: 'SMSS',
                 path: 'smss',
                 component: EngineSmssPage,
-                restrict: ['OWNER'],
-            },
-            {
-                name: 'Files',
-                path: 'files',
-                component: EngineFilePage,
-                restrict: ['OWNER', 'EDIT'],
-            },
-            {
-                name: 'Q&A',
-                path: 'qa',
-                component: EngineQAPage,
                 restrict: ['OWNER'],
             },
         ],
@@ -231,7 +226,7 @@ export const ENGINE_ROUTES: {
             {
                 name: 'Overview',
                 path: '',
-                component: EngineIndexPage,
+                component: EngineOverviewPage,
                 restrict: false,
             },
             {

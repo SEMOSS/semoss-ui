@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
 import {
     LocalPoliceRounded,
     CloudUploadRounded,
     DownloadForOfflineRounded,
+    Flag,
 } from '@mui/icons-material';
 import {
     styled,
@@ -16,11 +18,11 @@ import {
     Select,
     Switch,
 } from '@semoss/ui';
-import { useForm, useFormState, Controller } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useRootStore, useSettings } from '@/hooks';
 import { AxiosResponse } from 'axios';
 
-const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+const StyledModalContent = styled(Modal.Content)(() => ({
     maxWidth: '50rem',
 }));
 
@@ -91,10 +93,6 @@ interface EditUserForm {
     unit?: string;
 }
 
-const capitalize = (input: string) => {
-    return input.charAt(0).toUpperCase() + input.slice(1);
-};
-
 const passwordValidate = (password: string) => {
     if (!password) {
         return true;
@@ -134,6 +132,15 @@ const numberValidate = (number: string) => {
     );
 };
 
+const emailValidate = (email: string) => {
+    if (!email) {
+        return true;
+    }
+
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    return emailRegex.test(email);
+};
+
 interface UserAddOverlayProps {
     /**
      * Track if the model is open or close
@@ -153,7 +160,7 @@ interface UserAddOverlayProps {
     onClose: (success: boolean) => void;
 }
 
-export const UserAddOverlay = (props: UserAddOverlayProps) => {
+export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
     const { open = false, user: user = null, onClose = () => null } = props;
 
     const { configStore, monolithStore } = useRootStore();
@@ -180,7 +187,9 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             exporter: user?.exporter,
             publisher: user?.exporter,
             type: user?.type,
-            model_usage_restriction: user?.model_usage_restriction,
+            model_usage_restriction: user?.model_usage_restriction
+                ? user?.model_usage_restriction
+                : 'null',
             model_usage_frequency: user?.model_usage_frequency,
             model_max_tokens: user?.model_max_tokens,
             model_max_response_time: user?.model_max_response_time,
@@ -191,18 +200,13 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
         // reset on open or close
         reset({
             ...(user || {}),
+            model_usage_restriction: user?.model_usage_restriction ?? 'null', // always set default for new user
         });
     }, [user, open]);
 
     const type = watch('type', '');
     const limitType = watch('model_usage_restriction', '');
     const email = watch('email');
-
-    // TODO: Standardize
-    const providers = configStore.store.config.providers.map((val) => ({
-        name: capitalize(val),
-        provider: capitalize(val),
-    }));
 
     const usageRestritctionTypes: Record<string, string> = {
         null: 'None',
@@ -228,9 +232,36 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
 
             try {
                 let response: AxiosResponse<boolean> | null = null;
+
+                if (data.model_usage_restriction === 'token') {
+                    data.model_max_response_time = null;
+                }
+                if (data.model_usage_restriction === 'compute') {
+                    data.model_max_tokens = null;
+                }
+                if (data.model_usage_restriction === 'null') {
+                    data.model_usage_restriction = null;
+                    data.model_max_response_time = null;
+                    data.model_max_tokens = null;
+                    data.model_usage_frequency = null;
+                }
+
                 if (isNewUser) {
                     response = await monolithStore.createUser(adminMode, data);
                 } else {
+                    if (
+                        data.exporter === undefined ||
+                        data.publisher === undefined
+                    ) {
+                        if (data.exporter) {
+                            data.publisher = false;
+                        } else if (data.publisher) {
+                            data.exporter = false;
+                        } else {
+                            data.publisher = false;
+                            data.exporter = false;
+                        }
+                    }
                     response = await monolithStore.editMemberInfo(
                         adminMode,
                         data,
@@ -272,9 +303,24 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
         (e) => {
             console.warn(e);
 
+            const errorMessages = [];
+            for (const error in e) {
+                if (
+                    e[error].hasOwnProperty('message') &&
+                    e[error]['message'] !== ''
+                ) {
+                    errorMessages.push(e[error]['message'] + '.');
+                } else if (
+                    e[error].hasOwnProperty('type') &&
+                    e[error]['type'] === 'required'
+                ) {
+                    errorMessages.push(error + ' is a required field.');
+                }
+            }
+
             notification.add({
                 color: 'error',
-                message: 'Form is Invalid',
+                message: 'Form is Invalid. ' + errorMessages.join(' '),
             });
         },
     );
@@ -305,23 +351,24 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                                 field.onChange(e.target.value);
                                             }}
                                         >
-                                            {providers.map((option, i) => {
-                                                return (
-                                                    <Select.Item
-                                                        value={option.provider}
-                                                        key={i}
-                                                    >
-                                                        {option.name}
-                                                    </Select.Item>
-                                                );
-                                            })}
+                                            {configStore.store.config.availableProviders.map(
+                                                (option, i) => {
+                                                    return (
+                                                        <Select.Item
+                                                            value={option.label}
+                                                            key={i}
+                                                        >
+                                                            {option.label}
+                                                        </Select.Item>
+                                                    );
+                                                },
+                                            )}
                                         </Select>
                                     );
                                 }}
                             />
                             <Controller
                                 name="id"
-                                // disabled={isNewUser ? false : true}
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
@@ -341,7 +388,6 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                             />
                             <Controller
                                 name="username"
-                                // disabled={!isNewUser && user?.type === 'Native' ? true : false}
                                 control={control}
                                 rules={{}}
                                 render={({ field }) => {
@@ -349,13 +395,17 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                         <TextField
                                             label="Username"
                                             disabled={
-                                                !isNewUser &&
-                                                user?.type === 'Native'
+                                                user?.type === 'NATIVE' ||
+                                                type === 'NATIVE'
                                                     ? true
                                                     : false
                                             }
                                             value={
-                                                field.value ? field.value : ''
+                                                isNewUser && type === 'NATIVE'
+                                                    ? 'This wil match the User Id'
+                                                    : field.value
+                                                    ? field.value
+                                                    : ''
                                             }
                                             onChange={(e) => {
                                                 field.onChange(e.target.value);
@@ -365,7 +415,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 }}
                             />
                         </Stack>
-                        {type === 'Native' && (
+                        {type.toLowerCase() === 'native' && (
                             <>
                                 <Controller
                                     name="password"
@@ -435,7 +485,18 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                 name={'email'}
                                 control={control}
                                 rules={{
-                                    required: true,
+                                    required: false,
+                                    validate: (value) => {
+                                        if (value == '') {
+                                            return true;
+                                        }
+                                        emailValidate(value);
+                                    },
+                                    pattern: {
+                                        value: /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/,
+                                        message:
+                                            'Email does not match a valid format',
+                                    },
                                 }}
                                 render={({ field }) => {
                                     return (
@@ -532,6 +593,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                         <Stack direction={'column'} gap={1}>
                             <Controller
                                 name="model_usage_restriction"
+                                defaultValue={'null'}
                                 control={control}
                                 rules={{ required: true }}
                                 render={({ field }) => {
@@ -617,7 +679,7 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
                                         name="unit"
                                         control={control}
                                         rules={{}}
-                                        render={({ field }) => {
+                                        render={() => {
                                             return (
                                                 <Select
                                                     label="Unit"
@@ -794,4 +856,4 @@ export const UserAddOverlay = (props: UserAddOverlayProps) => {
             </form>
         </Modal>
     );
-};
+});

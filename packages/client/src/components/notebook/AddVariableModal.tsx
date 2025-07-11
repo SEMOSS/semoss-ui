@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { useBlocks } from '@/hooks';
+
+import { ActionMessages, VariableType, useBlocks } from '@semoss/renderer';
 import {
     Stack,
     Typography,
@@ -8,7 +9,6 @@ import {
     Modal,
     useNotification,
 } from '@semoss/ui';
-import { ActionMessages, VariableType } from '@/stores';
 
 export interface AddVariableModalProps {
     /**
@@ -55,6 +55,7 @@ export const AddVariableModal = (props: AddVariableModalProps) => {
                     className="add-variable-modal__content"
                 >
                     <TextField
+                        autoFocus
                         fullWidth
                         label={'Alias'}
                         error={

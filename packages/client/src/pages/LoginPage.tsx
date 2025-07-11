@@ -1,8 +1,7 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import { THEME } from '@/constants';
 import GIF from '@/assets/img/login-gif.gif';
 
 import {
@@ -14,18 +13,13 @@ import {
     LinearProgress,
     TextField,
     Typography,
-    Checkbox,
     Divider,
     Box,
     ButtonGroup,
     Modal,
-    CustomThemeOptions,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
-import MS from '@/assets/img/ms.png';
-import GOOGLE from '@/assets/img/google.png';
-import OKTA from '@/assets/img/okta.png';
 
 const StyledMain = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -104,11 +98,6 @@ const StyledImage = styled('img')(() => ({
     objectFit: 'cover',
 }));
 
-const StyledRememberBox = styled(Box)({
-    display: 'flex',
-    justifyContent: 'space-between',
-});
-
 const StyledAction = styled(Button)({
     display: 'flex',
     alignItems: 'center',
@@ -123,9 +112,9 @@ const StyledActionBox = styled('div')({
     padding: '4px',
 });
 
-const StyledActionImage = styled('img')(({ theme }) => ({
-    height: theme.spacing(3),
-}));
+// const StyledActionImage = styled('img')(({ theme }) => ({
+//     height: theme.spacing(3),
+// }));
 
 const StyledActionText = styled('span')(() => ({
     fontFamily: 'Inter',
@@ -181,26 +170,12 @@ const StyledRegisterNowBox = styled(Box)({
     justifyContent: 'center',
 });
 
-const StyledLogo = styled('img')(({ theme }) => ({
-    width: theme.spacing(3),
+const StyledLogoContainer = styled(Stack)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
-const StyledLogoBox = styled('div')(({ theme }) => ({
-    display: 'flex',
-    align: 'center',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    marginBottom: theme.spacing(4),
-}));
-
-const StyledLogoText = styled('span')(() => ({
-    fontFeatureSettings: '"clig" off, "liga" off',
-    fontFamily: 'Inter',
-    fontSize: '16px',
-    fontStyle: 'normal',
-    fontWeight: 500,
-    lineHeight: '150%',
-    letterSpacing: '0.15px',
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
 const StyledInstructions = styled(Typography)(({ theme }) => ({
@@ -248,7 +223,9 @@ export const LoginPage = observer(() => {
     const location = useLocation();
 
     const [forgotPassword, setForgotPassword] = useState(false);
-    const [loginType, setLoginType] = useState<string>('');
+    const [loginType, setLoginType] = useState<
+        'native' | 'ldap' | 'linotp' | ''
+    >('');
     const [register, setRegister] = useState(false);
     const [showOTPCodeField, setShowOTPCodeField] = useState(false);
     const [snackbar, setSnackbar] = useState<{
@@ -287,16 +264,55 @@ export const LoginPage = observer(() => {
         },
     });
 
-    useEffect(() => {
-        // set initial selected login type from config.
-        if (configStore.store.config.providers.includes('native')) {
-            setLoginType('native');
-        } else if (configStore.store.config.providers.includes('ldap')) {
-            setLoginType('ldap');
-        } else if (configStore.store.config.providers.includes('linOtp')) {
-            setLoginType('LinOTP');
+    // get a map of all providers
+    const availableProvidersMap: Record<
+        string,
+        {
+            provider: string;
+            label: string;
+            name: string;
+            isOauth: boolean;
         }
-    }, []);
+    > = configStore.store.config.availableProviders.reduce((acc, val) => {
+        acc[val.provider] = acc;
+
+        return acc;
+    }, {});
+
+    // check if there is oAuth
+    const hasOAuth = configStore.store.config.availableProviders.some(
+        (val) => val.isOauth,
+    );
+
+    const isNative = Object.prototype.hasOwnProperty.call(
+            availableProvidersMap,
+            'native',
+        ),
+        isLdap = Object.prototype.hasOwnProperty.call(
+            availableProvidersMap,
+            'ldap',
+        ),
+        isLinOTP = Object.prototype.hasOwnProperty.call(
+            availableProvidersMap,
+            'linotp',
+        );
+
+    // check if it requires username or password
+    const hasUsernamePassword = isNative || isLdap || isLinOTP;
+
+    const hasMoreThanOneUserNamePassword =
+        (isNative && isLdap) || (isNative && isLinOTP) || (isLdap && isLinOTP);
+
+    // set initial selected login type from config.
+    useEffect(() => {
+        if (isNative) {
+            setLoginType('native');
+        } else if (isLdap) {
+            setLoginType('ldap');
+        } else if (isLinOTP) {
+            setLoginType('linotp');
+        }
+    }, [isNative, isLdap, isLinOTP]);
 
     /**
      * Allow the user to login
@@ -340,7 +356,7 @@ export const LoginPage = observer(() => {
                             setIsLoading(false);
                         });
                 }
-                if (loginType === 'LinOTP') {
+                if (loginType === 'linotp') {
                     await configStore
                         .loginOTP(data.USERNAME, data.PASSWORD)
                         .then(() => {
@@ -470,20 +486,6 @@ export const LoginPage = observer(() => {
             });
     };
 
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
-
     // get the path the user is coming from
     const path = (location.state as { from: Location })?.from?.pathname || '/';
 
@@ -491,14 +493,6 @@ export const LoginPage = observer(() => {
     if (configStore.store.status === 'SUCCESS') {
         return <Navigate to={path} replace />;
     }
-
-    // get the proviers
-    const providers = [...configStore.store.config.providers];
-
-    // show the or
-    const showOrDivider =
-        providers.indexOf('native') > -1 &&
-        (providers.indexOf('ms') || providers.indexOf('google'));
 
     return (
         <>
@@ -523,65 +517,71 @@ export const LoginPage = observer(() => {
                     <StyledScroll>
                         <StyledContent>
                             <div>
-                                <StyledLogoBox>
-                                    {themeMap.isLogoUrl ? (
-                                        <StyledLogo src={themeMap.logo} />
-                                    ) : THEME.logo ? (
-                                        <StyledLogo src={THEME.logo} />
+                                <StyledLogoContainer
+                                    direction={'row'}
+                                    alignItems={'center'}
+                                    spacing={1}
+                                >
+                                    {configStore.theme.logo ? (
+                                        <img src={configStore.theme.logo} />
                                     ) : null}
-                                    <StyledLogoText>
-                                        {themeMap.name
-                                            ? themeMap.name
-                                            : THEME.name}
-                                    </StyledLogoText>
-                                </StyledLogoBox>
-                                <Typography variant="h4">Welcome!</Typography>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{ fontWeight: 700 }}
+                                    >
+                                        {configStore.theme.name}
+                                    </Typography>
+                                </StyledLogoContainer>
+                                <StyledTitle variant="h4">Welcome!</StyledTitle>
                                 <StyledInstructions variant="body1">
                                     {register
                                         ? 'Register below'
                                         : 'Log in below'}
                                 </StyledInstructions>
                             </div>
-                            {!register && (
+                            {!register && hasMoreThanOneUserNamePassword && (
                                 <StyledButtonGroup variant="outlined">
-                                    {configStore.store.config.providers.includes(
-                                        'native',
-                                    ) && (
+                                    {isNative && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
-                                                setLoginType('Native');
+                                                setLoginType('native');
                                                 setSuccess('');
                                                 setError('');
                                             }}
                                             selected={loginType === 'native'}
+                                            data-testid={
+                                                'loginPage-button-native'
+                                            }
                                         >
                                             Native
                                         </StyledButtonGroupItem>
                                     )}
-                                    {configStore.store.config.providers.includes(
-                                        'ldap',
-                                    ) && (
+                                    {isLdap && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
-                                                setLoginType('LDAP');
+                                                setLoginType('ldap');
                                                 setSuccess('');
                                                 setError('');
                                             }}
                                             selected={loginType === 'ldap'}
+                                            data-testid={
+                                                'loginPage-button-ldap'
+                                            }
                                         >
                                             LDAP
                                         </StyledButtonGroupItem>
                                     )}
-                                    {configStore.store.config.providers.includes(
-                                        'linotp',
-                                    ) && (
+                                    {isLinOTP && (
                                         <StyledButtonGroupItem
                                             onClick={() => {
-                                                setLoginType('LinOTP');
+                                                setLoginType('linotp');
                                                 setSuccess('');
                                                 setError('');
                                             }}
                                             selected={loginType === 'linotp'}
+                                            data-testid={
+                                                'loginPage-button-linotp'
+                                            }
                                         >
                                             LinOTP
                                         </StyledButtonGroupItem>
@@ -594,7 +594,7 @@ export const LoginPage = observer(() => {
                             )}
                             <form>
                                 <Stack spacing={2}>
-                                    {providers.indexOf('native') > -1 && (
+                                    {hasUsernamePassword && (
                                         <>
                                             {!showOTPCodeField && register && (
                                                 <>
@@ -627,6 +627,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-firstNameRegister',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -660,6 +664,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-lastNameRegister',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -693,6 +701,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-usernameRegister',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -735,6 +747,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-emailRegister',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -768,6 +784,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-phone',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -801,6 +821,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-extension',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -834,6 +858,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-countryCode',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -909,6 +937,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-passwordRegister',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -968,6 +1000,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-passwordConfirm',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -981,6 +1017,9 @@ export const LoginPage = observer(() => {
                                                                     false,
                                                                 )
                                                             }
+                                                            data-testid={
+                                                                'loginPage-button-back'
+                                                            }
                                                         >
                                                             Go Back
                                                         </Button>
@@ -992,8 +1031,11 @@ export const LoginPage = observer(() => {
                                                             onClick={
                                                                 registerAccount
                                                             }
+                                                            data-testid={
+                                                                'loginPage-button-register'
+                                                            }
                                                         >
-                                                            Register Account
+                                                            Register
                                                         </Button>
                                                     </StyledGoBackBox>
                                                 </>
@@ -1026,6 +1068,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-username',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -1057,6 +1103,10 @@ export const LoginPage = observer(() => {
                                                                                 .value,
                                                                         )
                                                                     }
+                                                                    inputProps={{
+                                                                        'data-testid':
+                                                                            'loginPage-textField-password',
+                                                                    }}
                                                                 />
                                                             );
                                                         }}
@@ -1087,6 +1137,10 @@ export const LoginPage = observer(() => {
                                                                             .value,
                                                                     )
                                                                 }
+                                                                inputProps={{
+                                                                    'data-testid':
+                                                                        'loginPage-textField-otpCode',
+                                                                }}
                                                             />
                                                         );
                                                     }}
@@ -1094,150 +1148,82 @@ export const LoginPage = observer(() => {
                                             )}
                                             {!register && (
                                                 <>
-                                                    <StyledRememberBox>
-                                                        <Controller
-                                                            name={
-                                                                'REMEMBER_LOGIN'
-                                                            }
-                                                            control={control}
-                                                            rules={{
-                                                                required: false,
-                                                            }}
-                                                            render={({
-                                                                field,
-                                                            }) => {
-                                                                return (
-                                                                    <Checkbox
-                                                                        label="Keep me logged in"
-                                                                        checked={
-                                                                            field.value
-                                                                        }
-                                                                        value={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : false
-                                                                        }
-                                                                        onChange={(
-                                                                            e: React.ChangeEvent<HTMLInputElement>,
-                                                                        ) =>
-                                                                            field.onChange(
-                                                                                e
-                                                                                    .target
-                                                                                    .checked,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                );
-                                                            }}
-                                                        />
-                                                        <StyledButtonText
-                                                            variant="text"
-                                                            onClick={() =>
-                                                                setForgotPassword(
-                                                                    true,
-                                                                )
-                                                            }
-                                                        >
-                                                            Forgot Password
-                                                        </StyledButtonText>
-                                                    </StyledRememberBox>
                                                     <Button
                                                         fullWidth
                                                         variant={'contained'}
                                                         onClick={login}
                                                         type="submit"
+                                                        data-testid={
+                                                            'loginPage-button-login'
+                                                        }
                                                     >
-                                                        Login with {loginType}
+                                                        Login
                                                     </Button>
-                                                    <StyledRegisterNowBox>
-                                                        Don&apos;t have an
-                                                        account?{' '}
-                                                        <StyledButtonText
-                                                            variant="text"
-                                                            onClick={() =>
-                                                                setRegister(
-                                                                    true,
-                                                                )
-                                                            }
-                                                        >
-                                                            Register Now
-                                                        </StyledButtonText>
-                                                    </StyledRegisterNowBox>
+                                                    {configStore.store.config
+                                                        .nativeRegistration && (
+                                                        <StyledRegisterNowBox>
+                                                            Don&apos;t have an
+                                                            account?{' '}
+                                                            <StyledButtonText
+                                                                variant="text"
+                                                                onClick={() =>
+                                                                    setRegister(
+                                                                        true,
+                                                                    )
+                                                                }
+                                                                data-testid={
+                                                                    'loginPage-button-registerPage'
+                                                                }
+                                                            >
+                                                                Register Now
+                                                            </StyledButtonText>
+                                                        </StyledRegisterNowBox>
+                                                    )}
                                                 </>
                                             )}
                                         </>
                                     )}
                                     {!register && (
                                         <>
-                                            {showOrDivider && (
-                                                <>
-                                                    <StyledDivider>
-                                                        <StyledDividerBox>
-                                                            or
-                                                        </StyledDividerBox>
-                                                    </StyledDivider>
-                                                </>
-                                            )}
-                                            {providers.indexOf('ms') > -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('ms');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={MS}
-                                                        />
-                                                        <StyledActionText>
-                                                            Microsoft
-                                                        </StyledActionText>
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
-                                            {providers.indexOf('google') >
-                                                -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('google');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={GOOGLE}
-                                                        />
-                                                        <StyledActionText>
-                                                            Google
-                                                        </StyledActionText>
-                                                    </StyledActionBox>
-                                                </StyledAction>
-                                            )}
-                                            {providers.indexOf('okta') > -1 && (
-                                                <StyledAction
-                                                    variant="outlined"
-                                                    onClick={() => {
-                                                        oauth('okta');
-                                                    }}
-                                                    fullWidth
-                                                >
-                                                    <StyledActionBox>
-                                                        <StyledActionImage
-                                                            src={OKTA}
-                                                        />
-                                                        <StyledActionText>
-                                                            Okta
-                                                        </StyledActionText>
-                                                        {/* <img
-                                                            src={OKTA}
-                                                            alt="okta"
-                                                            height={46}
-                                                            width="auto"
-                                                        /> */}
-                                                    </StyledActionBox>
-                                                </StyledAction>
+                                            {hasUsernamePassword &&
+                                                hasOAuth && (
+                                                    <>
+                                                        <StyledDivider>
+                                                            <StyledDividerBox>
+                                                                or
+                                                            </StyledDividerBox>
+                                                        </StyledDivider>
+                                                    </>
+                                                )}
+                                            {configStore.store.config.availableProviders.map(
+                                                (p) => {
+                                                    // skip ones that aren't oauth
+                                                    if (!p.isOauth) {
+                                                        return null;
+                                                    }
+
+                                                    return (
+                                                        <StyledAction
+                                                            key={p.provider}
+                                                            variant="outlined"
+                                                            onClick={() => {
+                                                                oauth(
+                                                                    p.provider,
+                                                                );
+                                                            }}
+                                                            fullWidth
+                                                        >
+                                                            <StyledActionBox>
+                                                                {/* <StyledActionImage
+                                                                    src={MS}
+                                                                /> */}
+                                                                <StyledActionText>
+                                                                    {p.name}
+                                                                </StyledActionText>
+                                                            </StyledActionBox>
+                                                        </StyledAction>
+                                                    );
+                                                },
                                             )}
                                         </>
                                     )}

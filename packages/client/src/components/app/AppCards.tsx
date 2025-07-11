@@ -60,6 +60,7 @@ export const ProjectTileCard = (props) => {
                 titleTypographyProps={{ variant: 'subtitle1' }}
                 avatar={<Folder />}
             ></Card.Header>
+
             <StyledCardContent>
                 <Typography variant="caption">
                     {description ? description : 'No description available'}

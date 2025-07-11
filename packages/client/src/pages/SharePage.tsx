@@ -6,8 +6,12 @@ import { styled, useNotification } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
-import { BlocksRenderer } from '@/components/blocks-workspace';
+
 import { AppType, AppMetadata } from '@/components/app';
+import { PlatformMessages } from '@/components/shared';
+
+import { Renderer } from '@semoss/renderer';
+import { runPixelTwo } from '../runPixelTwo';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -25,6 +29,7 @@ export const SharePage = observer(() => {
     const navigate = useNavigate();
 
     const [type, setType] = useState<AppType | null>(null);
+    const [insightId, setInsightId] = useState('');
 
     /**
      * Load an app
@@ -46,9 +51,16 @@ export const SharePage = observer(() => {
                 throw new Error('Unauthorized');
             }
 
+            const { insightId: iId } = await runPixelTwo(
+                `SetContext("${appId}")`,
+                'new',
+            );
+            setInsightId(iId);
+
             // get the metadata
             const getAppInfo = await monolithStore.runQuery<[AppMetadata]>(
                 `ProjectInfo(project=["${appId}"]);`,
+                iId,
             );
 
             // throw the errors if there are any
@@ -84,13 +96,16 @@ export const SharePage = observer(() => {
 
     // hide the screen while it loads
     if (!type) {
-        return <LoadingScreen.Trigger description="Initializing app" />;
+        return <LoadingScreen.Trigger />;
     }
 
     return (
         <StyledViewport>
             {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
-            {type === 'BLOCKS' ? <BlocksRenderer appId={appId} /> : null}
+            {type === 'BLOCKS' ? (
+                <Renderer appId={appId} insightId={insightId} />
+            ) : null}
+            <PlatformMessages />
         </StyledViewport>
     );
 });

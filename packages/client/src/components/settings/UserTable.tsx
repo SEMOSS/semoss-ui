@@ -13,11 +13,15 @@ import {
     Search,
     Box,
     Stack,
+    Popover,
+    Grid,
 } from '@semoss/ui';
 import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
+import CopyAllIcon from '@mui/icons-material/CopyAll';
+import { UserPopover } from './UserPopover';
 
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
@@ -162,7 +166,7 @@ const StyledNoUsersDiv = styled('div')(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const formatModelLimitValue = (input: string) => {
+const formatValue = (input: string) => {
     if (input !== undefined) {
         const mappings: Record<string, string> = {
             TOKEN: 'Token',
@@ -175,7 +179,10 @@ const formatModelLimitValue = (input: string) => {
     }
     return '';
 };
-
+const StyledNameStack = styled(Stack)({
+    alignItems: 'center',
+    flex: 1,
+});
 interface User {
     id: string;
     type: string;
@@ -188,10 +195,10 @@ interface User {
     phoneextension?: string;
     countrycode?: string;
     username?: string;
-    usage_restriction?: string;
-    usage_frequency?: string;
-    max_tokens?: number;
-    max_response_time?: number;
+    model_usage_restriction?: string;
+    model_usage_frequency?: string;
+    model_max_tokens?: number;
+    model_max_response_time?: number;
     unit?: string;
 }
 
@@ -210,8 +217,7 @@ export const UserTable = (props: UserTableProps) => {
     const notification = useNotification();
 
     const [page, setPage] = useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = useState<number>(5);
-    const [displayedUsers, setDisplayedUsers] = useState([]);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(25);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
@@ -220,8 +226,11 @@ export const UserTable = (props: UserTableProps) => {
 
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
-    const [count, setCount] = useState(0);
 
+    /** Utility for Popover */
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const [hoveredUser, setHoveredUser] = useState<User | null>(null);
+    const isPopoverOpen = Boolean(anchorEl);
     /** Add User State */
     const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
     const [addModalUser, setAddModalUser] = useState<User | null>(null);
@@ -233,27 +242,18 @@ export const UserTable = (props: UserTableProps) => {
         adminMode,
         debouncedSearch ? debouncedSearch : '',
         (page + 1) * rowsPerPage - rowsPerPage, // offset
-        rowsPerPage, // limit
+        0, // limit
     ]);
 
     // track if the page is loading
     const isLoading =
         getUsers.status === 'INITIAL' || getUsers.status === 'LOADING';
-    const totalUsers = getUsers.status === 'SUCCESS' ? getUsers.data.length : 0;
-    const hasUsers = getUsers.status === 'SUCCESS' && getUsers.data.length > 0;
-
-    // Set the displayed users when the data, page, or rowsPerPage change.
-    useEffect(() => {
-        if (getUsers.status === 'SUCCESS') {
-            const displayed = getUsers.data.slice(
-                page * rowsPerPage,
-                (page + 1) * rowsPerPage,
-            );
-            setDisplayedUsers(displayed);
-        } else {
-            setDisplayedUsers([]);
-        }
-    }, [getUsers.status, page, rowsPerPage]);
+    const renderedMembers =
+        getUsers.status === 'SUCCESS' ? getUsers.data['users'] : [];
+    const totalUsers =
+        getUsers.status === 'SUCCESS' ? getUsers.data['totalUsers'] : 0;
+    const hasUsers =
+        getUsers.status === 'SUCCESS' && getUsers.data['totalUsers'] > 0;
 
     /**
      * Update a user
@@ -261,6 +261,16 @@ export const UserTable = (props: UserTableProps) => {
      */
     const updateUser = async (user: User) => {
         try {
+            if (user.exporter === undefined || user.publisher === undefined) {
+                if (user.exporter) {
+                    user.publisher = false;
+                } else if (user.publisher) {
+                    user.exporter = false;
+                } else {
+                    user.publisher = false;
+                    user.exporter = false;
+                }
+            }
             const response = await monolithStore.editMemberInfo(
                 adminMode,
                 user,
@@ -376,23 +386,27 @@ export const UserTable = (props: UserTableProps) => {
                 }
             }
         } finally {
-            setCount(count + 1);
             setSelectedMembers([]);
         }
     };
-
+    /**
+     * Handle user popover close
+     */
+    const handlePopoverClose = () => {
+        setAnchorEl(null);
+    };
     // Avatars rendered
     const Avatars = useMemo(() => {
-        if (!displayedUsers.length) {
+        if (!renderedMembers.length) {
             return [];
         }
 
         let i = 0;
         const avatarList = [];
-        while (i < 5 && i < displayedUsers.length) {
+        while (i < 5 && i < renderedMembers.length) {
             avatarList.push(
                 <Avatar key={i}>
-                    {(displayedUsers[i].name || ' ').charAt(0).toUpperCase()}
+                    {(renderedMembers[i].name || ' ').charAt(0).toUpperCase()}
                 </Avatar>,
             );
 
@@ -400,7 +414,7 @@ export const UserTable = (props: UserTableProps) => {
         }
 
         return avatarList;
-    }, [displayedUsers.length]);
+    }, [renderedMembers.length]);
 
     return (
         <StyledMemberContent>
@@ -433,7 +447,6 @@ export const UserTable = (props: UserTableProps) => {
                                 </StyledTableTitleMemberCount>
                             </StyledTableTitleMemberCountContainer>
                         </StyledTableTitleMemberContainer>
-
                         <StyledSearchButtonContainer>
                             {isSearch ? (
                                 <Search
@@ -499,19 +512,22 @@ export const UserTable = (props: UserTableProps) => {
                                                 padding="checkbox"
                                             >
                                                 <Checkbox
+                                                    id={
+                                                        'userTable-checkbox-selectAll'
+                                                    }
                                                     checked={
                                                         selectedMembers.length ===
-                                                            displayedUsers.length &&
-                                                        displayedUsers.length >
+                                                            renderedMembers.length &&
+                                                        renderedMembers.length >
                                                             0
                                                     }
                                                     onChange={() => {
                                                         if (
                                                             selectedMembers.length !==
-                                                            displayedUsers.length
+                                                            renderedMembers.length
                                                         ) {
                                                             setSelectedMembers(
-                                                                displayedUsers,
+                                                                renderedMembers,
                                                             );
                                                         } else {
                                                             setSelectedMembers(
@@ -523,9 +539,6 @@ export const UserTable = (props: UserTableProps) => {
                                             </Table.Cell>
                                             <Table.Cell size="small">
                                                 Name
-                                            </Table.Cell>
-                                            <Table.Cell size="small">
-                                                Email
                                             </Table.Cell>
                                             <Table.Cell size="small">
                                                 Type
@@ -548,15 +561,15 @@ export const UserTable = (props: UserTableProps) => {
                                         </Table.Row>
                                     </Table.Head>
                                     <Table.Body>
-                                        {displayedUsers.map((user) => {
+                                        {renderedMembers.map((user) => {
                                             let isSelected = false;
                                             if (user) {
                                                 isSelected =
                                                     selectedMembers.some(
                                                         (value) => {
                                                             return (
-                                                                value.userid ===
-                                                                user.userid
+                                                                value.id ===
+                                                                user.id
                                                             );
                                                         },
                                                     );
@@ -581,8 +594,8 @@ export const UserTable = (props: UserTableProps) => {
                                                                                 u,
                                                                             ) => {
                                                                                 if (
-                                                                                    u.userid !==
-                                                                                    user.userid
+                                                                                    u.id !==
+                                                                                    user.id
                                                                                 )
                                                                                     selMembers.push(
                                                                                         u,
@@ -605,18 +618,30 @@ export const UserTable = (props: UserTableProps) => {
                                                         </StyledTableCell>
                                                         <Table.Cell>
                                                             <StyledCenteredBox>
-                                                                <AvatarWrapper>
-                                                                    <Avatar>
-                                                                        {user.name[0].toUpperCase()}
-                                                                    </Avatar>
-                                                                </AvatarWrapper>
-                                                                <Stack
-                                                                    direction={
-                                                                        'column'
+                                                                <StyledNameStack
+                                                                    direction="row"
+                                                                    onMouseEnter={(
+                                                                        event,
+                                                                    ) => {
+                                                                        setAnchorEl(
+                                                                            event.currentTarget,
+                                                                        );
+                                                                        setHoveredUser(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                    onMouseLeave={() =>
+                                                                        handlePopoverClose
                                                                     }
-                                                                    spacing={0}
-                                                                    flex={1}
+                                                                    aria-owns="mouse-over-popover"
+                                                                    aria-haspopup="true"
                                                                 >
+                                                                    <AvatarWrapper>
+                                                                        <Avatar>
+                                                                            {user.name[0].toUpperCase()}
+                                                                        </Avatar>
+                                                                    </AvatarWrapper>
+
                                                                     <StyledPrimaryText
                                                                         variant="body1"
                                                                         noWrap={
@@ -630,53 +655,14 @@ export const UserTable = (props: UserTableProps) => {
                                                                             </>
                                                                         )}
                                                                     </StyledPrimaryText>
-                                                                    <Stack
-                                                                        direction={
-                                                                            'row'
-                                                                        }
-                                                                        alignItems={
-                                                                            'center'
-                                                                        }
-                                                                        spacing={
-                                                                            1
-                                                                        }
-                                                                        width={
-                                                                            '150px'
-                                                                        }
-                                                                        title={`Id: ${user.id}`}
-                                                                    >
-                                                                        <StyledSecondaryText
-                                                                            variant="body2"
-                                                                            noWrap={
-                                                                                true
-                                                                            }
-                                                                        >
-                                                                            ID:
-                                                                        </StyledSecondaryText>
-                                                                        <StyledPrimaryText
-                                                                            variant="body2"
-                                                                            noWrap={
-                                                                                true
-                                                                            }
-                                                                        >
-                                                                            {user.id || (
-                                                                                <>
-                                                                                    &nbsp;
-                                                                                </>
-                                                                            )}
-                                                                        </StyledPrimaryText>
-                                                                    </Stack>
-                                                                </Stack>
+                                                                </StyledNameStack>
                                                             </StyledCenteredBox>
-                                                        </Table.Cell>
-                                                        <Table.Cell>
-                                                            {user.email}
                                                         </Table.Cell>
                                                         <Table.Cell>
                                                             {user.type}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {formatModelLimitValue(
+                                                            {formatValue(
                                                                 user?.model_usage_restriction,
                                                             )}
                                                         </Table.Cell>
@@ -690,7 +676,7 @@ export const UserTable = (props: UserTableProps) => {
                                                                 `${user?.model_max_tokens?.toLocaleString()}`}
                                                         </Table.Cell>
                                                         <Table.Cell>
-                                                            {formatModelLimitValue(
+                                                            {formatValue(
                                                                 user?.model_usage_frequency,
                                                             )}
                                                         </Table.Cell>
@@ -771,7 +757,6 @@ export const UserTable = (props: UserTableProps) => {
                                                     </Table.Row>
                                                 );
                                             }
-
                                             return null;
                                         })}
                                     </Table.Body>
@@ -785,7 +770,9 @@ export const UserTable = (props: UserTableProps) => {
                                                 }}
                                                 page={page}
                                                 rowsPerPage={rowsPerPage}
-                                                rowsPerPageOptions={[5, 10, 20]}
+                                                rowsPerPageOptions={[
+                                                    25, 50, 100,
+                                                ]}
                                                 onRowsPerPageChange={(e) => {
                                                     // set the new limit
                                                     setRowsPerPage(
@@ -799,6 +786,24 @@ export const UserTable = (props: UserTableProps) => {
                                             />
                                         </Table.Row>
                                     </Table.Footer>
+                                    <UserPopover
+                                        hoveredUser={
+                                            hoveredUser
+                                                ? {
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
+                                                : null
+                                        }
+                                        isPopoverOpen={isPopoverOpen}
+                                        anchorEl={anchorEl}
+                                        handlePopoverClose={handlePopoverClose}
+                                    />
                                 </StyledMemberTable>
                             ) : (
                                 <StyledNoUsersDiv>

@@ -1,5 +1,3 @@
-export * from './menu/';
-
 export * from './Designer';
 
 export * from './AddBlocksMenuCard';

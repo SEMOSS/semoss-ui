@@ -1,0 +1,32 @@
+import { CSSProperties } from "react";
+import { BlockConfig } from "../../../store";
+import { PageBlockDef, PageBlock } from "./PageBlock";
+import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
+
+export const DefaultStyles: CSSProperties = {
+    display: "flex",
+    flexDirection: "column",
+    padding: "24px",
+    gap: "8px",
+    fontFamily: "roboto",
+};
+
+// export the config for the block
+export const config: BlockConfig<PageBlockDef> = {
+    widget: "page",
+    type: BLOCK_TYPE_LAYOUT,
+    data: {
+        style: DefaultStyles,
+        loading: false,
+    },
+    listeners: {
+        onPageLoad: {
+            type: "sync",
+            order: [],
+        },
+    },
+    slots: {
+        content: [],
+    },
+    render: PageBlock,
+};

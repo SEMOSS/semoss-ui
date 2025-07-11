@@ -54,6 +54,21 @@ export const SETTINGS_ROUTES: {
         history: ['app', 'app/<id>'],
     },
     {
+        title: 'Database Settings',
+        path: 'database',
+        description: 'View and edit settings for databases',
+        icon: mdiDatabase,
+        history: ['database'],
+    },
+    {
+        title: 'Database Settings',
+        path: 'database/:id',
+        description:
+            'View member permissions, pending requests, and all other viewable settings pertaining to the database',
+        icon: mdiDatabase,
+        history: ['database', 'database/<id>'],
+    },
+    {
         title: 'Function Settings',
         path: 'function',
         description: 'View and edit settings for functions',
@@ -84,19 +99,19 @@ export const SETTINGS_ROUTES: {
         history: ['model', 'model/<id>'],
     },
     {
-        title: 'Database Settings',
-        path: 'database',
-        description: 'View and edit settings for databases',
-        icon: mdiDatabase,
-        history: ['database'],
+        title: 'Storage Settings',
+        path: 'storage',
+        description: 'View and edit settings for storages',
+        icon: mdiArchive,
+        history: ['storage'],
     },
     {
-        title: 'Database Settings',
-        path: 'database/:id',
+        title: 'Storage Settings',
+        path: 'storage/:id',
         description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the database',
-        icon: mdiDatabase,
-        history: ['database', 'database/<id>'],
+            'View member permissions, pending requests, and all other viewable settings pertaining to the storage',
+        icon: mdiArchive,
+        history: ['storage', 'storage/<id>'],
     },
     {
         title: 'Vector Settings',
@@ -113,21 +128,6 @@ export const SETTINGS_ROUTES: {
         icon: mdiDatabase,
         history: ['vector', 'vector/<id>'],
     },
-    {
-        title: 'Storage Settings',
-        path: 'storage',
-        description: 'View and edit settings for storages',
-        icon: mdiArchive,
-        history: ['storage'],
-    },
-    {
-        title: 'Storage Settings',
-        path: 'storage/:id',
-        description:
-            'View member permissions, pending requests, and all other viewable settings pertaining to the storage',
-        icon: mdiArchive,
-        history: ['storage', 'storage/<id>'],
-    },
     // {
     //     title: 'Insight Settings',
     //     path: 'insight',
@@ -143,6 +143,13 @@ export const SETTINGS_ROUTES: {
     //     icon: mdiClipboardTextOutline,
     //     history: ['insight', 'insight/<id>/<appId>'],
     // },
+    {
+        title: 'Jobs',
+        path: 'jobs',
+        description: 'Search by job name or filter using job tags',
+        icon: mdiTabletCellphone,
+        history: ['settings/'],
+    },
     {
         title: 'Member Settings',
         path: 'members',
@@ -176,13 +183,6 @@ export const SETTINGS_ROUTES: {
         icon: mdiTabletCellphone,
         history: ['settings/'],
         admin: true,
-    },
-    {
-        title: 'Jobs',
-        path: 'jobs',
-        description: 'Search by job name or filter using job tags',
-        icon: mdiTabletCellphone,
-        history: ['settings/'],
     },
     {
         title: 'Admin Query',

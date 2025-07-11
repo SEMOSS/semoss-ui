@@ -1,7 +1,8 @@
 import React from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { CellState } from '@/stores';
+import { CellState } from '@semoss/renderer';
+
 import { ErrorOperation } from './ErrorOperation';
 import { FrameOperation } from './FrameOperation';
 import { WarningOperation } from './WarningOperation';
@@ -33,6 +34,17 @@ export const Operation = observer((props: OperationProps): JSX.Element => {
     } else if (operation === 'ERROR') {
         return <ErrorOperation output={output as string} />;
     } else if (operation === 'FRAME_DATA_CHANGE') {
+        return (
+            <FrameOperation
+                output={
+                    output as {
+                        name: string;
+                        type: 'NATIVE' | 'PY' | 'GRID' | 'R';
+                    }
+                }
+            />
+        );
+    } else if (operation === 'FRAME_FILTER_CHANGE') {
         return (
             <FrameOperation
                 output={

@@ -1,10 +1,20 @@
 import { useMemo, useState } from 'react';
+
+import {
+    createFilterOptions,
+    styled,
+    AutocompleteTwo,
+    Box,
+    Grid,
+    Stack,
+    TextField,
+    Typography,
+} from '@semoss/ui';
+
+import { usePixel } from '@/hooks';
 import { Builder } from '../../prompt.types';
 import { StyledStepPaper } from '../../prompt.styled';
-import { createFilterOptions, Autocomplete } from '@mui/material';
-import { styled, Box, Grid, Stack, TextField, Typography } from '@semoss/ui';
 import { PromptLibraryDialogButton } from '../../library/PromptLibraryDialogButton';
-import { usePixel } from '@/hooks';
 import { PromptBuilderContextTestDialogButton } from './PromptBuilderContextTestDialogButton';
 
 type CfgLibraryEngineState = {
@@ -64,7 +74,7 @@ export const PromptBuilderContextStep = (props: {
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
-                <Typography variant="h5">Create Prompt</Typography>
+                <Typography variant="h6">Create Prompt</Typography>
                 <Typography variant="body1">
                     Construct your prompt by providing the context and inputs.
                     The context provides supplementary information so the model
@@ -86,36 +96,7 @@ export const PromptBuilderContextStep = (props: {
                                 props.setBuilderValue('title', e.target.value)
                             }
                         />
-                        <Autocomplete
-                            value={(props.builder.tags.value as string[]) ?? []}
-                            fullWidth
-                            multiple
-                            onChange={(_, newValue) => {
-                                props.setBuilderValue('tags', newValue);
-                            }}
-                            filterOptions={(options, params) => {
-                                const filtered = filter(options, params);
-
-                                const { inputValue } = params;
-                                const isExisting = options.some(
-                                    (option) => inputValue === option,
-                                );
-                                if (inputValue !== '' && !isExisting) {
-                                    filtered.push(inputValue);
-                                }
-
-                                return filtered;
-                            }}
-                            options={[]}
-                            renderOption={(props, option) => (
-                                <li {...props}>{option}</li>
-                            )}
-                            freeSolo
-                            renderInput={(params) => (
-                                <TextField {...params} label="Tags" />
-                            )}
-                        />
-                        <Autocomplete
+                        <AutocompleteTwo
                             disableClearable
                             fullWidth
                             id="model-autocomplete"

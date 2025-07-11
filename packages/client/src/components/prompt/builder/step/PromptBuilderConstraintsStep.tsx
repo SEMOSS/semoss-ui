@@ -191,7 +191,7 @@ export function PromptBuilderConstraintsStep(props: {
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
-                <Typography variant="h5">Set Constraints</Typography>
+                <Typography variant="h6">Set Constraints</Typography>
                 <Typography variant="body1">
                     Add constraints or rules to your prompt to help the LLM
                     tailor a response based on specific requirements

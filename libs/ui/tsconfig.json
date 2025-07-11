@@ -9,7 +9,7 @@
         "baseUrl": "src",
         "rootDir": "src",
         "module": "esnext",
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
         "resolveJsonModule": true,
 
@@ -34,16 +34,4 @@
     },
     "include": ["src"],
     "exclude": ["dist", "node_modules", "**/*.spec.ts", "**/*.stories.tsx"]
-    // "references": [
-    //     {
-    //         "path": "./tsconfig.lib.json"
-    //     },
-    //     {
-    //         "path": "./tsconfig.spec.json"
-    //     },
-    //     {
-    //         "path": "./tsconfig.storybook.json"
-    //     }
-    // ]
-    // "extends": "../../../tsconfig.base.json"
 }

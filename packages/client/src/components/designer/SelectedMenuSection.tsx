@@ -1,7 +1,8 @@
-import { ExpandMore } from '@mui/icons-material';
-import { Accordion, Stack, Typography, styled } from '@semoss/ui';
-import { observer } from 'mobx-react-lite';
 import React, { createElement } from 'react';
+import { observer } from 'mobx-react-lite';
+import { BorderColor, ExpandMore } from '@mui/icons-material';
+
+import { Accordion, Stack, Typography, styled } from '@semoss/ui';
 
 const StyledMenuSectionHeader = styled('div')(({ theme }) => ({
     alignItems: 'center',
@@ -11,36 +12,52 @@ const StyledMenuSectionHeader = styled('div')(({ theme }) => ({
     paddingLeft: theme.spacing(2),
 }));
 
-const StyledMenuSection = styled(Accordion)(({ theme }) => ({
-    boxShadow: 'none',
-    borderRadius: '0 !important',
-    border: '0px',
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    '&:before': {
-        display: 'none',
-    },
-    '&.Mui-expanded': {
-        margin: '0',
-        '&:last-child': {
-            borderBottom: '0px',
+const StyledMenuSection = styled(Accordion)<{ expansion: boolean }>(
+    ({ theme, expansion }) => ({
+        boxShadow: 'none',
+        borderRadius: '0 !important',
+        border: '0px',
+        borderBottom: `1px solid ${theme.palette.divider}`,
+        ':hover': {
+            backgroundColor: expansion ? 'transparent' : '#F5F5F5',
         },
-    },
-}));
+        '&:before': {
+            display: 'none',
+        },
+        '&.Mui-expanded': {
+            margin: '0',
+            '&:last-child': {
+                borderBottom: '0px',
+            },
+        },
+    }),
+);
 
-const StyledTypography = styled(Typography)(() => ({
-    textTransform: 'uppercase',
-    fontWeight: 'bold',
-}));
+const StyledTypography = styled(Typography)(() => ({}));
 
-// const StyledTypographyNoAccordion = styled(Typography)(({ theme }) => ({
-//     textTransform: 'uppercase',
-//     fontWeight: 'bold',
-//     paddingLeft: theme.spacing(2),
-// }));
-
-const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
+const StyledMenuSectionTitle = styled(Accordion.Trigger)<{
+    expansion?: boolean;
+}>(({ theme, expansion }) => ({
     minHeight: 'auto !important',
-    height: theme.spacing(6),
+    borderLeft: expansion ? '3px solid #1976d2' : '3px solid transparent',
+    height: theme.spacing(3),
+    paddingLeft: '12px',
+    paddingTop: '8px',
+    paddingBottom: '8px',
+    ':hover': {
+        backgroundColor: expansion ? 'transparent' : '#F5F5F5',
+    },
+    marginTop: expansion ? '8px' : '0px',
+    marginBottom: expansion ? '8px' : '0px',
+}));
+
+const StyledStack = styled(Stack)(() => ({
+    '>.MuiAccordion-root': {
+        paddingTop: '8px',
+        paddingBottom: '8px',
+        marginTop: '0px',
+        marginBottom: '8px',
+    },
 }));
 
 export const SelectedMenuSection = observer(
@@ -58,12 +75,14 @@ export const SelectedMenuSection = observer(
         setAccordion: (accordion: object) => void;
     }) => {
         return (
-            <Stack>
-                <StyledMenuSectionHeader>
-                    <StyledTypography variant="subtitle1">
-                        {props.sectionTitle}
-                    </StyledTypography>
-                </StyledMenuSectionHeader>
+            <StyledStack>
+                {props.sectionTitle != '' && (
+                    <StyledMenuSectionHeader>
+                        <StyledTypography variant="subtitle1">
+                            {props.sectionTitle}
+                        </StyledTypography>
+                    </StyledMenuSectionHeader>
+                )}
                 {props.menu.map((s, sIdx) => {
                     const key = `section--${sIdx}`;
 
@@ -71,6 +90,7 @@ export const SelectedMenuSection = observer(
                         <React.Fragment key={key}>
                             <StyledMenuSection
                                 expanded={props.accordion[key]}
+                                expansion={props.accordion[key]}
                                 onChange={() =>
                                     props.setAccordion({
                                         ...props.accordion,
@@ -79,13 +99,13 @@ export const SelectedMenuSection = observer(
                                 }
                             >
                                 <StyledMenuSectionTitle
-                                    expandIcon={<ExpandMore />}
+                                    expandIcon={''}
+                                    expansion={props.accordion[key]}
                                 >
-                                    <StyledTypography variant="body2">
+                                    <StyledTypography variant="body1">
                                         {s.name}
                                     </StyledTypography>
                                 </StyledMenuSectionTitle>
-                                {/* )} */}
 
                                 <Accordion.Content>
                                     {s.children.length > 0 ? (
@@ -103,7 +123,7 @@ export const SelectedMenuSection = observer(
                         </React.Fragment>
                     );
                 })}
-            </Stack>
+            </StyledStack>
         );
     },
 );
