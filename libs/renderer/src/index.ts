@@ -29,9 +29,11 @@ export {
     INPUT_BLOCK_TYPES,
     MigrationManager,
     STATE_VERSION,
+    ACTIONS_DISPLAY,
 } from "./store";
 
 export type {
+    BlockComponent,
     SerializedState,
     Variable,
     BlockJSON,
@@ -42,8 +44,37 @@ export type {
     CellState,
     NewCellAction,
     Block,
-    QueryStateConfig
+    QueryStateConfig,
+    BlockDef,
+    ListenerActions,
+    Variant,
 } from "./store";
+
+export type { GridBlockColumn } from "./components/block-defaults/grid-block/grid-block.types";
+export type { RadioBlockDef } from "./components/block-defaults/radio-block";
+export type { PDFViewerBlockDef } from "./components/block-defaults/pdfViewer-block";
+export type { EchartVisualizationBlockDef } from "./components/block-defaults/echart-visualization-block";
+export type { GridDynamicFrameBlockDef } from "./components/block-defaults/grid-dynamic-frame-block";
+export type { GridBlockDef } from "./components/block-defaults/grid-block";
+export type { LLMComparisonBlockDef } from "./components/block-defaults/llm-comparison-block";
+export type {
+    CellBackgroundSettings,
+    ChartTitleSettings,
+    ColorRule,
+    HeaderBackgroundSettings,
+    WrapTextSettings,
+} from "./components/block-defaults/grid-block/GridBlock";
+
+export type {
+    Paths,
+    PathValue,
+    TypeLlmComparisonForm,
+    TypeLlmConfig,
+    TypeVariants,
+    TypeVariant,
+} from "./types";
+
+export { getValueByPath, copy } from "./utility";
 
 // REGISTRY AND MENUS
 export { DefaultCells } from "./components/cell-defaults";
@@ -67,4 +98,10 @@ export { TextToSqlCellConfig } from "./components/cell-defaults/text-to-sql-cell
 export { DataImportFormModal } from "./components/shared/DataImportFormModal";
 
 // HOOKS
-export { useBlocks, useBlocksPixel } from "./hooks";
+export {
+    useBlocks,
+    useBlocksPixel,
+    useBlock,
+    useFrame,
+    useFrameHeaders,
+} from "./hooks";
