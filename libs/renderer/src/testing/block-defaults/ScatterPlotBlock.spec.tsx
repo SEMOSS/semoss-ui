@@ -496,37 +496,44 @@ describe("Scatter Plot Block", async () => {
         // select toggle input
         const toggle = parentElem.querySelector('input[type="checkbox"]');
 
-        // console.log({toggle})
         expect(toggle).toBeChecked;
 
         const xAxisVisible = result.current.data.option.xAxis.show as boolean;
         expect(xAxisVisible).toBeTruthy();
-        // expect(toggle[0].innerHTML).toBeChecked();
     });
-    // it("should check if Show/Hide Axis toggle can be toggled off", async () => {
-    // 	const { result } = renderHook(
-    // 		() => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
-    // 		{
-    // 			blocks,
-    // 			renderEngineId: "scatter",
-    // 			customChildren: <EditXAxisScatterPlot id="scatter" path={"option"} />,
-    // 		},
-    // 	);
-    // 	expect(result.current).toBeDefined();
 
-    // 	const toggle = screen.queryByText("Show/Hide Axis");
-    // 	// console.log({toggle})
+    it("should check if Show/Hide Axis toggle can be toggled off", async () => {
+        const { result } = renderHook(
+            () => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+            {
+                blocks,
+                renderEngineId: "scatter",
+                customChildren: (
+                    <EditXAxisScatterPlot id="scatter" path={"option"} />
+                ),
+            },
+        );
+        expect(result.current).toBeDefined();
 
-    // 	expect(toggle).toBeInTheDocument();
-    // 	const xAxisVisible = result.current.data.option.xAxis.show as boolean;
-    // 	// console.log({ xAxisVisible });
-    // 	expect(xAxisVisible).toBeTruthy();
+        const label = screen.queryByText("Show/Hide Axis");
 
-    // 	expect(toggle).toBeChecked()
-    // 	fireEvent.click(toggle);
-    // 	expect(toggle).not.toBeChecked()
-    // 	// console.log({ xAxisVisible });
+        const parentElem = label.parentElement;
 
-    // 	expect(xAxisVisible).toBeFalsy();
-    // });
+        const toggle = parentElem.querySelector('input[type="checkbox"]');
+
+        expect(toggle).toBeInTheDocument();
+
+        const xAxisVisible = result.current.data.option.xAxis.show as boolean;
+
+        expect(xAxisVisible).toBe(true);
+
+        expect(toggle).toBeChecked();
+
+        fireEvent.click(toggle);
+
+        expect(toggle).not.toBeChecked();
+
+        // This will result in the data block 'show' property to be set to false
+        expect(result.current.data.option.xAxis.show).toBe(false);
+    });
 });
