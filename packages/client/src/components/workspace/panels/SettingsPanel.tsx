@@ -170,9 +170,9 @@ export const SettingsPanel = () => {
                                     value={'APP'}
                                 />
                                 <ToggleTabsGroup.Item
-                                    label="Dependency"
+                                    label="Dependencies"
                                     disabled={workspace.role === 'READ_ONLY'}
-                                    value={'DEPENDENCY'}
+                                    value="DEPENDENCY"
                                 />
                             </ToggleTabsGroup>
                             {view === 'CURRENT' && (

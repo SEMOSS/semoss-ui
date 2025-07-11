@@ -40,15 +40,14 @@ const StyledUuidList = styled('div')({
 });
 
 export const DependencyList = ({ id }: DependencyListProps) => {
-    console.log('Fetching dependencies for app ID:', id);
-
     const getProjectDependencies = usePixel<EngineData[]>(
         `GetProjectDependencies(project="${id}", details=[true]);`,
     );
 
     const handleEngineClick = (engineId: string) => {
         const baseUrl = `${window.location.protocol}//${window.location.host}`;
-        const url = `${baseUrl}/SemossWeb/packages/client/dist/#/engine/storage/${engineId}`;
+        const safeEngineId = encodeURIComponent(engineId);
+        const url = `${baseUrl}/SemossWeb/packages/client/dist/#/engine/storage/${safeEngineId}`;
         window.open(url, '_blank');
     };
 
@@ -69,9 +68,15 @@ export const DependencyList = ({ id }: DependencyListProps) => {
                         (dependency: EngineData, index: number) => (
                             <StyledUuidItem
                                 key={dependency.engine_id || index}
+                                role="button"
+                                tabIndex={0}
                                 onClick={() =>
                                     handleEngineClick(dependency.engine_id)
                                 }
+                                onKeyPress={(e) => {
+                                    if (e.key === 'Enter')
+                                        handleEngineClick(dependency.engine_id);
+                                }}
                             >
                                 <div>
                                     <Typography
