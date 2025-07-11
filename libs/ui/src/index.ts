@@ -72,28 +72,67 @@ export * from "./components/TextFieldStack";
 
 // TODO: fix miscellaneous mui components/functions
 import {
+    OutlinedInput,
+    Checkbox,
+    Box,
     Autocomplete,
     Chip,
     Fade,
+    ListItem,
+    ListItemButton,
     ListItemIcon,
     ListItemText,
+    Menu,
     MenuList,
     MenuItem,
     Popper,
     Tooltip,
     TooltipProps,
+    ClickAwayListener,
+    SvgIcon,
+    Popover,
+    Switch,
+    Select,
+    Table,
+    TableHead,
+    TableRow,
+    TableCell,
+    TableBody,
+    Input,
+    FormHelperText,
 } from "@mui/material";
 
+import type { SvgIconProps } from "@mui/material";
+export type { SvgIconProps };
+
 export {
+    Input as InputTwo,
+    Checkbox as CheckboxTwo,
+    OutlinedInput,
+    SvgIcon,
+    Box as BoxTwo,
     Fade,
+    ListItem as ListItemTwo,
     ListItemIcon,
     ListItemText,
+    ListItemButton as ListItemButtonTwo,
     MenuList,
     Popper,
+    Menu as MenuTwo,
     MenuItem as MenuItemTwo,
     Tooltip as TooltipTwo,
     Chip as ChipTwo,
     Autocomplete as AutocompleteTwo,
+    ClickAwayListener,
+    Popover as PopoverTwo,
+    Switch as SwitchTwo,
+    Select as SelectTwo,
+    Table as TableTwo,
+    TableHead as TableHeadTwo,
+    TableRow as TableRowTwo,
+    TableCell as TableCellTwo,
+    TableBody as TableBodyTwo,
+    FormHelperText,
 };
 
 export { blue, green } from "@mui/material/colors";
