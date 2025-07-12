@@ -84,29 +84,29 @@ export const JobBuilderModal = (props: {
     }, [initialBuilder ? initialBuilder.id : null]);
 
     const CRON_PATTERNS: RegExp[] = [
-  /^(\*|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:\-[0-9]|\-(?:[1-5][0-9]))?|(?:\,(?:[0-9]|(?:[1-5][0-9])))*))$/, // Seconds: 0-59
-  /^(\*|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:\-[0-9]|\-(?:[1-5][0-9]))?|(?:\,(?:[0-9]|(?:[1-5][0-9])))*))$/, // Minutes: 0-59
-  /^(\*|(?:\*|(?:\*|(?:[0-9]|1[0-9]|2[0-3])))\/(?:[0-9]|1[0-9]|2[0-3])|(?:[0-9]|1[0-9]|2[0-3])(?:(?:\-(?:[0-9]|1[0-9]|2[0-3]))?|(?:\,(?:[0-9]|1[0-9]|2[0-3]))*))$/, // Hours: 0-23
-  /^(\*|\?|L(?:W|\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:W|\/(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:(?:\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:\,(?:[1-9]|(?:[12][0-9])|3[01]))*))$/, // Day of Month: 1-31, ?
-  /^(\*|(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?:(?:\-(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?|(?:\,(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))*))$/, // Month: 1-12
-  /^(\*|\?|[0-6](?:L|\#[1-5])?|(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT)(?:(?:\-(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))?|(?:\,(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))*))$/, // Day of Week: 0-6, ?
-  /^(\*|(?:[1-9][0-9]{3})(?:(?:\-[1-9][0-9]{3})?|(?:\,[1-9][0-9]{3})*))$/, // Year: 1000-9999
-];
+        /^(\*|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:\-[0-9]|\-(?:[1-5][0-9]))?|(?:\,(?:[0-9]|(?:[1-5][0-9])))*))$/, // Seconds: 0-59
+        /^(\*|(?:\*|(?:[0-9]|(?:[1-5][0-9])))\/(?:[0-9]|(?:[1-5][0-9]))|(?:[0-9]|(?:[1-5][0-9]))(?:(?:\-[0-9]|\-(?:[1-5][0-9]))?|(?:\,(?:[0-9]|(?:[1-5][0-9])))*))$/, // Minutes: 0-59
+        /^(\*|(?:\*|(?:\*|(?:[0-9]|1[0-9]|2[0-3])))\/(?:[0-9]|1[0-9]|2[0-3])|(?:[0-9]|1[0-9]|2[0-3])(?:(?:\-(?:[0-9]|1[0-9]|2[0-3]))?|(?:\,(?:[0-9]|1[0-9]|2[0-3]))*))$/, // Hours: 0-23
+        /^(\*|\?|L(?:W|\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:W|\/(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:[1-9]|(?:[12][0-9])|3[01])(?:(?:\-(?:[1-9]|(?:[12][0-9])|3[01]))?|(?:\,(?:[1-9]|(?:[12][0-9])|3[01]))*))$/, // Day of Month: 1-31, ?
+        /^(\*|(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?:(?:\-(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))?|(?:\,(?:[1-9]|1[012]|JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC))*))$/, // Month: 1-12
+        /^(\*|\?|[0-6](?:L|\#[1-5])?|(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT)(?:(?:\-(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))?|(?:\,(?:[0-6]|SUN|MON|TUE|WED|THU|FRI|SAT))*))$/, // Day of Week: 0-6, ?
+        /^(\*|(?:[1-9][0-9]{3})(?:(?:\-[1-9][0-9]{3})?|(?:\,[1-9][0-9]{3})*))$/, // Year: 1000-9999
+    ];
 
     // Validation: 7-field cron, allow '?' for day of month (index 3)
     const isCronExpressionValid: boolean = useMemo(() => {
-    const cronValues = getCronFields(builder.cronExpression);
+        const cronValues = getCronFields(builder.cronExpression);
 
-    if (cronValues.length !== 7) return false;
+        if (cronValues.length !== 7) return false;
 
-    for (let i = 0; i < 7; i++) {
-        if (!CRON_PATTERNS[i].test(cronValues[i])) {
-            return false;
+        for (let i = 0; i < 7; i++) {
+            if (!CRON_PATTERNS[i].test(cronValues[i])) {
+                return false;
+            }
         }
-    }
 
-    return true;
-}, [builder.cronExpression]);
+        return true;
+    }, [builder.cronExpression]);
 
     const isBaseFormValid: boolean = useMemo(() => {
         switch (builder.jobType) {
@@ -151,7 +151,7 @@ export const JobBuilderModal = (props: {
             builder.name !== initialBuilder.name ||
             builder.pixel !== initialBuilder.pixel ||
             JSON.stringify(builder.tags) !==
-                JSON.stringify(initialBuilder.tags) ||
+            JSON.stringify(initialBuilder.tags) ||
             builder.cronTz !== initialBuilder.cronTz ||
             builder.cronExpression !== initialBuilder.cronExpression ||
             builder.smtpHost !== initialBuilder.smtpHost ||
@@ -161,7 +161,7 @@ export const JobBuilderModal = (props: {
             JSON.stringify(builder.to) !== JSON.stringify(initialBuilder.to) ||
             JSON.stringify(builder.cc) !== JSON.stringify(initialBuilder.cc) ||
             JSON.stringify(builder.bcc) !==
-                JSON.stringify(initialBuilder.bcc) ||
+            JSON.stringify(initialBuilder.bcc) ||
             builder.from !== initialBuilder.from ||
             builder.message !== initialBuilder.message ||
             builder.username !== initialBuilder.username ||
