@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import EChartsReact, { EChartsOption } from "echarts-for-react";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+
+import { styled } from "@semoss/ui";
+
+import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
 import { ChartContextMenu } from "../bar-chart/ChartContextMenu";
 
@@ -31,6 +34,7 @@ export interface EchartVisualizationBlockDef {
         };
         variation: undefined | string;
         columns: EChartColumns[];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         aggregate: Record<string, any>;
         contextMenu: {
             hideUnfilter: boolean;
@@ -43,7 +47,7 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const StackChart: BlockComponent = observer(({ id }) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

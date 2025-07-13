@@ -1,21 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import { computed } from "mobx";
-
-import { BlockComponent } from "../../../../../store";
-import { EchartVisualizationBlockDef } from "../..";
-import { CustomContextMenu } from "./CustomContextMenu";
-import { PathValue } from "../../../../../types";
-import { getValueByPath } from "../../../../../utility";
-import {
-    useBlock,
-    useFrame,
-    useBlocks,
-    useBlockSettings,
-} from "../../../../../hooks";
 import { EChartsOption } from "echarts";
+
+import { styled } from "@semoss/ui";
+
+import { useFrame, useBlock } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
+import { EchartVisualizationBlockDef } from "../..";
+
+import { CustomContextMenu } from "./CustomContextMenu";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -42,7 +38,7 @@ interface PieProps {
 }
 
 export const Pie = observer(({ id, updateJson }: PieProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

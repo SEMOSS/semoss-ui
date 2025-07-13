@@ -1,24 +1,22 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import EChartsReact from "echarts-for-react";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+
+import { styled } from "@semoss/ui";
+
+import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
+
 import fetchWorldMap from "./map-utility";
 import { getSelector } from "./MapSelector";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 
-const StyledChartContainer = styled("div")(() => ({
-    width: "fit-content",
-    minWidth: "50px",
-    minHeight: "50px",
-}));
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",

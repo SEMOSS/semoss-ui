@@ -1,18 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Table } from "@mui/material";
-import { TableHead } from "@mui/material";
-import { styled } from "@mui/material";
-import { TableRow, TableCell, TableBody } from "@mui/material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import ReactECharts from "echarts-for-react";
 
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+import {
+    TableTwo,
+    TableHeadTwo,
+    TableRowTwo,
+    TableCellTwo,
+    TableBodyTwo,
+    styled,
+} from "@semoss/ui";
+
+import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockDef } from "../../../../../store";
 import { getValueByPath } from "../../../../../utility";
-import { VizBlockContextMenu } from "../../VizBlockContextMenu";
-import { GANTT_CHART } from "../../Visualization.constants";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+
+import { GANTT_CHART } from "../../Visualization.constants";
+import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 
 //Main container where gantt chart will render
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -31,7 +37,7 @@ const StyledContainer = styled("div")(() => ({
 //styled span to render series name
 const StyledDataSpan = styled("span")(({}) => ({}));
 //styled table cell to have background color
-const StyledTableCell = styled(TableCell)<{ backgroundColor?: string }>(
+const StyledTableCell = styled(TableCellTwo)<{ backgroundColor?: string }>(
     ({ backgroundColor }) => ({
         backgroundColor: backgroundColor ?? "#fff",
         border: "1px solid #e6e6e6",
@@ -45,8 +51,8 @@ interface GanttProps {
 //Gantt chart main component
 export const Gantt = observer(
     <D extends BlockDef = BlockDef>({ id, updateChart }: GanttProps) => {
-        const { data, setData } =
-            useBlockSettings<EchartVisualizationBlockDef>(id); //Data for the current block
+        const { data } = useBlock<EchartVisualizationBlockDef>(id);
+
         //computed value to hold the most recent data
         const computedValue = useMemo(() => {
             return computed(() => {
@@ -105,7 +111,9 @@ export const Gantt = observer(
             )}]) | Group(${groupByParts.join(", ")})`;
         };
         //selector to fetch data from the frame
-        let selector = buildDynamicQuery(Object.entries(data?.aggregate ?? {}));
+        const selector = buildDynamicQuery(
+            Object.entries(data?.aggregate ?? {}),
+        );
         //frame object to get the data from the frame
         const frame = useFrame(data.frame?.name, {
             selector: selector,
@@ -226,6 +234,7 @@ export const Gantt = observer(
                     Object.keys(groupedData).forEach((resource) => {
                         const tasks = groupedData[resource];
                         tasks.sort(
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             (a: any, b: any) =>
                                 new Date(a[1]).getTime() -
                                 new Date(b[1]).getTime(),
@@ -418,6 +427,7 @@ export const Gantt = observer(
                 ...option,
                 tooltip: {
                     trigger: "item",
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     formatter: (params: any) =>
                         chartFormatter(
                             params,
@@ -809,15 +819,16 @@ export const Gantt = observer(
                             >
                                 {seriesName}
                             </StyledDataSpan>
-                            <Table
+                            <TableTwo
                                 aria-label="simple table"
                                 ref={(e) => (tableRef.current = e)}
                             >
-                                <TableHead>
-                                    <TableRow>
+                                <TableHeadTwo>
+                                    <TableRowTwo>
                                         {quarterAndMonth.length &&
-                                            quarterAndMonth.map((item) => (
+                                            quarterAndMonth.map((item, i) => (
                                                 <StyledTableCell
+                                                    key={i}
                                                     backgroundColor={
                                                         fiscalAxisBackgroundColor
                                                     }
@@ -834,10 +845,10 @@ export const Gantt = observer(
                                                         : ""}
                                                 </StyledTableCell>
                                             ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    <TableRow
+                                    </TableRowTwo>
+                                </TableHeadTwo>
+                                <TableBodyTwo>
+                                    <TableRowTwo
                                         sx={{
                                             "&:last-child td, &:last-child th":
                                                 {
@@ -846,10 +857,11 @@ export const Gantt = observer(
                                         }}
                                     >
                                         {quarterAndMonth.length &&
-                                            quarterAndMonth.map((item) =>
+                                            quarterAndMonth.map((item, i) =>
                                                 item["month"].map(
                                                     (monthItem) => (
                                                         <StyledTableCell
+                                                            key={i}
                                                             component={"td"}
                                                             scope="row"
                                                             size="small"
@@ -859,9 +871,9 @@ export const Gantt = observer(
                                                     ),
                                                 ),
                                             )}
-                                    </TableRow>
-                                </TableBody>
-                            </Table>
+                                    </TableRowTwo>
+                                </TableBodyTwo>
+                            </TableTwo>
                         </StyledContainer>
                     )}
 

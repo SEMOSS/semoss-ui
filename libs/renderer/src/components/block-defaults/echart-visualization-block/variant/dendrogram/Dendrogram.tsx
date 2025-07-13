@@ -1,14 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
-import * as echarts from "echarts/core";
 import EChartsReact from "echarts-for-react";
-import { color, EChartsOption } from "echarts";
+import { EChartsOption } from "echarts";
+
+import { styled } from "@semoss/ui";
 
 import { getValueByPath } from "../../../../../utility";
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+import { useBlock, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { DendrogramChartField } from "./DendrogramChartField";
 
@@ -42,11 +43,13 @@ const StyledContainer = styled("div")(() => ({
 //bar component properties
 interface DendrogramProps {
     id: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     updateJson: (data: any, path: any) => void;
 }
 
 export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number; //x axis position for the click/brush event
         mouseY: number; //y axis position for the click/brush event
@@ -168,26 +171,26 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
         selector: selector,
     });
     function getSelectorData(header) {
-        let headerDataList =
+        const headerDataList =
             data.columns.find((item) => item.name == header)?.selector || "";
         return headerDataList;
     }
     function getColorData(currentIndex) {
-        let colorList = parsedJson?.color || [];
+        const colorList = parsedJson?.color || [];
         return colorList[currentIndex % colorList.length] || "#b0c4de";
     }
     const dataOption = useMemo(() => {
         let option = JSON.parse(computedValue);
 
-        let seriesIndex = option["series"].findIndex(
+        const seriesIndex = option["series"].findIndex(
             (item) => item.type === "tree" && item.data.length,
         );
-        let dataColumns =
+        const dataColumns =
             data.columns?.find((item) => item.hasOwnProperty("isFacet")) || {};
         if (seriesIndex > -1) {
-            let data = option["series"][seriesIndex]["data"];
+            const data = option["series"][seriesIndex]["data"];
             // let updatedDataListres = getDataValuesUpdate(0,frame.data.headers.length, [{name: 'Root', children: [], childrenIndex: 0, itemStyle: {color: getColorData(0)}}], -1);
-            let updatedDataListresLoop = [
+            const updatedDataListresLoop = [
                 {
                     name: "Root",
                     children: [],
@@ -235,9 +238,9 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
                 },
             };
         }
-        let legendData = ["Root", ...frame.data.headers];
+        const legendData = ["Root", ...frame.data.headers];
         if (option["legend"]?.["show"]) {
-            let legendSeries = legendData.map((item, index) => {
+            const legendSeries = legendData.map((item, index) => {
                 return {
                     name: item,
                     type: "tree",
