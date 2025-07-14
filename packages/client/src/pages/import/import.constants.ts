@@ -4249,12 +4249,6 @@ export const CONNECTION_OPTIONS = {
                 ],
             },
             {
-                name: 'NeMo',
-                disable: true,
-                icon: NEMO,
-                fields: [],
-            },
-            {
                 name: 'Replit code model – 3b',
                 disable: false,
                 icon: REPLIT,
