@@ -1,8 +1,9 @@
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties, ReactElement, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
+import LoadingSkeleton from '../../../assets/img/LoadingSkeleton.png';
 
 export type BoxShadowParts = {
     offsetX?: string;
@@ -21,6 +22,7 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
         dimension?: null | string;
         rowSpacing?: null | string;
         boxShadowParts: BoxShadowParts;
+        loadState: ReactElement | string;
     };
     slots: {
         children: true;
@@ -84,6 +86,15 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             {...attrs}
         >
             <Slot slot={slots.children}></Slot>
+            <>
+                <div style={{
+                    width:"300px",
+                    height:"300px",
+                    backgroundImage:"url('../../../assets/img/LoadingSkeleton.png')"
+                }}>
+                    &nbsp;
+                </div>
+            </>
         </div>
     );
 });

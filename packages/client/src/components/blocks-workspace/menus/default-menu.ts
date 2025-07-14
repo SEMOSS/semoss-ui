@@ -940,6 +940,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     spreadRadius: '',
                     color: '',
                 },
+                loadState:"",
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },

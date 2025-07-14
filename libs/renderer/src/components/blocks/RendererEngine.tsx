@@ -1,7 +1,8 @@
-import { createElement } from "react";
+import { createElement, ReactElement } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlocks } from "../../hooks";
+import { LoadingSkeleton } from "../../assets/skeleton/LoadingSkeleton";
 
 export interface RendererEngineProps {
     /** Id of the block */
@@ -112,12 +113,23 @@ export const RendererEngine = observer(
                 key: id,
                 id: id,
             });
+        } else if (
+            block.data.hasOwnProperty("loadState") &&
+            block.data.loadState !== ""
+        ) {
+            console.log("loadstate", block.data.loadState);
+            return createElement(LoadingSkeleton, {
+                key: id,
+                id: id,
+                ["data-block"]: id,
+            });
+        } else {
+            console.log("loadstate else", block.data);
+            return createElement("div", {
+                key: id,
+                id: id,
+                ["data-block"]: id,
+            });
         }
-
-        return createElement("div", {
-            key: id,
-            id: id,
-            ["data-block"]: id,
-        });
     },
 );

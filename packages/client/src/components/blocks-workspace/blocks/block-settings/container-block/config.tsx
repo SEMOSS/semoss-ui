@@ -25,6 +25,25 @@ export const config: BlockSettingsConfig = {
             children: [...buildShowField()],
         },
         {
+            name: 'Load State',
+            children: [
+                {
+                    description: 'Loading State',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            path="loadState"
+                            label="Loading State"
+                            options={[
+                                { value: '', display: 'None' },
+                                { value: 'skeleton', display: 'Skeleton' },
+                            ]}
+                        />
+                    ),
+                },
+            ],
+        },
+        {
             name: 'Pre Process',
             children: [...buildListener('preProcess')],
         },
