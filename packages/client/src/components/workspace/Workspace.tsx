@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
-import { InfoOutlined, Menu, RestartAlt } from '@mui/icons-material';
+import { InfoOutlined, Menu, Public, RestartAlt } from '@mui/icons-material';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
 import './flexlayout.css';
@@ -13,12 +13,14 @@ import {
     Tooltip,
     Breadcrumbs,
     useNotification,
+    Button,
+    Avatar,
 } from '@semoss/ui';
 import { useBlocks, ActionMessages } from '@semoss/renderer';
 
 import { WorkspaceContext } from '@/contexts';
 import { WorkspaceStore, WorkspaceOptions, getBlockElement } from '@/stores';
-import { useDesigner, useRootStore } from '@/hooks';
+import { useDesigner, usePage, useRootStore } from '@/hooks';
 import { WorkspaceOverlay } from './WorkspaceOverlay';
 import { WorkspaceLoading } from './WorkspaceLoading';
 
@@ -27,6 +29,7 @@ import SEMOSS_BLACK_LOGO from '@/assets/img/SEMOSS_BLACK_LOGO.png';
 import { PAGE_BLOCK } from '../blocks-workspace/panels/LayersPanel';
 import { AddPage } from '@/assets/img/AddPage';
 import { ClosePage } from '@/assets/img/ClosePage';
+import { NavbarHeader, NavbarLeft, NavbarRight } from '../shared';
 
 const StyledViewport = styled('div')(() => ({
     height: '100vh',
@@ -48,6 +51,7 @@ const StyledContent = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+    paddingTop: theme.spacing(1.5),
     paddingLeft: theme.spacing(1.5),
     paddingRight: theme.spacing(1.5),
     paddingBottom: theme.spacing(1.5),
@@ -122,8 +126,8 @@ type WorkspaceProps = {
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
-    const { workspace, options, factory = () => null } = props;
-
+    const { navbarActions, workspace, options, factory = () => null } = props;
+    const { page } = usePage();
     const { configStore } = useRootStore();
     const accordionRefs = useRef({});
     const { state } = useBlocks();
@@ -135,6 +139,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const model = workspace.model;
     // build the model from the layout
     useEffect(() => {
+        page.navbar.search = false;
         const handler = (e: CustomEvent) => {
             const { destinationType, destination } = e.detail;
             if (destinationType === 'App Page') {
@@ -488,136 +493,126 @@ export const Workspace = observer((props: WorkspaceProps) => {
                 workspace: workspace,
             }}
         >
-            <WorkspaceOverlay />
-            <StyledViewport>
-                <StyledMain>
-                    <StyledHeaderStack direction={'row'} alignItems={'center'}>
-                        <Breadcrumbs separator=" /">
-                            <StyledHeaderLogo to={'/'}>
-                                <Stack direction={'row'} alignItems={'center'}>
-                                    <StyledSemossImage
-                                        src={SEMOSS_BLACK_LOGO}
-                                        alt="SEMOSS"
-                                    ></StyledSemossImage>
-                                    <StyledAppTypography variant={'subtitle1'}>
-                                        App Library
-                                    </StyledAppTypography>
-                                </Stack>
-                            </StyledHeaderLogo>
-                            <StyledHeaderLogo
-                                to={`/app/${workspace.metadata.project_id}`}
-                            >
-                                <StyledAppTypography variant={'subtitle1'}>
-                                    {workspace.metadata.project_name}
-                                </StyledAppTypography>
-                            </StyledHeaderLogo>
-                            <StyledHeaderLogo to={''}>
-                                <Typography
-                                    variant={'subtitle1'}
-                                    sx={{ display: 'inline', mr: 0.5 }}
-                                >
-                                    {workspace.metadata.project_name} - Editor
-                                </Typography>
-                                {/*TODO : Info icon requires the text*/}
-                                {/* <IconButton size={'small'}>
+            <NavbarLeft>
+                <NavbarHeader
+                    logo={
+                        <Stack
+                            direction="row"
+                            alignItems={'center'}
+                            spacing={1}
+                            marginRight={0}
+                        ></Stack>
+                    }
+                />
+                <Breadcrumbs separator=" /">
+                    <StyledHeaderLogo to={'/'}>
+                        <Stack direction={'row'} alignItems={'center'}>
+                            <StyledSemossImage
+                                src={SEMOSS_BLACK_LOGO}
+                                alt="SEMOSS"
+                            ></StyledSemossImage>
+                            <StyledAppTypography variant={'subtitle1'}>
+                                App Library
+                            </StyledAppTypography>
+                        </Stack>
+                    </StyledHeaderLogo>
+                    <StyledHeaderLogo
+                        to={`/app/${workspace.metadata.project_id}/view`}
+                    >
+                        <StyledAppTypography variant={'subtitle1'}>
+                            {workspace.metadata.project_name}
+                        </StyledAppTypography>
+                    </StyledHeaderLogo>
+                    <StyledHeaderLogo to={''}>
+                        <Typography
+                            variant={'subtitle1'}
+                            sx={{ display: 'inline', mr: 0.5 }}
+                        >
+                            {workspace.metadata.project_name} - Editor
+                        </Typography>
+                        {/* TODO : Info icon requires the text */}
+                        {/* <IconButton size={'small'}>
                                     <InfoOutlined
                                         sx={{ color: '#666', fontSize: 16 }}
                                     />
-                                </IconButton> */}
-                            </StyledHeaderLogo>
-                        </Breadcrumbs>
-                        <Stack
-                            flex={1}
-                            alignItems={'center'}
-                            justifyContent={'center'}
-                            overflow={'hidden'}
-                        >
-                            {/* <div>{alert || <>&nbsp;</>}</div> */}
-                        </Stack>
-                        {/* {endTopbar} */}
-                    </StyledHeaderStack>
-                    <StyledContent>
-                        <WorkspaceLoading />
-                        <StyledSpacer>
-                            {model ? (
-                                <>
-                                    {}
-                                    <Layout
-                                        key={layoutRefeshKey}
-                                        ref={layoutRef}
-                                        model={model}
-                                        factory={(node) => {
-                                            return factory(
-                                                node,
-                                                layoutRef.current,
+                                </IconButton>  */}
+                    </StyledHeaderLogo>
+                </Breadcrumbs>
+            </NavbarLeft>
+            <NavbarRight>{navbarActions}</NavbarRight>
+            <WorkspaceOverlay />
+            <StyledMain>
+                <StyledContent>
+                    <WorkspaceLoading />
+                    <StyledSpacer>
+                        {workspace.model ? (
+                            <>
+                                <Layout
+                                    ref={layoutRef}
+                                    model={workspace.model}
+                                    factory={(node) => {
+                                        return factory(node, layoutRef.current);
+                                    }}
+                                    icons={{
+                                        close: <ClosePage />,
+                                    }}
+                                    onRenderTabSet={handleRenderTabSet}
+                                    onModelChange={() => {
+                                        workspace.saveToCache();
+                                    }}
+                                    onAction={(action) => {
+                                        if (
+                                            action.data.tabNode === 'settings'
+                                        ) {
+                                            setSettingsChecked(true);
+                                        } else {
+                                            setSettingsChecked(false);
+                                        }
+                                        return action;
+                                    }}
+                                    onRenderTab={(tabNode, renderValues) => {
+                                        const item = SIDEBAR_MENU.MENU.find(
+                                            (menuItem) =>
+                                                menuItem.name ===
+                                                tabNode.getName(),
+                                        );
+                                        const isSelected = tabNode.isSelected();
+                                        if (item && item.icon) {
+                                            const iconSrc = isSelected
+                                                ? item.icon.active
+                                                : item.icon.default;
+                                            renderValues.content = (
+                                                <StyledLetTabImage
+                                                    src={iconSrc}
+                                                    alt={tabNode.getName()}
+                                                />
                                             );
-                                        }}
-                                        icons={{
-                                            close: <ClosePage />,
-                                        }}
-                                        onRenderTabSet={handleRenderTabSet}
-                                        onModelChange={() => {
-                                            workspace.saveToCache();
-                                        }}
-                                        onAction={(action) => {
-                                            if (
-                                                action.data.tabNode ===
-                                                'settings'
-                                            ) {
-                                                setSettingsChecked(true);
-                                            } else {
-                                                setSettingsChecked(false);
-                                            }
-                                            return action;
-                                        }}
-                                        onRenderTab={(
-                                            tabNode,
-                                            renderValues,
-                                        ) => {
-                                            const item = SIDEBAR_MENU.MENU.find(
-                                                (menuItem) =>
-                                                    menuItem.name ===
-                                                    tabNode.getName(),
-                                            );
-                                            const isSelected =
-                                                tabNode.isSelected();
-                                            if (item && item.icon) {
-                                                const iconSrc = isSelected
-                                                    ? item.icon.active
-                                                    : item.icon.default;
-                                                renderValues.content = (
-                                                    <StyledLetTabImage
-                                                        src={iconSrc}
-                                                        alt={tabNode.getName()}
-                                                    />
-                                                );
-                                            }
-                                            return renderValues;
-                                        }}
-                                    />
-                                    <StyledActions
-                                        direction="column"
-                                        justifyContent={'center'}
-                                    >
-                                        <Tooltip title={'Reset workspace'}>
-                                            <IconButton
-                                                size={'small'}
-                                                color="default"
-                                                onClick={() => {
-                                                    resetWorkspace();
-                                                }}
-                                            >
-                                                <RestartAlt fontSize="inherit" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </StyledActions>
-                                </>
-                            ) : null}
-                        </StyledSpacer>
-                    </StyledContent>
-                    {/* {footer} */}
-                </StyledMain>
-            </StyledViewport>
+                                        }
+                                        return renderValues;
+                                    }}
+                                />
+                                <StyledActions
+                                    direction="column"
+                                    justifyContent={'center'}
+                                >
+                                    <Tooltip title={'Reset workspace'}>
+                                        <IconButton
+                                            size={'small'}
+                                            color="default"
+                                            onClick={() => {
+                                                resetWorkspace();
+                                            }}
+                                        >
+                                            <RestartAlt fontSize="inherit" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </StyledActions>
+                            </>
+                        ) : null}
+                    </StyledSpacer>
+                </StyledContent>
+            </StyledMain>
+            <WorkspaceOverlay />
         </WorkspaceContext.Provider>
     );
 });

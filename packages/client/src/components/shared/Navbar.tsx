@@ -58,8 +58,8 @@ export const Navbar: React.FC = observer(() => {
                 spacing={1}
                 flex={'1 1 0'}
             ></Stack>
-            <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
-                {page.navbar && page.navbar.search ? (
+            {page.navbar && page.navbar.search ? (
+                <Container maxWidth={false} sx={{ maxWidth: '720px' }}>
                     <Search
                         renderInput={(params) => (
                             <StyledTextField
@@ -88,10 +88,10 @@ export const Navbar: React.FC = observer(() => {
                             />
                         )}
                     />
-                ) : (
-                    <>&nbsp;</>
-                )}
-            </Container>
+                </Container>
+            ) : (
+                <>&nbsp;</>
+            )}
             <Stack
                 id={'navbar--right'}
                 direction="row"
