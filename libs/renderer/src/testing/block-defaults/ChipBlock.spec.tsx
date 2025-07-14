@@ -6,7 +6,7 @@ import "@testing-library/jest-dom";
 import { ChipBlock } from "../../components/block-defaults/chip-block/ChipBlock";
 
 const blocks = {
-    "chip": {
+    chip: {
         data: {
             style: {
                 display: "flex",
@@ -63,7 +63,6 @@ const blocks = {
         listeners: {},
     },
 };
-
 
 describe("chip block", () => {
     it("should render correctly with mocked provider", async () => {

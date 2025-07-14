@@ -68,7 +68,7 @@
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
-        "vitest": "^3.2.0",
+        "vitest": "^3.2.4",
         "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {
