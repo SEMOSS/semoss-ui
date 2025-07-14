@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
 // TODO: Pull from sdk
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { THEME } from '@/constants';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
@@ -753,7 +753,7 @@ export class ConfigStore {
      * @param pixel - pixel to execute
      */
     async runPixel<O extends unknown[] | []>(pixel: string) {
-        return await runPixelTwo<O>(
+        return await runPixel<O>(
             this._store.insightID ? this._store.insightID : 'new',
             pixel,
         );
@@ -775,10 +775,7 @@ export class ConfigStore {
             throw new Error('Unauthorized');
         }
 
-        const { insightId } = await runPixelTwo(
-            `SetContext("${appId}")`,
-            'new',
-        );
+        const { insightId } = await runPixel(`SetContext("${appId}")`, 'new');
 
         // get the metadata
         const getAppInfo = await this._root.monolithStore.runQuery<
@@ -816,7 +813,7 @@ export class ConfigStore {
      */
     async setGeneralReactors() {
         try {
-            const res = await runPixelTwo('META|HelpJson();');
+            const res = await runPixel('META|HelpJson();');
 
             runInAction(() => {
                 const generalReactorList = res.pixelReturn[0].output['General'];
