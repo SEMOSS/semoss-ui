@@ -24,7 +24,13 @@ import {
 } from '@mui/icons-material';
 
 import { ALL_TYPES } from '@/types';
-import { useRootStore, usePixel, useAPI, useSettings } from '@/hooks';
+import {
+    useRootStore,
+    usePixel,
+    useAPI,
+    useSettings,
+    useInfiniteScroll,
+} from '@/hooks';
 import { EngineLandscapeCard, EngineTileCard } from '@/components/engine';
 import { removeUnderscores } from '@/utility';
 
@@ -117,12 +123,12 @@ export const EngineSettingsIndexPage = (
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('ENGINENAME');
     const [sortOrder, setSortOrder] = useState('ASC');
-    const [canCollect, setCanCollect] = useState(true);
-    const [offset, setOffset] = useState(0);
 
     //** amount of items to be loaded */
     const limit = 8;
-
+    const { offset, checkHasReached, reset } = useInfiniteScroll({
+        limit,
+    });
     // To focus when getting new results
     const searchbarRef = useRef(null);
 
@@ -179,7 +185,7 @@ export const EngineSettingsIndexPage = (
 
     //** reset dataMode if adminMode is toggled */
     useEffect(() => {
-        setOffset(0);
+        reset();
         dispatch({
             type: 'field',
             field: 'databases',
@@ -193,12 +199,11 @@ export const EngineSettingsIndexPage = (
             return;
         }
 
-        if (getEngines.data.length < limit) {
-            setCanCollect(false);
-        } else {
-            if (!canCollectRef.current) {
-                setCanCollect(true);
-            }
+        if (
+            getEngines.status === 'SUCCESS' &&
+            getEngines.data instanceof Array
+        ) {
+            checkHasReached(getEngines.data.length);
         }
 
         const mutateListWithVotes = databases;
@@ -347,46 +352,6 @@ export const EngineSettingsIndexPage = (
             });
     };
 
-    //** infinite sroll variables */
-    let scrollEle, scrollTimeout, currentScroll, previousScroll;
-    const offsetRef = useRef(0);
-    offsetRef.current = offset;
-    const canCollectRef = useRef(true);
-    canCollectRef.current = canCollect;
-
-    const scrollAll = () => {
-        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
-        if (
-            currentScroll > scrollEle.scrollHeight * 0.75 &&
-            currentScroll > previousScroll
-        ) {
-            if (scrollTimeout) {
-                clearTimeout(scrollTimeout);
-            }
-
-            scrollTimeout = setTimeout(() => {
-                if (!canCollectRef.current) {
-                    return;
-                }
-
-                setOffset(offsetRef.current + limit);
-            }, 500);
-        }
-
-        previousScroll = currentScroll;
-    };
-
-    /**
-     * @desc infinite scroll
-     */
-    useEffect(() => {
-        scrollEle = document.querySelector('#home__content');
-        scrollEle.addEventListener('scroll', scrollAll);
-        return () => {
-            scrollEle.removeEventListener('scroll', scrollAll);
-        };
-    }, [scrollEle]);
-
     return (
         <>
             <Backdrop
@@ -412,6 +377,7 @@ export const EngineSettingsIndexPage = (
                     <StyledSearchbar
                         value={search}
                         onChange={(e) => {
+                            reset();
                             setSearch(e.target.value);
                         }}
                         size="small"
@@ -421,7 +387,10 @@ export const EngineSettingsIndexPage = (
                     <StyledSort
                         size={'small'}
                         value={sort}
-                        onChange={(e) => setSort(e.target.value)}
+                        onChange={(e) => {
+                            reset();
+                            setSort(e.target.value);
+                        }}
                         label={'Sort By'}
                     >
                         <MenuItem value="ENGINENAME">Name</MenuItem>

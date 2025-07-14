@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
-import { useRootStore, usePixel, useAPI } from '@/hooks';
+import { useRootStore, usePixel, useAPI, useInfiniteScroll } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { useNavigate } from 'react-router-dom';
 
@@ -107,11 +107,13 @@ export const DatabaseSettingsPage = () => {
     const [view, setView] = useState('tile');
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
-    const [canCollect, setCanCollect] = useState(true);
-    const [offset, setOffset] = useState(0);
 
     //** amount of items to be loaded */
     const limit = 15;
+
+    const { offset, checkHasReached, reset } = useInfiniteScroll({
+        limit,
+    });
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -169,7 +171,7 @@ export const DatabaseSettingsPage = () => {
 
     //** reset dataMode if adminMode is toggled */
     useEffect(() => {
-        setOffset(0);
+        reset();
         dispatch({
             type: 'field',
             field: 'databases',
@@ -180,15 +182,19 @@ export const DatabaseSettingsPage = () => {
     //** append data through infinite scroll */
     useEffect(() => {
         if (getEngines.status !== 'SUCCESS') {
+            dispatch({
+                type: 'field',
+                field: 'databases',
+                value: offset ? databases : [],
+            });
             return;
         }
 
-        if (getEngines.data.length < limit) {
-            setCanCollect(false);
-        } else {
-            if (!canCollectRef.current) {
-                setCanCollect(true);
-            }
+        if (
+            getEngines.status === 'SUCCESS' &&
+            getEngines.data instanceof Array
+        ) {
+            checkHasReached(getEngines.data.length);
         }
 
         const mutateListWithVotes = databases;
@@ -335,46 +341,6 @@ export const DatabaseSettingsPage = () => {
             });
     };
 
-    //** infinite sroll variables */
-    let scrollEle, scrollTimeout, currentScroll, previousScroll;
-    const offsetRef = useRef(0);
-    offsetRef.current = offset;
-    const canCollectRef = useRef(true);
-    canCollectRef.current = canCollect;
-
-    const scrollAll = () => {
-        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
-        if (
-            currentScroll > scrollEle.scrollHeight * 0.75 &&
-            currentScroll > previousScroll
-        ) {
-            if (scrollTimeout) {
-                clearTimeout(scrollTimeout);
-            }
-
-            scrollTimeout = setTimeout(() => {
-                if (!canCollectRef.current) {
-                    return;
-                }
-
-                setOffset(offsetRef.current + limit);
-            }, 500);
-        }
-
-        previousScroll = currentScroll;
-    };
-
-    /**
-     * @desc infinite scroll
-     */
-    useEffect(() => {
-        scrollEle = document.querySelector('#home__content');
-        scrollEle.addEventListener('scroll', scrollAll);
-        return () => {
-            scrollEle.removeEventListener('scroll', scrollAll);
-        };
-    }, [scrollEle]);
-
     return (
         <>
             <StyledBackdrop open={getEngines.status !== 'SUCCESS'}>
@@ -394,6 +360,7 @@ export const DatabaseSettingsPage = () => {
                     <StyledSearchbar
                         value={search}
                         onChange={(e) => {
+                            reset();
                             setSearch(e.target.value);
                         }}
                         size="small"

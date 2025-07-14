@@ -67,7 +67,11 @@ export function useInfiniteScroll({
         };
     }, [scrollEle]);
 
-    return { offset, canCollect, checkHasReached, reset };
+    return {
+        offset,
+        checkHasReached,
+        reset,
+    };
 }
 
 export default useInfiniteScroll;

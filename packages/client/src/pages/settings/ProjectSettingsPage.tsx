@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useReducer } from 'react';
 
-import { useSettings, useAPI } from '../../hooks';
+import { useSettings, useAPI, useInfiniteScroll } from '../../hooks';
 import { useNavigate } from 'react-router-dom';
 import { ProjectTileCard } from '@/components/app';
 
@@ -113,11 +113,13 @@ export const ProjectSettingsPage = () => {
     const [search, setSearch] = useState('');
     const [sort, setSort] = useState('Name');
     const [sortOrder, setSortOrder] = useState('ASC');
-    const [canCollect, setCanCollect] = useState(true);
-    const [offset, setOffset] = useState(0);
 
     //** amount of items to be loaded */
     const limit = 30;
+
+    const { offset, checkHasReached, reset } = useInfiniteScroll({
+        limit,
+    });
 
     // To focus when getting new results
     const searchbarRef = useRef(null);
@@ -141,7 +143,7 @@ export const ProjectSettingsPage = () => {
 
     //** reset dataMode if adminMode is toggled */
     useEffect(() => {
-        setOffset(0);
+        reset();
         dispatch({
             type: 'field',
             field: 'projects',
@@ -155,12 +157,11 @@ export const ProjectSettingsPage = () => {
             return;
         }
 
-        if (getProjects.data.length < limit) {
-            setCanCollect(false);
-        } else {
-            if (!canCollectRef.current) {
-                setCanCollect(true);
-            }
+        if (
+            getProjects.status === 'SUCCESS' &&
+            getProjects.data instanceof Array
+        ) {
+            checkHasReached(getProjects.data.length);
         }
 
         const mutateListWithVotes = projects;
@@ -185,47 +186,6 @@ export const ProjectSettingsPage = () => {
         searchbarRef.current?.focus();
     }, [getProjects.status, getProjects.data]);
 
-    //** infinite sroll variables */
-    let scrollEle, scrollTimeout, currentScroll, previousScroll;
-    const offsetRef = useRef(0);
-    offsetRef.current = offset;
-    const canCollectRef = useRef(true);
-    canCollectRef.current = canCollect;
-
-    const scrollAll = () => {
-        currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
-        if (
-            currentScroll > scrollEle.scrollHeight * 0.75 &&
-            currentScroll > previousScroll
-        ) {
-            if (scrollTimeout) {
-                clearTimeout(scrollTimeout);
-            }
-
-            scrollTimeout = setTimeout(() => {
-                if (!canCollectRef.current) {
-                    return;
-                }
-
-                setOffset(offsetRef.current + limit);
-            }, 500);
-        }
-
-        previousScroll = currentScroll;
-    };
-
-    /**
-     * @desc infinite scroll
-     */
-    useEffect(() => {
-        scrollEle = document.querySelector('#home__content');
-
-        scrollEle.addEventListener('scroll', scrollAll);
-        return () => {
-            scrollEle.removeEventListener('scroll', scrollAll);
-        };
-    }, [scrollEle]);
-
     return (
         <>
             <StyledBackdrop open={getProjects.status !== 'SUCCESS'}>
@@ -245,6 +205,7 @@ export const ProjectSettingsPage = () => {
                     <StyledSearch
                         value={search}
                         onChange={(e) => {
+                            reset();
                             setSearch(e.target.value);
                         }}
                         placeholder="Project"

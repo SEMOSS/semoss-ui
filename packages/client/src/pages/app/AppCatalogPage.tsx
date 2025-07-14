@@ -155,15 +155,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
     const { favoritedApps, apps } = state;
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
-    const [search, setSearch] = useState("");
+    const [search, setSearch] = useState('');
 
     const [sortOrder, setSortOrder] = useState('ASC');
-    // const [canCollect, setCanCollect] = useState(true);
-    // const [offset, setOffset] = useState(0);
 
     //** amount of items to be loaded */
     const limit = 5;
-    const { offset, checkHasReached } = useInfiniteScroll({ limit });
+    const { offset, checkHasReached, reset } = useInfiniteScroll({
+        limit,
+    });
 
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -345,11 +345,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         )}
                     </Stack>
                 </Stack>
-                <TextField 
+                <TextField
                     size="small"
                     label="Search"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => {
+                        reset();
+                        setSearch(e.target.value);
+                    }}
                 />
                 <StyledContainer>
                     {!configStore.store.config.adminOnlyViewMenuBarFlag &&
@@ -363,6 +366,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                     onChange={(
                                         filters: Record<string, unknown>,
                                     ) => {
+                                        reset();
                                         setMetaFilters(filters);
                                     }}
                                 />

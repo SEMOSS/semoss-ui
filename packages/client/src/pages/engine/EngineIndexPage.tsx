@@ -13,7 +13,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 
 import { ENGINE_TYPES } from '@/types';
-import { usePixel, useRootStore } from '@/hooks';
+import { usePixel, useRootStore, useInfiniteScroll } from '@/hooks';
 import { EngineLandscapeCard } from '@/components/engine';
 import { Filterbox } from '@/components/ui';
 import { Help } from '@/components/help';
@@ -121,15 +121,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
         const [state, dispatch] = useReducer(reducer, initialState);
         const { favoritedDbs, databases } = state;
 
-        const [offset, setOffset] = useState(0);
-        const [canCollect, setCanCollect] = useState(true);
-        const canCollectRef = useRef(true);
-        canCollectRef.current = canCollect;
-        const limit = 10;
-
-        const offsetRef = useRef(0);
-        offsetRef.current = offset;
-        let scrollEle, scrollTimeout, currentScroll, previousScroll;
+        const limit = 5;
 
         const [search, setSearch] = useState('');
 
@@ -158,6 +150,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                 });
     `,
         );
+
+        const { offset, checkHasReached, reset } = useInfiniteScroll({
+            limit,
+        });
 
         const getDatabases = usePixel<
             {
@@ -335,28 +331,6 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
             });
         };
 
-        const scrollAll = () => {
-            currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
-            if (
-                currentScroll > scrollEle.scrollHeight * 0.75 &&
-                currentScroll > previousScroll
-            ) {
-                if (scrollTimeout) {
-                    clearTimeout(scrollTimeout);
-                }
-
-                scrollTimeout = setTimeout(() => {
-                    if (!canCollectRef.current) {
-                        return;
-                    }
-
-                    setOffset(offsetRef.current + limit);
-                }, 500);
-            }
-
-            previousScroll = currentScroll;
-        };
-
         /**
          * @desc anytime we change catalogType clean up engines
          */
@@ -372,8 +346,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                 field: 'databases',
                 value: [],
             });
-            setCanCollect(true);
-            setOffset(0);
+            reset();
             setMetaFilters({});
             routeTypeRef.current = route.type;
         }, [route.type]);
@@ -386,12 +359,11 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                 return;
             }
 
-            if (getDatabases.data.length < limit) {
-                setCanCollect(false);
-            } else {
-                if (!canCollectRef.current) {
-                    setCanCollect(true);
-                }
+            if (
+                getDatabases.status === 'SUCCESS' &&
+                getDatabases.data instanceof Array
+            ) {
+                checkHasReached(getDatabases.data.length);
             }
 
             const mutateListWithVotes = databases;
@@ -427,28 +399,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
             });
         }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
-        /**
-         * @desc infinite scroll
-         */
-        useEffect(() => {
-            scrollEle = document.querySelector('#home__content');
-
-            scrollEle.addEventListener('scroll', scrollAll);
-            return () => {
-                scrollEle.removeEventListener('scroll', scrollAll);
-            };
-        }, [scrollEle]);
-
-        /**
-         * Reset tiles anytime search changes
-         */
         useEffect(() => {
             dispatch({
                 type: 'field',
                 field: 'databases',
                 value: [],
             });
-            setOffset(0);
         }, [search]);
 
         // finish loading the page
@@ -515,7 +471,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                     size="small"
                     label="Search"
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onChange={(e) => {
+                        reset();
+                        setSearch(e.target.value);
+                    }}
                 />
                 <StyledContainer>
                     <Filterbox
@@ -526,8 +485,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                                 field: 'databases',
                                 value: [],
                             });
+                            reset();
                             setMetaFilters(filters);
-                            setOffset(0);
                         }}
                     />
                     <StyledContent>
@@ -544,8 +503,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                                         field: 'databases',
                                         value: [],
                                     });
+                                    reset();
                                     setMode(val as MODE);
-                                    setOffset(0);
                                 }}
                             >
                                 <StyledToggleTabsGroupItem
