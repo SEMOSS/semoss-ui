@@ -1,34 +1,15 @@
-<!-- # First-Time Semoss-UI Setup Instructions
+# Getting Started
 
 | Software    | Version |
 | -------- | ------- |
-| Node.js |  v18.16.0|
-| pnpm | v10.10.x |
+| Node |  v22.17.0|
+| pnpm | v10.13.x |
 
 1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
-2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@10.10.
+2. Run `pnpm install` in root directory.
 
-3. create a `.env.local` file and populate with the following. **Do not change the .env**
-
-```
-    MODULE=http://localhost:9090/Monolith_Dev
-
-    THEME_TITLE=SEMOSS
-    THEME_FAVICON=./src/assets/favicon.svg
-
-    NODE_ENV=development
-```
-
-1. Run `pnpm install` in root directory.
-
-2. Build the client, run `pnpm run build`.
-
-3. For local development on our new ui (./packages/client) and the component library (./libs)  run `pnpm run dev:client`
-
-Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
-
-4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook` -->
+3. Launch the dev-server, by running `pnpm run dev:client`.
 
 # Contributions and Standardized Commits 
 

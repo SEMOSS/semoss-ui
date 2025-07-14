@@ -7,7 +7,7 @@ export default defineConfig(({ mode }) => {
 
     const isProduction = mode === 'production';
 
-    const MODULE = env.VITE_MODULE;
+    const MODULE = env.MODULE;
     const ENDPOINT = env.ENDPOINT;
 
     return {
@@ -15,6 +15,9 @@ export default defineConfig(({ mode }) => {
         plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
         resolve: {
             alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+        },
+        define: {
+            'import.meta.env.MODULE': JSON.stringify(MODULE),
         },
         build: {
             minify: isProduction,

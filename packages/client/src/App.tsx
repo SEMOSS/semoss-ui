@@ -9,7 +9,7 @@ import { AppWrapper } from './AppWrapper';
 
 // use the environment variable to set the module
 Env.update({
-    MODULE: import.meta.env.VITE_MODULE || '/Monolith',
+    MODULE: import.meta.env.MODULE || '/Monolith',
 });
 
 const CSRF = {
