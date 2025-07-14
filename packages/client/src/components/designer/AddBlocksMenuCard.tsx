@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { observer } from 'mobx-react-lite';
-import { DeleteOutline, ReportRounded } from '@mui/icons-material';
+import {
+    DeleteOutline,
+    ReportRounded,
+    InfoOutlined,
+} from '@mui/icons-material';
 import html2canvas from 'html2canvas';
 
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from '@semoss/renderer';
@@ -247,6 +251,9 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
         // clear the selected
         designer.setSelected(id ? id : '');
 
+        // clear the selectedBlocks
+        designer.addBlockToSelected('clear');
+
         // set as active
         setLocal(false);
     }, [
@@ -326,6 +333,16 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                     justifyContent={'center'}
                 >
                     {item.name}
+                    {item.recentChanges && (
+                        <Tooltip
+                            title={item.recentChanges}
+                            children={
+                                <Icon color={'info'} fontSize="small">
+                                    <InfoOutlined />
+                                </Icon>
+                            }
+                        />
+                    )}
                     {item.isBeta && (
                         <Tooltip
                             title={'This block is currently in beta'}

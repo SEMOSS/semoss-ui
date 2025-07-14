@@ -8,7 +8,7 @@ import { LoadingScreen } from '@/components/ui';
  */
 export const EngineUsagePage = () => {
     // get the database information
-    const { id } = useEngine();
+    const { active } = useEngine();
     const notification = useNotification();
 
     // get the engine info
@@ -16,7 +16,7 @@ export const EngineUsagePage = () => {
         code: string;
         label: string;
         type: string;
-    }>(`GetEngineUsage(engine=["${id}"]);`);
+    }>(`GetEngineUsage(engine=["${active.id}"]);`);
 
     /**
      * Copy text and add it to the clipboard

@@ -14,7 +14,7 @@ export const PromptBuilderPreviewStep = (props: {
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
-                <Typography variant="h5">Preview Prompt</Typography>
+                <Typography variant="h6">Preview Prompt</Typography>
                 <Typography variant="body1">
                     Preview your prompt before exporting to an app.
                 </Typography>
