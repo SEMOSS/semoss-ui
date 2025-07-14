@@ -4,10 +4,8 @@ import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
 import terser from "@rollup/plugin-terser";
 import image from "@rollup/plugin-image";
-import json from '@rollup/plugin-json';
-import postcss from 'rollup-plugin-postcss'
-
-import packageJson from "./package.json" with { type: "json" };
+import json from "@rollup/plugin-json";
+import postcss from "rollup-plugin-postcss";
 
 import del from "rollup-plugin-delete";
 
@@ -35,7 +33,14 @@ export default defineConfig({
         }),
         isProduction && terser(),
     ],
-    external: [...Object.keys(packageJson.peerDependencies)],
+    external: [
+        "@emotion/react",
+        "@emotion/styled",
+        "@mui/icons-material",
+        "@mui/material",
+        "react",
+        "react-dom",
+    ],
     watch: {
         clearScreen: false,
     },
