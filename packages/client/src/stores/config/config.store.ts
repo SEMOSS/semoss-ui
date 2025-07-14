@@ -754,8 +754,8 @@ export class ConfigStore {
      */
     async runPixel<O extends unknown[] | []>(pixel: string) {
         return await runPixel<O>(
-            this._store.insightID ? this._store.insightID : 'new',
             pixel,
+            this._store.insightID ? this._store.insightID : 'new',
         );
     }
 

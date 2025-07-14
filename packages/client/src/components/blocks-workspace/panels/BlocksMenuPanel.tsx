@@ -132,7 +132,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      */
     const getClientBlocks = async () => {
         setLoading(true);
-        runPixel('GetClientBlocks()').then((res) => {
+        await runPixel('GetClientBlocks()').then((res) => {
             const { pixelReturn, errors } = res;
             if (errors.length) {
                 notification.add({
