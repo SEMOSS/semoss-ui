@@ -31,11 +31,6 @@ import { AddPage } from '@/assets/img/AddPage';
 import { ClosePage } from '@/assets/img/ClosePage';
 import { NavbarHeader, NavbarLeft, NavbarRight } from '../shared';
 
-const StyledViewport = styled('div')(() => ({
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-}));
 const StyledMain = styled('div')(() => ({
     position: 'relative',
     height: '100%',
@@ -51,6 +46,7 @@ const StyledContent = styled('div')(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
+    marginTop: theme.spacing(1),
     paddingTop: theme.spacing(1.5),
     paddingLeft: theme.spacing(1.5),
     paddingRight: theme.spacing(1.5),
@@ -70,9 +66,7 @@ const StyledAppTypography = styled(Typography)(() => ({
     color: 'rgb(0, 0, 0)',
 }));
 
-const StyledSemossImage = styled('img')(() => ({
-    padding: '8px 16px',
-}));
+const StyledSemossImage = styled('img')(() => ({}));
 
 const StyledLetTabImage = styled('img')(() => ({
     width: 50,
@@ -106,11 +100,7 @@ const StyledActions = styled(Stack)(({ theme }) => ({
     width: '32px', // from flexlayout
     zIndex: 1,
 }));
-const StyledHeaderStack = styled(Stack)(({ theme }) => ({
-    paddingBottom: '0px',
-    marginBottom: '8px',
-    borderBottom: `1px solid ${theme.palette.divider}`,
-}));
+
 type WorkspaceProps = {
     /** Actions to render in the navbar */
     navbarActions?: React.ReactNode;
@@ -496,21 +486,15 @@ export const Workspace = observer((props: WorkspaceProps) => {
             <NavbarLeft>
                 <NavbarHeader
                     logo={
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                            marginRight={0}
-                        ></Stack>
+                        <StyledSemossImage
+                            src={SEMOSS_BLACK_LOGO}
+                            alt="SEMOSS"
+                        ></StyledSemossImage>
                     }
                 />
                 <Breadcrumbs separator=" /">
                     <StyledHeaderLogo to={'/'}>
                         <Stack direction={'row'} alignItems={'center'}>
-                            <StyledSemossImage
-                                src={SEMOSS_BLACK_LOGO}
-                                alt="SEMOSS"
-                            ></StyledSemossImage>
                             <StyledAppTypography variant={'subtitle1'}>
                                 App Library
                             </StyledAppTypography>

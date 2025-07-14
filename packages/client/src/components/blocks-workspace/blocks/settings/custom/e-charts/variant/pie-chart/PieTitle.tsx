@@ -27,7 +27,6 @@ import {
 } from '../../Visualization.constants';
 import { useBlockSettings } from '@/hooks';
 
-
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
     /**
      * Id of the block that is being worked with

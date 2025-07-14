@@ -1,3 +1,3 @@
-import { useLLMComparison } from "./useLLMComparison";
+import { useLLMComparison } from './useLLMComparison';
 
 export { useLLMComparison };

@@ -16,7 +16,7 @@ import {
     useBlocksPixel,
     useFrameHeaders,
     getValueByPath,
-    EchartVisualizationBlockDef
+    EchartVisualizationBlockDef,
 } from '@semoss/renderer';
 
 import { useBlockSettings } from '@/hooks';
@@ -242,7 +242,7 @@ export const DataTabStyling = observer(
             if (!columnsSelector || columnsSelector.length === 0) {
                 return;
             }
-            let parsedValue = JSON.parse(computedValue);
+            const parsedValue = JSON.parse(computedValue);
             const formattedArray = chart.map((item, index) => {
                 let value;
                 if (data.variation === 'echart-bar-graph') {
@@ -257,11 +257,11 @@ export const DataTabStyling = observer(
                         parsedValue['_state']?.['fields']?.[chart[index].label];
                 }
                 value = value ? (Array.isArray(value) ? value : [value]) : [];
-                let selectorsList = [];
-                let dataTypeList = [];
-                let valueList = [];
+                const selectorsList = [];
+                const dataTypeList = [];
+                const valueList = [];
                 value.forEach((col) => {
-                    let selector = columnsSelector.find(
+                    const selector = columnsSelector.find(
                         (column) => column.name === col,
                     );
                     if (selector) {
@@ -287,13 +287,13 @@ export const DataTabStyling = observer(
             }
             const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
-                let value = selectedColumns[key]?.values ?? [];
-                let selectorsList = [];
-                let dataTypeList = [];
-                let valueList = [];
+                const value = selectedColumns[key]?.values ?? [];
+                const selectorsList = [];
+                const dataTypeList = [];
+                const valueList = [];
 
                 value.forEach((col) => {
-                    let selector = columnsSelector.find(
+                    const selector = columnsSelector.find(
                         (column) => column.name === col,
                     );
                     if (selector) {
@@ -327,7 +327,7 @@ export const DataTabStyling = observer(
         };
 
         const onAggregateChange = (selectedAggregate: string) => {
-            let targetDataType =
+            const targetDataType =
                 selectedColumns[
                     `data-tab-drop-area-${tempAggClickData.chartIndex}`
                 ]?.dataType;

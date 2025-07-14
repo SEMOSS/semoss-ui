@@ -113,11 +113,11 @@ export const CustomizeDendrogramSymbol = observer(
         }
 
         useEffect(() => {
-            let jsonData = JSON.parse(computedValue);
-            let seriesIndex = jsonData['series'].findIndex((item) => {
+            const jsonData = JSON.parse(computedValue);
+            const seriesIndex = jsonData['series'].findIndex((item) => {
                 return item.type === 'tree';
             });
-            let customizeSymbolList = customizeSymbol;
+            const customizeSymbolList = customizeSymbol;
             customizeSymbolList['symbolShape'] =
                 jsonData['series'][seriesIndex]['symbol'];
             customizeSymbolList['symbolSize'] =
@@ -132,8 +132,8 @@ export const CustomizeDendrogramSymbol = observer(
         }, []);
 
         useEffect(() => {
-            let jsonData = JSON.parse(computedValue);
-            let seriesIndex = jsonData['series'].findIndex((item) => {
+            const jsonData = JSON.parse(computedValue);
+            const seriesIndex = jsonData['series'].findIndex((item) => {
                 return item.type === 'tree';
             });
             jsonData['series'][seriesIndex] = {

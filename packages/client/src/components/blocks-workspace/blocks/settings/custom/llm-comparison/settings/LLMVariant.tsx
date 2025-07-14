@@ -9,7 +9,7 @@ import {
     useBlock,
     useBlocks,
     TypeVariant,
-    LLMComparisonBlockDef
+    LLMComparisonBlockDef,
 } from '@semoss/renderer';
 
 import { useLLMComparison } from '../hooks';

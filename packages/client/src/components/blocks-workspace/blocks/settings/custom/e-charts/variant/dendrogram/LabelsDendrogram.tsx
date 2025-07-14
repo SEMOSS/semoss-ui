@@ -88,11 +88,11 @@ export const LabelsDendrogram = observer(
         }
         useEffect(() => {
             if (!labelsUpdated) return;
-            let option: PathValue<D['data'], typeof path> =
+            const option: PathValue<D['data'], typeof path> =
                 typeof computedValue === 'string'
                     ? JSON.parse(computedValue)
                     : computedValue;
-            let seriesIndex = option['series'].findIndex(
+            const seriesIndex = option['series'].findIndex(
                 (item) => item.type === 'tree' && item.data.length > 0,
             );
             option['series'][seriesIndex] = {
@@ -107,14 +107,14 @@ export const LabelsDendrogram = observer(
         }, [labelsData]);
 
         useEffect(() => {
-            let option: PathValue<D['data'], typeof path> =
+            const option: PathValue<D['data'], typeof path> =
                 typeof computedValue === 'string'
                     ? JSON.parse(computedValue)
                     : computedValue;
-            let seriesIndex = option['series'].findIndex(
+            const seriesIndex = option['series'].findIndex(
                 (item) => item.type === 'tree' && item.data.length > 0,
             );
-            let labelsDataList = labelsData;
+            const labelsDataList = labelsData;
             labelsDataList.showLabels =
                 option['series'][seriesIndex]['label']['show'];
             labelsDataList.labelFontColor =

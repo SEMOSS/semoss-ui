@@ -43,12 +43,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
 
     layout: {
-        // selected: 'main',
-        // available: {
-        //     main: {
-        //         id: 'main',
-        //         name: 'Main Layout',
-        //         data: {
         global: { tabEnableClose: false },
         borders: [
             {
@@ -169,9 +163,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
         },
     },
 };
-//         },
-//     },
-// };
 
 const ACTIVE = 'page-1';
 

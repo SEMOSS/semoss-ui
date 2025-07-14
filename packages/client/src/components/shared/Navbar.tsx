@@ -25,7 +25,7 @@ const StyledNavbar = styled('div')(({ theme }) => ({
     alignItems: 'center',
     justifyContent: 'space-between',
     gap: 0,
-    padding: theme.spacing(0, 2),
+    paddingRight: theme.spacing(2),
 }));
 
 const StyledTextField = styled(TextField)(() => ({

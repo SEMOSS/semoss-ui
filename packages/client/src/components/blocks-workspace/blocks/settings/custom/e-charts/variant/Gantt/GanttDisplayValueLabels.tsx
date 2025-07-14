@@ -13,7 +13,6 @@ import {
 
 import { useBlockSettings } from '@/hooks';
 
-
 //main container with default padding and border
 const StyledMainContainer = styled('div')(({}) => ({
     padding: '0.5rem',

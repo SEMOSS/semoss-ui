@@ -20,7 +20,6 @@ import {
 
 import { useBlockSettings } from '@/hooks';
 
-
 // Axis div styling for switch type fields, to show labels and fields in a row
 const StyledAxisDiv = styled('div')<{
     display?: string;

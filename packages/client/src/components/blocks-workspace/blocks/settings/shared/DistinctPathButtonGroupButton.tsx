@@ -14,7 +14,6 @@ import {
 
 import { useBlockSettings } from '@/hooks';
 
-
 /**
  * Used in the DistinctPathButtonGroupSettings
  */

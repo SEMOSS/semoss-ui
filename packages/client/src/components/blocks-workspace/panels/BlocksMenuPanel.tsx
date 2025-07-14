@@ -43,18 +43,6 @@ const StyledTitle = styled('div')(({ theme }) => ({
     color: theme.palette.info.dark,
 }));
 
-const StyledHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    lineHeight: theme.spacing(5),
-    paddingTop: theme.spacing(1.5),
-    paddingRight: theme.spacing(2),
-    paddingBottom: theme.spacing(1.5),
-    paddingLeft: theme.spacing(2),
-    gap: theme.spacing(1),
-}));
-
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     border: '1px',
     minHeight: '42px',

@@ -124,10 +124,6 @@ const StyledTreeItemIcon = styled(Icon)(() => ({
     color: '#757575',
 }));
 
-const StyledDuplicateImage = styled('img')(() => ({
-    marginRight: '8px',
-}));
-
 const StyledTreeItemIconButton = styled(IconButton)(() => ({
     '&[data-onhover]': {
         display: 'none',
@@ -838,75 +834,76 @@ export const LayersPanel = observer(
                             </StyledTreeItemIconButton>
                         ) : null}
 
-                    {/* 3-dot menu button */}
-                    <IconButton
-                        size="small"
-                        aria-label="more"
-                        onClick={(e) => handleMenuOpen(e, block.id)}
+                        {/* 3-dot menu button */}
+                        <IconButton
+                            size="small"
+                            aria-label="more"
+                            onClick={(e) => handleMenuOpen(e, block.id)}
+                        >
+                            <MoreVert fontSize="small" />
+                        </IconButton>
+                    </StyledTreeItemLabel>
+                    <Menu
+                        anchorEl={menuAnchorEl}
+                        open={Boolean(menuAnchorEl)}
+                        onClose={handleMenuClose}
+                        anchorOrigin={{
+                            vertical: 'bottom',
+                            horizontal: 'right',
+                        }}
+                        transformOrigin={{
+                            vertical: 'top',
+                            horizontal: 'right',
+                        }}
+                        sx={{
+                            '.MuiPopover-paper': {
+                                borderRadius: '4px',
+                                padding: '8px 0px',
+                                boxShadow:
+                                    '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
+                            },
+                        }}
                     >
-                        <MoreVert fontSize="small" />
-                    </IconButton>
-                </StyledTreeItemLabel>
-                <Menu
-                    anchorEl={menuAnchorEl}
-                    open={Boolean(menuAnchorEl)}
-                    onClose={handleMenuClose}
-                    anchorOrigin={{
-                        vertical: 'bottom',
-                        horizontal: 'right',
-                    }}
-                    transformOrigin={{
-                        vertical: 'top',
-                        horizontal: 'right',
-                    }}
-                    sx={{
-                        '.MuiPopover-paper': {
-                            borderRadius: '4px',
-                            padding: '8px 0px',
-                            boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
-                        },
-                    }}
-                >
-                    <MenuItem
-                        value="duplicate"
-                        sx={{ display: 'flex' }}
-                        onClick={(e: React.MouseEvent<HTMLElement>) =>
-                            handleDuplicate(e, block.id)
-                        }
-                    >
-                        <img
-                            src={DuplicateIcon}
-                            alt="Duplicate Icon"
-                            style={{ marginRight: '8px' }}
-                        />{' '}
-                        Duplicate
-                    </MenuItem>
-                    <MenuItem
-                        value="delete"
-                        sx={{ display: 'flex' }}
-                        onClick={() => handleDelete(block.id)}
-                    >
-                        <DeleteOutlineOutlinedIcon
-                            style={{ color: '#757575', marginRight: '6px' }}
-                        />{' '}
-                        Delete
-                    </MenuItem>
-                </Menu>
-            </>
-        );
-    };
-    const renderBlock = (id: string) => {
-        const block = state.blocks[id];
-        if (!block) {
-            return null;
-        }
-        const variableName = state.getAlias(id);
-        const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
-        const WidgetIcon = BlockSettingsRegistry[block.widget].icon;
-        const children = [];
-        for (const s in block.slots) {
-            children.push(...block.slots[s].children);
-        }
+                        <MenuItem
+                            value="duplicate"
+                            sx={{ display: 'flex' }}
+                            onClick={(e: React.MouseEvent<HTMLElement>) =>
+                                handleDuplicate(e, block.id)
+                            }
+                        >
+                            <img
+                                src={DuplicateIcon}
+                                alt="Duplicate Icon"
+                                style={{ marginRight: '8px' }}
+                            />{' '}
+                            Duplicate
+                        </MenuItem>
+                        <MenuItem
+                            value="delete"
+                            sx={{ display: 'flex' }}
+                            onClick={() => handleDelete(block.id)}
+                        >
+                            <DeleteOutlineOutlinedIcon
+                                style={{ color: '#757575', marginRight: '6px' }}
+                            />{' '}
+                            Delete
+                        </MenuItem>
+                    </Menu>
+                </>
+            );
+        };
+        const renderBlock = (id: string) => {
+            const block = state.blocks[id];
+            if (!block) {
+                return null;
+            }
+            const variableName = state.getAlias(id);
+            const canVariabilize = INPUT_BLOCK_TYPES.indexOf(block.widget) > -1;
+            const WidgetIcon = BlockSettingsRegistry[block.widget].icon;
+            const children = [];
+            for (const s in block.slots) {
+                children.push(...block.slots[s].children);
+            }
 
             return (
                 <>

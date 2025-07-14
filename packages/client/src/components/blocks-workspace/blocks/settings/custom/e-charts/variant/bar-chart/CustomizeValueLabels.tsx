@@ -16,7 +16,7 @@ import {
     PathValue,
     getValueByPath,
     EchartVisualizationBlockDef,
-    EchartVisualizationBlockConfig
+    EchartVisualizationBlockConfig,
 } from '@semoss/renderer';
 
 import { useBlockSettings } from '@/hooks';
