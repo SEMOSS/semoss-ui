@@ -1,4 +1,4 @@
-# First-Time Semoss-UI Setup Instructions
+<!-- # First-Time Semoss-UI Setup Instructions
 
 | Software    | Version |
 | -------- | ------- |
@@ -28,7 +28,7 @@
 
 Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
 
-4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook`
+4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook` -->
 
 # Contributions and Standardized Commits 
 
