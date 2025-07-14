@@ -4,6 +4,7 @@ import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
     CropFree,
     DriveFileRenameOutlineRounded,
+    ExpandMore,
     KeyboardArrowDown,
 } from "@mui/icons-material";
 import {
@@ -14,6 +15,7 @@ import {
     InputAdornment,
     Typography,
     Icon,
+    Accordion,
 } from "@semoss/ui";
 import { TransformationTargetCell } from "../shared";
 import { ActionMessages, CellComponent, CellDef } from "../../../store";
@@ -138,6 +140,13 @@ const StyledUserTextField = styled(TextField)(({ theme }) => ({
  */
 const StyledTypography = styled(Typography)(({ theme }) => ({
     color: theme.palette.text.secondary,
+    fontFeatureSettings: "'liga' off, 'clig' off",
+}));
+/**
+ * Styled typography component for displaying generated sql with custom styling
+ */
+const StyledGenSQLTypography = styled(Typography)(({ theme }) => ({
+    color: theme.palette.text.primary,
     fontFeatureSettings: "'liga' off, 'clig' off",
 }));
 /**
@@ -634,22 +643,22 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                      */
                     isExpanded && cell.parameters.dataFrameQuery && (
                         <Stack>
-                            <StyledTypographySection>
-                                <StyledTypography variant="body2">
-                                    Generated SQL
-                                </StyledTypography>
-                            </StyledTypographySection>
-                            <StyledSQLTextField
-                                fullWidth
-                                size={"small"}
-                                variant={"outlined"}
-                                placeholder={"Enter SQL query"}
-                                value={cell.parameters.dataFrameQuery}
-                                data-testid={`generated-sql-${cell.id}`}
-                                multiline
-                                rows={4}
-                                disabled
-                            />
+                            <Accordion>
+                                <Accordion.Trigger
+                                    expandIcon={
+                                        <ExpandMore
+                                            sx={{ color: "text.secondary" }}
+                                        />
+                                    }
+                                >
+                                    <StyledGenSQLTypography variant="body1">
+                                        Generated SQL
+                                    </StyledGenSQLTypography>
+                                </Accordion.Trigger>
+                                <Accordion.Content>
+                                    {cell.parameters.dataFrameQuery}
+                                </Accordion.Content>
+                            </Accordion>
                         </Stack>
                     )
                 }

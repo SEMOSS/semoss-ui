@@ -38,6 +38,7 @@ import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
 import { AddVariableModal } from './AddVariableModal';
+import { CellLoader } from '../../assets/CellLoader';
 
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from '@/utility';
@@ -957,28 +958,30 @@ export const NotebookCell = observer(
                                                                         cell.messages
                                                                     }
                                                                 />
-                                                                {cell.isExecuted
-                                                                    ? cell.operation.map(
-                                                                          (
-                                                                              o,
-                                                                              oIdx,
-                                                                          ) => {
-                                                                              return (
-                                                                                  <Operation
-                                                                                      key={
-                                                                                          oIdx
-                                                                                      }
-                                                                                      operation={
-                                                                                          o
-                                                                                      }
-                                                                                      output={getCellOutput(
-                                                                                          o,
-                                                                                      )}
-                                                                                  />
-                                                                              );
-                                                                          },
-                                                                      )
-                                                                    : null}
+                                                                {cell.isExecuted ? (
+                                                                    cell.operation.map(
+                                                                        (
+                                                                            o,
+                                                                            oIdx,
+                                                                        ) => {
+                                                                            return (
+                                                                                <Operation
+                                                                                    key={
+                                                                                        oIdx
+                                                                                    }
+                                                                                    operation={
+                                                                                        o
+                                                                                    }
+                                                                                    output={getCellOutput(
+                                                                                        o,
+                                                                                    )}
+                                                                                />
+                                                                            );
+                                                                        },
+                                                                    )
+                                                                ) : cell.isLoading ? (
+                                                                    <CellLoader />
+                                                                ) : null}
                                                             </>
                                                         )}
                                                     </Stack>
