@@ -7,8 +7,9 @@
         "type-check": "tsc --pretty --noEmit",
         "lint": "eslint --fix",
         "format": "prettier . --write --plugin-search-dir=.",
-        "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:browser": "vitest --watch --ui --pool=forks --project client"
+        "test": "vitest run",
+        "test:watch": "vitest --watch"
+
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",

@@ -30,30 +30,10 @@ export default defineConfig(({ mode }) => {
                 },
             },
         },
-        // test: {
-        //     name: 'client',
-        //     watch: false,
-        //     globals: true,
-        //     environment: 'jsdom',
-        //     include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-        //     deps: {
-        //         // Required for vitest-canvas-mock
-        //         inline: ['vitest-canvas-mock'],
-        //     },
-        //     reporters: ['default'],
-        //     coverage: {
-        //         reportsDirectory: '../../coverage/packages/client',
-        //         provider: 'v8',
-        //     },
-        //     environmentOptions: {
-        //         jsdom: {
-        //             resources: 'usable',
-        //         },
-        //     },
-        //     cache: {
-        //         dir: '../../node_modules/.vitest',
-        //     },
-        //     setupFiles: ['./vitest.setup.ts'],
-        // },
+        test: {
+            environment: 'jsdom',
+            globals: true,
+            setupFiles: ['./vitest.setup.ts'],
+        },
     };
 });
