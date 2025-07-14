@@ -1,10 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { PathValue } from "react-hook-form";
-import { Menu, MenuItem } from "@mui/material";
 
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { MenuTwo, MenuItemTwo } from "@semoss/ui";
+
 import { useBlock, useFrame } from "../../../../../hooks";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 export interface ChartContextMenuProps {
     id: string;
@@ -113,7 +115,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
             };
         }
         return (
-            <Menu
+            <MenuTwo
                 open={contextMenu !== null}
                 onClose={() => onClose()}
                 anchorReference="anchorPosition"
@@ -127,7 +129,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                 }
             >
                 {contextMenu && !data.contextMenu?.hideUnfilter ? (
-                    <MenuItem
+                    <MenuItemTwo
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
@@ -150,10 +152,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                         }}
                     >
                         Unfilter
-                    </MenuItem>
+                    </MenuItemTwo>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItem
+                    <MenuItemTwo
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -177,10 +179,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                         {typeof contextMenu.value === "string"
                             ? contextMenu.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItem>
+                    </MenuItemTwo>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideExclude ? (
-                    <MenuItem
+                    <MenuItemTwo
                         dense={true}
                         value={"exclude"}
                         onClick={() => {
@@ -200,9 +202,9 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                     >
                         Exclude {contextMenu.value.name} !={" "}
                         {contextMenu?.value?.value}
-                    </MenuItem>
+                    </MenuItemTwo>
                 ) : null}
-            </Menu>
+            </MenuTwo>
         );
     },
 );

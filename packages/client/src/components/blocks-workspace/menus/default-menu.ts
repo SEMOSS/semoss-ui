@@ -22,7 +22,7 @@ export const SECTION_ORDER = [
     SECTION_ELEMENT,
     SECTION_MISC,
     SECTION_CHARTS,
-    SECTION_GROUPED,
+    // SECTION_GROUPED,
 ];
 
 // Development Environment Blocks
@@ -614,7 +614,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_INPUT,
         name: 'Switch',
-        helperText: 'Toggle between two states',
+        helperText: 'Switch between multiple options',
+        activeImage: BLOCK_IMAGES['SWITCH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['SWITCH_HOVER'],
         json: {
             widget: 'switch',
             data: {
@@ -648,6 +650,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
         section: SECTION_INPUT,
         name: 'Time Picker',
         helperText: 'Select a time from a time picker',
+        activeImage: BLOCK_IMAGES['TIME_PICKER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['TIME_PICKER_HOVER'],
         json: {
             widget: 'timepicker',
             data: {
@@ -2606,7 +2610,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     {
         section: SECTION_CHARTS,
         name: 'Vega',
-        helperText: '',
+        helperText: 'Paste JSON to make a custom chart',
+        activeImage: BLOCK_IMAGES['VEGA_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['VEGA_HOVER'],
         json: {
             widget: 'vega',
             data: {
@@ -2619,8 +2625,39 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
     },
     {
         section: SECTION_CHARTS,
+        name: 'Dynamic Data Grid',
+        helperText: 'Organize and display dynamic data in a tabular format',
+        activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
+        json: {
+            widget: 'grid-dynamic-frame',
+            data: {
+                frame: {
+                    name: '',
+                },
+                option: {},
+                columns: [],
+                view: {
+                    pagination: true,
+                },
+                style: {
+                    display: 'flex',
+                    flexDirection: 'row',
+                    flexWrap: 'wrap',
+                    width: '450px',
+                    height: '350px',
+                },
+            },
+            listeners: {},
+            slots: {} as BlockJSON['slots'],
+        },
+    },
+    {
+        section: SECTION_CHARTS,
         name: 'Data Grid',
-        helperText: 'Organize and display data in a tabular format',
+        recentChanges:
+            'If you are looking to build a table with unstructured headers, please use the Dynamic Data Grid block.',
+        helperText: 'Organize and display known data in a tabular format',
         activeImage: BLOCK_IMAGES['DATA_GRID_ACTIVE'],
         hoverImage: BLOCK_IMAGES['DATA_GRID_HOVER'],
         json: {

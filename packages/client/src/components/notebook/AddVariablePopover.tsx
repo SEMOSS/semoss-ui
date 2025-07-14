@@ -37,7 +37,6 @@ import {
     capitalizeFirstLetter,
     isOutputJSON,
     splitAtPeriod,
-    // getEngineImage,
 } from '../../utility';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
