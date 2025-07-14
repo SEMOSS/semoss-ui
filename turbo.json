@@ -24,6 +24,14 @@
         "dev": {
             "cache": false,
             "persistent": true
+        },
+        "test": {
+            "dependsOn": ["^test"],
+            "inputs": ["src/**/*.ts", "src/**/*/tsx"]
+        },
+        "test:watch": {
+          "cache": false,
+          "persistent": true
         }
     }
 }

@@ -11,8 +11,8 @@
     "build:dev": "turbo run build:dev",
     "fix": "turbo run lint format",
     "format": "turbo run format",
-    "test": "vitest --watch=false --passWithNoTests --changed",
-    "test:browser": "vitest --watch --ui --pool=forks"
+    "test": "turbo run test",
+    "test:watch": "turbo run test:watch"
   },
   "author": "",
   "license": "Apache-2.0",

@@ -18,8 +18,8 @@
         "build:dev": "rollup -c",
         "lint": "eslint . --fix",
         "format": "prettier . --write --plugin-search-dir=.",
-        "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:browser": "vitest --watch --ui --pool=forks --project renderer"
+        "test": "vitest run",
+        "test:watch": "vitest --watch"
     },
     "keywords": [],
     "author": "",
@@ -68,7 +68,8 @@
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
-        "vitest": "^3.2.0"
+        "vitest": "^3.2.0",
+        "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {
         "@emotion/react": "11.11.1",

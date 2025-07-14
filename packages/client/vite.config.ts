@@ -15,6 +15,11 @@ export default defineConfig({
         minify: isProduction,
         commonjsOptions: { transformMixedEsModules: true },
     },
+    test: {
+        environment: 'jsdom',
+        globals: true,
+        setupFiles: ['./vitest.setup.ts']
+    },
     // test: {
     //     name: 'client',
     //     watch: false,
