@@ -1,5 +1,29 @@
 // src/test-setup.ts
-import { vi } from 'vitest';
+import { vi } from "vitest";
+
+// Mock vega packages to avoid ESM issues in tests
+vi.mock("vega-embed", () => ({
+    default: vi.fn(() => Promise.resolve({ view: {} })),
+    embed: vi.fn(() => Promise.resolve({ view: {} })),
+}));
+
+vi.mock("vega", () => ({
+    default: {},
+    View: vi.fn(),
+    parse: vi.fn(),
+    loader: vi.fn(),
+}));
+
+vi.mock("vega-lite", () => ({
+    default: {},
+    compile: vi.fn(),
+}));
+
+vi.mock("react-vega", () => ({
+    VegaLite: vi.fn(() => null),
+    Vega: vi.fn(() => null),
+    createClassFromSpec: vi.fn(() => vi.fn(() => null)),
+}));
 
 // Mock canvas getContext
 HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
