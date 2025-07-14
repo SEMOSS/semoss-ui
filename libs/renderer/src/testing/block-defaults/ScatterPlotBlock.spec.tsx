@@ -566,10 +566,48 @@ describe("Scatter Plot Block", async () => {
 
         expect(toggle).toBeChecked();
 
+        const titleInputLabel = screen.queryByText("Set X Axis Title");
+        const titleInput =
+            titleInputLabel.parentElement.querySelector('input[type="text"]');
+        expect(titleInput).toBeInTheDocument();
+
         fireEvent.click(toggle);
+        expect(titleInput).not.toBeInTheDocument();
 
         expect(toggle).not.toBeChecked();
 
         expect(result.current.data.option.xAxis.name).toBe("");
     });
+
+    it("should set X Axis Title", async () => {
+        const { result } = renderHook(
+            () => useBlockSettings<EchartVisualizationBlockDef>("scatter"),
+            {
+                blocks,
+                renderEngineId: "scatter",
+                customChildren: (
+                    <EditXAxisScatterPlot id="scatter" path={"option"} />
+                ),
+            },
+        );
+        expect(result.current).toBeDefined();
+
+        const label = screen.queryByText("Set X Axis Title");
+
+        const parentElem = label.parentElement;
+
+        const titleInput = parentElem.querySelector('input[type="text"]');
+
+        expect(titleInput).toBeInTheDocument();
+
+        const xAxisTitle = result.current.data.option.xAxis.name;
+
+        expect(xAxisTitle).toContain("DemoX");
+
+        fireEvent.change(titleInput, { target: { value: ["Hello World"] } });
+
+        expect(result.current.data.option.xAxis.name).toContain("Hello World");
+    });
+
+    // TODO: will need to complete other settings test
 });
