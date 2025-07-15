@@ -13,8 +13,6 @@ import {
     Tooltip,
     Typography,
 } from '@semoss/ui';
-
-import { Token } from '../../prompt.types';
 import { PromptReadonlyInputToken } from '../../shared/token';
 import {
     INPUT_TYPES,
