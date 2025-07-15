@@ -12,7 +12,7 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '../../contexts';
 import { LoadingScreen } from '../../components/ui';
@@ -224,7 +224,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         workspace.setLoading(true);
 
         // load the app
-        runPixelTwo<[SerializedState]>(
+        runPixel<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
             workspace.insightId ? workspace.insightId : 'new',
         )
