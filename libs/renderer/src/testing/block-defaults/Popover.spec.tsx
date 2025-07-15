@@ -4,6 +4,7 @@ import "@testing-library/jest-dom";
 import { render, screen } from "../utils";
 import { ContainerBlock } from "../../components/block-defaults/container-block/ContainerBlock";
 import { PopoverBlock } from "../../components/block-defaults/popover-block/PopoverBlock";
+import { ListenerActions } from "@/store";
 
 const blocks = {
     helloText: {
@@ -69,7 +70,14 @@ const blocks = {
             },
         },
         listeners: {
-            onOpen: [],
+           onOpen: {
+                type: "async" as "async",
+                order: [],
+            },
+            onClose: {
+                type: "async" as "async",
+                order: [] as ListenerActions[],
+            },
         },
     },
     styledPopover: {
@@ -99,7 +107,14 @@ const blocks = {
             },
         },
         listeners: {
-            onOpen: [],
+           onOpen: {
+                type: "async" as "async",
+                order: [],
+            },
+            onClose: {
+                type: "async" as "async",
+                order: [] as ListenerActions[],
+            },
         },
     },
 };
@@ -127,9 +142,7 @@ describe("Popover Block", () => {
                             name: "children",
                         },
                     },
-                    listeners: {
-                        onChange: [],
-                    },
+                    listeners: {},
                 },
             },
         });
