@@ -2,8 +2,8 @@ import { observer } from "mobx-react-lite";
 
 import { MenuTwo, MenuItemTwo } from "@semoss/ui";
 
-import { useBlock, useFrame } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { useBlock, useFrame } from "../../../hooks";
+import { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
 export interface VizBlockContextMenuProps {
     /** ID of the block */

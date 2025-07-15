@@ -1,7 +1,7 @@
 {
-    "files.exclude": {
+    "search.exclude": {
         "**/*.rollup.cache": true,
         "**/dist": true,
         "**/target": true
-    }
+    },
 }
