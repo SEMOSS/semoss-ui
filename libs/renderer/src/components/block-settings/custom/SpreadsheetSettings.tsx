@@ -39,7 +39,7 @@ function SpreadsheetSettingsComponent<D extends BlockDef = BlockDef>({
                     dropDownOption = "showReadSheetForm";
                 }
                 else if(event && event.target && event.target.innerText === "Create Sheet") {
-                    dropDownOption = "showWriteSheetForm";
+                    dropDownOption = "showCreateSheetForm";
                 }
                 else if(event && event.target && event.target.innerText === "Update Sheet") {
                     dropDownOption = "showUpdateSheetForm";

@@ -31,10 +31,12 @@ interface SpreadsheetFormProps {
   onSubmit: (data: any) => void;
   handleSubmit: any;
   reset: () => void;
+  onSheetNameChange?: (newValue: any) => void; // Optional callback for sheet name change
 }
 
 
-export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset }: SpreadsheetFormProps) {
+export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset,onSheetNameChange }: SpreadsheetFormProps) {
+  console.log('update form rendered',control);
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Stack direction="column" spacing={2} style={{ paddingTop: '10px' }}>
@@ -56,6 +58,7 @@ export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset
                   />
                 );
               } else if (field.type === "autocomplete") {
+                // Only call onSheetNameChange for the 'SHEET_NAME' field
                 return (
                   <Autocomplete
                     options={field.options || []}
@@ -63,7 +66,12 @@ export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset
                     getOptionLabel={field.getOptionLabel || ((option) => option)}
                     isOptionEqualToValue={field.isOptionEqualToValue || ((option, value) => option === value)}
                     value={controllerField.value || (field.multiple ? [] : null)}
-                    onChange={(_event, newValue) => controllerField.onChange(newValue)}
+                    onChange={(_event, newValue) => {
+                      controllerField.onChange(newValue);
+                      if (field.name === 'SHEET_NAME' && typeof onSheetNameChange === 'function') {
+                        onSheetNameChange(newValue);
+                      }
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}

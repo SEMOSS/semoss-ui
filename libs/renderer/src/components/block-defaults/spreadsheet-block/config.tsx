@@ -22,8 +22,8 @@ export const config: BlockConfig<SpreadsheetBlockDef> = {
         show: "true",
         showReadSheetForm: false,
         showReadForm: false,
-        showWriteSheetForm: false,
-        showWriteForm: false,
+        showCreateSheetForm: false,
+        showCreateForm: false,
         showUpdateSheetForm: false,
         showUpdateForm: false,
         showDeleteSheetForm: false,
@@ -44,7 +44,7 @@ export const config: BlockConfig<SpreadsheetBlockDef> = {
                 {
                     description: "Text",
                     render: ({ id }) => (
-                        <SpreadsheetSettings id={id} paths={['showReadSheetForm','showReadForm','showWriteSheetForm','showWriteForm','showUpdateSheetForm','showUpdateForm','showDeleteSheetForm','showDeleteForm','showListedSheets']} userId="userId" connections={["sheetConnectionValue","sheetActionValue"]}/>
+                        <SpreadsheetSettings id={id} paths={['showReadSheetForm','showReadForm','showCreateSheetForm','showCreateForm','showUpdateSheetForm','showUpdateForm','showDeleteSheetForm','showDeleteForm','showListedSheets']} userId="userId" connections={["sheetConnectionValue","sheetActionValue"]}/>
                     ),
                 },
             ],
