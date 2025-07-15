@@ -1,12 +1,15 @@
-// Required modules and project imports
+// CommonJS imports
 const vscode = require("vscode");
-const { storeSecrets, getSecrets, selectInstance, removeInstance } = require('./src/secrets');
-const { setFolderPaths, getProjectId, getOutputFilePath } = require('./src/projectUtils');
-const { setDeployConfig, deployProject } = require('./src/deploy');
-const { zipProject } = require('./src/zip');
-const { createNewApp } = require('./src/createApp');
-const { handleChatbotAction } = require('./src/components/Chatbot/Chatbot');
-const { registerChatbotWebview } = require('./src/components/ChatbotWebview/ChatbotWebview');
+const fs = require("fs");
+const path = require("path");
+const { storeSecrets, getSecrets, selectInstance, removeInstance, storeInstance, getStoredInstances } = require('./src/utils/secrets.js');
+const { setFolderPaths, getProjectId } = require('./src/utils/projectUtils.js');
+const { setDeployConfig, deployProject } = require('./src/utils/deploy.js');
+const { zipProject } = require('./src/utils/zip.js');
+const { createNewApp } = require('./src/utils/createApp.js');
+const { initStatusBar, updateStatusBar } = require('./src/utils/statusBar.js');
+const { handleChatbotAction } = require('./src/components/ChatbotWebview/ChatbotSeparateManager.js');
+const { registerChatbotWebview } = require('./src/components/ChatbotWebview/ChatbotWebview.js');
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -15,23 +18,26 @@ const { registerChatbotWebview } = require('./src/components/ChatbotWebview/Chat
  * @param {vscode.ExtensionContext} context
  */
 async function activate(context) {
+    // Initialize the status bar
+    initStatusBar(context);
+    await updateStatusBar(context);
+
     // Register the chatbot webview
     registerChatbotWebview(context);
 
     // Register authorize command (add new instance)
-    const disposable1 = vscode.commands.registerCommand(
+    const disposableAuthorize = vscode.commands.registerCommand(
         "semoss.authorize",
         async (args) => {
             // If called from chatbot, use args; otherwise, prompt
             if (args && args.alias && args.url && args.accessKey && args.privateKey) {
-                // Store instance directly
-                const { storeInstance } = require('./src/secrets');
                 await storeInstance(context, args.alias, {
                     semossUrl: args.url,
                     accessKey: args.accessKey,
                     privateKey: args.privateKey
                 });
                 await context.secrets.store('CURRENT_INSTANCE_ALIAS', args.alias);
+                await updateStatusBar(context);
                 vscode.window.showInformationMessage(`Instance "${args.alias}" saved successfully!`);
                 vscode.commands.executeCommand('workbench.action.reloadWindow');
             } else {
@@ -42,16 +48,18 @@ async function activate(context) {
     );
 
     // Register select instance command
-    const disposable5 = vscode.commands.registerCommand(
+    const disposableSelectInstance = vscode.commands.registerCommand(
         "semoss.selectInstance",
         async (args) => {
             if (args && args.alias) {
                 await context.secrets.store('CURRENT_INSTANCE_ALIAS', args.alias);
+                await updateStatusBar(context);
                 vscode.window.showInformationMessage(`Switched to instance: ${args.alias}`);
                 vscode.commands.executeCommand('workbench.action.reloadWindow');
             } else {
                 const selected = await selectInstance(context);
                 if (selected) {
+                    await updateStatusBar(context);
                     vscode.commands.executeCommand('workbench.action.reloadWindow');
                 }
             }
@@ -59,11 +67,10 @@ async function activate(context) {
     );
 
     // Register remove instance command
-    const disposable6 = vscode.commands.registerCommand(
+    const disposableRemoveInstance = vscode.commands.registerCommand(
         "semoss.removeInstance",
         async (args) => {
             if (args && args.alias) {
-                const { getStoredInstances } = require('./src/secrets');
                 const instances = await getStoredInstances(context);
                 if (instances[args.alias]) {
                     delete instances[args.alias];
@@ -72,35 +79,40 @@ async function activate(context) {
                     if (currentAlias === args.alias) {
                         await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
                     }
+                    // Always update status bar after instance removal
+                    await updateStatusBar(context);
                     vscode.window.showInformationMessage(`Instance "${args.alias}" removed successfully!`);
                 } else {
                     vscode.window.showWarningMessage(`Instance "${args.alias}" not found.`);
                 }
             } else {
                 await removeInstance(context);
+                await updateStatusBar(context);
             }
         }
-    );
-
-    // Register create new project command
+    );    // Register create new project command
     const disposableCreateApp = vscode.commands.registerCommand(
         "semoss.createNewApp",
         async (args) => {
             // If called from chatbot, use args; otherwise, prompt
-            if (args && args.appName) {
-                const getSecretsWithValidation = async (context) => {
-                    const secrets = await getSecrets(context);
-                    if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
-                        vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
-                        return null;
-                    }
-                    return secrets;
-                };
-                // Patch createNewApp to accept args
-                const { createNewApp } = require('./src/createApp');
-                await createNewApp(context, getSecretsWithValidation, args);
-            } else {
-                await createNewApp(context, getSecretsWithValidation);
+            const getSecretsWithValidation = async (context) => {
+                const secrets = await getSecrets(context);
+                if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
+                    vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
+                    return null;
+                }
+                return secrets;
+            };
+
+            try {
+                if (args && args.appName) {
+                    await createNewApp(context, getSecretsWithValidation, args);
+                } else {
+                    await createNewApp(context, getSecretsWithValidation);
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`App creation failed: ${error.message}`);
+                console.error('Error in createNewApp:', error);
             }
         }
     );
@@ -117,29 +129,59 @@ async function activate(context) {
     };
 
     // Register zip and deploy command
-    const disposable2 = vscode.commands.registerCommand(
+    const disposableZipDeploy = vscode.commands.registerCommand(
         "semoss.zipanddeploy",
         async (uri) => {
+            // If called from Chatbot UI, uri may be undefined. Use first workspace folder.
             if (!uri || !uri.fsPath) {
-                vscode.window.showErrorMessage('Please right-click a folder (client, portals, or py) and select "Semoss: Zip and deploy".');
-                return;
+                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    uri = vscode.workspace.workspaceFolders[0].uri;
+                } else {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
             }
             try {
                 const secrets = await getSecretsWithValidation(context);
                 if (!secrets) return;
 
                 setFolderPaths(uri);
-                const projectId = getProjectId();
 
-                if (!projectId) {
-                    vscode.window.showErrorMessage('Unable to find project id in the smss file');
+                // Zip the project (json, smss, assets as assets.zip)
+                await zipProject();
+
+                // Find the zip file that was created (should be assets.zip, but let's be flexible)
+                const zipFiles = fs.readdirSync(uri.fsPath).filter(file => file.endsWith('.zip'));
+                let outputZip;
+
+                if (zipFiles.includes('assets.zip')) {
+                    // Prefer assets.zip if it exists (which it should after zipProject())
+                    outputZip = path.join(uri.fsPath, 'assets.zip');
+                } else if (zipFiles.length > 0) {
+                    // Use the first zip file found
+                    outputZip = path.join(uri.fsPath, zipFiles[0]);
+                    vscode.window.showInformationMessage(`Using zip file: ${zipFiles[0]}`);
+                } else {
+                    vscode.window.showErrorMessage('No zip file was created during the zip process.');
                     return;
                 }
 
-                // Zip the project
-                await zipProject();
+                // Validate the zip file exists and is readable
+                if (!fs.existsSync(outputZip)) {
+                    vscode.window.showErrorMessage(`Zip file does not exist: ${path.basename(outputZip)}`);
+                    return;
+                }
 
-                // Configure deployment
+                // Check if file is not empty
+                const stats = fs.statSync(outputZip);
+                if (stats.size === 0) {
+                    vscode.window.showErrorMessage(`Zip file is empty: ${path.basename(outputZip)}`);
+                    return;
+                }
+
+                vscode.window.showInformationMessage(`Created and ready to deploy: ${path.basename(outputZip)} (${Math.round(stats.size / 1024)} KB)`);
+
+                // Configure deployment to use the found zip file
                 const encoded = Buffer.from(secrets.accessKey + ':' + secrets.privateKey).toString('base64');
                 const headers = { 'Authorization': 'Basic ' + encoded };
 
@@ -147,10 +189,15 @@ async function activate(context) {
                     semossUrl: secrets.semossUrl,
                     authHeaders: headers,
                     base64Encoded: encoded,
-                    outputPath: getOutputFilePath()
+                    outputPath: outputZip
                 });
 
-                // Deploy the project
+                // Retrieve and use the current project ID
+                const projectId = await getProjectId(context);
+                if (!projectId) {
+                    vscode.window.showErrorMessage('Unable to find project id in the smss file');
+                    return;
+                }
                 await deployProject(projectId);
             } catch (error) {
                 vscode.window.showErrorMessage(`Error in zip and deploy: ${error.message}`);
@@ -159,12 +206,17 @@ async function activate(context) {
     );
 
     // Register zip only command
-    const disposable3 = vscode.commands.registerCommand(
+    const disposableZip = vscode.commands.registerCommand(
         "semoss.ziponly",
         async (uri) => {
+            // If called from Chatbot UI, uri may be undefined. Use first workspace folder.
             if (!uri || !uri.fsPath) {
-                vscode.window.showErrorMessage('Please right-click a folder (client, portals, or py) and select "Semoss: Zip only".');
-                return;
+                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    uri = vscode.workspace.workspaceFolders[0].uri;
+                } else {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
             }
             try {
                 setFolderPaths(uri);
@@ -176,26 +228,76 @@ async function activate(context) {
     );
 
     // Register deploy only command
-    const disposable4 = vscode.commands.registerCommand(
+    const disposableDeploy = vscode.commands.registerCommand(
         "semoss.deployonly",
         async (uri) => {
+            // Always deploy assets.zip from the selected or first workspace folder
             if (!uri || !uri.fsPath) {
-                vscode.window.showErrorMessage('Please right-click a folder (client, portals, or py) and select "Semoss: Deploy only".');
-                return;
+                if (vscode.workspace.workspaceFolders && vscode.workspace.workspaceFolders.length > 0) {
+                    uri = vscode.workspace.workspaceFolders[0].uri;
+                } else {
+                    vscode.window.showErrorMessage('No workspace folder found.');
+                    return;
+                }
             }
             try {
+                // Find zip files in the directory
+                const zipFiles = fs.readdirSync(uri.fsPath).filter(file => file.endsWith('.zip'));
+                let outputZip;
+
+                if (zipFiles.length === 0) {
+                    vscode.window.showErrorMessage('No zip files found in the selected folder. Please create a zip file first using "Zip Only" command or manually.');
+                    return;
+                } else if (zipFiles.includes('assets.zip')) {
+                    // Prefer assets.zip if it exists
+                    outputZip = path.join(uri.fsPath, 'assets.zip');
+                    vscode.window.showInformationMessage('Using preferred zip file: assets.zip');
+                } else if (zipFiles.length === 1) {
+                    // If only one zip file exists (and it's not assets.zip), use it
+                    outputZip = path.join(uri.fsPath, zipFiles[0]);
+                    vscode.window.showInformationMessage(`Using zip file: ${zipFiles[0]}`);
+                } else {
+                    // Multiple zip files exist, let user choose
+                    const selectedZip = await vscode.window.showQuickPick(zipFiles, {
+                        placeHolder: 'Multiple zip files found. Select one to deploy:',
+                        canPickMany: false
+                    });
+                    if (!selectedZip) {
+                        vscode.window.showInformationMessage('Deploy cancelled.');
+                        return;
+                    }
+                    outputZip = path.join(uri.fsPath, selectedZip);
+                    vscode.window.showInformationMessage(`Selected zip file: ${selectedZip}`);
+                }
+
+                // Validate the zip file exists and is readable
+                if (!fs.existsSync(outputZip)) {
+                    vscode.window.showErrorMessage(`Selected zip file does not exist: ${path.basename(outputZip)}`);
+                    return;
+                }
+
+                // Check if file is not empty
+                const stats = fs.statSync(outputZip);
+                if (stats.size === 0) {
+                    vscode.window.showErrorMessage(`Selected zip file is empty: ${path.basename(outputZip)}`);
+                    return;
+                }
+
+                vscode.window.showInformationMessage(`Ready to deploy: ${path.basename(outputZip)} (${Math.round(stats.size / 1024)} KB)`);
+
                 const secrets = await getSecretsWithValidation(context);
                 if (!secrets) return;
 
                 setFolderPaths(uri);
-                const projectId = getProjectId();
 
+                // Retrieve and use the current project ID
+                const projectId = await getProjectId(context);
                 if (!projectId) {
                     vscode.window.showErrorMessage('Unable to find project id in the smss file');
                     return;
                 }
 
-                // Configure deployment
+                // Configure deployment to use assets.zip
                 const encoded = Buffer.from(secrets.accessKey + ':' + secrets.privateKey).toString('base64');
                 const headers = { 'Authorization': 'Basic ' + encoded };
 
@@ -203,7 +305,7 @@ async function activate(context) {
                     semossUrl: secrets.semossUrl,
                     authHeaders: headers,
                     base64Encoded: encoded,
-                    outputPath: getOutputFilePath()
+                    outputPath: outputZip
                 });
 
                 await deployProject(projectId);
@@ -216,15 +318,9 @@ async function activate(context) {
     // Register chatbot action command for programmatic use
     const disposableChatbot = vscode.commands.registerCommand(
         "semoss.chatbotAction",
-        /**
-         * @param {string} action - The action to perform (zipanddeploy, ziponly, deployonly, authorize, selectInstance, removeInstance, createNewApp)
-         * @param {object} options - Additional options (e.g., uri)
-         */
-
-
         async (action, options = {}) => {
-             if (action === 'removeInstance') {
-                const { getStoredInstances } = require('./src/secrets');
+            if (action === 'removeInstance') {
+                // Using the already imported getStoredInstances from the top of the file
                 const instances = await getStoredInstances(context);
                 const aliases = Object.keys(instances);
                 if (aliases.length === 0) {
@@ -250,6 +346,8 @@ async function activate(context) {
                         if (currentAlias === selected.label) {
                             await context.secrets.delete('CURRENT_INSTANCE_ALIAS');
                         }
+                        // Always update status bar after instance removal
+                        await updateStatusBar(context);
                         vscode.window.showInformationMessage(`Instance "${selected.label}" removed successfully!`);
                     }
                 }
@@ -274,20 +372,18 @@ async function activate(context) {
 
     // Check if credentials are available and show status
     const secrets = await getSecrets(context);
-    
+
+
     if (secrets && secrets.semossUrl && secrets.accessKey && secrets.privateKey) {
         vscode.window.showInformationMessage(`Semoss: Connected to "${secrets.alias || 'Default'}" (${secrets.semossUrl})`);
-        context.subscriptions.push(disposable1, disposable2, disposable3, disposable4, disposable5, disposable6);
+        context.subscriptions.push(disposableAuthorize, disposableZipDeploy, disposableZip, disposableDeploy, disposableSelectInstance, disposableRemoveInstance);
     } else {
         vscode.window.showErrorMessage('Semoss: No instance configured. Use "Semoss: Authorize New Instance" to get started.');
-        context.subscriptions.push(disposable1, disposable5, disposable6); // Add instance management commands even if not authenticated
+        context.subscriptions.push(disposableAuthorize, disposableSelectInstance, disposableRemoveInstance); // Add instance management commands even if not authenticated
     }
 }
 
 // This method is called when your extension is deactivated
 function deactivate() { }
 
-module.exports = {
-    activate,
-    deactivate,
-};
+module.exports = { activate, deactivate };
