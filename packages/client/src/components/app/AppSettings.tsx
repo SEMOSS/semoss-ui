@@ -27,6 +27,7 @@ import { usePixel, useRootStore, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { Java } from '@/assets/img/Java';
+import EngineIdsModal from './save-app/EngineIdsModal';
 
 const StyledAppSettings = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -234,6 +235,9 @@ export const AppSettings = (props: AppSettingsProps) => {
     const notification = useNotification();
     const { adminMode } = useSettings();
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [showEngineModal, setShowEngineModal] = useState(false);
+    const [successIds, setSuccessIds] = useState<string[]>([]);
+    const [failedIds, setFailedIds] = useState<string[]>([]);
 
     const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
         defaultValues: {
@@ -504,9 +508,15 @@ export const AppSettings = (props: AppSettingsProps) => {
             );
 
             // upnzip the file in the new app
-            await monolithStore.runQuery(
+            const unzipResp = await monolithStore.runQuery(
                 `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
             );
+            let unzipOutput = unzipResp.pixelReturn[0].output;
+            const success = unzipOutput.engineIds.success ? Object.keys(unzipOutput.engineIds.success) : [];
+            const failed = unzipOutput.engineIds.failed ? unzipOutput.engineIds.failed : [];
+            setSuccessIds(success);
+            setFailedIds(failed);
+            setShowEngineModal(true);
 
             // Load the insight classes
             await monolithStore.runQuery(
@@ -539,6 +549,9 @@ export const AppSettings = (props: AppSettingsProps) => {
             setIsLoading(false);
         }
     });
+    const handleEngineModalOk = () => {
+    setShowEngineModal(false);
+    };
 
     if (condensed) {
         return (
@@ -635,6 +648,7 @@ export const AppSettings = (props: AppSettingsProps) => {
         );
     } else {
         return (
+            <>
             <StyledAppSettings>
                 <StyledTopCardContainer>
                     <StyledCardDiv>
@@ -890,6 +904,13 @@ export const AppSettings = (props: AppSettingsProps) => {
                     </StyledCardDiv>
                 </StyledCardContainer>
             </StyledAppSettings>
+            <EngineIdsModal
+            open={showEngineModal}
+            successIds={successIds}
+            failedIds={failedIds}
+            onClose={handleEngineModalOk}
+            />
+        </>
         );
     }
 };
