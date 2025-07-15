@@ -41,7 +41,6 @@ export const SpreadsheetSettings = observer(
             const { monolithStore,configStore } = useRootStore();
             const [isLoading, setIsLoading] = useState(false);
             const notification = useNotification();
-            console.log('hello123',configStore.store.config.loginDetails['GOOGLE']);
             const [loggedInUser,setLoggedInUser]= useState('')
 
             const handleMouseDownChange = (event): void => {
@@ -49,7 +48,7 @@ export const SpreadsheetSettings = observer(
                 if(event && event.target && event.target.innerText === "Read Sheet") {
                     dropDownOption = "showReadSheetForm";
                 }
-                else if(event && event.target && event.target.innerText === "Write Sheet") {
+                else if(event && event.target && event.target.innerText === "Create Sheet") {
                     dropDownOption = "showWriteSheetForm";
                 }
                 else if(event && event.target && event.target.innerText === "Update Sheet") {
@@ -174,7 +173,7 @@ export const SpreadsheetSettings = observer(
                             <Stack spacing={1}>
                                 <div>Actions</div>
                                 <Autocomplete
-                                    options={[{ value: "Read Sheet" }, { value: "Write Sheet" },{ value: "Update Sheet" },{ value: "Delete Sheet" },{ value: "List all Sheets" }]}
+                                    options={[{ value: "Read Sheet" }, { value: "Create Sheet" },{ value: "Update Sheet" },{ value: "Delete Sheet" },{ value: "List all Sheets" }]}
                                     getOptionLabel={(option) => option['value']}
                                     multiple={false}
                                     value={field.value || actionValue || null}

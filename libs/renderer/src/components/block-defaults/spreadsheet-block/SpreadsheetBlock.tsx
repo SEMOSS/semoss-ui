@@ -3,24 +3,18 @@ import { observer } from "mobx-react-lite";
 import { useBlock, useTypeWriter, useBlocks, useBlockSettings } from "../../../hooks";
 import { BlockDef, BlockComponent} from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { runPixel } from "@semoss/sdk/react";
 import {
     Button,
-    TextField,
-    Stack,
-    TextArea,
     styled,
-    Autocomplete,
     Modal,
     Typography
 } from '@semoss/ui';
 
 import { PathValue } from "../../../types";
 import {SpreadsheetForm} from "./SpreadsheetForm";
-const StyledButton = styled(Button)(({ theme }) => ({
-    marginTop: '20px !important',
-}));
+import { useRootStore } from '@semoss/ui/hooks';
 
 type showReadSheetForm = {
     TITLE_SHEET_NAME: string;
@@ -81,7 +75,8 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     const block = useBlock<SpreadsheetBlockDef>(id);
     const state = useBlocks();
     const { data} = block;
-    const { setData } = useBlockSettings(id);;
+    const { setData } = useBlockSettings(id);
+    const { monolithStore,configStore } = useRootStore();
     const[showReadData, setShowReadData] = useState('');
     const [showResponseData, setShowResponseData] = useState('');
     const [isDelete, setIsDelete] = useState(false);
@@ -303,6 +298,28 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         }
     }
 
+    // const oauth = async (provider: string) => {
+    //     setIsLoading(true);
+    //     await configStore
+    //         .oauth(provider)
+    //         .then(async () => {
+    //             setIsLoading(false);
+    //             notification.add({
+    //                 color: 'success',
+    //                 message: `Successfully logged in`,
+    //             });
+    //             await configStore.initialize();
+    //             setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
+    //         })
+    //         .catch((error) => {
+    //             setIsLoading(false);
+    //             notification.add({
+    //                 color: 'error',
+    //                 message: error.message,
+    //             });
+    //         });
+    // };
+
     return (
         <div data-block = {id} style={{ position: "relative", ...data.style }}>
             {showBlock(block, state) ? (
@@ -314,14 +331,20 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                     }}
                 >
                     {displayTxt}
+                    {/* <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => {oauth('google')}}
+                        data-testid={'my-jira-profile-new-key-btn'}
+                    >
+                        Login google
+                    </Button> */}
                     {data.showReadSheetForm && (
                         <SpreadsheetForm
                             control={controlRead}
                             fields={[
                             { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
                             { name: "SHEET_NAME", label: "Sheet Name", required: true ,type: "autocomplete", options:sheetOptions},
-                            { name: "ROW_NUMBER", label: "Row Number", required: true },
-                            { name: "COLUMN_NUMBER", label: "Column Number", required: true },
                             ]}
                             onSubmit={onReadSubmit}
                             handleSubmit={handleReadSubmit}
@@ -340,8 +363,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                             fields={[
                             { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
                             { name: "SHEET_NAME", label: "Sheet Name", required: true,type: "autocomplete", options:sheetOptions },
-                            { name: "ROW_NUMBER", label: "Row Number", required: true },
-                            { name: "COLUMN_NUMBER", label: "Column Number", required: true },
                             { name: "CONTENT", label: "Content", type: "textarea", required: true },
                             ]}
                             onSubmit={onWriteSubmit}
@@ -360,8 +381,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                             fields={[
                             { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
                             { name: "SHEET_NAME", label: "Sheet Name", required: true,type: "autocomplete", options:sheetOptions },
-                            { name: "ROW_NUMBER", label: "Row Number", required: true },
-                            { name: "COLUMN_NUMBER", label: "Column Number", required: true },
                             { name: "CONTENT", label: "Content", type: "textarea" , required: true },
                             ]}
                             onSubmit={onUpdateSubmit}
@@ -380,8 +399,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                             fields={[
                             { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions},
                             { name: "SHEET_NAME", label: "Sheet Name", required: false,type: "autocomplete", options:sheetOptions },
-                            { name: "ROW_NUMBER", label: "Row Number", required: false },
-                            { name: "COLUMN_NUMBER", label: "Column Number", required: false },
                             ]}
                             onSubmit={onDeleteSubmit}
                             handleSubmit={handleDeleteSubmit}
