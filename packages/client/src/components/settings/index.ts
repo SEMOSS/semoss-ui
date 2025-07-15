@@ -6,3 +6,4 @@ export * from './EngineQASidebar';
 export * from './MembersTable';
 export * from './PendingMembersTable';
 export * from './UserTable';
+export * from './DependencyList';
