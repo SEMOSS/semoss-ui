@@ -1,5 +1,5 @@
 import React, { useState,useEffect } from 'react';
-import { Autocomplete, TextField, Stack, Button,useNotification } from '@semoss/ui';
+import { Autocomplete, TextField, Stack} from '@semoss/ui';
 import { useBlocks, useBlockSettings } from "../../../hooks";
 import { observer } from "mobx-react-lite";
 import { Controller, useForm } from 'react-hook-form';
@@ -8,10 +8,6 @@ import {
     BlockDef,
 } from "../../../store";
 import { Paths, PathValue } from "../../../types";
-import { useRootStore } from '@semoss/ui/hooks';
-import { Add, Delete } from '@mui/icons-material';
-
-//import { useRootStore } from 'client/src/hooks';
 
 interface SpreadsheetSettingsProps<D extends BlockDef = BlockDef> {
     id: string;
@@ -26,23 +22,17 @@ type SpreadsheetSettingsForm = {
 };
 
 
-export const SpreadsheetSettings = observer(
-    <D extends BlockDef = BlockDef>({
+function SpreadsheetSettingsComponent<D extends BlockDef = BlockDef>({
             id,
             paths,
             userId,
             connections,
-        }: SpreadsheetSettingsProps<D>) =>{
+        }: SpreadsheetSettingsProps<D>){
             const [connectionValue, setConnectionValue] = useState('');
             const [actionValue, setActionValue] = useState('');
             const [jiraData, setJiraData] = useState<any>(null);
             const { state } = useBlocks();
             const { data, setData } = useBlockSettings(id);
-            const { monolithStore,configStore } = useRootStore();
-            const [isLoading, setIsLoading] = useState(false);
-            const notification = useNotification();
-            const [loggedInUser,setLoggedInUser]= useState('')
-
             const handleMouseDownChange = (event): void => {
                 let dropDownOption;
                 if(event && event.target && event.target.innerText === "Read Sheet") {
@@ -66,18 +56,6 @@ export const SpreadsheetSettings = observer(
                 })             
             };
 
-            useEffect(()=>{
-                async function fetchData() {
-                    const pixelCommand = `META | GetGoogleProfile()`;
-                    const response = await state.runSideEffect(pixelCommand);
-                    const output1 = response.pixelReturn[0].output as { userId: string }[];
-                    const userData = output1.map((item: any) => item.userName);
-                    const userDataId = output1.map((item: any) => item.id);
-                    const finalData = userData.map((userId, index) => ({ user: userId, id: userDataId[index] }));
-                    setJiraData(finalData);
-                }
-                fetchData();
-            },[])
 
             useEffect(() => {
                 // Restore persisted values for dropdowns when the block is selected again
@@ -98,73 +76,8 @@ export const SpreadsheetSettings = observer(
                         },
             });
 
-            const oauth = async (provider: string) => {
-                setIsLoading(true);
-                await configStore
-                    .oauth(provider)
-                    .then(async () => {
-                        setIsLoading(false);
-                        notification.add({
-                            color: 'success',
-                            message: `Successfully logged in`,
-                        });
-                        await configStore.initialize();
-                        setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
-                    })
-                    .catch((error) => {
-                        setIsLoading(false);
-                        notification.add({
-                            color: 'error',
-                            message: error.message,
-                        });
-                    });
-            };
-
             return (
                 <Stack direction="column" spacing={2}>
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={() => {oauth('google')}}
-                        data-testid={'my-jira-profile-new-key-btn'}
-                    >
-                        Login google
-                    </Button>
-                    {loggedInUser && (
-                        <div>
-                            <span>Logged in as: </span>
-                            <h4>{configStore.store.config.loginDetails['GOOGLE'].name}</h4>
-                        </div>
-                    )}
-                    {/* <Controller
-                        name="SPREADSHEET_CONNECTION"
-                        control={control}
-                        rules={{ required: true }}
-                        render={({ field }) => (
-                            <Stack spacing={1}>
-                                <div>Connections</div>
-                                <Autocomplete
-                                    options={jiraData || []}
-                                    getOptionLabel={(option) => option['user']}
-                                    multiple={false}
-                                    value={field.value || connectionValue || null}
-                                    onChange={(event, newValue) => {
-                                        field.onChange(newValue);
-                                        setData(userId, newValue['id'] as PathValue<D["data"], typeof userId>);
-                                        setConnectionValue(newValue);
-                                        setData(connections[0], newValue as PathValue<D["data"], typeof connections[0]>);
-                                    }}
-                                    renderInput={(params) => (
-                                        <TextField
-                                            {...params}
-                                            label="Connections"
-                                            fullWidth
-                                        />
-                                    )}
-                                />
-                            </Stack>
-                        )}
-                    /> */}
                     <Controller
                         name="SPREADSHEET_ACTION"
                         control={control}
@@ -197,5 +110,5 @@ export const SpreadsheetSettings = observer(
                 </Stack>
             );
 
-        }
-);
+        };
+export const SpreadsheetSettings = observer(SpreadsheetSettingsComponent);

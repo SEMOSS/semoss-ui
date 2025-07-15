@@ -9,12 +9,14 @@ import {
     Button,
     styled,
     Modal,
-    Typography
+    Typography,
+    useNotification,
 } from '@semoss/ui';
 
 import { PathValue } from "../../../types";
 import {SpreadsheetForm} from "./SpreadsheetForm";
 import { useRootStore } from '@semoss/ui/hooks';
+import { Add } from '@mui/icons-material';
 
 type showReadSheetForm = {
     TITLE_SHEET_NAME: string;
@@ -71,7 +73,7 @@ export interface SpreadsheetBlockDef extends BlockDef<"spreadsheet"> {
     listeners: never;
 }
 
-export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
+function SpreadsheetBlockComponent ({ id }) {
     const block = useBlock<SpreadsheetBlockDef>(id);
     const state = useBlocks();
     const { data} = block;
@@ -85,9 +87,13 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     const [titleSheetOptions, setTitleSheetOptions] = useState<string[]>(['parent1', 'parent2']);
     const [sheetOptions, setSheetOptions] = useState<string[]>(['mysheet1', 'mysheet5']);
     const [listedSheets, setListedSheets] = useState<string[]>(['sheet1', 'sheet2', 'sheet3']);
+    const [isLoading, setIsLoading] = useState(false);
+    const notification = useNotification();
+    const [loggedInUser,setLoggedInUser]= useState('')
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
+    console.log('loggedInUser', configStore.store.config.loginDetails);
 
     const escapePixelString = (str: string) => {
         if (typeof str !== 'string') return '';
@@ -138,6 +144,13 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
             fetchListedSheets();
         }
    });
+
+   useEffect(() => {
+        console.log('loggedInUserfirst', configStore.store.config);
+        (async () => {
+            await configStore.initialize();
+        })();
+    },[configStore]);
 
     if (!data.isStreaming) displayTxt = textContent;
     const { getValues:getReadValues, handleSubmit:handleReadSubmit, control:controlRead,reset:resetRead } = useForm<showReadSheetForm>({
@@ -298,27 +311,27 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         }
     }
 
-    // const oauth = async (provider: string) => {
-    //     setIsLoading(true);
-    //     await configStore
-    //         .oauth(provider)
-    //         .then(async () => {
-    //             setIsLoading(false);
-    //             notification.add({
-    //                 color: 'success',
-    //                 message: `Successfully logged in`,
-    //             });
-    //             await configStore.initialize();
-    //             setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
-    //         })
-    //         .catch((error) => {
-    //             setIsLoading(false);
-    //             notification.add({
-    //                 color: 'error',
-    //                 message: error.message,
-    //             });
-    //         });
-    // };
+    const oauth = async (provider: string) => {
+        setIsLoading(true);
+        await configStore
+            .oauth(provider)
+            .then(async () => {
+                setIsLoading(false);
+                notification.add({
+                    color: 'success',
+                    message: `Successfully logged in`,
+                });
+                await configStore.initialize();
+                setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
+            })
+            .catch((error) => {
+                setIsLoading(false);
+                notification.add({
+                    color: 'error',
+                    message: error.message,
+                });
+            });
+    };
 
     return (
         <div data-block = {id} style={{ position: "relative", ...data.style }}>
@@ -331,14 +344,24 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                     }}
                 >
                     {displayTxt}
-                    {/* <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={() => {oauth('google')}}
-                        data-testid={'my-jira-profile-new-key-btn'}
-                    >
-                        Login google
-                    </Button> */}
+                    {!configStore.store.config.loginDetails['GOOGLE'] && (
+                        <div>
+                            <Button
+                                variant="contained"
+                                startIcon={<Add />}
+                                onClick={() => {oauth('google')}}
+                                data-testid={'my-jira-profile-new-key-btn'}
+                            >
+                                Login google
+                            </Button>
+                        </div>
+                    )}
+                    {loggedInUser && (
+                        <div>
+                            <span>Logged in as: </span>
+                            <h4>{loggedInUser}</h4>
+                        </div>
+                    )}
                     {data.showReadSheetForm && (
                         <SpreadsheetForm
                             control={controlRead}
@@ -458,4 +481,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
             )}
         </div>
     )
-});
+};
+
+export const SpreadsheetBlock: BlockComponent = observer(SpreadsheetBlockComponent);
