@@ -153,9 +153,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedApps, apps } = state;
-    const search = configStore.store.globalSearch || '';
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
+    const [search, setSearch] = useState("");
 
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -333,6 +333,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         )}
                     </Stack>
                 </Stack>
+                <TextField 
+                    size="small"
+                    label="Search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
                 <StyledContainer>
                     {!configStore.store.config.adminOnlyViewMenuBarFlag &&
                         configStore.isEngineOperationAvailable(
