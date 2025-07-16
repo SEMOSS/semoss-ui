@@ -52,7 +52,7 @@ jobs:
               run: |
                 pnpm install
                 cd packages/client
-                pnpm add prettier @prettier/plugin-babel --save-dev
+                pnpm add prettier --save-dev
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
