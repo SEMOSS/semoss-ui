@@ -16,7 +16,7 @@ import prettier from 'prettier';
 
 import { styled, useNotification } from '@semoss/ui';
 import { LoadingScreen } from '@/components/ui';
-import { runPixelTwo } from '../../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 
 const Editor = lazy(() => import('@monaco-editor/react'));
 
@@ -192,7 +192,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('Error missing pixel to get file');
                 }
 
-                const response = await runPixelTwo<[string]>(pixel, insightId);
+                const response = await runPixel<[string]>(pixel, insightId);
 
                 // set the content
                 const content = response.pixelReturn[0].output;
@@ -293,7 +293,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('Error missing pixel to get file');
                 }
 
-                const { errors } = await runPixelTwo(pixel, insightId);
+                const { errors } = await runPixel(pixel, insightId);
 
                 // bubble up the errors
                 for (const e of errors) {
@@ -331,7 +331,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                     throw new Error('No Agent Model Engine');
                 }
 
-                const response = await runPixelTwo(
+                const response = await runPixel(
                     `LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
                     insightId,
                 );
