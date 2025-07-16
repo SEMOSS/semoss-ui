@@ -27,7 +27,7 @@ import {
     Home,
     Delete,
     MoreVert,
-} from '@mui/icons-material/';
+} from '@mui/icons-material';
 
 import {
     useBlocks,

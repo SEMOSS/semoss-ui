@@ -1,5 +1,5 @@
 import { Pagination as MuiPagination, SxProps } from "@mui/material";
-import { UsePaginationItem } from "@mui/material/usePagination/usePagination";
+import { UsePaginationItem } from "@mui/material/usePagination";
 
 export interface PaginationRenderItemParams extends UsePaginationItem {
     color: PaginationProps["color"];

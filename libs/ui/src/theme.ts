@@ -7,7 +7,7 @@ import {
     keyframes,
     SimplePaletteColorOptions,
 } from "@mui/material";
-import { TypographyOptions } from "@mui/material/styles/createTypography";
+import { TypographyVariantsOptions } from "@mui/material/styles";
 
 // export specifics from the library
 export { alpha, styled, useTheme, keyframes };
@@ -88,7 +88,7 @@ export interface CustomSimplePaletteColorOptions
     backdropOverlay?: string;
 }
 
-export interface CustomTypographyOptions extends TypographyOptions {
+export interface CustomTypographyOptions extends TypographyVariantsOptions {
     body3: any;
     body4: any;
 }

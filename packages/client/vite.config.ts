@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
         plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
         resolve: {
             alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
+            dedupe: ['@emotion/react', '@emotion/styled', '@mui/material', '@mui/material-icons']
         },
         define: {
             'import.meta.env.MODULE': JSON.stringify(MODULE),

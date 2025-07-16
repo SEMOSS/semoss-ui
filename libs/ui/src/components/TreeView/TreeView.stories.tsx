@@ -2,7 +2,7 @@ import React from "react";
 import { TreeView } from ".";
 import { styled } from "../../theme";
 import { Mail } from "@mui/icons-material";
-import { ExpandMore, ChevronRight } from "@mui/icons-material/";
+import { ExpandMore, ChevronRight } from "@mui/icons-material";
 
 export default {
     title: "Components/TreeView",

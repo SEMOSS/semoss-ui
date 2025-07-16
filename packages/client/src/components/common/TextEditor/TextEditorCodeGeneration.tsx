@@ -11,7 +11,7 @@ import {
     Select,
     Menu,
 } from '@semoss/ui';
-import { AutoAwesome, ContentCopyOutlined } from '@mui/icons-material/';
+import { AutoAwesome, ContentCopyOutlined } from '@mui/icons-material';
 
 import { useLLM, usePixel, useRootStore } from '@/hooks';
 
