@@ -118,6 +118,17 @@ const StyledModalContentText = styled(Modal.ContentText)({
     marginTop: '12px',
 });
 
+const StyledDeleteModal = styled(Modal)({
+    '& .MuiPaper-root': {
+        width: '600px'
+    }
+});
+
+const StyledDeleteButton = styled(Button)({
+    fontWeight: 500,
+    padding: '6px 16px'
+});
+
 interface TeamCardProps {
     /** ID of team */
     id: string;
@@ -505,7 +516,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     </Popover>
                 </StyledActionContainer>
             </StyledTileCard>
-            <Modal open={deleteModal}>
+            <StyledDeleteModal open={deleteModal}>
                 <StyledModalTitle>
                     <Typography sx={{ color: '#000000DE' }} variant="h6">
                         Delete Team
@@ -516,7 +527,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 </StyledModalTitle>
                 <Modal.Content>
                     <Typography sx={{ color: '#000000DE' }} variant="body1">
-                        Are you sure you want to delete group {id}
+                        Are you sure you want to delete group: {id}
                     </Typography>
                 </Modal.Content>
                 <Modal.Actions
@@ -529,15 +540,15 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     >
                         Cancel
                     </Button>
-                    <Button
+                    <StyledDeleteButton
                         variant="contained"
                         color={'error'}
                         onClick={() => deleteGroup()}
                     >
                         Delete
-                    </Button>
+                    </StyledDeleteButton>
                 </Modal.Actions>
-            </Modal>
+            </StyledDeleteModal>
             <Modal open={addMembersModal} maxWidth="lg">
                 <StyledModalTitle>
                     <Typography sx={{ color: '#000000DE' }} variant="h6">
