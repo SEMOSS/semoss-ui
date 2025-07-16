@@ -10,11 +10,11 @@
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "fix": "turbo run lint format",
-    "format": "turbo run format",
-    "test": "turbo run test",
     "test:watch": "turbo run test:watch",
-    "format-and-lint": "lint-staged",
-    "format-and-lint-one:fix": "lint-staged:fix"
+    "format-and-lint-staged": "lint-staged",
+    "format-and-lint-staged:fix": "lint-staged:fix",
+    "format-and-lint": "biome check",
+    "format-and-lint:fix": "biome check --write"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx,json}": ["biome check"]
