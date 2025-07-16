@@ -80,8 +80,14 @@ jobs:
                   apt-get install -y maven
                   npm install -g pnpm@10.10
                   pnpm install
+            
+            - name: Install nvm 
+              run: |
+                  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
+                  export NVM_DIR="$HOME/.nvm"
+                  [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
                   
-            - name: Install nvm 24
+            - name: Install node 24
               run: nvm install 24
             
             - name: Use Node 24
