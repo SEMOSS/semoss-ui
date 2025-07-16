@@ -35,17 +35,33 @@ jobs:
                   repository: SEMOSS/bi
                   token: ${{ secrets.SEMOSS_GITHUB_PAT }}
                   path: bi
+            
+            - name: Cache node modules and Maven repository
+              uses: actions/cache@v4
+              with:
+                  path: |
+                      node_modules
+                      .m2/repository
+                      dist
+                      index.html
+                      .nx/cache
+                  key: ${{ github.ref_name }}
 
             - name: Install pnpm
               run: npm install -g pnpm@10.10
 
-            - name: Install BI dependencies and build
+            - name: Install BI dependencies
               working-directory: ./bi
               run: |
                   apt-get update
                   apt-get install -y maven
                   npm install -g pnpm@10.10
                   pnpm install
+                  
+
+            - name: Build BI
+              working-directory: ./bi
+              run: |
                   pnpm build
 
             - name: Upload BI artifact
