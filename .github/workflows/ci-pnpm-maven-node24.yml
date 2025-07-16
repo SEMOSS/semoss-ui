@@ -58,12 +58,9 @@ jobs:
                   npm install -g pnpm@10.10
                   pnpm install
                   
-
-            - name: Build BI
+            - name: BI build
               working-directory: ./bi
-              env:
-                  NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
-              run: npx nx run-many -t build -p @semoss/client @semoss/legacy
+              run: pnpm run build
 
             - name: Upload BI artifact
               uses: actions/upload-artifact@v4
