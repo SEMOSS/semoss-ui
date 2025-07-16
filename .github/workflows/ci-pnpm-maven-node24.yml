@@ -38,7 +38,6 @@ jobs:
             - name: Install BI dependencies and build
               working-directory: ./bi
               run: |
-                  npm install -g pnpm@10.10
                   pnpm install
                   pnpm run build
             - name: Upload BI artifact
