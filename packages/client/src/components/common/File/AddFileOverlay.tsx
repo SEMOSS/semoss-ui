@@ -9,6 +9,7 @@ import {
     Checkbox,
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
+import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
 
 interface AddFileOverlayProps {
     /** Type of file opened */
@@ -32,6 +33,18 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [uploadFile, setUploadFiles] = useState<File>(null);
     const [unzipFile, setUnzipFile] = useState<boolean>(false);
+    const [showEngineIdsModal, setShowEngineIdsModal] = useState(false);
+    const [successIds, setSuccessIds] = useState<string[]>([]);
+    const [failedIds, setFailedIds] = useState<string[]>([]);
+    const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
+
+    const handleEngineIdsModalClose = () => {
+    setShowEngineIdsModal(false);
+    if (pendingUploadPath) {
+        onClose(true, pendingUploadPath);
+        setPendingUploadPath(null);
+    }
+    };
 
     /**
      * Add the file to the app
@@ -60,9 +73,18 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
             if (unzipFile) {
                 if (type === 'app') {
-                    await monolithStore.runQuery(
+                    const result = await monolithStore.runQuery(
                         `UnzipFile(filePath=["${path}"], space=["${space}"])`,
                     );
+                    let output = undefined;
+                    output = result.pixelReturn[0].output;
+                    const success = output.engineIds.success ? Object.keys(output.engineIds.success) : [];
+                    const failed = output.engineIds.failed ? output.engineIds.failed : [];
+                    setSuccessIds(success);
+                    setFailedIds(failed);
+                    setPendingUploadPath(path);
+                    setShowEngineIdsModal(true);
+                    return;
                 } else {
                     throw new Error('TODO');
                 }
@@ -122,6 +144,12 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 </Button>
             </Modal.Actions>
             {isLoading && <LinearProgress />}
+            <EngineIdsModal
+                open={showEngineIdsModal}
+                successIds={successIds}
+                failedIds={failedIds}
+                onClose={handleEngineIdsModalClose}
+            />
         </>
     );
 };
