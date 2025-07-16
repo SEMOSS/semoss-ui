@@ -81,19 +81,14 @@ jobs:
                   npm install -g pnpm@10.10
                   pnpm install
             
-            - name: Install nvm 
+            - name: Install nvm and node 24
               run: |
                   curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
                   export NVM_DIR="$HOME/.nvm"
                   [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-                  
-            - name: Install node 24
-              run: nvm install 24
-            
-            - name: Use Node 24
-              run: |
+                  nvm install 24
                   nvm use 24
-                  node --version     
+                  node --version
 
             - name: Build
               env:
