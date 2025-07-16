@@ -53,6 +53,7 @@ jobs:
                 pnpm install
                 cd packages/client
                 pnpm add prettier --save-dev
+                pnpm add @semoss/sdk --filter ./packages/client
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
