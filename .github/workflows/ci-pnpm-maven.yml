@@ -51,6 +51,8 @@ jobs:
             - name: Install dependencies and build (semoss-ui)
               run: |
                 pnpm install
+                cd packages/client
+                pnpm add prettier @prettier/plugin-babel --save-dev
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
