@@ -46,14 +46,13 @@ jobs:
                 node-version: '24'
 
             - name: Install pnpm
-              run: npm install -g pnpm@10.10
+              run: npm install -g pnpm@10.13
 
             - name: Install dependencies and build (semoss-ui)
               run: |
                 pnpm install
                 cd packages/client
                 pnpm add prettier --save-dev
-                pnpm add @semoss/sdk --filter ./packages/client
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -109,7 +108,7 @@ jobs:
                 node-version: '18'
 
             - name: Install pnpm in Node 18 session
-              run: npm install -g pnpm@10.10
+              run: npm install -g pnpm@10.13
 
             - name: Install dependencies and build (SEMOSS/bi)
               working-directory: packages/legacy
