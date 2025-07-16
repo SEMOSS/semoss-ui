@@ -4,6 +4,8 @@ import { observer } from "mobx-react-lite";
 import { useBlock, useTypeWriter, useBlocks } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
+import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
+import { LoadingScreen } from "@semoss/ui";
 
 export interface TextBlockDef extends BlockDef<"text"> {
     widget: "text";
@@ -13,6 +15,8 @@ export interface TextBlockDef extends BlockDef<"text"> {
         variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
         isStreaming: boolean;
         show: string;
+        loading: boolean | string;
+        loadSkeleton: string;
     };
     slots: never;
     listeners: {
@@ -41,6 +45,25 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
+    const isLoading =
+        data.hasOwnProperty("loading") &&
+        data.loading?.toString().toLowerCase() === "true";
+
+    const getLoadingChildren = () => {
+        if (data?.loadSkeleton && data?.loadSkeleton === "LoadingSkeleton") {
+            return (
+                <LoadingScreen relative>
+                    <LoadingSkeleton />
+                </LoadingScreen>
+            );
+        }
+        return (
+            <LoadingScreen relative>
+                <LoadingScreen.Trigger />
+            </LoadingScreen>
+        );
+    };
+
     // TODO: Why?
     return showBlock(block, state)
         ? React.createElement(
@@ -53,7 +76,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
                   },
                   ...attrs,
               },
-              displayTxt,
+              isLoading ? getLoadingChildren() : displayTxt,
           )
         : React.createElement("p", {
               style: {

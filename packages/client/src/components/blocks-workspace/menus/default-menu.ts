@@ -143,6 +143,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'Accordion 1',
                                                     variant: 'p',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -207,6 +209,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
                                                     variant: 'p',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -267,6 +271,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'Accordion 2',
                                                     variant: 'p',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -290,6 +296,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'I am an accordion',
                                                     variant: 'h4',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -332,6 +340,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
                                                     variant: 'p',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -392,6 +402,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'Accordion 3',
                                                     variant: 'p',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -415,6 +427,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'I am an accordion',
                                                     variant: 'h4',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -457,6 +471,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                                                     text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse malesuada lacus ex, sit amet blandit leo lobortis eget.',
                                                     variant: 'p',
                                                     show: 'true',
+                                                    loading: false,
+                                                    loadSkeleton: '',
                                                 },
                                                 listeners: {
                                                     preProcess: {
@@ -940,7 +956,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     spreadRadius: '',
                     color: '',
                 },
-                loadState:"",
+                loadState: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1292,6 +1308,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'h1',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1316,6 +1334,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'h2',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1340,6 +1360,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'h3',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1364,6 +1386,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'h4',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1388,6 +1412,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'h5',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1412,6 +1438,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'h6',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -1436,6 +1464,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 text: 'Hello world',
                 variant: 'p',
                 show: 'true',
+                loading: false,
+                loadSkeleton: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },
@@ -3072,6 +3102,8 @@ export const CLIENT_BLOCKS_MENU = [
                             },
                             text: 'Contact Information',
                             variant: 'p',
+                            loading: false,
+                            loadSkeleton: '',
                         },
                         listeners: {},
                         slots: {},
@@ -4107,6 +4139,8 @@ export const CLIENT_BLOCKS_MENU = [
                             },
                             text: 'Grouped Component',
                             variant: 'h1',
+                            loading: false,
+                            loadSkeleton: '',
                         },
                         listeners: {},
                         slots: {},

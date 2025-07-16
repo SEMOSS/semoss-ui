@@ -1,7 +1,10 @@
 import { HighlightAlt } from '@mui/icons-material';
 
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import { ContainerLayoutSettings } from '../../settings';
+import {
+    ContainerLayoutSettings,
+    QuerySelectionSettings,
+} from '../../settings';
 import {
     buildSpacingSection,
     buildDimensionsSection,
@@ -28,15 +31,29 @@ export const config: BlockSettingsConfig = {
             name: 'Load State',
             children: [
                 {
-                    description: 'Loading State',
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                            queryPath="isLoading"
+                        />
+                    ),
+                },
+                {
+                    description: 'Load Skeleton',
                     render: ({ id }) => (
                         <SelectInputSettings
                             id={id}
-                            path="loadState"
-                            label="Loading State"
+                            path="loadSkeleton"
+                            label="Loading Skeleton"
                             options={[
                                 { value: '', display: 'None' },
-                                { value: 'skeleton', display: 'Skeleton' },
+                                {
+                                    value: 'LoadingSkeleton',
+                                    display: 'Skeleton',
+                                },
                             ]}
                         />
                     ),

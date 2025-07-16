@@ -3,7 +3,8 @@ import { observer } from "mobx-react-lite";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
-import LoadingSkeleton from '../../../assets/img/LoadingSkeleton.png';
+import { LoadingScreen } from "@semoss/ui";
+import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
 
 export type BoxShadowParts = {
     offsetX?: string;
@@ -22,7 +23,8 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
         dimension?: null | string;
         rowSpacing?: null | string;
         boxShadowParts: BoxShadowParts;
-        loadState: ReactElement | string;
+        loading: boolean | string;
+        loadSkeleton: string;
     };
     slots: {
         children: true;
@@ -74,6 +76,20 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             listeners.preProcess();
         }
     }, []);
+    /**
+     * Given a template string, loads the correct template to render in its place.
+     * If the template doesn't exist, returns nothing.
+     * @param {string} template The name of the template to load.
+     * @returns {ReactElement} The loaded template, or nothing if it doesn't exist.
+     */
+    const loadTemplate = (template: string): ReactElement => {
+        if (template === "LoadingSkeleton") {
+            return <LoadingSkeleton />;
+        }
+    };
+    const isLoading =
+        data.hasOwnProperty("loading") &&
+        data.loading?.toString().toLowerCase() === "true";
 
     return (
         <div
@@ -85,16 +101,19 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            <Slot slot={slots.children}></Slot>
-            <>
-                <div style={{
-                    width:"300px",
-                    height:"300px",
-                    backgroundImage:"url('../../../assets/img/LoadingSkeleton.png')"
-                }}>
-                    &nbsp;
-                </div>
-            </>
+            <LoadingScreen relative>
+                {/* Render the loading skeleton if specified */}
+                {isLoading ? (
+                    data.loadSkeleton ? (
+                        loadTemplate(data.loadSkeleton)
+                    ) : (
+                        <LoadingScreen.Trigger />
+                    )
+                ) : null}
+                {isLoading && data.loadSkeleton ? null : (
+                    <Slot slot={slots.children}></Slot>
+                )}
+            </LoadingScreen>
         </div>
     );
 });

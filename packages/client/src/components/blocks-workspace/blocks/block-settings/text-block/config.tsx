@@ -7,7 +7,11 @@ import {
 } from '../block-defaults.shared';
 import { TextFields } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { QueryInputSettings } from '../../settings';
+import {
+    QueryInputSettings,
+    QuerySelectionSettings,
+    SelectInputSettings,
+} from '../../settings';
 import { SwitchSettings } from '../../settings/shared/SwitchSettings';
 import { BlockSettingsConfig } from '../settings.types';
 
@@ -39,6 +43,39 @@ export const config: BlockSettingsConfig = {
                             label="Enable Typewriting Effect"
                             path="isStreaming"
                             description="This setting will enable the typewriting effect on the text"
+                        />
+                    ),
+                },
+            ],
+        },
+        {
+            name: 'Load State',
+            children: [
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                            queryPath="isLoading"
+                        />
+                    ),
+                },
+                {
+                    description: 'Load Skeleton',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            path="loadSkeleton"
+                            label="Loading Skeleton"
+                            options={[
+                                { value: '', display: 'None' },
+                                {
+                                    value: 'LoadingSkeleton',
+                                    display: 'Skeleton',
+                                },
+                            ]}
                         />
                     ),
                 },

@@ -113,23 +113,11 @@ export const RendererEngine = observer(
                 key: id,
                 id: id,
             });
-        } else if (
-            block.data.hasOwnProperty("loadState") &&
-            block.data.loadState !== ""
-        ) {
-            console.log("loadstate", block.data.loadState);
-            return createElement(LoadingSkeleton, {
-                key: id,
-                id: id,
-                ["data-block"]: id,
-            });
-        } else {
-            console.log("loadstate else", block.data);
-            return createElement("div", {
-                key: id,
-                id: id,
-                ["data-block"]: id,
-            });
         }
+        return createElement("div", {
+            key: id,
+            id: id,
+            ["data-block"]: id,
+        });
     },
 );

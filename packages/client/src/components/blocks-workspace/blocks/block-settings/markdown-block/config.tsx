@@ -11,7 +11,11 @@ import {
 import { FormatListBulleted } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
 import { SwitchSettings } from '../../settings/shared/SwitchSettings';
-import { QueryInputSettings } from '../../settings';
+import {
+    QueryInputSettings,
+    QuerySelectionSettings,
+    SelectInputSettings,
+} from '../../settings';
 import { BlockSettingsConfig } from '../settings.types';
 
 // export the config for the block
@@ -39,6 +43,39 @@ export const config: BlockSettingsConfig = {
                             id={id}
                             label="Enable Typewriting Effect"
                             path="isStreaming"
+                        />
+                    ),
+                },
+            ],
+        },
+        {
+            name: 'Load State',
+            children: [
+                {
+                    description: 'Loading',
+                    render: ({ id }) => (
+                        <QuerySelectionSettings
+                            id={id}
+                            label="Loading"
+                            path="loading"
+                            queryPath="isLoading"
+                        />
+                    ),
+                },
+                {
+                    description: 'Load Skeleton',
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            path="loadSkeleton"
+                            label="Loading Skeleton"
+                            options={[
+                                { value: '', display: 'None' },
+                                {
+                                    value: 'LoadingSkeleton',
+                                    display: 'Skeleton',
+                                },
+                            ]}
                         />
                     ),
                 },

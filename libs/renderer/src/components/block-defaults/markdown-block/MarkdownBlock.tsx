@@ -1,9 +1,11 @@
-import { CSSProperties, useEffect } from "react";
+import { CSSProperties, ReactElement, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useBlock, useTypeWriter } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import { LoadingScreen } from "@semoss/ui";
+import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
 
 export interface MarkdownBlockDef extends BlockDef<"markdown"> {
     widget: "markdown";
@@ -12,6 +14,8 @@ export interface MarkdownBlockDef extends BlockDef<"markdown"> {
         markdown: string;
         isStreaming: boolean;
         show: string;
+        loading: boolean | string;
+        loadSkeleton: string;
     };
     slots: never;
     listeners: {
@@ -32,11 +36,21 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
 
     if (!data.isStreaming) displayTxt = markdownTxt;
 
+    const isLoading =
+        data.hasOwnProperty("loading") &&
+        data.loading?.toString().toLowerCase() === "true";
+
     useEffect(() => {
         if (listeners.preProcess) {
             listeners.preProcess();
         }
     }, []);
+
+    const loadTemplate = (template: string): ReactElement => {
+        if (template === "LoadingSkeleton") {
+            return <LoadingSkeleton />;
+        }
+    };
 
     return (
         <div
@@ -45,9 +59,20 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {displayTxt}
-            </ReactMarkdown>
+            <LoadingScreen relative>
+                {isLoading ? (
+                    data.loadSkeleton ? (
+                        loadTemplate(data.loadSkeleton)
+                    ) : (
+                        <LoadingScreen.Trigger />
+                    )
+                ) : null}
+                {isLoading && data.loadSkeleton ? null : (
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {displayTxt}
+                    </ReactMarkdown>
+                )}
+            </LoadingScreen>
         </div>
     );
 });

@@ -26,7 +26,8 @@ export const config: BlockConfig<ContainerBlockDef> = {
             spreadRadius: "",
             color: "",
         },
-        loadState: "",
+        loading: false,
+        loadSkeleton: "",
     },
     listeners: {
         preProcess: {
