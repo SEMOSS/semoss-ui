@@ -55,9 +55,13 @@ jobs:
               run: |
                   apt-get update
                   apt-get install -y maven
-                  npm install -g pnpm@10.10
                   pnpm install
-                  
+                  pnpm add -D webpack
+          
+            - name: List node_modules/.bin
+              working-directory: ./bi
+              run: ls -l node_modules/.bin
+
             - name: BI build
               working-directory: ./bi
               run: pnpm run build
