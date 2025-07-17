@@ -701,6 +701,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'contained',
                 color: 'primary',
                 show: true,
+                type: 'button',
             },
             listeners: {
                 onClick: {
