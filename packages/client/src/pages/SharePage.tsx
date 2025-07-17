@@ -8,9 +8,10 @@ import { LoadingScreen } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
 
 import { AppType, AppMetadata } from '@/components/app';
+import { PlatformMessages } from '@/components/shared';
 
 import { Renderer } from '@semoss/renderer';
-import { Env, InsightProvider } from '@semoss/sdk';
+import { runPixel } from '@semoss/sdk/react';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -28,6 +29,7 @@ export const SharePage = observer(() => {
     const navigate = useNavigate();
 
     const [type, setType] = useState<AppType | null>(null);
+    const [insightId, setInsightId] = useState('');
 
     /**
      * Load an app
@@ -49,9 +51,16 @@ export const SharePage = observer(() => {
                 throw new Error('Unauthorized');
             }
 
+            const { insightId: iId } = await runPixel(
+                `SetContext("${appId}")`,
+                'new',
+            );
+            setInsightId(iId);
+
             // get the metadata
             const getAppInfo = await monolithStore.runQuery<[AppMetadata]>(
                 `ProjectInfo(project=["${appId}"]);`,
+                iId,
             );
 
             // throw the errors if there are any
@@ -87,24 +96,16 @@ export const SharePage = observer(() => {
 
     // hide the screen while it loads
     if (!type) {
-        return <LoadingScreen.Trigger description="Initializing app" />;
+        return <LoadingScreen.Trigger />;
     }
-
-    /**
-     * Initialize insight for app building
-     */
-    Env.update({
-        MODULE: process.env.MODULE || '',
-    });
 
     return (
         <StyledViewport>
             {type === 'CODE' ? <CodeRenderer appId={appId} /> : null}
             {type === 'BLOCKS' ? (
-                <InsightProvider>
-                    <Renderer appId={appId} />
-                </InsightProvider>
+                <Renderer appId={appId} insightId={insightId} />
             ) : null}
+            <PlatformMessages />
         </StyledViewport>
     );
 });

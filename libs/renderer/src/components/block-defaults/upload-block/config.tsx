@@ -1,14 +1,9 @@
 import { CSSProperties } from "react";
-import { BlockConfig } from "../../../store";
 
+import { BlockConfig } from "../../../store";
 import { UploadBlockDef, UploadBlock } from "./UploadBlock";
-import { Upload } from "@mui/icons-material";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { buildListener, buildShowField } from "../block-defaults.shared";
-import { InputSettings, QuerySelectionSettings } from "../../block-settings";
-import { UploadSettings } from "../../block-settings/shared/UploadSettings";
-import { SelectSettings } from "../../block-settings/shared/SelectSettings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
+
 export const DefaultStyles: CSSProperties = {
     width: "100%",
     padding: "4px",
@@ -58,77 +53,15 @@ export const config: BlockConfig<UploadBlockDef> = {
         show: "true",
     },
     listeners: {
-        onChange: [],
+        onChange: {
+            type: "sync",
+            order: [],
+        },
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {},
     render: UploadBlock,
-    icon: Upload,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                ...buildShowField(),
-                {
-                    description: "Value",
-                    render: ({ id }) => (
-                        <UploadSettings
-                            id={id}
-                            label="Value"
-                            path={"value"}
-                            restrictPath={"extensions"}
-                        />
-                    ),
-                },
-                {
-                    description: "Extensions",
-                    render: ({ id }) => (
-                        <SelectSettings
-                            id={id}
-                            label="Extensions"
-                            path={"extensions"}
-                            options={FileTypes}
-                        />
-                    ),
-                },
-                {
-                    description: "Label",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
-                    ),
-                },
-                {
-                    description: "Hint",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Hint" path="hint" />
-                    ),
-                },
-                {
-                    description: "Loading",
-                    render: ({ id }) => (
-                        <QuerySelectionSettings
-                            id={id}
-                            label="Loading"
-                            path="loading"
-                            queryPath="isLoading"
-                        />
-                    ),
-                },
-                {
-                    description: "Multiple Files",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Multiple Files"
-                            path="multiple"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "on Change",
-            children: [...buildListener("onChange")],
-        },
-    ],
-    styleMenu: [],
 };

@@ -1,9 +1,14 @@
 import { useCallback } from 'react';
 
-import { Paths, PathValue } from '@/types';
-import { ActionMessages, Block, BlockDef, ListenerActions } from '@/stores';
-
-import { useBlocks } from './useBlocks';
+import {
+    Paths,
+    PathValue,
+    ActionMessages,
+    Block,
+    BlockDef,
+    ListenerActions,
+    useBlocks,
+} from '@semoss/renderer';
 
 /**
  * useBlockSettingsReturn
@@ -38,6 +43,7 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
     setListener: (
         listener: keyof Block<D>['listeners'],
         actions: ListenerActions[],
+        type?: 'sync' | 'async',
     ) => void;
 }
 
@@ -107,6 +113,7 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
         (
             listener: keyof Block<D>['listeners'],
             actions: ListenerActions[],
+            type: 'sync' | 'async',
         ): void => {
             state.dispatch({
                 message: ActionMessages.SET_LISTENER,
@@ -114,6 +121,7 @@ export const useBlockSettings = <D extends BlockDef = BlockDef>(
                     id: id,
                     listener: listener as string,
                     actions: actions,
+                    type: type,
                 },
             });
         },

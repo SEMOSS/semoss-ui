@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
-import * as echarts from "echarts/core";
 import EChartsReact from "echarts-for-react";
+import { EChartsOption } from "echarts";
+
+import { styled } from "@semoss/ui";
+
+import { useBlock, useFrame } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 import { ChartContextMenu } from "./ChartContextMenu";
-import { getValueByPath } from "../../../../../utility";
-import { useBlockSettings, useFrame } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { EChartsOption } from "echarts";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -42,24 +43,48 @@ interface BarProps {
 }
 
 export const Bar = observer(({ id, updateJson }: BarProps) => {
-    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlock<EchartVisualizationBlockDef>(id);
+
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number; //x axis position for the click/brush event
         mouseY: number; //y axis position for the click/brush event
         value: unknown; //value can be of object or string or number type
     } | null>(null);
     let resultData: unknown = {};
-    //selector string construction based on fields selection
-    const selector = `Select(${data.columns
-        ?.map((c, index) => {
-            //Converting Y axis columns to Average by default
-            return index > 0 ? `Average(${c.selector})` : c.selector;
-        })
-        .join(", ")}).as([${data.columns
-        ?.map((c, index) => {
-            return c.name;
-        })
-        .join(", ")}])|Group(${data.columns?.[0]?.name})`;
+
+    /**
+     * Builds a dynamic query string based on the provided input data.
+     * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+     * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+     */
+    const buildDynamicQuery = (
+        inputData: [string, Record<string, string | undefined>][],
+    ): string => {
+        const selectParts: string[] = [];
+        const aliasParts: string[] = [];
+        const groupByParts: string[] = [];
+
+        inputData.forEach(([_, fields]) => {
+            for (const field in fields) {
+                const rawAgg = fields[field];
+                aliasParts.push(field);
+
+                if (rawAgg) {
+                    const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+                    selectParts.push(`${cleanedAgg}(${field})`);
+                } else {
+                    selectParts.push(field);
+                    groupByParts.push(field); // Only unaggregated fields are grouped
+                }
+            }
+        });
+
+        return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+            ", ",
+        )}]) | Group(${groupByParts.join(", ")})`;
+    };
+
+    const selector = buildDynamicQuery(Object.entries(data?.aggregate ?? {}));
     //frame object
     const frameData = useFrame(data.frame.name, {
         selector: selector,

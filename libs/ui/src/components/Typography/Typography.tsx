@@ -32,11 +32,17 @@ export interface TypographyProps {
         | "subtitle2"
         | "body1"
         | "body2"
+        | "body3"
+        | "body4"
         | "caption"
         | "button"
         | "overline";
     sx?: SxProps;
-    fontWeight?: "light" | "regular" | "medium" | "500" | "bold";
+
+    fontSize?: number;
+    //TODO:  WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM INTEGERS Ex: BOXSHADOWSETTINGS.tsx
+    fontWeight?: "light" | "regular" | "medium" | "500" | "bold" | number;
+    // TODO: WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM COLORS Ex: BOXSHADOWSETTINGS.tsx
     color?:
         | "inherit"
         | "primary"
@@ -44,10 +50,16 @@ export interface TypographyProps {
         | "success"
         | "error"
         | "info"
-        | "warning";
+        | "warning"
+        | "disabled"
+        | "textPrimary"
+        | string;
+
     noWrap?: MuiTypographyProps["noWrap"];
     title?: MuiTypographyProps["title"];
     id?: string;
+    component?: React.ElementType;
+    gutterBottom?: MuiTypographyProps["gutterBottom"];
 }
 
 export const Typography = (props: TypographyProps) => {
@@ -67,6 +79,8 @@ export const Typography = (props: TypographyProps) => {
                     ? "primary.main"
                     : color === "secondary"
                     ? "text.secondary"
+                    : color === "disabled"
+                    ? "text.disabled"
                     : color
             }
             {...otherProps}

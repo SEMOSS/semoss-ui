@@ -1,8 +1,8 @@
-import { CSSProperties, useMemo } from "react";
+import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { useBlock, useDebounce } from "../../../hooks";
-import { BlockComponent, BlockDef } from "../../../store";
+import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { LinearProgress, TextField, styled } from "@mui/material";
 import { debounced } from "../../../utility";
 
@@ -26,11 +26,31 @@ export interface UploadBlockDef extends BlockDef<"upload"> {
         multiple?: boolean;
         show: string;
     };
+    listeners: {
+        preProcess: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+        onChange: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
+    };
 }
 
 export const UploadBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, uploadFile, listeners } =
         useBlock<UploadBlockDef>(id);
+
+    useEffect(() => {
+        if (listeners.preProcess) {
+            listeners.preProcess();
+        }
+    }, []);
+
+    const debouncedCallback = debounced(() => {
+        listeners.onChange();
+    }, 200);
 
     /**
      * Upload a file to the server
@@ -76,6 +96,8 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             } else {
                 setData("value", fileLocations[0]);
             }
+
+            debouncedCallback();
         } catch (e) {
             console.error(e);
         } finally {
@@ -83,10 +105,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
             setData("loading", false);
         }
     };
-
-    const debouncedCallback = debounced(() => {
-        listeners.onChange();
-    }, 200);
 
     return (
         <StyledTextField
@@ -116,7 +134,6 @@ export const UploadBlock: BlockComponent = observer(({ id }) => {
 
                 // upload the files
                 upload(Array.from(files));
-                debouncedCallback();
             }}
             {...attrs}
         />

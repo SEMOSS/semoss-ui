@@ -1,8 +1,11 @@
 import { makeAutoObservable, runInAction } from 'mobx';
 
+// TODO: Pull from sdk
+import { runPixel } from '@semoss/sdk/react';
+import { THEME } from '@/constants';
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
-import { runPixel } from '@/api';
 import { AppMetadata } from '@/components/app';
+import { ALL_TYPES } from '@/types';
 
 interface ConfigStoreInterface {
     /** Status of the application */
@@ -21,6 +24,8 @@ interface ConfigStoreInterface {
         email: string;
         admin: boolean;
     };
+    /** App Builder mode (local storage, based on userEpoch) */
+    globalSearch: string;
     /** Config information */
     config: {
         databaseMetaKeys: {
@@ -85,6 +90,51 @@ interface ConfigStoreInterface {
          * Track if python is enabled
          */
         python: boolean;
+        /**
+         * Track if csrf is enabled
+         */
+        csrf: boolean;
+        /*
+         * sidemenubar if adminOnlyViewMenuBarFlag is enabled
+         */
+        adminOnlyViewMenuBarFlag: boolean;
+        /**
+         * Flags
+         */
+        adminOnlyDbAdd: boolean;
+        adminOnlyDbAddAccess: boolean;
+        adminOnlyDbDelete: boolean;
+        adminOnlyDbSetDiscoverable: boolean;
+        adminOnlyDbSetPublic: boolean;
+        adminOnlyFunctionAdd: boolean;
+        adminOnlyFunctionAddAccess: boolean;
+        adminOnlyFunctionDelete: boolean;
+        adminOnlyFunctionSetDiscoverable: boolean;
+        adminOnlyFunctionSetPublic: boolean;
+        adminOnlyInsightAddAccess: boolean;
+        adminOnlyInsightSetPublic: boolean;
+        adminOnlyInsightShare: boolean;
+        adminOnlyModelAdd: boolean;
+        adminOnlyModelAddAccess: boolean;
+        adminOnlyModelDelete: boolean;
+        adminOnlyModelSetDiscoverable: boolean;
+        adminOnlyModelSetPublic: boolean;
+        adminOnlyProjectAdd: boolean;
+        adminOnlyProjectAddAccess: boolean;
+        adminOnlyProjectDelete: boolean;
+        adminOnlyProjectSetDiscoverable: boolean;
+        adminOnlyProjectSetPublic: boolean;
+        adminOnlyStorageAdd: boolean;
+        adminOnlyStorageAddAccess: boolean;
+        adminOnlyStorageDelete: false;
+        adminOnlyStorageSetDiscoverable: boolean;
+        adminOnlyStorageSetPublic: boolean;
+        adminOnlyVectorAdd: boolean;
+        adminOnlyVectorAddAccess: boolean;
+        adminOnlyVectorDelete: boolean;
+        adminOnlyVectorSetDiscoverable: boolean;
+        adminOnlyVectorSetPublic: boolean;
+
         [key: string]: unknown;
     };
 }
@@ -99,6 +149,7 @@ export class ConfigStore {
         authenticated: false,
         insightID: '',
         userEpoch: '',
+        globalSearch: '',
         user: {
             loggedIn: false,
             id: '',
@@ -117,6 +168,41 @@ export class ConfigStore {
             },
             r: true,
             python: true,
+            csrf: false,
+            adminOnlyViewMenuBarFlag: false,
+            adminOnlyDbAdd: false,
+            adminOnlyDbAddAccess: false,
+            adminOnlyDbDelete: false,
+            adminOnlyDbSetDiscoverable: false,
+            adminOnlyDbSetPublic: false,
+            adminOnlyFunctionAdd: false,
+            adminOnlyFunctionAddAccess: false,
+            adminOnlyFunctionDelete: false,
+            adminOnlyFunctionSetDiscoverable: false,
+            adminOnlyFunctionSetPublic: false,
+            adminOnlyInsightAddAccess: false,
+            adminOnlyInsightSetPublic: false,
+            adminOnlyInsightShare: false,
+            adminOnlyModelAdd: false,
+            adminOnlyModelAddAccess: false,
+            adminOnlyModelDelete: false,
+            adminOnlyModelSetDiscoverable: false,
+            adminOnlyModelSetPublic: false,
+            adminOnlyProjectAdd: false,
+            adminOnlyProjectAddAccess: false,
+            adminOnlyProjectDelete: false,
+            adminOnlyProjectSetDiscoverable: false,
+            adminOnlyProjectSetPublic: false,
+            adminOnlyStorageAdd: false,
+            adminOnlyStorageAddAccess: false,
+            adminOnlyStorageDelete: false,
+            adminOnlyStorageSetDiscoverable: false,
+            adminOnlyStorageSetPublic: false,
+            adminOnlyVectorAdd: false,
+            adminOnlyVectorAddAccess: false,
+            adminOnlyVectorDelete: false,
+            adminOnlyVectorSetDiscoverable: false,
+            adminOnlyVectorSetPublic: false,
         },
     };
     private _generalReactors: Array<string> = [];
@@ -145,6 +231,106 @@ export class ConfigStore {
     get generalReactors() {
         return this._generalReactors;
     }
+
+    /**
+     * Get the config
+     */
+    get config() {
+        return this._store.config;
+    }
+
+    /**
+     * Get the config
+     */
+    get theme(): {
+        name: string;
+        logo: string;
+        isLogoUrl: boolean;
+        cookiePolicyBannerReact: string;
+        cookiePolicyOrderReact: string[];
+        cookiePoliciesReact: unknown;
+        cookiePolicyModalBodyReact: string;
+        cookiePolicyModalHeaderReact: string;
+        cookiePolicyNoticePage: string;
+        helpBannerOrder: string[];
+        helpBannerValues: unknown;
+        privacyNoticePage: string;
+        termsHeaderReact: string;
+        termsReact: string;
+        materialTheme: unknown;
+    } {
+        const defaultTheme = {
+            name: THEME.name,
+            logo: THEME.logo,
+            isLogoUrl: false,
+            cookiePolicyBannerReact: '',
+            cookiePolicyOrderReact: [],
+            cookiePoliciesReact: {},
+            cookiePolicyModalBodyReact: '',
+            cookiePolicyModalHeaderReact: '',
+            cookiePolicyNoticePage: '',
+            helpBannerOrder: [],
+            helpBannerValues: {},
+            privacyNoticePage: '',
+            termsHeaderReact: '',
+            termsReact: '',
+            materialTheme: {},
+        };
+
+        let customTheme = {};
+        try {
+            if (
+                this._store.config.theme &&
+                this._store.config.theme['THEME_MAP']
+            ) {
+                customTheme = JSON.parse(
+                    this._store.config.theme['THEME_MAP'] as string,
+                );
+            }
+        } catch {}
+
+        return {
+            ...defaultTheme,
+            ...customTheme,
+        };
+    }
+
+    /**
+     * Track if an engine operation is available
+     */
+    isEngineOperationAvailable = (
+        type: ALL_TYPES,
+        flag: 'access' | 'add' | 'delete' | 'discoverable' | 'public',
+    ): boolean => {
+        // it is always available if the user is an admin
+        if (this.store.user.admin) {
+            return true;
+        }
+
+        const moduleMap = {
+            APP: 'Project',
+            DATABASE: 'Db',
+            FUNCTION: 'Function',
+            MODEL: 'Model',
+            STORAGE: 'Storage',
+            VECTOR: 'Vector',
+        } as const;
+
+        const operationMap = {
+            access: 'AddAccess',
+            add: 'Add',
+            delete: 'Delete',
+            discoverable: 'SetDiscoverable',
+            public: 'SetPublic',
+        } as const;
+
+        // if the flag is set to true, the user needs admin access
+        return (
+            this._store.config[
+                `adminOnly${moduleMap[type]}${operationMap[flag]}`
+            ] === false
+        );
+    };
 
     // *********************************************************
     // Actions
@@ -294,6 +480,62 @@ export class ConfigStore {
                 this._store.status = 'ERROR';
             });
         }
+    }
+
+    setGlobalSearch(text = '') {
+        runInAction(() => {
+            this._store.globalSearch = text;
+        });
+    }
+
+    /**
+     * Add a recent search to localStorage.
+     * Stores up to 8 items, removes oldest if limit exceeded.
+     * If same id exists, remove it and add new at the end.
+     * @param recentSearch { label: string, id: string, type: string }
+     */
+    setRecentSearch(recentSearch: { label: string; id: string; type: string }) {
+        const key = `recent-searches--${this._store.userEpoch}`;
+        let recent: Array<{ label: string; id: string; type: string }> = [];
+
+        // Get existing searches
+        const item = localStorage.getItem(key);
+        if (item) {
+            try {
+                recent = JSON.parse(item);
+                // Remove if id already exists
+                recent = recent.filter((s) => s.id !== recentSearch.id);
+            } catch {
+                recent = [];
+            }
+        }
+
+        // Add new search at the end
+        recent.push(recentSearch);
+
+        // Keep only last 8
+        if (recent.length > 8) {
+            recent = recent.slice(recent.length - 8);
+        }
+
+        localStorage.setItem(key, JSON.stringify(recent));
+    }
+
+    /**
+     * Get recent searches from localStorage.
+     */
+    getRecentSearches(): Array<{ label: string; id: string; type: string }> {
+        const key = `recent-searches--${this._store.userEpoch}`;
+        const item = localStorage.getItem(key);
+
+        if (item) {
+            try {
+                return JSON.parse(item);
+            } catch {
+                return [];
+            }
+        }
+        return [];
     }
 
     /**
@@ -512,8 +754,8 @@ export class ConfigStore {
      */
     async runPixel<O extends unknown[] | []>(pixel: string) {
         return await runPixel<O>(
-            this._store.insightID ? this._store.insightID : 'new',
             pixel,
+            this._store.insightID ? this._store.insightID : 'new',
         );
     }
 
@@ -533,10 +775,12 @@ export class ConfigStore {
             throw new Error('Unauthorized');
         }
 
+        const { insightId } = await runPixel(`SetContext("${appId}")`, 'new');
+
         // get the metadata
         const getAppInfo = await this._root.monolithStore.runQuery<
             [AppMetadata]
-        >(`ProjectInfo(project=["${appId}"]);`);
+        >(`ProjectInfo(project=["${appId}"]);`, insightId);
 
         // throw the errors if there are any
         if (getAppInfo.errors.length > 0) {
@@ -549,6 +793,7 @@ export class ConfigStore {
 
         const workspace: WorkspaceConfigInterface = {
             appId: appId,
+            insightId: insightId,
             type: 'CODE',
             role: role,
             metadata: metadata,

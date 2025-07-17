@@ -1,19 +1,6 @@
 import { BlockConfig } from "../../../store";
-import {
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildColorSection,
-    buildTypographySection,
-    buildTextAlignSection,
-    buildBorderSection,
-    buildShowField,
-} from "../block-defaults.shared";
-
 import { MarkdownBlockDef, MarkdownBlock } from "./MarkdownBlock";
-import { FormatListBulleted } from "@mui/icons-material";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import { QueryInputSettings } from "../../block-settings";
 
 // export the config for the block
 export const config: BlockConfig<MarkdownBlockDef> = {
@@ -27,37 +14,12 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         isStreaming: false,
         show: "true",
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {},
     render: MarkdownBlock,
-    icon: FormatListBulleted,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                ...buildShowField(),
-                {
-                    description: "Markdown",
-                    render: ({ id }) => (
-                        <QueryInputSettings
-                            id={id}
-                            label="Markdown"
-                            path="markdown"
-                        />
-                    ),
-                },
-                {
-                    description: "Enable Typewriting Effect",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Enable Typewriting Effect"
-                            path="isStreaming"
-                        />
-                    ),
-                },
-            ],
-        },
-    ],
-    styleMenu: [buildTypographySection(), buildTextAlignSection()],
 };

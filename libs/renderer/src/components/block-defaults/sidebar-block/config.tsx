@@ -1,18 +1,6 @@
-import { ArrowDownward, ArrowForward, Schema } from "@mui/icons-material";
-
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import { BlockConfig } from "../../../store";
 import { SidebarBlock, SidebarBlockDef } from "./SidebarBlock";
-import {
-    ButtonGroupSettings,
-    SizeSettings,
-    QueryInputSettings,
-} from "../../block-settings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
-import {
-    buildColorSection,
-    buildBorderSection,
-} from "../block-defaults.shared";
 
 export const config: BlockConfig<SidebarBlockDef> = {
     widget: "sidebar",
@@ -26,111 +14,18 @@ export const config: BlockConfig<SidebarBlockDef> = {
             height: "100%",
         },
     },
-    listeners: {},
+    listeners: {
+        preProcess: {
+            type: "sync",
+            order: [],
+        },
+        postProcess: {
+            type: "sync",
+            order: [],
+        },
+    },
     slots: {
         content: [],
     },
     render: SidebarBlock,
-    icon: Schema,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                {
-                    description: "Design Mode",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Design Mode"
-                            path="designMode"
-                            description="Enable this in order to edit sidebar content without interference from app interactions."
-                        />
-                    ),
-                },
-                {
-                    description: "Open State",
-                    render: ({ id }) => (
-                        <QueryInputSettings
-                            id={id}
-                            label="Open State"
-                            path="open"
-                        />
-                    ),
-                },
-            ],
-        },
-    ],
-    styleMenu: [
-        {
-            name: "Layout",
-            children: [
-                {
-                    description: "Direction",
-                    render: ({ id }) => (
-                        <ButtonGroupSettings
-                            id={id}
-                            path="anchor"
-                            label="Direction"
-                            options={[
-                                {
-                                    value: "top",
-                                    icon: ArrowDownward,
-                                    title: "Top",
-                                    isDefault: false,
-                                },
-                                {
-                                    value: "left",
-                                    icon: ArrowForward,
-                                    title: "Left",
-                                    isDefault: true,
-                                },
-                            ]}
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "Dimensions",
-            children: [
-                {
-                    description: "Width",
-                    render: ({ id }) => (
-                        <SizeSettings
-                            id={id}
-                            label="Width"
-                            path="style.width"
-                        />
-                    ),
-                },
-                {
-                    description: "Height",
-                    render: ({ id }) => (
-                        <SizeSettings
-                            id={id}
-                            label="Height"
-                            path="style.height"
-                        />
-                    ),
-                },
-            ],
-        },
-        buildColorSection(),
-        {
-            name: "Spacing",
-            children: [
-                {
-                    description: "Padding",
-                    render: ({ id }) => (
-                        <SizeSettings
-                            id={id}
-                            label="Padding"
-                            path="style.padding"
-                        />
-                    ),
-                },
-            ],
-        },
-        buildBorderSection(),
-    ],
 };

@@ -30,15 +30,27 @@ import {
     EchartVisualizationBlockDef,
 } from "./echart-visualization-block";
 
+import {
+    config as FlipCardBlockConfig,
+    FlipCardBlockDef,
+} from "./flip-card-block";
+
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
+import {
+    config as GridDynamicFrameBlockConfig,
+    GridDynamicFrameBlockDef,
+} from "./grid-dynamic-frame-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
-import { config as IconBlockConfig, IconBlockDef } from "./Icon_block";
+import { config as IconBlockConfig, IconBlockDef } from "./icon-block";
 import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
 import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
 import { config as InputBlockConfig, InputBlockDef } from "./input-block";
-import { config as IterationBlockConfig, IterationBlockDef } from './iteration-block';
+import {
+    config as IterationBlockConfig,
+    IterationBlockDef,
+} from "./iteration-block";
 
 import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
 import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
@@ -89,14 +101,10 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
-
-// import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
-// import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
-// import { config as QueryBlockConfig, QueryBlockDef } from "./query-block";
-// import { config as FooterBlockConfig, FooterBlockDef } from "./footer-block";
-// import { config as FormBlockConfig, FormBlockDef } from "./form-block";
-// import { config as HeaderBlockConfig, HeaderBlockDef } from "./header-block";
-// import { config as StepperBlockConfig, StepperBlockDef } from "./stepper-block";
+import {
+    config as VisualizationFilterBlockConfig,
+    VisualizationFilterBlockDef,
+} from "./visualization-filter-block";
 
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
@@ -109,6 +117,7 @@ export type DefaultBlockDefinitions =
     | ContainerBlockDef
     | DividerBlockDef
     | EchartVisualizationBlockDef
+    | FlipCardBlockDef
     | GridBlockDef
     | HTMLBlockDef
     | IconBlockDef
@@ -138,15 +147,8 @@ export type DefaultBlockDefinitions =
     | VegaVisualizationBlockDef
     | RadioBlockDef
     | TimePickerBlockDef
-    | ThemeBlockDef;
-// | BodyBlockDef
-// | DividerBlockDef
-// | FooterBlockDef
-// | FormBlockDef
-// | HeaderBlockDef
-// | QueryBlockDef
-// | SectionBlockDef
-// | StepperBlockDef
+    | VisualizationFilterBlockDef
+    | GridDynamicFrameBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -159,6 +161,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ContainerBlockConfig.widget]: ContainerBlockConfig,
     [DividerBlockConfig.widget]: DividerBlockConfig,
     [EchartVisualizationBlockConfig.widget]: EchartVisualizationBlockConfig,
+    [FlipCardBlockConfig.widget]: FlipCardBlockConfig,
     [GridBlockConfig.widget]: GridBlockConfig,
     [IconBlockConfig.widget]: IconBlockConfig,
     [IframeBlockConfig.widget]: IframeBlockConfig,
@@ -187,8 +190,8 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [ToggleButtonBlockConfig.widget]: ToggleButtonBlockConfig,
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
-    // [StepperBlockConfig.widget]: StepperBlockConfig,
-    // [QueryBlockConfig.widget]: QueryBlockConfig,
+    [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
+    [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
 };
 
 export {
@@ -228,4 +231,7 @@ export {
     RadioBlockConfig,
     PDFViewerBlockConfig,
     TimePickerBlockConfig,
+    FlipCardBlockConfig,
+    VisualizationFilterBlockConfig,
+    GridDynamicFrameBlockConfig,
 };
