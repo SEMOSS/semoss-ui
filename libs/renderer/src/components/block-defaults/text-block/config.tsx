@@ -19,7 +19,7 @@ export const config: BlockConfig<TextBlockDef> = {
         isStreaming: false,
         show: "true",
         loading: false,
-        loadSkeleton: "",
+        loadSkeleton: "none",
     },
     listeners: {
         preProcess: {

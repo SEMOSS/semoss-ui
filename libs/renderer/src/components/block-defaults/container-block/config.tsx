@@ -27,7 +27,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
             color: "",
         },
         loading: false,
-        loadSkeleton: "",
+        loadSkeleton: "none",
     },
     listeners: {
         preProcess: {

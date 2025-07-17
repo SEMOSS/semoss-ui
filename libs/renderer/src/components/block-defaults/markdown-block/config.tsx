@@ -14,7 +14,7 @@ export const config: BlockConfig<MarkdownBlockDef> = {
         isStreaming: false,
         show: "true",
         loading: false,
-        loadSkeleton: "",
+        loadSkeleton: "none",
     },
     listeners: {
         preProcess: {

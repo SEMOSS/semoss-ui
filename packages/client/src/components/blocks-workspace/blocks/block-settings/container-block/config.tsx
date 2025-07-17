@@ -1,10 +1,7 @@
 import { HighlightAlt } from '@mui/icons-material';
 
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';
-import {
-    ContainerLayoutSettings,
-    QuerySelectionSettings,
-} from '../../settings';
+import { ContainerLayoutSettings } from '../../settings';
 import {
     buildSpacingSection,
     buildDimensionsSection,
@@ -13,6 +10,7 @@ import {
     buildListener,
     buildShowField,
     buildShadowSection,
+    buildLoadStateSection,
 } from '../block-defaults.shared';
 import { SelectInputSettings } from '../../settings/shared/SelectInputSettings';
 import { SizeSettings } from '../../settings/shared/SizeSettings';
@@ -29,36 +27,7 @@ export const config: BlockSettingsConfig = {
         },
         {
             name: 'Load State',
-            children: [
-                {
-                    description: 'Loading',
-                    render: ({ id }) => (
-                        <QuerySelectionSettings
-                            id={id}
-                            label="Loading"
-                            path="loading"
-                            queryPath="isLoading"
-                        />
-                    ),
-                },
-                {
-                    description: 'Load Skeleton',
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            path="loadSkeleton"
-                            label="Loading Skeleton"
-                            options={[
-                                { value: '', display: 'None' },
-                                {
-                                    value: 'LoadingSkeleton',
-                                    display: 'Skeleton',
-                                },
-                            ]}
-                        />
-                    ),
-                },
-            ],
+            children: [...buildLoadStateSection()],
         },
         {
             name: 'Pre Process',

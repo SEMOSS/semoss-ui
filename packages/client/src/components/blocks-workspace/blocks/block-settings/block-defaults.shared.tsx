@@ -27,10 +27,12 @@ import { SelectInputSettings } from '../settings/shared/SelectInputSettings';
 import {
     DEFAULT_TRUE_VARIABLE,
     DEFAULT_FALSE_VARIABLE,
+    LOAD_SKELETON_OPTIONS,
 } from './block-defaults.constants';
 import { BoxShadowSizeSettings } from '../settings/shared/BoxShadowSizeSetting';
 import { StandardColorSettings } from '../settings/shared/StandardColorSettings';
 import { useBlocks, BlockDef } from '@semoss/renderer';
+import { QuerySelectionSettings } from '../settings/custom/QuerySelectionSettings';
 
 const trueSegment = DEFAULT_TRUE_VARIABLE;
 const falseSegment = DEFAULT_FALSE_VARIABLE;
@@ -623,3 +625,33 @@ export const buildShadowSection = () => ({
         },
     ],
 });
+
+/**
+ * Build the Load State Section to return loading and loading skeleton state of the block
+ * @returns a load state section
+ */
+
+export const buildLoadStateSection = <D extends BlockDef = BlockDef>() => [
+    {
+        description: 'Loading',
+        render: ({ id }) => (
+            <QuerySelectionSettings
+                id={id}
+                label="Loading"
+                path="loading"
+                queryPath="isLoading"
+            />
+        ),
+    },
+    {
+        description: 'Load Skeleton',
+        render: ({ id }) => (
+            <SelectInputSettings
+                id={id}
+                path="loadSkeleton"
+                label="Loading Skeleton"
+                options={LOAD_SKELETON_OPTIONS}
+            />
+        ),
+    },
+];

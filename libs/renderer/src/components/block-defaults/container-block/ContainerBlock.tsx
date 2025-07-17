@@ -86,6 +86,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
         if (template === "LoadingSkeleton") {
             return <LoadingSkeleton />;
         }
+        return <LoadingScreen.Trigger />;
     };
     const isLoading =
         data.hasOwnProperty("loading") &&
@@ -104,13 +105,8 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             <LoadingScreen relative>
                 {/* Render the loading skeleton if specified */}
                 {isLoading ? (
-                    data.loadSkeleton ? (
-                        loadTemplate(data.loadSkeleton)
-                    ) : (
-                        <LoadingScreen.Trigger />
-                    )
-                ) : null}
-                {isLoading && data.loadSkeleton ? null : (
+                    loadTemplate(data.loadSkeleton)
+                ) : (
                     <Slot slot={slots.children}></Slot>
                 )}
             </LoadingScreen>

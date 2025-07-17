@@ -50,6 +50,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
         if (template === "LoadingSkeleton") {
             return <LoadingSkeleton />;
         }
+        return <LoadingScreen.Trigger />;
     };
 
     return (
@@ -61,13 +62,8 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
         >
             <LoadingScreen relative>
                 {isLoading ? (
-                    data.loadSkeleton ? (
-                        loadTemplate(data.loadSkeleton)
-                    ) : (
-                        <LoadingScreen.Trigger />
-                    )
-                ) : null}
-                {isLoading && data.loadSkeleton ? null : (
+                    loadTemplate(data.loadSkeleton)
+                ) : (
                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
                         {displayTxt}
                     </ReactMarkdown>

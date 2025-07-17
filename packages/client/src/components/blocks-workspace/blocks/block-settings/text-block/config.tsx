@@ -4,14 +4,11 @@ import {
     buildTextAlignSection,
     buildShowField,
     buildListener,
+    buildLoadStateSection,
 } from '../block-defaults.shared';
 import { TextFields } from '@mui/icons-material';
 import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import {
-    QueryInputSettings,
-    QuerySelectionSettings,
-    SelectInputSettings,
-} from '../../settings';
+import { QueryInputSettings } from '../../settings';
 import { SwitchSettings } from '../../settings/shared/SwitchSettings';
 import { BlockSettingsConfig } from '../settings.types';
 
@@ -49,41 +46,12 @@ export const config: BlockSettingsConfig = {
             ],
         },
         {
-            name: 'Load State',
-            children: [
-                {
-                    description: 'Loading',
-                    render: ({ id }) => (
-                        <QuerySelectionSettings
-                            id={id}
-                            label="Loading"
-                            path="loading"
-                            queryPath="isLoading"
-                        />
-                    ),
-                },
-                {
-                    description: 'Load Skeleton',
-                    render: ({ id }) => (
-                        <SelectInputSettings
-                            id={id}
-                            path="loadSkeleton"
-                            label="Loading Skeleton"
-                            options={[
-                                { value: '', display: 'None' },
-                                {
-                                    value: 'LoadingSkeleton',
-                                    display: 'Skeleton',
-                                },
-                            ]}
-                        />
-                    ),
-                },
-            ],
-        },
-        {
             name: 'Conditional',
             children: [...buildShowField()],
+        },
+        {
+            name: 'Load State',
+            children: [...buildLoadStateSection()],
         },
         {
             name: 'Pre Process',

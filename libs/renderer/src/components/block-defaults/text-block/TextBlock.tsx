@@ -63,6 +63,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
             </LoadingScreen>
         );
     };
+    if (isLoading) return getLoadingChildren();
 
     // TODO: Why?
     return showBlock(block, state)
@@ -76,7 +77,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
                   },
                   ...attrs,
               },
-              isLoading ? getLoadingChildren() : displayTxt,
+              displayTxt,
           )
         : React.createElement("p", {
               style: {

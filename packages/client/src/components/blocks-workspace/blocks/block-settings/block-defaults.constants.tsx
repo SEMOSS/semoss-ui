@@ -41,3 +41,10 @@ export const DEFAULT_FALSE_VARIABLE = {
         groupAlias: 'Others',
     },
 };
+export const LOAD_SKELETON_OPTIONS = [
+    { value: 'none', display: 'None' },
+    {
+        value: 'LoadingSkeleton',
+        display: 'Skeleton',
+    },
+];
