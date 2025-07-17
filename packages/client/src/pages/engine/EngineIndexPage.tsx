@@ -7,6 +7,7 @@ import {
     Button,
     ToggleTabsGroup,
     Grid,
+    TextField,
 } from '@semoss/ui';
 
 import { useNavigate } from 'react-router-dom';
@@ -130,7 +131,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
         offsetRef.current = offset;
         let scrollEle, scrollTimeout, currentScroll, previousScroll;
 
-        const search = configStore.store.globalSearch || '';
+        const [search, setSearch] = useState('');
 
         // which view we are on
         const [mode, setMode] = useState<MODE>('Mine');
@@ -510,6 +511,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                         </Typography>
                     </Stack>
                 </Stack>
+                <TextField
+                    size="small"
+                    label="Search"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                />
                 <StyledContainer>
                     <Filterbox
                         type={route.type}

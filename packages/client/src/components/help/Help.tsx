@@ -37,12 +37,9 @@ export const Help = observer((): JSX.Element => {
         setAnchorEl(null);
     };
 
-     return (
+    return (
         <StyledContainer>
             <StyledButton
-                // aria-controls={open ? 'help-menu' : undefined}
-                // aria-haspopup="true"
-                // aria-expanded={open ? 'true' : undefined}
                 id="help-btn"
                 variant="outlined"
                 startIcon={<HelpRounded />}
@@ -53,8 +50,6 @@ export const Help = observer((): JSX.Element => {
                 Help
             </StyledButton>
             <Menu
-                // id="help-menu"
-                // aria-labelledby="help-btn"
                 anchorEl={anchorEl}
                 open={open}
                 onClose={handleHelpClose}
@@ -90,26 +85,6 @@ export const Help = observer((): JSX.Element => {
                         );
                     }
                 })}
-                {/* <MenuItem>
-                    <span>
-                        <StyledLink
-                            href="https://workshop.cfg.deloitte.com/docs/category/app-creation-guides"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                        >
-                            Tutorials
-                        </StyledLink>
-                    </span>
-                </MenuItem>
-                <MenuItem onClick={handleHelpClose} disabled>
-                    Platform Tour
-                </MenuItem>
-                <MenuItem onClick={handleHelpClose} disabled>
-                    Github
-                </MenuItem>
-                <MenuItem onClick={handleHelpClose} disabled>
-                    Feedback
-                </MenuItem> */}
             </Menu>
         </StyledContainer>
     );
