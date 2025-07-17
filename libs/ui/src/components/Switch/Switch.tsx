@@ -3,7 +3,7 @@ import { Switch as MuiSwitch, SxProps, styled } from "@mui/material";
 
 const StyledSwitch = styled(MuiSwitch)(({ theme, size }) => ({
     width: size === "small" ? "40px" : "52px",
-    height: size === "small" ? "20px" : "32px",
+    height: size === "small" ? "24px" : "32px",
     padding: 0,
     "& .MuiSwitch-switchBase": {
         padding: 0,
@@ -11,7 +11,8 @@ const StyledSwitch = styled(MuiSwitch)(({ theme, size }) => ({
         transitionDuration: "300ms",
 
         "&.Mui-checked": {
-            transform: "translateX(20px)",
+            transform:
+                size === "small" ? "translateX(16px)" : "translateX(20px)",
             color: "#fff",
 
             "& + .MuiSwitch-track": {
@@ -32,8 +33,8 @@ const StyledSwitch = styled(MuiSwitch)(({ theme, size }) => ({
 
     "& .MuiSwitch-thumb": {
         boxSizing: "border-box",
-        width: size === "medium" ? "24px" : "12px",
-        height: size === "medium" ? "24px" : "12px",
+        width: size === "medium" ? "24px" : "16px",
+        height: size === "medium" ? "24px" : "16px",
         color: theme.palette.background.paper,
     },
 
