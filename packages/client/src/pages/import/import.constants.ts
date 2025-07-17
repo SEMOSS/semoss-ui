@@ -6709,7 +6709,7 @@ export const CONNECTION_OPTIONS = {
                     {
                         fieldName: 'API_VERSION',
                         label: 'API Version',
-                        defaultValue: '',
+                        defaultValue: '2024-07-01',
                         options: {
                             component: 'text-field',
                         },
