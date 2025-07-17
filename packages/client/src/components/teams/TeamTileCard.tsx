@@ -241,7 +241,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
             });
             notification.add({
                 color: 'success',
-                message: 'Successfully deleted group',
+                message: 'Successfully deleted team',
             });
         } catch (e) {
             console.error(e);
@@ -527,7 +527,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 </StyledModalTitle>
                 <Modal.Content>
                     <Typography sx={{ color: '#000000DE' }} variant="body1">
-                        Are you sure you want to delete group: {id}
+                        Are you sure you want to delete this team: {id}
                     </Typography>
                 </Modal.Content>
                 <Modal.Actions
