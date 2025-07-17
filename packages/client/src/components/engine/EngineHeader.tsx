@@ -83,13 +83,16 @@ export const EngineHeader: React.FC = () => {
             const output = response.pixelReturn[0].output,
                 insightId = response.insightId;
 
+            const formattedEngineType =
+                type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+
             monolithStore
                 .download(insightId, output)
                 .then(() => {
                     if (output && response.errors.length === 0) {
                         notification.add({
                             color: 'success',
-                            message: `${type} downloaded successfully`,
+                            message: `${formattedEngineType} engine downloaded successfully`,
                         });
                     }
                     setExportLoading(false);
@@ -97,7 +100,7 @@ export const EngineHeader: React.FC = () => {
                 .catch(() => {
                     notification.add({
                         color: 'error',
-                        message: `${type} download failed`,
+                        message: `${formattedEngineType} engine download failed`,
                     });
                     setExportLoading(false);
                 });
