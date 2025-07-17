@@ -234,7 +234,6 @@ const IconMapper = {
     'Connect to Model': <ConnectModel />,
     'Connect to Vector Database': <ConnectStorage />,
     'Connect to Function': <ConnectModel />,
-    // 'Upload Database': <UploadDb />,
 };
 
 interface ImportPageContentProps {
@@ -291,7 +290,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
                             [
                                 ...steps,
                                 {
-                                    id: `${model.name}`,
+                                    id: model.id,
                                     title: model.name,
                                     description: `Fill out ${
                                         model.name
