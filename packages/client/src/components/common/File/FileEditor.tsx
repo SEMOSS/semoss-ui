@@ -372,6 +372,48 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                 return;
             }
 
+            monaco.languages.setMonarchTokensProvider('java', {
+                tokenizer: {
+                    root: [
+                        // Keywords
+                        [
+                            /\b(abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|null|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while)\b/,
+                            'keyword',
+                        ],
+
+                        // Types
+                        [
+                            /\b(String|Integer|Double|Boolean|Object|List|Map|Set|ArrayList|HashMap|HashSet|void)\b/,
+                            'type.identifier',
+                        ],
+
+                        // Annotations
+                        [/@\w+/, 'annotation'],
+
+                        // Function names (lookahead for `(`)
+                        [/[a-zA-Z_]\w*(?=\s*\()/, 'function'],
+
+                        // Variables
+                        [/[a-zA-Z_]\w*/, 'identifier'],
+
+                        // Numbers
+                        [/\d+/, 'number'],
+
+                        // Strings
+                        [/".*?"/, 'string'],
+
+                        // Comments
+                        [/\/\/.*$/, 'comment'],
+                        [/\/\*/, 'comment', '@comment'],
+                    ],
+                    comment: [
+                        [/[^\/*]+/, 'comment'],
+                        [/\*\//, 'comment', '@pop'],
+                        [/[\/*]/, 'comment'],
+                    ],
+                },
+            });
+
             // prevents redundant additions of new dropdown action
             if (LLMActionAdded === false) {
                 setLLMActionAdded(true);
