@@ -12,11 +12,18 @@ import path from "path";
 import fs from "fs";
 import { setDeployConfig, deployProject } from "./deploy.js";
 import { zipProject } from "./zip.js";
-import unzipper from "unzipper";
 import axios from "axios";
 import http from "http";
 import https from "https";
 import { processGithubAssets } from "./githubAssets.js";
+import StreamZip from "node-stream-zip";
+
+// Helper for error reporting
+function logError(context, err) {
+    const errorDetails = `${context}: ${err.message}`;
+    vscode.window.showErrorMessage(errorDetails);
+    console.error(errorDetails);
+}
 
 /**
  * Constants and configuration for the app creation process
@@ -113,18 +120,8 @@ export async function createNewApp(context, getSecretsWithValidation, args) {
         vscode.window.showInformationMessage('App created, zipped and deployed successfully!');
         return true;
     } catch (err) {
-        // Log the error for debugging purposes
-        console.error('App creation failed:', err);
-
-        // Format user-friendly error message
-        let errorMessage = 'Failed to create app';
-        if (err.name === 'AggregateError') {
-            errorMessage += ': Multiple errors occurred';
-        } else if (err.message) {
-            errorMessage += `: ${err.message}`;
-        }
-
-        throw new Error(errorMessage);
+        logError('App creation failed', err);
+        throw err;
     }
 }
 
@@ -258,38 +255,53 @@ async function createAppOnServer(secrets, headers, appDetails) {
     );
     params.append('insightId', 'new');
 
-    const response = await axios.post(
-        `${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-        params,
-        { headers }
-    );
-
-    if (!response.data ||
-        !response.data.pixelReturn ||
-        !response.data.pixelReturn[0] ||
-        !response.data.pixelReturn[0].output ||
-        !response.data.pixelReturn[0].output.project_id) {
-        throw new Error('Failed to create app: Invalid response');
-    }
-
-    const projectId = response.data.pixelReturn[0].output.project_id;
-
-    // Set description using SetProjectMetadata if description is provided
-    if (appDetails.description) {
-        const metadataParams = new URLSearchParams();
-        metadataParams.append('expression',
-            `SetProjectMetadata(project=["${projectId}"], meta=[{"tag":[],"description":"${appDetails.description}"}])`
-        );
-        metadataParams.append('insightId', response.data.insightID || 'new');
-
-        await axios.post(
+    try {
+        const response = await axios.post(
             `${secrets.semossUrl}/Monolith/api/engine/runPixel`,
-            metadataParams,
+            params,
             { headers }
         );
-    }
 
-    return projectId;
+        if (!response.data ||
+            !response.data.pixelReturn ||
+            !response.data.pixelReturn[0] ||
+            !response.data.pixelReturn[0].output ||
+            !response.data.pixelReturn[0].output.project_id) {
+            logError('CreateProject response invalid', new Error('Invalid response from SEMOSS API'));
+            throw new Error('Failed to create app: Invalid response');
+        }
+
+        const projectId = response.data.pixelReturn[0].output.project_id;
+
+        // Set description using SetProjectMetadata if description is provided
+        if (appDetails.description) {
+            const metadataParams = new URLSearchParams();
+            metadataParams.append('expression',
+                `SetProjectMetadata(project=["${projectId}"], meta=[{"tag":[],"description":"${appDetails.description}"}])`
+            );
+            metadataParams.append('insightId', response.data.insightID || 'new');
+
+            await axios.post(
+                `${secrets.semossUrl}/Monolith/api/engine/runPixel`,
+                metadataParams,
+                { headers }
+            );
+        }
+
+        return projectId;
+    } catch (err) {
+        if (err.isAxiosError) {
+            logError('Axios error during CreateProject', err);
+            const url = (err.config && err.config.url) ? err.config.url : 'N/A';
+            const status = (err.response && err.response.status) ? err.response.status : 'N/A';
+            vscode.window.showErrorMessage(
+                `Network/API error: ${err.message}\nURL: ${url}\nStatus: ${status}`
+            );
+        } else {
+            logError('App creation failed', err);
+        }
+        throw err;
+    }
 }
 
 /**
@@ -436,12 +448,9 @@ async function extractZipFile(filePath, downloadsDir, appName) {
         fs.mkdirSync(unzipDir);
     }
 
-    await new Promise((resolve, reject) => {
-        fs.createReadStream(filePath)
-            .pipe(unzipper.Extract({ path: unzipDir }))
-            .on('close', resolve)
-            .on('error', reject);
-    });
+    const zip = new StreamZip.async({ file: filePath });
+    await zip.extract(null, unzipDir); // Extract all files
+    await zip.close();
 
     vscode.window.showInformationMessage(`App unzipped to ${unzipDir}`);
     return unzipDir;

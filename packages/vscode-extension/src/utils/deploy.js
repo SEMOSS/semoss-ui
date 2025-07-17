@@ -163,7 +163,8 @@ async function deployProject(projectId) {
         }
 
         if (response.data.pixelReturn[0].output !== true) {
-            vscode.window.showErrorMessage('Failed to unzip file');
+            const apiError = response.data.pixelReturn[0].output;
+            vscode.window.showErrorMessage(`Failed to unzip the uploaded file on the server. API response: ${apiError}`);
             return;
         }
 

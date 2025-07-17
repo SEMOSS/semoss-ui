@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import path from 'path';
 import fs from 'fs';
 import https from 'https';
-import unzipper from 'unzipper';
 import axios from 'axios';
 import ncp from 'ncp';
+import StreamZip from 'node-stream-zip';
 
 /**
  * Downloads and extracts assets from a GitHub repository
@@ -116,13 +116,11 @@ export async function processGithubAssets(
 
         vscode.window.showInformationMessage(`Repository downloaded successfully. File size: ${stats.size} bytes`);
 
-        // Unzip GitHub repo
-        await new Promise((resolve, reject) => {
-            fs.createReadStream(zipPath)
-                .pipe(unzipper.Extract({ path: extractPath }))
-                .on('close', resolve)
-                .on('error', reject);
-        });
+
+        // Unzip GitHub repo using node-stream-zip
+        const zip = new StreamZip.async({ file: zipPath });
+        await zip.extract(null, extractPath); // Extract all files
+        await zip.close();
 
         // Find the extracted top-level folder
         const [topFolder] = fs.readdirSync(extractPath);
