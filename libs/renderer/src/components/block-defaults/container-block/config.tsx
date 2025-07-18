@@ -1,5 +1,3 @@
-import { HighlightAlt } from "@mui/icons-material";
-
 import { BlockConfig } from "../../../store";
 import { ContainerBlockDef, ContainerBlock } from "./ContainerBlock";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";

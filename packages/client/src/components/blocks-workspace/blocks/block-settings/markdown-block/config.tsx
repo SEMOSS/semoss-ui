@@ -1,10 +1,6 @@
 import {
-    buildSpacingSection,
-    buildDimensionsSection,
-    buildColorSection,
     buildTypographySection,
     buildTextAlignSection,
-    buildBorderSection,
     buildShowField,
     buildListener,
     buildLoadStateSection,
