@@ -16,6 +16,7 @@ class SemossChatbot {
             viewport: {
                 width: window.innerWidth,
                 height: window.innerHeight,
+                isSmallPhone: window.innerWidth <= 375,
                 isMobile: window.innerWidth <= 768,
                 isLandscape: window.innerWidth > window.innerHeight
             }
@@ -344,7 +345,7 @@ class SemossChatbot {
         // Process text content for responsive display
         if (typeof text === 'string') {
             // Create a container for the processed content
-            let processedContent = text;
+            let processedContent = this.escapeHtml(text);
 
             // Handle code blocks for better mobile display
             const codeBlockRegex = /```([\s\S]*?)```/g;
@@ -924,7 +925,7 @@ class SemossChatbot {
         let inputHTML = '<div class="input-group';
 
         if (input.conditional) {
-            inputHTML += ' conditional-field" data-depends-on="' + input.conditional + '" style="display: none;';
+            inputHTML += ' conditional-field" data-depends-on="' + input.conditional + '" style="display: none;"';
         }
         inputHTML += '">';
 
