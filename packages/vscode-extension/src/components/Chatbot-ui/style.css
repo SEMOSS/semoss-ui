@@ -145,7 +145,7 @@ body {
     margin: var(--space-md) var(--space-md) 0 var(--space-md);
     max-height: calc(100vh - 200px);
     min-height: 300px;
-    width: calc(100% - 2 * var(--space-md));
+    width: calc(100% - (2 * var(--space-md)));
     /* Adjust for margins */
     max-width: 100%;
     box-sizing: border-box;
@@ -168,14 +168,9 @@ body {
     border: 1px solid var(--border-primary);
     border-bottom: none;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-    padding: var(--space-sm) var(--space-md);
-    min-height: 44px;
-    backdrop-filter: blur(10px);
-}
-
-#chat-header {
     padding: var(--space-xs) var(--space-sm);
     min-height: 36px;
+    backdrop-filter: blur(10px);
 }
 
 .header-buttons {

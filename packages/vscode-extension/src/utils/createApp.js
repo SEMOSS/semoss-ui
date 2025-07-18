@@ -189,7 +189,7 @@ async function selectDownloadFolder() {
     });
 
     if (!uri || uri.length === 0) {
-        throw new Error('No folder selected');
+        return null;
     }
 
     return uri[0].fsPath;
@@ -235,7 +235,9 @@ async function validateGithubRepository(githubLink, isPrivateRepo, accessToken) 
 
         return true;
     } catch (err) {
-        throw new Error(`GitHub validation failed: ${err.message || err}`);
+        const msg = `GitHub validation failed: ${err.message || err}`;
+        vscode.window.showErrorMessage(msg);
+        return false;
     }
 }
 

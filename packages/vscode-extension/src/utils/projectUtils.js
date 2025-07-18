@@ -19,20 +19,15 @@ export function setFolderPaths(uri) {
  * @returns {string} The project ID
  */
 export function getProjectId() {
-    let projectId = "";
     const projectFolderPath = assetsFolderPath.replace(/\\assets|\/assets/g, "");
-    const smssFile = fs.readdirSync(projectFolderPath).find((file) => file.endsWith('.smss'));
+    const smssFile = fs.readdirSync(projectFolderPath).find(file => file.endsWith('.smss'));
     if (!smssFile) {
         throw new Error(`No .smss file found in project folder: ${projectFolderPath}`);
     }
-
-    if (!smssFile) {
-        throw new Error('No .smss file found in the project folder');
-    }
-
     const smssContent = fs.readFileSync(path.join(projectFolderPath, smssFile), 'utf8');
     const projectLines = smssContent.split('\n');
 
+    let projectId = "";
     projectLines.forEach((line) => {
         if (line.startsWith('PROJECT\t')) {
             projectId = line.split('\t')[1];
