@@ -1,5 +1,3 @@
-import { Migration, MigrationState } from "./migration.types";
-
 import migrate__1_0_0_alpha_to_1_0_0_alpha_1 from "./migrate__1_0_0_alpha__to__1_0_0_alpha_1";
 import migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 from "./migrate__1_0_0_alpha_1__to__1_0_0_alpha_2";
 import migrate__1_0_0_alpha_2_to_1_0_0_alpha_3 from "./migrate__1_0_0_alpha_2__to___1_0_0_alpha_3";
@@ -11,12 +9,14 @@ import migrate__1_0_0_alpha_7_to_1_0_0_alpha_8 from "./migrate__1_0_0_alpha_7__t
 import migrate__1_0_0_alpha_8_to_1_0_0_alpha_9 from "./migrate__1_0_0_alpha_8__to___1_0_0_alpha_9_";
 import migrate__1_0_0_alpha_9_to_1_0_0_alpha_10 from "./migrate__1_0_0_alpha_9__to___1_0_0_alpha_10_";
 import migrate__1_0_0_alpha_10_to_1_0_0_alpha_11 from "./migrate__1_0_0_alpha_10__to__1_0_0_alpha_11";
+import migrate__1_0_0_alpha_11_to_1_0_0_alpha_12 from "./migrate__1_0_0_alpha_11__to___1_0_0_alpha_12";
+import { Migration, MigrationState } from "./migration.types";
 
 // TODO: ANYTIME VERSION CHANGES
 // 1. Update Template Apps
 // 2. Update Agent Builder
 
-export const STATE_VERSION = "1.0.0-alpha.11";
+export const STATE_VERSION = "1.0.0-alpha.12";
 
 export class MigrationManager {
     /**
@@ -50,6 +50,8 @@ export class MigrationManager {
             migrate__1_0_0_alpha_9_to_1_0_0_alpha_10,
         [migrate__1_0_0_alpha_10_to_1_0_0_alpha_11.versionFrom]:
             migrate__1_0_0_alpha_10_to_1_0_0_alpha_11,
+        [migrate__1_0_0_alpha_11_to_1_0_0_alpha_12.versionFrom]:
+            migrate__1_0_0_alpha_11_to_1_0_0_alpha_12,
     };
 
     /**
@@ -68,9 +70,6 @@ export class MigrationManager {
 
         // notifiy developers
         if (newState.version !== this.latestVersion) {
-            console.warn(
-                `Migrating version ${state.version} to ${STATE_VERSION}`,
-            );
         }
 
         while (newState.version !== this.latestVersion) {
@@ -87,11 +86,9 @@ export class MigrationManager {
 
                     // update the version to the new one
                     newState.version = migration.versionTo;
-                } catch (e) {
-                    console.log(e);
+                } catch (_e) {
 
-                    throw new Error(
-                        `Error migrating from ${migration.versionFrom} to ${migration.versionTo}`,
+                    throw newating from ${migration.versionFrom} to ${migration.versionTo}`,
                     );
                 }
             } else {
