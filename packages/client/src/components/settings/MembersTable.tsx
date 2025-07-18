@@ -11,6 +11,7 @@ import {
     IconButton,
     AvatarGroup,
     Avatar,
+    Skeleton,
     RadioGroup,
     Typography,
     Search,
@@ -59,7 +60,6 @@ const StyledMemberLoading = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    height: '160px',
 }));
 
 const StyledMemberTable = styled(Table)({
@@ -321,10 +321,8 @@ export const MembersTable = (props: MembersTableProps) => {
                   permission: 'OWNER',
               },
               status: 'SUCCESS',
+              refresh: () => null,
           };
-
-    // TODO: NEEDS FIX ^
-    console.log('userDetails', userDetails);
 
     const allAuthorsResponse = useAPI(getAllAuthorsApi);
     const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
@@ -476,6 +474,7 @@ export const MembersTable = (props: MembersTableProps) => {
                 // refresh the members
                 getMembers.refresh();
                 allAuthorsResponse.refresh();
+                userDetails.refresh();
 
                 onChange();
             } else {
@@ -754,9 +753,52 @@ export const MembersTable = (props: MembersTableProps) => {
 
                     {isLoading ? (
                         <StyledMemberLoading>
-                            <LoadingScreen relative={true}>
-                                <LoadingScreen.Trigger description="Getting members" />
-                            </LoadingScreen>
+                            <StyledMemberTable>
+                                <Table.Body>
+                                    {[...Array(rowsPerPage)].map((_, idx) => (
+                                        <Table.Row key={idx}>
+                                            <Table.Cell
+                                                size="medium"
+                                                padding="checkbox"
+                                            >
+                                                <Skeleton
+                                                    variant="rectangular"
+                                                    width={20}
+                                                    height={20}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={160}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={240}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={160}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={80}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </StyledMemberTable>
                         </StyledMemberLoading>
                     ) : (
                         <>
@@ -980,13 +1022,13 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Editor"
                                                                     label="Editor"
                                                                     disabled={
-                                                                        (isLastAuthor(
+                                                                        isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                            (userPermission ===
-                                                                                'Editor' &&
-                                                                                user.permission ===
-                                                                                    'OWNER') ||
+                                                                        (((userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                             !configStore.isEngineOperationAvailable(
                                                                                 type,
                                                                                 'access',
@@ -996,20 +1038,20 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             )
                                                                                 ?.priority >
                                                                                 2) &&
-                                                                        !adminMode
+                                                                            !adminMode)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
                                                                     value="Read-Only"
                                                                     label="Read-Only"
                                                                     disabled={
-                                                                        (isLastAuthor(
+                                                                        isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                            (userPermission ===
-                                                                                'Editor' &&
-                                                                                user.permission ===
-                                                                                    'OWNER') ||
+                                                                        (((userPermission ===
+                                                                            'Editor' &&
+                                                                            user.permission ===
+                                                                                'OWNER') ||
                                                                             !configStore.isEngineOperationAvailable(
                                                                                 type,
                                                                                 'access',
@@ -1022,7 +1064,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             readOnlyRestricted(
                                                                                 user,
                                                                             )) &&
-                                                                        !adminMode
+                                                                            !adminMode)
                                                                     }
                                                                 />
                                                             </RadioGroup>
@@ -1199,6 +1241,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         // refresh
                         getMembers.refresh();
                         allAuthorsResponse.refresh();
+                        userDetails.refresh();
                     }
                 }}
             />
