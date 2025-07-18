@@ -49,6 +49,13 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
         data.hasOwnProperty("loading") &&
         data.loading?.toString().toLowerCase() === "true";
 
+    /**
+     * Returns a loading screen component based on the `loadSkeleton` property.
+     * If `loadSkeleton` is set to "LoadingSkeleton", it returns a `LoadingScreen`
+     * containing a `LoadingSkeleton`. Otherwise, it returns a `LoadingScreen`
+     * with a `LoadingScreen.Trigger`.
+     */
+
     const getLoadingChildren = () => {
         if (data?.loadSkeleton && data?.loadSkeleton === "LoadingSkeleton") {
             return (
@@ -63,6 +70,8 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
             </LoadingScreen>
         );
     };
+    // If the block is loading, return the loading children
+    // Otherwise, render the block with the text content
     if (isLoading) return getLoadingChildren();
 
     // TODO: Why?

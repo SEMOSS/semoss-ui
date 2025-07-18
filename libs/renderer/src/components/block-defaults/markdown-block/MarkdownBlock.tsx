@@ -46,6 +46,12 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
+    /**
+     * Given a template string, loads the correct template to render in its place.
+     * If the template doesn't exist, returns default skeleton.
+     * @param {string} template The name of the template to load.
+     * @returns {ReactElement} The loaded template, or default skeleton if it doesn't exist.
+     */
     const loadTemplate = (template: string): ReactElement => {
         if (template === "LoadingSkeleton") {
             return <LoadingSkeleton />;

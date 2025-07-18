@@ -88,6 +88,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
         }
         return <LoadingScreen.Trigger />;
     };
+    // Check if the block is loading
     const isLoading =
         data.hasOwnProperty("loading") &&
         data.loading?.toString().toLowerCase() === "true";

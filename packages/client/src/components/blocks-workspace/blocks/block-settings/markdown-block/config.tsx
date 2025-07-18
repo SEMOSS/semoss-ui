@@ -46,12 +46,12 @@ export const config: BlockSettingsConfig = {
             ],
         },
         {
-            name: 'Load State',
-            children: [...buildLoadStateSection()],
-        },
-        {
             name: 'Conditional',
             children: [...buildShowField()],
+        },
+        {
+            name: 'Load State',
+            children: [...buildLoadStateSection()],
         },
         {
             name: 'Pre Process',
