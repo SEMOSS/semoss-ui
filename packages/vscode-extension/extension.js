@@ -90,20 +90,20 @@ async function activate(context) {
                 await updateStatusBar(context);
             }
         }
-    );    // Register create new project command
+    );    // Helper function to get secrets with error handling
+    const getSecretsWithValidation = async (context) => {
+        const secrets = await getSecrets(context);
+        if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
+            vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
+            return null;
+        }
+        return secrets;
+    };
+
+    // Register create new project command
     const disposableCreateApp = vscode.commands.registerCommand(
         "semoss.createNewApp",
         async (args) => {
-            // If called from chatbot, use args; otherwise, prompt
-            const getSecretsWithValidation = async (context) => {
-                const secrets = await getSecrets(context);
-                if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
-                    vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
-                    return null;
-                }
-                return secrets;
-            };
-
             try {
                 if (args && args.appName) {
                     await createNewApp(context, getSecretsWithValidation, args);
@@ -117,16 +117,6 @@ async function activate(context) {
         }
     );
     context.subscriptions.push(disposableCreateApp);
-
-    // Helper function to get secrets with error handling
-    const getSecretsWithValidation = async (context) => {
-        const secrets = await getSecrets(context);
-        if (!secrets || !secrets.semossUrl || !secrets.accessKey || !secrets.privateKey) {
-            vscode.window.showErrorMessage('No instance configured. Please authorize an instance first.');
-            return null;
-        }
-        return secrets;
-    };
 
     // Register zip and deploy command
     const disposableZipDeploy = vscode.commands.registerCommand(
