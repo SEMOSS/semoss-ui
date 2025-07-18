@@ -19,6 +19,8 @@ import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { usePixel } from '@/hooks';
 
+import { permissionPriorityMapper } from '@/utility/general';
+
 // Styled modal content to match MembersAddOverlay
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     minWidth: '50rem',
@@ -125,7 +127,7 @@ export const MemberDependencyOverlay = (
         onChange = () => null,
         userData,
     } = props;
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const { adminMode } = useSettings();
 
@@ -222,6 +224,35 @@ export const MemberDependencyOverlay = (
     const [pendingPermissions, setPendingPermissions] = useState<
         Record<string, string>
     >({});
+
+    const [loggedInUserEnginePermissions, setLoggedInUserEnginePermissions] =
+        useState<Record<string, string>>({});
+
+    useEffect(() => {
+        if (!allDependencies.length) {
+            setLoggedInUserEnginePermissions({});
+            return;
+        }
+        const fetchPermissions = async () => {
+            const perms: Record<string, string> = {};
+            await Promise.all(
+                allDependencies.map(async (dep) => {
+                    try {
+                        const res = await monolithStore.getUserEnginePermission(
+                            dep.engine_id,
+                        );
+                        perms[dep.engine_id] = res?.permission || '';
+                    } catch {
+                        perms[dep.engine_id] = '';
+                    }
+                }),
+            );
+            setLoggedInUserEnginePermissions(perms);
+        };
+        fetchPermissions();
+    }, [allDependencies, monolithStore]);
+    console.log('loggedInUserEnginePermissions', loggedInUserEnginePermissions);
+
     const nearBottom = (target: EventTarget | null) => {
         if (
             !target ||
@@ -497,14 +528,62 @@ export const MemberDependencyOverlay = (
                                                         <RadioGroup.Item
                                                             value="Author"
                                                             label="Author"
+                                                            disabled={
+                                                                permissionPriorityMapper(
+                                                                    loggedInUserEnginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ],
+                                                                ).priority >
+                                                                    1 &&
+                                                                !adminMode
+                                                            }
                                                         />
                                                         <RadioGroup.Item
                                                             value="Editor"
                                                             label="Editor"
+                                                            disabled={
+                                                                (loggedInUserEnginePermissions[
+                                                                    dep
+                                                                        .engine_id
+                                                                ] === 'EDIT' &&
+                                                                    enginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ] ===
+                                                                        'OWNER') ||
+                                                                (permissionPriorityMapper(
+                                                                    loggedInUserEnginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ],
+                                                                ).priority >
+                                                                    2 &&
+                                                                    !adminMode)
+                                                            }
                                                         />
                                                         <RadioGroup.Item
                                                             value="Read-Only"
                                                             label="Read-Only"
+                                                            disabled={
+                                                                (loggedInUserEnginePermissions[
+                                                                    dep
+                                                                        .engine_id
+                                                                ] === 'EDIT' &&
+                                                                    enginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ] ===
+                                                                        'OWNER') ||
+                                                                (permissionPriorityMapper(
+                                                                    loggedInUserEnginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ],
+                                                                ).priority >=
+                                                                    3 &&
+                                                                    !adminMode)
+                                                            }
                                                         />
                                                     </RadioGroup>
                                                 </Box>
@@ -577,14 +656,44 @@ export const MemberDependencyOverlay = (
                                                         <RadioGroup.Item
                                                             value="Author"
                                                             label="Author"
+                                                            disabled={
+                                                                permissionPriorityMapper(
+                                                                    loggedInUserEnginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ],
+                                                                ).priority >
+                                                                    1 &&
+                                                                !adminMode
+                                                            }
                                                         />
                                                         <RadioGroup.Item
                                                             value="Editor"
                                                             label="Editor"
+                                                            disabled={
+                                                                permissionPriorityMapper(
+                                                                    loggedInUserEnginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ],
+                                                                ).priority >
+                                                                    2 &&
+                                                                !adminMode
+                                                            }
                                                         />
                                                         <RadioGroup.Item
                                                             value="Read-Only"
                                                             label="Read-Only"
+                                                            disabled={
+                                                                permissionPriorityMapper(
+                                                                    loggedInUserEnginePermissions[
+                                                                        dep
+                                                                            .engine_id
+                                                                    ],
+                                                                ).priority >=
+                                                                    3 &&
+                                                                !adminMode
+                                                            }
                                                         />
                                                     </RadioGroup>
                                                 </Box>
