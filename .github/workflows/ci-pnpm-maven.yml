@@ -90,17 +90,14 @@ jobs:
               run: |
                 mv tmp/bi-main ./packages/legacy
                 rm -rf tmp/
-            
-            # - name: Check Node.js version
-            #   run: node -v
 
             # # ---------- Build SEMOSS/bi (Node 18) -----------
             
 
-            # # - name: Set up Node.js 18 for SEMOSS/bi
-            # #   uses: actions/setup-node@v4
-            # #   with:
-            # #     node-version: '18'
+            - name: Set up Node.js 18 for SEMOSS/bi
+              uses: actions/setup-node@v4
+              with:
+                node-version: '18'
 
             # - name: Install pnpm in Node 18 session
             #   run: npm install -g pnpm@10.13
