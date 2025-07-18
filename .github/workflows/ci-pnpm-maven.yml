@@ -4,7 +4,7 @@ on:
         branches:
             - dev
             - main
-            - 776-build-ci
+            - 776-update-frontend-build-tooling-and-node-version
     pull_request:
         branches:
             - dev
