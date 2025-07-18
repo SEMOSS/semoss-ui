@@ -4,10 +4,10 @@ import { useEffect } from "react";
 type EditableTableProps = {
   data: string[][];
   setData: React.Dispatch<React.SetStateAction<string[][]>>;
+  tableType: "create" | "update"; 
 };
 
-const EditableTable = React.memo(function EditableTable({ data, setData }: EditableTableProps) {
-  
+const EditableTable = React.memo(function EditableTable({ data, setData,tableType }: EditableTableProps) {
     useEffect(() => {
         if (!data || data.length === 0) {
         setData(Array.from({ length: 3 }, () => Array(3).fill("")));
@@ -24,7 +24,6 @@ const EditableTable = React.memo(function EditableTable({ data, setData }: Edita
     );
   };
 
-  // If no data, show a 3x3 empty editable table
   let tableData = data;
   if (!tableData || tableData.length === 0) {
     tableData = Array.from({ length: 3 }, () => Array(3).fill(""));

@@ -5,24 +5,24 @@ import {
     TextArea,
     styled,
     Autocomplete,
-    Modal,
-    Typography
 } from '@semoss/ui';
-import { Controller, useForm } from 'react-hook-form';
-const StyledButton = styled(Button)(({ theme }) => ({
+import { Controller} from 'react-hook-form';
+import React from 'react';
+import  EditableTable  from './EditableTable';
+
+const StyledButton = styled(Button)(() => ({
     marginTop: '20px !important',
 }));
-
 
 type FieldConfig = {
   name: string;
   label: string;
   type?: "text" | "textarea" | "autocomplete";
   required?: boolean;
-  options?: string[]; // for autocomplete
-  getOptionLabel?: (option: any) => string; // for autocomplete
-  isOptionEqualToValue?: (option: any, value: any) => boolean; // for autocomplete
-  multiple?: boolean; // for autocomplete
+  options?: string[]; 
+  getOptionLabel?: (option: any) => string; 
+  isOptionEqualToValue?: (option: any, value: any) => boolean; 
+  multiple?: boolean; 
 };
 
 interface SpreadsheetFormProps {
@@ -30,13 +30,14 @@ interface SpreadsheetFormProps {
   fields: FieldConfig[];
   onSubmit: (data: any) => void;
   handleSubmit: any;
-  reset: () => void;
-  onSheetNameChange?: (newValue: any) => void; // Optional callback for sheet name change
+  cancel: () => void;
+  formType: "create" | "update" | "delete" | "read";
+  tableData: string[][] | null; 
+  setTableData: React.Dispatch<React.SetStateAction<string[][]>> | null; 
 }
 
 
-export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset,onSheetNameChange }: SpreadsheetFormProps) {
-  console.log('update form rendered',control);
+export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, cancel, formType,tableData,setTableData }: SpreadsheetFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       <Stack direction="column" spacing={2} style={{ paddingTop: '10px' }}>
@@ -46,57 +47,26 @@ export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, reset
             name={field.name}
             control={control}
             rules={{ required: field.required }}
-            render={({ field: controllerField }) => {
-              if (field.type === "textarea") {
-                return (
-                  <TextArea
-                    label={field.label}
-                    variant="outlined"
-                    value={controllerField.value || ''}
-                    onChange={controllerField.onChange}
-                    rows={3}
-                  />
-                );
-              } else if (field.type === "autocomplete") {
-                // Only call onSheetNameChange for the 'SHEET_NAME' field
-                return (
-                  <Autocomplete
-                    options={field.options || []}
-                    multiple={field.multiple}
-                    getOptionLabel={field.getOptionLabel || ((option) => option)}
-                    isOptionEqualToValue={field.isOptionEqualToValue || ((option, value) => option === value)}
-                    value={controllerField.value || (field.multiple ? [] : null)}
-                    onChange={(_event, newValue) => {
-                      controllerField.onChange(newValue);
-                      if (field.name === 'SHEET_NAME' && typeof onSheetNameChange === 'function') {
-                        onSheetNameChange(newValue);
-                      }
-                    }}
-                    renderInput={(params) => (
-                      <TextField
-                        {...params}
-                        label={field.label}
-                        fullWidth
-                      />
-                    )}
-                  />
-                );
-              } else {
-                return (
-                  <TextField
+            render={({ field: controllerField }) => (
+              <TextField
                     label={field.label}
                     value={controllerField.value || ''}
                     onChange={controllerField.onChange}
                     fullWidth
-                  />
-                );
-              }
-            }}
+               />
+            )}
           />
         ))}
       </Stack>
+      {formType === "create" && (
+        <EditableTable data={tableData} setData={setTableData} tableType={formType} />
+      )}
+      {formType === "update" && tableData && tableData.length > 0 && (
+        <EditableTable data={tableData} setData={setTableData} tableType={formType}/>
+      )}
+
       <Stack direction="row" spacing={1} paddingX={2} paddingBottom={2}>
-        <StyledButton type="button" onClick={reset}>Reset</StyledButton>
+        <StyledButton type="button" onClick={cancel}>Cancel</StyledButton>
         <StyledButton type="submit" variant="contained">Submit</StyledButton>
       </Stack>
     </form>

@@ -1,29 +1,24 @@
 import React, { CSSProperties, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useTypeWriter, useBlocks, useBlockSettings } from "../../../hooks";
-import { BlockDef, BlockComponent} from "../../../store";
+import { useBlock, useTypeWriter, useBlocks} from "../../../hooks";
+import { BlockDef, BlockComponent,ActionMessages,ListenerActions,Block} from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 import { useForm } from 'react-hook-form';
 import { runPixel } from "@semoss/sdk/react";
 import {
     Button,
-    styled,
     Modal,
     Typography,
     useNotification,
-    Table,
 } from '@semoss/ui';
-
-import { PathValue } from "../../../types";
+import { PathValue,Paths } from "../../../types";
 import {SpreadsheetForm} from "./SpreadsheetForm";
 import { useRootStore } from '@semoss/ui/hooks';
 import { Add } from '@mui/icons-material';
-import { set } from "mermaid/dist/diagrams/state/id-cache.js";
-import EditableTable  from "./EditableTable";
+import { useCallback } from "react";
 
-type showReadSheetForm = {
+type showSpreadSheetForm = {
     TITLE_SHEET_NAME: string;
-    SHEET_NAME: string;
 };
 
 type showCreateSheetForm = {
@@ -36,14 +31,12 @@ type showUpdateSheetForm = {
     SHEET_NAME: string;
 };
 
-type showDeleteSheetForm = {
-    TITLE_SHEET_NAME: string;
-    SHEET_NAME: string;
-};
-
-const StyledTableContainer = styled(Table.Container)(() => ({
-    marginTop: '20px',
-}));
+interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
+    setData: <P extends Paths<Block<D>["data"], 4>>(
+        path: P,
+        value: PathValue<D["data"], P>,
+    ) => void;
+}
 
 export interface SpreadsheetBlockDef extends BlockDef<"spreadsheet"> {
     widget: "spreadsheet";
@@ -53,22 +46,47 @@ export interface SpreadsheetBlockDef extends BlockDef<"spreadsheet"> {
         variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
         isStreaming: boolean;
         show: string;
-        showReadSheetForm: boolean;
-        showReadForm: boolean;
+        showSpreadSheetForm: boolean;
         showCreateSheetForm: boolean;
-        showCreateForm: boolean;
         showUpdateSheetForm: boolean;
-        showUpdateForm: boolean;
-        showDeleteSheetForm: boolean;
-        showDeleteForm: boolean;
+        deleteTitleSheet: boolean;
         showListedSheets: boolean;
-        userId: string;
-        sheetConnectionValue: string;
-        sheetActionValue: string;
+        titleSheetName: string;
+        sheetName: string;
     };
     slots: never;
     listeners: never;
 }
+
+const useBlockSettings = <D extends BlockDef = BlockDef>(
+    id: string,
+): useBlockSettingsReturn<D> => {
+    const { state } = useBlocks();
+    const block = state.getBlock(id);
+    if (!block) {
+        throw Error(`Cannot find block ${id}`);
+    }
+    const setData = useCallback(
+        <P extends Paths<Block<D>["data"], 4>>(
+            path: P | null,
+            value: PathValue<Block<D>["data"], P>,
+        ): void => {
+            state.dispatch({
+                message: ActionMessages.SET_BLOCK_DATA,
+                payload: {
+                    id: id,
+                    path: path,
+                    value: value,
+                },
+            });
+        },
+        [id],
+    );
+    return {
+        setData: setData,
+    };
+};
+
 
 function SpreadsheetBlockComponent ({ id }) {
     const block = useBlock<SpreadsheetBlockDef>(id);
@@ -76,125 +94,113 @@ function SpreadsheetBlockComponent ({ id }) {
     const { data} = block;
     const { setData } = useBlockSettings(id);
     const { monolithStore,configStore } = useRootStore();
-    const[showReadData, setShowReadData] = useState([['Hello', 'World'],['Hi',''],['Test']]);
-    const [showResponseData, setShowResponseData] = useState('');
     const [isDelete, setIsDelete] = useState(false);
-    const [deleteText, setDeleteText] = useState('');
-    const [deletePixelCall, setDeletePixelCall] = useState('');
-    const [titleSheetOptions, setTitleSheetOptions] = useState<string[]>(['parent1', 'parent2']);
-    const [sheetOptions, setSheetOptions] = useState<string[]>(['mysheet1', 'mysheet5']);
-    const [listedSheets, setListedSheets] = useState<string[]>(['sheet1', 'sheet2', 'sheet3']);
-    const [isLoading, setIsLoading] = useState(false);
+    const [allListedSheets, setAllListedSheets] = useState([]);
     const notification = useNotification();
     const [loggedInUser,setLoggedInUser]= useState('');
     const [updateSheet, setUpdateSheet] = useState([]);
     const [createSheet, setCreateSheet] = useState([]);
+    const [refreshSheets, setRefreshSheets] = useState(0);
+    const allSections: Paths<SpreadsheetBlockDef["data"], 4>[] = [
+        "showSpreadSheetForm",
+        "showCreateSheetForm",
+        "showUpdateSheetForm",
+        "deleteTitleSheet",
+        "showListedSheets"
+    ];
+    const [showUpdateSuccessModal, setShowUpdateSuccessModal] = useState(false);
     const textContent =
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
-    console.log('loggedInUser', configStore.store.config.loginDetails);
-
+    
     const escapePixelString = (str: string) => {
         if (typeof str !== 'string') return '';
         return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\"/g, '\\"');
     }
 
     useEffect(() => {
-        const fetchSheetOptions = async () => {
-            const safeUserId = escapePixelString(data.userId);
+        const fetchSheetData = async () => {
             try {
-                const response = await runPixel<[string]>(
-                    `META | GoogleSheet(command = "get sheet names",userid="${safeUserId}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`
+                const response = await runPixel<[string[]]>(
+                    `META | GetAllGoogleSheets();`
                 );
                 const output = response.pixelReturn[0].output;
                 const type = response.pixelReturn[0].operationType;
-                if (type.indexOf('ERROR') === -1) {
-                    //setTitleSheetOptions(output.split(','));
-                    //setSheetOptions(output.split(','));
+                if (type.indexOf('ERROR') === -1 && output) {
+                    setAllListedSheets(output);
                 } else {
-                    throw new Error(output);
+                    throw new Error('error');
                 }
             } catch (error) {
                 console.error("Error fetching sheet options:", error);
             }
         };
-        fetchSheetOptions();
-    },[data.userId]);
+        if(loggedInUser){
+            fetchSheetData();
+        }
+    },[loggedInUser, refreshSheets]);
 
     useEffect(() => {
-        const fetchListedSheets = async () => {
-            const safeUserId = escapePixelString(data.userId);
-            try {
-                const response = await runPixel<[string]>(
-                    `META | GoogleSheet(command = "list sheets",userid="${safeUserId}");`
-                );
-                const output = response.pixelReturn[0].output;
-                const type = response.pixelReturn[0].operationType;
-                if (type.indexOf('ERROR') === -1) {
-                    setListedSheets(output.split(','));
-                } else {
-                    throw new Error(output);
-                }
-            } catch (error) {
-                console.error("Error fetching listed sheets:", error);
-            }
-        };
-        if(data.showListedSheets) {
-            fetchListedSheets();
-        }
-   });
-
-   useEffect(() => {
-        setData("showReadForm", true as PathValue<SpreadsheetBlockDef["data"], "showReadForm">);
         (async () => {
             await configStore.initialize();
+            if (configStore.store.config.loginDetails['GOOGLE'] && configStore.store.config.loginDetails['GOOGLE'].name) {
+                setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
+            }
         })();
+        setData("showListedSheets", true as PathValue<SpreadsheetBlockDef["data"], "showListedSheets">);
     },[configStore]);
 
+    useEffect(() => {
+        if (data.showUpdateSheetForm) {
+            resetUpdate({
+            TITLE_SHEET_NAME: data.titleSheetName,
+            SHEET_NAME: data.sheetName,
+            });
+        }
+
+        if (data.showCreateSheetForm) {
+            resetCreate({
+            TITLE_SHEET_NAME: data.titleSheetName,
+            });
+        }       
+    }, [data.titleSheetName,data.sheetName]);
+    
     if (!data.isStreaming) displayTxt = textContent;
-    const { getValues:getReadValues, handleSubmit:handleReadSubmit, control:controlRead,reset:resetRead } = useForm<showReadSheetForm>({
+    const { getValues:getSpreadValues, handleSubmit:handleSpreadSubmit, control:controlSpread,reset:resetSpread } = useForm<showSpreadSheetForm>({
             defaultValues: {
                 TITLE_SHEET_NAME: '',
-                SHEET_NAME: '',
             },
         });
 
-        const { getValues : getCreateValues, handleSubmit : handleCreateSubmit, control : controlCreate, reset: resetCreate} = useForm<showCreateSheetForm>({
-            defaultValues: {
-                TITLE_SHEET_NAME: '',
-                SHEET_NAME: '',
-            },
-        });
+    const { getValues : getCreateValues, handleSubmit : handleCreateSubmit, control : controlCreate, reset: resetCreate} = useForm<showCreateSheetForm>({
+        defaultValues: {
+            TITLE_SHEET_NAME: '',
+            SHEET_NAME: '',
+        },
+    });
 
-        const { getValues : getUpdateValues, handleSubmit : handleUpdateSubmit, control : controlUpdate, reset: resetUpdate } = useForm<showUpdateSheetForm>({
-            defaultValues: {
-                TITLE_SHEET_NAME: '',
-                SHEET_NAME: '',
-            },
-        });
+    const { getValues : getUpdateValues, handleSubmit : handleUpdateSubmit, control : controlUpdate, reset: resetUpdate } = useForm<showUpdateSheetForm>({
+        defaultValues: {
+            TITLE_SHEET_NAME: '',
+            SHEET_NAME: '',
+        },
+    });
 
-        const { getValues : getDeleteValues, handleSubmit : handleDeleteSubmit, control : controlDelete, reset: resetDelete } = useForm<showDeleteSheetForm>({
-            defaultValues: {
-                TITLE_SHEET_NAME: '',
-                SHEET_NAME: '',
-            },
-        });
-
-    const onReadSubmit = handleReadSubmit(async (readData: showReadSheetForm) => {
-        const safeSheetName = escapePixelString(readData.SHEET_NAME);
+    const onSpreadSubmit = handleSpreadSubmit(async (spreadData: showSpreadSheetForm) => {
+        const safeTitleSheetName = escapePixelString(spreadData.TITLE_SHEET_NAME);
         try{
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "read",sheetName="${safeSheetName}",spreadSheetId="1dwaxnAiGF3AE-FJiasitdmqS4XInNPs2GbK1eJQVU5c");`,
+                `META | GoogleNewSpreadSheet(titleSheetName="${safeTitleSheetName}");`,
             );
-            const outputRead = response.pixelReturn[0].output;
+            const outputCreate = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
-            if (type.indexOf('ERROR') === -1) {
-                setData("showReadSheetForm", false as PathValue<SpreadsheetBlockDef["data"], "showReadSheetForm">);
-                setData("showReadForm", true as PathValue<SpreadsheetBlockDef["data"], "showReadForm">);
-                //setShowReadData(outputRead);
-                resetRead();
+            if (type.indexOf('ERROR') === -1  && outputCreate.includes("Spreadsheet created")) {
+                setData("showSpreadSheetForm", false as PathValue<SpreadsheetBlockDef["data"], "showSpreadSheetForm">);
+                setData("showListedSheets", true as PathValue<SpreadsheetBlockDef["data"], "showListedSheets">);
+                resetSpread();
+                setRefreshSheets(refreshSheets + 1);
             }else {
-                throw new Error(outputRead);
+                throw new Error(outputCreate);
             }
         }
         catch (error) {
@@ -202,23 +208,22 @@ function SpreadsheetBlockComponent ({ id }) {
         }
     });
 
-    const onCreateSubmit = async (writeData: showCreateSheetForm) => {
-        console.log('Created sheet data:', createSheet);
+    const onCreateSubmit = async (createData: showCreateSheetForm) => {
         try{
-            const safeSheetName = escapePixelString(writeData.SHEET_NAME);
-            const safeTitleSheetName = escapePixelString(writeData.TITLE_SHEET_NAME);
+            const safeSheetName = escapePixelString(createData.SHEET_NAME);
+            const safeTitleSheetName = escapePixelString(createData.TITLE_SHEET_NAME);
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "create new sheet",sheetName="${safeSheetName}",titleSheetName="${safeTitleSheetName}");`,
+                `META | GoogleSpreadSheetCreate(titleSheetName='${safeTitleSheetName}',sheetName='${safeSheetName}',data='${JSON.stringify(createSheet)}');`,
             );
-            const outputWrite = response.pixelReturn[0].output;
+            const outputCreateSheet = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
-            if (type.indexOf('ERROR') === -1 && outputWrite === "Data written successfully") {
+            if (type.indexOf('ERROR') === -1 && outputCreateSheet.includes("Data added successfully to new sheet")) {
                 setData("showCreateSheetForm", false as PathValue<SpreadsheetBlockDef["data"], "showCreateSheetForm">);
-                setData("showCreateForm", true as PathValue<SpreadsheetBlockDef["data"], "showCreateForm">);
-                setShowResponseData(outputWrite);
+                setData("showListedSheets", true as PathValue<SpreadsheetBlockDef["data"], "showListedSheets">);
+                setRefreshSheets(refreshSheets + 1);
                 resetCreate();
             }else {
-                throw new Error(outputWrite);
+                throw new Error(outputCreateSheet);
             }
         }
         catch (error) {
@@ -227,19 +232,28 @@ function SpreadsheetBlockComponent ({ id }) {
     };
 
     const onUpdateSubmit = handleUpdateSubmit(async (updateData: showUpdateSheetForm) => {
-        console.log('updateData', updateSheet);
+        const maxCols = updateSheet.reduce((max, row) => Math.max(max, Array.isArray(row) ? row.length : 0), 0);
+        let processedSheet = updateSheet;
+        if (!updateSheet.length) {
+            processedSheet = [Array(maxCols || 1).fill("")];
+        } else {
+            processedSheet = updateSheet.map(row =>
+                Array.isArray(row)
+                    ? [...row, ...Array(maxCols - row.length).fill("")]
+                    : Array(maxCols).fill("")
+            );
+        }
         try{
             const safeSheetName = escapePixelString(updateData.SHEET_NAME);
             const safeTitleSheetName = escapePixelString(updateData.TITLE_SHEET_NAME);
             const response = await runPixel<[string]>(
-                `META | GoogleSheet(command = "update",titleSheetName="${safeTitleSheetName}",sheetName="${safeSheetName}",data="${updateSheet}");`,
+                `META | GoogleSpreadSheetUpdate(titleSheetName='${safeTitleSheetName}',sheetName='${safeSheetName}',data='${JSON.stringify(processedSheet)}');`,
             );
             const outputUpdate = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
-            if (type.indexOf('ERROR') === -1) {
+            if (type.indexOf('ERROR') === -1 && outputUpdate === "All data replaced successfully"){
+                setShowUpdateSuccessModal(true);
                 setData("showUpdateSheetForm", false as PathValue<SpreadsheetBlockDef["data"], "showUpdateSheetForm">);
-                setData("showUpdateForm", true as PathValue<SpreadsheetBlockDef["data"], "showUpdateForm">);
-                setShowResponseData(outputUpdate);
                 setUpdateSheet([]);
                 resetUpdate();
             }else {
@@ -251,31 +265,22 @@ function SpreadsheetBlockComponent ({ id }) {
         }
     });
 
-    const onDeleteSubmit = handleDeleteSubmit(async (deleteData: showDeleteSheetForm) => {
-        const safeTitleSheetName = escapePixelString(deleteData.TITLE_SHEET_NAME);
-        const safeSheetName = escapePixelString(deleteData.SHEET_NAME); 
-        if(deleteData.TITLE_SHEET_NAME !=='' && deleteData.SHEET_NAME === '') {
-            setDeleteText(`Are you sure you want to delete the title sheet ${deleteData.TITLE_SHEET_NAME}? This action is permanent.`);
-            setDeletePixelCall(`META | GoogleSheet(command = "delete titlesheet",titleSheetName="${safeTitleSheetName}");`);
-        }else{
-            setDeleteText(`Are you sure you want to delete sheet ${deleteData.SHEET_NAME}? This action is permanent.`);
-            setDeletePixelCall(`META | GoogleSheet(command = "delete sheet",sheetName="${safeSheetName}",titleSheetName="${safeTitleSheetName}");`);
-        }
-        setIsDelete(true);
-    });
-
     const deleteSheet = async () => {
-        const deleteValues = getDeleteValues();
         try{
-            const response = await runPixel<[string]>(deletePixelCall);
+            let pixelCall ;
+            if(data.deleteTitleSheet) {
+                pixelCall = `META | GoogleDeleteSpreadSheet(titleSheetName="${data.titleSheetName}");`;
+            }
+            else {
+                pixelCall = `META | GoogleDeleteSheet(titleSheetName="${data.titleSheetName}",sheetName="${data.sheetName}");`;
+            }
+            const response = await runPixel<[string]>(pixelCall);
             const outputDelete = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
-            if (type.indexOf('ERROR') === -1 && outputDelete === "Data deleted successfully"|| "Sheet deleted successfully" ) {
-                setData("showDeleteSheetForm", false as PathValue<SpreadsheetBlockDef["data"], "showDeleteSheetForm">);
-                setData("showDeleteForm", true as PathValue<SpreadsheetBlockDef["data"], "showDeleteForm">);
-                setShowResponseData(outputDelete);
-                resetDelete();
+            if (type.indexOf('ERROR') === -1 && outputDelete.includes("deleted successfully")) {
+                setData("showListedSheets", true as PathValue<SpreadsheetBlockDef["data"], "showListedSheets">);
                 setIsDelete(false);
+                setRefreshSheets(refreshSheets + 1);
             }else {
                 throw new Error(outputDelete);
             }
@@ -286,11 +291,9 @@ function SpreadsheetBlockComponent ({ id }) {
     }
 
     const oauth = async (provider: string) => {
-        setIsLoading(true);
         await configStore
             .oauth(provider)
             .then(async () => {
-                setIsLoading(false);
                 notification.add({
                     color: 'success',
                     message: `Successfully logged in`,
@@ -299,7 +302,6 @@ function SpreadsheetBlockComponent ({ id }) {
                 setLoggedInUser(configStore.store.config.loginDetails['GOOGLE'].name);
             })
             .catch((error) => {
-                setIsLoading(false);
                 notification.add({
                     color: 'error',
                     message: error.message,
@@ -307,29 +309,35 @@ function SpreadsheetBlockComponent ({ id }) {
             });
     };
 
-    const handleUpdateSheetDropdownChange= async () =>{
-        setUpdateSheet([['Hello', 'World'],['Hi',''],['Test']]);
-        // const updateValues = getUpdateValues();
-        // const safeSheetName = escapePixelString(updateValues.SHEET_NAME);
-        // const safeTitleSheetName = escapePixelString(updateValues.TITLE_SHEET_NAME);
-        // try{
-        //     const response = await runPixel<[string]>(
-        //         `META | GoogleSheet(command = "read",sheetName="${safeSheetName}",titleSheetName="${safeTitleSheetName}");`,
-        //     );
-        //     const outputRead = response.pixelReturn[0].output;
-        //     const type = response.pixelReturn[0].operationType;
-        //     if (type.indexOf('ERROR') === -1) {
-        //         //setUpdateSheet(outputRead);
-        //         resetRead();
-        //     }else {
-        //         throw new Error(outputRead);
-        //     }
-        // }
-        // catch (error) {
-        //     console.error("Error reading sheet data:", error);
-        // }
-        // console.log('handleUpdateSheetDropdownChange called');
+    const handleUpdateSheetDropdownChange= async (titleSheetName,sheetName) =>{
+        const safeSheetName = escapePixelString(sheetName);
+        const safeTitleSheetName = escapePixelString(titleSheetName);
+        try{
+            const response = await runPixel<[string[]]>(
+                `META | GoogleSpreadSheetRead(titleSheetName="${safeTitleSheetName}",sheetName="${safeSheetName}");`,
+            );
+            const outputRead = response.pixelReturn[0].output;
+            const type = response.pixelReturn[0].operationType;
+            if (type.indexOf('ERROR') === -1) {
+                setUpdateSheet(outputRead);
+            }else {
+                throw new Error("error reading sheet data");
+            }
+        }
+        catch (error) {
+            console.error("Error reading sheet data:", error);
+        }
     }
+
+    const setCurrentSection = (section: Paths<SpreadsheetBlockDef["data"], 4>,titleSheetName,sheetName) => {
+        if(section === 'showUpdateSheetForm') {
+            handleUpdateSheetDropdownChange(titleSheetName,sheetName);
+        }
+        allSections.forEach(path => {
+            const value = path === section ? true : false;
+            setData(path, value as PathValue<SpreadsheetBlockDef["data"], typeof path>);
+        });
+    };
 
     return (
         <div data-block = {id} style={{ position: "relative", ...data.style }}>
@@ -348,6 +356,7 @@ function SpreadsheetBlockComponent ({ id }) {
                                 variant="contained"
                                 startIcon={<Add />}
                                 onClick={() => {oauth('google')}}
+                                style={{ marginTop: '10px' }}
                                 data-testid={'my-jira-profile-new-key-btn'}
                             >
                                 Login google
@@ -355,126 +364,200 @@ function SpreadsheetBlockComponent ({ id }) {
                         </div>
                     )}
                     {loggedInUser && (
-                        <div>
-                            <span>Logged in as: </span>
-                            <h4>{loggedInUser}</h4>
-                        </div>
-                    )}
-                    {data.showReadSheetForm && (
-                        <SpreadsheetForm
-                            control={controlRead}
-                            fields={[
-                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
-                            { name: "SHEET_NAME", label: "Sheet Name", required: true ,type: "autocomplete", options:sheetOptions},
-                            ]}
-                            onSubmit={onReadSubmit}
-                            handleSubmit={handleReadSubmit}
-                            reset={resetRead}
-                        />
-                    )}
-                    {data.showReadForm && (
-                        <StyledTableContainer>
-                            <Table sx={{ width: '25%', borderCollapse: 'collapse', margin: '0 auto' }}>
-                                <Table.Body>
-                                    {(() => {
-                                        const maxCols = showReadData.reduce((max, row) => Math.max(max, row.length), 0);
-                                        return showReadData.map((row, rIdx) => (
-                                            <Table.Row key={rIdx}>
-                                                {[...Array(maxCols)].map((_, cIdx) => (
-                                                    <Table.Cell
-                                                        key={cIdx}
-                                                        sx={{
-                                                            border: '1px solid #ccc',
-                                                            padding: '4px',
-                                                            width: '50px',
-                                                            height: '25px',
-                                                            textAlign: 'center',
-                                                            background: '#fff'
-                                                        }}
-                                                    >
-                                                        {row[cIdx] || ""}
-                                                    </Table.Cell>
-                                                ))}
-                                            </Table.Row>
-                                        ));
-                                    })()}
-                                </Table.Body>
-                            </Table>
-                        </StyledTableContainer>
-                    )}
-                    {data.showCreateSheetForm && (
-                        <>
-                            <SpreadsheetForm
-                                control={controlCreate}
-                                fields={[
-                                { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
-                                { name: "SHEET_NAME", label: "Sheet Name", required: true},
-                                ]}
-                                onSubmit={onCreateSubmit}
-                                handleSubmit={handleCreateSubmit}
-                                reset={resetCreate}
-                            />
-                            <EditableTable data={createSheet} setData={setCreateSheet} />
-                        </>
-                    )}
-                    {data.showCreateForm && (
-                        <div>
-                            <h3>{showResponseData}</h3>
-                        </div>
-                    )}
-                    {data.showUpdateSheetForm && (
-                        <>
-                            <SpreadsheetForm
-                                control={controlUpdate}
-                                fields={[
-                                { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions },
-                                { name: "SHEET_NAME", label: "Sheet Name", required: true,type: "autocomplete", options:sheetOptions},
-                                { name: "CONTENT", label: "Content", type: "textarea" , required: true },
-                                ]}
-                                onSheetNameChange={handleUpdateSheetDropdownChange}
-                                onSubmit={onUpdateSubmit}
-                                handleSubmit={handleUpdateSubmit}
-                                reset={resetUpdate}
-                            />
-                            {updateSheet && updateSheet.length > 0 && (
-                                <EditableTable data={updateSheet} setData={setUpdateSheet} />                     
-                            )}
-                        </>
-                    )}
-                    {data.showUpdateForm && (
-                        <div>
-                            <h3>{showResponseData}</h3>
-                        </div>
-                    )}
-                    {data.showDeleteSheetForm && (
-                        <SpreadsheetForm
-                            control={controlDelete}
-                            fields={[
-                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true,type: "autocomplete", options:titleSheetOptions},
-                            { name: "SHEET_NAME", label: "Sheet Name", required: false,type: "autocomplete", options:sheetOptions },
-                            ]}
-                            onSubmit={onDeleteSubmit}
-                            handleSubmit={handleDeleteSubmit}
-                            reset={resetDelete}
-                        />
-                    )}
-                    {data.showDeleteForm && (
-                        <div>
-                            <h3>{showResponseData}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '600px', margin: '0 auto', marginBottom: '16px' }}>
+                            <div>
+                                <span>Logged in as: </span>
+                                <h4 style={{ display: 'inline', marginLeft: '8px' }}>{loggedInUser}</h4>
+                            </div>
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                onClick={()=>setCurrentSection('showSpreadSheetForm','','')}
+                            >
+                                Create
+                            </Button>
                         </div>
                     )}
                     {data.showListedSheets && (
-                        <div>
-                            Listed Sheets:
+                        <div
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            <div
+                                style={{
+                                    width: '600px', // or use maxWidth: '90vw'
+                                    margin: '0 auto',
+                                }}
+                            >
+                                <div style={{ fontWeight: 'bold', marginBottom: '12px' }}>Listed Sheets:</div>
+                                {allListedSheets.map((sheet, index) => (
+                                    <div
+                                        key={index}
+                                        style={{
+                                            margin: '16px 0',
+                                            borderBottom: '1px solid #eee',
+                                            paddingBottom: '8px',
+                                            background: '#fafafa',
+                                            borderRadius: '8px',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                                        }}
+                                    >
+                                        {/* Title and Create button row */}
+                                        <div
+                                            style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'center',
+                                                width: '100%',
+                                                padding: '8px 0',
+                                            }}
+                                        >
+                                            <h3 style={{ margin: 0 }}>{sheet['spreadsheetTitle']}</h3>
+                                            <Button 
+                                                variant="contained" 
+                                                style={{ marginLeft: 'auto' }}
+                                                onClick={()=>{
+                                                    setData("titleSheetName", sheet['spreadsheetTitle'] as PathValue<SpreadsheetBlockDef["data"], "titleSheetName">);
+                                                    setCurrentSection('showCreateSheetForm','','');
+                                                }}
+                                            >
+                                                Create New Sheet
+                                            </Button>
+                                            <Button 
+                                                variant="outlined" 
+                                                color="error"
+                                                onClick={()=>{
+                                                    setData("titleSheetName", sheet['spreadsheetTitle'] as PathValue<SpreadsheetBlockDef["data"], "titleSheetName">);
+                                                    setData("deleteTitleSheet", true as PathValue<SpreadsheetBlockDef["data"], "deleteTitleSheet">);
+                                                    setIsDelete(true);
+                                                }}
+                                            >
+                                                Delete Title Sheet
+                                            </Button>
+                                        </div>
+                                        {/* Sheet names list below the title */}
+                                        <div style={{ width: '100%', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                                            {sheet['sheetNames'].map((sheetName, idx) => (
+                                                <div
+                                                    key={idx}
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        padding: '4px 0',
+                                                    }}
+                                                >
+                                                    <span>{sheetName}</span>
+                                                    <div>
+                                                        <Button 
+                                                            variant="outlined" 
+                                                            style={{ marginRight: '8px' }}
+                                                            onClick={()=>{
+                                                                setData("titleSheetName", sheet['spreadsheetTitle'] as PathValue<SpreadsheetBlockDef["data"], "titleSheetName">);
+                                                                setData("sheetName", sheetName as PathValue<SpreadsheetBlockDef["data"], "sheetName">);
+                                                                setCurrentSection('showUpdateSheetForm',sheet['spreadsheetTitle'],sheetName);
+                                                            }}
+                                                        >
+                                                            Edit
+                                                        </Button>
+                                                        <Button 
+                                                            variant="outlined" 
+                                                            color="error"
+                                                            onClick={()=>{
+                                                                setData("titleSheetName", sheet['spreadsheetTitle'] as PathValue<SpreadsheetBlockDef["data"], "titleSheetName">);
+                                                                setData("sheetName", sheetName as PathValue<SpreadsheetBlockDef["data"], "sheetName">);
+                                                                setIsDelete(true);
+                                                            }}
+                                                        >
+                                                            Delete
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    )}  
+                    )}
+                    {data.showSpreadSheetForm && (
+                        <SpreadsheetForm
+                            control={controlSpread}
+                            fields={[
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true},
+                            ]}
+                            onSubmit={onSpreadSubmit}
+                            handleSubmit={handleSpreadSubmit}
+                            cancel={()=>setCurrentSection('showListedSheets','','')}
+                            formType="read"
+                            tableData={null}
+                            setTableData={null}
+                        />
+                    )}
+                    {data.showCreateSheetForm && (
+                        <SpreadsheetForm
+                            control={controlCreate}
+                            fields={[
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true},
+                            { name: "SHEET_NAME", label: "Sheet Name", required: true},
+                            ]}
+                            onSubmit={onCreateSubmit}
+                            handleSubmit={handleCreateSubmit}
+                            cancel={()=>setCurrentSection('showListedSheets','','')}
+                            formType="create"
+                            tableData={createSheet}
+                            setTableData={setCreateSheet}
+                        />
+                    )}
+                    {data.showUpdateSheetForm && (
+                        <SpreadsheetForm
+                            control={controlUpdate}
+                            fields={[
+                            { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true},
+                            { name: "SHEET_NAME", label: "Sheet Name", required: true},
+                            ]}
+                            onSubmit={onUpdateSubmit}
+                            handleSubmit={handleUpdateSubmit}
+                            cancel={()=>setCurrentSection('showListedSheets','','')}
+                            formType="update"
+                            tableData={updateSheet}
+                            setTableData={setUpdateSheet}
+                        />
+                    )}
+                    {showUpdateSuccessModal && (
+                       <Modal open={showUpdateSuccessModal} onClose={() => setShowUpdateSuccessModal(false)}>
+                            <Modal.Content>
+                                <Modal.Title>Sheet Updated</Modal.Title>
+                                <Modal.Content>
+                                    <Typography variant="body1">
+                                        Sheet updated successfully.
+                                    </Typography>
+                                </Modal.Content>
+                                <Modal.Actions>
+                                    <Button
+                                        variant="contained"
+                                        onClick={() => {
+                                            setShowUpdateSuccessModal(false);
+                                            setData("showListedSheets", true as PathValue<SpreadsheetBlockDef["data"], "showListedSheets">);
+                                        }}
+                                    >
+                                        OK
+                                    </Button>
+                                </Modal.Actions>
+                            </Modal.Content>
+                        </Modal>
+                    )}
                     {isDelete &&(
                         <Modal onClose={close} open={isDelete}>
                             <Modal.Content>
                                 <Modal.Title>Delete Job</Modal.Title>
                                 <Modal.Content>
                                     <Typography variant="body1">
-                                        {deleteText}
+                                        Are you sure you want to delete? This action is permanent.
                                     </Typography>
                                 </Modal.Content>
                                 <Modal.Actions>
