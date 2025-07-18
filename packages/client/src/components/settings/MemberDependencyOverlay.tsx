@@ -17,7 +17,6 @@ import { ClearRounded } from '@mui/icons-material';
 import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
-import { checkUserDependencies } from '@/utility/checkUserDependencies';
 import { usePixel } from '@/hooks';
 
 // Styled modal content to match MembersAddOverlay
@@ -176,18 +175,43 @@ export const MemberDependencyOverlay = (
             return;
         }
         setCheckingAccess(true);
-        checkUserDependencies(
-            allDependencies,
-            selectedMember.id,
-            monolithStore,
-            adminMode,
-        )
-            .then(({ hasAccess, noAccess, permissions }) => {
-                setUserDependencies(hasAccess);
-                setUserNoAccess(noAccess);
-                setEnginePermissions(permissions || {});
-            })
-            .finally(() => setCheckingAccess(false));
+        // Inline checkUserDependencies logic
+        (async () => {
+            const hasAccess = [];
+            const noAccess = [];
+            const permissions = {};
+            for (const dep of allDependencies) {
+                try {
+                    let users = [];
+                    // Engine (DATABASE, STORAGE, MODEL, VECTOR, FUNCTION, etc.)
+                    const result = await monolithStore.getEngineUsers(
+                        adminMode,
+                        dep.engine_id,
+                        '',
+                        '',
+                        0,
+                        1000,
+                    );
+                    users = result?.members || [];
+                    const userObj = users.find(
+                        (u) => u.id === selectedMember.id,
+                    );
+                    if (userObj) {
+                        hasAccess.push(dep.engine_id);
+                        permissions[dep.engine_id] =
+                            userObj.permission || 'Read-Only';
+                    } else {
+                        noAccess.push(dep.engine_id);
+                    }
+                } catch {
+                    noAccess.push(dep.engine_id);
+                }
+            }
+            setUserDependencies(hasAccess);
+            setUserNoAccess(noAccess);
+            setEnginePermissions(permissions);
+            setCheckingAccess(false);
+        })();
     }, [selectedMember, allDependencies, adminMode]);
 
     // debounce the input
