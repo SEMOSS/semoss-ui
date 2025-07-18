@@ -13,6 +13,7 @@ const SECTION_TEXT = 'Text';
 const SECTION_CHARTS = 'Data Charts';
 const SECTION_MISC = 'Miscellaneous';
 const SECTION_GROUPED = 'Grouped Blocks';
+const SECTION_GOOGLEDOCS = 'GoogleDocs';
 
 export const SECTION_ORDER = [
     SECTION_LAYOUT,
@@ -23,6 +24,7 @@ export const SECTION_ORDER = [
     SECTION_MISC,
     SECTION_CHARTS,
     // SECTION_GROUPED,
+    SECTION_GOOGLEDOCS,
 ];
 
 // Development Environment Blocks
@@ -74,6 +76,46 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 header: [],
                 content: [],
             },
+        },
+    },
+
+    {
+        section: SECTION_GOOGLEDOCS,
+        name: 'Googledocs',
+        helperText: 'Integrate with Google Docs to manage documents',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'googledocstext',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Google Docs Block',
+                isStreaming: false,
+                show: 'true',
+                showDocsCreateForm: false,
+                showCreateForm: false,
+                showDocsUpdateForm: false,
+                showUpdateForm: false,
+                showDocsReadForm: false,
+                showReadForm: false,
+                showDocsDeleteForm: false,
+                showDeleteForm: false,
+                listAllDocs: false,
+                listedDocs: false,
+                title: '',
+                content: '',
+                googledocsConnectionValue: '',
+                googledocsActionValue: '',
+                docsTitleValue: '',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
 
