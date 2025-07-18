@@ -1,4 +1,13 @@
-export const LoadingSkeleton = (props) => {
+import React from "react";
+/**
+ * LoadingSkeleton is a stateless functional component that renders a
+ * loading skeleton UI using SVG elements. It is primarily used to
+ * provide a placeholder while content is being loaded. The component
+ * accepts and spreads any props passed to it onto the root div
+ * element, allowing for flexible styling and additional attributes.
+ */
+
+export const LoadingSkeleton = React.memo((props) => {
     return (
         <div {...props}>
             <svg
@@ -423,4 +432,4 @@ export const LoadingSkeleton = (props) => {
             </svg>
         </div>
     );
-};
+});

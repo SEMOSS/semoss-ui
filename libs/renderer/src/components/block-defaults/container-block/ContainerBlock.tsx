@@ -82,7 +82,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
      * @param {string} template The name of the template to load.
      * @returns {ReactElement} The loaded template, or nothing if it doesn't exist.
      */
-    const loadTemplate = (template: string): ReactElement => {
+    const getLoadingChildren = (template: string): ReactElement => {
         if (template === "LoadingSkeleton") {
             return <LoadingSkeleton />;
         }
@@ -106,7 +106,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             <LoadingScreen relative>
                 {/* Render the loading skeleton if specified */}
                 {isLoading ? (
-                    loadTemplate(data.loadSkeleton)
+                    getLoadingChildren(data.loadSkeleton)
                 ) : (
                     <Slot slot={slots.children}></Slot>
                 )}

@@ -58,21 +58,14 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 
     const getLoadingChildren = () => {
         if (data?.loadSkeleton && data?.loadSkeleton === "LoadingSkeleton") {
-            return (
-                <LoadingScreen relative>
-                    <LoadingSkeleton />
-                </LoadingScreen>
-            );
+            return <LoadingSkeleton />;
         }
-        return (
-            <LoadingScreen relative>
-                <LoadingScreen.Trigger />
-            </LoadingScreen>
-        );
+        return <LoadingScreen.Trigger />;
     };
     // If the block is loading, return the loading children
     // Otherwise, render the block with the text content
-    if (isLoading) return getLoadingChildren();
+    if (isLoading)
+        return <LoadingScreen relative>{getLoadingChildren()}</LoadingScreen>;
 
     // TODO: Why?
     return showBlock(block, state)
