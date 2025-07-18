@@ -254,6 +254,30 @@ export const ListenerActionOverlay = observer(
             }
         }, [message]);
 
+        const queryIdValue = watch('payload.queryId');
+        const cellIdValue = watch('payload.cellId');
+        const nameValue = watch('payload.name');
+        const destinationTypeValue = watch('payload.destinationType');
+        const destinationValue = watch('payload.destination');
+
+        // Validation logic for all ActionMessages
+        const isSaveEnabled = (() => {
+            switch (message) {
+                case ActionMessages.RUN_QUERY:
+                    return !!queryIdValue;
+                case ActionMessages.RUN_CELL:
+                    return !!queryIdValue && !!cellIdValue;
+                case ActionMessages.DISPATCH_EVENT:
+                    return !!nameValue;
+                case ActionMessages.DISPATCH_OPEN_EVENT:
+                    return !!destinationTypeValue && !!destinationValue;
+                case ActionMessages.DISPATCH_OUTPUTS_EVENT:
+                    return true; // No required fields
+                default:
+                    return false;
+            }
+        })();
+
         return (
             <>
                 <Modal.Title>
@@ -551,7 +575,12 @@ export const ListenerActionOverlay = observer(
                     >
                         Cancel
                     </Button>
-                    <Button onClick={() => onSubmit()}>Save</Button>
+                    <Button
+                        onClick={() => onSubmit()}
+                        disabled={!isSaveEnabled}
+                    >
+                        Save
+                    </Button>
                 </Modal.Actions>
             </>
         );
