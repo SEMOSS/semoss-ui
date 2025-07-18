@@ -38,8 +38,11 @@ jobs:
               #install and switch to node 18 
               #pnpm install and build 
               #copy legacy into semoss-ui/packages/legacy 
+            
+            - name: Install n (Node version manager)
+              run: npm install -g n
 
-             # ---------- Build semoss-ui (Node 24) -----------                
+            # ---------- Build semoss-ui (Node 24) -----------                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
@@ -60,6 +63,10 @@ jobs:
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
+            
+            - name: Switch to Node 18
+              run: n 18
+
             - name: Remove previous legacy folder
               run: rm -rf packages/legacy
 
@@ -75,41 +82,13 @@ jobs:
                 mv tmp/bi-main ./packages/legacy
                 rm -rf tmp/
             
-            # # https://github.com/SEMOSS/bi/issues/1
-            # - name: Delete contents of legacy folder
-            #   run: |
-            #       echo "Remove and recreate the legacy folder"
-            #       rm -rf legacy
-            #       mkdir legacy
-            #       ls -als
-
-            # - name: Download contents of SEMOSS/bi project
-            #   run: |
-            #       echo "Download SEMOSS/bi as a zip file"
-            #       mkdir -p tmp
-            #       curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
-            #       echo "Unzip contents of the SEMOSS/bi to the tmp folder"
-            #       unzip tmp/main.zip -d tmp/
-            #       echo "Delete the playsheet folder from semoss/bi files"
-            #       rm -rf tmp/bi-main/playsheet/
-            #       ls -als tmp/bi-main/
-            #       echo "Remove zip file"
-            #       rm tmp/main.zip
-            
-            # - name: Move SEMOSS/bi files into the legacy folder
-            #   run: |
-            #       echo "Move contents of SEMOSS/bi into legacy folder"
-            #       cp -r tmp/bi-main/. legacy/
-            #       echo "Delete tmp folder"
-            #       rm -rf tmp/
-            #       echo "list files under legacy folder"
-            #       ls -als legacy
-
             # ---------- Build SEMOSS/bi (Node 18) -----------
-            - name: Set up Node.js 18 for SEMOSS/bi
-              uses: actions/setup-node@v4
-              with:
-                node-version: '18'
+            
+
+            # - name: Set up Node.js 18 for SEMOSS/bi
+            #   uses: actions/setup-node@v4
+            #   with:
+            #     node-version: '18'
 
             - name: Install pnpm in Node 18 session
               run: npm install -g pnpm@10.13
@@ -121,37 +100,6 @@ jobs:
                 pnpm rebuild node-sass
                 pnpm run build
 
-            # - name: Cache node modules and Maven repository
-            #   uses: actions/cache@v4
-            #   with:
-            #       path: |
-            #           node_modules
-            #           .m2/repository
-            #           dist
-            #           index.html
-            #           .nx/cache
-            #       key: ${{ github.ref_name }}
-
-            # - name: Install dependencies
-            #   run: |
-            #       apt-get update
-            #       apt-get install -y maven
-            #       npm install -g pnpm@10.10
-            #       pnpm install
-            
-            # # - name: Install nvm and node 24
-            # #   run: |
-            # #       curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
-            # #       export NVM_DIR="$HOME/.nvm"
-            # #       [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"
-            # #       nvm install 24
-            # #       nvm use 24
-            # #       node --version
-
-            # - name: Build
-            #   env:
-            #       NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
-            #   run: npx nx run-many -t build -p @semoss/client @semoss/legacy
 
             - name: Maven clean install
               run: |
