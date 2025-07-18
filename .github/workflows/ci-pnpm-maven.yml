@@ -44,6 +44,8 @@ jobs:
               uses: actions/setup-node@v4
               with:
                 node-version: '24'
+                cache: "pnpm"
+                
             - name: Install pnpm
               uses: pnpm/action-setup@v4
               with:
@@ -55,7 +57,7 @@ jobs:
             - name: Install dependencies and build (semoss-ui)
               run: |
                 pnpm install
-                pnpm run build:dev
+                pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
             - name: Remove previous legacy folder
