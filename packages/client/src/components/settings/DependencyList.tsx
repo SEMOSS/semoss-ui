@@ -2,11 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { styled, Typography, Button, Box } from '@semoss/ui';
 import { usePixel } from '@/hooks';
 import { Add } from '@mui/icons-material';
-import { SETTINGS_PROVISIONED_USER, SETTINGS_ROLE } from './settings.types';
+import { SETTINGS_ROLE } from './settings.types';
 import { MemberDependencyOverlay } from './MemberDependencyOverlay';
-interface DependencyListProps {
-    id: string;
-}
 
 interface DependencyListProps {
     id: string;
