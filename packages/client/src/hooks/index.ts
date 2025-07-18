@@ -11,7 +11,6 @@ import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
-import { useFileManager } from './useFileManager';
 
 export {
     useAPI,
@@ -27,5 +26,4 @@ export {
     useWorkspace,
     useDebounce,
     useDebounceValue,
-    useFileManager,
 };

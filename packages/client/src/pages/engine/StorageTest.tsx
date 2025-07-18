@@ -1,18 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
 import {
   Checkbox,
   Search,
   Table,
   Typography,
   styled,
+  useNotification,
 } from '@semoss/ui';
-import { useFileManager } from '@/hooks';
-
+import { usePixel } from '@/hooks';
+ 
+export interface FileTableProps {
+  id: string;
+  storagePath?: string;
+}
+ 
+ 
+export interface FileExplorerProps {
+  fileName: string;
+  fileSize: number;
+  lastModified: {
+    seconds: number;
+    nanos: number;
+  };
+}
+ 
 const StyledTableContainer = styled(Table.Container)({
   borderRadius: '12px',
   boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
 });
-
+ 
 const StyledTableTitleContainer = styled('div')({
   display: 'flex',
   alignItems: 'center',
@@ -21,7 +38,7 @@ const StyledTableTitleContainer = styled('div')({
   backgroundColor: 'white',
   justifyContent: 'space-between',
 });
-
+ 
 const StyledFileContent = styled('div')({
   display: 'flex',
   width: '100%',
@@ -32,55 +49,89 @@ const StyledFileContent = styled('div')({
   flexShrink: '0',
   paddingLeft: '5px',
 });
-
+ 
 const StyledTableTitleDiv = styled('div')({
   display: 'flex',
   padding: '12px 24px 12px 16px',
   alignItems: 'center',
   gap: '10px',
 });
-
+ 
 const StyledFileTable = styled(Table)({ backgroundColor: 'white' });
-
+ 
 interface StorageTestProps {
   id: string;
   storagePath?: string;
 }
-
+ 
+interface EnrichedFile extends FileExplorerProps {
+  formattedDate: string;
+}
+ 
 const StorageTest = ({ id, storagePath = '/' }: StorageTestProps) => {
+  const [selectedFiles, setSelectedFiles] = useState<EnrichedFile[]>([]);
   const [filePage, setFilePage] = useState<number>(1);
+  const [fileCount, setFileCount] = useState<number>(0);
+  const [filteredFileCount, setFilteredFileCount] = useState<number>(0);
+  const fileSearchRef = useRef<any>(null);
+  const didMount = useRef<boolean>(false);
+  const notification = useNotification();
+ 
   const NUM_RESULTS_PER_PAGE = 5;
-
-  const {
-    files,
-    searchFilter,
-    setSearchFilter,
-    selectedFiles,
-    setSelectedFiles,
-    isLoading
-  } = useFileManager({
-    engineId: id,
-    mode: 'storage',
-    storagePath
+ 
+  const { control, watch, setValue } = useForm<{
+    FILES: EnrichedFile[];
+    SEARCH_FILTER: string;
+  }>({
+    defaultValues: {
+      FILES: [],
+      SEARCH_FILTER: '',
+    },
   });
-
-  const startIndex = filePage * NUM_RESULTS_PER_PAGE - NUM_RESULTS_PER_PAGE;
-  const endIndex = filePage * NUM_RESULTS_PER_PAGE;
-  const paginatedFiles = files.slice(startIndex, endIndex);
-
-  const toggleFileSelection = (file: any) => {
-    const isSelected = selectedFiles.some(f => f.fileName === file.fileName);
-    if (isSelected) {
-      setSelectedFiles(selectedFiles.filter(f => f.fileName !== file.fileName));
-    } else {
-      setSelectedFiles([...selectedFiles, file]);
+ 
+  const searchFilter = watch('SEARCH_FILTER');
+  const verifiedFiles = watch('FILES');
+ 
+  const query = `Storage(storage = '${id}') | ListStoragePathDetails(storagePath='${storagePath}')`;
+  const getFileDetails = usePixel<FileExplorerProps[]>(query);
+ 
+  useEffect(() => {
+    if (getFileDetails.status !== 'SUCCESS' || !getFileDetails.data) return;
+ 
+    const enrichedFiles: EnrichedFile[] = getFileDetails.data.map((file: any) => {
+      const date = new Date(
+        file.lastModified.seconds * 1000 + Math.round(file.lastModified.nanos / 1e6)
+      );
+      return {
+        fileName: file.key ?? 'Unknown',
+        fileSize: file.size ?? 0,
+        lastModified: file.lastModified,
+        formattedDate: date.toLocaleString(),
+      };
+    });
+ 
+    const filtered = enrichedFiles.filter((file) =>
+      file.fileName.toLowerCase().includes(searchFilter.toLowerCase())
+    );
+ 
+    filtered.sort(
+      (a, b) => new Date(a.formattedDate).getTime() - new Date(b.formattedDate).getTime()
+    );
+ 
+    setValue('FILES', filtered);
+    if (!didMount.current) {
+      setFileCount(enrichedFiles.length);
+      didMount.current = true;
     }
-  };
-
-  if (isLoading) {
-    return <div>Loading...</div>;
-  }
-
+    setFilteredFileCount(filtered.length);
+    fileSearchRef.current?.focus();
+ 
+    return () => {
+      setValue('FILES', []);
+      setSelectedFiles([]);
+    };
+  }, [getFileDetails.status, getFileDetails.data, searchFilter]);
+ 
   return (
     <StyledFileContent>
       <StyledTableContainer>
@@ -90,15 +141,16 @@ const StorageTest = ({ id, storagePath = '/' }: StorageTestProps) => {
           </StyledTableTitleDiv>
           <div>
             <Search
+              ref={fileSearchRef}
               placeholder={'Search Files'}
               size="small"
               sx={{ marginRight: '20px' }}
               value={searchFilter}
-              onChange={(e) => setSearchFilter(e.target.value)}
+              onChange={(e) => setValue('SEARCH_FILTER', e.target.value)}
             />
           </div>
         </StyledTableTitleContainer>
-
+ 
         <StyledFileTable>
           <Table.Head>
             <Table.Cell size="small">Select</Table.Cell>
@@ -107,23 +159,35 @@ const StorageTest = ({ id, storagePath = '/' }: StorageTestProps) => {
             <Table.Cell size="small">Size</Table.Cell>
           </Table.Head>
           <Table.Body>
-            {paginatedFiles.map((file, i) => {
-              const isSelected = selectedFiles.some(f => f.fileName === file.fileName);
-              return (
-                <Table.Row key={i}>
-                  <Table.Cell size="medium">
-                    <Checkbox
-                      checked={isSelected}
-                      onChange={() => toggleFileSelection(file)}
-                    />
-                  </Table.Cell>
-                  <Table.Cell>{file.fileName}</Table.Cell>
-                  <Table.Cell>{file.lastModified}</Table.Cell>
-                  <Table.Cell>
-                    {Math.round(file.fileSize * 10) / 10} KB
-                  </Table.Cell>
-                </Table.Row>
-              );
+            {verifiedFiles.map((file, i) => {
+              const start = filePage * NUM_RESULTS_PER_PAGE - NUM_RESULTS_PER_PAGE;
+              const end = filePage * NUM_RESULTS_PER_PAGE;
+              if (i >= start && i < end) {
+                const isSelected = selectedFiles.some(
+                  (f) => f.fileName === file.fileName
+                );
+                return (
+                  <Table.Row key={i}>
+                    <Table.Cell size="medium">
+                      <Checkbox
+                        checked={isSelected}
+                        onChange={() => {
+                          setSelectedFiles((prev) =>
+                            isSelected
+                              ? prev.filter((f) => f.fileName !== file.fileName)
+                              : [...prev, file]
+                          );
+                        }}
+                      />
+                    </Table.Cell>
+                    <Table.Cell>{file.fileName}</Table.Cell>
+                    <Table.Cell>{file.formattedDate}</Table.Cell>
+                    <Table.Cell>
+                      {Math.round(file.fileSize * 10) / 10} KB
+                    </Table.Cell>
+                  </Table.Row>
+                );
+              }
             })}
           </Table.Body>
           <Table.Footer>
@@ -136,7 +200,7 @@ const StorageTest = ({ id, storagePath = '/' }: StorageTestProps) => {
                 }}
                 page={filePage - 1}
                 rowsPerPage={NUM_RESULTS_PER_PAGE}
-                count={files.length}
+                count={filteredFileCount}
               />
             </Table.Row>
           </Table.Footer>
@@ -145,5 +209,5 @@ const StorageTest = ({ id, storagePath = '/' }: StorageTestProps) => {
     </StyledFileContent>
   );
 };
-
+ 
 export default StorageTest;
