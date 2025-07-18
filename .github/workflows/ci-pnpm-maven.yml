@@ -117,7 +117,8 @@ jobs:
             - name: Install dependencies and build (SEMOSS/bi)
               working-directory: packages/legacy
               run: |
-                pnpm install
+                cd /packages/legacy
+                pnpm install --ignore-workspace
                 pnpm run build
 
             # - name: Cache node modules and Maven repository
