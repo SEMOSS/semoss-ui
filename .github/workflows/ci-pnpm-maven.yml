@@ -108,6 +108,7 @@ jobs:
                 n 18
                 node -v
                 pnpm install --ignore-workspace
+                pnpm add node-sass@^7.0.0
                 pnpm rebuild node-sass
                 pnpm run build
 
