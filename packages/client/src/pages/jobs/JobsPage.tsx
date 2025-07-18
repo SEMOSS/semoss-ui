@@ -20,7 +20,7 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { useDebounce, useRootStore } from '@/hooks';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
@@ -168,14 +168,27 @@ export function JobsPage() {
             .then((response) => {
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
-                if (type.indexOf('ERROR') === -1 && output === true) {
-                    notification.add({
-                        color: 'success',
-                        message:
-                            jobId.length > 1 && jobGroup.length > 1
-                                ? `Successfully deleted all selected jobs`
-                                : `Successfully deleted ${type}`,
-                    });
+                // Expecting output to have { success: string[], failed: string[] }
+                const successIds = output?.success || [];
+                const failedIds = output?.failed || [];
+
+                if (type.indexOf('ERROR') === -1) {
+                    if (failedIds.length === 0) {
+                        notification.add({
+                            color: 'success',
+                            message: `Successfully deleted all selected jobs`,
+                        });
+                    } else {
+                        // Map failed job IDs to job names
+                        const failedJobNames = jobs
+                            .filter((job) => failedIds.includes(job.id))
+                            .map((job) => job.name)
+                            .join(', ');
+                        notification.add({
+                            color: 'warning',
+                            message: `Some jobs were deleted successfully, but the following jobs could not be deleted: ${failedJobNames}`,
+                        });
+                    }
                     jobId.length > 1 && jobGroup.length > 1
                         ? setJobsToDelete([])
                         : setJobToDelete(null);
@@ -201,7 +214,7 @@ export function JobsPage() {
             pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixelTwo(pixel);
+            await runPixel(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -218,7 +231,7 @@ export function JobsPage() {
             pixel += `ResumeJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixelTwo(pixel);
+            await runPixel(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',

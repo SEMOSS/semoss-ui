@@ -2,7 +2,7 @@ import { Controller, useForm } from 'react-hook-form';
 import PeopleAltIcon from '@mui/icons-material/PeopleAlt';
 import { Close } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import {
     Stack,
     Modal,
@@ -72,7 +72,7 @@ const StyledSelectItem = styled(Select.Item, {
     type: string;
 }>(({ theme, type }) => ({
     borderBottom:
-        type === 'Custom'
+        type === 'CUSTOM'
             ? '1px solid var(--Secondary-Border, #C4C4C4)'
             : 'none',
 }));
@@ -100,6 +100,7 @@ type TeamReturn = {
     id: string;
     type: string;
     description: string;
+    previousTeamName?: string;
 };
 
 type NewTeamForm = {
@@ -129,11 +130,18 @@ interface AddTeamModalProps {
 
 export const AddTeamModal = (props: AddTeamModalProps) => {
     const { open, onClose, isEdit, id, type, description } = props;
-    const navigate = useNavigate();
 
+    const navigate = useNavigate();
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
 
+    // State to track the previous team name, type
+    const [previousTeamName, setPreviousTeamName] = React.useState<
+        string | undefined
+    >(id);
+    const [previousType, setPreviousType] = React.useState<string | undefined>(
+        id,
+    );
     const {
         handleSubmit,
         control,
@@ -144,7 +152,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         defaultValues: {
             TEAM_NAME: id || '',
             TEAM_DESCRIPTION: description || '',
-            TEAM_TYPE: type || '',
+            TEAM_TYPE: type,
         },
         mode: 'onChange', // Ensures validation updates on field changes
     });
@@ -153,15 +161,19 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         reset({
             TEAM_NAME: id || '',
             TEAM_DESCRIPTION: description || '',
-            TEAM_TYPE: type || '',
+            TEAM_TYPE: type,
         });
+
+        // Update the previous team name when the modal is opened
+        setPreviousTeamName(id);
+        setPreviousType(type);
     }, [id, type, description, reset]);
 
     const selectedTeamType = watch('TEAM_TYPE');
 
     const loginTypes = [
         {
-            provider: 'Custom',
+            provider: 'CUSTOM',
             name: 'Custom',
             description: 'Directly manage users in the team',
             isOauth: false,
@@ -178,52 +190,47 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
      * Method that is called to create the team
      */
     const onSubmit = handleSubmit(async (data: NewTeamForm) => {
-        try {
-            if (isEdit) {
-                // Logic for editing the team
-                const editResponse =
-                    data.TEAM_TYPE === 'Custom'
-                        ? monolithStore.editTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              true,
-                          )
-                        : monolithStore.editTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              false,
-                              data.TEAM_TYPE,
-                          );
-
-                editResponse.then(() => {
+        if (isEdit) {
+            // Logic for editing the team
+            try {
+                const response = await monolithStore.editTeam(
+                    data.TEAM_NAME,
+                    data.TEAM_DESCRIPTION,
+                    data.TEAM_TYPE,
+                    previousTeamName,
+                    previousType,
+                );
+                if (response.status === 200 && response.data) {
                     onClose({
                         id: data.TEAM_NAME,
                         type: data.TEAM_TYPE,
                         description: data.TEAM_DESCRIPTION,
+                        previousTeamName: previousTeamName,
                     });
                     reset();
                     notification.add({
                         color: 'success',
                         message: 'Successfully updated team',
                     });
+                } else {
+                    throw new Error('Failed to update team');
+                }
+            } catch (e) {
+                console.error(e);
+                notification.add({
+                    color: 'error',
+                    message: 'Error updating team',
                 });
-            } else {
-                // Logic for creating a new team
-                const newResponse =
-                    data.TEAM_TYPE === 'Custom'
-                        ? monolithStore.addTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              true,
-                          )
-                        : monolithStore.addTeam(
-                              data.TEAM_NAME,
-                              data.TEAM_DESCRIPTION,
-                              false,
-                              data.TEAM_TYPE,
-                          );
-
-                newResponse.then(() => {
+            }
+        } else {
+            // Logic for creating a new team
+            try {
+                const response = await monolithStore.addTeam(
+                    data.TEAM_NAME,
+                    data.TEAM_DESCRIPTION,
+                    data.TEAM_TYPE,
+                );
+                if (response.status === 200 && !response.data) {
                     onClose({
                         id: data.TEAM_NAME,
                         type: data.TEAM_TYPE,
@@ -241,23 +248,20 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                         {
                             state: {
                                 name: data.TEAM_NAME,
-                                type:
-                                    data.TEAM_TYPE !== 'Custom'
-                                        ? data.TEAM_TYPE
-                                        : undefined,
+                                type: data.TEAM_TYPE,
                             },
                         },
                     );
+                } else {
+                    throw new Error('Failed to add team');
+                }
+            } catch (e) {
+                console.error(e);
+                notification.add({
+                    color: 'error',
+                    message: 'Error adding team',
                 });
             }
-        } catch (e) {
-            console.error(e);
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-        } finally {
-            // close the modal
         }
     });
 
@@ -390,7 +394,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
                                                 }
                                                 fullWidth={true}
                                             />
-                                            {selectedTeamType !== 'Custom' &&
+                                            {selectedTeamType !== 'CUSTOM' &&
                                             selectedTeamType !== '' ? (
                                                 <StyledContainer>
                                                     Must be the name of the

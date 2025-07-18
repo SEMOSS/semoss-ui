@@ -1,10 +1,8 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
 
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
-import { Slot } from "../../blocks";
 
 export interface LinkBlockDef extends BlockDef<"link"> {
     widget: "link";
@@ -33,30 +31,33 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const isFullUrl = (href:string) => {
-        return /^(https?:)?\/\//.test(data.href)
-    }
-
     const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if(!data.href) return;
-        if(isFullUrl(data.href)){
-            return
-        } else if (data.href.startsWith("/")) {
-            e.preventDefault()
-
-            const hash = window.location.hash 
-            const match = hash.match(/^#\/[^/]+\/[^/]+/)
-
-            if(match) {
-                const base  = match[0]
-
-                const newHash = base + (data.href.startsWith("/") ? data.href : "/")
-
-                window.location.hash = newHash
-            }
+        if (!data.href) {
+            return;
         }
 
-    }
+        const isFullUrl = /^(https?:)?\/\//.test(data.href);
+        if (isFullUrl) {
+            return; // External link, let default behavior happen
+        } else if (data.href.startsWith("/")) {
+            e.preventDefault();
+
+            const hash = window.location.hash;
+            // Match either #/s/:id/ or #/:id/view
+            const appPageMatch = hash.match(/^#\/app\/([^/]+)/);
+            const sharePageMatch = hash.match(/^#\/s\/([^/]+)/);
+
+            if (appPageMatch || sharePageMatch) {
+                const base = appPageMatch ? appPageMatch[0] : sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
+                const newHash = data.href.startsWith("/")
+                    ? base.replace(/\/$/, "") + data.href
+                    : base + data.href; // Avoid double slashes
+
+                window.location.hash = newHash;
+            }
+        }
+    };
+
     return (
         <a
             href={data.href}

@@ -5,6 +5,8 @@ import { LoadingScreen } from '@/components/ui';
 import { StepperContext, StepperContextType } from '@/contexts';
 
 export const ImportLayout = (props) => {
+    const { children } = props;
+
     const [isLoading, setIsLoading] =
         useState<StepperContextType['isLoading']>(false);
     const [internalSteps, setInternalSteps] = useState<
@@ -70,7 +72,7 @@ export const ImportLayout = (props) => {
             }}
         >
             {isLoading && <LoadingScreen.Trigger />}
-            <Outlet />
+            {children}{' '}
         </StepperContext.Provider>
     );
 };

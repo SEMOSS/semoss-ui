@@ -15,7 +15,7 @@ export type BoxShadowParts = {
 export interface ContainerBlockDef extends BlockDef<"container"> {
     widget: "container";
     data: {
-        style: CSSProperties 
+        style: CSSProperties;
         show: string;
         type: "custom" | "grid";
         dimension?: null | string;
@@ -33,24 +33,23 @@ export interface ContainerBlockDef extends BlockDef<"container"> {
     };
 }
 
-
 export const ContainerBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, listeners } = useBlock<ContainerBlockDef>(id);
     const buildBoxShadowFromParts = (parts?: BoxShadowParts): string => {
-        if(!parts) return "";
-        
+        if (!parts) return "";
+
         const safe = (value?: string): string => {
             // Check if the value is defined. If so, trim whitespace and return it.
             // If not, return the default value "0px".
             return value?.trim() || "0px";
         };
-    
+
         /**
          * The color of the box shadow. If it doesn't exist, default to "rgba(0,0,0,0.2)"
          * @type {string}
          */
         const color = parts?.color?.trim() || "rgba(0,0,0,0.2)";
-    
+
         /**
          * The box shadow string. This is constructed by joining the parts of the box
          * shadow with spaces. The resulting string should look like:
@@ -64,10 +63,10 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             safe(parts?.spreadRadius), // spread-radius
             color, // color
         ].join(" ");
-    
+
         return shadow as string;
     };
-    
+
     useEffect(() => {
         if (listeners.preProcess) {
             listeners.preProcess();

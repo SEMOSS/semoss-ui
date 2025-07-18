@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import { THEME } from '@/constants';
 import GIF from '@/assets/img/login-gif.gif';
 
 import {
@@ -172,26 +171,12 @@ const StyledRegisterNowBox = styled(Box)({
     justifyContent: 'center',
 });
 
-const StyledLogo = styled('img')(({ theme }) => ({
-    width: theme.spacing(3),
+const StyledLogoContainer = styled(Stack)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
-const StyledLogoBox = styled('div')(({ theme }) => ({
-    display: 'flex',
-    align: 'center',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    marginBottom: theme.spacing(4),
-}));
-
-const StyledLogoText = styled('span')(() => ({
-    fontFeatureSettings: '"clig" off, "liga" off',
-    fontFamily: 'Inter',
-    fontSize: '16px',
-    fontStyle: 'normal',
-    fontWeight: 500,
-    lineHeight: '150%',
-    letterSpacing: '0.15px',
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
 const StyledInstructions = styled(Typography)(({ theme }) => ({
@@ -536,20 +521,6 @@ export const LoginPage = observer(() => {
             });
     };
 
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
-
     // get the path the user is coming from
     const path = (location.state as { from: Location })?.from?.pathname || '/';
 
@@ -581,19 +552,22 @@ export const LoginPage = observer(() => {
                     <StyledScroll>
                         <StyledContent>
                             <div>
-                                <StyledLogoBox>
-                                    {themeMap.isLogoUrl ? (
-                                        <StyledLogo src={themeMap.logo} />
-                                    ) : THEME.logo ? (
-                                        <StyledLogo src={THEME.logo} />
+                                <StyledLogoContainer
+                                    direction={'row'}
+                                    alignItems={'center'}
+                                    spacing={1}
+                                >
+                                    {configStore.theme.logo ? (
+                                        <img src={configStore.theme.logo} />
                                     ) : null}
-                                    <StyledLogoText>
-                                        {themeMap.name
-                                            ? themeMap.name
-                                            : THEME.name}
-                                    </StyledLogoText>
-                                </StyledLogoBox>
-                                <Typography variant="h4">Welcome!</Typography>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{ fontWeight: 700 }}
+                                    >
+                                        {configStore.theme.name}
+                                    </Typography>
+                                </StyledLogoContainer>
+                                <StyledTitle variant="h4">Welcome!</StyledTitle>
                                 <StyledInstructions variant="body1">
                                     {register
                                         ? 'Register below'

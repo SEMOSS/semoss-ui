@@ -1072,15 +1072,9 @@ export class MonolithStore {
      * @param groupId
      * @param description
      * @param type
-     * @param isCustomGroup
      * @returns
      */
-    async addTeam(
-        groupId: string,
-        description: string,
-        isCustomGroup: boolean,
-        type?: string,
-    ) {
+    async addTeam(groupId: string, description: string, type?: string) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
@@ -1088,7 +1082,6 @@ export class MonolithStore {
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&description=' + encodeURIComponent(description);
-        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
         if (type) {
             postData += '&type=' + encodeURIComponent(type);
         }
@@ -1107,26 +1100,25 @@ export class MonolithStore {
      * @param groupId
      * @param description
      * @param type
-     * @param isCustomGroup
      * @returns
      */
     async editTeam(
         groupId: string,
         description: string,
-        isCustomGroup: boolean,
         type?: string,
+        previousTeamName?: string,
+        previousType?: string,
     ) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
-        url += 'group/editGroup';
+        url += 'group/editGroupDetails';
 
-        postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&description=' + encodeURIComponent(description);
-        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
-        if (type) {
-            postData += '&type=' + encodeURIComponent(type);
-        }
+        postData += 'groupId=' + encodeURIComponent(previousTeamName);
+        postData += '&newGroupId=' + encodeURIComponent(groupId);
+        postData += '&newDescription=' + encodeURIComponent(description);
+        postData += '&type=' + encodeURIComponent(previousType);
+        postData += '&newType=' + encodeURIComponent(type);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
@@ -1901,7 +1893,7 @@ export class MonolithStore {
                 params: {
                     projectId: projectId,
                 },
-            })
+            });
 
             // there was no response, that is an error
             if (!response) {

@@ -74,7 +74,7 @@ export const PromptBuilderContextStep = (props: {
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
-                <Typography variant="h5">Create Prompt</Typography>
+                <Typography variant="h6">Create Prompt</Typography>
                 <Typography variant="body1">
                     Construct your prompt by providing the context and inputs.
                     The context provides supplementary information so the model

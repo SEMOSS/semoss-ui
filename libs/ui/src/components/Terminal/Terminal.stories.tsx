@@ -58,9 +58,6 @@ const Template = (args) => {
 
                     new Promise((resolve) =>
                         setTimeout(() => {
-                            console.log("neel");
-                            setCommand("neel");
-
                             resolve("A");
                         }, 2000),
                     );
