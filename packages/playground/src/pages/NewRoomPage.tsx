@@ -1,24 +1,3 @@
-import { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Typography,
-    Button,
-    Grid,
-    Chip,
-    Stack,
-    Container,
-    IconButton,
-    TextField,
-    Tooltip,
-    MenuItem,
-    Select,
-    FormControl,
-    Badge,
-    CircularProgress,
-    Link,
-} from '@semoss/ui';
-import { Resizable } from 're-resizable';
 import {
     ArrowForward,
     AttachFileRounded,
@@ -28,28 +7,49 @@ import {
     SendRounded,
     TuneRounded,
 } from '@mui/icons-material';
-import { Alert, useNotification } from '@semoss/ui';
-import { useInsight } from '@semoss/sdk/react';
+import { useInsight, usePixel } from '@semoss/sdk/react';
+import {
+    Alert,
+    Badge,
+    Button,
+    Chip,
+    CircularProgress,
+    Container,
+    FormControl,
+    Grid,
+    IconButton,
+    Link,
+    MenuItem,
+    Select,
+    Stack,
+    styled,
+    TextField,
+    Tooltip,
+    Typography, useNotification
+} from '@semoss/ui';
+import { observer } from 'mobx-react-lite';
+import { Resizable } from 're-resizable';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     KnowledgeOverlayComponent,
-    ToolsOverlayComponent,
-    OptionsPickerComponent,
     OptionsMenuComponent,
+    OptionsPickerComponent,
     PromptLibraryComponent,
+    ToolsOverlayComponent,
 } from '@/components';
-import { useChat, usePixel } from '@/hooks';
-import { ChatRoom } from '@/stores';
 import { TEMPERATURE, TOKEN_LENGTH } from '@/constants';
+import { useChat } from '@/hooks';
+import { ChatRoom } from '@/stores';
 import { Prompt } from '@/types';
 
-const APP_DESCRIPTION = process.env.APP_DESCRIPTION
-    ? process.env.APP_DESCRIPTION
+const APP_DESCRIPTION = import.meta.env.APP_DESCRIPTION
+    ? import.meta.env.APP_DESCRIPTION
     : '';
 
-const ENABLE_MODEL_SELECT = process.env.ENABLE_MODEL_SELECT === 'true';
-const ENABLE_TASK = process.env.ENABLE_TASK === 'true';
-const ENABLE_TOOLS = process.env.ENABLE_TOOLS === 'true';
+const ENABLE_MODEL_SELECT = import.meta.env.ENABLE_MODEL_SELECT === 'true';
+const ENABLE_TASK = import.meta.env.ENABLE_TASK === 'true';
+const ENABLE_TOOLS = import.meta.env.ENABLE_TOOLS === 'true';
 
 const StyledPage = styled(Stack)(({ theme }) => ({
     height: '100%',
@@ -100,10 +100,10 @@ const StyledSelect = styled(Select)(({ theme }) => ({
     fontSize: '14px',
     maxWidth: '220px',
     '& .MuiOutlinedInput-notchedOutline, &:hover .MuiOutlinedInput-notchedOutline, &.Mui-focused .MuiOutlinedInput-notchedOutline':
-        {
-            border: 'none',
-            borderRadius: theme.shape.borderRadiusSm,
-        },
+    {
+        border: 'none',
+        borderRadius: theme.shape.borderRadiusSm,
+    },
     '& .MuiSelect-icon': {
         color: theme.palette.text.primary,
         top: 'calc(50% - 10px)',
@@ -624,7 +624,7 @@ export const NewRoomPage = observer(() => {
                                                                     sx={{
                                                                         borderColor:
                                                                             borderColor[
-                                                                                index
+                                                                            index
                                                                             ],
                                                                     }}
                                                                 >

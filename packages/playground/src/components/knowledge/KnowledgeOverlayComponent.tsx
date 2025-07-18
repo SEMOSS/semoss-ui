@@ -1,29 +1,25 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { AddRounded, Close } from '@mui/icons-material';
+import { useInsight, usePixel } from '@semoss/sdk/react';
 import {
     Button,
-    Modal,
+    CircularProgress,
     IconButton,
+    MenuItem,
+    Modal,
     Stack,
     TextField,
-    Typography,
-    MenuItem,
-    CircularProgress,
+    Typography, useNotification
 } from '@semoss/ui';
-import { AddRounded, Close } from '@mui/icons-material';
-import { useNotification } from '@semoss/ui';
-
+import React, { useEffect, useRef, useState } from 'react';
 import { Engine, Knowledge } from '@/types';
-import { usePixel } from '@/hooks';
-
+import { ExistingKnowledgeComponent } from './ExistingKnowledgeComponent';
 import {
     NewKnowledgeComponent,
     NewKnowledgeData,
 } from './NewKnowledgeComponent';
-import { ExistingKnowledgeComponent } from './ExistingKnowledgeComponent';
-import { useInsight } from '@semoss/sdk/react';
 
-const EMBEDDING_MODEL = process.env.EMBEDDING_MODEL || '';
-const ENABLE_FILE_UPLOAD = process.env.ENABLE_FILE_UPLOAD === 'true';
+const EMBEDDING_MODEL = import.meta.env.EMBEDDING_MODEL || '';
+const ENABLE_FILE_UPLOAD = import.meta.env.ENABLE_FILE_UPLOAD === 'true';
 
 interface KnowledgeOverlayComponentProps {
     /** Knowledge loaded into the room */
@@ -63,11 +59,11 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
         useEffect(() => {
             const engine: Engine | null = knowledge
                 ? {
-                      app_id: knowledge.id,
-                      app_name: knowledge.name,
-                      app_type: 'KNOWLEDGE',
-                      description: '',
-                  }
+                    app_id: knowledge.id,
+                    app_name: knowledge.name,
+                    app_type: 'KNOWLEDGE',
+                    description: '',
+                }
                 : null;
 
             setSelectedEngine(engine);
@@ -383,7 +379,7 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
                             ) : null
                         }
                     >
-                        {newEngineData ? <>Add</> : <>Select</>}
+                        {newEngineData ? "Add" : "Select"}
                     </Button>
                 </Modal.Actions>
             </Modal>

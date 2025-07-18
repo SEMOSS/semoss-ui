@@ -1,28 +1,27 @@
-import { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import { Navigate, useLocation, Location } from 'react-router-dom';
-import { useForm, Controller } from 'react-hook-form';
-
+import { useInsight } from '@semoss/sdk/react';
 import {
-    styled,
     Alert,
+    Box,
     Button,
-    Stack,
-    Snackbar,
+    Divider,
     LinearProgress,
+    Modal,
+    Snackbar,
+    Stack,
+    styled,
     TextField,
     Typography,
-    Divider,
-    Box,
-    Modal,
 } from '@semoss/ui';
-import { useInsight } from '@semoss/sdk/react';
+import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { Location, Navigate, useLocation } from 'react-router-dom';
 
 import LOGO_FULL from '@/assets/img/logo_full.svg';
 
-const APP_NAME = process.env.APP_NAME ? process.env.APP_NAME : '';
-const LOGO_FULL_PATH = process.env.LOGO_FULL_PATH
-    ? process.env.LOGO_FULL_PATH
+const APP_NAME = import.meta.env.APP_NAME ? import.meta.env.APP_NAME : '';
+const LOGO_FULL_PATH = import.meta.env.LOGO_FULL_PATH
+    ? import.meta.env.LOGO_FULL_PATH
     : '';
 
 const StyledMain = styled('div')(({ theme }) => ({
@@ -96,7 +95,7 @@ const StyledImageHolder = styled('div')(() => ({
     zIndex: 0,
 }));
 
-const StyledImage = styled('img')(() => ({
+const _StyledImage = styled('img')(() => ({
     height: '100%',
     // width: '100%',
     objectFit: 'cover',
@@ -428,13 +427,11 @@ export const LoginPage = observer(() => {
                                     )}
 
                                     {hasUsernamePassword && hasOAuth && (
-                                        <>
-                                            <StyledDivider>
-                                                <StyledDividerBox>
-                                                    or
-                                                </StyledDividerBox>
-                                            </StyledDivider>
-                                        </>
+                                        <StyledDivider>
+                                            <StyledDividerBox>
+                                                or
+                                            </StyledDividerBox>
+                                        </StyledDivider>
                                     )}
                                     {system.config.availableProviders.map(
                                         (p) => {

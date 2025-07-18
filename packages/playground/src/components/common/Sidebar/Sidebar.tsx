@@ -1,19 +1,3 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Button,
-    Typography,
-    List,
-    Stack,
-    IconButton,
-    Menu,
-    MenuItem,
-    Drawer,
-    Avatar,
-} from '@semoss/ui';
-import { useInsight } from '@semoss/sdk/react';
 import {
     Add,
     MenuOpenRounded,
@@ -21,16 +5,31 @@ import {
     MoreVertOutlined,
     PublicOutlined,
 } from '@mui/icons-material';
-
-import { useCacheState, useChat } from '@/hooks';
-import { SidebarItem } from './SidebarItem';
+import { useInsight } from '@semoss/sdk/react';
+import {
+    Avatar,
+    Button,
+    Drawer,
+    IconButton,
+    List,
+    Menu,
+    MenuItem,
+    Stack,
+    styled,
+    Typography,
+} from '@semoss/ui';
+import { observer } from 'mobx-react-lite';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import LOGO from '@/assets/img/logo.svg';
 import LOGO_FULL from '@/assets/img/logo_full.svg';
+import { useCacheState, useChat } from '@/hooks';
+import { SidebarItem } from './SidebarItem';
 
-const APP_NAME = process.env.APP_NAME ? process.env.APP_NAME : '';
-const LOGO_PATH = process.env.LOGO_PATH ? process.env.LOGO_PATH : '';
-const LOGO_FULL_PATH = process.env.LOGO_FULL_PATH
-    ? process.env.LOGO_FULL_PATH
+const APP_NAME = import.meta.env.APP_NAME ? import.meta.env.APP_NAME : '';
+const LOGO_PATH = import.meta.env.LOGO_PATH ? import.meta.env.LOGO_PATH : '';
+const LOGO_FULL_PATH = import.meta.env.LOGO_FULL_PATH
+    ? import.meta.env.LOGO_FULL_PATH
     : '';
 
 const DRAWER_OPEN_WIDTH = 320;
@@ -195,7 +194,6 @@ export const Sidebar = observer(() => {
 
             setSettingsMenuAnchorEle(null);
         } catch (e) {
-            console.warn(e);
         }
     };
 

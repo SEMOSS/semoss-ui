@@ -1,57 +1,18 @@
-# SEMOSS
+# Getting Started
 
-> A playground app built on SEMOSS. Test out and interact with a variety of models.
+1. Run `pnpm install` in root directory.
 
-## Development:
+2. Launch the dev-server, by running `pnpm run dev:playground`.
 
-Please install the following prerequisites:
+Note: If you have a custom setup, create a `.env.local` to configure your environment. 
 
-1. Node (at least v18.16.0) - [https://nodejs.org](https://nodejs.org)
-2. PNPM (v6.X.X) - [https://pnpm.io/]
+```.env.local
+    # development
+    # path to server
+    ENDPOINT=http://localhost:9090
 
-Navigate to the `client` folder.
-
-Create a ``.env.local` with the following credentials:
-
-```sh
-# ./client/.env.local
-
-# Backend where your application is running
-ENDPOINT=
-
-# Backend Module name
-MODULE=
-
-# Access key to authenticate (do not commit this)
-ACCESS_KEY=
-
-# Secret key to authenticate
-SECRET_KEY=
-
+    # name of deployed instance
+    MODULE=/Monolith
 ```
 
-Next install the dependencies:
-
-```sh
-# ./client
-
-pnpm install
-```
-
-Finally, run the development server:
-
-```sh
-# ./client
-
-pnpm run dev
-```
-
-To make a build:
-
-```sh
-# ./client
-
-pnpm run build
-
-# outputs in ./portals
-```
+**Do not change the .env**

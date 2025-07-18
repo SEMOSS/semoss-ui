@@ -1,4 +1,3 @@
-import { ChatContextProps, ChatContext } from './ChatContext';
+import { ChatContext } from "./ChatContext";
 
-export type { ChatContextProps };
 export { ChatContext };

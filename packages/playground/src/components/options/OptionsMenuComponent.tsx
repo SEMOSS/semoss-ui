@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Delete } from '@mui/icons-material';
 import {
     styled,
     Typography,
@@ -11,16 +11,15 @@ import {
     FormControlLabel,
 } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
-import { Delete } from '@mui/icons-material';
-
-import { ChatRoom } from '@/stores';
+import { useState } from 'react';
 import {
     KnowledgeOverlayComponent,
     RightMenu,
     ToolsOverlayComponent,
 } from '@/components';
+import { ChatRoom } from '@/stores';
 
-const ENABLE_TOOLS = process.env.ENABLE_TOOLS === 'true';
+const ENABLE_TOOLS = import.meta.env.ENABLE_TOOLS === 'true';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     color: theme.palette.text.primary,

@@ -1,3 +1,3 @@
-import { Router, history } from './Router';
+import { Router } from "./Router";
 
-export { Router, history };
+export { Router };

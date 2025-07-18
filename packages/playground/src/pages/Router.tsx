@@ -1,20 +1,19 @@
-import { useState, useLayoutEffect } from 'react';
-import {
-    Router as ReactRouter,
-    Routes,
-    Route,
-    Navigate,
-} from 'react-router-dom';
-import { createHashHistory } from 'history';
+
 import { useInsight } from '@semoss/sdk/react';
-import { styled, CircularProgress } from '@semoss/ui';
+import { CircularProgress, styled } from '@semoss/ui';
+import {
+    HashRouter,
+    Navigate,
+    Route,
+    Routes,
+} from 'react-router-dom';
 
 import { AuthenticatedLayout } from './AuthenticatedLayout';
+import { DiscoverPage } from './DiscoverPage';
 import { LoginPage } from './LoginPage';
 import { MainLayout } from './MainLayout';
 import { NewRoomPage } from './NewRoomPage';
 import { RoomPage } from './RoomPage';
-import { DiscoverPage } from './DiscoverPage';
 
 const StyledContainer = styled('div')(() => ({
     display: 'flex',
@@ -26,17 +25,10 @@ const StyledContainer = styled('div')(() => ({
     width: '100%',
 }));
 
-export const history = createHashHistory();
 
 export const Router = () => {
     const { isInitialized, error } = useInsight();
 
-    const [state, setState] = useState({
-        action: history.action,
-        location: history.location,
-    });
-
-    useLayoutEffect(() => history.listen(setState), [history]);
 
     // don't load anything if it is pending
     if (!isInitialized) {
@@ -48,15 +40,11 @@ export const Router = () => {
     }
 
     if (error) {
-        return <>Error</>;
+        return "Error";
     }
 
     return (
-        <ReactRouter
-            location={state.location}
-            navigationType={state.action}
-            navigator={history}
-        >
+        <HashRouter >
             <Routes>
                 <Route element={<AuthenticatedLayout />}>
                     <Route element={<MainLayout />}>
@@ -72,6 +60,6 @@ export const Router = () => {
                 <Route path="/login" element={<LoginPage />}></Route>
                 <Route path="*" element={<Navigate to="/login" replace />} />
             </Routes>
-        </ReactRouter>
+        </HashRouter>
     );
 };

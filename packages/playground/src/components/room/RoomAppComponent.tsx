@@ -1,16 +1,14 @@
-import { useEffect, useState } from 'react';
-import { observer } from 'mobx-react-lite';
 import {
-    Typography,
     CircularProgress,
     Stack,
+    Typography,
     useNotification,
 } from '@semoss/ui';
-
-import { ChatRoom } from '@/stores';
+import { observer } from 'mobx-react-lite';
+import { useEffect, useState } from 'react';
 import { RightMenu } from '@/components';
+import { ChatRoom } from '@/stores';
 
-const PLATFORM_LINK = process.env.PLATFORM_LINK;
 
 interface RoomAppComponentProps {
     /** Room to render */
@@ -49,7 +47,7 @@ export const RoomAppComponent: React.FC<RoomAppComponentProps> = observer(
 
             // TODO: Env specific
             // let url = `http://localhost:9090/SemossWeb/packages/client/dist/#/s/${response.id}`;
-            let url = `${PLATFORM_LINK}s/${options.toolId}`;
+            let url = `../../client/dist/#/s/${options.toolId}`;
 
             const params = [];
             for (const [key, value] of Object.entries(options.toolParameters)) {
@@ -69,7 +67,7 @@ export const RoomAppComponent: React.FC<RoomAppComponentProps> = observer(
             return () => {
                 window.removeEventListener('message', handleMessage);
             };
-        }, [options]);
+        }, [options, room.processAppResponse, room.closeSidebar, notification.add]);
 
         if (!options) {
             return;

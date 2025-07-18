@@ -1,29 +1,27 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useDebounceValue, usePixel } from '@/hooks';
+import { Close } from '@mui/icons-material';
+import { usePixel } from '@semoss/sdk/react';
 import {
-    styled,
     Button,
+    Checkbox,
+    Chip,
     CircularProgress,
-    Modal,
     Grid,
     IconButton,
-    MenuItem,
-    Stack,
-    TextField,
-    Typography,
     Link,
-    Chip,
-    Checkbox,
+    MenuItem,
+    Modal, Search,
+    Stack,
+    styled,
+    TextField,
+    Typography
 } from '@semoss/ui';
-import { Search } from '@semoss/ui';
-import { Close } from '@mui/icons-material';
-
+import React, { useEffect, useMemo, useState } from 'react';
 import LOGO from '@/assets/img/logo.svg';
+import { useDebounceValue } from '@/hooks';
 import { App, Engine, Tool } from '@/types';
 
-const PLATFORM_LINK = process.env.PLATFORM_LINK;
-const ENDPOINT = process.env.ENDPOINT;
-const MODULE = process.env.MODULE;
+const ENDPOINT = import.meta.env.ENDPOINT;
+const MODULE = import.meta.env.MODULE;
 
 const StyledHolder = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -278,7 +276,7 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                         <Link
                             variant="inherit"
                             target="_blank"
-                            href={`${PLATFORM_LINK}engine/function`}
+                            href={`../../client/dist/#/engine/function`}
                         >
                             new
                         </Link>{' '}
@@ -358,8 +356,9 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                                                     spacing={1}
                                                 >
                                                     <StyledItemImageHolder>
-                                                        {t.image ? (
+                                                        {t.image && (
                                                             <img
+                                                                alt=""
                                                                 src={t.image}
                                                                 onError={({
                                                                     currentTarget,
@@ -370,8 +369,6 @@ export const ToolsOverlayComponent: React.FC<ToolsOverlayComponentProps> = (
                                                                         LOGO;
                                                                 }}
                                                             />
-                                                        ) : (
-                                                            <></>
                                                         )}
                                                     </StyledItemImageHolder>
                                                     <Stack

@@ -1,39 +1,38 @@
-import { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import {
-    Stack,
-    Container,
-    TextField,
-    Tooltip,
-    IconButton,
-    CircularProgress,
-    Select,
-    styled,
-    MenuItem,
-    Button,
-} from '@semoss/ui';
-import { useNavigate } from 'react-router-dom';
 import {
     KeyboardArrowDownRounded,
     RuleRounded,
     SendRounded,
 } from '@mui/icons-material';
-
+import {
+    Button,
+    CircularProgress,
+    Container,
+    IconButton,
+    MenuItem,
+    Select,
+    Stack,
+    styled,
+    TextField,
+    Tooltip,
+} from '@semoss/ui';
+import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { OptionsPickerComponent } from '@/components';
 import { useChat } from '@/hooks';
 import { ChatRoom } from '@/stores';
-import { OptionsPickerComponent } from '@/components';
 
-const ENABLE_MODEL_SELECT = process.env.ENABLE_MODEL_SELECT === 'true';
-const ENABLE_TASK = process.env.ENABLE_TASK === 'true';
+const ENABLE_MODEL_SELECT = import.meta.env.ENABLE_MODEL_SELECT === 'true';
+const ENABLE_TASK = import.meta.env.ENABLE_TASK === 'true';
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     fontSize: '14px',
     maxWidth: '220px',
     '& .MuiOutlinedInput-notchedOutline, &:hover .MuiOutlinedInput-notchedOutline, &.Mui-focused .MuiOutlinedInput-notchedOutline':
-        {
-            border: 'none',
-            borderRadius: theme.shape.borderRadiusSm,
-        },
+    {
+        border: 'none',
+        borderRadius: theme.shape.borderRadiusSm,
+    },
     '& .MuiSelect-icon': {
         color: theme.palette.text.primary,
         top: 'calc(50% - 10px)',
@@ -78,7 +77,6 @@ export const RoomInputComponent: React.FC<RoomInputComponentProps> = observer(
                 // clear the input
                 setInput('');
             } catch (e) {
-                console.warn(e);
             } finally {
                 // noop
             }

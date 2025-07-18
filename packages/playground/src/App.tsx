@@ -1,16 +1,12 @@
 import { Env, InsightProvider } from '@semoss/sdk/react';
 
-import { styled, ThemeProvider, Notification } from '@semoss/ui';
+import { Notification, styled, ThemeProvider } from '@semoss/ui';
 import { Router } from '@/pages';
 
-if (process.env.NODE_ENV !== 'production') {
-    Env.update({
-        MODULE: process.env.MODULE || '',
-        ACCESS_KEY: process.env.ACCESS_KEY || '',
-        SECRET_KEY: process.env.SECRET_KEY || '',
-        APP: process.env.APP || '',
-    });
-}
+// use the environment variable to set the module
+Env.update({
+    MODULE: import.meta.env.MODULE || '/Monolith',
+});
 
 const StyledMain = styled('div')(({ theme }) => ({
     position: 'absolute',

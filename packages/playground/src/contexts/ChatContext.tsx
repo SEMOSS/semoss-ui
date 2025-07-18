@@ -5,7 +5,7 @@ import { ChatStore } from '@/stores';
 /**
  * Value
  */
-export type ChatContextProps = {
+type ChatContextProps = {
     /** chat store */
     chat: ChatStore;
 };
