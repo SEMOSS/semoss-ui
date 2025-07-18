@@ -22,6 +22,7 @@ import { SaveAppModal } from './SaveAppModal';
 import { AppDetailsStep } from './AppDetailsStep';
 import { useNotification } from '@semoss/ui';
 import { AppTagsStep } from './AppTagsStep';
+import EngineIdsModal from './EngineIdsModal';
 
 type AddAppForm = {
     [ADD_APP_FORM_FIELD_NAME]: string;
@@ -130,6 +131,10 @@ export const AddAppModal = (props: AddAppProps) => {
 
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
+    const [showEngineModal, setShowEngineModal] = useState(false);
+    const [pendingProjectId, setPendingProjectId] = useState<string | undefined>();
+    const [successIds, setSuccessIds] = useState<string[]>([]);
+    const [failedIds, setFailedIds] = useState<string[]>([]);
 
     const defaultFormValues: AddAppForm = {
         [ADD_APP_FORM_FIELD_NAME]: '',
@@ -162,6 +167,12 @@ export const AddAppModal = (props: AddAppProps) => {
 
             output = resp.pixelReturn[0].output;
             type = resp.pixelReturn[0].operationType[0];
+            const success = output.engineIds.success ? Object.keys(output.engineIds.success) : [];
+            const failed = output.engineIds.failed ? output.engineIds.failed : [];
+            setSuccessIds(success);
+            setFailedIds(failed);
+            setPendingProjectId(output.project_id);
+            setShowEngineModal(true);
 
             if (type.indexOf('ERROR') > -1) {
                 notification.add({
@@ -171,7 +182,6 @@ export const AddAppModal = (props: AddAppProps) => {
 
                 return;
             }
-            handleClose(output.project_id);
         } else {
             const createProjectResponse = await monolithStore.runQuery(
                 `CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["${data[ADD_APP_FORM_FIELD_APP_TYPE]}"], portal=["true"])`,
@@ -262,8 +272,13 @@ export const AddAppModal = (props: AddAppProps) => {
             handleClose(createProjectOutput.project_id);
         }
     };
+    const handleEngineModalOk = () => {
+        setShowEngineModal(false);
+        handleClose(pendingProjectId);
+    };
 
     return (
+        <>
         <SaveAppModal
             open={open}
             handleClose={handleClose}
@@ -273,5 +288,12 @@ export const AddAppModal = (props: AddAppProps) => {
             handleFormSubmit={createApp}
             errorMessage="There was an error creating your app. Please check your zip file and try again."
         />
+         <EngineIdsModal
+            open={showEngineModal}
+            successIds={successIds}
+            failedIds={failedIds}
+            onClose={handleEngineModalOk}
+        />
+        </>
     );
 };
