@@ -44,9 +44,13 @@ jobs:
               uses: actions/setup-node@v4
               with:
                 node-version: '24'
-
             - name: Install pnpm
-              run: npm install -g pnpm@10.13
+              uses: pnpm/action-setup@v4
+              with:
+                version: 10.13
+
+            #- name: Install pnpm
+            #  run: npm install -g pnpm@10.13
 
             - name: Install dependencies and build (semoss-ui)
               run: |
