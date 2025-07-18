@@ -125,10 +125,6 @@ export class StateStore {
 
         // set the initial state after reactive to invoke it
         this.setState(config.state, config.initialParams);
-
-        // console.log(this.toJSON())
-        // const r = this.buildDependencyGraph(this._store, {}, [])
-        // console.log(r);
     }
 
     /**
@@ -811,6 +807,41 @@ export class StateStore {
     /**
      * Helpers
      */
+
+    /**
+     * Generates a unique page ID
+     */
+    private generatePageId(): string {
+        let pageNum = 2;
+        while (this._store.blocks[`page--${pageNum}`]) {
+            pageNum++;
+        }
+        return `page--${pageNum}`;
+    }
+
+    /**
+     * Generates a unique ID for non-page widgets
+     */
+    private generateNonPageId(widget: string): string {
+        // Try sequential numbers starting from 1
+        let blockNum = 1;
+        while (this._store.blocks[`${widget}--${blockNum}`]) {
+            blockNum++;
+        }
+        return `${widget}--${blockNum}`;
+    }
+
+    /**
+     * @description creates a new block id
+     * @returns block id - string
+     */
+    private generateBlockId = (json: BlockJSON): string => {
+        if (json.widget === "page") {
+            return this.generatePageId();
+        }
+        return this.generateNonPageId(json.widget);
+    };
+
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -818,40 +849,7 @@ export class StateStore {
      */
     private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
         // generate a new id
-        let id: string;
-        if (json.widget === "page") {
-            // Find all page blocks and their numbers
-            const usedPageNumbers = new Set<number>();
-            Object.keys(this._store.blocks).forEach(blockId => {
-                const match = blockId.match(/^page--(\d+)$/);
-                if (match) {
-                    usedPageNumbers.add(Number(match[1]));
-                }
-            });
-            // Find the lowest available page number
-            let pageNum = 2; // Start from 2 to avoid conflicts with the default page
-            while (usedPageNumbers.has(pageNum)) {
-                pageNum++;
-            }
-            id = `page--${pageNum}`;
-        } else if (json.widget !== "page") {
-            // Global sequencing: find all block numbers used, regardless of page and widget type
-            const usedBlockNumbers = new Set<number>();
-            Object.values(this._store.blocks).forEach(block => {
-                if (block.widget !== "page") {
-                    const match = block.id.match(/^.+--(\d+)$/);
-                    if (match) {
-                        usedBlockNumbers.add(Number(match[1]));
-                    }
-                }
-            });
-            // Find the lowest available block number
-            let blockNum = 1;
-            while (usedBlockNumbers.has(blockNum)) {
-                blockNum++;
-            }
-            id = `${json.widget}--${blockNum}`;
-        }
+        const id = this.generateBlockId(json);
 
         // create the block
         const block = {
@@ -1834,7 +1832,6 @@ export class StateStore {
                         const newHash = destination.startsWith("/")
                             ? base.replace(/\/$/, "") + destination
                             : base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
-
 
                         window.location.hash = newHash;
                     }
