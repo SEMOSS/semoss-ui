@@ -56,7 +56,7 @@ const StyledTileCard = styled(
         ),
     ),
 )<{ disabled: boolean }>(({ disabled, theme }) => ({
-    height: '247px',
+    minHeight: '247px',
     '&:hover': {
         cursor: disabled ? 'default' : 'pointer',
     },
@@ -227,7 +227,7 @@ const StyledPlaceholder = styled('div')(({ theme }) => ({
 
 const StyledMainDiv = styled('div')(({ theme }) => ({
     width: '307px',
-    height: '307px',
+    minHeight: '307px',
 }));
 
 const StyledSkeletonImage = styled('div')(({ theme }) => ({
@@ -479,11 +479,19 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const createdDate = useMemo(() => {
         const d = dayjs(app.project_date_created);
         if (!d.isValid()) {
-            return `Published ${dayjs().format('MMMM D, YYYY')}`;
+            return null;
         }
 
         return `Published ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_created]);
+    const lastEditedDate = useMemo(() => {
+        const d = dayjs(app.project_date_last_edited);
+        if (!d.isValid()) {
+            return null;
+        }
+
+        return `Last Edited ${d.format('MMMM D, YYYY')}`;
+    }, [app.project_date_last_edited]);
 
     /**
      * @name findAppImage
@@ -846,12 +854,22 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                         />
                                     ))}
                             </Stack>
-                            <StyledPublishedByContainer>
-                                <StyledAccessTimeIcon />
-                                <StyledPublishedByLabel variant={'body2'}>
-                                    {createdDate}
-                                </StyledPublishedByLabel>
-                            </StyledPublishedByContainer>
+                            {createdDate && (
+                                <StyledPublishedByContainer>
+                                    <StyledAccessTimeIcon />
+                                    <StyledPublishedByLabel variant={'body2'}>
+                                        {createdDate}
+                                    </StyledPublishedByLabel>
+                                </StyledPublishedByContainer>
+                            )}
+                            {lastEditedDate && (
+                                <StyledPublishedByContainer>
+                                    <StyledAccessTimeIcon />
+                                    <StyledPublishedByLabel variant={'body2'}>
+                                        {lastEditedDate}
+                                    </StyledPublishedByLabel>
+                                </StyledPublishedByContainer>
+                            )}
                             {systemApp && !appDetails && <StyledPlaceholder />}
                         </StyledCardContent>
                         <StyledCardActions>

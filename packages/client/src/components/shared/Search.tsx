@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
@@ -187,6 +187,7 @@ interface SearchProps {
 export const Search = observer(({ renderInput }: SearchProps) => {
     // TODO: navigation should be done through callback
     const navigate = useNavigate();
+    const location = useLocation();
     const { configStore } = useRootStore();
     const searchValue = configStore.store.globalSearch || '';
     const [open, setOpen] = useState(false);
@@ -213,6 +214,11 @@ export const Search = observer(({ renderInput }: SearchProps) => {
             };
         });
     }
+   
+    useEffect(() => {
+     configStore.setGlobalSearch('');
+    }, [location?.pathname]);
+
     const handleInputChange = (event, newInputValue) => {
         configStore.setGlobalSearch(newInputValue);
     };
@@ -357,7 +363,8 @@ export const Search = observer(({ renderInput }: SearchProps) => {
                                     label: option.label,
                                     id: option.id,
                                     type: option.section,
-                                });
+                                }),
+                                configStore.setGlobalSearch(''); // Clear search after selection
                             }}
                         >
                             <CatalogItem
