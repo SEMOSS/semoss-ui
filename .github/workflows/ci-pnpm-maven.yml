@@ -31,13 +31,6 @@ jobs:
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
-
-              #install node 24 - set to node 24
-              #pnpm install and build
-              #download semoss bi - rename semoss bi to lagacy 
-              #install and switch to node 18 
-              #pnpm install and build 
-              #copy legacy into semoss-ui/packages/legacy 
             
             - name: Install n (Node version manager)
               run: npm install -g n
@@ -97,7 +90,6 @@ jobs:
               working-directory: packages/legacy
               run: |
                 pnpm install --ignore-workspace
-                pnpm rebuild node-sass
                 pnpm run build
 
 
