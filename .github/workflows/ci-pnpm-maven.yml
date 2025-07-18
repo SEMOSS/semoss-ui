@@ -51,9 +51,7 @@ jobs:
             - name: Install dependencies and build (semoss-ui)
               run: |
                 pnpm install
-                cd packages/client
-                pnpm add prettier --save-dev
-                pnpm run build
+                pnpm run build:dev
 
             # ---------- Download and Set Up semoss/bi -----------
             - name: Remove previous legacy folder
