@@ -75,6 +75,9 @@ jobs:
                 mv tmp/bi-main ./packages/legacy
                 rm -rf tmp/
             
+            - name: Check Node.js version
+              run: node -v
+
             # ---------- Build SEMOSS/bi (Node 18) -----------
             
 
@@ -90,6 +93,7 @@ jobs:
               working-directory: packages/legacy
               run: |
                 pnpm install --ignore-workspace
+                pnpm rebuild node-sass
                 pnpm run build
 
 
