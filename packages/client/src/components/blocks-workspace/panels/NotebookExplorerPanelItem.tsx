@@ -7,6 +7,7 @@ import {
 } from '@mui/icons-material';
 
 import { alpha, Icon, IconButton, Stack, styled, Typography } from '@semoss/ui';
+import DuplicateIcon from '../../../assets/img/Duplicate.svg';
 
 const StyledItem = styled('li', {
     shouldForwardProp: (prop) => prop !== 'isDragging' && prop !== 'isSelected',
@@ -41,6 +42,14 @@ const StyledTypography = styled(Typography)(() => ({
     textOverflow: 'ellipsis',
     flex: '1',
 }));
+
+const StyledDuplicateIcon = styled('img')({
+    width: '1rem',
+    height: '1.0625rem',
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    objectFit: 'contain',
+});
 
 interface NotebookExplorerItemProps {
     /**  Details */
@@ -121,7 +130,10 @@ export const NotebookExplorerItem: React.FC<NotebookExplorerItemProps> =
                             size="small"
                             color={'default'}
                         >
-                            <ContentCopyOutlined fontSize="inherit" />
+                            <StyledDuplicateIcon
+                                src={DuplicateIcon}
+                                alt="Duplicate Icon"
+                            />
                         </IconButton>
                         <IconButton
                             title={`Delete ${name}`}
