@@ -117,6 +117,7 @@ jobs:
             - name: Install dependencies and build (SEMOSS/bi)
               working-directory: packages/legacy
               run: |
+                npm rebuild node-sass
                 pnpm install --ignore-workspace
                 pnpm run build
 
