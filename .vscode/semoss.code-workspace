@@ -4,6 +4,10 @@
       "path": "../"
     },
     {
+      "name": "cli",
+      "path": "../packages/cli"
+    },
+    {
       "name": "client",
       "path": "../packages/client"
     },
@@ -12,21 +16,13 @@
       "path": "../packages/playground"
     },
     {
-      "name": "cli",
-      "path": "../packages/cli"
-    },
-    {
       "name": "sdk",
-      "path": "../libs/sdk"
+      "path": "../packages/sdk"
     },
     {
       "name": "ui",
-      "path": "../libs/ui"
-    },
-    {
-      "name": "renderer",
-      "path": "../libs/renderer"
-    },
+      "path": "../packages/ui"
+    }
   ],
   "settings": {
     "files.exclude": {

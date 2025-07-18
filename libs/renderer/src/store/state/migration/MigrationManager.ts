@@ -1,4 +1,3 @@
-
 import { Migration, MigrationState } from "./migration.types";
 
 import migrate__1_0_0_alpha_to_1_0_0_alpha_1 from "./migrate__1_0_0_alpha__to__1_0_0_alpha_1";
@@ -13,7 +12,6 @@ import migrate__1_0_0_alpha_8_to_1_0_0_alpha_9 from "./migrate__1_0_0_alpha_8__t
 import migrate__1_0_0_alpha_9_to_1_0_0_alpha_10 from "./migrate__1_0_0_alpha_9__to___1_0_0_alpha_10_";
 import migrate__1_0_0_alpha_10_to_1_0_0_alpha_11 from "./migrate__1_0_0_alpha_10__to__1_0_0_alpha_11";
 
-
 // TODO: ANYTIME VERSION CHANGES
 // 1. Update Template Apps
 // 2. Update Agent Builder
@@ -27,7 +25,7 @@ export class MigrationManager {
     private latestVersion: string = STATE_VERSION;
 
     /**
- * Current record of all available migrations
+     * Current record of all available migrations
      */
     private migrations: Record<string, Migration> = {
         [migrate__1_0_0_alpha_to_1_0_0_alpha_1.versionFrom]:

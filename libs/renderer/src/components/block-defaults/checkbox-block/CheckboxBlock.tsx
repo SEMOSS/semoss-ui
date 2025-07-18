@@ -50,22 +50,21 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
         listeners.onChange();
     }, 200);
 
-   return (
-    <StyledContainer {...attrs}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <StyledCheckbox
-                style={{ ...data.style }}
-                disabled={data.disabled}
-                checked={data.value}
-                onChange={(e) => {
-                    const value = e.target.checked;
-                    setData("value", value);
-                    debouncedCallback();
-                }}
-            />
-            <Box>{data.label}</Box>
-        </Box>
-    </StyledContainer>
-);
-
+    return (
+        <StyledContainer {...attrs}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <StyledCheckbox
+                    style={{ ...data.style }}
+                    disabled={data.disabled}
+                    checked={data.value}
+                    onChange={(e) => {
+                        const value = e.target.checked;
+                        setData("value", value);
+                        debouncedCallback();
+                    }}
+                />
+                <Box>{data.label}</Box>
+            </Box>
+        </StyledContainer>
+    );
 });

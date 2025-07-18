@@ -7,9 +7,9 @@ import { RootStore } from '@/stores';
 import { RootStoreContext } from '@/contexts';
 import { AppWrapper } from './AppWrapper';
 
-// use the environment variable to set the module if in development
+// use the environment variable to set the module
 Env.update({
-    MODULE: process.env.MODULE || '',
+    MODULE: import.meta.env.MODULE || '/Monolith',
 });
 
 const CSRF = {

@@ -106,14 +106,6 @@ import {
     VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
 
-// import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
-// import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
-// import { config as QueryBlockConfig, QueryBlockDef } from "./query-block";
-// import { config as FooterBlockConfig, FooterBlockDef } from "./footer-block";
-// import { config as FormBlockConfig, FormBlockDef } from "./form-block";
-// import { config as HeaderBlockConfig, HeaderBlockDef } from "./header-block";
-// import { config as StepperBlockConfig, StepperBlockDef } from "./stepper-block";
-
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
     | PopoverBlockDef
@@ -157,14 +149,6 @@ export type DefaultBlockDefinitions =
     | TimePickerBlockDef
     | VisualizationFilterBlockDef
     | GridDynamicFrameBlockDef;
-// | BodyBlockDef
-// | DividerBlockDef
-// | FooterBlockDef
-// | FormBlockDef
-// | HeaderBlockDef
-// | QueryBlockDef
-// | SectionBlockDef
-// | StepperBlockDef
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -207,9 +191,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
-    [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig
-    // [StepperBlockConfig.widget]: StepperBlockConfig,
-    // [QueryBlockConfig.widget]: QueryBlockConfig,
+    [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
 };
 
 export {
@@ -251,5 +233,5 @@ export {
     TimePickerBlockConfig,
     FlipCardBlockConfig,
     VisualizationFilterBlockConfig,
-    GridDynamicFrameBlockConfig
+    GridDynamicFrameBlockConfig,
 };

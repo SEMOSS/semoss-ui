@@ -19,7 +19,7 @@ import {
     Button,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { Panel } from '@/components/workspace';
 import { SECTION_ORDER } from '../menus/default-menu';
 import { AddBlocksMenuCard } from '@/components/designer';
@@ -132,7 +132,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
      */
     const getClientBlocks = async () => {
         setLoading(true);
-        runPixelTwo('GetClientBlocks()').then((res) => {
+        await runPixel('GetClientBlocks()').then((res) => {
             const { pixelReturn, errors } = res;
             if (errors.length) {
                 notification.add({
@@ -163,22 +163,22 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
         setCommunityBlock(
             communityBlock.filter((item) => item['id'] !== blockId),
         );
-        runPixelTwo(
-            `DeleteBlock(blockId = "${blockId}", hardDelete = true)`,
-        ).then((res) => {
-            const { errors } = res;
-            if (errors.length) {
-                notification.add({
-                    color: 'error',
-                    message: errors.join(''),
-                });
-            } else {
-                notification.add({
-                    color: 'success',
-                    message: 'Block deleted successfully',
-                });
-            }
-        });
+        runPixel(`DeleteBlock(blockId = "${blockId}", hardDelete = true)`).then(
+            (res) => {
+                const { errors } = res;
+                if (errors.length) {
+                    notification.add({
+                        color: 'error',
+                        message: errors.join(''),
+                    });
+                } else {
+                    notification.add({
+                        color: 'success',
+                        message: 'Block deleted successfully',
+                    });
+                }
+            },
+        );
         workspace.closeOverlay();
     };
 

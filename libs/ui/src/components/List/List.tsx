@@ -29,7 +29,7 @@ export interface ListProps extends MuiListProps {
     /**
      * 	String to use a HTML element for root node
      */
-    component?: string;
+    component?: React.ReactElement;
 }
 
 const _List = (

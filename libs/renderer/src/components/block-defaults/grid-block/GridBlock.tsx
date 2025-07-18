@@ -308,8 +308,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
                 );
             });
 
-            let style = { ...origionalStyle };
-            for (let rule of matchingRowRules) {
+            const style = { ...origionalStyle };
+            for (const rule of matchingRowRules) {
                 if (rule.colorEntireRow) {
                     style.backgroundColor = rule.color;
                     style.color = "#fff";
