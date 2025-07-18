@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { ChangeEvent, useEffect, useMemo } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Controller, useForm } from 'react-hook-form';
@@ -114,6 +114,24 @@ export const ListenerActionOverlay = observer(
                                   },
                               },
                           }
+                        : lis.message === ActionMessages.DISPATCH_EVENT
+                        ? {
+                              defaultValues: {
+                                  message: ActionMessages.DISPATCH_EVENT,
+                                  payload: {
+                                      name: '',
+                                      detail: {},
+                                  },
+                              },
+                          }
+                        : lis.message === ActionMessages.DISPATCH_OUTPUTS_EVENT
+                        ? {
+                              defaultValues: {
+                                  message:
+                                      ActionMessages.DISPATCH_OUTPUTS_EVENT,
+                                  payload: {},
+                              },
+                          }
                         : {
                               defaultValues: {
                                   message: ActionMessages.RUN_QUERY,
@@ -219,10 +237,18 @@ export const ListenerActionOverlay = observer(
                     setValue('message', ActionMessages.RUN_QUERY);
                 }
             } else if (message === ActionMessages.DISPATCH_EVENT) {
-                setValue('payload', {
-                    name: '',
-                    detail: {},
-                });
+                if (listeners[listener].order[actionIdx]) {
+                    if (
+                        listeners[listener].order[actionIdx].message !==
+                        ActionMessages.DISPATCH_EVENT
+                    ) {
+                        setValue('payload', {
+                            name: '',
+                            detail: {},
+                        });
+                    }
+                    setValue('message', ActionMessages.DISPATCH_EVENT);
+                }
             } else if (message === ActionMessages.DISPATCH_OUTPUTS_EVENT) {
                 setValue('payload', {});
             } else if (message === ActionMessages.RUN_CELL) {
@@ -293,9 +319,48 @@ export const ListenerActionOverlay = observer(
                                     <Select
                                         label="Type"
                                         value={field.value ? field.value : ''}
-                                        onChange={(value) =>
-                                            field.onChange(value)
-                                        }
+                                        onChange={(
+                                            value: ChangeEvent<HTMLInputElement>,
+                                        ) => {
+                                            if (
+                                                value.target.value ===
+                                                ActionMessages.RUN_QUERY
+                                            ) {
+                                                setValue('payload', {
+                                                    queryId: '',
+                                                });
+                                            } else if (
+                                                value.target.value ===
+                                                ActionMessages.RUN_CELL
+                                            ) {
+                                                setValue('payload', {
+                                                    queryId: '',
+                                                    cellId: '',
+                                                });
+                                            } else if (
+                                                value.target.value ===
+                                                ActionMessages.DISPATCH_EVENT
+                                            ) {
+                                                setValue('payload', {
+                                                    name: '',
+                                                    detail: {},
+                                                });
+                                            } else if (
+                                                value.target.value ===
+                                                ActionMessages.DISPATCH_OUTPUTS_EVENT
+                                            ) {
+                                                setValue('payload', {});
+                                            } else if (
+                                                value.target.value ===
+                                                ActionMessages.DISPATCH_OPEN_EVENT
+                                            ) {
+                                                setValue('payload', {
+                                                    destinationType: '',
+                                                    destination: '',
+                                                });
+                                            }
+                                            field.onChange(value);
+                                        }}
                                     >
                                         {[
                                             ActionMessages.RUN_QUERY,
@@ -481,9 +546,13 @@ export const ListenerActionOverlay = observer(
                                                         ? field.value
                                                         : ''
                                                 }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
+                                                onChange={(value) => {
+                                                    setValue(
+                                                        'payload.destination',
+                                                        '',
+                                                    );
+                                                    field.onChange(value);
+                                                }}
                                             >
                                                 {destinationTypes.map(
                                                     (q, i) => (
