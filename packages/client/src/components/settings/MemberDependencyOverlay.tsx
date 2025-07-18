@@ -11,11 +11,15 @@ import {
     TextField,
     IconButton,
 } from '@semoss/ui';
-import {
-    EditRounded,
-    RemoveRedEyeRounded,
-    ClearRounded,
-} from '@mui/icons-material';
+
+import { ClearRounded } from '@mui/icons-material';
+
+import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { MembersAddOverlayUser } from './MembersAddOverlayUser';
+import { SETTINGS_ROLE } from './settings.types';
+import { checkUserDependencies } from '@/utility/checkUserDependencies';
+import { usePixel } from '@/hooks';
+
 // Styled modal content to match MembersAddOverlay
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     minWidth: '50rem',
@@ -38,16 +42,6 @@ const StyledOuterBox = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
 }));
 
-// import { ALL_TYPES } from '@/types';
-// import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
-
-import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
-import { MembersAddOverlayUser } from './MembersAddOverlayUser';
-import { SETTINGS_ROLE } from './settings.types';
-import { checkUserDependencies } from '@/utility/checkUserDependencies';
-import { usePixel } from '@/hooks';
-
-// const AUTOCOMPLETE_OFFSET = 0;
 const AUTOCOMPLETE_LIMIT = 10;
 
 interface MemberDependencyOverlayProps {
@@ -146,109 +140,6 @@ export const MemberDependencyOverlay = (
     const [hasMore, setHasMore] = useState(true);
     const [searchLoading, setSearchLoading] = useState(false);
     const [renderedMembers, setRenderedMembers] = useState([]);
-
-    // Add member to engine with selected permission
-    const addMemberToEngine = async (engineId: string, permission: string) => {
-        if (!selectedMember) return;
-        try {
-            // Map UI permission to backend value
-            let backendPermission = permission;
-            if (permission === 'Author') backendPermission = 'OWNER';
-            else if (permission === 'Editor') backendPermission = 'EDIT';
-            else if (permission === 'Read-Only')
-                backendPermission = 'READ_ONLY';
-
-            // Prepare request object
-            const userAdd = [
-                {
-                    userid: selectedMember.id,
-                    permission: backendPermission,
-                },
-            ];
-            // Call backend to add member
-            const response = await monolithStore.addEngineUserPermissions(
-                adminMode,
-                engineId,
-                userAdd,
-            );
-            if (response?.data?.success) {
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully added user to engine',
-                });
-                // Update local state: move engine from noAccess to hasAccess
-                setUserDependencies((prev) => [...prev, engineId]);
-                setUserNoAccess((prev) => prev.filter((id) => id !== engineId));
-                setEnginePermissions((prev) => ({
-                    ...prev,
-                    [engineId]: backendPermission,
-                }));
-                if (onChange) onChange();
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: 'Error adding user to engine',
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        }
-    };
-
-    // Update engine permission for a user
-    const handleEnginePermissionChange = async (
-        engineId: string,
-        newPermission: string,
-    ) => {
-        if (!selectedMember) return;
-        try {
-            // Map UI permission to backend value
-            let backendPermission = newPermission;
-            if (newPermission === 'Author') backendPermission = 'OWNER';
-            else if (newPermission === 'Editor') backendPermission = 'EDIT';
-            else if (newPermission === 'Read-Only')
-                backendPermission = 'READ_ONLY';
-
-            // Prepare request object
-            const userUpdate = [
-                {
-                    userid: selectedMember.id,
-                    permission: backendPermission,
-                },
-            ];
-            // Call backend to update permission
-            const response = await monolithStore.editEngineUserPermissions(
-                adminMode,
-                engineId,
-                userUpdate,
-            );
-            if (response?.data?.success) {
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully updated engine permission',
-                });
-                // Update local state
-                setEnginePermissions((prev) => ({
-                    ...prev,
-                    [engineId]: backendPermission,
-                }));
-                if (onChange) onChange();
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: 'Error updating engine permission',
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        }
-    };
 
     // Reset state when modal is opened or closed
     useEffect(() => {
