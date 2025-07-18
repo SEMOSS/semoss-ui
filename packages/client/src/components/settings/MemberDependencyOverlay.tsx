@@ -11,11 +11,7 @@ import {
     TextField,
     IconButton,
 } from '@semoss/ui';
-import {
-    EditRounded,
-    RemoveRedEyeRounded,
-    ClearRounded,
-} from '@mui/icons-material';
+import { ClearRounded } from '@mui/icons-material';
 // Styled modal content to match MembersAddOverlay
 const StyledModal = styled(Modal.Content)(({ theme }) => ({
     minWidth: '50rem',
@@ -44,7 +40,7 @@ const StyledOuterBox = styled('div')(({ theme }) => ({
 import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
-import { checkUserDependencies } from '@/utility/checkUserDependencies';
+
 import { usePixel } from '@/hooks';
 
 // const AUTOCOMPLETE_OFFSET = 0;
@@ -198,58 +194,6 @@ export const MemberDependencyOverlay = (
         }
     };
 
-    // Update engine permission for a user
-    const handleEnginePermissionChange = async (
-        engineId: string,
-        newPermission: string,
-    ) => {
-        if (!selectedMember) return;
-        try {
-            // Map UI permission to backend value
-            let backendPermission = newPermission;
-            if (newPermission === 'Author') backendPermission = 'OWNER';
-            else if (newPermission === 'Editor') backendPermission = 'EDIT';
-            else if (newPermission === 'Read-Only')
-                backendPermission = 'READ_ONLY';
-
-            // Prepare request object
-            const userUpdate = [
-                {
-                    userid: selectedMember.id,
-                    permission: backendPermission,
-                },
-            ];
-            // Call backend to update permission
-            const response = await monolithStore.editEngineUserPermissions(
-                adminMode,
-                engineId,
-                userUpdate,
-            );
-            if (response?.data?.success) {
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully updated engine permission',
-                });
-                // Update local state
-                setEnginePermissions((prev) => ({
-                    ...prev,
-                    [engineId]: backendPermission,
-                }));
-                if (onChange) onChange();
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: 'Error updating engine permission',
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        }
-    };
-
     // Reset state when modal is opened or closed
     useEffect(() => {
         if (open) {
@@ -285,18 +229,43 @@ export const MemberDependencyOverlay = (
             return;
         }
         setCheckingAccess(true);
-        checkUserDependencies(
-            allDependencies,
-            selectedMember.id,
-            monolithStore,
-            adminMode,
-        )
-            .then(({ hasAccess, noAccess, permissions }) => {
-                setUserDependencies(hasAccess);
-                setUserNoAccess(noAccess);
-                setEnginePermissions(permissions || {});
-            })
-            .finally(() => setCheckingAccess(false));
+        // Inline checkUserDependencies logic
+        (async () => {
+            const hasAccess = [];
+            const noAccess = [];
+            const permissions = {};
+            for (const dep of allDependencies) {
+                try {
+                    let users = [];
+                    // Engine (DATABASE, STORAGE, MODEL, VECTOR, FUNCTION, etc.)
+                    const result = await monolithStore.getEngineUsers(
+                        adminMode,
+                        dep.engine_id,
+                        '',
+                        '',
+                        0,
+                        1000,
+                    );
+                    users = result?.members || [];
+                    const userObj = users.find(
+                        (u) => u.id === selectedMember.id,
+                    );
+                    if (userObj) {
+                        hasAccess.push(dep.engine_id);
+                        permissions[dep.engine_id] =
+                            userObj.permission || 'Read-Only';
+                    } else {
+                        noAccess.push(dep.engine_id);
+                    }
+                } catch {
+                    noAccess.push(dep.engine_id);
+                }
+            }
+            setUserDependencies(hasAccess);
+            setUserNoAccess(noAccess);
+            setEnginePermissions(permissions);
+            setCheckingAccess(false);
+        })();
     }, [selectedMember, allDependencies, adminMode]);
 
     // debounce the input
