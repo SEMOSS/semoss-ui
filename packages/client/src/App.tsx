@@ -135,16 +135,18 @@ export const App = () => {
             if (!document) {
                 return;
             }
-            const envElement = document.getElementById('semoss-env');
-            const envText = envElement?.textContent || '';
-            if (envText) {
-                const env = JSON.parse(envText) as { MODULE: string };
-                // update the environment variables with the module
-                if (env) {
-                    Env.update({
-                        MODULE: env.MODULE,
-                    });
-                }
+
+            const env = JSON.parse(
+                document.getElementById('semoss-env')?.textContent || null,
+            ) as {
+                MODULE: string;
+            };
+
+            // update the enviornment variables with the module
+            if (env) {
+                Env.update({
+                    MODULE: env.MODULE,
+                });
             }
         } catch (e) {
             console.error(e);
