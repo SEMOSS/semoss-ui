@@ -11,6 +11,7 @@ import {
     IconButton,
     AvatarGroup,
     Avatar,
+    Skeleton,
     RadioGroup,
     Typography,
     Search,
@@ -59,7 +60,6 @@ const StyledMemberLoading = styled('div')(({ theme }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    height: '160px',
 }));
 
 const StyledMemberTable = styled(Table)({
@@ -312,8 +312,18 @@ export const MembersTable = (props: MembersTableProps) => {
         ];
     }
 
+    // Update userDetails to AUTHOR if ADMIN
     const getMembers = useAPI(getMembersApi);
-    const userDetails = useAPI(getUserDataApi);
+    const userDetails = !adminMode
+        ? useAPI(getUserDataApi)
+        : {
+              data: {
+                  permission: 'OWNER',
+              },
+              status: 'SUCCESS',
+              refresh: () => null,
+          };
+
     const allAuthorsResponse = useAPI(getAllAuthorsApi);
     const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
         [],
@@ -464,6 +474,7 @@ export const MembersTable = (props: MembersTableProps) => {
                 // refresh the members
                 getMembers.refresh();
                 allAuthorsResponse.refresh();
+                userDetails.refresh();
 
                 onChange();
             } else {
@@ -742,9 +753,52 @@ export const MembersTable = (props: MembersTableProps) => {
 
                     {isLoading ? (
                         <StyledMemberLoading>
-                            <LoadingScreen relative={true}>
-                                <LoadingScreen.Trigger description="Getting members" />
-                            </LoadingScreen>
+                            <StyledMemberTable>
+                                <Table.Body>
+                                    {[...Array(rowsPerPage)].map((_, idx) => (
+                                        <Table.Row key={idx}>
+                                            <Table.Cell
+                                                size="medium"
+                                                padding="checkbox"
+                                            >
+                                                <Skeleton
+                                                    variant="rectangular"
+                                                    width={20}
+                                                    height={20}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={160}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={240}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={160}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                            <Table.Cell size="medium">
+                                                <Skeleton
+                                                    variant="text"
+                                                    width={80}
+                                                    height={35}
+                                                />
+                                            </Table.Cell>
+                                        </Table.Row>
+                                    ))}
+                                </Table.Body>
+                            </StyledMemberTable>
                         </StyledMemberLoading>
                     ) : (
                         <>
@@ -952,15 +1006,16 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                     value="Author"
                                                                     label="Author"
                                                                     disabled={
-                                                                        !configStore.isEngineOperationAvailable(
+                                                                        (!configStore.isEngineOperationAvailable(
                                                                             type,
                                                                             'access',
                                                                         ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            .priority >
-                                                                            1
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                .priority >
+                                                                                1) &&
+                                                                        !adminMode
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -970,19 +1025,20 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                        (userPermission ===
+                                                                        (((userPermission ===
                                                                             'Editor' &&
                                                                             user.permission ===
                                                                                 'OWNER') ||
-                                                                        !configStore.isEngineOperationAvailable(
-                                                                            type,
-                                                                            'access',
-                                                                        ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >
-                                                                            2
+                                                                            !configStore.isEngineOperationAvailable(
+                                                                                type,
+                                                                                'access',
+                                                                            ) ||
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >
+                                                                                2) &&
+                                                                            !adminMode)
                                                                     }
                                                                 />
                                                                 <RadioGroup.Item
@@ -992,22 +1048,23 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         isLastAuthor(
                                                                             user,
                                                                         ) ||
-                                                                        (userPermission ===
+                                                                        (((userPermission ===
                                                                             'Editor' &&
                                                                             user.permission ===
                                                                                 'OWNER') ||
-                                                                        !configStore.isEngineOperationAvailable(
-                                                                            type,
-                                                                            'access',
-                                                                        ) ||
-                                                                        permissionPriorityMapper(
-                                                                            userPermission,
-                                                                        )
-                                                                            ?.priority >=
-                                                                            3 ||
-                                                                        readOnlyRestricted(
-                                                                            user,
-                                                                        )
+                                                                            !configStore.isEngineOperationAvailable(
+                                                                                type,
+                                                                                'access',
+                                                                            ) ||
+                                                                            permissionPriorityMapper(
+                                                                                userPermission,
+                                                                            )
+                                                                                ?.priority >=
+                                                                                3 ||
+                                                                            readOnlyRestricted(
+                                                                                user,
+                                                                            )) &&
+                                                                            !adminMode)
                                                                     }
                                                                 />
                                                             </RadioGroup>
@@ -1184,6 +1241,7 @@ export const MembersTable = (props: MembersTableProps) => {
                         // refresh
                         getMembers.refresh();
                         allAuthorsResponse.refresh();
+                        userDetails.refresh();
                     }
                 }}
             />

@@ -1,10 +1,11 @@
-import { styled, SxProps } from "@mui/material";
-import { useEffect, useState } from "react";
-import { getSingletonHighlighterCore } from "@shikijs/core";
+import { styled, SxProps, useTheme } from "@mui/material";
+import { useEffect, useRef, useState } from "react";
+import { createHighlighterCore } from "@shikijs/core";
 import { createJavaScriptRegexEngine } from "@shikijs/engine-javascript";
 
 //TODO: Dynamic import
-import shikijsTheme from "@shikijs/themes/github-light";
+import minLight from "@shikijs/themes/min-light";
+import gitHubDark from "@shikijs/themes/github-dark";
 
 import shikiLangJSX from "@shikijs/langs/jsx";
 import shikiLangTSX from "@shikijs/langs/tsx";
@@ -19,6 +20,7 @@ import shikiLangJava from "@shikijs/langs/java";
 const StyledCode = styled("code")(({ theme }) => ({
     ...theme.typography.body2,
     background: theme.palette.background.default,
+    width: "100%",
 }));
 
 export interface CodeProps {
@@ -51,8 +53,10 @@ export const Code: React.FC<CodeProps> = ({
     language = null,
     sx,
 }) => {
+    const { palette } = useTheme();
     // store the highlighted coe
     const [highlightedHtml, setHighlightedHTML] = useState<string>("");
+    const highlighterRef = useRef(null);
 
     // when it is a mounted, try to highlight
     useEffect(() => {
@@ -64,8 +68,8 @@ export const Code: React.FC<CodeProps> = ({
             }
 
             // get the highlighter
-            const highlighter = await getSingletonHighlighterCore({
-                themes: [shikijsTheme],
+            highlighterRef.current = await createHighlighterCore({
+                themes: [gitHubDark, minLight],
                 langs: [
                     shikiLangTypescript,
                     shikiLangJavascript,
@@ -80,8 +84,8 @@ export const Code: React.FC<CodeProps> = ({
                 engine: createJavaScriptRegexEngine(),
             });
 
-            const html = highlighter.codeToHtml(code, {
-                theme: "github-light",
+            const html = await highlighterRef.current.codeToHtml(code, {
+                theme: palette.mode === "light" ? "min-light" : "github-dark",
                 lang: language,
                 structure: "inline",
             });
@@ -96,7 +100,7 @@ export const Code: React.FC<CodeProps> = ({
         return () => {
             isMounted = false;
         };
-    }, [code, language]);
+    }, [code, palette.mode, language]);
 
     if (!highlightedHtml) {
         return <StyledCode sx={sx}>{code}</StyledCode>;

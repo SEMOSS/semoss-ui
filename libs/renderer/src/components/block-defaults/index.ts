@@ -36,6 +36,10 @@ import {
 } from "./flip-card-block";
 
 import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
+import {
+    config as GridDynamicFrameBlockConfig,
+    GridDynamicFrameBlockDef,
+} from "./grid-dynamic-frame-block";
 
 import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
 
@@ -97,20 +101,16 @@ import {
     config as VegaVisualizationBlockConfig,
     VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
-import { config as VisualizationFilterBlockConfig, VisualizationFilterBlockDef } from "./visualization-filter-block";
+
+import {
+    config as VisualizationFilterBlockConfig,
+    VisualizationFilterBlockDef,
+} from "./visualization-filter-block";
 
 import {
     config as SpreadsheetBlockConfig,
     SpreadsheetBlockDef,
 } from "./spreadsheet-block";
-
-// import { config as SectionBlockConfig, SectionBlockDef } from "./section-block";
-// import { config as BodyBlockConfig, BodyBlockDef } from "./body-block";
-// import { config as QueryBlockConfig, QueryBlockDef } from "./query-block";
-// import { config as FooterBlockConfig, FooterBlockDef } from "./footer-block";
-// import { config as FormBlockConfig, FormBlockDef } from "./form-block";
-// import { config as HeaderBlockConfig, HeaderBlockDef } from "./header-block";
-// import { config as StepperBlockConfig, StepperBlockDef } from "./stepper-block";
 
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
@@ -154,15 +154,9 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | TimePickerBlockDef
     | VisualizationFilterBlockDef
-    | SpreadsheetBlockDef
-// | BodyBlockDef
-// | DividerBlockDef
-// | FooterBlockDef
-// | FormBlockDef
-// | HeaderBlockDef
-// | QueryBlockDef
-// | SectionBlockDef
-// | StepperBlockDef
+    | GridDynamicFrameBlockDef
+    | SpreadsheetBlockDef;
+
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -205,9 +199,8 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [UploadBlockConfig.widget]: UploadBlockConfig,
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
+    [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
     [SpreadsheetBlockConfig.widget]: SpreadsheetBlockConfig,
-    // [StepperBlockConfig.widget]: StepperBlockConfig,
-    // [QueryBlockConfig.widget]: QueryBlockConfig,
 };
 
 export {
@@ -249,5 +242,6 @@ export {
     TimePickerBlockConfig,
     FlipCardBlockConfig,
     VisualizationFilterBlockConfig,
+    GridDynamicFrameBlockConfig,
     SpreadsheetBlockConfig,
 };

@@ -388,7 +388,7 @@ export const lightTheme: CustomThemeOptions = {
         },
         h5: {
             /* Typography/H5 */
-            fontSize: "24px",
+            fontSize: "4px",
             fontStyle: "normal",
             fontWeight: "500",
             lineHeight: "133.4%",
@@ -411,6 +411,9 @@ export const lightTheme: CustomThemeOptions = {
     components: {
         MuiCssBaseline: {
             styleOverrides: (themeParam) => ({
+                body: {
+                    overflow: "hidden",
+                },
                 "*::-webkit-scrollbar": {
                     width: "8px",
                     height: "8px",

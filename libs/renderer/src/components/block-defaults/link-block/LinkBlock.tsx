@@ -1,10 +1,8 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { Link } from "react-router-dom";
 
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
-import { Slot } from "../../blocks";
 
 export interface LinkBlockDef extends BlockDef<"link"> {
     widget: "link";
@@ -33,14 +31,13 @@ export const LinkBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const isFullUrl = (href: string) => {
-        return /^(https?:)?\/\//.test(data.href);
-    };
-
     const navigate = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (!data.href) return;
+        if (!data.href) {
+            return;
+        }
 
-        if (isFullUrl(data.href)) {
+        const isFullUrl = /^(https?:)?\/\//.test(data.href);
+        if (isFullUrl) {
             return; // External link, let default behavior happen
         } else if (data.href.startsWith("/")) {
             e.preventDefault();
