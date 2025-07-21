@@ -87,35 +87,35 @@ jobs:
             - name: Download SEMOSS/bi repository
               run: |
                 mkdir -p tmp
-                curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
-                unzip tmp/main.zip -d tmp/
-                rm tmp/main.zip
+                curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/776-update-bi-node-version.zip https://github.com/SEMOSS/bi/archive/refs/heads/776-update-bi-node-version.zip
+                unzip tmp/776-update-bi-node-version.zip -d tmp/
+                rm tmp/776-update-bi-node-version.zip
 
             - name: Move SEMOSS/bi to packages/legacy
               run: |
-                mv tmp/bi-main ./packages/legacy
+                mv tmp/bi-776-update-bi-node-version ./packages/legacy
                 rm -rf tmp/
 
             # # ---------- Build SEMOSS/bi (Node 18) -----------
             
 
-            - name: Set up Node.js 18 for SEMOSS/bi
-              uses: actions/setup-node@v4
-              with:
-                node-version: '18'
+            # - name: Set up Node.js 18 for SEMOSS/bi
+            #   uses: actions/setup-node@v4
+            #   with:
+            #     node-version: '18'
 
-            # - name: Install pnpm in Node 18 session
-            #   run: npm install -g pnpm@10.13
+            # # - name: Install pnpm in Node 18 session
+            # #   run: npm install -g pnpm@10.13
 
-            - name: Install dependencies and build (SEMOSS/bi)
-              working-directory: packages/legacy
-              run: |
-                n 18
-                node -v
-                pnpm install --ignore-workspace
-                pnpm add node-sass@^7.0.0
-                pnpm rebuild node-sass
-                pnpm run build
+            # - name: Install dependencies and build (SEMOSS/bi)
+            #   working-directory: packages/legacy
+            #   run: |
+            #     n 18
+            #     node -v
+            #     pnpm install --ignore-workspace
+            #     pnpm add node-sass@^7.0.0
+            #     pnpm rebuild node-sass
+            #     pnpm run build
 
 
             - name: Maven clean install
