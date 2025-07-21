@@ -43,13 +43,13 @@ import { useChat } from '@/hooks';
 import { ChatRoom } from '@/stores';
 import { Prompt } from '@/types';
 
-const APP_DESCRIPTION = import.meta.env.APP_DESCRIPTION
-    ? import.meta.env.APP_DESCRIPTION
+const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
+    ? import.meta.env.VITE_APP_DESCRIPTION
     : '';
 
-const ENABLE_MODEL_SELECT = import.meta.env.ENABLE_MODEL_SELECT === 'true';
-const ENABLE_TASK = import.meta.env.ENABLE_TASK === 'true';
-const ENABLE_TOOLS = import.meta.env.ENABLE_TOOLS === 'true';
+const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+const ENABLE_TASK = import.meta.env.VITE_ENABLE_TASK === "true";
+const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
 
 const StyledPage = styled(Stack)(({ theme }) => ({
     height: '100%',
@@ -207,7 +207,7 @@ export const NewRoomPage = observer(() => {
             setIsLoading(true);
 
             // create a new room
-            const room = await chat.openRoom(chat.models.selected, input);
+            const room = await chat.createRoom(chat.models.selected, input);
 
             // ask the room
             await room.askModel(input, options);
@@ -609,6 +609,7 @@ export const NewRoomPage = observer(() => {
 
                                                         return (
                                                             <Grid
+                                                                item
                                                                 key={p.ID}
                                                                 xs={4}
                                                             >

@@ -1,14 +1,14 @@
 import { Delete } from '@mui/icons-material';
 import {
-    styled,
-    Typography,
-    TextField,
-    Stack,
     Button,
-    IconButton,
-    List,
     Checkbox,
     FormControlLabel,
+    IconButton,
+    List,
+    Stack,
+    styled,
+    TextField,
+    Typography,
 } from '@semoss/ui';
 import { observer } from 'mobx-react-lite';
 import { useState } from 'react';
@@ -19,7 +19,7 @@ import {
 } from '@/components';
 import { ChatRoom } from '@/stores';
 
-const ENABLE_TOOLS = import.meta.env.ENABLE_TOOLS === 'true';
+const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === 'true';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
     color: theme.palette.text.primary,

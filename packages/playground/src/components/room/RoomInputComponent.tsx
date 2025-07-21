@@ -22,8 +22,8 @@ import { OptionsPickerComponent } from '@/components';
 import { useChat } from '@/hooks';
 import { ChatRoom } from '@/stores';
 
-const ENABLE_MODEL_SELECT = import.meta.env.ENABLE_MODEL_SELECT === 'true';
-const ENABLE_TASK = import.meta.env.ENABLE_TASK === 'true';
+const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === 'true';
+const ENABLE_TASK = import.meta.env.VITE_ENABLE_TASK === 'true';
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     fontSize: '14px',
@@ -76,7 +76,7 @@ export const RoomInputComponent: React.FC<RoomInputComponentProps> = observer(
 
                 // clear the input
                 setInput('');
-            } catch (e) {
+            } catch (_e) {
             } finally {
                 // noop
             }

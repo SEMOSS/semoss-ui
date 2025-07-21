@@ -7,8 +7,8 @@ import { MODEL_KEY } from "@/constants";
 import { Engine } from "@/types";
 import { ChatRoom } from "./chat.room";
 
-const DEFAUlT_MODEL = import.meta.env.DEFAUlT_MODEL || "";
-const ENABLE_MODEL_SELECT = import.meta.env.ENABLE_MODEL_SELECT === "true";
+const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
+const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -168,13 +168,9 @@ export class ChatStore {
 	}
 
 	/**
-	 * Create a new room object
+	 * Create a new room instance
 	 */
-	createRoom(roomId: string): ChatRoom {
-		if (this.getRoom(roomId)) {
-			throw new Error("Room exists");
-		}
-
+	newRoom(roomId: string): ChatRoom {
 		// create a new room
 		const room = new ChatRoom(roomId);
 
@@ -190,7 +186,7 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	openRoom = async (modelId: string, name: string): Promise<ChatRoom> => {
+	createRoom = async (modelId: string, name: string): Promise<ChatRoom> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -203,7 +199,7 @@ export class ChatStore {
 							roomId: string;
 						},
 					]
-				>(`OpenRoom();`);
+				>(`CreateRoom();`);
 
 			// throw errors
 			if (this._error) {
@@ -219,7 +215,7 @@ export class ChatStore {
 			const today = new Date();
 
 			// register the room
-			const room = this.createRoom(roomId);
+			const room = this.newRoom(roomId);
 
 			// set the initial data
 			room.setModel(modelId);
@@ -227,9 +223,6 @@ export class ChatStore {
 				name: name,
 				dateCreated: today.toDateString(),
 			});
-
-			// initialize it
-			await room.initialize();
 
 			runInAction(() => {
 				// add to the front
@@ -286,7 +279,6 @@ export class ChatStore {
 
 			return;
 		} catch (_e) {
-			console.e;
 			// turn off the loading screen
 			this.setIsLoading(false);
 		}
@@ -308,18 +300,16 @@ export class ChatStore {
 			this._store.order = [];
 
 			// wait for the pixel to run
-			const { pixelReturn } =
-				await this._actions.run<
-					[
-						{
-							ROOM_ID: string;
-							ROOM_NAME: string;
-							MODEL_ID: string;
-							DATE_CREATED: string;
-							OPTIONS: string;
-						}[],
-					]
-				>(`GetRooms();`);
+			const { pixelReturn } = await this._actions.run<
+				[
+					{
+						ROOM_ID: string;
+						ROOM_NAME: string;
+						MODEL_ID: string;
+						DATE_CREATED: string;
+					}[],
+				]
+			>(`GetUserConversationRooms();`);
 
 			// throw errors
 			if (this._error) {
@@ -340,11 +330,10 @@ export class ChatStore {
 
 				// create a new one if it doesn't
 				if (!room) {
-					room = this.createRoom(r.ROOM_ID);
+					room = this.newRoom(r.ROOM_ID);
 				}
 
 				room.setModel(r.MODEL_ID);
-				room.setOptions(r.OPTIONS ? JSON.parse(r.OPTIONS) : {});
 				room.setMetadata({
 					name: r.ROOM_NAME,
 					dateCreated: r.DATE_CREATED,

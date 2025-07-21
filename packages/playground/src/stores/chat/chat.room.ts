@@ -342,165 +342,132 @@ export class ChatRoom {
 
 	/**
 	 * Send a new user message and recieve a response
-	 * @param question - user message
+	 * @param prompt - user message
 	 */
 	askModel = async (
-		question: string,
+		prompt: string,
 		options?: Partial<ChatRoomInterface["options"]>,
 	): Promise<void> => {
-		//             if (!this._store.modelId) {
-		//                 throw new Error('Model is required');
-		//             }
-		//             if (!question) {
-		//                 throw new Error('Question is required');
-		//             }
-		//             // turn on the loading screen
-		//             this.setIsLoading(true);
-		//             // options to use with the ask
-		//             if (options) {
-		//                 this.setOptions(options);
-		//             }
-		//             // create a new message
-		//             const message = new ChatMessage();
-		//             // temp message
-		//             message.saveId(`TEMP`);
-		//             message.updateType('USER');
-		//             message.updateContent({
-		//                 type: 'TEXT',
-		//                 text: question,
-		//             });
-		//             // add it to the log
-		//             this._store.history.push(message);
-		//             // if there are vector dbs query that and get the content
-		//             let knowledge: {
-		//                 score: number;
-		//                 percent: string;
-		//                 source: string;
-		//                 content: string;
-		//             }[] = [];
-		//             if (this._store.options.knowledge) {
-		//                 knowledge = await this.askVectorCatalog(
-		//                     this._store.options.knowledge.id,
-		//                     question,
-		//                 );
-		//             }
-		//             // build the context if it is there
-		//             let context = '';
-		//             if (this._store.options?.instructions) {
-		//                 context = this._store.options?.instructions;
-		//             }
-		//             // build the full prompt
-		//             let prompt = '';
-		//             if (knowledge.length) {
-		//                 prompt = `
-		// Answer the question
-		// question:${question}
-		// based on the provided context. The context is presented as an array [{"content":"", "source": ""}]. Only use information from this context.
-		// context:${JSON.stringify(
-		//                     knowledge.map((k) => {
-		//                         return {
-		//                             content: k.content,
-		//                             source: k.source,
-		//                         };
-		//                     }),
-		//                 )}`;
-		//             } else {
-		//                 prompt = question;
-		//             }
-		//             // // reset the typewriter
-		//             // message.resetTypewriter('');
-		//             // // start collecting
-		//             // isCollecting = true;
-		//             // // initial delay collecting the partial
-		//             // setTimeout(() => collectMessage(message), 500);
-		//             // get a list of engine ids
-		//             const engines: string[] = this._store.options.tools.reduce(
-		//                 (acc, val) => {
-		//                     if (val.type === 'FUNCTION' || val.type === 'DATABASE') {
-		//                         acc.push(val.id);
-		//                     }
-		//                     return acc;
-		//                 },
-		//                 [],
-		//             );
-		//             // get a list of app ids
-		//             const apps: string[] = this._store.options.tools.reduce(
-		//                 (acc, val) => {
-		//                     if (val.type === 'APP') {
-		//                         acc.push(val.id);
-		//                     }
-		//                     return acc;
-		//                 },
-		//                 [],
-		//             );
-		//             // wait for the pixel to run
-		//             const response = await runPixel<
-		//                 [
-		//                     {
-		//                         messageId: string;
-		//                         response: PixelMessage[];
-		//                     },
-		//                 ]
-		//             >(
-		//                 `AskRoomPrompt(
-		// roomId=["${this._store.roomId}"],
-		// project_tools=${JSON.stringify(apps)},
-		// engine_tools=${JSON.stringify(engines)},
-		// modelId=["${this._store.modelId}"],
-		// ${context ? `context=["<encode>${context}</encode>"],` : ''}
-		// question=["<encode>${prompt}</encode>"],
-		// paramValues=[${JSON.stringify({
-		//                     max_new_tokens: this._store.options.tokenLength,
-		//                     temperature: this._store.options.temperature,
-		//                 })}],
-		// execute_tool=[${this._store.options.autoExecute}],
-		// chain_of_thought=[${this._store.options.chainOfThought}]
-		// );`,
-		//             );
-		//             const { output, operationType } = response.pixelReturn[0];
-		//             // throw errors
-		//             if (operationType.indexOf('ERROR') > -1) {
-		//                 throw new Error(output as unknown as string);
-		//             }
-		//             // update the id
-		//             message.saveId(output.messageId);
-		//             // save the new options
-		//             await runPixel<
-		//                 [
-		//                     {
-		//                         updated: boolean;
-		//                     },
-		//                 ]
-		//             >(
-		//                 `UpdateRoomOptions(roomId='${
-		//                     this.roomId
-		//                 }', roomOptions=[${JSON.stringify(this.options)}]);`,
-		//             );
-		//             //TODO: Modify later
-		//             if (
-		//                 this._store.options.chainOfThought === true &&
-		//                 this._store.options.autoExecute === false
-		//             ) {
-		//                 const conclusion = [...output.response];
-		//                 conclusion.push({
-		//                     type: 'CONCLUSION',
-		//                 });
-		//                 message.saveResponse(conclusion);
-		//             } else {
-		//                 // finish based on the full response
-		//                 message.saveResponse(output.response);
-		//             }
-		//             // TODO: sync with backend
-		//             // update the sources
-		//             const sourceMap = {};
-		//             for (const k of knowledge) {
-		//                 sourceMap[k.source] = true;
-		//             }
-		//             message.updateSources(Object.keys(sourceMap));
-		//         } finally {
-		//             // turn off the loading screen
-		//             this.setIsLoading(false);
-		//         }
+		try {
+			if (!this._store.modelId) {
+				throw new Error("Model is required");
+			}
+
+			if (!prompt) {
+				throw new Error("Prompt is required");
+			}
+			// turn on the loading screen
+			this.setIsLoading(true);
+			// options to use with the ask
+			if (options) {
+				this.setOptions(options);
+			}
+			
+			// create a new message
+			const message = new ChatMessage();
+			// temp message
+			message.saveId(`TEMP`);
+			message.updateType("USER");
+			message.updateContent({
+				type: "TEXT",
+				text: prompt,
+			});
+			// add it to the log
+			this._store.history.push(message);
+
+			// build the context if it is there
+			let _context = "";
+			if (this._store.options?.instructions) {
+				_context = this._store.options?.instructions;
+			}
+
+			const engines: string[] = this._store.options.tools.reduce(
+				(acc, val) => {
+					if (val.type === "FUNCTION" || val.type === "DATABASE") {
+						acc.push(val.id);
+					}
+					return acc;
+				},
+				[],
+			);
+			// get a list of app ids
+			const apps: string[] = this._store.options.tools.reduce(
+				(acc, val) => {
+					if (val.type === "APP") {
+						acc.push(val.id);
+					}
+					return acc;
+				},
+				[],
+			);
+			// wait for the pixel to run
+			const response = await runPixel<
+				[
+					{
+						messageId: string;
+						response: PixelMessage[];
+					},
+				]
+			>(
+				`AskPlayground(
+		roomId=["${this._store.roomId}"],
+		project_tools=${JSON.stringify(apps)},
+		engine_tools=${JSON.stringify(engines)},
+		modelId=["${this._store.modelId}"],
+		question=["<encode>${prompt}</encode>"],
+		paramValues=[${JSON.stringify({
+			max_new_tokens: this._store.options.tokenLength,
+			temperature: this._store.options.temperature,
+		})}],
+		execute_tool=[${this._store.options.autoExecute}],
+		chain_of_thought=[${this._store.options.chainOfThought}]
+		);`,
+			);
+			const { output, operationType } = response.pixelReturn[0];
+			// throw errors
+			if (operationType.indexOf("ERROR") > -1) {
+				throw new Error(output as unknown as string);
+			}
+			// update the id
+			message.saveId(output.messageId);
+
+			// // save the new options
+			// await runPixel<
+			// 	[
+			// 		{
+			// 			updated: boolean;
+			// 		},
+			// 	]
+			// >(
+			// 	`UpdateRoomOptions(roomId='${
+			// 		this.roomId
+			// 	}', roomOptions=[${JSON.stringify(this.options)}]);`,
+			// );
+			// //TODO: Modify later
+			// if (
+			// 	this._store.options.chainOfThought === true &&
+			// 	this._store.options.autoExecute === false
+			// ) {
+			// 	const conclusion = [...output.response];
+			// 	conclusion.push({
+			// 		type: "CONCLUSION",
+			// 	});
+			// 	message.saveResponse(conclusion);
+			// } else {
+			// 	// finish based on the full response
+			// 	message.saveResponse(output.response);
+			// }
+			// // TODO: sync with backend
+			// // update the sources
+			// const sourceMap = {};
+			// for (const k of knowledge) {
+			// 	sourceMap[k.source] = true;
+			// }
+			// message.updateSources(Object.keys(sourceMap));
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
 	};
 
 	/**

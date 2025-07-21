@@ -26,10 +26,10 @@ import LOGO_FULL from '@/assets/img/logo_full.svg';
 import { useCacheState, useChat } from '@/hooks';
 import { SidebarItem } from './SidebarItem';
 
-const APP_NAME = import.meta.env.APP_NAME ? import.meta.env.APP_NAME : '';
-const LOGO_PATH = import.meta.env.LOGO_PATH ? import.meta.env.LOGO_PATH : '';
-const LOGO_FULL_PATH = import.meta.env.LOGO_FULL_PATH
-    ? import.meta.env.LOGO_FULL_PATH
+const APP_NAME = import.meta.env.VITE_APP_NAME ? import.meta.env.VITE_APP_NAME : '';
+const LOGO_PATH = import.meta.env.VITE_LOGO_PATH ? import.meta.env.VITE_LOGO_PATH : '';
+const LOGO_FULL_PATH = import.meta.env.VITE_LOGO_FULL_PATH
+    ? import.meta.env.VITE_LOGO_FULL_PATH
     : '';
 
 const DRAWER_OPEN_WIDTH = 320;
@@ -193,7 +193,7 @@ export const Sidebar = observer(() => {
             await actions.logout();
 
             setSettingsMenuAnchorEle(null);
-        } catch (e) {
+        } catch (_e) {
         }
     };
 

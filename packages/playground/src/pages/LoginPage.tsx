@@ -19,9 +19,9 @@ import { Location, Navigate, useLocation } from 'react-router-dom';
 
 import LOGO_FULL from '@/assets/img/logo_full.svg';
 
-const APP_NAME = import.meta.env.APP_NAME ? import.meta.env.APP_NAME : '';
-const LOGO_FULL_PATH = import.meta.env.LOGO_FULL_PATH
-    ? import.meta.env.LOGO_FULL_PATH
+const APP_NAME = import.meta.env.VITE_APP_NAME ? import.meta.env.VITE_APP_NAME : '';
+const LOGO_FULL_PATH = import.meta.env.VITE_LOGO_FULL_PATH
+    ? import.meta.env.VITE_LOGO_FULL_PATH
     : '';
 
 const StyledMain = styled('div')(({ theme }) => ({
