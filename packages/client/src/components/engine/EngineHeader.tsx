@@ -60,7 +60,7 @@ const StyledInfoDescription = styled(Typography)(({ theme }) => ({
  */
 export const EngineHeader: React.FC = () => {
     // get the engine information
-    const { name, active } = useEngine();
+    const { name, active, type } = useEngine();
 
     // Service for Axios calls
     const { monolithStore } = useRootStore();
@@ -83,7 +83,27 @@ export const EngineHeader: React.FC = () => {
             const output = response.pixelReturn[0].output,
                 insightId = response.insightId;
 
-            monolithStore.download(insightId, output);
+            const formattedEngineType =
+                type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+
+            monolithStore
+                .download(insightId, output)
+                .then(() => {
+                    if (output && response.errors.length === 0) {
+                        notification.add({
+                            color: 'success',
+                            message: `${formattedEngineType} engine downloaded successfully`,
+                        });
+                    }
+                    setExportLoading(false);
+                })
+                .catch(() => {
+                    notification.add({
+                        color: 'error',
+                        message: `${formattedEngineType} engine download failed`,
+                    });
+                    setExportLoading(false);
+                });
         });
         setExportLoading(false);
     };

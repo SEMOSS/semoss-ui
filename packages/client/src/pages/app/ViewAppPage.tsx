@@ -19,7 +19,12 @@ import { WorkspaceStore } from '@/stores';
 import { usePage, useRootStore } from '@/hooks';
 import { LoadingScreen, ShareOverlay } from '@/components/ui';
 import { CodeRenderer } from '@/components/code-workspace';
-import { EditOutlined, ShareRounded } from '@mui/icons-material';
+import {
+    EditOutlined,
+    ShareRounded,
+    Bookmark,
+    BookmarkBorderOutlined,
+} from '@mui/icons-material';
 import { Env } from '@semoss/sdk';
 import { NavbarLeft, NavbarHeader, NavbarRight } from '../../components/shared';
 
@@ -32,13 +37,33 @@ const StyledContent = styled('div')(({ theme }) => ({
 export const ViewAppPage = observer(() => {
     // App ID Needed for pixel calls
     const { appId } = useParams();
-    const { configStore } = useRootStore();
+    const { configStore, monolithStore } = useRootStore();
 
     const notification = useNotification();
     const navigate = useNavigate();
 
     const [workspace, setWorkspace] = useState<WorkspaceStore>(undefined);
     const [isShareOpen, setIsShareOpen] = useState<boolean>(false);
+    const [bookmarked, setBookmarked] = useState<boolean>(false);
+
+    const handleBookmark = (status: boolean) => {
+        setBookmarked(status);
+        monolithStore
+            .setProjectFavorite(appId, status)
+            .then(() => {
+                notification.add({
+                    color: 'success',
+                    message: `Project ${
+                        bookmarked ? 'unbookmarked' : 'bookmarked'
+                    }`,
+                });
+                return;
+            })
+            .catch((err) => {
+                // throw error if promise doesn't fulfill
+                throw Error(err);
+            });
+    };
 
     // setup the page
     usePage({
@@ -53,6 +78,9 @@ export const ViewAppPage = observer(() => {
             .createWorkspace(appId)
             .then((loadedWorkspace) => {
                 setWorkspace(loadedWorkspace);
+                setBookmarked(
+                    Boolean(loadedWorkspace.metadata.project_favorite),
+                );
             })
             .catch((e) => {
                 notification.add({
@@ -91,6 +119,20 @@ export const ViewAppPage = observer(() => {
                 />
             </NavbarLeft>
             <NavbarRight>
+                <Tooltip title={'Bookmark App'}>
+                    <IconButton
+                        size="small"
+                        color={bookmarked ? 'primary' : 'default'}
+                        onClick={() => handleBookmark(!bookmarked)}
+                        data-testid={'app-page-bookmark-btn'}
+                    >
+                        {bookmarked ? (
+                            <Bookmark fontSize={'inherit'} />
+                        ) : (
+                            <BookmarkBorderOutlined fontSize={'inherit'} />
+                        )}
+                    </IconButton>
+                </Tooltip>
                 <Tooltip title={'Share App'}>
                     <IconButton
                         size="small"
