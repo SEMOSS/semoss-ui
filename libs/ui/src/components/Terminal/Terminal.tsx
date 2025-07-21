@@ -19,7 +19,6 @@ const StyledTerminal = styled("div")(({ theme }) => ({
 // prompt for new input
 const PROMPT = `\x1b[1;30m> \x1b[0m`;
 const PROMPT_LENGTH = 2;
-
 export interface TerminalProps {
     /** Default command to display */
     defaultCommand?: string;
@@ -204,8 +203,13 @@ export const Terminal: React.FC<TerminalProps> = ({
             switch (key) {
                 // Enter
                 case "\r": {
-                    // run the command
-                    await onRun();
+                    if (updatedBuffer?.command?.trim() === "") {
+                        // If command is empty, ignore
+                        break;
+                    } else {
+                        // run the command with error handling
+                        await onRun();
+                    }
 
                     // clear it
                     updatedBuffer = {
@@ -215,7 +219,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 
                     break;
                 }
-
                 // Backspace
                 case "\x7F": {
                     if (updatedBuffer.position > 0) {
@@ -232,8 +235,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
                         // clear the line, add the buffer, move to the first position and then move to the buffer position
                         terminalInstance.write(
-                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${
-                                PROMPT_LENGTH + updatedBuffer.position
+                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${PROMPT_LENGTH + updatedBuffer.position
                             }C`,
                         );
                     }
@@ -342,8 +344,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
                         // clear the line, add the buffer, move to the first position and then move to the buffer position
                         terminalInstance.write(
-                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${
-                                PROMPT_LENGTH + updatedBuffer.position
+                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${PROMPT_LENGTH + updatedBuffer.position
                             }C`,
                         );
                     }
