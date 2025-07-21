@@ -2,10 +2,11 @@ import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Checkbox, styled } from "@mui/material";
 
+import { Box } from "@semoss/ui";
+import { debounced } from "@semoss/sdk/react";
+
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-import { debounced } from "../../../utility";
-import { Box } from "@semoss/ui";
 
 export interface CheckboxBlockDef extends BlockDef<"checkbox"> {
     widget: "checkbox";

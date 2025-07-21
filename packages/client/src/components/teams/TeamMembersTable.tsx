@@ -23,6 +23,7 @@ import { Delete, ClearRounded } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
 import { useRootStore } from '@/hooks';
+import { debounced } from '@semoss/sdk/react';
 
 const colors = [
     '#22A4FF',
@@ -125,7 +126,6 @@ const StyledTableTitleMemberCount = styled('div')({
 const StyledSearchButtonContainer = styled('div')({
     display: 'flex',
     alignItems: 'center',
-    // gap: '10px',
 });
 
 const StyledDeleteSelectedContainer = styled('div')({
@@ -510,41 +510,42 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     teamMembers > 9 && paginationOptions.membersPageCounts.push(10);
     teamMembers > 19 && paginationOptions.membersPageCounts.push(20);
 
-    function useDebounce(effect, dependencies, delay) {
-        const callback = useCallback(effect, dependencies);
+    const filterUsers = useCallback(() => {
+        monolithStore
+            .getTeamUsers(
+                groupId,
+                limit,
+                membersPage * limit - limit, // offset
+                searchFilter,
+            )
+            .then((data) => {
+                setTeamMembers(data);
+                setHasMembers(true);
+            });
+    }, [count, membersPage, searchFilter]);
 
-        useEffect(() => {
-            const timeout = setTimeout(callback, delay);
-            return () => clearTimeout(timeout);
-        }, [callback, delay]);
-    }
+    const filterUsersTwo = useCallback(() => {
+        monolithStore
+            .getTeamUsers(
+                groupId,
+                100,
+                0, // offset
+                searchFilter,
+            )
+            .then((data) => setMemberCount(data.length));
+    }, [count, membersPage, searchFilter]);
 
-    // DeBounce Function
-    useDebounce(
-        () => {
-            monolithStore
-                .getTeamUsers(
-                    groupId,
-                    limit,
-                    membersPage * limit - limit, // offset
-                    searchFilter,
-                )
-                .then((data) => {
-                    setTeamMembers(data);
-                    setHasMembers(true);
-                });
-            monolithStore
-                .getTeamUsers(
-                    groupId,
-                    100,
-                    0, // offset
-                    searchFilter,
-                )
-                .then((data) => setMemberCount(data.length));
-        },
-        [count, membersPage, searchFilter],
-        200,
-    );
+    const filter = () => {
+        filterUsers();
+        filterUsersTwo();
+    };
+
+    const debouncedFilterTeams = debounced(filter, 400);
+
+    const handleInputChange = (newInputValue) => {
+        setValue('SEARCH_FILTER', newInputValue);
+        debouncedFilterTeams();
+    };
 
     return (
         <StyledMemberContent>
@@ -589,10 +590,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
                                     size="small"
                                     value={searchFilter}
                                     onChange={(e) => {
-                                        setValue(
-                                            'SEARCH_FILTER',
-                                            e.target.value,
-                                        );
+                                        handleInputChange(e.target.value);
                                     }}
                                 />
                             </StyledSearchButtonContainer>
