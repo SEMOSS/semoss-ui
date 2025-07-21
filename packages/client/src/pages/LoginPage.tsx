@@ -1,8 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
-import { THEME } from '@/constants';
 import GIF from '@/assets/img/login-gif.gif';
 
 import {
@@ -18,6 +17,7 @@ import {
     Box,
     ButtonGroup,
     Modal,
+    Tooltip,
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -171,26 +171,12 @@ const StyledRegisterNowBox = styled(Box)({
     justifyContent: 'center',
 });
 
-const StyledLogo = styled('img')(({ theme }) => ({
-    width: theme.spacing(3),
+const StyledLogoContainer = styled(Stack)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
-const StyledLogoBox = styled('div')(({ theme }) => ({
-    display: 'flex',
-    align: 'center',
-    alignItems: 'center',
-    gap: theme.spacing(1),
-    marginBottom: theme.spacing(4),
-}));
-
-const StyledLogoText = styled('span')(() => ({
-    fontFeatureSettings: '"clig" off, "liga" off',
-    fontFamily: 'Inter',
-    fontSize: '16px',
-    fontStyle: 'normal',
-    fontWeight: 500,
-    lineHeight: '150%',
-    letterSpacing: '0.15px',
+const StyledTitle = styled(Typography)(({ theme }) => ({
+    marginBottom: theme.spacing(1),
 }));
 
 const StyledInstructions = styled(Typography)(({ theme }) => ({
@@ -256,7 +242,12 @@ export const LoginPage = observer(() => {
     const [success, setSuccess] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
-    const { control, handleSubmit } = useForm({
+    const {
+        control,
+        handleSubmit,
+        formState: { errors: formErrors },
+    } = useForm({
+        mode: 'onChange',
         defaultValues: {
             USERNAME: '',
             PASSWORD: '',
@@ -265,7 +256,14 @@ export const LoginPage = observer(() => {
         },
     });
 
-    const { control: registerControl, handleSubmit: registerSubmit } = useForm({
+    const {
+        control: registerControl,
+        handleSubmit: registerSubmit,
+        watch,
+        formState: { errors },
+        reset,
+    } = useForm({
+        mode: 'onChange',
         defaultValues: {
             FIRST_NAME: '',
             LAST_NAME: '',
@@ -278,6 +276,26 @@ export const LoginPage = observer(() => {
             PASSWORD_CONFIRMATION: '',
         },
     });
+
+    const regPassword = watch('PASSWORD');
+
+    const regPasswordRules = {
+        length: regPassword.length >= 8,
+        upper: /[A-Z]/.test(regPassword),
+        lower: /[a-z]/.test(regPassword),
+        special: /[!@#$%^&*]/.test(regPassword),
+    };
+
+    const passwordTooltipContent = (
+        <Box>
+            <Typography variant="body2">• At least 8 characters</Typography>
+            <Typography variant="body2">• One uppercase letter</Typography>
+            <Typography variant="body2">• One lowercase letter</Typography>
+            <Typography variant="body2">
+                • One special character [!, @, #, $, %, ^, &, *]
+            </Typography>
+        </Box>
+    );
 
     // get a map of all providers
     const availableProvidersMap: Record<
@@ -336,6 +354,7 @@ export const LoginPage = observer(() => {
         async (data: TypeUserLogin): Promise<TypeUserLogin> => {
             // turn on loading
             setIsLoading(true);
+            setSuccess('');
 
             if (!data.USERNAME || !data.PASSWORD) {
                 setError('Username and Password is Required');
@@ -451,6 +470,7 @@ export const LoginPage = observer(() => {
                         setSuccess(
                             'Account registration successful. Log in below.',
                         );
+                        reset();
                     }
                 })
                 .catch((error) => {
@@ -501,20 +521,6 @@ export const LoginPage = observer(() => {
             });
     };
 
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
-
     // get the path the user is coming from
     const path = (location.state as { from: Location })?.from?.pathname || '/';
 
@@ -546,19 +552,22 @@ export const LoginPage = observer(() => {
                     <StyledScroll>
                         <StyledContent>
                             <div>
-                                <StyledLogoBox>
-                                    {themeMap.isLogoUrl ? (
-                                        <StyledLogo src={themeMap.logo} />
-                                    ) : THEME.logo ? (
-                                        <StyledLogo src={THEME.logo} />
+                                <StyledLogoContainer
+                                    direction={'row'}
+                                    alignItems={'center'}
+                                    spacing={1}
+                                >
+                                    {configStore.theme.logo ? (
+                                        <img src={configStore.theme.logo} />
                                     ) : null}
-                                    <StyledLogoText>
-                                        {themeMap.name
-                                            ? themeMap.name
-                                            : THEME.name}
-                                    </StyledLogoText>
-                                </StyledLogoBox>
-                                <Typography variant="h4">Welcome!</Typography>
+                                    <Typography
+                                        variant="h6"
+                                        sx={{ fontWeight: 700 }}
+                                    >
+                                        {configStore.theme.name}
+                                    </Typography>
+                                </StyledLogoContainer>
+                                <StyledTitle variant="h4">Welcome!</StyledTitle>
                                 <StyledInstructions variant="body1">
                                     {register
                                         ? 'Register below'
@@ -614,9 +623,15 @@ export const LoginPage = observer(() => {
                                     )}
                                 </StyledButtonGroup>
                             )}
-                            {error && <Alert color="error">{error}</Alert>}
+                            {error && (
+                                <Alert severity="error" color="error">
+                                    {error}
+                                </Alert>
+                            )}
                             {success && (
-                                <Alert color="success">{success}</Alert>
+                                <Alert severity="success" color="success">
+                                    {success}
+                                </Alert>
                             )}
                             <form>
                                 <Stack spacing={2}>
@@ -630,12 +645,13 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'First name is required',
                                                         }}
                                                         render={({ field }) => {
                                                             return (
                                                                 <TextField
-                                                                    label="First Name"
+                                                                    label="First Name *"
                                                                     variant="outlined"
                                                                     size="small"
                                                                     fullWidth
@@ -657,6 +673,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-firstNameRegister',
                                                                     }}
+                                                                    error={
+                                                                        !!errors.FIRST_NAME
+                                                                    }
+                                                                    helperText={
+                                                                        errors
+                                                                            .FIRST_NAME
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -667,12 +691,13 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Last name is required',
                                                         }}
                                                         render={({ field }) => {
                                                             return (
                                                                 <TextField
-                                                                    label="Last Name"
+                                                                    label="Last Name *"
                                                                     size="small"
                                                                     variant="outlined"
                                                                     fullWidth
@@ -694,6 +719,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-lastNameRegister',
                                                                     }}
+                                                                    error={
+                                                                        !!errors.LAST_NAME
+                                                                    }
+                                                                    helperText={
+                                                                        errors
+                                                                            .LAST_NAME
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -704,12 +737,13 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Username is required',
                                                         }}
                                                         render={({ field }) => {
                                                             return (
                                                                 <TextField
-                                                                    label="Username"
+                                                                    label="Username *"
                                                                     size="small"
                                                                     variant="outlined"
                                                                     fullWidth
@@ -731,6 +765,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-usernameRegister',
                                                                     }}
+                                                                    error={
+                                                                        !!errors.USERNAME
+                                                                    }
+                                                                    helperText={
+                                                                        errors
+                                                                            .USERNAME
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -741,21 +783,18 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Email is required',
+                                                            pattern: {
+                                                                value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                                                message:
+                                                                    'Please enter a valid email address',
+                                                            },
                                                         }}
                                                         render={({ field }) => {
                                                             return (
                                                                 <TextField
-                                                                    label="Email"
-                                                                    error={error.includes(
-                                                                        'is not a valid email address',
-                                                                    )}
-                                                                    helperText={
-                                                                        error.includes(
-                                                                            'is not a valid email address',
-                                                                        ) &&
-                                                                        'Please enter a valid email'
-                                                                    }
+                                                                    label="Email *"
                                                                     size="small"
                                                                     variant="outlined"
                                                                     fullWidth
@@ -777,6 +816,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-emailRegister',
                                                                     }}
+                                                                    error={
+                                                                        !!errors.EMAIL
+                                                                    }
+                                                                    helperText={
+                                                                        errors
+                                                                            .EMAIL
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -787,7 +834,11 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: false,
+                                                            pattern: {
+                                                                value: /^\d{10}$/,
+                                                                message:
+                                                                    'Please enter valid Phone Number',
+                                                            },
                                                         }}
                                                         render={({ field }) => {
                                                             return (
@@ -814,6 +865,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-phone',
                                                                     }}
+                                                                    error={
+                                                                        !!errors.PHONE
+                                                                    }
+                                                                    helperText={
+                                                                        errors
+                                                                            .PHONE
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -898,76 +957,71 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Password is required',
+                                                            validate: () => {
+                                                                if (
+                                                                    !regPasswordRules.length
+                                                                )
+                                                                    return 'Minimum 8 characters';
+                                                                if (
+                                                                    !regPasswordRules.upper
+                                                                )
+                                                                    return 'At least one uppercase letter';
+                                                                if (
+                                                                    !regPasswordRules.lower
+                                                                )
+                                                                    return 'At least one lowercase letter';
+                                                                if (
+                                                                    !regPasswordRules.special
+                                                                )
+                                                                    return 'At least one special character';
+                                                                return true;
+                                                            },
                                                         }}
                                                         render={({ field }) => {
                                                             return (
-                                                                <TextField
-                                                                    label="Password"
-                                                                    error={
-                                                                        error.includes(
-                                                                            'Passwords do not match',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must be at least 8 characters in length',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must have atleast one uppercase character',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must have atleast one lowercase character',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                        )
+                                                                <Tooltip
+                                                                    title={
+                                                                        passwordTooltipContent
                                                                     }
-                                                                    helperText={
-                                                                        error &&
-                                                                        (error.includes(
-                                                                            'Password must be at least 8 characters in length',
-                                                                        ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one uppercase character',
-                                                                            ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one lowercase character',
-                                                                            ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                            ) ||
-                                                                            error.includes(
-                                                                                'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                            ))
-                                                                            ? error.includes(
-                                                                                  'Passwords do no match',
-                                                                              )
-                                                                                ? 'Passwords do not match'
-                                                                                : 'Passwords must be at least 8 characters in length and contain one lowercase, one uppercase, one special character.'
-                                                                            : ''
-                                                                    }
-                                                                    size="small"
-                                                                    variant="outlined"
-                                                                    type="password"
-                                                                    fullWidth
-                                                                    value={
-                                                                        field.value
-                                                                            ? field.value
-                                                                            : ''
-                                                                    }
-                                                                    onChange={(
-                                                                        e,
-                                                                    ) =>
-                                                                        field.onChange(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                    }
-                                                                    inputProps={{
-                                                                        'data-testid':
-                                                                            'loginPage-textField-passwordRegister',
-                                                                    }}
-                                                                />
+                                                                    placement="right"
+                                                                    arrow
+                                                                >
+                                                                    <TextField
+                                                                        label="Password *"
+                                                                        error={
+                                                                            !!errors.PASSWORD
+                                                                        }
+                                                                        helperText={
+                                                                            errors
+                                                                                .PASSWORD
+                                                                                ?.message
+                                                                        }
+                                                                        size="small"
+                                                                        variant="outlined"
+                                                                        type="password"
+                                                                        fullWidth
+                                                                        value={
+                                                                            field.value
+                                                                                ? field.value
+                                                                                : ''
+                                                                        }
+                                                                        onChange={(
+                                                                            e,
+                                                                        ) =>
+                                                                            field.onChange(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                        }
+                                                                        inputProps={{
+                                                                            'data-testid':
+                                                                                'loginPage-textField-passwordRegister',
+                                                                        }}
+                                                                    />
+                                                                </Tooltip>
                                                             );
                                                         }}
                                                     />
@@ -979,35 +1033,25 @@ export const LoginPage = observer(() => {
                                                             registerControl
                                                         }
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Please confirm your password',
+                                                            validate: (value) =>
+                                                                value ===
+                                                                    regPassword ||
+                                                                'Passwords do not match',
                                                         }}
                                                         render={({ field }) => {
                                                             return (
                                                                 <TextField
-                                                                    label="Password Confirmation"
+                                                                    label="Password Confirmation *"
                                                                     size="small"
                                                                     error={
-                                                                        error.includes(
-                                                                            'Passwords do not match',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must be at least 8 characters in length',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must have atleast one uppercase character',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must have atleast one lowercase character',
-                                                                        ) ||
-                                                                        error.includes(
-                                                                            'Password must have atleast one special character among [!,@,#,$,%,^,&,*]',
-                                                                        )
+                                                                        !!errors.PASSWORD_CONFIRMATION
                                                                     }
                                                                     helperText={
-                                                                        error.includes(
-                                                                            'Passwords do not match',
-                                                                        ) &&
-                                                                        'Passwords do no match'
+                                                                        errors
+                                                                            .PASSWORD_CONFIRMATION
+                                                                            ?.message
                                                                     }
                                                                     variant="outlined"
                                                                     type="password"
@@ -1072,7 +1116,8 @@ export const LoginPage = observer(() => {
                                                         name={'USERNAME'}
                                                         control={control}
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Username is required',
                                                         }}
                                                         render={({ field }) => {
                                                             return (
@@ -1098,6 +1143,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-username',
                                                                     }}
+                                                                    error={
+                                                                        !!formErrors.USERNAME
+                                                                    }
+                                                                    helperText={
+                                                                        formErrors
+                                                                            .USERNAME
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -1106,7 +1159,8 @@ export const LoginPage = observer(() => {
                                                         name={'PASSWORD'}
                                                         control={control}
                                                         rules={{
-                                                            required: true,
+                                                            required:
+                                                                'Password is required',
                                                         }}
                                                         render={({ field }) => {
                                                             return (
@@ -1133,6 +1187,14 @@ export const LoginPage = observer(() => {
                                                                         'data-testid':
                                                                             'loginPage-textField-password',
                                                                     }}
+                                                                    error={
+                                                                        !!formErrors.PASSWORD
+                                                                    }
+                                                                    helperText={
+                                                                        formErrors
+                                                                            .PASSWORD
+                                                                            ?.message
+                                                                    }
                                                                 />
                                                             );
                                                         }}
@@ -1192,11 +1254,14 @@ export const LoginPage = observer(() => {
                                                             account?{' '}
                                                             <StyledButtonText
                                                                 variant="text"
-                                                                onClick={() =>
+                                                                onClick={() => {
                                                                     setRegister(
                                                                         true,
-                                                                    )
-                                                                }
+                                                                    );
+                                                                    setError(
+                                                                        '',
+                                                                    );
+                                                                }}
                                                                 data-testid={
                                                                     'loginPage-button-registerPage'
                                                                 }

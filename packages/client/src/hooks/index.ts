@@ -11,9 +11,12 @@ import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
 import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
+import { usePage } from './usePage';
+import { useBlockSettings } from './useBlockSettings';
 
 export {
     useAPI,
+    useBlockSettings,
     useCacheState,
     useEngine,
     useLLM,
@@ -26,4 +29,5 @@ export {
     useWorkspace,
     useDebounce,
     useDebounceValue,
+    usePage,
 };

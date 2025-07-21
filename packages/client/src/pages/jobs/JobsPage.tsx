@@ -20,7 +20,7 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { useDebounce, useRootStore } from '@/hooks';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
@@ -214,7 +214,7 @@ export function JobsPage() {
             pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixelTwo(pixel);
+            await runPixel(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -231,7 +231,7 @@ export function JobsPage() {
             pixel += `ResumeJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixelTwo(pixel);
+            await runPixel(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',

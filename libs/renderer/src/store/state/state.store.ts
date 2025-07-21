@@ -1,10 +1,10 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
 
 import { runPixel, download } from "@semoss/sdk/react";
-import { 
-    cancellablePromise, 
-    getValueByPath, 
-    syncronousPromise, 
+import {
+    cancellablePromise,
+    getValueByPath,
+    syncronousPromise,
 } from "../../utility";
 
 import {
@@ -92,7 +92,7 @@ export class StateStore {
         cellRegistry: {},
         variables: {},
         executionOrder: [],
-        dependencyGraph: {}
+        dependencyGraph: {},
     };
 
     /**
@@ -125,10 +125,6 @@ export class StateStore {
 
         // set the initial state after reactive to invoke it
         this.setState(config.state, config.initialParams);
-
-        // console.log(this.toJSON())
-        // const r = this.buildDependencyGraph(this._store, {}, [])
-        // console.log(r);
     }
 
     /**
@@ -436,8 +432,7 @@ export class StateStore {
 
                 return this.runQuery(queryId);
             } else if (ActionMessages.NEW_CELL === action.message) {
-                const { queryId, config, previousCellId } =
-                    action.payload;
+                const { queryId, config, previousCellId } = action.payload;
 
                 return this.newCell(queryId, config, previousCellId);
             } else if (ActionMessages.MOVE_CELL === action.message) {
@@ -464,11 +459,12 @@ export class StateStore {
                 const { queryId, cellId, marked } = action.payload;
 
                 this.runMarkdownCell(queryId, cellId, marked);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
-
-                this.dispatchOutputsEvent()
-            } else if(ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
-                const {destinationType, destination} = action.payload;
+            } else if (
+                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+            ) {
+                this.dispatchOutputsEvent();
+            } else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+                const { destinationType, destination } = action.payload;
 
                 this.dispatchOpenEvent(destinationType, destination);
             } else if (ActionMessages.RENAME_VARIABLE === action.message) {
@@ -519,34 +515,43 @@ export class StateStore {
         }
     };
 
-    
     /**
      * TODO: Needs to get folded into code above --> useBlock.tsx
-     * @param action 
-     * @returns 
+     * @param action
+     * @returns
      */
-    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
+    dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
         try {
             if (ActionMessages.RUN_QUERY === action.message) {
                 const { queryId } = action.payload;
 
-                const run = () => new Promise(async (resolve) => { 
-                    await this.runQuery(queryId, type)
-                    resolve(this._store.queries[queryId].output)
-                }); 
-                    
+                const run = () =>
+                    new Promise(async (resolve) => {
+                        await this.runQuery(queryId, type);
+                        resolve(this._store.queries[queryId].output);
+                    });
+
                 return await run();
             } else if (ActionMessages.RUN_CELL === action.message) {
                 const { queryId, cellId } = action.payload;
 
-                this.runCell(queryId, cellId);
+                const run = () =>
+                    new Promise(async (resolve) => {
+                        await this.runCell(queryId, cellId, type);
+
+                        resolve(
+                            this._store.queries[queryId].cells[cellId].output,
+                        );
+                    });
+                return await run();
             } else if (ActionMessages.DISPATCH_EVENT === action.message) {
                 const { name, detail } = action.payload;
 
                 this.dispatchEvent(name, detail);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
-
-                this.dispatchOutputsEvent()
+            } else if (
+                ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+            ) {
+                this.dispatchOutputsEvent();
             } else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
                 const { destinationType, destination } = action.payload;
 
@@ -555,19 +560,23 @@ export class StateStore {
         } catch (e) {
             console.error(e);
         }
-    }
+    };
 
     /** Variable Methods */
     /**
      * TODO: Clean this fn up (split out iterator parsing?)
      * Parse a variables and return the value if it exists (otherwise return the expression)
      */
-    parseVariable = (expression: string, id?: string, _depth: number = 0, _seen: Set<string> = new Set()): unknown => {
+    parseVariable = (
+        expression: string,
+        id?: string,
+        _depth: number = 0,
+        _seen: Set<string> = new Set(),
+    ): unknown => {
+        if (_depth > 10) return expression;
+        if (_seen.has(expression)) return expression;
 
-        if(_depth > 10) return expression;
-        if(_seen.has(expression)) return expression
-        
-        _seen.add(expression)
+        _seen.add(expression);
 
         // trim the whitespace
         let cleaned = expression.trim();
@@ -583,10 +592,8 @@ export class StateStore {
 
         // Special Parsing for Iterators
         if (cleaned.startsWith("$")) {
-            
             // See if id is a descendant of an iterator block
             const iteratorBlock = this.isDescendantOfIterator(id);
-
 
             if (iteratorBlock) {
                 try {
@@ -608,10 +615,10 @@ export class StateStore {
 
                     let variable;
 
-                    if(expression.includes(".")) {
+                    if (expression.includes(".")) {
                         variable = expression.match(/\$(.*?)\./)[1];
                     } else {
-                        variable = expression.match(/^\$(\w+)/)?.[1]
+                        variable = expression.match(/^\$(\w+)/)?.[1];
                     }
 
                     const stripped = iteratorList.slice(2, -2);
@@ -645,34 +652,34 @@ export class StateStore {
         const pointer = path[0];
 
         // Special syntax to parse by cell order
-        const isNumber = !isNaN(parseFloat(path[1]))
+        const isNumber = !isNaN(parseFloat(path[1]));
 
         if (isNumber) {
             let q;
 
             // TODO: Problem we want to reference cells by a special syntax
-            // I don't want to change ids to be numbered for cells, 
+            // I don't want to change ids to be numbered for cells,
             // i think we are good with our id generation
-            if(this._store.variables[pointer]) {
+            if (this._store.variables[pointer]) {
                 const variable = this._store.variables[path[0]];
-                if(variable.type === "query") {
-                    q = this._store.queries[variable.to]
+                if (variable.type === "query") {
+                    q = this._store.queries[variable.to];
                 }
             } else if (this._store.queries[pointer]) {
-                q = this._store.queries[pointer]
+                q = this._store.queries[pointer];
             }
 
-            if(q) {
+            if (q) {
                 try {
-                    const c = q.cellList[parseFloat(path[1]) - 1]
-                    const p = path
-                    p.splice(0,2)
+                    const c = q.cellList[parseFloat(path[1]) - 1];
+                    const p = path;
+                    p.splice(0, 2);
 
-                    if(p.length === 0) {
-                        return c.output
+                    if (p.length === 0) {
+                        return c.output;
                     } else {
                         const key = p[0];
-                        
+
                         if (key in c._exposed) {
                             // get the search path
                             const s = p.join(".");
@@ -681,9 +688,8 @@ export class StateStore {
                         }
                     }
                 } catch (e) {
-                    return expression
+                    return expression;
                 }
-
             }
         }
 
@@ -699,13 +705,15 @@ export class StateStore {
                     ? variable.value
                     : null,
             );
-            
 
             // TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
             if (value !== undefined && value !== null) {
                 // RECURSIVE: If value is another {{var}}, resolve again
-                if(typeof value === "string" && value.trim().match(/^{{.*}}$/)) {
-                    return this.parseVariable(value, id, _depth + 1, _seen)
+                if (
+                    typeof value === "string" &&
+                    value.trim().match(/^{{.*}}$/)
+                ) {
+                    return this.parseVariable(value, id, _depth + 1, _seen);
                 }
                 return value;
             }
@@ -799,6 +807,41 @@ export class StateStore {
     /**
      * Helpers
      */
+
+    /**
+     * Generates a unique page ID
+     */
+    private generatePageId(): string {
+        let pageNum = 2;
+        while (this._store.blocks[`page--${pageNum}`]) {
+            pageNum++;
+        }
+        return `page--${pageNum}`;
+    }
+
+    /**
+     * Generates a unique ID for non-page widgets
+     */
+    private generateNonPageId(widget: string): string {
+        // Try sequential numbers starting from 1
+        let blockNum = 1;
+        while (this._store.blocks[`${widget}--${blockNum}`]) {
+            blockNum++;
+        }
+        return `${widget}--${blockNum}`;
+    }
+
+    /**
+     * @description creates a new block id
+     * @returns block id - string
+     */
+    private generateBlockId = (json: BlockJSON): string => {
+        if (json.widget === "page") {
+            return this.generatePageId();
+        }
+        return this.generateNonPageId(json.widget);
+    };
+
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -806,7 +849,7 @@ export class StateStore {
      */
     private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
         // generate a new id
-        const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
+        const id = this.generateBlockId(json);
 
         // create the block
         const block = {
@@ -821,7 +864,7 @@ export class StateStore {
         // add the data
         block.data = json.data;
 
-        if(json.widget === "page") {
+        if (json.widget === "page") {
             // Defaulting the route to the block id
             block.data.route = id;
         }
@@ -838,7 +881,10 @@ export class StateStore {
             if (json.slots[slot]) {
                 block.slots[slot] = {
                     name: slot,
-                    children: (Array.isArray(json.slots[slot]) ? json.slots[slot] : json.slots[slot]['children']).map((child) => {
+                    children: (Array.isArray(json.slots[slot])
+                        ? json.slots[slot]
+                        : json.slots[slot]["children"]
+                    ).map((child) => {
                         // form the parent object
                         const parent = { id: id, slot: slot };
 
@@ -946,13 +992,14 @@ export class StateStore {
 
     extractDependenciesFromString = (str) => {
         const regex = /{{\s*([\w_]+)\s*}}/g;
-        let match, deps = [];
+        let match,
+            deps = [];
         while ((match = regex.exec(str)) !== null) {
-          deps.push(match[1]);
+            deps.push(match[1]);
         }
-    
+
         return deps;
-    }
+    };
 
     /**
      * Attach a block to the parent block's slot. At this point, we assume that everything can be attached correctly.
@@ -1132,37 +1179,57 @@ export class StateStore {
     };
 
     private buildDependencyGraph = (json, nodes = {}, edges = []) => {
-        if (typeof json === 'object' && json !== null) {
+        if (typeof json === "object" && json !== null) {
             for (const [key, value] of Object.entries(json)) {
-              // If the key is 'id', treat it as a node
-              if (key === 'id' && typeof value === 'string') {
-                if (!nodes[value]) {
-                  nodes[value] = { id: value, data: { label: value }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
-                }
-              }
-              // If value is a string, look for dependencies
-              if (typeof value === 'string') {
-                const deps = this.extractDependenciesFromString(value);
-                if (json.id && deps.length) {
-                  deps.forEach(dep => {
-                    if (!nodes[dep]) {
-                      nodes[dep] = { id: dep, data: { label: dep }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
+                // If the key is 'id', treat it as a node
+                if (key === "id" && typeof value === "string") {
+                    if (!nodes[value]) {
+                        nodes[value] = {
+                            id: value,
+                            data: { label: value },
+                            position: {
+                                x: Math.random() * 400,
+                                y: Math.random() * 400,
+                            },
+                        };
                     }
-                    edges.push({ id: `e${json.id}-${dep}`, source: json.id, target: dep });
-                  });
                 }
-              }
-              // Recurse into objects/arrays
-              if (typeof value === 'object') {
-                this.buildDependencyGraph(value, nodes, edges);
-              }
+                // If value is a string, look for dependencies
+                if (typeof value === "string") {
+                    const deps = this.extractDependenciesFromString(value);
+                    if (json.id && deps.length) {
+                        deps.forEach((dep) => {
+                            if (!nodes[dep]) {
+                                nodes[dep] = {
+                                    id: dep,
+                                    data: { label: dep },
+                                    position: {
+                                        x: Math.random() * 400,
+                                        y: Math.random() * 400,
+                                    },
+                                };
+                            }
+                            edges.push({
+                                id: `e${json.id}-${dep}`,
+                                source: json.id,
+                                target: dep,
+                            });
+                        });
+                    }
+                }
+                // Recurse into objects/arrays
+                if (typeof value === "object") {
+                    this.buildDependencyGraph(value, nodes, edges);
+                }
             }
         } else if (Array.isArray(json)) {
-          json.forEach(item => this.buildDependencyGraph(item, nodes, edges));
+            json.forEach((item) =>
+                this.buildDependencyGraph(item, nodes, edges),
+            );
         }
 
         return { nodes: Object.values(nodes), edges };
-    }
+    };
 
     /**
      * Create a block and add it to the tree
@@ -1410,12 +1477,12 @@ export class StateStore {
         id: string,
         listener: string,
         actions: ListenerActions[],
-        type: "sync" | "async"
+        type: "sync" | "async",
     ): void => {
         this._store.blocks[id].listeners[listener] = {
             type: type,
-            order: actions
-        }
+            order: actions,
+        };
     };
 
     /**
@@ -1443,26 +1510,25 @@ export class StateStore {
                 id: queryId,
                 type: "query",
                 to: queryId,
-                isOutput: true
-            }
-        })
+                isOutput: true,
+            },
+        });
 
         Object.entries(this._store.queries[queryId].cells).forEach((c) => {
             // Automate variable creation for notebook and new cell
-            const cId = c[0]
+            const cId = c[0];
             this.dispatch({
                 message: ActionMessages.ADD_VARIABLE,
                 payload: {
                     id: `${queryId}--${cId}`,
                     type: "cell",
                     to: queryId,
-                    cellId: cId
-                }
-            })
-        })
+                    cellId: cId,
+                },
+            });
+        });
 
         this._store.executionOrder.push(queryId);
-
 
         return queryId;
     };
@@ -1512,37 +1578,37 @@ export class StateStore {
      * Run a query
      * @param queryId - name of the query that we are running
      */
-    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
+    private runQuery = (queryId: string, type?: "sync" | "async"): void => {
         const q = this._store.queries[queryId];
 
         const key = `query--${queryId};`;
 
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
-        
+
         let p;
         let sync;
 
-        if(!type || type === 'async') {
-            sync = false
+        if (!type || type === "async") {
+            sync = false;
         } else {
-            sync = true
+            sync = true;
         }
-        
+
         if (sync) {
             p = syncronousPromise(async () => {
                 await q._run();
                 return true;
-            })
+            });
         } else {
             p = cancellablePromise(async () => {
-                await q._run()
-                return true
-            })
+                await q._run();
+                return true;
+            });
         }
-        if(sync) {
-            return p.promise
-        } else  {
+        if (sync) {
+            return p.promise;
+        } else {
             p.promise
                 .then((resp) => {
                     // noop
@@ -1572,7 +1638,7 @@ export class StateStore {
         const q = this._store.queries[queryId];
 
         // add the cell
-        return q._addCell(config, previousCellId) as string
+        return q._addCell(config, previousCellId) as string;
     };
 
     /**
@@ -1581,13 +1647,17 @@ export class StateStore {
      * @param activeCellId - id of the active cell
      * @param overCellId - id of the cell we are moving over
      */
-    private moveCell = (queryId: string, activeCellId: string, overCellId: string): void => {
+    private moveCell = (
+        queryId: string,
+        activeCellId: string,
+        overCellId: string,
+    ): void => {
         // get the query
         const q = this._store.queries[queryId];
 
         // move the cell
         q._moveCell(activeCellId, overCellId);
-    }
+    };
 
     /**
      * Delete a cell
@@ -1653,7 +1723,11 @@ export class StateStore {
      * @param queryId - id of the updated query
      * @param cellId - id of the deleted cell
      */
-    private runCell = (queryId: string, cellId: string): void => {
+    private runCell = (
+        queryId: string,
+        cellId: string,
+        type?: string,
+    ): void => {
         const q = this._store.queries[queryId];
         const c = q.getCell(cellId);
 
@@ -1662,33 +1736,55 @@ export class StateStore {
         // cancel a previous command
         this._utils.queryPromises[key]?.cancel();
 
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the cell
-            await c._run();
+        let p;
+        let sync;
 
-            // turn it off
-            return true;
-        });
+        if (!type || type === "async") {
+            sync = false;
+        } else {
+            sync = true;
+        }
 
-        p.promise
-            .then(() => {
-                // noop
-            })
-            .catch((e) => {
-                console.error("ERROR:", e);
+        if (sync) {
+            p = syncronousPromise(async () => {
+                await c._run();
+                return true;
             });
+        } else {
+            p = cancellablePromise(async () => {
+                // run the cell
+                await c._run();
+                // turn it off
+                return true;
+            });
+        }
+
+        if (sync) {
+            return p.promise;
+        } else {
+            p.promise
+                .then((resp) => {
+                    // noop
+                })
+                .catch((e) => {
+                    console.error("ERROR:", e);
+                });
+        }
 
         // save the promise
         this._utils.queryPromises[key] = p;
     };
 
-    private runMarkdownCell = (queryId: string, cellId: string, marked: boolean): void => {
+    private runMarkdownCell = (
+        queryId: string,
+        cellId: string,
+        marked: boolean,
+    ): void => {
         const q = this._store.queries[queryId];
         const c = q.getCell(cellId);
         // make the cell as marked
-        this._store.queries[queryId].cells[cellId].parameters.marked = marked
-    }
+        this._store.queries[queryId].cells[cellId].parameters.marked = marked;
+    };
     /**
      * Dispatch a custom event
      * @param name - name of the event
@@ -1701,55 +1797,79 @@ export class StateStore {
         const event = new CustomEvent(name, {
             detail: detail,
         });
-        
+
         // dispatch the event to the window
         window.dispatchEvent(event);
     };
 
-    private dispatchOpenEvent = (destinationType: string, destination: string): void => {
-        const event = new CustomEvent("OPEN_EVENT", { detail: {destinationType, destination}});
+    private dispatchOpenEvent = (
+        destinationType: string,
+        destination: string,
+    ): void => {
+        const event = new CustomEvent("OPEN_EVENT", {
+            detail: { destinationType, destination },
+        });
 
-        if(this.mode === "interactive"){
-            if(destinationType === "Internal"){
-                const currentUrl = window.location.href;
-                const pageIds = this.getAllBlocksOfType('page').map((page) => page.id);
-                const pageIdInUrl = pageIds.find((id) => currentUrl.includes(id));
-                let newUrl;
-                if (pageIdInUrl) 
-                    newUrl = currentUrl.replace(pageIdInUrl, destination);
-                else
-                    newUrl = currentUrl + `${destination}`
+        if (this.mode === "interactive") {
+            if (destinationType === "Internal") {
+                const hash = window.location.hash;
+                // Match either #/s/:id/ or #/:id/view
+                const appPageMatch = hash.match(/^#\/app\/([^/]+)/);
+                const sharePageMatch = hash.match(/^#\/s\/([^/]+)/);
 
-                window.location.href = newUrl
-            } else if(destinationType === "External"){
-                window.location.href = destination
+                if (appPageMatch || sharePageMatch) {
+                    const base = appPageMatch
+                        ? appPageMatch[0]
+                        : sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
+
+                    const pageBlocks = this.getAllBlocksOfType("page");
+
+                    const urlPageRouteMatch = pageBlocks.find(
+                        (page) => page.data.route === destination,
+                    );
+
+                    if (urlPageRouteMatch) {
+                        const newHash = destination.startsWith("/")
+                            ? base.replace(/\/$/, "") + destination
+                            : base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
+
+                        window.location.hash = newHash;
+                    }
+
+                    return;
+                }
+                4;
+            } else if (destinationType === "External") {
+                window.location.href = destination;
             }
         }
 
         // dispatch the event to the window
         window.dispatchEvent(event);
-    }
+    };
 
     /**
-     * 
+     *
      * Dispatch an event
      * @param detail - payload associated with event
      */
     private dispatchOutputsEvent = (): void => {
-
-        let outputMap = {};
+        const outputMap = {};
 
         Object.keys(this._store.variables).forEach((k) => {
-            if(this._store.variables[k].isOutput) {
-                outputMap[k] = this.parseVariable(`{{${k}}}`)
+            if (this._store.variables[k].isOutput) {
+                outputMap[k] = this.parseVariable(`{{${k}}}`);
             }
-        })
+        });
 
         // Communication with Iframe
-        window.parent.postMessage({
-            type: "DISPATCH_APP_OUTPUTS",
-            data: outputMap
-        }, '*') // --> Cross Origin Communications
+        window.parent.postMessage(
+            {
+                type: "DISPATCH_APP_OUTPUTS",
+                data: outputMap,
+            },
+            "*",
+        ); // --> Cross Origin Communications
     };
 
     // -----------------------------------
