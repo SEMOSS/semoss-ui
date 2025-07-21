@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRootStore } from '@/hooks';
 import {
     Modal,
     Typography,
@@ -19,6 +20,8 @@ interface EngineIdsModalProps {
     failedIds: string[];
     onClose: () => void;
     onEngineReplacement?: (replacements: Record<string, string>) => void;
+    appId: string;
+    isUploadProjectApp: boolean;
 }
 
 const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
@@ -27,10 +30,14 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
     failedIds,
     onClose,
     onEngineReplacement,
+    appId,
+    isUploadProjectApp,
 }) => {
     const [engineReplacements, setEngineReplacements] = useState<
         Record<string, string>
     >({});
+    const { monolithStore } = useRootStore();
+    const myfilePath = isUploadProjectApp ? "version/assets" : "version/assets/assets";
 
     // Fetch available engines that user has access to
     const availableEngines = usePixel<engine[]>('MyEngines();');
@@ -56,16 +63,24 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
         }));
     };
 
-    const handleSaveReplacements = () => {
-        if (onEngineReplacement) {
-            // Only include replacements that have been selected
-            const validReplacements = Object.entries(engineReplacements)
-                .filter(([, replacement]) => replacement !== '')
-                .reduce((acc, [failed, replacement]) => {
-                    acc[failed] = replacement;
-                    return acc;
-                }, {} as Record<string, string>);
+    const handleSaveReplacements = async () => {
+        // Only include replacements that have been selected
+        const validReplacements = Object.entries(engineReplacements)
+            .filter(([, replacement]) => replacement !== '')
+            .reduce((acc, [failed, replacement]) => {
+                acc[failed] = replacement;
+                return acc;
+            }, {} as Record<string, string>);
 
+        // Format map as required
+        const mapStr = `[ { ${Object.entries(validReplacements)
+            .map(([failed, replacement]) => `"${failed}" : "${replacement}"`)
+            .join(', ')} } ]`;
+        await monolithStore.runQuery(
+            `ReplaceInaccessibleEngines(filePath=["${myfilePath}"], space=["${appId}"], map=${mapStr});`
+        );
+
+        if (onEngineReplacement) {
             onEngineReplacement(validReplacements);
         }
         onClose();
@@ -81,8 +96,8 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
         <Modal
             open={open}
             fullWidth
-            maxWidth="xl"
-            sx={{ '& .MuiDialog-paper': { minHeight: '70vh' } }}
+            maxWidth={false}
+            sx={{ '& .MuiDialog-paper': { width: '95vw', maxWidth: 1000, minWidth: 320, minHeight: '70vh' } }}
         >
             <Modal.Title>
                 <Stack
@@ -226,7 +241,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                         </Stack>
                         <Stack spacing={1.5} sx={{ pl: 1, width: '100%' }}>
                             {failedIds.length > 0 ? (
-                                failedIds.map((id) => (
+                                failedIds.map((id, index) => (
                                     <Stack
                                         key={id}
                                         direction="row"
@@ -253,12 +268,18 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                             <Typography
                                                 variant="body2"
                                                 sx={{
-                                                    fontWeight: 500,
+                                                    backgroundColor: 'grey.100',
                                                     color: 'text.secondary',
-                                                    whiteSpace: 'nowrap',
+                                                    px: 1.5,
+                                                    py: 0.5,
+                                                    borderRadius: 1,
+                                                    minWidth: 24,
+                                                    textAlign: 'center',
+                                                    fontWeight: 500,
+                                                    fontSize: '0.875rem',
                                                 }}
                                             >
-                                                Failed Engine:
+                                                {index + 1}
                                             </Typography>
                                             <Typography
                                                 variant="body2"
@@ -266,7 +287,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                     wordBreak: 'break-all',
                                                     fontFamily: 'monospace',
                                                     color: 'text.primary',
-                                                    backgroundColor: 'grey.100',
                                                     px: 1.5,
                                                     py: 0.5,
                                                     borderRadius: 1,
@@ -283,7 +303,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                 <Select
                                                     value={
                                                         engineReplacements[
-                                                            id
+                                                        id
                                                         ] || ''
                                                     }
                                                     onChange={(e) =>
@@ -301,18 +321,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                         },
                                                     }}
                                                 >
-                                                    <MenuItem value="">
-                                                        <em
-                                                            style={{
-                                                                color: '#999',
-                                                                fontStyle:
-                                                                    'italic',
-                                                            }}
-                                                        >
-                                                            Select replacement
-                                                            engine
-                                                        </em>
-                                                    </MenuItem>
                                                     {availableEngines.data?.map(
                                                         (engine) => (
                                                             <MenuItem
@@ -347,6 +355,21 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                         ),
                                                     )}
                                                 </Select>
+                                                {!engineReplacements[id] && (
+                                                    <span
+                                                        style={{
+                                                            position: 'absolute',
+                                                            left: 16,
+                                                            top: 8,
+                                                            color: '#999',
+                                                            fontStyle: 'italic',
+                                                            pointerEvents: 'none',
+                                                            fontSize: '0.875rem',
+                                                        }}
+                                                    >
+                                                        Select replacement engine
+                                                    </span>
+                                                )}
                                             </FormControl>
                                         </Stack>
                                     </Stack>

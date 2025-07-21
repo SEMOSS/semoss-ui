@@ -37,6 +37,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
     const [successIds, setSuccessIds] = useState<string[]>([]);
     const [failedIds, setFailedIds] = useState<string[]>([]);
     const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
+    const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
 
     const handleEngineIdsModalClose = () => {
     setShowEngineIdsModal(false);
@@ -73,15 +74,18 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
             if (unzipFile) {
                 if (type === 'app') {
-                    const result = await monolithStore.runQuery(
+                    await monolithStore.runQuery(
                         `UnzipFile(filePath=["${path}"], space=["${space}"])`,
                     );
-                    let output = undefined;
-                    output = result.pixelReturn[0].output;
-                    const success = output.engineIds.success ? Object.keys(output.engineIds.success) : [];
-                    const failed = output.engineIds.failed ? output.engineIds.failed : [];
+                    const extractResult = await monolithStore.runQuery(
+                    `ExtractAndSetDependencies(filePath=["version/assets"], space=["${space}"]);`
+                    );
+                    let extractOutput = extractResult.pixelReturn[0].output;
+                    const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
+                    const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
                     setSuccessIds(success);
                     setFailedIds(failed);
+                    setIsUploadProjectApp(false);
                     setPendingUploadPath(path);
                     setShowEngineIdsModal(true);
                     return;
@@ -149,6 +153,8 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 successIds={successIds}
                 failedIds={failedIds}
                 onClose={handleEngineIdsModalClose}
+                appId={space}
+                isUploadProjectApp={isUploadProjectApp}
             />
         </>
     );

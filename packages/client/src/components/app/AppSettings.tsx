@@ -238,6 +238,7 @@ export const AppSettings = (props: AppSettingsProps) => {
     const [showEngineModal, setShowEngineModal] = useState(false);
     const [successIds, setSuccessIds] = useState<string[]>([]);
     const [failedIds, setFailedIds] = useState<string[]>([]);
+    const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
 
     const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
         defaultValues: {
@@ -508,14 +509,20 @@ export const AppSettings = (props: AppSettingsProps) => {
             );
 
             // upnzip the file in the new app
-            const unzipResp = await monolithStore.runQuery(
+            await monolithStore.runQuery(
                 `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
             );
-            let unzipOutput = unzipResp.pixelReturn[0].output;
-            const success = unzipOutput.engineIds.success ? Object.keys(unzipOutput.engineIds.success) : [];
-            const failed = unzipOutput.engineIds.failed ? unzipOutput.engineIds.failed : [];
+
+           const extractResp = await monolithStore.runQuery(
+                `ExtractAndSetDependencies(filePath=["version/assets"], space=["${id}"]);`
+            );
+
+            let extractOutput = extractResp.pixelReturn[0].output;
+            const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
+            const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
             setSuccessIds(success);
             setFailedIds(failed);
+            setIsUploadProjectApp(false);
             setShowEngineModal(true);
 
             // Load the insight classes
@@ -909,6 +916,8 @@ export const AppSettings = (props: AppSettingsProps) => {
             successIds={successIds}
             failedIds={failedIds}
             onClose={handleEngineModalOk}
+            appId={id}
+            isUploadProjectApp={isUploadProjectApp}
             />
         </>
         );

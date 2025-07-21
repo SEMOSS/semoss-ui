@@ -135,6 +135,8 @@ export const AddAppModal = (props: AddAppProps) => {
     const [pendingProjectId, setPendingProjectId] = useState<string | undefined>();
     const [successIds, setSuccessIds] = useState<string[]>([]);
     const [failedIds, setFailedIds] = useState<string[]>([]);
+    const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
+
 
     const defaultFormValues: AddAppForm = {
         [ADD_APP_FORM_FIELD_NAME]: '',
@@ -168,9 +170,10 @@ export const AddAppModal = (props: AddAppProps) => {
             output = resp.pixelReturn[0].output;
             type = resp.pixelReturn[0].operationType[0];
             const success = output.engineIds.success ? Object.keys(output.engineIds.success) : [];
-            const failed = output.engineIds.failed ? output.engineIds.failed : [];
+            const failed = output.engineIds.failed ? Object.keys(output.engineIds.failed) : [];
             setSuccessIds(success);
             setFailedIds(failed);
+            setIsUploadProjectApp(true);
             setPendingProjectId(output.project_id);
             setShowEngineModal(true);
 
@@ -293,6 +296,8 @@ export const AddAppModal = (props: AddAppProps) => {
             successIds={successIds}
             failedIds={failedIds}
             onClose={handleEngineModalOk}
+            appId={pendingProjectId || ''}
+            isUploadProjectApp={isUploadProjectApp}
         />
         </>
     );
