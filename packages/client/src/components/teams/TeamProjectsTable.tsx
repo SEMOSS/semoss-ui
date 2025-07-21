@@ -11,7 +11,6 @@ import {
     Autocomplete,
     Card,
     Box,
-    Chip,
     Avatar,
     Search,
     Stack,
@@ -29,6 +28,10 @@ import { AxiosResponse } from 'axios';
 
 import { SETTINGS_ROLE } from '@/components/settings/settings.types';
 import { useRootStore } from '@/hooks';
+import codeApp2 from '@/assets/img/code_app_2.png';
+import codeApp3 from '@/assets/img/code_app_3.png';
+import codeApp4 from '@/assets/img/code_app_4.png';
+import codeApp5 from '@/assets/img/code_app_5.png';
 
 const colors = [
     '#22A4FF',
@@ -39,6 +42,8 @@ const colors = [
     '#22A4FF',
     '#4CAF50',
 ];
+
+const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
 
 const UserInfoTableCell = styled(Table.Cell)({
     display: 'flex',
@@ -169,6 +174,13 @@ const StyledModalContentText = styled(Modal.ContentText)({
 
 const StyledCard = styled(Card)({
     borderRadius: '12px',
+});
+
+const StyledModal = styled(Modal)({
+    '& .MuiPaper-root': {
+        borderRadius: '12px',
+        padding: '24px',
+    },
 });
 
 // maps for permissions,
@@ -590,6 +602,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         200,
     );
 
+    const getRandomImage = () => {
+        const randomIndex = Math.floor(Math.random() * projectImages.length);
+        return projectImages[randomIndex];
+    };
+
     return (
         <StyledProjectContent>
             <StyledProjectInnerContent>
@@ -867,12 +884,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     </StyledNonProjectsContainer>
                 )}
             </StyledProjectInnerContent>
-            <Modal open={addProjectModal} maxWidth="lg">
-                <Modal.Title>Add App</Modal.Title>
+            <StyledModal open={addProjectModal} maxWidth="lg">
+                <Modal.Title>
+                    <Typography variant="h6">Add Projects</Typography>
+                </Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
                     <StyledModalContentText>
                         <Autocomplete
-                            label="Select App"
+                            label="Select Project"
                             loading={searchLoading}
                             multiple={true}
                             freeSolo={false}
@@ -921,15 +940,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         {selectedNonCredentialedProjects &&
                             selectedNonCredentialedProjects.map(
                                 (project, idx) => {
-                                    const space =
-                                        project.project_name.indexOf(' ');
-                                    const initial = project.project_name
-                                        ? space > -1
-                                            ? `${project.project_name[0].toUpperCase()}${project.project_name[
-                                                  space + 1
-                                              ].toUpperCase()}`
-                                            : project.project_name[0].toUpperCase()
-                                        : project.project_id[0].toUpperCase();
                                     return (
                                         <Box
                                             key={idx}
@@ -984,14 +994,15 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                 display: 'flex',
                                                                 width: '50px',
                                                                 height: '50px',
-                                                                fontSize:
-                                                                    '24px',
-                                                                backgroundColor:
-                                                                    project.color,
+                                                                '& img': {
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit:
+                                                                        'cover',
+                                                                },
                                                             }}
-                                                        >
-                                                            {initial}
-                                                        </Avatar>
+                                                            src={getRandomImage()}
+                                                        />
                                                     </Box>
                                                 </Box>
                                                 <Card.Header
@@ -1025,20 +1036,20 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                     opacity: 0.9,
                                                                     fontSize:
                                                                         '11px',
-                                                                    //height:'20px',
                                                                     width: '70%',
                                                                     gap: '4px',
                                                                 }}
                                                             >
                                                                 {`Project ID: `}
-                                                                <Chip
-                                                                    label={
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    component="span"
+                                                                >
+                                                                    {
                                                                         project.project_id
                                                                     }
-                                                                    size="small"
-                                                                />
+                                                                </Typography>
                                                             </span>
-                                                            {`• `}
                                                         </Box>
                                                     }
                                                     action={
@@ -1084,9 +1095,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 pb: '12px',
                                 fontWeight: 'bold',
                                 fontSize: '16',
+                                color: '#000',
                             }}
                         >
-                            Permissions
+                            Project access
                         </Typography>
                         <Box
                             sx={{
@@ -1280,7 +1292,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         Save
                     </Button>
                 </Modal.Actions>
-            </Modal>
+            </StyledModal>
             <Modal open={deleteProjectModal} maxWidth="md">
                 <Modal.Title>
                     <Typography variant="h6">Are you sure?</Typography>
