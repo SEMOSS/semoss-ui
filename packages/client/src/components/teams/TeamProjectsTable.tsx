@@ -245,6 +245,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [searchLoading, setSearchLoading] = useState(false);
 
+    const [projectImageMap, setProjectImageMap] = useState<Record<string, string>>({});
+
     const nearBottom = (
         target: {
             scrollHeight?: number;
@@ -602,10 +604,23 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         200,
     );
 
-    const getRandomImage = () => {
+    const getRandomImageForProject = useCallback((projectId: string) => {
+        if (projectImageMap[projectId]) {
+            return projectImageMap[projectId];
+        }
         const randomIndex = Math.floor(Math.random() * projectImages.length);
-        return projectImages[randomIndex];
-    };
+        const newImage = projectImages[randomIndex];
+        
+        // Only update state if we don't have an image for this project
+        if (!projectImageMap[projectId]) {
+            setProjectImageMap(prev => ({
+                ...prev,
+                [projectId]: newImage
+            }));
+        }
+        
+        return newImage;
+    }, [projectImageMap]);
 
     return (
         <StyledProjectContent>
@@ -1001,7 +1016,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                         'cover',
                                                                 },
                                                             }}
-                                                            src={getRandomImage()}
+                                                            src={getRandomImageForProject(project.project_id)}
                                                         />
                                                     </Box>
                                                 </Box>
