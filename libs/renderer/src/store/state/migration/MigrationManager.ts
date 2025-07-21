@@ -1,3 +1,4 @@
+import { Migration, MigrationState } from "./migration.types";
 import migrate__1_0_0_alpha_to_1_0_0_alpha_1 from "./migrate__1_0_0_alpha__to__1_0_0_alpha_1";
 import migrate__1_0_0_alpha_1_to_1_0_0_alpha_2 from "./migrate__1_0_0_alpha_1__to__1_0_0_alpha_2";
 import migrate__1_0_0_alpha_2_to_1_0_0_alpha_3 from "./migrate__1_0_0_alpha_2__to___1_0_0_alpha_3";
@@ -10,7 +11,6 @@ import migrate__1_0_0_alpha_8_to_1_0_0_alpha_9 from "./migrate__1_0_0_alpha_8__t
 import migrate__1_0_0_alpha_9_to_1_0_0_alpha_10 from "./migrate__1_0_0_alpha_9__to___1_0_0_alpha_10_";
 import migrate__1_0_0_alpha_10_to_1_0_0_alpha_11 from "./migrate__1_0_0_alpha_10__to__1_0_0_alpha_11";
 import migrate__1_0_0_alpha_11_to_1_0_0_alpha_12 from "./migrate__1_0_0_alpha_11__to___1_0_0_alpha_12";
-import { Migration, MigrationState } from "./migration.types";
 
 // TODO: ANYTIME VERSION CHANGES
 // 1. Update Template Apps
