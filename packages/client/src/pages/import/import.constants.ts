@@ -79,6 +79,7 @@ import GOOGLE_OCR from '@/assets/img/GOOGLE_OCR.png';
 import AWS_TEXTRACT from '@/assets/img/AWS_TEXTRACT.png';
 import AWS_TRANSCRIBE from '@/assets/img/AWS_TRANSCRIBE.png';
 //Vector
+import MICROSOFT from '@/assets/loginProviders/microsoft.png';
 import CHROMADB from '@/assets/img/CHROMADB.png';
 import MILVUS from '@/assets/img/MILVUS.png';
 import PINECONE from '@/assets/img/PINECONE.png';
@@ -6563,6 +6564,322 @@ export const CONNECTION_OPTIONS = {
     },
     VECTOR: {
         Connections: [
+            {
+                name: 'Azure AI Search',
+                disable: false,
+                icon: MICROSOFT,
+                fields: [
+                    {
+                        fieldName: 'NAME',
+                        label: 'Catalog Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^[\w\-\s]+$/,
+                                message:
+                                    'Catalog names can only contain alphanumeric characters and dashes.',
+                            },
+                            custom: {
+                                value: 'CheckEngineName ( "[VALUE]") ;',
+                                message:
+                                    'This Catalog name has already been used, please try another.',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'VECTOR_TYPE',
+                        label: 'Type',
+                        defaultValue: 'AZURE_AI_SEARCH',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDER_ENGINE_ID',
+                        label: 'Embedder',
+                        defaultValue: '',
+                        options: {
+                            component: 'select',
+                            options: [],
+                            pixel: `MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "embeddings" }] , engineTypes = [ 'MODEL' ] ) ;`,
+                            optionDisplay: 'database_name',
+                            optionValue: 'database_id',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        helperText:
+                            'The registered model engine responsible for converting input strings into fixed-size vectors, known as embeddings, capturing semantic information for downstream machine learning and natural language processing tasks.',
+                    },
+                    {
+                        fieldName: 'INDEX_CLASSES',
+                        label: 'Index Classes',
+                        defaultValue: 'default',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: true,
+                        hidden: true,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'CHUNKING_STRATEGY',
+                        label: 'Chunking Strategy',
+                        defaultValue: 'ALL',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Token',
+                                    value: 'ALL',
+                                },
+                                {
+                                    display: 'Page by page',
+                                    value: 'PAGE_BY_PAGE',
+                                },
+                                {
+                                    display: 'Markdown',
+                                    value: 'MARKDOWN',
+                                }
+                            ],
+                        },
+                        disabled: false,
+                        hidden: false,
+                        rules: { required: true },
+                        displayRules: {
+                            hideOtherFields: [
+                                {
+                                    fieldName: 'CONTENT_LENGTH',
+                                    value: ['PAGE_BY_PAGE', 'MARKDOWN'],
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        fieldName: 'CONTENT_LENGTH',
+                        label: 'Content Length',
+                        defaultValue: '512',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        helperText:
+                            "The content length represents the upper limit of tokens within a chunk, as determined by the embedder's tokenizer.",
+                    },
+                    {
+                        fieldName: 'CONTENT_OVERLAP',
+                        label: 'Content Overlap',
+                        defaultValue: '20',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        helperText:
+                            'The number of tokens from prior chunks that are carried over into the current chunk when processing content.',
+                    },
+                    {
+                        fieldName: 'HOSTNAME',
+                        label: 'Host Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_KEY',
+                        label: 'API Key',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'API_VERSION',
+                        label: 'API Version',
+                        defaultValue: '2024-07-01',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+
+                    {
+                        fieldName: 'INDEX_NAME',
+                        label: 'Index Name',
+                        defaultValue: '',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true, pattern: {
+                                value: /^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$/,
+                                message: 'Index name must only contain lowercase letters, digits or dashes, cannot start or end with dashes and is limited to 128 characters',
+                            },
+                        },
+                    },
+
+                    {
+                        fieldName: 'DIMENSION_SIZE',
+                        label: 'Embedding Dimension Size',
+                        defaultValue: '1024',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                    },
+                    {
+                        fieldName: 'METHOD_NAME',
+                        label: 'Method Name',
+                        defaultValue: 'hnsw',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'SPACE_TYPE',
+                        label: 'Space Type',
+                        defaultValue: 'l2',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'INDEX_ENGINE',
+                        label: 'Index Engine',
+                        defaultValue: 'lucene',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'EF_CONSTRUCTION',
+                        label: 'EF Construction',
+                        defaultValue: '128',
+                        options: {
+                            component: 'number',
+                        },
+                        disabled: false,
+                        rules: { required: true, min: 0 },
+                        advanced: true,
+                    },
+                    {
+                        fieldName: 'M_VALUE',
+                        label: 'M Value',
+                        defaultValue: '10',
+                        options: {
+                            component: 'text-field',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            pattern: {
+                                value: /^(4|5|6|7|8|9|10)$/,
+                                message:
+                                    'Permitted values are between 4 and 10',
+                            },
+                        },
+                    },
+                    {
+                        fieldName: 'KEEP_INPUT_OUTPUT',
+                        label: 'Record Questions and Responses',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'true',
+                                    value: 'true',
+                                },
+                                {
+                                    display: 'false',
+                                    value: 'false',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: true },
+                    },
+                    {
+                        fieldName: 'EMBEDDINGS',
+                        label: 'Embeddings',
+                        defaultValue: null,
+                        options: {
+                            component: 'file-upload',
+                        },
+                        disabled: true,
+                        secondary: true,
+                        rules: {},
+                    },
+                    {
+                        fieldName: 'DISTANCE_METHOD',
+                        label: 'Distance Method',
+                        defaultValue: 'euclidean',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'Cosine similarity',
+                                    value: 'cosine',
+                                },
+                                {
+                                    display: 'Squared Euclidean (L2) distance',
+                                    value: 'euclidean',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                        helperText: '',
+                    },
+                    {
+                        fieldName: 'RETAIN_EXTRACTED_TEXT',
+                        label: 'Retain Extracted Text',
+                        defaultValue: 'false',
+                        options: {
+                            component: 'select',
+                            options: [
+                                {
+                                    display: 'False',
+                                    value: 'false',
+                                },
+                                {
+                                    display: 'True',
+                                    value: 'true',
+                                },
+                            ],
+                        },
+                        disabled: false,
+                        rules: { required: false },
+                        advanced: true,
+                    },
+                ],
+            },
             {
                 name: 'Chroma',
                 disable: false,
