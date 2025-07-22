@@ -88,7 +88,7 @@ jobs:
                 GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
               run: |
                  mkdir -p artifact
-                 RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^776-update-bi-node-version-' | head -n 1 | awk '{print $1}')
+                 RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^bi-build-' | head -n 1 | awk '{print $1}')
                  gh release download "$RELEASE_TAG" -R SEMOSS/bi -D artifact
                  ls -al artifact
 
