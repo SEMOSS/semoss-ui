@@ -180,17 +180,26 @@ export class MonolithStore {
             username,
         )}&password=${encodeURIComponent(password)}&disableRedirect=true`;
 
-        await axios
-            .post(`${Env.MODULE}/api/auth/login`, postData, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
+        try {
+            const response = await axios.post(
+                `${Env.MODULE}/api/auth/login`,
+                postData,
+                {
+                    headers: {
+                        'content-type': 'application/x-www-form-urlencoded',
+                    },
+                    validateStatus: () => true,
                 },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
+            );
 
-        return true;
+            if (response?.data?.errorMessage) {
+                throw new Error(response.data.errorMessage);
+            }
+
+            return true;
+        } catch (error) {
+            throw new Error(error.message);
+        }
     }
 
     /**
@@ -336,25 +345,25 @@ export class MonolithStore {
             encodeURIComponent(phoneextension) +
             '&countrycode=' +
             encodeURIComponent(countrycode);
-        return await axios
-            .post(`${Env.MODULE}/api/auth/createUser`, create, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
+        try {
+            const response = await axios.post(
+                `${Env.MODULE}/api/auth/createUser`,
+                create,
+                {
+                    headers: {
+                        'content-type': 'application/x-www-form-urlencoded',
+                    },
+                    validateStatus: () => true,
                 },
-            })
-            .catch((error) => {
-                if (
-                    error.response &&
-                    error.response.status === 401 &&
-                    error.response.data &&
-                    error.response.data.requirePwdChange
-                ) {
-                    return;
-                }
+            );
 
-                // throw the message
-                throw Error(error);
-            });
+            if (response.data?.errorMessage) {
+                throw new Error(response.data.errorMessage);
+            }
+            return response.data;
+        } catch (error) {
+            throw new Error(error.message);
+        }
     }
 
     /**     *

@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { Menu, MenuItem } from "@mui/material";
+
+import { MenuTwo, MenuItemTwo } from "@semoss/ui";
 
 import { useBlock, useFrame } from "../../../../../hooks";
 import { GridBlockDef } from "../../../grid-block/GridBlock";
@@ -11,7 +12,7 @@ export interface GridBlockContextMenuProps {
     /** Frame that the user is interacting with */
     frame: ReturnType<typeof useFrame>;
 
-    /** Context Menu */
+    /** Context MenuTwo */
     contextMenu: {
         mouseX: number;
         mouseY: number;
@@ -26,7 +27,7 @@ export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
     ({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
         const { data } = useBlock<GridBlockDef>(id);
         return (
-            <Menu
+            <MenuTwo
                 open={contextMenu !== null}
                 onClose={() => onClose()}
                 anchorReference="anchorPosition"
@@ -40,7 +41,7 @@ export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
                 }
             >
                 {contextMenu && !data.contextMenu?.hideUnfilter ? (
-                    <MenuItem
+                    <MenuItemTwo
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
@@ -49,10 +50,10 @@ export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
                         }}
                     >
                         Unfilter
-                    </MenuItem>
+                    </MenuItemTwo>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItem
+                    <MenuItemTwo
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -68,10 +69,10 @@ export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
                         {typeof contextMenu.value.value === "string"
                             ? contextMenu.value.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItem>
+                    </MenuItemTwo>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItem
+                    <MenuItemTwo
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -87,9 +88,9 @@ export const CustomContextMenu: React.FC<GridBlockContextMenuProps> = observer(
                         {typeof contextMenu.value.value === "string"
                             ? contextMenu.value.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItem>
+                    </MenuItemTwo>
                 ) : null}
-            </Menu>
+            </MenuTwo>
         );
     },
 );

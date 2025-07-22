@@ -9,13 +9,13 @@ export interface StackProps extends MuiStackProps {
     /** custom style object */
     sx?: SxProps;
 
-    //** children to be rendered */
-    children: ReactNode;
+    /** children to be rendered */
+    children?: ReactNode;
 
-    //** spacing between children components */
+    /** spacing between children components */
     spacing?: number;
 
-    //** direction of stack children */
+    /** direction of stack children */
     direction?: "column-reverse" | "column" | "row-reverse" | "row";
 }
 
