@@ -2,10 +2,10 @@ import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
 import { Box, Slider, styled } from "@semoss/ui";
+import { debounced } from "@semoss/sdk/react";
 
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
-import { debounced } from "../../../utility";
 
 const StyledSliderBox = styled(Box, {
     shouldForwardProp: (prop) => prop !== "sliderColor",
