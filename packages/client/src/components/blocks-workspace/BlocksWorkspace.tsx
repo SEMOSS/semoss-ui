@@ -37,8 +37,9 @@ import {
 } from './panels';
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
-const DEFAULT_BORDER_SIZE = 300;
-const BLOCK_SETTINGS_MIN_WIDTH = 450;
+const DEFAULT_BOTTOM_BORDER_SIZE = 300;
+const DEFAULT_LEFT_BORDER_SIZE = 400;
+const DEFAULT_RIGHT_BORDER_SIZE = 450;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -48,7 +49,8 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
             {
                 type: 'border',
                 location: 'left',
-                size: DEFAULT_BORDER_SIZE,
+                size: DEFAULT_LEFT_BORDER_SIZE,
+                minSize: DEFAULT_LEFT_BORDER_SIZE,
                 children: [
                     {
                         type: 'tab',
@@ -93,8 +95,8 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
             {
                 type: 'border',
                 location: 'right',
-                size: BLOCK_SETTINGS_MIN_WIDTH,
-                minSize: BLOCK_SETTINGS_MIN_WIDTH,
+                size: DEFAULT_RIGHT_BORDER_SIZE,
+                minSize: DEFAULT_RIGHT_BORDER_SIZE,
                 children: [
                     {
                         type: 'tab',
@@ -109,7 +111,8 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
             {
                 type: 'border',
                 location: 'bottom',
-                size: DEFAULT_BORDER_SIZE,
+                size: DEFAULT_BOTTOM_BORDER_SIZE,
+                minSize: DEFAULT_BOTTOM_BORDER_SIZE,
                 children: [
                     {
                         id: 'settings',
