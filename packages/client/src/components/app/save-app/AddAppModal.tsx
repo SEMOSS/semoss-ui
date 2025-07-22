@@ -298,6 +298,7 @@ export const AddAppModal = (props: AddAppProps) => {
             onClose={handleEngineModalOk}
             appId={pendingProjectId || ''}
             isUploadProjectApp={isUploadProjectApp}
+            engineDetails={{}}
         />
         </>
     );

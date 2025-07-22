@@ -38,13 +38,15 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
     const [failedIds, setFailedIds] = useState<string[]>([]);
     const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
     const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
+    const [engineIdToName, setEngineIdToName] = useState<Record<string, string>>({});
+    const [engineDetails, setEngineDetails] = useState<Record<string, { files: string[]; instances: (string | number)[] }>>({});
 
     const handleEngineIdsModalClose = () => {
-    setShowEngineIdsModal(false);
-    if (pendingUploadPath) {
-        onClose(true, pendingUploadPath);
-        setPendingUploadPath(null);
-    }
+        setShowEngineIdsModal(false);
+        if (pendingUploadPath) {
+            onClose(true, pendingUploadPath);
+            setPendingUploadPath(null);
+        }
     };
 
     /**
@@ -78,13 +80,38 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                         `UnzipFile(filePath=["${path}"], space=["${space}"])`,
                     );
                     const extractResult = await monolithStore.runQuery(
-                    `ExtractAndSetDependencies(filePath=["version/assets"], space=["${space}"]);`
+                        `ExtractAndSetDependencies(filePath=["version/assets"], space=["${space}"]);`
                     );
                     let extractOutput = extractResult.pixelReturn[0].output;
                     const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
                     const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
                     setSuccessIds(success);
                     setFailedIds(failed);
+                    const idToName: Record<string, string> = {};
+                    if (extractOutput.engineIds.success) {
+                        Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
+                            idToName[id] = (obj as { engineName?: string }).engineName || '';
+                        });
+                    }
+                    setEngineIdToName(idToName);
+                    const engineDetails: Record<string, { files: string[]; instances: (string | number)[] }> = {};
+                    if (extractOutput.engineIds.success) {
+                        Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
+                            engineDetails[id] = {
+                                files: (obj as any).files?.map((f: any) => f.filename) || [],
+                                instances: (obj as any).files?.map((f: any) => f.instances) || [],
+                            };
+                        });
+                    }
+                    if (extractOutput.engineIds.failed) {
+                        Object.entries(extractOutput.engineIds.failed).forEach(([id, obj]) => {
+                            engineDetails[id] = {
+                                files: (obj as any).files?.map((f: any) => f.filename) || [],
+                                instances: (obj as any).files?.map((f: any) => f.instances) || [],
+                            };
+                        });
+                    }
+                    setEngineDetails(engineDetails);
                     setIsUploadProjectApp(false);
                     setPendingUploadPath(path);
                     setShowEngineIdsModal(true);
@@ -155,6 +182,8 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 onClose={handleEngineIdsModalClose}
                 appId={space}
                 isUploadProjectApp={isUploadProjectApp}
+                engineIdToName={engineIdToName}
+                engineDetails={engineDetails}
             />
         </>
     );
