@@ -558,9 +558,6 @@ export const lightTheme: CustomThemeOptions = {
             styleOverrides: {
                 root: ({ theme }) => ({
                     boxShadow: "none",
-                    "&:hover": {
-                        backgroundColor: "#4A4949",
-                    },
                 }),
             },
         },
