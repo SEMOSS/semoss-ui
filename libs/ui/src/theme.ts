@@ -160,7 +160,7 @@ export const lightTheme: CustomThemeOptions = {
             // main: "#26890D",
             // light: "#86BC25",
             // dark: "#046A38",
-            hover: "#4A4949",
+            hover: "#F5F9FE",
             selected: "#EBF4FE",
             border: "#9FCFFF",
         },
