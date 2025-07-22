@@ -162,7 +162,6 @@ export const MemberDependencyOverlay = (
         `GetProjectDependencies(project="${id}", details=[true]);`,
     );
     const allDependencies = getProjectDependencies?.data || [];
-    console.log('allDependencies', allDependencies);
     const [userDependencies, setUserDependencies] = useState<string[]>([]);
     const [userNoAccess, setUserNoAccess] = useState<string[]>([]);
     const [enginePermissions, setEnginePermissions] = useState<
