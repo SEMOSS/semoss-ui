@@ -1,11 +1,17 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from "react";
 
 export function useInfiniteScroll({
     limit = 10,
     scrollElementId = null,
+    collect = () => {
+        return;
+    },
+    length = 0,
 }: {
     limit?: number;
     scrollElementId?: string;
+    collect?: (offset: number) => void;
+    length?: number;
 }) {
     const [canCollect, setCanCollect] = useState(true);
     const [offset, setOffset] = useState(0);
@@ -15,14 +21,13 @@ export function useInfiniteScroll({
     const previousScrollRef = useRef(0);
     let currentScroll;
 
-    const offsetRef = useRef(0);
-    offsetRef.current = offset;
+    const offsetRef = useRef(limit);
     const canCollectRef = useRef(true);
     canCollectRef.current = canCollect;
 
     const reset = () => {
+        offsetRef.current = limit;
         setOffset(0);
-        setCanCollect(true);
     };
 
     const checkHasReached = (len: number) => {
@@ -50,9 +55,10 @@ export function useInfiniteScroll({
                 if (!canCollectRef.current) {
                     return;
                 }
-
-                setOffset(offsetRef.current + limit);
-                offsetRef.current = offsetRef.current + limit;
+                const nextOffset = offsetRef.current + limit;
+                setOffset(nextOffset);
+                offsetRef.current = nextOffset;
+                collect(nextOffset);
             }, 500);
         }
 
@@ -65,18 +71,24 @@ export function useInfiniteScroll({
 
     useEffect(() => {
         scrollElRef.current = document.querySelector(
-            scrollElementId || '#home__content',
+            scrollElementId || "#home__content",
         );
 
         if (!scrollElRef.current) {
             return;
         }
 
-        scrollElRef.current?.addEventListener('scroll', scrollAll);
+        scrollElRef.current?.addEventListener("scroll", scrollAll);
         return () => {
-            scrollElRef.current?.removeEventListener('scroll', scrollAll);
+            scrollElRef.current?.removeEventListener("scroll", scrollAll);
         };
     }, [scrollElementId]);
+
+    useEffect(() => {
+        if (length > 0) {
+            checkHasReached(length);
+        }
+    }, [length]);
 
     return {
         offset,

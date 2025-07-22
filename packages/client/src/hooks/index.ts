@@ -13,7 +13,8 @@ import { useDebounce } from './useDebounce';
 import { useDebounceValue } from './useDebounceValue';
 import { usePage } from './usePage';
 import { useBlockSettings } from './useBlockSettings';
-import { useInfiniteScroll } from './useInfiniteScroll';
+import { useInfiniteScroll } from '@semoss/sdk/react';
+import { useInfinitePixel } from '@semoss/sdk/react';
 
 export {
     useAPI,
@@ -32,4 +33,5 @@ export {
     useDebounceValue,
     usePage,
     useInfiniteScroll,
+    useInfinitePixel,
 };

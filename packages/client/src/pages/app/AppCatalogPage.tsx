@@ -13,7 +13,12 @@ import {
 
 import { useNavigate } from 'react-router-dom';
 
-import { useInfiniteScroll, usePixel, useRootStore } from '@/hooks';
+import {
+    useInfiniteScroll,
+    usePixel,
+    useRootStore,
+    useInfinitePixel,
+} from '@/hooks';
 import { AppMetadata, AppTileCard } from '@/components/app';
 import { Help } from '@/components/help';
 import { Filterbox } from '@/components/ui';
@@ -161,9 +166,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
     //** amount of items to be loaded */
     const limit = 5;
-    const { offset, checkHasReached, reset } = useInfiniteScroll({
-        limit,
-    });
+    // const { offset, checkHasReached, reset } = useInfiniteScroll({
+    //     limit,
+    // });
 
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -185,6 +190,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
         return k.metakey;
     });
 
+    // const [offsetVal, setOffset] = useState(0);
+
     let pixel = mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects';
 
     pixel += `(metaKeys = ${JSON.stringify([
@@ -192,33 +199,55 @@ export const AppCatalogPage = observer((): JSX.Element => {
         'description',
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
-    )}], filterWord=["${search}"], onlyPortals=[true],limit=[${limit}], offset=[${offset}]);`;
+    )}], filterWord=["${search}"], onlyPortals=[true],limit=[${limit}],offset=[${0}]);`;
+
+    const { data, status, error, currLen, collect } = useInfinitePixel(
+        mode === 'Mine' ? 'MyProjects' : 'MyDiscoverableProjects',
+        `metaKeys = ${JSON.stringify([
+            ...metaKeys,
+            'description',
+        ])}, metaFilters=[${JSON.stringify(
+            metaFilters,
+        )}], filterWord=["${search}"], onlyPortals=[true], limit=[${limit}]`,
+    );
+
+    const { offset, reset } = useInfiniteScroll({
+        limit,
+        length: currLen,
+        collect,
+    });
+
+    // useEffect(() => {
+    //     // if (!offset) {
+    //     //     collect();
+    //     // }
+    //     setOffset(offset);
+    // }, [offset]);
+
+    console.log('data', data, 'status', status, 'error', error);
+    // console.log('pixel ', pixel);
 
     /**
      * @desc Get & Set Apps
      */
-    const getApps = usePixel<AppMetadata[]>(pixel);
+    // const getApps = usePixel<AppMetadata[]>(pixel);
 
     useEffect(() => {
-        if (getApps.status !== 'SUCCESS') {
-            dispatch({
-                type: 'field',
-                field: 'apps',
-                value: offset ? apps : [],
-            });
+        if (status !== 'SUCCESS') {
+            // dispatch({
+            //     type: 'field',
+            //     field: 'apps',
+            //     value: [],
+            // });
             return;
-        }
-
-        if (getApps.status === 'SUCCESS' && getApps.data instanceof Array) {
-            checkHasReached(getApps.data.length);
         }
 
         dispatch({
             type: 'field',
             field: 'apps',
-            value: offset ? [...apps, ...getApps.data] : getApps.data,
+            value: Array.isArray(data) ? data : [],
         });
-    }, [getApps.status, getApps.data]);
+    }, [status, data, offset]);
 
     /**
      * @desc Get & Sets Favorited Apps
@@ -230,7 +259,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
         'description',
     ])}, metaFilters=[${JSON.stringify(
         metaFilters,
-    )}], filterWord=["${search}"], onlyFavorites=[true],limit=[${limit}], offset=[${offset}]);`;
+    )}], filterWord=["${search}"], onlyFavorites=[true],limit=[${limit}], offset=[${0}]);`;
     const getFavoritedApps = usePixel(mode === 'Mine' && favoritePixel);
 
     useEffect(() => {
