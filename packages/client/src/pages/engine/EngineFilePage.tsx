@@ -1,6 +1,8 @@
 import { Table, styled, Typography } from '@semoss/ui';
 import { useEngine } from '@/hooks';
 import { FileTable } from '@/components/settings';
+import { StorageFileExplorer } from '@/components/engine/StorageFileExplorer';
+
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -35,8 +37,11 @@ export const EngineFilePage = () => {
             </StyledTopDiv>
 
             <StyledTableContainer>
-                <FileTable id={active.id} />
+                {/* <FileTable id={active.id} /> */}
+                <StorageFileExplorer id={active.id}/>
             </StyledTableContainer>
         </StyledContainer>
     );
 };
+
+ 

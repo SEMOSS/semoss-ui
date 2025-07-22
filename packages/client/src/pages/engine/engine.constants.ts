@@ -54,7 +54,7 @@ export const ENGINE_ROUTES: {
         path: 'function',
         type: 'FUNCTION',
         description:
-            'Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ',
+            'Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ',
         icon: SwitchAccessShortcutOutlined,
         specific: [
             {
@@ -174,7 +174,7 @@ export const ENGINE_ROUTES: {
         path: 'vector',
         type: 'VECTOR',
         description:
-            'Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ',
+            'Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ',
         icon: TokenOutlined,
         specific: [
             {
@@ -247,6 +247,13 @@ export const ENGINE_ROUTES: {
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
+            {
+                name: 'Files',
+                path: 'files',
+                component: EngineFilePage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
         ],
     },
 ];
+ 
