@@ -240,7 +240,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
             insightID: string;
             pixelReturn: {
                 operationType: string[];
-                output: unknown;
+                output: O[number];
                 pixelExpression: string;
             }[];
         };
