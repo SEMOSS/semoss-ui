@@ -1,6 +1,9 @@
-import React, { useEffect } from 'react';
-import { styled, Typography } from '@semoss/ui';
+import React, { useEffect, useState } from 'react';
+import { styled, Typography, Button, Box } from '@semoss/ui';
 import { usePixel } from '@/hooks';
+import { Add } from '@mui/icons-material';
+import { SETTINGS_ROLE } from './settings.types';
+import { MemberDependencyOverlay } from './MemberDependencyOverlay';
 
 interface DependencyListProps {
     id: string;
@@ -15,6 +18,21 @@ interface EngineData {
     engine_date_created: string;
     engine_discoverable: boolean;
     engine_global: boolean;
+}
+
+interface User {
+    id: string;
+    type: string;
+    name: string;
+    email: string;
+    permission_granted_by_type: string;
+    permission_granted_by: string;
+    permission: string;
+    date_added: string;
+    usage_restriction?: string;
+    usage_frequency?: string;
+    max_tokens?: number;
+    max_response_time?: number;
 }
 
 const StyledUuidItem = styled('div')(({ theme }) => ({
@@ -39,10 +57,37 @@ const StyledUuidList = styled('div')({
     overflowY: 'auto',
 });
 
+const StyledAddMemberContainer = styled('div')({
+    display: 'flex',
+    padding: '10px 24px 10px 8px',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: '10px',
+});
+
+const StyledCenteredBox = styled(Box)({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+});
+
 export const DependencyList = ({ id }: DependencyListProps) => {
     const getProjectDependencies = usePixel<EngineData[]>(
         `GetProjectDependencies(project="${id}", details=[true]);`,
     );
+
+    /** Add Member State */
+    const [addMembersModal, setAddMembersModal] = useState<boolean>(false);
+    const [addModalUser, setAddModalUser] = useState<User | null>(null);
+
+    const openDependencyAddMembersModal = () => {
+        setAddModalUser(null); // reset user for add
+        setAddMembersModal(true);
+    };
+
+    const [userPermission, setUserPermission] =
+        useState<SETTINGS_ROLE>('Read-Only');
 
     const handleEngineClick = (engineId: string) => {
         const baseUrl = `${window.location.protocol}//${window.location.host}`;
@@ -53,9 +98,29 @@ export const DependencyList = ({ id }: DependencyListProps) => {
 
     return (
         <div style={{ width: '100%' }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-                Dependencies
-            </Typography>
+            <div
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    // marginBottom: 16,
+                }}
+            >
+                <Typography variant="h6" sx={{ mb: 2 }}>
+                    Dependencies
+                </Typography>
+                <StyledAddMemberContainer>
+                    <Button
+                        variant={'contained'}
+                        onClick={openDependencyAddMembersModal}
+                    >
+                        <StyledCenteredBox>
+                            <Add />
+                            Add Members
+                        </StyledCenteredBox>
+                    </Button>
+                </StyledAddMemberContainer>
+            </div>
             <Typography variant="body2" sx={{ mb: 2 }}>
                 The following resources are associated with this application:
             </Typography>
@@ -109,6 +174,15 @@ export const DependencyList = ({ id }: DependencyListProps) => {
                         No dependencies found for this application.
                     </Typography>
                 )}
+                {/* Always render MemberDependencyOverlay, but control its open prop */}
+                <MemberDependencyOverlay
+                    id={id}
+                    open={addMembersModal}
+                    user={addModalUser}
+                    setAddModalUser={setAddModalUser}
+                    userPermission={userPermission}
+                    onClose={() => setAddMembersModal(false)}
+                />
             </StyledUuidList>
         </div>
     );
