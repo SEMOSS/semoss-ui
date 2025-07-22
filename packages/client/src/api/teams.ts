@@ -1,5 +1,4 @@
-import { Env } from '../../env';
-import { get, post} from "../../utility";
+import { Env, get, post } from '@semoss/sdk';
 
 export const getTeams = async (admin: boolean) => {
     let url = `${Env.MODULE}/api/auth/`;

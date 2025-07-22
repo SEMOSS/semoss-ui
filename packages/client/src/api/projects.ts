@@ -1,5 +1,5 @@
-import { Env } from '../../env';
-import { get, post} from "../../utility";
+import { Env, get, post } from '@semoss/sdk';
+
 import { Role } from '@/types';
 
 export const setProjectFavorite = async (

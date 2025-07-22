@@ -1,7 +1,4 @@
-import { Env } from '../../env';
-import { Insight } from "../../";
-import { get, post, interceptors, UnauthorizedError } from "../../utility";
-
+import { Env, get, post } from '@semoss/sdk';
 
 export const config = async () => {
     // get the response
@@ -76,14 +73,6 @@ export const run = async <O extends unknown[] | []>(
         pixelReturn: response.data.pixelReturn,
     };
 };
-
-export const runQuery = async <O extends any[] | []>(
-    pixel: string,
-    insightId?: string,
-) => {
-    return run<O>(insightId ?? Insight["insightId"], pixel);
-};
-
 
 export const fileDownload = async (insightID: string, fileKey: string) => {
     return new Promise<void>((resolve) => {
