@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+
 import {
     styled,
     Button,
@@ -19,6 +20,8 @@ import {
     RadioGroup,
     Icon,
 } from '@semoss/ui';
+import { debounced } from '@semoss/sdk/react';
+
 import {
     Delete,
     ClearRounded,
@@ -550,45 +553,38 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     projects > 9 && paginationOptions.projectsPageCounts.push(10);
     projects > 19 && paginationOptions.projectsPageCounts.push(20);
 
-    function useDebounce(effect, dependencies, delay) {
-        const callback = useCallback(effect, dependencies);
+    const filterProjects = useCallback(() => {
+        monolithStore
+            .getTeamProjects(
+                groupId,
+                groupType,
+                limit,
+                projectsPage * limit - limit, // offset
+                searchFilter,
+                false,
+            )
+            .then((data) => {
+                setProjects(data);
+                setHasProject(true);
+            });
+        monolithStore
+            .getTeamProjects(
+                groupId,
+                groupType,
+                100,
+                0, // offset
+                searchFilter,
+                false,
+            )
+            .then((data) => setProjectCount(data.length));
+    }, [count, projectsPage, searchFilter]);
 
-        useEffect(() => {
-            const timeout = setTimeout(callback, delay);
-            return () => clearTimeout(timeout);
-        }, [callback, delay]);
-    }
+    const debouncedFilterProjects = debounced(filterProjects, 400);
 
-    // DeBounce Function
-    useDebounce(
-        () => {
-            monolithStore
-                .getTeamProjects(
-                    groupId,
-                    groupType,
-                    limit,
-                    projectsPage * limit - limit, // offset
-                    searchFilter,
-                    false,
-                )
-                .then((data) => {
-                    setProjects(data);
-                    setHasProject(true);
-                });
-            monolithStore
-                .getTeamProjects(
-                    groupId,
-                    groupType,
-                    100,
-                    0, // offset
-                    searchFilter,
-                    false,
-                )
-                .then((data) => setProjectCount(data.length));
-        },
-        [count, projectsPage, searchFilter],
-        200,
-    );
+    const handleInputChange = (newInputValue) => {
+        setValue('SEARCH_FILTER', newInputValue);
+        debouncedFilterProjects();
+    };
 
     return (
         <StyledProjectContent>
@@ -607,10 +603,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                     size="small"
                                     value={searchFilter}
                                     onChange={(e) => {
-                                        setValue(
-                                            'SEARCH_FILTER',
-                                            e.target.value,
-                                        );
+                                        handleInputChange(e.target.value);
                                     }}
                                 />
                             </StyledSearchButtonContainer>
