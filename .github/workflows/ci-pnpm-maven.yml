@@ -4,6 +4,7 @@ on:
         branches:
             - dev
             - main
+            - 776-update-frontend-build-tooling-and-node-version
     pull_request:
         branches:
             - dev
@@ -65,17 +66,26 @@ jobs:
             - name: Remove previous legacy folder
               run: rm -rf packages/legacy
 
-            - name: Download SEMOSS/bi repository
+            # - name: Download SEMOSS/bi repository
+            #   run: |
+            #     mkdir -p tmp
+            #     curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+            #     unzip tmp/main.zip -d tmp/
+            #     rm tmp/main.zip
+
+            - name: Download build artifact from SEMOSS/bi release
+              env:
+                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
               run: |
-                mkdir -p tmp
-                curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
-                unzip tmp/main.zip -d tmp/
-                rm tmp/main.zip
+                 mkdir -p artifact
+                 RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^776-' | head -n 1 | awk '{print $1}')
+                 gh release download "$RELEASE_TAG" -R SEMOSS/bi -D artifact
+                 ls -al artifact
 
             - name: Move SEMOSS/bi to packages/legacy
               run: |
-                mv tmp/bi-main ./packages/legacy
-                rm -rf tmp/
+                unzip 'artifact/*.zip' -d ./packages/legacy
+                ls -als packages/legacy
 
             - name: Maven clean install
               run: |
