@@ -13,7 +13,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { Job, JobBuilder } from './job.types';
 import { getHumanReadableCronExpression } from './job.utils';
 
@@ -55,7 +55,7 @@ export const JobsTable = (props: {
     const runJob = async (job: Job) => {
         setRunJobLoading(true);
         try {
-            await runPixelTwo(
+            await runPixel(
                 `META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
             );
         } catch (e) {
