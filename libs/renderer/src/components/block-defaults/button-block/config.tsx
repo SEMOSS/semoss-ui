@@ -15,6 +15,7 @@ export const config: BlockConfig<ButtonBlockDef> = {
         variant: "contained",
         color: "primary",
         show: "true",
+        type: "button"
     },
     listeners: {
         onClick: {
