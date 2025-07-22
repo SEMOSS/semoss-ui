@@ -91,7 +91,9 @@ jobs:
             #      RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^bi-build-' | head -n 1 | awk '{print $1}')
             #      gh release download "$RELEASE_TAG" -R SEMOSS/bi -D artifact
             #      ls -al artifact
-
+            - name: Install jq
+              run: sudo apt-get update && sudo apt-get install -y jq
+            
             - name: Download workflow artifact from another repo
               env:
                 GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
