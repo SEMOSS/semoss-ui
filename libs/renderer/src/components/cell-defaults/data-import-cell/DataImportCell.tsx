@@ -58,25 +58,17 @@ const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
 const FRAME_TYPES = {
-    PIXEL: {
-        display: "Pixel",
-        value: "PIXEL",
-    },
-    NATIVE: {
-        display: "GRID",
-        value: "NATIVE",
-    },
     PY: {
         display: "Python",
         value: "PY",
     },
-    R: {
-        display: "R",
-        value: "R",
-    },
     GRID: {
         display: "Grid",
         value: "GRID",
+    },
+    NATIVE: {
+        display: "Native",
+        value: "NATIVE",
     },
 };
 
