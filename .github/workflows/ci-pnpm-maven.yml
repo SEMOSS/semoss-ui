@@ -123,7 +123,9 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                 name: semoss-ui-build
-                path: dist/
+                path: | 
+                    packages/client/dist
+                    packages/legacy
 
             # - name: Save artifacts
             #   if: success()
