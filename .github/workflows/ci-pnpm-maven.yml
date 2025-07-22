@@ -82,31 +82,6 @@ jobs:
             - name: Remove previous legacy folder
               run: rm -rf packages/legacy
 
-            # - name: Download SEMOSS/bi repository
-            #   run: |
-            #     mkdir -p tmp
-            #     curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
-            #     unzip tmp/main.zip -d tmp/
-            #     rm tmp/main.zip
-
-            - name: Install GitHub CLI
-              run: |
-                apt-get update
-                apt-get install -y curl
-                curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
-                chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
-                echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
-                apt-get update
-                apt-get install -y gh
-                
-            # - name: Download build artifact from SEMOSS/bi release
-            #   env:
-            #     GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
-            #   run: |
-            #      mkdir -p artifact
-            #      RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^bi-build-' | head -n 1 | awk '{print $1}')
-            #      gh release download "$RELEASE_TAG" -R SEMOSS/bi -D artifact
-            #      ls -al artifact
             - name: Install jq
               run: apt-get update && apt-get install -y jq
             
