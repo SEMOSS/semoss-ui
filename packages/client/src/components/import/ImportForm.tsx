@@ -1,20 +1,15 @@
-// InputForm
-
 import { useEffect, useState, useRef, useMemo, useReducer } from 'react';
 import {
     Button,
     Checkbox,
     FileDropzone,
     IconButton,
-    Menu,
     TextField,
-    Typography,
     Stack,
     Select,
     styled,
     useNotification,
     CircularProgress,
-    Tooltip,
     Box,
     RadioGroup,
     FormControlLabel,
@@ -27,22 +22,13 @@ import {
 } from '@semoss/ui';
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
-import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
-import React from 'react';
+import { useForm, Controller } from 'react-hook-form';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 
-const StyledFlexEnd = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: theme.spacing(1),
-}));
-
-const StyledProperty = styled('div')(({ theme }) => ({
-    display: 'flex',
-    width: '100%',
-    flexDirection: 'column',
-    gap: theme.spacing(1),
-}));
+const initialState = {
+    defaultFields: [],
+    advancedFields: [],
+};
 
 const StyledKeyValue = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -51,23 +37,35 @@ const StyledKeyValue = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
 }));
 
-const StyledDropzoneField = styled('div')(({ theme }) => ({
+const FormRow = styled(Box)({
+    display: 'flex',
+    flexDirection: 'row',
+});
+const FormLabelBlock = styled(Box)(({ theme }) => ({
+    width: '35%',
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
+}));
+const FormInputBlock = styled(Box)({
+    width: '65%',
+});
+const FlexEndBox = styled(Box)({
+    display: 'flex',
+    justifyContent: 'flex-end',
+});
+const SectionTitle = styled(Box)(({ theme }) => ({
+    fontWeight: 'bold',
+    ...theme.typography.h6,
+}));
+const SectionDescription = styled(Box)(({ theme }) => ({
+    ...theme.typography.body2,
+    color: theme.palette.text.secondary,
+    marginBottom: theme.spacing(2),
+}));
+
+const StyledFileUploadSection = styled('div')({  
     width: '100%',
-    height: '100%',
-}));
-
-const StyledSubmitButton = styled(Button)(() => ({
-    textTransform: 'capitalize',
-    minWidth: '128px',
-}));
-
-const initialState = {
-    defaultFields: [],
-    advancedFields: [],
-};
+});
 
 const reducer = (state, action) => {
     switch (action.type) {
@@ -83,12 +81,10 @@ const reducer = (state, action) => {
 
 export const ImportForm = (props) => {
     const { submitFunc, fields } = props;
-
     const { steps, setSteps } = useStepper();
     const notification = useNotification();
     const { monolithStore, configStore } = useRootStore();
     const navigate = useNavigate();
-
     const [state, dispatch] = useReducer(reducer, initialState);
     const { defaultFields, advancedFields } = state;
     const [openAdvanced, setOpenAdvanced] = useState(false);
@@ -97,9 +93,7 @@ export const ImportForm = (props) => {
     const [updateFieldName, setUpdateFieldName] = useState('');
     const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
         useState(false);
-
     const watchedFieldRef = useRef({});
-
     //** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
     const {
         control,
@@ -695,82 +689,51 @@ export const ImportForm = (props) => {
      * @param value
      */
 
-    const checkForDisplayRulesSet = (field, value) => {
-        const selectedDefaultField = fields.find(
-            (f) => f.fieldName === field.name,
+    // Field-check logic
+    const hasOnlyUploadFields = (fields) =>
+        fields.every((f) =>
+            ['file-upload', 'zip-upload'].includes(f.options?.component),
         );
-        if (selectedDefaultField?.displayRules?.hideOtherFields) {
-            selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
-                const optionValue = fth.value;
-                fields.forEach((f) => {
-                    if (f.fieldName === fth.fieldName) {
-                        f.hidden = optionValue.includes(value);
-                    }
-                });
-                dispatch({
-                    type: 'field',
-                    field: 'defaultFields',
-                    value: fields,
-                });
-            });
-        }
-    };
+    const hasMixedFields = (fields) =>
+        fields.some(
+            (f) =>
+                !['file-upload', 'zip-upload'].includes(f.options?.component),
+        ) &&
+        fields.some((f) =>
+            ['file-upload', 'zip-upload'].includes(f.options?.component),
+        );
+    const onlyUploads = hasOnlyUploadFields(defaultFields);
+    const mixedFields = hasMixedFields(defaultFields);
 
-    console.log('Default Fields:', defaultFields);
     return (
         <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Logic flags */}
             {(() => {
-                const hasOnlyUploadFields = defaultFields.every(
-                    (f) =>
-                        f.options?.component === 'file-upload' ||
-                        f.options?.component === 'zip-upload',
-                );
-                const hasMixedFields =
-                    defaultFields.some(
-                        (f) =>
-                            f.options?.component !== 'file-upload' &&
-                            f.options?.component !== 'zip-upload',
-                    ) &&
-                    defaultFields.some(
-                        (f) =>
-                            f.options?.component === 'file-upload' ||
-                            f.options?.component === 'zip-upload',
-                    );
-
-                // Only file uploads (top layout)
-                if (hasOnlyUploadFields) {
+                if (onlyUploads) {
+                    // Upload-only mode
                     return (
                         <Grid container spacing={2}>
-                            {defaultFields.map((field, i) => (
-                                <Grid item xs={12} key={i}>
-                                    <Box>
-                                        <Controller
-                                            name={field.fieldName}
-                                            control={control}
-                                            rules={field.rules}
-                                            render={({ field: f }) => (
+                            {defaultFields.map((f) => (
+                                <Grid item xs={12} key={f.fieldName}>
+                                    <Controller
+                                        name={f.fieldName}
+                                        control={control}
+                                        rules={f.rules}
+                                        render={({ field: fld }) => (
+                                            <StyledFileUploadSection>
                                                 <FileDropzone
                                                     multiple
-                                                    value={field.value}
-                                                    disabled={false}
-                                                    onChange={(newValues) => {
-                                                        f.onChange(newValues);
-                                                    }}
+                                                    value={fld.value || f.value}
+                                                    onChange={(v) =>
+                                                        fld.onChange(v)
+                                                    }
                                                 />
-                                            )}
-                                        />
-                                    </Box>
+                                            </StyledFileUploadSection>
+                                        )}
+                                    />
                                 </Grid>
                             ))}
-
                             <Grid item xs={12}>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'flex-end',
-                                    }}
-                                >
+                                <FlexEndBox>
                                     <Button
                                         disabled={formLoading}
                                         type="submit"
@@ -779,53 +742,36 @@ export const ImportForm = (props) => {
                                         {formLoading ? (
                                             <CircularProgress size="1.5em" />
                                         ) : (
-                                            `Upload`
+                                            'Upload'
                                         )}
                                     </Button>
-                                </Box>
+                                </FlexEndBox>
                             </Grid>
                         </Grid>
                     );
                 }
 
-                // Mixed mode (inline upload goes below settings)
-                return (
-                    <Stack spacing={4}>
-                        <div style={{ display: 'flex', flexDirection: 'row' }}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    width: '35%',
-                                }}
-                            >
-                                <Typography variant="h6" fontWeight="bold">
-                                    Select Hosting Mode
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    color="secondary"
-                                    sx={{ mb: 2 }}
+                if (mixedFields) {
+                    return (
+                        <Stack spacing={4}>
+                            {/* Hosting Mode */}
+                            <FormRow>
+                                <FormLabelBlock>
+                                    <SectionTitle>
+                                        Select Hosting Mode
+                                    </SectionTitle>
+                                    <SectionDescription>
+                                        Choose between commercially hosted or
+                                        locally hosted modes.
+                                    </SectionDescription>
+                                </FormLabelBlock>
+                                <FormInputBlock
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        ml: 3,
+                                    }}
                                 >
-                                    Choose between commercially hosted for
-                                    managed services
-                                    <br />
-                                    and support, or locally hosted for greater
-                                    control and
-                                    <br />
-                                    customization of your environment.
-                                    <br />
-                                </Typography>
-                            </div>
-                            <div
-                                style={{
-                                    width: '65%',
-                                    alignItems: 'center',
-                                    display: 'flex',
-                                    marginLeft: '30px',
-                                }}
-                            >
-                                <Box>
                                     <Controller
                                         name="HOSTING_MODE"
                                         control={control}
@@ -835,388 +781,292 @@ export const ImportForm = (props) => {
                                                 <FormControlLabel
                                                     value="commercial"
                                                     control={
-                                                        <Radio
-                                                            label={
-                                                                'Commercially Hosted'
-                                                            }
-                                                        />
+                                                        <Radio label={''} />
                                                     }
-                                                    label=""
+                                                    label="Commercially Hosted"
                                                 />
                                                 <FormControlLabel
                                                     value="local"
                                                     control={
-                                                        <Radio
-                                                            label={
-                                                                'Locally Hosted'
-                                                            }
-                                                        />
+                                                        <Radio label={''} />
                                                     }
-                                                    label=""
+                                                    label="Locally Hosted"
                                                 />
                                             </RadioGroup>
                                         )}
                                     />
-                                </Box>
-                            </div>
-                        </div>
+                                </FormInputBlock>
+                            </FormRow>
+                            <Divider />
 
-                        <Divider sx={{ my: 2 }} />
-
-                        {/* General Section */}
-                        <div style={{ display: 'flex', flexDirection: 'row' }}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    width: '35%',
-                                }}
-                            >
-                                <Typography variant="h6" fontWeight="bold">
-                                    General
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    color="secondary"
-                                    sx={{ mb: 2 }}
-                                >
-                                    Please provide the name, type, and model to
-                                    uniquely identify,
-                                    <br />
-                                    categorize, and configure your setup for
-                                    optimal performance.
-                                </Typography>
-                            </div>
-
-                            <div style={{ width: '65%' }}>
-                                <Grid container spacing={2}>
-                                    {/* First field: full width */}
-                                    {defaultFields
-                                        .slice(0, 1)
-                                        .map((field, i) => (
-                                            <Grid item xs={12} key={i}>
-                                                <Box>
-                                                    <Controller
-                                                        name={field.fieldName}
-                                                        control={control}
-                                                        rules={field.rules}
-                                                        render={({
-                                                            field: f,
-                                                            fieldState,
-                                                        }) =>
-                                                            field.options
-                                                                ?.component ===
-                                                            'select' ? (
-                                                                <FormControl
-                                                                    fullWidth
-                                                                    error={
-                                                                        !!fieldState.error
-                                                                    }
-                                                                >
-                                                                    <Select
-                                                                        label={
-                                                                            field.label
-                                                                        }
-                                                                        value={
-                                                                            f.value ??
-                                                                            ''
-                                                                        }
-                                                                        onChange={
-                                                                            f.onChange
-                                                                        }
-                                                                        disabled={
-                                                                            field.disabled
-                                                                        }
-                                                                        required={
-                                                                            field
-                                                                                .rules
-                                                                                ?.required
-                                                                        }
-                                                                    >
-                                                                        {(
-                                                                            field
-                                                                                .options
-                                                                                .options ||
-                                                                            []
-                                                                        ).map(
-                                                                            (
-                                                                                option,
-                                                                            ) => (
-                                                                                <MenuItem
-                                                                                    key={
-                                                                                        option[
-                                                                                            field
-                                                                                                .options
-                                                                                                .optionValue
-                                                                                        ]
-                                                                                    }
-                                                                                    value={
-                                                                                        option[
-                                                                                            field
-                                                                                                .options
-                                                                                                .optionValue
-                                                                                        ]
-                                                                                    }
-                                                                                >
-                                                                                    {
-                                                                                        option[
-                                                                                            field
-                                                                                                .options
-                                                                                                .optionDisplay
-                                                                                        ]
-                                                                                    }
-                                                                                </MenuItem>
-                                                                            ),
-                                                                        )}
-                                                                    </Select>
-                                                                </FormControl>
-                                                            ) : (
-                                                                <TextField
-                                                                    fullWidth
-                                                                    label={
-                                                                        field.label
-                                                                    }
-                                                                    disabled={
-                                                                        field.disabled
-                                                                    }
-                                                                    value={
-                                                                        f.value ??
-                                                                        ''
-                                                                    }
-                                                                    onChange={
-                                                                        f.onChange
-                                                                    }
-                                                                    required={
-                                                                        field
-                                                                            .rules
-                                                                            ?.required
-                                                                    }
-                                                                    error={
-                                                                        !!fieldState.error
-                                                                    }
-                                                                    helperText={
-                                                                        fieldState
-                                                                            .error
-                                                                            ?.message ||
-                                                                        field.helperText
-                                                                    }
-                                                                />
-                                                            )
-                                                        }
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        ))}
-
-                                    {/* Second & third fields: half width */}
-                                    {defaultFields
-                                        .slice(1, 3)
-                                        .map((field, i) => (
-                                            <Grid item xs={6} key={i + 1}>
-                                                <Box>
-                                                    <Controller
-                                                        name={field.fieldName}
-                                                        control={control}
-                                                        rules={field.rules}
-                                                        render={({
-                                                            field: f,
-                                                            fieldState,
-                                                        }) =>
-                                                            field.options
-                                                                ?.component ===
-                                                            'select' ? (
-                                                                <FormControl
-                                                                    fullWidth
-                                                                    error={
-                                                                        !!fieldState.error
-                                                                    }
-                                                                >
-                                                                    <Select
-                                                                        label={
-                                                                            field.label
-                                                                        }
-                                                                        value={
-                                                                            f.value ??
-                                                                            ''
-                                                                        }
-                                                                        onChange={
-                                                                            f.onChange
-                                                                        }
-                                                                        disabled={
-                                                                            field.disabled
-                                                                        }
-                                                                        required={
-                                                                            field
-                                                                                .rules
-                                                                                ?.required
-                                                                        }
-                                                                    >
-                                                                        {(
-                                                                            field
-                                                                                .options
-                                                                                .options ||
-                                                                            []
-                                                                        ).map(
-                                                                            (
-                                                                                option,
-                                                                            ) => (
-                                                                                <MenuItem
-                                                                                    key={
-                                                                                        option[
-                                                                                            field
-                                                                                                .options
-                                                                                                .optionValue
-                                                                                        ]
-                                                                                    }
-                                                                                    value={
-                                                                                        option[
-                                                                                            field
-                                                                                                .options
-                                                                                                .optionValue
-                                                                                        ]
-                                                                                    }
-                                                                                >
-                                                                                    {
-                                                                                        option[
-                                                                                            field
-                                                                                                .options
-                                                                                                .optionDisplay
-                                                                                        ]
-                                                                                    }
-                                                                                </MenuItem>
-                                                                            ),
-                                                                        )}
-                                                                    </Select>
-                                                                </FormControl>
-                                                            ) : (
-                                                                <TextField
-                                                                    fullWidth
-                                                                    label={
-                                                                        field.label
-                                                                    }
-                                                                    disabled={
-                                                                        field.disabled
-                                                                    }
-                                                                    value={
-                                                                        f.value ??
-                                                                        ''
-                                                                    }
-                                                                    onChange={
-                                                                        f.onChange
-                                                                    }
-                                                                    required={
-                                                                        field
-                                                                            .rules
-                                                                            ?.required
-                                                                    }
-                                                                    error={
-                                                                        !!fieldState.error
-                                                                    }
-                                                                    helperText={
-                                                                        fieldState
-                                                                            .error
-                                                                            ?.message ||
-                                                                        field.helperText
-                                                                    }
-                                                                />
-                                                            )
-                                                        }
-                                                    />
-                                                </Box>
-                                            </Grid>
-                                        ))}
-                                </Grid>
-                            </div>
-                        </div>
-
-                        <Divider sx={{ my: 2 }} />
-
-                        {/* Credentials Section */}
-                        <div style={{ display: 'flex', flexDirection: 'row' }}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    width: '35%',
-                                }}
-                            >
-                                <Typography variant="h6" fontWeight="bold">
-                                    Credentials
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    color="secondary"
-                                    sx={{ mb: 2 }}
-                                >
-                                    Enter the AWS region, variable name, access
-                                    key, and secret
-                                    <br />
-                                    key to securely configure and authenticate
-                                    your AWS
-                                    <br />
-                                    environment.
-                                </Typography>
-                            </div>
-                            <div style={{ width: '65%' }}>
-                                <Grid container spacing={2}>
-                                    {defaultFields
-
-                                        .slice(3, 7)
-                                        .map((field, i) => (
+                            {/* General Section */}
+                            <FormRow>
+                                <FormLabelBlock>
+                                    <SectionTitle>General</SectionTitle>
+                                    <SectionDescription>
+                                        Provide name, type, and model to
+                                        identify and configure.
+                                    </SectionDescription>
+                                </FormLabelBlock>
+                                <FormInputBlock>
+                                    <Grid container spacing={2}>
+                                        {defaultFields.slice(0, 1).map((f) => (
                                             <Grid
                                                 item
-                                                xs={i < 2 ? 6 : 12}
-                                                key={i}
+                                                xs={12}
+                                                key={f.fieldName}
                                             >
-                                                <Box>
-                                                    <Controller
-                                                        name={field.fieldName}
-                                                        control={control}
-                                                        rules={field.rules}
-                                                        render={({
-                                                            field: f,
-                                                            fieldState,
-                                                        }) => {
-                                                            const isSelect =
-                                                                field.options
-                                                                    ?.component ===
-                                                                'select';
-                                                            const error =
-                                                                !!fieldState.error;
-                                                            const helperText =
-                                                                fieldState.error
-                                                                    ?.message ||
-                                                                field.helperText;
+                                                <Controller
+                                                    name={f.fieldName}
+                                                    control={control}
+                                                    rules={f.rules}
+                                                    render={({
+                                                        field: fld,
+                                                        fieldState: fs,
+                                                    }) =>
+                                                        f.options?.component ===
+                                                        'select' ? (
+                                                            <FormControl
+                                                                fullWidth
+                                                                error={
+                                                                    !!fs.error
+                                                                }
+                                                            >
+                                                                <Select
+                                                                    label={
+                                                                        f.label
+                                                                    }
+                                                                    value={
+                                                                        fld.value ||
+                                                                        ''
+                                                                    }
+                                                                    onChange={
+                                                                        fld.onChange
+                                                                    }
+                                                                    required={
+                                                                        f.rules
+                                                                            ?.required
+                                                                    }
+                                                                >
+                                                                    {(
+                                                                        f
+                                                                            .options
+                                                                            .options ||
+                                                                        []
+                                                                    ).map(
+                                                                        (
+                                                                            opt,
+                                                                            i,
+                                                                        ) => (
+                                                                            <MenuItem
+                                                                                key={
+                                                                                    i
+                                                                                }
+                                                                                value={
+                                                                                    opt[
+                                                                                        f
+                                                                                            .options
+                                                                                            .optionValue
+                                                                                    ]
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    opt[
+                                                                                        f
+                                                                                            .options
+                                                                                            .optionDisplay
+                                                                                    ]
+                                                                                }
+                                                                            </MenuItem>
+                                                                        ),
+                                                                    )}
+                                                                </Select>
+                                                            </FormControl>
+                                                        ) : (
+                                                            <TextField
+                                                                fullWidth
+                                                                label={f.label}
+                                                                value={
+                                                                    fld.value ||
+                                                                    ''
+                                                                }
+                                                                onChange={
+                                                                    fld.onChange
+                                                                }
+                                                                required={
+                                                                    f.rules
+                                                                        ?.required
+                                                                }
+                                                                error={
+                                                                    !!fs.error
+                                                                }
+                                                                helperText={
+                                                                    fs.error
+                                                                        ?.message ||
+                                                                    f.helperText
+                                                                }
+                                                            />
+                                                        )
+                                                    }
+                                                />
+                                            </Grid>
+                                        ))}
+                                        {defaultFields.slice(1, 3).map((f) => (
+                                            <Grid item xs={6} key={f.fieldName}>
+                                                <Controller
+                                                    name={f.fieldName}
+                                                    control={control}
+                                                    rules={f.rules}
+                                                    render={({
+                                                        field: fld,
+                                                        fieldState: fs,
+                                                    }) =>
+                                                        f.options?.component ===
+                                                        'select' ? (
+                                                            <FormControl
+                                                                fullWidth
+                                                                error={
+                                                                    !!fs.error
+                                                                }
+                                                            >
+                                                                <Select
+                                                                    label={
+                                                                        f.label
+                                                                    }
+                                                                    value={
+                                                                        fld.value ||
+                                                                        ''
+                                                                    }
+                                                                    onChange={
+                                                                        fld.onChange
+                                                                    }
+                                                                    required={
+                                                                        f.rules
+                                                                            ?.required
+                                                                    }
+                                                                >
+                                                                    {(
+                                                                        f
+                                                                            .options
+                                                                            .options ||
+                                                                        []
+                                                                    ).map(
+                                                                        (
+                                                                            opt,
+                                                                            i,
+                                                                        ) => (
+                                                                            <MenuItem
+                                                                                key={
+                                                                                    i
+                                                                                }
+                                                                                value={
+                                                                                    opt[
+                                                                                        f
+                                                                                            .options
+                                                                                            .optionValue
+                                                                                    ]
+                                                                                }
+                                                                            >
+                                                                                {
+                                                                                    opt[
+                                                                                        f
+                                                                                            .options
+                                                                                            .optionDisplay
+                                                                                    ]
+                                                                                }
+                                                                            </MenuItem>
+                                                                        ),
+                                                                    )}
+                                                                </Select>
+                                                            </FormControl>
+                                                        ) : (
+                                                            <TextField
+                                                                fullWidth
+                                                                label={f.label}
+                                                                value={
+                                                                    fld.value ||
+                                                                    ''
+                                                                }
+                                                                onChange={
+                                                                    fld.onChange
+                                                                }
+                                                                required={
+                                                                    f.rules
+                                                                        ?.required
+                                                                }
+                                                                error={
+                                                                    !!fs.error
+                                                                }
+                                                                helperText={
+                                                                    fs.error
+                                                                        ?.message ||
+                                                                    f.helperText
+                                                                }
+                                                            />
+                                                        )
+                                                    }
+                                                />
+                                            </Grid>
+                                        ))}
+                                    </Grid>
+                                </FormInputBlock>
+                            </FormRow>
+                            <Divider />
 
-                                                            return isSelect ? (
+                            {/* Credentials */}
+                            <FormRow>
+                                <FormLabelBlock>
+                                    <SectionTitle>Credentials</SectionTitle>
+                                    <SectionDescription>
+                                        Enter AWS region, access keys, etc.
+                                        securely.
+                                    </SectionDescription>
+                                </FormLabelBlock>
+                                <FormInputBlock>
+                                    <Grid container spacing={2}>
+                                        {defaultFields
+                                            .slice(3, 7)
+                                            .map((f, i) => (
+                                                <Grid
+                                                    item
+                                                    xs={i < 2 ? 6 : 12}
+                                                    key={f.fieldName}
+                                                >
+                                                    <Controller
+                                                        name={f.fieldName}
+                                                        control={control}
+                                                        rules={f.rules}
+                                                        render={({
+                                                            field: fld,
+                                                            fieldState: fs,
+                                                        }) =>
+                                                            f.options
+                                                                ?.component ===
+                                                            'select' ? (
                                                                 <FormControl
                                                                     fullWidth
                                                                     error={
-                                                                        error
+                                                                        !!fs.error
                                                                     }
                                                                     required={
-                                                                        field
-                                                                            .rules
+                                                                        f.rules
                                                                             ?.required
                                                                     }
                                                                 >
                                                                     <Select
                                                                         value={
-                                                                            f.value ??
+                                                                            fld.value ??
                                                                             ''
                                                                         }
                                                                         onChange={
-                                                                            f.onChange
-                                                                        }
-                                                                        disabled={
-                                                                            field.disabled
+                                                                            fld.onChange
                                                                         }
                                                                         label={
-                                                                            field.label
+                                                                            f.label
                                                                         }
                                                                     >
                                                                         {(
-                                                                            field
+                                                                            f
                                                                                 .options
                                                                                 .options ||
                                                                             []
@@ -1244,125 +1094,93 @@ export const ImportForm = (props) => {
                                                                 <TextField
                                                                     fullWidth
                                                                     label={
-                                                                        field.label
-                                                                    }
-                                                                    disabled={
-                                                                        field.disabled
+                                                                        f.label
                                                                     }
                                                                     value={
-                                                                        f.value ??
+                                                                        fld.value ||
                                                                         ''
                                                                     }
                                                                     onChange={
-                                                                        f.onChange
+                                                                        fld.onChange
                                                                     }
                                                                     required={
-                                                                        field
-                                                                            .rules
+                                                                        f.rules
                                                                             ?.required
                                                                     }
                                                                     error={
-                                                                        error
+                                                                        !!fs.error
                                                                     }
                                                                     helperText={
-                                                                        helperText
+                                                                        fs.error
+                                                                            ?.message ||
+                                                                        f.helperText
                                                                     }
                                                                 />
-                                                            );
-                                                        }}
+                                                            )
+                                                        }
                                                     />
-                                                </Box>
-                                            </Grid>
-                                        ))}
-                                </Grid>
-                            </div>
-                        </div>
+                                                </Grid>
+                                            ))}
+                                    </Grid>
+                                </FormInputBlock>
+                            </FormRow>
+                            <Divider />
 
-                        <Divider sx={{ my: 2 }} />
-
-                        {/* Settings Section */}
-                        <div style={{ display: 'flex', flexDirection: 'row' }}>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    width: '35%',
-                                }}
-                            >
-                                <Typography variant="h6" fontWeight="bold">
-                                    Settings
-                                </Typography>
-                                <Typography
-                                    variant="body2"
-                                    color="secondary"
-                                    sx={{ mb: 2 }}
-                                >
-                                    Configure the chat type, initialization
-                                    script, token limits, input
-                                    <br />
-                                    key, and preferences for conversation
-                                    history and recording
-                                    <br />
-                                    questions and responses to tailor the
-                                    system's behavior <br />
-                                    to your needs.
-                                </Typography>
-                            </div>
-
-                            <div style={{ width: '65%' }}>
-                                <Grid container spacing={2}>
-                                    {defaultFields
-                                        .slice(7)
-                                        .filter(
-                                            (field) =>
-                                                field.options?.component !==
-                                                    'file-upload' &&
-                                                field.options?.component !==
-                                                    'zip-upload',
-                                        )
-                                        .map((field, i) => {
-                                            const compType =
-                                                field.options?.component;
-                                            const isSwitch =
-                                                compType === 'switch' &&
-                                                field.options?.options?.some(
-                                                    (opt) =>
-                                                        [
-                                                            'true',
-                                                            'false',
-                                                        ].includes(opt.value),
-                                                );
-                                            const isTextArea =
-                                                compType === 'text-area';
-                                            const width = i < 2 ? 12 : 6;
-
-                                            return (
-                                                <Grid
-                                                    item
-                                                    xs={width}
-                                                    key={field.fieldName}
-                                                >
-                                                    <Box>
-                                                        {isSwitch ? (
-                                                            <Controller
-                                                                name={
-                                                                    field.fieldName
-                                                                }
-                                                                control={
-                                                                    control
-                                                                }
-                                                                rules={
-                                                                    field.rules
-                                                                }
-                                                                render={({
-                                                                    field: f,
-                                                                }) => (
+                            {/* Settings */}
+                            <FormRow>
+                                <FormLabelBlock>
+                                    <SectionTitle>Settings</SectionTitle>
+                                    <SectionDescription>
+                                        Configure chat type, tokens, history,
+                                        etc.
+                                    </SectionDescription>
+                                </FormLabelBlock>
+                                <FormInputBlock>
+                                    <Grid container spacing={2}>
+                                        {defaultFields
+                                            .slice(7)
+                                            .filter(
+                                                (f) =>
+                                                    ![
+                                                        'file-upload',
+                                                        'zip-upload',
+                                                    ].includes(
+                                                        f.options?.component,
+                                                    ),
+                                            )
+                                            .map((f, i) => {
+                                                const comp =
+                                                    f.options?.component;
+                                                const isSwitch =
+                                                    comp === 'switch' &&
+                                                    f.options.options?.some(
+                                                        (o) =>
+                                                            [
+                                                                'true',
+                                                                'false',
+                                                            ].includes(o.value),
+                                                    );
+                                                const isTextArea =
+                                                    comp === 'text-area';
+                                                return (
+                                                    <Grid
+                                                        item
+                                                        xs={i < 2 ? 12 : 6}
+                                                        key={f.fieldName}
+                                                    >
+                                                        <Controller
+                                                            name={f.fieldName}
+                                                            control={control}
+                                                            rules={f.rules}
+                                                            render={({
+                                                                field: fld,
+                                                                fieldState: fs,
+                                                            }) =>
+                                                                isSwitch ? (
                                                                     <FormControlLabel
                                                                         sx={{
-                                                                            display:
-                                                                                'flex',
+                                                                            ml: 1,
                                                                             gap: 3,
-                                                                            marginLeft: 1,
                                                                         }}
                                                                         control={
                                                                             <Switch
@@ -1385,26 +1203,10 @@ export const ImportForm = (props) => {
                                                                             />
                                                                         }
                                                                         label={
-                                                                            field.label
+                                                                            f.label
                                                                         }
                                                                     />
-                                                                )}
-                                                            />
-                                                        ) : isTextArea ? (
-                                                            <Controller
-                                                                name={
-                                                                    field.fieldName
-                                                                }
-                                                                control={
-                                                                    control
-                                                                }
-                                                                rules={
-                                                                    field.rules
-                                                                }
-                                                                render={({
-                                                                    field: f,
-                                                                    fieldState,
-                                                                }) => (
+                                                                ) : isTextArea ? (
                                                                     <TextField
                                                                         fullWidth
                                                                         multiline
@@ -1412,458 +1214,392 @@ export const ImportForm = (props) => {
                                                                             4
                                                                         }
                                                                         label={
-                                                                            field.label
-                                                                        }
-                                                                        disabled={
-                                                                            field.disabled
+                                                                            f.label
                                                                         }
                                                                         value={
-                                                                            f.value ??
+                                                                            fld.value ||
                                                                             ''
                                                                         }
                                                                         onChange={
-                                                                            f.onChange
+                                                                            fld.onChange
                                                                         }
                                                                         required={
-                                                                            field
+                                                                            f
                                                                                 .rules
                                                                                 ?.required
                                                                         }
                                                                         error={
-                                                                            !!fieldState.error
+                                                                            !!fs.error
                                                                         }
                                                                         helperText={
-                                                                            fieldState
+                                                                            fs
                                                                                 .error
                                                                                 ?.message ||
-                                                                            field.helperText
+                                                                            f.helperText
                                                                         }
                                                                     />
-                                                                )}
-                                                            />
-                                                        ) : (
-                                                            <Controller
-                                                                name={
-                                                                    field.fieldName
-                                                                }
-                                                                control={
-                                                                    control
-                                                                }
-                                                                rules={
-                                                                    field.rules
-                                                                }
-                                                                render={({
-                                                                    field: f,
-                                                                    fieldState,
-                                                                }) => (
+                                                                ) : (
                                                                     <TextField
                                                                         fullWidth
                                                                         label={
-                                                                            field.label
-                                                                        }
-                                                                        disabled={
-                                                                            field.disabled
+                                                                            f.label
                                                                         }
                                                                         value={
-                                                                            f.value ??
+                                                                            fld.value ||
                                                                             ''
                                                                         }
                                                                         onChange={
-                                                                            f.onChange
+                                                                            fld.onChange
                                                                         }
                                                                         required={
-                                                                            field
+                                                                            f
                                                                                 .rules
                                                                                 ?.required
                                                                         }
                                                                         error={
-                                                                            !!fieldState.error
+                                                                            !!fs.error
                                                                         }
                                                                         helperText={
-                                                                            fieldState
+                                                                            fs
                                                                                 .error
                                                                                 ?.message ||
-                                                                            field.helperText
+                                                                            f.helperText
                                                                         }
                                                                     />
-                                                                )}
-                                                            />
-                                                        )}
-                                                    </Box>
-                                                </Grid>
-                                            );
-                                        })}
-                                </Grid>
-                            </div>
-                        </div>
-
-                        {/* File Upload Section (below settings) */}
-                        {defaultFields
-                            .slice(7)
-                            .some(
-                                (field) =>
-                                    field.options?.component ===
-                                        'file-upload' ||
-                                    field.options?.component === 'zip-upload',
-                            ) && (
-                            <>
-                                <Divider sx={{ my: 2 }} />
-                                <Grid container spacing={2}>
-                                    {defaultFields
-                                        .slice(7)
-                                        .filter(
-                                            (field) =>
-                                                field.options?.component ===
-                                                    'file-upload' ||
-                                                field.options?.component ===
-                                                    'zip-upload',
-                                        )
-                                        .map((field, i) => (
-                                            <Grid item xs={12} key={i}>
-                                                <Box>
-                                                    <Grid item xs={12}>
-                                                        <Typography
-                                                            variant="h6"
-                                                            fontWeight="bold"
-                                                            sx={{ mb: 3 }}
-                                                        >
-                                                            {field.label}
-                                                        </Typography>
+                                                                )
+                                                            }
+                                                        />
                                                     </Grid>
+                                                );
+                                            })}
+                                    </Grid>
+                                </FormInputBlock>
+                            </FormRow>
+
+                            {/* Optional File Upload Under Settings */}
+                            {defaultFields
+                                .slice(7)
+                                .some((f) =>
+                                    ['file-upload', 'zip-upload'].includes(
+                                        f.options?.component,
+                                    ),
+                                ) && (
+                                <>
+                                    <Divider />
+                                    <Grid container spacing={2}>
+                                        {defaultFields
+                                            .slice(7)
+                                            .filter((f) =>
+                                                [
+                                                    'file-upload',
+                                                    'zip-upload',
+                                                ].includes(
+                                                    f.options?.component,
+                                                ),
+                                            )
+                                            .map((f) => (
+                                                <Grid
+                                                    item
+                                                    xs={12}
+                                                    key={f.fieldName}
+                                                >
+                                                    <SectionTitle
+                                                        sx={{ mt: 3 }}
+                                                    >
+                                                        {f.label}
+                                                    </SectionTitle>
                                                     <Controller
-                                                        name={field.fieldName}
+                                                        name={f.fieldName}
                                                         control={control}
-                                                        rules={field.rules}
+                                                        rules={f.rules}
                                                         render={({
-                                                            field: f,
+                                                            field: fld,
                                                         }) => (
-                                                            <FileDropzone
-                                                                multiple
-                                                                value={
-                                                                    field.value
-                                                                }
-                                                                disabled={false}
-                                                                onChange={(
-                                                                    newValues,
-                                                                ) => {
-                                                                    f.onChange(
-                                                                        newValues,
-                                                                    );
-                                                                }}
-                                                            />
+                                                            <StyledFileUploadSection>
+                                                                <FileDropzone
+                                                                    multiple
+                                                                    value={
+                                                                        fld.value ||
+                                                                        f.value
+                                                                    }
+                                                                    onChange={(
+                                                                        v,
+                                                                    ) =>
+                                                                        fld.onChange(
+                                                                            v,
+                                                                        )
+                                                                    }
+                                                                />
+                                                            </StyledFileUploadSection>
                                                         )}
                                                     />
-                                                </Box>
-                                            </Grid>
-                                        ))}
-                                </Grid>
-                            </>
-                        )}
+                                                </Grid>
+                                            ))}
+                                    </Grid>
+                                </>
+                            )}
+                            <Divider />
 
-                        <Divider sx={{ my: 2 }} />
-                        {/* Advanced Section */}
-                        {advancedFields.length ? (
-                            <>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        width: '100%',
-                                        justifyContent: 'space-between',
-                                    }}
-                                >
-                                    <Typography variant="h6" fontWeight="bold">
-                                        ADVANCED SETTINGS
-                                    </Typography>
-                                    <IconButton
-                                        onClick={() =>
-                                            setOpenAdvanced(!openAdvanced)
-                                        }
-                                    >
-                                        {openAdvanced ? (
-                                            <ExpandLess />
-                                        ) : (
-                                            <ExpandMore />
-                                        )}
-                                    </IconButton>
-                                </div>
-
-                                {openAdvanced &&
-                                    advancedFields.map((val, i) => {
-                                        if (!val.hidden) {
-                                            return (
-                                                <StyledKeyValue key={i}>
+                            {/* Advanced */}
+                            {advancedFields.length > 0 && (
+                                <>
+                                    <FormRow>
+                                        <SectionTitle>
+                                            ADVANCED SETTINGS
+                                        </SectionTitle>
+                                        <Box sx={{ flex: 1 }} />
+                                        <IconButton
+                                            onClick={() =>
+                                                setOpenAdvanced(!openAdvanced)
+                                            }
+                                        >
+                                            {openAdvanced ? (
+                                                <ExpandLess />
+                                            ) : (
+                                                <ExpandMore />
+                                            )}
+                                        </IconButton>
+                                    </FormRow>
+                                    {openAdvanced &&
+                                        advancedFields.map((val) =>
+                                            !val.hidden ? (
+                                                <StyledKeyValue
+                                                    key={val.fieldName}
+                                                >
                                                     <Controller
                                                         name={val.fieldName}
                                                         control={control}
                                                         rules={val.rules}
                                                         render={({
-                                                            field,
-                                                            fieldState,
+                                                            field: fld,
                                                         }) => {
-                                                            const hasError =
-                                                                fieldState.error;
-                                                            if (
+                                                            switch (
                                                                 val.options
-                                                                    .component ===
-                                                                'text-field'
+                                                                    .component
                                                             ) {
-                                                                return (
-                                                                    <TextField
-                                                                        id={`${val.fieldName}`}
-                                                                        fullWidth
-                                                                        required={
-                                                                            val
-                                                                                .rules
-                                                                                .required
-                                                                        }
-                                                                        label={
-                                                                            val.label
-                                                                        }
-                                                                        disabled={
-                                                                            val.disabled
-                                                                        }
-                                                                        value={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : ''
-                                                                        }
-                                                                        onChange={(
-                                                                            value,
-                                                                        ) =>
-                                                                            field.onChange(
+                                                                case 'text-field':
+                                                                    return (
+                                                                        <TextField
+                                                                            fullWidth
+                                                                            required={
+                                                                                val
+                                                                                    .rules
+                                                                                    ?.required
+                                                                            }
+                                                                            label={
+                                                                                val.label
+                                                                            }
+                                                                            value={
+                                                                                fld.value ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                e,
+                                                                            ) =>
+                                                                                fld.onChange(
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                                )
+                                                                            }
+                                                                            helperText={
+                                                                                val.helperText
+                                                                            }
+                                                                            inputProps={{
+                                                                                'data-testid': `importForm-textField-${val.fieldName}`,
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                case 'password':
+                                                                    return (
+                                                                        <TextField
+                                                                            fullWidth
+                                                                            type="password"
+                                                                            required={
+                                                                                val
+                                                                                    .rules
+                                                                                    ?.required
+                                                                            }
+                                                                            label={
+                                                                                val.label
+                                                                            }
+                                                                            value={
+                                                                                fld.value ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                e,
+                                                                            ) =>
+                                                                                fld.onChange(
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                                )
+                                                                            }
+                                                                            helperText={
+                                                                                val.helperText
+                                                                            }
+                                                                            inputProps={{
+                                                                                'data-testid': `importForm-textField-${val.fieldName}`,
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                case 'number':
+                                                                    return (
+                                                                        <TextField
+                                                                            fullWidth
+                                                                            type="number"
+                                                                            required={
+                                                                                val
+                                                                                    .rules
+                                                                                    ?.required
+                                                                            }
+                                                                            label={
+                                                                                val.label
+                                                                            }
+                                                                            value={
+                                                                                fld.value ||
+                                                                                ''
+                                                                            }
+                                                                            onChange={(
+                                                                                e,
+                                                                            ) =>
+                                                                                fld.onChange(
+                                                                                    e
+                                                                                        .target
+                                                                                        .value,
+                                                                                )
+                                                                            }
+                                                                            helperText={
+                                                                                val.helperText
+                                                                            }
+                                                                            inputProps={{
+                                                                                'data-testid': `importForm-textField-${val.fieldName}`,
+                                                                            }}
+                                                                        />
+                                                                    );
+                                                                case 'checkbox':
+                                                                    return (
+                                                                        <Checkbox
+                                                                            required={
+                                                                                val
+                                                                                    .rules
+                                                                                    ?.required
+                                                                            }
+                                                                            label={
+                                                                                val.label
+                                                                            }
+                                                                            disabled={
+                                                                                val.disabled
+                                                                            }
+                                                                            checked={
+                                                                                fld.value
+                                                                                    ? fld.value
+                                                                                    : false
+                                                                            }
+                                                                            onChange={(
                                                                                 value,
-                                                                            )
-                                                                        }
-                                                                        helperText={
-                                                                            val.helperText
-                                                                        }
-                                                                        inputProps={{
-                                                                            'data-testid': `importForm-textField-${val.fieldName}`,
-                                                                        }}
-                                                                    ></TextField>
-                                                                );
-                                                            } else if (
-                                                                val.options
-                                                                    .component ===
-                                                                'password'
-                                                            ) {
-                                                                return (
-                                                                    <TextField
-                                                                        id={`${val.fieldName}`}
-                                                                        type="password"
-                                                                        fullWidth
-                                                                        required={
-                                                                            val
-                                                                                .rules
-                                                                                .required
-                                                                        }
-                                                                        label={
-                                                                            val.label
-                                                                        }
-                                                                        disabled={
-                                                                            val.disabled
-                                                                        }
-                                                                        value={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : ''
-                                                                        }
-                                                                        onChange={(
-                                                                            value,
-                                                                        ) =>
-                                                                            field.onChange(
-                                                                                value,
-                                                                            )
-                                                                        }
-                                                                        helperText={
-                                                                            val.helperText
-                                                                        }
-                                                                        inputProps={{
-                                                                            'data-testid': `importForm-textField-${val.fieldName}`,
-                                                                        }}
-                                                                    ></TextField>
-                                                                );
-                                                            } else if (
-                                                                val.options
-                                                                    .component ===
-                                                                'number'
-                                                            ) {
-                                                                return (
-                                                                    <TextField
-                                                                        id={`${val.fieldName}`}
-                                                                        type="number"
-                                                                        fullWidth
-                                                                        required={
-                                                                            val
-                                                                                .rules
-                                                                                .required
-                                                                        }
-                                                                        label={
-                                                                            val.label
-                                                                        }
-                                                                        disabled={
-                                                                            val.disabled
-                                                                        }
-                                                                        value={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : ''
-                                                                        }
-                                                                        onChange={(
-                                                                            value,
-                                                                        ) =>
-                                                                            field.onChange(
-                                                                                value,
-                                                                            )
-                                                                        }
-                                                                        helperText={
-                                                                            val.helperText
-                                                                        }
-                                                                        inputProps={{
-                                                                            'data-testid': `importForm-textField-${val.fieldName}`,
-                                                                        }}
-                                                                    ></TextField>
-                                                                );
-                                                            } else if (
-                                                                val.options
-                                                                    .component ===
-                                                                'checkbox'
-                                                            ) {
-                                                                return (
-                                                                    <Checkbox
-                                                                        required={
-                                                                            val
-                                                                                .rules
-                                                                                .required
-                                                                        }
-                                                                        label={
-                                                                            val.label
-                                                                        }
-                                                                        disabled={
-                                                                            val.disabled
-                                                                        }
-                                                                        checked={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : false
-                                                                        }
-                                                                        onChange={(
-                                                                            value,
-                                                                        ) =>
-                                                                            field.onChange(
-                                                                                value,
-                                                                            )
-                                                                        }
-                                                                    />
-                                                                );
-                                                            } else if (
-                                                                val.options
-                                                                    .component ===
-                                                                'select'
-                                                            ) {
-                                                                return (
-                                                                    <Select
-                                                                        fullWidth
-                                                                        required={
-                                                                            val
-                                                                                .rules
-                                                                                .required
-                                                                        }
-                                                                        label={
-                                                                            val.label
-                                                                        }
-                                                                        disabled={
-                                                                            val.disabled
-                                                                        }
-                                                                        value={
-                                                                            field.value
-                                                                                ? field.value
-                                                                                : ''
-                                                                        }
-                                                                        onChange={(
-                                                                            value,
-                                                                        ) =>
-                                                                            field.onChange(
-                                                                                value,
-                                                                            )
-                                                                        }
-                                                                        helperText={
-                                                                            val.helperText
-                                                                        }
-                                                                    >
-                                                                        {val.options.options.map(
-                                                                            (
-                                                                                opt,
-                                                                                i,
-                                                                            ) => {
-                                                                                return (
-                                                                                    <Menu.Item
-                                                                                        key={
-                                                                                            i
-                                                                                        }
-                                                                                        value={
-                                                                                            opt.value
-                                                                                        }
-                                                                                    >
-                                                                                        {
-                                                                                            opt.display
-                                                                                        }
-                                                                                    </Menu.Item>
-                                                                                );
-                                                                            },
-                                                                        )}
-                                                                    </Select>
-                                                                );
-                                                            } else if (
-                                                                val.options
-                                                                    .component ===
-                                                                'zip-upload'
-                                                            ) {
-                                                                return (
-                                                                    <FileDropzone
-                                                                        multiple
-                                                                        value={
-                                                                            field.value
-                                                                        }
-                                                                        disabled={
-                                                                            false
-                                                                        }
-                                                                        onChange={(
-                                                                            newValues,
-                                                                        ) => {
-                                                                            field.onChange(
-                                                                                newValues,
-                                                                            );
-                                                                        }}
-                                                                    />
-                                                                );
+                                                                            ) =>
+                                                                                fld.onChange(
+                                                                                    value,
+                                                                                )
+                                                                            }
+                                                                        />
+                                                                    );
+                                                                case 'select':
+                                                                    return (
+                                                                        <FormControl
+                                                                            fullWidth
+                                                                        >
+                                                                            <Select
+                                                                                label={
+                                                                                    val.label
+                                                                                }
+                                                                                value={
+                                                                                    fld.value ||
+                                                                                    ''
+                                                                                }
+                                                                                onChange={(
+                                                                                    e,
+                                                                                ) =>
+                                                                                    fld.onChange(
+                                                                                        e
+                                                                                            .target
+                                                                                            .value,
+                                                                                    )
+                                                                                }
+                                                                            >
+                                                                                {val.options.options.map(
+                                                                                    (
+                                                                                        opt,
+                                                                                        i,
+                                                                                    ) => (
+                                                                                        <MenuItem
+                                                                                            key={
+                                                                                                i
+                                                                                            }
+                                                                                            value={
+                                                                                                opt.value
+                                                                                            }
+                                                                                        >
+                                                                                            {
+                                                                                                opt.display
+                                                                                            }
+                                                                                        </MenuItem>
+                                                                                    ),
+                                                                                )}
+                                                                            </Select>
+                                                                        </FormControl>
+                                                                    );
+                                                                case 'zip-upload':
+                                                                    return (
+                                                                        <StyledFileUploadSection>
+                                                                            <FileDropzone
+                                                                                multiple
+                                                                                value={
+                                                                                    fld.value ||
+                                                                                    ''
+                                                                                }
+                                                                                onChange={(
+                                                                                    v,
+                                                                                ) =>
+                                                                                    fld.onChange(
+                                                                                        v,
+                                                                                    )
+                                                                                }
+                                                                            />
+                                                                        </StyledFileUploadSection>
+                                                                    );
+                                                                default:
+                                                                    return null;
                                                             }
                                                         }}
                                                     />
                                                 </StyledKeyValue>
-                                            );
-                                        }
-                                    })}
-                            </>
-                        ) : null}
-                        {/* Submit Button */}
-                        <Box
-                            sx={{ display: 'flex', justifyContent: 'flex-end' }}
-                        >
-                            <Button
-                                disabled={formLoading}
-                                type="submit"
-                                variant="contained"
-                            >
-                                {formLoading ? (
-                                    <CircularProgress size="1.5em" />
-                                ) : (
-                                    `Create ${steps[0].data.toLowerCase()}`
-                                )}
-                            </Button>
-                        </Box>
-                    </Stack>
-                );
+                                            ) : null,
+                                        )}
+                                </>
+                            )}
+
+                            <FlexEndBox>
+                                <Button
+                                    disabled={formLoading}
+                                    type="submit"
+                                    variant="contained"
+                                >
+                                    {formLoading ? (
+                                        <CircularProgress size="1.5em" />
+                                    ) : (
+                                        `Create ${
+                                            steps[0]?.data?.toLowerCase() || ''
+                                        }`
+                                    )}
+                                </Button>
+                            </FlexEndBox>
+                        </Stack>
+                    );
+                }
+                return null;
             })()}
         </form>
     );
