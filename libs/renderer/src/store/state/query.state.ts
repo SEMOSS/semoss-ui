@@ -57,16 +57,16 @@ export class QueryState {
         // create the cells
         const { cells, list } = config.cells.reduce(
             (acc, val) => {
-                const id = `${this._store.counter}`
+                const id = `${this._store.counter}`;
 
                 const c = {
                     id: val.id ? val.id : id,
-                    ...val
-                }
+                    ...val,
+                };
                 const newCell = new CellState(c, this, this._state);
 
-                acc.cells[newCell.id] = newCell
-                acc.list.push(newCell.id)
+                acc.cells[newCell.id] = newCell;
+                acc.list.push(newCell.id);
 
                 return acc;
             },
@@ -77,16 +77,16 @@ export class QueryState {
         );
 
         // Set counter to highest number in cells
-        let highest = 1
+        let highest = 1;
         Object.keys(cells).forEach((cId) => {
-            let parsedId = parseInt(cId)
+            const parsedId = parseInt(cId);
 
-            if(parsedId > highest) {
-                highest = parsedId
+            if (parsedId > highest) {
+                highest = parsedId;
             }
-        })
+        });
 
-        this._store.counter = highest + 1
+        this._store.counter = highest + 1;
 
         this._store.cells = cells;
         this._store.list = list;
@@ -212,7 +212,7 @@ export class QueryState {
      * Increments based on addition of cell
      */
     get counter() {
-        return this._store.counter
+        return this._store.counter;
     }
 
     /**
@@ -289,7 +289,6 @@ export class QueryState {
                 // run the cell
                 await cell._run();
             }
-
         } catch (e) {
             // if a cell errors out of the runPixel and causes a break/catch here,
             // we're unable to get granular information about which cell caused the error.
@@ -329,7 +328,7 @@ export class QueryState {
         config: Omit<CellStateConfig, "id">,
         previousCellId: string,
     ) => {
-        const id = `${this._store.counter}`
+        const id = `${this._store.counter}`;
 
         // create the new cell
         const cell = new CellState(
@@ -349,21 +348,21 @@ export class QueryState {
         if (previousCellId) {
             previousCellIdx = this._store.list.indexOf(previousCellId);
         }
-        
+
         // add to end if there is no previous cell
         if (previousCellIdx === -1) {
             this._store.list.push(id);
             return;
         }
-        
+
         // add it
         if (!this._store.list.includes(id)) {
             this._store.list.splice(previousCellIdx + 1, 0, id);
         }
 
-        this._store.counter += 1
+        this._store.counter += 1;
 
-        return id
+        return id;
     };
 
     _moveCell = (active: string, over: string) => {
@@ -377,7 +376,6 @@ export class QueryState {
         this._store.list.splice(activeIdx, 1);
         this._store.list.splice(overIdx, 0, active);
     };
-       
 
     /**
      * Remove a cell
