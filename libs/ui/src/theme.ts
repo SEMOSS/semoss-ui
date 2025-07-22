@@ -152,7 +152,7 @@ export const lightTheme: CustomThemeOptions = {
     palette: {
         mode: "light",
         primary: {
-            // SEMOSS BLACK
+            // SEMOSS BLUE
             main: "#0471F0",
             dark: "#1260DD",
             light: "#22A4FF",
