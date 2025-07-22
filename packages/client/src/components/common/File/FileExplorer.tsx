@@ -91,7 +91,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
     // Get storage files for storage type
     const getStorageFiles = usePixel<string[]>(
         type === 'storage'
-            ? `Storage(storage = "${storageId}") | ListStoragePathDetails(storagePath='/');`
+            ? `Storage(storage = "${storageId}") | ListStoragePath(storagePath='/');`
             : ''
     );
 
