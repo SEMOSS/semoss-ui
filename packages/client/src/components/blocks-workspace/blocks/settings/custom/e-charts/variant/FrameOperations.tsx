@@ -1133,108 +1133,53 @@ export const FrameOperations = observer(
                 setData('option', tempValue);
             }
             if (variation === 'echart-world-map-chart') {
-                if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
+                const tempValue = JSON.parse(computedValue);
 
-                    tempValue['_state'] =
-                        tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
-                    tempValue['_state']['fields'] = {
-                        ...tempValue['_state']['fields'],
-                        label: firstColumn?.values?.[0],
-                        labelDataType: firstColumn?.dataType?.[0],
-                    };
+                // Ensure that the _state and fields objects exist
+                tempValue['_state'] = tempValue['_state'] || {};
+                tempValue['_state']['fields'] =
+                    tempValue['_state']['fields'] || {};
 
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                if (firstColumn?.values?.length > 0) {
+                    tempValue['_state']['fields']['label'] =
+                        firstColumn.values[0];
+                    tempValue['_state']['fields']['labelDataType'] =
+                        firstColumn.dataType[0];
                 }
-                if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
-
-                    tempValue['_state'] =
-                        tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
-                    tempValue['_state']['fields'] = {
-                        ...tempValue['_state']['fields'],
-                        Latitude: secondColumn?.values?.[0],
-                        LatitudeDataType: secondColumn?.dataType?.[0],
-                    };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                if (secondColumn?.values?.length > 0) {
+                    tempValue['_state']['fields']['Latitude'] =
+                        secondColumn.values[0];
+                    tempValue['_state']['fields']['LatitudeDataType'] =
+                        secondColumn.dataType[0];
                 }
-                if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
-                    tempValue['_state'] =
-                        tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
-                    tempValue['_state']['fields'] = {
-                        ...tempValue['_state']['fields'],
-                        Longitude: columnsDrop[2]?.values?.[0],
-                        LongitudeDataType: columnsDrop[2]?.dataType?.[0],
-                    };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                if (columnsDrop[2]?.values?.length > 0) {
+                    tempValue['_state']['fields']['Longitude'] =
+                        columnsDrop[2].values[0];
+                    tempValue['_state']['fields']['LongitudeDataType'] =
+                        columnsDrop[2].dataType[0];
                 }
-                if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
-                    tempValue['_state'] =
-                        tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
-                    tempValue['_state']['fields'] = {
-                        ...tempValue['_state']['fields'],
-                        size: columnsDrop[3]?.values?.[0],
-                        sizeDataType: columnsDrop[3]?.dataType?.[0],
-                    };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                if (columnsDrop[3]?.values?.length > 0) {
+                    tempValue['_state']['fields']['size'] =
+                        columnsDrop[3].values[0];
+                    tempValue['_state']['fields']['sizeDataType'] =
+                        columnsDrop[3].dataType[0];
                 }
-                if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
-                    tempValue['_state'] =
-                        tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
-                    tempValue['_state']['fields'] = {
-                        ...tempValue['_state']['fields'],
-                        color: columnsDrop[4]?.values?.[0],
-                        colorDataType: columnsDrop[4]?.dataType?.[0],
-                    };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                if (columnsDrop[4]?.values?.length > 0) {
+                    tempValue['_state']['fields']['color'] =
+                        columnsDrop[4].values[0];
+                    tempValue['_state']['fields']['colorDataType'] =
+                        columnsDrop[4].dataType[0];
                 }
-                if (columnsDrop[5]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
-                    tempValue['_state'] =
-                        tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
-                    tempValue['_state']['fields'] = {
-                        ...tempValue['_state']['fields'],
-                        tooltip: columnsDrop[5]?.values?.[0],
-                        tooltipDataType: columnsDrop[5]?.dataType?.[0],
-                    };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                if (columnsDrop[5]?.values?.length > 0) {
+                    tempValue['_state']['fields']['tooltip'] =
+                        columnsDrop[5].values[0];
+                    tempValue['_state']['fields']['tooltipDataType'] =
+                        columnsDrop[5].dataType[0];
                 }
+
+                // Update state once at the end
+                setValue(JSON.stringify(tempValue));
+                setData('option', tempValue);
             }
             if (variation == 'echart-gantt-chart') {
                 let columnsToSet = [];
