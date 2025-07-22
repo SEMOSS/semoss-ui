@@ -4,7 +4,6 @@ on:
         branches:
             - dev
             - main
-            - 776-update-frontend-build-tooling-and-node-version
     pull_request:
         branches:
             - dev
@@ -157,35 +156,72 @@ jobs:
             #           index.html
             #       key: ${{ github.ref_name }}
 
-            - name: Delete contents of legacy folder
-              run: |
-                  echo "Remove and recreate the legacy folder"
-                  rm -rf legacy
-                  mkdir legacy
-                  ls -als
+            # - name: Delete contents of legacy folder
+            #   run: |
+            #       echo "Remove and recreate the legacy folder"
+            #       rm -rf legacy
+            #       mkdir legacy
+            #       ls -als
 
-            - name: Download contents of SEMOSS/bi project
-              run: |
-                  echo "Download SEMOSS/bi as a zip file"
-                  mkdir -p tmp
-                  curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
-                  echo "Unzip contents of the SEMOSS/bi to the tmp folder"
-                  unzip tmp/main.zip -d tmp/
-                  echo "Delete the playsheet folder from semoss/bi files"
-                  rm -rf tmp/bi-main/playsheet/
-                  ls -als tmp/bi-main/
-                  echo "Remove zip file"
-                  rm tmp/main.zip
+            # - name: Download contents of SEMOSS/bi project
+            #   run: |
+            #       echo "Download SEMOSS/bi as a zip file"
+            #       mkdir -p tmp
+            #       curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+            #       echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+            #       unzip tmp/main.zip -d tmp/
+            #       echo "Delete the playsheet folder from semoss/bi files"
+            #       rm -rf tmp/bi-main/playsheet/
+            #       ls -als tmp/bi-main/
+            #       echo "Remove zip file"
+            #       rm tmp/main.zip
             
-            - name: Move SEMOSS/bi files into the legacy folder
-              run: |
-                  echo "Move contents of SEMOSS/bi into legacy folder"
-                  cp -r tmp/bi-main/. legacy/
-                  echo "Delete tmp folder"
-                  rm -rf tmp/
-                  echo "list files under legacy folder"
-                  ls -als legacy
+            # - name: Move SEMOSS/bi files into the legacy folder
+            #   run: |
+            #       echo "Move contents of SEMOSS/bi into legacy folder"
+            #       cp -r tmp/bi-main/. legacy/
+            #       echo "Delete tmp folder"
+            #       rm -rf tmp/
+            #       echo "list files under legacy folder"
+            #       ls -als legacy
 
+              # ---------- Download and Set Up semoss/bi -----------
+            
+            - name: Remove previous legacy folder
+              run: rm -rf packages/legacy
+
+            - name: Install jq
+              run: apt-get update && apt-get install -y jq
+            
+            - name: Download workflow artifact from another repo
+              env:
+                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+              run: |
+                # Set variables
+                REPO="SEMOSS/bi"
+                ARTIFACT_NAME="bi-build"        
+                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
+                
+                # 1. Find the latest successful workflow run (customize as needed)
+                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
+                  | jq -r '.workflow_runs[0].id')
+                
+                # 2. List artifacts for that run
+                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
+                
+                # 3. Download the artifact
+                curl -L -H "Authorization: token $GH_TOKEN" \
+                  -o artifact.zip \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+                
+            - name: Move SEMOSS/bi to packages/legacy
+              run: |
+                unzip artifact.zip -d ./packages/legacy
+                ls -als packages/legacy
+            
             - name: Install dependencies
               run: |
                   echo "Event Name: ${{ github.event_name }}"
@@ -275,27 +311,64 @@ jobs:
                   NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
               run: npx nx run-many -t build -p @semoss/client @semoss/legacy --verbose
 
-            - name: Download contents of SEMOSS/bi project
-              run: |
-                  echo "Download SEMOSS/bi as a zip file"
-                  mkdir -p tmp
-                  curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
-                  echo "Unzip contents of the SEMOSS/bi to the tmp folder"
-                  unzip tmp/main.zip -d tmp/
-                  echo "Delete the playsheet folder from semoss/bi files"
-                  rm -rf tmp/bi-main/playsheet/
-                  ls -als tmp/bi-main/
-                  echo "Remove zip file"
-                  rm tmp/main.zip
+            # - name: Download contents of SEMOSS/bi project
+            #   run: |
+            #       echo "Download SEMOSS/bi as a zip file"
+            #       mkdir -p tmp
+            #       curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+            #       echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+            #       unzip tmp/main.zip -d tmp/
+            #       echo "Delete the playsheet folder from semoss/bi files"
+            #       rm -rf tmp/bi-main/playsheet/
+            #       ls -als tmp/bi-main/
+            #       echo "Remove zip file"
+            #       rm tmp/main.zip
             
-            - name: Move SEMOSS/bi files into the legacy folder
+            # - name: Move SEMOSS/bi files into the legacy folder
+            #   run: |
+            #       echo "Move contents of SEMOSS/bi into legacy folder"
+            #       cp -r tmp/bi-main/. legacy/
+            #       echo "Delete tmp folder"
+            #       rm -rf tmp/
+            #       echo "list files under legacy folder"
+            #       ls -als legacy
+
+              # ---------- Download and Set Up semoss/bi -----------
+            
+            - name: Remove previous legacy folder
+              run: rm -rf packages/legacy
+
+            - name: Install jq
+              run: apt-get update && apt-get install -y jq
+            
+            - name: Download workflow artifact from another repo
+              env:
+                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
               run: |
-                  echo "Move contents of SEMOSS/bi into legacy folder"
-                  cp -r tmp/bi-main/. legacy/
-                  echo "Delete tmp folder"
-                  rm -rf tmp/
-                  echo "list files under legacy folder"
-                  ls -als legacy
+                # Set variables
+                REPO="SEMOSS/bi"
+                ARTIFACT_NAME="bi-build"        
+                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
+                
+                # 1. Find the latest successful workflow run (customize as needed)
+                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
+                  | jq -r '.workflow_runs[0].id')
+                
+                # 2. List artifacts for that run
+                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
+                
+                # 3. Download the artifact
+                curl -L -H "Authorization: token $GH_TOKEN" \
+                  -o artifact.zip \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+                
+            - name: Move SEMOSS/bi to packages/legacy
+              run: |
+                unzip artifact.zip -d ./packages/legacy
+                ls -als packages/legacy
 
             - name: Install dependencies
               run: |
