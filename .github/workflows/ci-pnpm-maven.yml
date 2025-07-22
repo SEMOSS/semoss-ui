@@ -52,13 +52,29 @@ jobs:
                 node-version: '24'
                 cache: "pnpm"
 
-            #- name: Install pnpm
-            #  run: npm install -g pnpm@10.13
-
-            - name: Install dependencies and build (semoss-ui)
+            - name: Install npm dependencies
               run: |
                 node -v
                 pnpm install
+
+            - name: Build Component Library
+              run: |
+                cd libs/ui
+                pnpm run build
+
+            - name: Build SDK
+              run: |
+                cd libs/sdk
+                pnpm run build    
+
+            - name: Build Renderer Library
+              run: |
+                cd libs/renderer
+                pnpm run build
+
+            - name: Build semoss-ui
+              run: |
+                cd packages/client
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
