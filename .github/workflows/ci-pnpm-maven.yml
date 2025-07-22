@@ -120,7 +120,7 @@ jobs:
                 
             - name: Move SEMOSS/bi to packages/legacy
               run: |
-                unzip 'artifact/*.zip' -d ./packages/legacy
+                unzip artifact.zip -d ./packages/legacy
                 ls -als packages/legacy
 
             - name: Maven clean install
