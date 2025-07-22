@@ -83,15 +83,39 @@ jobs:
                 apt-get update
                 apt-get install -y gh
                 
-            - name: Download build artifact from SEMOSS/bi release
+            # - name: Download build artifact from SEMOSS/bi release
+            #   env:
+            #     GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+            #   run: |
+            #      mkdir -p artifact
+            #      RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^bi-build-' | head -n 1 | awk '{print $1}')
+            #      gh release download "$RELEASE_TAG" -R SEMOSS/bi -D artifact
+            #      ls -al artifact
+
+            - name: Download workflow artifact from another repo
               env:
                 GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
               run: |
-                 mkdir -p artifact
-                 RELEASE_TAG=$(gh release list -R SEMOSS/bi --limit 100 | grep '^bi-build-' | head -n 1 | awk '{print $1}')
-                 gh release download "$RELEASE_TAG" -R SEMOSS/bi -D artifact
-                 ls -al artifact
-
+                # Set variables
+                REPO="SEMOSS/bi"
+                ARTIFACT_NAME="bi-build"        
+                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
+                
+                # 1. Find the latest successful workflow run (customize as needed)
+                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
+                  | jq -r '.workflow_runs[0].id')
+                
+                # 2. List artifacts for that run
+                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
+                
+                # 3. Download the artifact
+                curl -L -H "Authorization: token $GH_TOKEN" \
+                  -o artifact.zip \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+                
             - name: Move SEMOSS/bi to packages/legacy
               run: |
                 unzip 'artifact/*.zip' -d ./packages/legacy
