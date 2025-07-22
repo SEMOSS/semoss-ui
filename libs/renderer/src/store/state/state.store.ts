@@ -125,10 +125,6 @@ export class StateStore {
 
         // set the initial state after reactive to invoke it
         this.setState(config.state, config.initialParams);
-
-        // console.log(this.toJSON())
-        // const r = this.buildDependencyGraph(this._store, {}, [])
-        // console.log(r);
     }
 
     /**
@@ -811,6 +807,41 @@ export class StateStore {
     /**
      * Helpers
      */
+
+    /**
+     * Generates a unique page ID
+     */
+    private generatePageId(): string {
+        let pageNum = 2;
+        while (this._store.blocks[`page--${pageNum}`]) {
+            pageNum++;
+        }
+        return `page--${pageNum}`;
+    }
+
+    /**
+     * Generates a unique ID for non-page widgets
+     */
+    private generateNonPageId(widget: string, isCommunityBlock: boolean): string {
+        // Try sequential numbers starting from 1
+        let blockNum = 1;
+        while (this._store.blocks[`${widget}--${blockNum}`]) {
+            blockNum++;
+        }
+        return `${isCommunityBlock ? "com-" : ""}${widget}--${blockNum}`;
+    }
+
+    /**
+     * @description creates a new block id
+     * @returns block id - string
+     */
+    private generateBlockId = (json: BlockJSON, isCommunityBlock: boolean): string => {
+        if (json.widget === "page") {
+            return this.generatePageId();
+        }
+        return this.generateNonPageId(json.widget, isCommunityBlock);
+    };
+
     /**
      * Generate a new block from the json
      * @param json - json of the block that we are generating
@@ -818,8 +849,7 @@ export class StateStore {
      */
     private generateBlock = (json: BlockJSON, isCommunityBlock: boolean, communityIdMap:Record<string, string>, parent?: Block["parent"]) => {
         // generate a new id
-        const id = `${isCommunityBlock ? 'com_' : ''}${json.widget}--${Math.floor(Math.random() * 10000)}`;
-
+        const id = this.generateBlockId(json, isCommunityBlock);
         // create the block
         const block = {
             id: id,
@@ -1823,7 +1853,6 @@ export class StateStore {
                         const newHash = destination.startsWith("/")
                             ? base.replace(/\/$/, "") + destination
                             : base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
-
 
                         window.location.hash = newHash;
                     }

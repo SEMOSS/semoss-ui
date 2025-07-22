@@ -137,7 +137,7 @@ export const App = () => {
             }
 
             const env = JSON.parse(
-                document.getElementById('semoss-env')?.textContent || '',
+                document.getElementById('semoss-env')?.textContent || null,
             ) as {
                 MODULE: string;
             };
@@ -151,7 +151,6 @@ export const App = () => {
         } catch (e) {
             console.error(e);
         }
-
         // intialize it
         _store.configStore.initialize().then(() => {
             // set as enabled
