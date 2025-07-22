@@ -1,11 +1,9 @@
 import {
     KeyboardArrowDownRounded,
-    RuleRounded,
     SendRounded,
 } from '@mui/icons-material';
 import {
-    Button,
-    CircularProgress,
+    ButtrProgress,
     Container,
     IconButton,
     MenuItem,
@@ -23,7 +21,6 @@ import { useChat } from '@/hooks';
 import { ChatRoom } from '@/stores';
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === 'true';
-const ENABLE_TASK = import.meta.env.VITE_ENABLE_TASK === 'true';
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     fontSize: '14px',
@@ -186,44 +183,6 @@ export const RoomInputComponent: React.FC<RoomInputComponentProps> = observer(
                             ),
                         }}
                     />
-                    {ENABLE_TASK && (
-                        <Stack direction={'row'} alignItems={'center'}>
-                            <Tooltip title={'Complete Tasks'} placement="top">
-                                <span>
-                                    <Button
-                                        type="button"
-                                        size={'small'}
-                                        variant={'outlined'}
-                                        color={
-                                            room.options.chainOfThought
-                                                ? 'primary'
-                                                : 'secondary'
-                                        }
-                                        // may want to disable until GetCOT distinguishes CoT messages from normal chat messages
-                                        disabled={room.isLoading}
-                                        startIcon={
-                                            <RuleRounded fontSize="inherit" />
-                                        }
-                                        onClick={() => {
-                                            room.setOptions({
-                                                ...room.options,
-                                                chainOfThought:
-                                                    !room.options
-                                                        .chainOfThought,
-                                            });
-                                        }}
-                                        sx={{
-                                            color: room.options.chainOfThought
-                                                ? 'primary'
-                                                : 'text.primary',
-                                        }}
-                                    >
-                                        Task
-                                    </Button>
-                                </span>
-                            </Tooltip>
-                        </Stack>
-                    )}
                 </Stack>
             </Container>
         );

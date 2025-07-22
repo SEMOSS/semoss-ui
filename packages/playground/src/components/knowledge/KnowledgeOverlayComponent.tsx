@@ -18,8 +18,8 @@ import {
     NewKnowledgeData,
 } from './NewKnowledgeComponent';
 
-const EMBEDDING_MODEL = import.meta.env.EMBEDDING_MODEL || '';
-const ENABLE_FILE_UPLOAD = import.meta.env.ENABLE_FILE_UPLOAD === 'true';
+const EMBEDDING_MODEL = import.meta.env.VITE_EMBEDDING_MODEL || '';
+const ENABLE_FILE_UPLOAD = import.meta.env.VITE_ENABLE_FILE_UPLOAD === 'true';
 
 interface KnowledgeOverlayComponentProps {
     /** Knowledge loaded into the room */

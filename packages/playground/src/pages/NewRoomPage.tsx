@@ -3,7 +3,6 @@ import {
     AttachFileRounded,
     ConstructionOutlined,
     KeyboardArrowDownRounded,
-    RuleRounded,
     SendRounded,
     TuneRounded,
 } from '@mui/icons-material';
@@ -48,7 +47,6 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
     : '';
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
-const ENABLE_TASK = import.meta.env.VITE_ENABLE_TASK === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
 
 const StyledPage = styled(Stack)(({ theme }) => ({
@@ -406,42 +404,6 @@ export const NewRoomPage = observer(() => {
                                             direction={'row'}
                                             alignItems={'center'}
                                         >
-                                            {ENABLE_TASK && (
-                                                <Tooltip
-                                                    title={'Complete Tasks'}
-                                                    placement="top"
-                                                >
-                                                    <Button
-                                                        type="button"
-                                                        size={'small'}
-                                                        variant={'outlined'}
-                                                        color={
-                                                            options.chainOfThought
-                                                                ? 'primary'
-                                                                : 'secondary'
-                                                        }
-                                                        disabled={isLoading}
-                                                        startIcon={
-                                                            <RuleRounded fontSize="inherit" />
-                                                        }
-                                                        onClick={() => {
-                                                            setOptions({
-                                                                ...options,
-                                                                chainOfThought:
-                                                                    !options.chainOfThought,
-                                                            });
-                                                        }}
-                                                        sx={{
-                                                            color: options.chainOfThought
-                                                                ? 'primary'
-                                                                : 'text.primary',
-                                                        }}
-                                                    >
-                                                        Task
-                                                    </Button>
-                                                </Tooltip>
-                                            )}
-
                                             <Stack
                                                 direction={'row'}
                                                 flex={1}

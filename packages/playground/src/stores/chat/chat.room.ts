@@ -362,7 +362,7 @@ export class ChatRoom {
 			if (options) {
 				this.setOptions(options);
 			}
-			
+
 			// create a new message
 			const message = new ChatMessage();
 			// temp message
@@ -381,7 +381,7 @@ export class ChatRoom {
 				_context = this._store.options?.instructions;
 			}
 
-			const engines: string[] = this._store.options.tools.reduce(
+			const _engines: string[] = this._store.options.tools.reduce(
 				(acc, val) => {
 					if (val.type === "FUNCTION" || val.type === "DATABASE") {
 						acc.push(val.id);
@@ -391,7 +391,7 @@ export class ChatRoom {
 				[],
 			);
 			// get a list of app ids
-			const apps: string[] = this._store.options.tools.reduce(
+			const _apps: string[] = this._store.options.tools.reduce(
 				(acc, val) => {
 					if (val.type === "APP") {
 						acc.push(val.id);
@@ -410,18 +410,17 @@ export class ChatRoom {
 				]
 			>(
 				`AskPlayground(
-		roomId=["${this._store.roomId}"],
-		project_tools=${JSON.stringify(apps)},
-		engine_tools=${JSON.stringify(engines)},
-		modelId=["${this._store.modelId}"],
-		question=["<encode>${prompt}</encode>"],
-		paramValues=[${JSON.stringify({
-			max_new_tokens: this._store.options.tokenLength,
-			temperature: this._store.options.temperature,
-		})}],
-		execute_tool=[${this._store.options.autoExecute}],
-		chain_of_thought=[${this._store.options.chainOfThought}]
-		);`,
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+command=["<encode>${prompt}</encode>"],
+context=[],
+image=[],
+url=[],
+paramValues=[${JSON.stringify({
+					max_new_tokens: this._store.options.tokenLength,
+					temperature: this._store.options.temperature,
+				})}]
+);`,
 			);
 			const { output, operationType } = response.pixelReturn[0];
 			// throw errors
