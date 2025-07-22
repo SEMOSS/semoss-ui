@@ -825,10 +825,10 @@ export class StateStore {
     private generateNonPageId(widget: string, isCommunityBlock: boolean): string {
         // Try sequential numbers starting from 1
         let blockNum = 1;
-        while (this._store.blocks[`${widget}--${blockNum}`]) {
+        while (this._store.blocks[`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`]) {
             blockNum++;
         }
-        return `${isCommunityBlock ? "com-" : ""}${widget}--${blockNum}`;
+        return `${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`;
     }
 
     /**
