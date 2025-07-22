@@ -6,12 +6,12 @@ export const setProjectFavorite = async (
     projectId: string,
     favorite: boolean,
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
 
     const postData = {
-        'projectId': projectId,
-        'isFavorite': favorite,
-    }
+        projectId: projectId,
+        isFavorite: favorite,
+    };
     url += 'project/setProjectFavorite';
 
     const response = await post<{
@@ -31,13 +31,13 @@ export const addProject = async (
     type?: string,
     endDate?: string,
 ) => {
-    let url = `${Env.MODULE}/api/auth/admin/`
+    let url = `${Env.MODULE}/api/auth/admin/`;
     url += 'group/addGroupProjectPermission';
     const postData = {
-        'groupId': groupId,
-        'projectId': projectId,
-        'permission': permission,
-    }
+        groupId: groupId,
+        projectId: projectId,
+        permission: permission,
+    };
     if (type) {
         postData['type'] = type;
     }
@@ -65,13 +65,13 @@ export const editProjectPermisison = async (
         endDate?: string;
     },
 ) => {
-    let url = `${Env.MODULE}/api/auth/admin/`
+    let url = `${Env.MODULE}/api/auth/admin/`;
     url += 'group/editGroupProjectPermission';
     const postData = {
-        'groupId': groupId,
-        'projectId': project.projectid,
-       'permission': project.permission,
-    }
+        groupId: groupId,
+        projectId: project.projectid,
+        permission: project.permission,
+    };
     if (groupType) {
         postData['type'] = project.project_type;
     }
@@ -97,12 +97,12 @@ export const deleteProjectPermission = async (
         group_type?: string;
     },
 ) => {
-    let url = `${Env.MODULE}/api/auth/admin/`
+    let url = `${Env.MODULE}/api/auth/admin/`;
     url += 'group/removeGroupProjectPermission';
     const postData = {
         groupId: groupId,
         projectId: project.projectid,
-    }
+    };
     if (groupType) {
         postData['type'] = groupType;
     }
@@ -131,17 +131,16 @@ export const getProjects = async (
     offset ? (url += `&offset=${offset}`) : '';
     limit ? (url += `&limit=${limit}`) : '';
     const response = await get<
-            {
-                project_global: boolean;
-                project_id: string;
-                project_name: string;
-                project_permission: string;
-                project_visibility: boolean;
-            }[]
-        >(url)
-        .catch((error) => {
-            throw Error(error);
-        });
+        {
+            project_global: boolean;
+            project_id: string;
+            project_name: string;
+            project_permission: string;
+            project_visibility: boolean;
+        }[]
+    >(url).catch((error) => {
+        throw Error(error);
+    });
     // there was no response, that is an error
     if (!response) {
         throw Error('No Response to get Projects');
@@ -149,20 +148,19 @@ export const getProjects = async (
     return response.data;
 };
 
-//Check with Neel
-export const getUserProjectPermission = async (
-    projectId: string,
-): Promise<{
-    permission: Role;
-}> => {
-    let url = `${Env.MODULE}/api/auth/`;
-    url += `project/getUserProjectPermission?projectId=${projectId}`;
-    const response = await get(url);
+export const getUserProjectPermission = async (projectId: string) => {
+    const response = await get<{
+        permission: Role;
+    }>(
+        `${Env.MODULE}/api/auth/project/getUserProjectPermission?projectId=${projectId}`,
+    ).catch((error) => {
+        throw Error(error);
+    });
     // there was no response, that is an error
     if (!response) {
         throw Error('No Response to get permission');
     }
-    return {permission: response.data as Role};
+    return response.data;
 };
 
 export const getProjectUsers = async (
@@ -178,25 +176,25 @@ export const getProjectUsers = async (
     if (admin) {
         url += 'admin/';
     }
-    url += `project/getProjectUsers?projectId=${projectId}&userId=${user}&permission=${permission}`;
-    if (offset) {
-        url += `&offset=${offset}`;
-    }
-    if (limit) {
-        url += `&limit=${limit}`;
-    }
+
+    url += 'project/getProjectUsers?';
+    url += `projectId=${projectId}`;
+    user ? (url += `&userId=${user}`) : '';
+    permission ? (url += `&permission=${permission}`) : '';
+    offset ? (url += `&offset=${offset}`) : '';
+    limit ? (url += `&limit=${limit}`) : '';
+
     // get the response
     const response = await get<{
-            members: {
-                id: string;
-                name: string;
-                permission: string;
-            }[];
-            totalMembers: number;
-        }>(url)
-        .catch((error) => {
-            throw Error(error);
-        });
+        members: {
+            id: string;
+            name: string;
+            permission: string;
+        }[];
+        totalMembers: number;
+    }>(url).catch((error) => {
+        throw Error(error);
+    });
     // there was no response, that is an error
     if (!response) {
         throw Error('No Response to get users associated with app');
@@ -218,17 +216,16 @@ export const getProjectUsersNoCredentials = async (
     url += `project/getProjectUsersNoCredentials?projectId=${appId}&limit=${limit}&offset=${offset}&searchTerm=${searchTerm}`;
     // get the response
     const response = await get<
-            {
-                id: string;
-                email: string;
-                name: string;
-                type: string;
-                username: string;
-            }[]
-        >(url)
-        .catch((error) => {
-            throw Error(error);
-        });
+        {
+            id: string;
+            email: string;
+            name: string;
+            type: string;
+            username: string;
+        }[]
+    >(url).catch((error) => {
+        throw Error(error);
+    });
     // there was no response, that is an error
     if (!response) {
         throw Error('No Response to get non credentialed users');
@@ -241,10 +238,10 @@ export const approveProjectUserAccessRequest = async (
     appId: string,
     requests: any[],
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
     const postData = {
-        'projectId': appId,
-        'requests': requests,
+        projectId: appId,
+        requests: requests,
     };
     if (admin) {
         url += 'admin/';
@@ -267,11 +264,11 @@ export const denyProjectUserAccessRequest = async (
     projectId: string,
     userIds: string[],
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
-    
+    let url = `${Env.MODULE}/api/auth/`;
+
     const postData = {
-        'projectId': projectId,
-        'requestids': userIds,
+        projectId: projectId,
+        requestids: userIds,
     };
     if (admin) {
         url += 'admin/';
@@ -294,11 +291,11 @@ export const addProjectUserPermissions = async (
     appId: string,
     users: any[],
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
     const postData = {
-        'projectId': appId,
-        'userpermissions': users,
-        }
+        projectId: appId,
+        userpermissions: users,
+    };
     if (admin) {
         url += 'admin/';
     }
@@ -320,12 +317,12 @@ export const editProjectUserPermissions = async (
     appId: string,
     users: any[],
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
 
     const postData = {
-        'projectId': appId,
-        'userpermissions': users,
-    }
+        projectId: appId,
+        userpermissions: users,
+    };
     if (admin) {
         url += 'admin/';
     }
@@ -347,11 +344,11 @@ export const removeProjectUserPermissions = async (
     appId: string,
     users: any[],
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
 
     const postData = {
-        'projectId': appId,
-        'ids': users,
+        projectId: appId,
+        ids: users,
     };
     if (admin) {
         url += 'admin/';
@@ -370,11 +367,11 @@ export const removeProjectUserPermissions = async (
 };
 
 export const setProjectGlobal = async (admin, appId, global: boolean) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
     const postData = {
-        'projectId': appId,
-        'public': global,
-    }
+        projectId: appId,
+        public: global,
+    };
     if (admin) {
         url += 'admin/';
     }
@@ -391,12 +388,12 @@ export const setProjectGlobal = async (admin, appId, global: boolean) => {
 };
 
 export const setProjectVisiblity = async (admin, appId, visible) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
 
     const postData = {
-        'projectId': appId,
-        'discoverable': visible,
-    }
+        projectId: appId,
+        discoverable: visible,
+    };
     if (admin) {
         url += 'admin/';
     }
@@ -418,11 +415,13 @@ export const setProjectPortal = async (
     hasPortal: boolean,
     portalName?: string,
 ) => {
-    let url = `${Env.MODULE}/api/auth/`
+    let url = `${Env.MODULE}/api/auth/`;
     // if (admin) {
     //     url += 'admin/';
     // }
-    url += `project/setProjectPortal?projectId=${encodeURIComponent(projectId)}&hasPortal=${encodeURIComponent(hasPortal)}`;
+    url += `project/setProjectPortal?projectId=${encodeURIComponent(
+        projectId,
+    )}&hasPortal=${encodeURIComponent(hasPortal)}`;
 
     if (portalName) {
         url += '&projectId=' + encodeURIComponent(portalName);
@@ -432,6 +431,3 @@ export const setProjectPortal = async (
     }>(url, null);
     return response;
 };
-
-
-
