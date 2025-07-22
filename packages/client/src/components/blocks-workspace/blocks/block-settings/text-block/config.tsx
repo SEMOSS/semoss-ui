@@ -28,7 +28,7 @@ export const config: BlockSettingsConfig = {
                 {
                     description: 'Text',
                     render: ({ id }) => (
-                        <QueryInputSettings id={id} label="Text" path="text" spellCheck= {true} />
+                        <QueryInputSettings id={id} label="Text" path="text" />
                     ),
                 },
                 {
