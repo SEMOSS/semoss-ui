@@ -153,7 +153,7 @@ export const lightTheme: CustomThemeOptions = {
         mode: "light",
         primary: {
             // SEMOSS BLACK
-            main: "#000000",
+            main: "#0471F0",
             dark: "#1260DD",
             light: "#22A4FF",
             // DELOITTE GREEN

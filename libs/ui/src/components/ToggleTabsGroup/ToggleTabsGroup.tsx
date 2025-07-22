@@ -21,13 +21,14 @@ const StyledBox = styled(Box, {
 })<{
     color: COLORS;
 }>(({ theme, color }) => {
+    // TODO: CAN WE GRAB FROM THEME
     return {
         backgroundColor:
             theme.palette.mode === "dark"
                 ? "#0000000A"
                 : color === "primary"
                 ? `${theme.palette.primary.light}1D`
-                : theme.palette.primary.selected,
+                : "rgba(0, 0, 0, 0.04)",
         border: theme.palette.mode === "dark" ? "1px" : "0",
         borderRadius: "12px",
         width: "fit-content",
