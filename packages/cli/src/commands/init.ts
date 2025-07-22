@@ -1,5 +1,5 @@
 import { Command, Flags } from '@oclif/core';
-import { Env, Insight } from '@semoss/sdk';
+import { Env, Insight } from '@semoss/sdk/react';
 import { config } from 'dotenv';
 import * as fs from 'node:fs';
 import Listr from 'listr';

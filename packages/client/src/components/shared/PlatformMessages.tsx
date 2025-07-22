@@ -9,7 +9,7 @@ export const PlatformMessages: React.FC = observer(() => {
 
     const terms = {
         header: configStore.theme.termsHeaderReact,
-        text: configStore.theme.termsHeaderReact,
+        text: configStore.theme.termsReact,
     };
 
     useEffect(() => {

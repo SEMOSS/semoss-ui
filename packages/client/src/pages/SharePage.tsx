@@ -11,7 +11,7 @@ import { AppType, AppMetadata } from '@/components/app';
 import { PlatformMessages } from '@/components/shared';
 
 import { Renderer } from '@semoss/renderer';
-import { runPixelTwo } from '../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 
 const StyledViewport = styled('div')(() => ({
     display: 'flex',
@@ -51,7 +51,7 @@ export const SharePage = observer(() => {
                 throw new Error('Unauthorized');
             }
 
-            const { insightId: iId } = await runPixelTwo(
+            const { insightId: iId } = await runPixel(
                 `SetContext("${appId}")`,
                 'new',
             );
