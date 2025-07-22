@@ -13,6 +13,7 @@ import {
 import Close from '@mui/icons-material/Close';
 import { usePixel } from '@/hooks';
 import { engine } from '../app-details.utility';
+import { Divider, Chip, Paper } from '@mui/material';
 
 interface EngineIdsModalProps {
     open: boolean;
@@ -36,8 +37,12 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
     const [engineReplacements, setEngineReplacements] = useState<
         Record<string, string>
     >({});
+    const [showConfirmation, setShowConfirmation] = useState(false);
+    const [replacementsToShow, setReplacementsToShow] = useState<Record<string, string>>({});
     const { monolithStore } = useRootStore();
     const myfilePath = isUploadProjectApp ? "version/assets" : "version/assets/assets";
+    const [successFiles, setSuccessFiles] = useState<Record<string, string[]>>({});
+
 
     // Fetch available engines that user has access to
     const availableEngines = usePixel<engine[]>('MyEngines();');
@@ -76,14 +81,29 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
         const mapStr = `[ { ${Object.entries(validReplacements)
             .map(([failed, replacement]) => `"${failed}" : "${replacement}"`)
             .join(', ')} } ]`;
-        await monolithStore.runQuery(
+        const response = await monolithStore.runQuery(
             `ReplaceInaccessibleEngines(filePath=["${myfilePath}"], space=["${appId}"], map=${mapStr});`
         );
-
-        if (onEngineReplacement) {
-            onEngineReplacement(validReplacements);
+        const successObj = response?.pixelReturn?.[0]?.output?.success ?? {};
+        const successKeys = Object.keys(successObj);
+        if (successKeys.length > 0) {
+            setReplacementsToShow(validReplacements);
+            setSuccessFiles(successObj);
+            setShowConfirmation(true);
+        } else {
+        // Optionally handle case where no engines were replaced
+            if (onEngineReplacement) {
+                onEngineReplacement(validReplacements);
+            }
+            onClose();
         }
-        onClose();
+    };
+    const handleConfirmationClose = () => {
+    setShowConfirmation(false);
+    if (onEngineReplacement) {
+        onEngineReplacement(replacementsToShow);
+    }
+    onClose();
     };
 
     const hasValidReplacements =
@@ -93,6 +113,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
         );
 
     return (
+        <>
         <Modal
             open={open}
             fullWidth
@@ -483,6 +504,113 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                 </Stack>
             </Modal.Actions>
         </Modal>
+        <Modal
+            open={showConfirmation}
+            fullWidth
+            maxWidth={false}
+            sx={{ '& .MuiDialog-paper': { width: '80vw',maxWidth: 1000, minWidth: 320 } }}
+        >
+            <Modal.Title>
+    <Typography variant="h4" align="center" sx={{ flex: 1, fontWeight: 600 }}>
+        Engine Replacement Confirmation
+    </Typography>
+</Modal.Title>
+<Divider sx={{ mb: 2 }} />
+<Modal.Content sx={{ p: 3 }}>
+    <Typography variant="body1" sx={{ mb: 2 }}>
+        <span style={{ color: '#555' }}>
+            The following engine IDs have been replaced:
+        </span>
+    </Typography>
+    <Stack spacing={2}>
+        {Object.entries(replacementsToShow).map(([failed, replacement], index) => (
+            <Paper
+                key={failed}
+                elevation={2}
+                sx={{
+                    p: 2,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    backgroundColor: 'grey.50',
+                    borderRadius: 2,
+                }}
+            >
+                <Typography
+                    variant="body2"
+                    sx={{
+                        backgroundColor: 'grey.100',
+                        color: 'text.secondary',
+                        px: 1.5,
+                        py: 0.5,
+                        borderRadius: 1,
+                        minWidth: 24,
+                        textAlign: 'center',
+                        fontWeight: 500,
+                        fontSize: '0.875rem',
+                    }}
+                >
+                    {index + 1}
+                </Typography>
+                <Stack direction="row" alignItems="center" spacing={1}>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            fontWeight: 600,
+                            color: 'text.secondary',
+                            fontFamily: 'monospace',
+                        }}
+                    >
+                        {failed}
+                    </Typography>
+                    <Typography variant="body2" sx={{ mx: 1, color: 'text.disabled' }}>
+                        &rarr;
+                    </Typography>
+                    <Typography
+                        variant="body2"
+                        sx={{
+                            fontWeight: 700,
+                            color: 'success.main',
+                            fontFamily: 'monospace',
+                        }}
+                    >
+                        {replacement}
+                    </Typography>
+                    {successFiles[failed] && (
+                        <Stack direction="row" spacing={1} sx={{ ml: 2 }}>
+                            {successFiles[failed].map((file) => (
+                                <Chip
+                                    key={file}
+                                    label={file}
+                                    size="small"
+                                    sx={{
+                                        backgroundColor: 'grey.100',
+                                        color: 'text.secondary',
+                                        fontWeight: 500,
+                                    }}
+                                />
+                            ))}
+                        </Stack>
+                    )}
+                </Stack>
+            </Paper>
+        ))}
+    </Stack>
+            </Modal.Content>
+            <Modal.Actions>
+                <Stack direction="row" justifyContent="center" sx={{ p: 2 }}>
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={handleConfirmationClose}
+                        sx={{ minWidth: 120, py: 1.5 }}
+                    >
+                        OK
+                    </Button>
+                </Stack>
+            </Modal.Actions>
+        </Modal>
+        </>
     );
 };
 
