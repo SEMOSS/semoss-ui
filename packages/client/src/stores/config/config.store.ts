@@ -258,6 +258,7 @@ export class ConfigStore {
         termsHeaderReact: string;
         termsReact: string;
         materialTheme: unknown;
+        backgroundImg:string;
     } {
         const defaultTheme = {
             name: THEME.name,
@@ -275,6 +276,7 @@ export class ConfigStore {
             termsHeaderReact: '',
             termsReact: '',
             materialTheme: {},
+            backgroundImg: ''
         };
 
         let customTheme = {};

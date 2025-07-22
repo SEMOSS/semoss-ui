@@ -3,6 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Navigate, useLocation, Location } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import GIF from '@/assets/img/login-gif.gif';
+import AICOREGIF from '@/assets/img/AICore_img.gif';
 
 import {
     styled,
@@ -302,9 +303,17 @@ export const LoginPage = observer(() => {
 
     const hasMoreThanOneUserNamePassword =
         (isNative && isLdap) || (isNative && isLinOTP) || (isLdap && isLinOTP);
+    const [backgroundImg,setBackgroundImg] = useState("");      
 
     // set initial selected login type from config.
     useEffect(() => {
+        if(configStore.theme.backgroundImg !== null && 
+             configStore.theme.backgroundImg === AICOREGIF){
+             setBackgroundImg (AICOREGIF);
+        }else{
+             setBackgroundImg (GIF);
+        }
+
         if (isNative) {
             setLoginType('native');
         } else if (isLdap) {
@@ -1233,7 +1242,7 @@ export const LoginPage = observer(() => {
                     </StyledScroll>
                     <StyledGradient />
                     <StyledImageHolder>
-                        <StyledImage src={GIF} />
+                        <StyledImage src={backgroundImg} />
                     </StyledImageHolder>
                 </StyledRow>
                 {isLoading && <StyledProgress />}
