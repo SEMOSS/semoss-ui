@@ -16,7 +16,9 @@ import {
     Popover,
     Grid,
 } from '@semoss/ui';
-import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
+import { useDebouncedValue } from '@semoss/sdk/react';
+
+import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
@@ -222,7 +224,7 @@ export const UserTable = (props: UserTableProps) => {
     const [search, setSearch] = useState<string>('');
 
     // debounce the input
-    const debouncedSearch = useDebounceValue(search);
+    const debouncedSearch = useDebouncedValue(search);
 
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
