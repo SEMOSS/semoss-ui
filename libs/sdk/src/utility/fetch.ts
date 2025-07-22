@@ -1,4 +1,6 @@
-// store the interceptors
+/**
+ * Store the interceptors to modify any fetch command
+ */
 export const interceptors: {
     request: ((options: RequestInit) => Promise<RequestInit>) | null;
     response: ((output: { response: Response }) => Promise<void>) | null;

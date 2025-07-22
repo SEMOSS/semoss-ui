@@ -357,7 +357,9 @@ export const MembersTable = (props: MembersTableProps) => {
         if (!userDetails.data) {
             return;
         }
-        setUserData(userDetails.data);
+
+
+        const userData = userDetails.data as SETTINGS_PROVISIONED_USER
         if (adminMode) {
             const adminPermissionPriority = 'Author';
             setUserPermission(
@@ -367,12 +369,15 @@ export const MembersTable = (props: MembersTableProps) => {
         } else {
             setUserPermission(
                 permissionPriorityMapper(
-                    userDetails.data.permission === 'OWNER'
+                    userData.permission === 'OWNER'
                         ? 'Author'
-                        : userDetails.data.permission,
+                        : userData.permission,
                 )?.permission as SETTINGS_ROLE,
             );
         }
+
+
+        setUserData(userData);
     };
 
     /**
