@@ -125,7 +125,7 @@ jobs:
                 mkdir -p semoss-ui-build/packages/client
                 cp -r packages/client/dist semoss-ui-build/packages/client
                 cp -r packages/legacy semoss-ui-build/packages
-                mv semoss-ui-build/packages/legacy/index.html semoss-ui-build/ || true
+                mv semoss-ui-build/packages/legacy/dist/index.html semoss-ui-build/ || true
             
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
