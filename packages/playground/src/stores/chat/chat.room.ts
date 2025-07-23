@@ -257,7 +257,7 @@ export class ChatRoom {
 			this.setIsLoading(true);
 
 			// wait for the pixel to run
-			const response = await runPixel<[PixelMessage[]]>(
+			const response = await this.runPixel<[PixelMessage[]]>(
 				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
 			);
 
@@ -392,7 +392,7 @@ export class ChatRoom {
 				[],
 			);
 			// wait for the pixel to run
-			const response = await runPixel<
+			const response = await this.runPixel<
 				[
 					{
 						inputMessage: PixelMessage;
@@ -462,7 +462,7 @@ paramValues=[${JSON.stringify({
 		//                     return acc;
 		//                 }, {});
 		//             // wait for the pixel to run
-		//             const response = await runPixel<[{ response: string }]>(
+		//             const response = await this.runPixel<[{ response: string }]>(
 		//                 `AddToolResponse(
 		// engine=["${this._store.modelId}"],
 		// tool_name=["${messageResponse.tool_name}"],
@@ -491,14 +491,14 @@ paramValues=[${JSON.stringify({
 	 * @param comment
 	 */
 	recordFeedback = async (
-		messageId: string,
+		message: ChatMessage,
 		rating: boolean,
 		comment = "",
 	): Promise<void> => {
 		try {
 			// wait for the pixel to run
-			const response = await runPixel<[boolean]>(
-				`SubmitRoomFeedback(messageId = ["${messageId}"], text=["${comment}"], rating=[${rating}]);`,
+			const response = await this.runPixel<[boolean]>(
+				`SubmitLlmFeedback(messageId = ["${message.messageId}"], feedbackText=["${comment}"], rating=[${rating}]);`,
 			);
 
 			// throw errors
@@ -508,14 +508,10 @@ paramValues=[${JSON.stringify({
 			}
 
 			// save the feedback to the message's state
-			for (const m of this._store.history) {
-				if (m.messageId === messageId) {
-					m.saveRating({
-						positive: rating,
-						comment: comment,
-					});
-				}
-			}
+			message.saveRating({
+				positive: rating,
+				comment: comment,
+			});
 		} finally {
 			// noop
 		}
@@ -526,26 +522,32 @@ paramValues=[${JSON.stringify({
 	 * @param messageId
 	 */
 	downloadHistory = async (): Promise<void> => {
-		//         try {n on the loading screen
-		//             this.setIsLoading(true);
-		//             const html = this._store.history
-		//                 .map((h) => {
-		//                     return `
-		// <div>${h.question}</div>
-		// <div>${h.responseText}</div>
-		// `;
-		//                 })
-		//                 .join('\n');
-		//             // wait for the pixel to run
-		//             const { pixelReturn } = await runPixel<[string]>(
-		//                 `ToPdf( html=["<encode>${html}</encode>"]);`,
-		//             );
-		//             // get the output
-		//             this.download(pixelReturn[0].output);
-		//         } finally {
-		//             // turn off the loading screen
-		//             this.setIsLoading(false);
-		//         }
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// convert the content to html
+			const html = this._store.history
+				.map((message) => {
+					if (message.content.type === "TEXT") {
+						return `<div>${message.content.text}</div>`;
+					}
+
+					return "";
+				})
+				.join("\n");
+
+			// wait for the pixel to run
+			const { pixelReturn } = await this.runPixel<[string]>(
+				`ToPdf( html=["<encode>${html}</encode>"]);`,
+			);
+
+			// get the response
+			await this.download(pixelReturn[0].output);
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
 	};
 
 	/**
@@ -576,9 +578,9 @@ paramValues=[${JSON.stringify({
 	 * Set the isLoading boolean
 	 * @param isLoading - is it loading
 	 */
-	private setIsLoading(isLoading: boolean): void {
+	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
-	}
+	};
 
 	/**
 	 * Update a ChatMessage from a pixelMessage
@@ -628,25 +630,25 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
-	// /**
-	//  * Run a pixel
-	//  * @param pixel - pixel
-	//  */
-	// private runPixel = async <O extends [] | unknown[]>(pixel: string) => {
-	//     // get the response
-	//     const response = await runPixel<O>(pixel, this._insightID);
+	/**
+	 * Run a pixel
+	 * @param pixel - pixel
+	 */
+	private runPixel = async <O extends [] | unknown[]>(pixel: string) => {
+		// get the response
+		const response = await runPixel<O>(pixel, this._insightID);
 
-	//     if (response.errors.length > 0) {
-	//         throw new Error(response.errors.join(''));
-	//     }
+		if (response.errors.length > 0) {
+			throw new Error(response.errors.join(""));
+		}
 
-	//     // store the new insight id
-	//     runInAction(() => {
-	//         this._insightID = response.insightId;
-	//     });
+		// store the new insight id
+		runInAction(() => {
+			this._insightID = response.insightId;
+		});
 
-	//     return response;
-	// };
+		return response;
+	};
 
 	/**
 	 * Download a file
@@ -657,55 +659,55 @@ paramValues=[${JSON.stringify({
 		await download(this._insightID, fileKey);
 	};
 
-	/**
-	 * Search the VectorDatabase and get results from it based on the question
-	 * @param id
-	 * @param question
-	 * @returns
-	 */
-	private askVectorCatalog = async (id: string, question: string) => {
-		const pixel = `VectorDatabaseQuery(engine=["${id}"] , command=["<encode>${question}</encode>"], limit=[5])`;
+	// /**
+	//  * Search the VectorDatabase and get results from it based on the question
+	//  * @param id
+	//  * @param question
+	//  * @returns
+	//  */
+	// private askVectorCatalog = async (id: string, question: string) => {
+	// 	const pixel = `VectorDatabaseQuery(engine=["${id}"] , command=["<encode>${question}</encode>"], limit=[5])`;
 
-		const response =
-			await runPixel<
-				[
-					{
-						Score: number;
-						Source: string;
-						Divider: string;
-						Part: string;
-						Content: string;
-					}[],
-				]
-			>(pixel);
+	// 	const response =
+	// 		await this.runPixel<
+	// 			[
+	// 				{
+	// 					Score: number;
+	// 					Source: string;
+	// 					Divider: string;
+	// 					Part: string;
+	// 					Content: string;
+	// 				}[],
+	// 			]
+	// 		>(pixel);
 
-		const { output, operationType } = response.pixelReturn[0];
+	// 	const { output, operationType } = response.pixelReturn[0];
 
-		// throw the error
-		if (operationType.indexOf("ERROR") > -1) {
-			throw new Error(output as unknown as string);
-		}
+	// 	// throw the error
+	// 	if (operationType.indexOf("ERROR") > -1) {
+	// 		throw new Error(output as unknown as string);
+	// 	}
 
-		const results: {
-			score: number;
-			percent: string;
-			source: string;
-			content: string;
-		}[] = [];
+	// 	const results: {
+	// 		score: number;
+	// 		percent: string;
+	// 		source: string;
+	// 		content: string;
+	// 	}[] = [];
 
-		for (let i = 0; i < output.length; i++) {
-			if (!output[i].Content) {
-				continue;
-			}
+	// 	for (let i = 0; i < output.length; i++) {
+	// 		if (!output[i].Content) {
+	// 			continue;
+	// 		}
 
-			results.push({
-				score: output[i].Score,
-				percent: `${Math.round(output[i].Score * 10000) / 100}%`,
-				source: output[i].Source,
-				content: output[i].Content,
-			});
-		}
+	// 		results.push({
+	// 			score: output[i].Score,
+	// 			percent: `${Math.round(output[i].Score * 10000) / 100}%`,
+	// 			source: output[i].Source,
+	// 			content: output[i].Content,
+	// 		});
+	// 	}
 
-		return results;
-	};
+	// 	return results;
+	// };
 }

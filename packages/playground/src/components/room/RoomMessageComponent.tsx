@@ -1,21 +1,20 @@
-import { observer } from 'mobx-react-lite';
-import {
-    Avatar,
-    Divider,
-    IconButton,
-    Stack,
-    styled,
-    Typography,
-} from '@semoss/ui';
 import {
     AppsRounded,
     CopyAllOutlined,
     ThumbDownOffAltOutlined,
     ThumbUpAltOutlined,
 } from '@mui/icons-material';
-import { Chip, Markdown, useNotification } from '@semoss/ui';
 import { useInsight } from '@semoss/sdk/react';
-import { ChatRoom, ChatMessage } from '@/stores';
+import {
+    Avatar,Chip, 
+    Divider,
+    IconButton,Markdown, 
+    Stack,
+    styled,
+    Typography,useNotification 
+} from '@semoss/ui';
+import { observer } from 'mobx-react-lite';
+import { ChatMessage, ChatRoom } from '@/stores';
 
 const StyledUserMessage = styled(Stack)(({ theme }) => ({
     padding: theme.spacing(2),
@@ -116,11 +115,11 @@ export const RoomMessageComponent: React.FC<RoomMessageComponentProps> =
          */
         const recordFeedback = async (rating: boolean) => {
             try {
-                await room.recordFeedback(message.messageId, rating);
+                await room.recordFeedback(message, rating);
 
                 notification.add({
                     color: 'success',
-                    message: 'Succesfully copied to clipboard',
+                    message: 'Succesfully saved feedback',
                 });
             } catch (e) {
                 notification.add({

@@ -147,7 +147,7 @@ export class ChatStore {
 	/**
 	 * Initialize the store
 	 */
-	async initialize(): Promise<void> {
+	initialize = async (): Promise<void> => {
 		try {
 			// set as initialized
 			Promise.all([
@@ -165,12 +165,12 @@ export class ChatStore {
 			// turn off the loading screen
 			this.setIsLoading(false);
 		}
-	}
+	};
 
 	/**
 	 * Create a new room instance
 	 */
-	newRoom(roomId: string): ChatRoom {
+	newRoom = (roomId: string): ChatRoom => {
 		// create a new room
 		const room = new ChatRoom(roomId);
 
@@ -178,7 +178,7 @@ export class ChatStore {
 		this._store.rooms[roomId] = room;
 
 		return room;
-	}
+	};
 
 	/**
 	 * Open a room
@@ -285,13 +285,27 @@ export class ChatStore {
 	};
 
 	/**
+	 * Get available models from the backend
+	 */
+	setSelectedModel = async (modelIdArray: string): Promise<void> => {
+		this.models.selected = modelIdArray;
+
+		// save to local storage
+		if (localStorage) {
+			localStorage.setItem(
+				MODEL_KEY,
+				JSON.stringify(this.models.selected),
+			);
+		}
+	};
+
+	/**
 	 * Helpers
 	 */
-
 	/**
 	 * Get the current rooms
 	 */
-	async getRooms(): Promise<void> {
+	private getRooms = async (): Promise<void> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -365,12 +379,12 @@ export class ChatStore {
 		} finally {
 			this.setIsLoading(false);
 		}
-	}
+	};
 
 	/**
 	 * Get available models from the backend
 	 */
-	async getModels(): Promise<void> {
+	private getModels = async (): Promise<void> => {
 		// model selection is not enabled, set it to the default
 		if (!ENABLE_MODEL_SELECT) {
 			this._store.models = {
@@ -450,72 +464,13 @@ export class ChatStore {
 		} finally {
 			this.setIsLoading(false);
 		}
-	}
-
-	/**
-	 * Get available models from the backend
-	 */
-	async setSelectedModel(modelIdArray: string): Promise<void> {
-		this.models.selected = modelIdArray;
-
-		// save to local storage
-		if (localStorage) {
-			localStorage.setItem(
-				MODEL_KEY,
-				JSON.stringify(this.models.selected),
-			);
-		}
-	}
+	};
 
 	/**
 	 * Set the isLoading boolean
 	 * @param isLoading - is it loading
 	 */
-	private setIsLoading(isLoading: boolean): void {
+	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
-	}
-
-	//Download a pdf based on html passed in
-	async downloadPDF(insightID: string, htmlString: string) {
-		// wait for the pixel to run
-		const { pixelReturn } = await this._actions.run<[string]>(
-			`ToPdf( html=["<encode>${htmlString}</encode>"]);`,
-		);
-
-		// get the output
-		const { output } = pixelReturn[0];
-		if (pixelReturn[0].operationType[0] === "FILE_DOWNLOAD") {
-			this.download(insightID, output);
-		}
-	}
-
-	/**
-	 * Download a file by using a unique key
-	 *
-	 * @param insightID - insightID to download the file
-	 * @param fileKey - id for the file to download
-	 */
-	async download(insightID: string, fileKey: string) {
-		return new Promise<void>((resolve) => {
-			// create the download url
-			const url = `${
-				import.meta.env.MODULE
-			}/api/engine/downloadFile?insightId=${insightID}&fileKey=${encodeURIComponent(
-				fileKey,
-			)}`;
-
-			// fake clicking a link
-			const link: HTMLAnchorElement = document.createElement("a");
-
-			link.href = url;
-			link.target = "_blank";
-			document.body.appendChild(link);
-			link.click();
-
-			document.body.removeChild(link);
-
-			// resolve the promise
-			resolve();
-		});
 	}
 }
