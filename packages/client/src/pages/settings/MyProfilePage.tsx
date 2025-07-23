@@ -28,7 +28,10 @@ import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
 import { getSDKSnippet } from '@/utility';
+
 import EventHistory from './EventHistory';
+import TraceViewer from './TraceViewer';
+
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
     display: 'flex',
     alignContent: 'center',
@@ -226,24 +229,24 @@ export const MyProfilePage = () => {
             responseTime: '2.0',
         },
         {
-            createdDate: '2025-07-05 10:05:43',
+            createdDate: '2025-07-05 10:05:45',
             activityType: 'llm',
             type: 'response_text',
             result: {
-                response: '"Hello! How can I assist you today?"',
+                response: 'Hello! How can I assist you today?',
                 engine: 'GPT 4.0',
             },
             responseTime: '2.0',
         },
         {
-            createdDate: '2025-07-05 10:05:43',
+            createdDate: '2025-07-05 10:05:47',
             activityType: 'embedding',
             type: 'user_text',
             result: { request: 'embedded a document', engine: 'Milvus Vector' },
             responseTime: '2.0',
         },
         {
-            createdDate: '2025-07-05 10:05:43',
+            createdDate: '2025-07-05 10:05:49',
             activityType: 'embedding',
             type: 'response_text',
             result: {
@@ -251,6 +254,54 @@ export const MyProfilePage = () => {
                 engine: 'Milvus Vector',
             },
             responseTime: '2.0',
+        },
+        {
+            createdDate: '2025-07-05 10:05:51',
+            activityType: 'llm',
+            type: 'user_text',
+            result: {
+                request: "What's the weather like?",
+                engine: 'GPT 4.0',
+                context: 'weather inquiry',
+            },
+            responseTime: '1.8',
+        },
+        {
+            createdDate: '2025-07-05 10:05:53',
+            activityType: 'llm',
+            type: 'response_text',
+            result: {
+                response:
+                    "I don't have access to real-time weather data, but I can help you find weather information.",
+                engine: 'GPT 4.0',
+                confidence: 0.95,
+            },
+            responseTime: '1.8',
+        },
+        {
+            createdDate: '2025-07-05 10:05:55',
+            activityType: 'search',
+            type: 'user_text',
+            result: {
+                query: 'weather API call',
+                location: 'New York',
+                service: 'OpenWeather',
+            },
+            responseTime: '3.2',
+        },
+        {
+            createdDate: '2025-07-05 10:05:58',
+            activityType: 'search',
+            type: 'response_text',
+            result: {
+                data: {
+                    temperature: '22°C',
+                    condition: 'sunny',
+                    humidity: '45%',
+                },
+                status: 'success',
+            },
+            responseTime: '3.2',
         },
     ];
     /**
@@ -790,6 +841,8 @@ export const MyProfilePage = () => {
             </StyledAccessTokensPaper>
             <StyledPaper>
                 <EventHistory logs={logs} height={300} />
+                <br/>
+                <TraceViewer activities={logs} />
             </StyledPaper>
             <Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
                 <Modal.Title>Generate Key</Modal.Title>

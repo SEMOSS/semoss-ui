@@ -45,11 +45,7 @@ export interface ChatLog {
   createdDate: string;
   activityType: string;
   type: string;
-  result: {
-    request?: string;
-    response?: string;
-    engine: string;
-  };
+  result: Record<string, any>;
   responseTime?: string;
 }
 
