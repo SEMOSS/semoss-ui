@@ -19,7 +19,7 @@ import {
 } from './NewKnowledgeComponent';
 
 const EMBEDDING_MODEL = import.meta.env.VITE_EMBEDDING_MODEL || '';
-const ENABLE_FILE_UPLOAD = import.meta.env.VITE_ENABLE_FILE_UPLOAD === 'true';
+const ENABLE_NEW_KNOWLEDGE = import.meta.env.VITE_ENABLE_NEW_KNOWLEDGE === 'true';
 
 interface KnowledgeOverlayComponentProps {
     /** Knowledge loaded into the room */
@@ -118,7 +118,7 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
                 setIsLoading(true);
 
                 if (newEngineData) {
-                    if (!ENABLE_FILE_UPLOAD) {
+                    if (!ENABLE_NEW_KNOWLEDGE) {
                         throw new Error('File Upload is disabled');
                     }
                     if (!newEngineData.name) {
@@ -315,7 +315,7 @@ export const KnowledgeOverlayComponent: React.FC<KnowledgeOverlayComponentProps>
                                 }}
                                 fullWidth
                             >
-                                {ENABLE_FILE_UPLOAD ? (
+                                {ENABLE_NEW_KNOWLEDGE ? (
                                     <MenuItem value={`new`}>
                                         <Stack
                                             direction={'row'}

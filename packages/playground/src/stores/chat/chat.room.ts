@@ -216,7 +216,7 @@ export class ChatRoom {
 	 * Set the model
 	 * @param modelId - model to use in the room
 	 */
-	setModel = async (modelId: string) => {
+	setModel = (modelId: string) => {
 		this._store.modelId = modelId;
 	};
 
@@ -224,7 +224,7 @@ export class ChatRoom {
 	 * Set options
 	 * @param options - options
 	 */
-	setOptions = async (options: Partial<ChatRoomInterface["options"]>) => {
+	setOptions = (options: Partial<ChatRoomInterface["options"]>) => {
 		this._store.options = {
 			...this._store.options,
 			...options,
@@ -235,7 +235,7 @@ export class ChatRoom {
 	 * Set the mdetadata
 	 * @param metadata - metadata
 	 */
-	setMetadata = async (metadata: Partial<ChatRoomInterface["metadata"]>) => {
+	setMetadata = (metadata: Partial<ChatRoomInterface["metadata"]>) => {
 		this._store.metadata = {
 			...this._store.metadata,
 			...metadata,
@@ -271,11 +271,21 @@ export class ChatRoom {
 			const history: ChatMessage[] = [];
 			const messages: Record<string, ChatMessage> = {};
 
-			for (const r of output) {
+			// store the last model
+			let activeModelId = "";
+			let activeOptions: Pick<
+				ChatRoomInterface["options"],
+				"tokenLength" | "temperature"
+			> = {
+				tokenLength: TOKEN_LENGTH,
+				temperature: TEMPERATURE,
+			};
+
+			for (const pixelMessage of output) {
 				let isNew = false;
 
 				// check if the message exists and create a new one if it doesn't
-				let message = messages[r.messageId];
+				let message = messages[pixelMessage.messageId];
 				if (!message) {
 					message = new ChatMessage();
 
@@ -283,55 +293,35 @@ export class ChatRoom {
 					isNew = true;
 				}
 
-				// update the id
-				message.saveId(r.messageId);
-
-				if (r.type === "INPUT_TEXT") {
-					message.updateType("USER");
-					message.updateContent({
-						type: "TEXT",
-						text: r.inputUIPrompt,
-					});
-				} else if (r.type === "INPUT_TOOL_EXEC") {
-					message.updateType("AGENT");
-					message.updateContent({
-						type: "APP",
-						name: r.toolResponse.name,
-						id: r.toolResponse.arguments.id,
-						map: r.toolResponse.arguments.map,
-					});
-				} else if (r.type === "RESPONSE_TEXT") {
-					message.updateType("AGENT");
-					message.updateContent({
-						type: "TEXT",
-						text: r.content,
-					});
-				} else if (r.type === "RESPONSE_TOOL") {
-					message.updateType("AGENT");
-					message.updateContent({
-						type: "APP",
-						name: r.toolResponse.name,
-						id: r.toolResponse.arguments.id,
-						map: r.toolResponse.arguments.map,
-					});
+				if (pixelMessage.type === "INPUT_TEXT") {
+					activeModelId = pixelMessage.modelId;
+					activeOptions = {
+						temperature: pixelMessage.paramMap.temperature,
+						tokenLength: pixelMessage.paramMap.max_new_tokens,
+					};
 				}
 
-				// update sources if it exists
-				if (r.ornaments && r.ornaments.chunks) {
-					message.updateSources(r.ornaments.chunks as string[]);
-				}
+				// process it
+				this.processPixelMessage(message, pixelMessage);
 
 				// store it
 				messages[message.messageId] = message;
 
 				// only add if it is visible and new
-				if (r.visible && isNew) {
+				if (pixelMessage.visible && isNew) {
 					history.push(message);
 				}
 			}
 
 			runInAction(() => {
+				// set the model + options based on the history
+				this.setModel(activeModelId);
+				this.setOptions(activeOptions);
+
+				// update the history
 				this._store.history = history;
+
+				// mark as initialized
 				this._store.isInitialized = true;
 			});
 		} finally {
@@ -364,21 +354,22 @@ export class ChatRoom {
 			}
 
 			// create a new message
-			const message = new ChatMessage();
+			const inputMessage = new ChatMessage();
+
 			// temp message
-			message.saveId(`TEMP`);
-			message.updateType("USER");
-			message.updateContent({
+			inputMessage.saveId(`TEMP`);
+			inputMessage.updateType("USER");
+			inputMessage.updateContent({
 				type: "TEXT",
 				text: prompt,
 			});
 			// add it to the log
-			this._store.history.push(message);
+			this._store.history.push(inputMessage);
 
 			// build the context if it is there
-			let _context = "";
+			let context = "";
 			if (this._store.options?.instructions) {
-				_context = this._store.options?.instructions;
+				context = this._store.options?.instructions;
 			}
 
 			const _engines: string[] = this._store.options.tools.reduce(
@@ -404,8 +395,8 @@ export class ChatRoom {
 			const response = await runPixel<
 				[
 					{
-						messageId: string;
-						response: PixelMessage[];
+						inputMessage: PixelMessage;
+						responseMessage: PixelMessage;
 					},
 				]
 			>(
@@ -413,7 +404,7 @@ export class ChatRoom {
 engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
 command=["<encode>${prompt}</encode>"],
-context=[],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 image=[],
 url=[],
 paramValues=[${JSON.stringify({
@@ -427,42 +418,18 @@ paramValues=[${JSON.stringify({
 			if (operationType.indexOf("ERROR") > -1) {
 				throw new Error(output as unknown as string);
 			}
-			// update the id
-			message.saveId(output.messageId);
 
-			// // save the new options
-			// await runPixel<
-			// 	[
-			// 		{
-			// 			updated: boolean;
-			// 		},
-			// 	]
-			// >(
-			// 	`UpdateRoomOptions(roomId='${
-			// 		this.roomId
-			// 	}', roomOptions=[${JSON.stringify(this.options)}]);`,
-			// );
-			// //TODO: Modify later
-			// if (
-			// 	this._store.options.chainOfThought === true &&
-			// 	this._store.options.autoExecute === false
-			// ) {
-			// 	const conclusion = [...output.response];
-			// 	conclusion.push({
-			// 		type: "CONCLUSION",
-			// 	});
-			// 	message.saveResponse(conclusion);
-			// } else {
-			// 	// finish based on the full response
-			// 	message.saveResponse(output.response);
-			// }
-			// // TODO: sync with backend
-			// // update the sources
-			// const sourceMap = {};
-			// for (const k of knowledge) {
-			// 	sourceMap[k.source] = true;
-			// }
-			// message.updateSources(Object.keys(sourceMap));
+			// update the input
+			this.processPixelMessage(inputMessage, output.inputMessage);
+
+			// create the response, process it, and add to the history
+			const responseMessage = new ChatMessage();
+			this.processPixelMessage(responseMessage, output.responseMessage);
+
+			runInAction(() => {
+				// update the history
+				this._store.history.push(responseMessage);
+			});
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -612,6 +579,54 @@ paramValues=[${JSON.stringify({
 	private setIsLoading(isLoading: boolean): void {
 		this._store.isLoading = isLoading;
 	}
+
+	/**
+	 * Update a ChatMessage from a pixelMessage
+	 * @param message - ChatMessage that will be updated
+	 * @param pixelMessage - message from backend that needs to be converted
+	 */
+	private processPixelMessage = async (
+		message: ChatMessage,
+		pixelMessage: PixelMessage,
+	) => {
+		// update the id
+		message.saveId(pixelMessage.messageId);
+
+		if (pixelMessage.type === "INPUT_TEXT") {
+			message.updateType("USER");
+			message.updateContent({
+				type: "TEXT",
+				text: pixelMessage.inputUIPrompt,
+			});
+		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
+			message.updateType("AGENT");
+			message.updateContent({
+				type: "APP",
+				name: pixelMessage.toolResponse.name,
+				id: pixelMessage.toolResponse.arguments.id,
+				map: pixelMessage.toolResponse.arguments.map,
+			});
+		} else if (pixelMessage.type === "RESPONSE_TEXT") {
+			message.updateType("AGENT");
+			message.updateContent({
+				type: "TEXT",
+				text: pixelMessage.content,
+			});
+		} else if (pixelMessage.type === "RESPONSE_TOOL") {
+			message.updateType("AGENT");
+			message.updateContent({
+				type: "APP",
+				name: pixelMessage.toolResponse.name,
+				id: pixelMessage.toolResponse.arguments.id,
+				map: pixelMessage.toolResponse.arguments.map,
+			});
+		}
+
+		// update sources if it exists
+		if (pixelMessage.ornaments && pixelMessage.ornaments.chunks) {
+			message.updateSources(pixelMessage.ornaments.chunks as string[]);
+		}
+	};
 
 	// /**
 	//  * Run a pixel

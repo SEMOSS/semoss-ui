@@ -305,7 +305,6 @@ export class ChatStore {
 					{
 						ROOM_ID: string;
 						ROOM_NAME: string;
-						MODEL_ID: string;
 						DATE_CREATED: string;
 					}[],
 				]
@@ -333,7 +332,6 @@ export class ChatStore {
 					room = this.newRoom(r.ROOM_ID);
 				}
 
-				room.setModel(r.MODEL_ID);
 				room.setMetadata({
 					name: r.ROOM_NAME,
 					dateCreated: r.DATE_CREATED,

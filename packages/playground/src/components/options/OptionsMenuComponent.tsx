@@ -19,6 +19,7 @@ import {
 } from '@/components';
 import { ChatRoom } from '@/stores';
 
+const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === 'true';
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -80,7 +81,7 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                         }}
                     />
                 </Stack>
-                <Stack direction={'column'} width={'100%'} spacing={1} flex={1}>
+                {ENABLE_KNOWLEDGE && (<Stack direction={'column'} width={'100%'} spacing={1} flex={1}>
                     <Stack
                         direction={'row'}
                         width={'100%'}
@@ -139,103 +140,104 @@ export const OptionsMenuComponent: React.FC<OptionsMenuComponentProps> =
                             </List.Item>
                         )}
                     </List>
-                </Stack>
+                </Stack>)}
                 {ENABLE_TOOLS && (
-                    <Stack
-                        direction={'column'}
-                        width={'100%'}
-                        spacing={1}
-                        flex={1}
-                    >
+                    <>
                         <Stack
-                            direction={'row'}
+                            direction={'column'}
                             width={'100%'}
-                            spacing={2}
-                            justifyContent={'space-between'}
-                            alignItems={'center'}
+                            spacing={1}
+                            flex={1}
                         >
-                            <Typography variant="body1">Tools</Typography>
-                            <Button
-                                variant="outlined"
-                                color="inherit"
-                                size="small"
-                                onClick={() => {
-                                    setIsToolsOpen(true);
-                                }}
+                            <Stack
+                                direction={'row'}
+                                width={'100%'}
+                                spacing={2}
+                                justifyContent={'space-between'}
+                                alignItems={'center'}
                             >
-                                Add
-                            </Button>
-                        </Stack>
+                                <Typography variant="body1">Tools</Typography>
+                                <Button
+                                    variant="outlined"
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => {
+                                        setIsToolsOpen(true);
+                                    }}
+                                >
+                                    Add
+                                </Button>
+                            </Stack>
 
-                        <List dense={true}>
-                            {options.tools.length ? (
-                                options.tools.map((t, tIdx) => {
-                                    return (
-                                        <List.Item
-                                            key={t.id}
-                                            dense={true}
-                                            secondaryAction={
-                                                <IconButton
-                                                    edge="end"
-                                                    aria-label="delete"
-                                                    size="small"
-                                                    onClick={() => {
-                                                        // copy it
-                                                        const updated = [
-                                                            ...options.tools,
-                                                        ];
+                            <List dense={true}>
+                                {options.tools.length ? (
+                                    options.tools.map((t, tIdx) => {
+                                        return (
+                                            <List.Item
+                                                key={t.id}
+                                                dense={true}
+                                                secondaryAction={
+                                                    <IconButton
+                                                        edge="end"
+                                                        aria-label="delete"
+                                                        size="small"
+                                                        onClick={() => {
+                                                            // copy it
+                                                            const updated = [
+                                                                ...options.tools,
+                                                            ];
 
-                                                        // remove at index
-                                                        updated.splice(tIdx, 1);
+                                                            // remove at index
+                                                            updated.splice(tIdx, 1);
 
-                                                        // update the tools
-                                                        setOptions({
-                                                            ...options,
-                                                            tools: updated,
-                                                        });
-                                                    }}
-                                                >
-                                                    <Delete
-                                                        fontSize={'small'}
-                                                    />
-                                                </IconButton>
-                                            }
+                                                            // update the tools
+                                                            setOptions({
+                                                                ...options,
+                                                                tools: updated,
+                                                            });
+                                                        }}
+                                                    >
+                                                        <Delete
+                                                            fontSize={'small'}
+                                                        />
+                                                    </IconButton>
+                                                }
+                                            >
+                                                <List.ItemText primary={t.name} />
+                                            </List.Item>
+                                        );
+                                    })
+                                ) : (
+                                    <List.Item dense={true}>
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                width: '100%',
+                                                textAlign: 'center',
+                                            }}
                                         >
-                                            <List.ItemText primary={t.name} />
-                                        </List.Item>
-                                    );
-                                })
-                            ) : (
-                                <List.Item dense={true}>
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            width: '100%',
-                                            textAlign: 'center',
-                                        }}
-                                    >
-                                        No tools added
-                                    </Typography>
-                                </List.Item>
-                            )}
-                        </List>
-                    </Stack>
-                )}
-
-                <FormControlLabel
-                    control={
-                        <Checkbox
-                            checked={options.autoExecute}
-                            onChange={(e, val) =>
-                                setOptions({
-                                    ...options,
-                                    autoExecute: !options.autoExecute,
-                                })
+                                            No tools added
+                                        </Typography>
+                                    </List.Item>
+                                )}
+                            </List>
+                        </Stack>
+                        <FormControlLabel
+                            control={
+                                <Checkbox
+                                    checked={options.autoExecute}
+                                    onChange={(e, val) =>
+                                        setOptions({
+                                            ...options,
+                                            autoExecute: !options.autoExecute,
+                                        })
+                                    }
+                                />
                             }
+                            label="Auto-execute"
                         />
-                    }
-                    label="Auto-execute"
-                />
+                    </>
+                )}
                 {isKnowledgeOpen && (
                     <KnowledgeOverlayComponent
                         knowledge={options.knowledge}

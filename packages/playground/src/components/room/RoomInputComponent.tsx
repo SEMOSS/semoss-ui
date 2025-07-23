@@ -3,7 +3,7 @@ import {
     SendRounded,
 } from '@mui/icons-material';
 import {
-    ButtrProgress,
+    CircularProgress,
     Container,
     IconButton,
     MenuItem,
@@ -52,7 +52,7 @@ export const RoomInputComponent: React.FC<RoomInputComponentProps> = observer(
         const { chat } = useChat();
 
         // set the get the room based on the params
-        const navigate = useNavigate();
+        const _navigate = useNavigate();
 
         const [input, setInput] = useState('');
 
@@ -95,8 +95,6 @@ export const RoomInputComponent: React.FC<RoomInputComponentProps> = observer(
                                 onChange={(e) => {
                                     // set the selected model
                                     chat.setSelectedModel(e.target.value);
-
-                                    navigate('/new');
                                 }}
                                 IconComponent={KeyboardArrowDownRounded}
                             >

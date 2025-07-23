@@ -134,13 +134,13 @@ const StyledListItem = styled(List.Item)(({ theme }) => ({
     padding: theme.spacing(1),
 }));
 
-const StyledListItemButton = styled(List.ItemButton)(({ theme }) => ({
+const _StyledListItemButton = styled(List.ItemButton)(({ theme }) => ({
     flexGrow: '0',
     gap: theme.spacing(1),
     padding: theme.spacing(1),
 })) as unknown as typeof List.ItemButton;
 
-const StyledListItemIcon = styled(List.Icon)(() => ({
+const _StyledListItemIcon = styled(List.Icon)(() => ({
     width: '28px',
     minWidth: 'auto',
 }));
@@ -151,7 +151,7 @@ const StyledLink = styled(Link)(({ theme }) => ({
     cursor: 'pointer',
 }));
 
-const StyledPublicOutlined = styled(PublicOutlined)(({ theme }) => ({
+const _StyledPublicOutlined = styled(PublicOutlined)(({ theme }) => ({
     color: theme.palette.text.primary,
 }));
 
@@ -304,7 +304,7 @@ export const Sidebar = observer(() => {
                             })}
                         </Stack>
                     </StyledList>
-                    <StyledLink to={'/agents'} aria-label={'Discover Agents'}>
+                    {/* <StyledLink to={'/agents'} aria-label={'Discover Agents'}>
                         <StyledListItemButton dense={true}>
                             <StyledListItemIcon>
                                 <StyledPublicOutlined fontSize="medium" />
@@ -313,7 +313,7 @@ export const Sidebar = observer(() => {
                                 Discover
                             </Typography>
                         </StyledListItemButton>
-                    </StyledLink>
+                    </StyledLink> */}
                     <Stack
                         direction={'row'}
                         alignItems={'center'}

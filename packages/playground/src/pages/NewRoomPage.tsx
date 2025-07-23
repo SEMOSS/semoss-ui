@@ -47,6 +47,7 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
     : '';
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
 
 const StyledPage = styled(Stack)(({ theme }) => ({
@@ -456,8 +457,7 @@ export const NewRoomPage = observer(() => {
                                                         </IconButton>
                                                     </Tooltip>
                                                 )}
-
-                                                <Tooltip
+                                                {ENABLE_KNOWLEDGE && (<Tooltip
                                                     title={'Add Knowledge'}
                                                     placement="top"
                                                 >
@@ -488,7 +488,7 @@ export const NewRoomPage = observer(() => {
                                                         </Badge>
                                                         <Badge />
                                                     </IconButton>
-                                                </Tooltip>
+                                                </Tooltip>)}
                                                 <Tooltip
                                                     title={buttonTooltip}
                                                     placement="top"
