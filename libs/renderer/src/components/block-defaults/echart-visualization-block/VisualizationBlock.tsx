@@ -2,18 +2,20 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import { styled } from "@mui/material";
 
-import { Bar } from "./variant/bar-chart/Bar";
-import { Pie } from "./variant/pie-chart/Pie";
-import { BAR_CHART_DATA } from "./Visualization.constants";
-import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
-import { useBlock, useBlocks, useBlockSettings } from "../../../hooks";
+import { useBlock, useBlocks } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { PathValue } from "../../../types";
-import { Map } from "./variant/map-chart/Map";
-import { Line } from "./variant/line-chart/Line";
-import { StackChart } from "./variant/stack-chart/StackChart";
-import { Gantt } from "./variant/Gantt/Gantt";
+
+import { BAR_CHART_DATA } from "./Visualization.constants";
+import { Bar } from "./variant/bar-chart/Bar";
 import { Dendrogram } from "./variant/dendrogram/Dendrogram";
+import { Gantt } from "./variant/Gantt/Gantt";
+import { Line } from "./variant/line-chart/Line";
+import { Map } from "./variant/map-chart/Map";
+import { Pie } from "./variant/pie-chart/Pie";
+import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
+
+import { StackChart } from "./variant/stack-chart/StackChart";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -86,9 +88,8 @@ export interface EchartVisualizationBlockDef {
 
 export const VisualizationBlock: BlockComponent = observer(
     <D extends BlockDef = BlockDef>({ id }) => {
-        const { data, attrs, listeners } =
+        const { data, setData, attrs, listeners } =
             useBlock<EchartVisualizationBlockDef>(id);
-        const { setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
         const { state } = useBlocks();
 
         const elementRef = useRef<HTMLDivElement>(null);

@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import EChartsReact from "echarts-for-react";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
+import { EChartsOption } from "echarts";
 
-import { useBlockSettings, useFrame } from "../../../../../hooks";
+import { styled } from "@semoss/ui";
+
+import { useFrame, useBlock } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
+
 import { getSelector } from "./ScatterPlotSelector";
 import { processData } from "./ScatterPlotProcessData";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
-import { EChartsOption } from "echarts";
 import { updateColorData } from "../shared/chart-utility";
 
 const StyledNoDataContainer = styled("div", {
@@ -32,9 +34,9 @@ export interface EchartVisualizationBlockDef {
     widget: "e-chart";
     data: {
         option: {
-            series:any[];
-            customSettings?:any;
-            tooltip:any;
+            series: any[];
+            customSettings?: any;
+            tooltip: any;
         };
         frame: {
             name: string;
@@ -53,7 +55,8 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

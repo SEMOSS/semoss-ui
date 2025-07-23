@@ -51,7 +51,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
     const updatePanels = (isModified: boolean) => {
         try {
             // get the model
-            const model = workspace.selectedLayout?.model;
+            const model = workspace.model;
             if (!model) {
                 throw new Error('Missing model');
             }

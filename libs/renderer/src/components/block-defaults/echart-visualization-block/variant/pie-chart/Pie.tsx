@@ -1,11 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import { computed } from "mobx";
+import { EChartsOption } from "echarts";
 
-import { BlockComponent } from "../../../../../store";
+import { styled } from "@semoss/ui";
+
+import { useFrame, useBlock } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../..";
+
 import { CustomContextMenu } from "./CustomContextMenu";
 import { PathValue } from "../../../../../types";
 import { getValueByPath } from "../../../../../utility";
@@ -43,7 +48,7 @@ interface PieProps {
 }
 
 export const Pie = observer(({ id, updateJson }: PieProps) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
 
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
@@ -88,7 +93,6 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     const frame = useFrame(data?.frame?.name, {
         selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
     });
-
 
     /**
      * @description Trying out different approach for TrendLine, work in progress

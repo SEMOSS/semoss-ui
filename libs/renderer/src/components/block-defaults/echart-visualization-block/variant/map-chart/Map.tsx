@@ -1,14 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { styled } from "@mui/material";
 import EChartsReact from "echarts-for-react";
 import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
 import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
-import { useBlock, useBlockSettings, useFrame } from "../../../../../hooks";
+
+import { styled } from "@semoss/ui";
+
+import { useBlock, useFrame } from "../../../../../hooks";
 import { computed } from "mobx";
 import { BlockComponent } from "../../../../../store";
+
 import fetchWorldMap from "./map-utility";
 import { getSelector } from "./MapSelector";
 import { processData } from "./MapChartProcessData";
@@ -16,12 +19,6 @@ import { formatdatapoints } from "./MapChartTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { getValueByPath } from "../../../../../utility";
 import { updateColorData } from "../shared/chart-utility";
-
-const StyledChartContainer = styled("div")(() => ({
-    width: "fit-content",
-    minWidth: "50px",
-    minHeight: "50px",
-}));
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -62,7 +59,7 @@ export interface EchartVisualizationBlockDef {
                 data: any[];
                 coordinateSystem: string;
             }[];
-            tooltip:{}
+            tooltip: {};
         };
         frame: {
             name: string;

@@ -81,7 +81,7 @@ export const AccordionBlock: BlockComponent = observer(({ id }) => {
                 sx={{
                     backgroundColor: data.triggerBgColor,
                 }}
-                expandIcon={<ArrowDropDown />}
+                expandIcon={data.showExpandIcon ? <ArrowDropDown /> : null}
             >
                 <Stack sx={{ width: "100%" }}>
                     <Slot slot={slots.header} />

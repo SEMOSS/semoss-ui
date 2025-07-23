@@ -49,7 +49,7 @@ export const AppFilter = (props: AppFilterProps) => {
                     <List.ItemText
                         disableTypography
                         primary={
-                            <Typography variant="h6">Filter By</Typography>
+                            <Typography variant="h6">Filter Byss</Typography>
                         }
                     />
                 </List.Item>

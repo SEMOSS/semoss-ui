@@ -50,24 +50,16 @@ export const CookieWrapper = observer((props: CookieWrapperProps) => {
         const permissionGranted = localStorage.getItem(cookieName);
 
         if (!permissionGranted) {
-            const theme = configStore.store.config.theme;
-            if (theme && theme['THEME_MAP']) {
-                try {
-                    const themeMap = JSON.parse(theme['THEME_MAP'] as string);
+            try {
+                const themeCookieBanner =
+                    configStore.theme.cookiePolicyBannerReact;
 
-                    const themeCookieBanner = themeMap[
-                        'cookiePolicyBannerReact'
-                    ]
-                        ? themeMap['cookiePolicyBannerReact']
-                        : '';
-
-                    if (themeCookieBanner) {
-                        setCookieBanner(themeCookieBanner);
-                        setVisible(true);
-                    }
-                } catch {
-                    console.error('Unable to parse theme for cookie wrapper');
+                if (themeCookieBanner) {
+                    setCookieBanner(themeCookieBanner);
+                    setVisible(true);
                 }
+            } catch {
+                console.error('Unable to parse theme for cookie wrapper');
             }
         }
 

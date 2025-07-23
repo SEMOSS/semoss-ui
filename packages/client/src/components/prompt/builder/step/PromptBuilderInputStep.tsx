@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { TOKEN_TYPE_TEXT, TOKEN_TYPE_INPUT } from '../../prompt.constants';
 import { Builder, Token } from '../../prompt.types';
 import { StyledStepPaper, StyledTextPaper } from '../../prompt.styled';
@@ -12,6 +12,7 @@ export const PromptBuilderInputStep = (props: {
     const [tokens, setTokens] = useState<Token[]>([]);
     // Tokens in input, necessary to accomodate multiple word inputs
     const [selectedInputTokens, setSelectedInputTokens] = useState([]);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     // PromptBuilderInputSettings
     const builderInputSettings = props.builder.inputs.value as Token[];
@@ -30,6 +31,41 @@ export const PromptBuilderInputStep = (props: {
         setInitLoadComplete(true);
     }, [builderInputSettings]);
 
+    useEffect(() => {
+        function handleMouseUp() {
+            const selection = window.getSelection();
+            if (!selection || selection.isCollapsed) return;
+
+            const wrapper = containerRef.current;
+            const tokenSpans = wrapper
+                ? Array.from(wrapper.querySelectorAll('[data-token-index]'))
+                : [];
+            if (tokenSpans.length === 0) return;
+
+            const selectedIndices: number[] = [];
+            tokenSpans.forEach((span) => {
+                if (selection.containsNode(span, true)) {
+                    const idx = parseInt(
+                        span.getAttribute('data-token-index') || '',
+                        10,
+                    );
+                    if (!isNaN(idx)) selectedIndices.push(idx);
+                }
+            });
+
+            if (selectedIndices.length > 1) {
+                selectedIndices.sort((a, b) => a - b);
+                setSelectedInputTokens(selectedIndices);
+            }
+        }
+
+        const container = containerRef.current;
+        if (container) {
+            container.addEventListener('mouseup', handleMouseUp);
+            return () =>
+                container.removeEventListener('mouseup', handleMouseUp);
+        }
+    }, [tokens]);
     useEffect(() => {
         // updates after user changes input tokens
         if (initLoadComplete) {
@@ -335,7 +371,7 @@ export const PromptBuilderInputStep = (props: {
     return (
         <StyledStepPaper elevation={2} square>
             <Box>
-                <Typography variant="h5">Set Inputs</Typography>
+                <Typography variant="h6">Set Inputs</Typography>
                 <Typography variant="body1">
                     Click on a word or consecutive words to set it as a
                     user-defined input. Click a defined input to deselect it.
@@ -344,17 +380,24 @@ export const PromptBuilderInputStep = (props: {
             <StyledTextPaper>
                 {Array.from(tokens, (token: Token) => (
                     <React.Fragment key={token.index}>
-                        <PromptSetToken
-                            token={token}
-                            selectedInputTokens={selectedInputTokens}
-                            isSelectedLinkable={isSelectedLinkable()}
-                            addSelectedInputToken={addSelectedInputToken}
-                            removeSelectedInputToken={removeSelectedInputToken}
-                            resetInputToken={resetInputToken}
-                            setSelectedTokensAsInputs={
-                                setSelectedTokensAsInputs
-                            }
-                        />
+                        <span
+                            style={{ display: 'inline-block' }}
+                            data-token-index={token.index}
+                        >
+                            <PromptSetToken
+                                token={token}
+                                selectedInputTokens={selectedInputTokens}
+                                isSelectedLinkable={isSelectedLinkable()}
+                                addSelectedInputToken={addSelectedInputToken}
+                                removeSelectedInputToken={
+                                    removeSelectedInputToken
+                                }
+                                resetInputToken={resetInputToken}
+                                setSelectedTokensAsInputs={
+                                    setSelectedTokensAsInputs
+                                }
+                            />
+                        </span>
                         {token.display.endsWith('\n') ? (
                             <div style={{ flex: 1 }} />
                         ) : (

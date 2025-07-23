@@ -1,0 +1,16 @@
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<line x1="4.5" y1="11.5" x2="19.5" y2="11.5" stroke="#0471F0" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="12.5" y1="4.5" x2="12.5" y2="19.5" stroke="#0471F0" stroke-linecap="round" stroke-linejoin="round"/>
+<circle cx="9.59688" cy="6.93334" r="0.8" fill="#9FCFFF"/>
+<circle cx="18.1359" cy="15.4667" r="0.8" fill="#9FCFFF"/>
+<circle cx="18.1359" cy="6.93334" r="0.8" fill="#9FCFFF"/>
+<circle cx="9.59688" cy="15.4667" r="0.8" fill="#9FCFFF"/>
+<circle cx="6.40156" cy="6.4" r="0.8" fill="#0471F0"/>
+<circle cx="14.9328" cy="14.9333" r="0.8" fill="#0471F0"/>
+<circle cx="14.9328" cy="6.4" r="0.8" fill="#0471F0"/>
+<circle cx="6.40156" cy="14.9333" r="0.8" fill="#0471F0"/>
+<circle cx="6.93281" cy="9.6" r="0.8" fill="#9FCFFF"/>
+<circle cx="15.4641" cy="18.1333" r="0.8" fill="#9FCFFF"/>
+<circle cx="15.4641" cy="9.6" r="0.8" fill="#9FCFFF"/>
+<circle cx="6.93281" cy="18.1333" r="0.8" fill="#9FCFFF"/>
+</svg>
