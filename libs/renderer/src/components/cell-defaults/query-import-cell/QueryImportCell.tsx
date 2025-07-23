@@ -7,7 +7,7 @@ import {
 } from "@mui/icons-material";
 
 import { usePixel } from "@semoss/sdk/react";
-import { DATA_FRAME_TYPES as FRAME_TYPES } from "@semoss/sdk";
+import { DATA_FRAME_TYPES } from "@semoss/sdk";
 import {
     styled,
     Button,
@@ -389,14 +389,16 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                     });
                                 }}
                             >
-                                {Object.values(FRAME_TYPES).map((frame, i) => (
-                                    <StyledSelectItem
-                                        key={`${i}-${cell.id}-${frame.value}`}
-                                        value={frame.value}
-                                    >
-                                        {frame.display}
-                                    </StyledSelectItem>
-                                ))}
+                                {Object.values(DATA_FRAME_TYPES).map(
+                                    (frame, i) => (
+                                        <StyledSelectItem
+                                            key={`${i}-${cell.id}-${frame.value}`}
+                                            value={frame.value}
+                                        >
+                                            {frame.display}
+                                        </StyledSelectItem>
+                                    ),
+                                )}
                             </StyledSelect>
                             <StyledTextField
                                 title="Set Frame Variable Name"
