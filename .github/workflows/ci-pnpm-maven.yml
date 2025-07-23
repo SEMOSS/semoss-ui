@@ -122,9 +122,9 @@ jobs:
             - name: Upload build artifacts
               uses: actions/upload-artifact@v4
               with:
-                name: semoss-ui-build
+                name: semoss-ui-build/packages
                 path: | 
-                    packages/client/dist
+                    packages/client
                     packages/legacy
 
             # - name: Save artifacts
