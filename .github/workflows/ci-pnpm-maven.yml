@@ -402,7 +402,7 @@ jobs:
             #       echo "list files under legacy folder"
             #       ls -als legacy
 
-             - name: Install maven
+            - name: Install maven
               run: |
                   apt-get update
                   apt-get install -y maven
