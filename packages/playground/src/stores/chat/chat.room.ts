@@ -258,7 +258,7 @@ export class ChatRoom {
 
 			// wait for the pixel to run
 			const response = await runPixel<[PixelMessage[]]>(
-				`GetRoomMessages(roomId=["${this._store.roomId}"]);`,
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
 			);
 
 			const { output, operationType } = response.pixelReturn[0];

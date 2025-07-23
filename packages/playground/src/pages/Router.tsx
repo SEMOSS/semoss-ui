@@ -44,7 +44,9 @@ export const Router = () => {
     }
 
     return (
-        <HashRouter >
+        <HashRouter future={{
+            v7_startTransition: true
+        }} >
             <Routes>
                 <Route element={<AuthenticatedLayout />}>
                     <Route element={<MainLayout />}>
