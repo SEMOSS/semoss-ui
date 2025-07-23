@@ -26,3 +26,18 @@ packages/legacy/app.constants.js
 
 .nx/cache
 .nx/workspace-data
+
+# Ignore the generated files for vscode extension
+*.vsix
+out/
+
+# VSCode extension
+.vscode-test/
+.vscode-test-web/
+coverage/
+.nyc_output/
+npm-debug.log
+yarn-error.log
+*.tgz
+.vscode/.ropeproject
+.idea/
