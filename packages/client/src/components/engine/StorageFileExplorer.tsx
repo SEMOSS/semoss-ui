@@ -86,8 +86,8 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
      */
     const handleDownload = (path: string) => {
         console.log('Download initiated for path:', path);
-        // The actual download logic is handled in FileExplorer component
-        // This is just a callback for logging purposes
+        // In a real implementation, you might want to show download progress
+        // or a success notification
     };
 
     /**
