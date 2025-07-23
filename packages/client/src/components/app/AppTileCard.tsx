@@ -784,6 +784,11 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         </StyledOverlayContent>
                     </StyledContainer>
                 )}
+                <div
+                    onMouseEnter={() => setHoveredCard(app.project_id)}
+                    onMouseLeave={() => setHoveredCard(null)}
+                    style={{ position: 'relative' }}
+                >
                 <Link
                     href={href}
                     rel="noopener noreferrer"
@@ -936,6 +941,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         </StyledCardActions>
                     </StyledContent>
                 </Link>
+                </div>
                 <Menu
                     anchorEl={anchorEl}
                     open={open}
