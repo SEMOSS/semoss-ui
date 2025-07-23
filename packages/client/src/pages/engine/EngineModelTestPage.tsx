@@ -10,12 +10,15 @@ import {
     TextField,
     styled,
     Alert,
-    Markdown
+    Markdown,
+    Divider
 } from '@semoss/ui';
 
 import { useEngine, useRootStore } from '@/hooks';
 import { EngineModelTestSidebar } from '@/components/settings';
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
+import { IconButton } from '@mui/material';
+import { Send as SendIcon, CopyAll as CopyAllIcon, Refresh as RefreshIcon } from '@mui/icons-material';
 
 const StyledLayout = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -49,27 +52,55 @@ const StyledChatContainer = styled('div')(({ theme }) => ({
 const StyledMessagesContainer = styled('div')(({ theme }) => ({
     flex: 1,
     overflowY: 'auto',
-    padding: theme.spacing(1),
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
-    backgroundColor: theme.palette.background.default,
+    backgroundColor: 'transparent',
 }));
 
 const StyledMessageBubble = styled('div')<{ isUser: boolean }>(({ theme, isUser }) => ({
     padding: theme.spacing(2),
     marginBottom: theme.spacing(1),
     borderRadius: theme.shape.borderRadius,
-    backgroundColor: isUser ? theme.palette.primary.main : theme.palette.grey[100],
-    color: isUser ? theme.palette.primary.contrastText : theme.palette.text.primary,
+    backgroundColor: isUser ? theme.palette.grey[100] : 'transparent',
+    color: theme.palette.text.primary,
     alignSelf: isUser ? 'flex-end' : 'flex-start',
-    maxWidth: '80%',
+    maxWidth: '100%',
     wordWrap: 'break-word',
+    margin: theme.spacing(1, 1)
 }));
 
 const StyledInputContainer = styled('div')(({ theme }) => ({
     display: 'flex',
-    gap: theme.spacing(1),
     alignItems: 'flex-end',
+    margin: theme.spacing(1, 1),
+    maxWidth: '100%',
+    '& .MuiInputBase-root': {
+        padding: '0% 1%'
+    }
+}));
+
+const StyledForm = styled('form')(() => ({
+    width: '100%',
+    height: '5%'
+}));
+
+const StyledSendButton = styled(IconButton)(({ theme }) => ({
+    padding: 0,
+    '&:hover': { backgroundColor: 'transparent', color: theme.palette.primary.main }
+}));
+
+const StyledDivider = styled(Divider)({
+    marginTop: 5,
+    marginBottom: 1.5
+});
+
+const StyledChatTitle = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: theme.spacing(2),
+    padding: theme.spacing(1, 1),
+    background: theme.palette.primary.selected
 }));
 
 interface Message {
@@ -81,8 +112,8 @@ interface Message {
 }
 
 interface Model {
-    database_id: string;
-    database_name: string;
+    model_id: string;
+    model_name: string;
     tag?: string;
 }
 
@@ -91,10 +122,10 @@ export const EngineModelTestPage = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [messages, setMessages] = useState<Message[]>([]);
-    
+
     const [selectedModel, setSelectedModel] = useState<Model>({
-        database_id: active.id,
-        database_name: '',
+        model_id: active.id,
+        model_name: '',
     });
     const [temperature, setTemperature] = useState<number>(0.1);
     const [maxTokens, setMaxTokens] = useState<number>(2000);
@@ -114,7 +145,7 @@ export const EngineModelTestPage = () => {
     const createNewInsight = async () => {
         setIsInsightLoading(true);
         try {
-            const { insightId: newId } = await runPixelTwo('1+1;', 'new');
+            const { insightId: newId } = await runPixel('1+1;', 'new');
             setInsightId(newId);
         } catch (e) {
             setError(e.message || 'Failed to create new chat session.');
@@ -125,8 +156,8 @@ export const EngineModelTestPage = () => {
 
     useEffect(() => {
         setSelectedModel({
-            database_id: active.id,
-            database_name: '',
+            model_id: active.id,
+            model_name: '',
         });
         setMessages([]);
         createNewInsight(); // Get a new insightId from backend
@@ -145,7 +176,7 @@ export const EngineModelTestPage = () => {
         };
         setMessages(prev => [...prev, userMessage]);
         try {
-            const pixel = `LLM(engine="${selectedModel.database_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
+            const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
             const response = await monolithStore.runQuery(pixel, insightId);
             const { output, operationType } = response.pixelReturn[0];
             if (operationType.indexOf('ERROR') > -1) {
@@ -188,20 +219,7 @@ export const EngineModelTestPage = () => {
                 <StyledPaper variant="elevation" elevation={2} square>
                     <Stack spacing={2}>
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                            <Typography variant="h5">Test Model</Typography>
-                            {messages.length > 0 && (
-                                <Button
-                                    variant="outlined"
-                                    size="small"
-                                    onClick={() => {
-                                        setMessages([]);
-                                        createNewInsight();
-                                    }}
-                                    disabled={isLoading || isInsightLoading}
-                                >
-                                    Clear Chat
-                                </Button>
-                            )}
+                            <Typography variant="h4">Test Model</Typography>
                         </Stack>
                         <Typography variant="body1" sx={{ marginBottom: '20px' }}>
                             Test and interact with this LLM model. Ask questions, experiment with different prompts,
@@ -214,6 +232,23 @@ export const EngineModelTestPage = () => {
                         )}
                         <StyledChatContainer>
                             <StyledMessagesContainer>
+                                <StyledChatTitle>
+                                    <Typography variant="subtitle1">Chat History</Typography>
+                                    {messages.length > 0 && (
+                                        <Button
+                                            variant="text"
+                                            startIcon={<RefreshIcon />}
+                                            size="small"
+                                            onClick={() => {
+                                                setMessages([]);
+                                                createNewInsight();
+                                            }}
+                                            disabled={isLoading || isInsightLoading}
+                                        >
+                                            Clear Chat
+                                        </Button>
+                                    )}
+                                </StyledChatTitle>
                                 {isInsightLoading ? (
                                     <Typography variant="body2" color="secondary" sx={{ textAlign: 'center', mt: 4 }}>
                                         Initializing chat session...
@@ -226,11 +261,23 @@ export const EngineModelTestPage = () => {
                                     messages.map((message, index) => (
                                         <div key={message.id}>
                                             <StyledMessageBubble isUser={message.isUser}>
+                                                {!message.isUser && <Typography variant="subtitle2" sx={{mb: 2}}>Response</Typography>}
                                                 <div><Markdown>{message.content}</Markdown></div>
+                                                {!message.isUser && <StyledDivider></StyledDivider>}
                                                 {message.tokens && (
-                                                    <Typography variant="caption" sx={{ opacity: 0.7, mt: 1, display: 'block' }}>
-                                                        Tokens: {message.tokens}
-                                                    </Typography>
+                                                    <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
+                                                        <Typography variant="caption" sx={{ opacity: 0.7 }}>
+                                                            Tokens: {message.tokens}
+                                                        </Typography>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => navigator.clipboard.writeText(message.content)}
+                                                            sx={{ padding: 0 }}
+                                                            aria-label="Copy tokens to clipboard"
+                                                        >
+                                                            <CopyAllIcon fontSize="small" sx={{ opacity: 0.7 }} />
+                                                        </IconButton>
+                                                    </Stack>
                                                 )}
                                             </StyledMessageBubble>
                                         </div>
@@ -244,34 +291,38 @@ export const EngineModelTestPage = () => {
                                         </Typography>
                                     </StyledMessageBubble>
                                 )}
+                                <StyledForm onSubmit={handleSubmit(sendMessage)} >
+                                    <StyledInputContainer>
+                                        <Controller
+                                            name="prompt"
+                                            control={control}
+                                            render={({ field }) => (
+                                                <TextField
+                                                    {...field}
+                                                    multiline
+                                                    maxRows={4}
+                                                    placeholder="Ask a question..."
+                                                    variant="outlined"
+                                                    fullWidth
+                                                    disabled={isLoading || isInsightLoading}
+                                                    InputProps={{
+                                                        endAdornment: (
+                                                            <StyledSendButton
+                                                                type="submit"
+                                                                disabled={isLoading || !promptValue?.trim() || isInsightLoading}
+                                                                aria-label="Send message"
+                                                                disableRipple={true}
+                                                            >
+                                                                {isLoading ? <CircularProgress size={20} /> : <SendIcon />}
+                                                            </StyledSendButton>
+                                                        ),
+                                                    }}
+                                                />
+                                            )}
+                                        />
+                                    </StyledInputContainer>
+                                </StyledForm>
                             </StyledMessagesContainer>
-                            <form onSubmit={handleSubmit(sendMessage)}>
-                                <StyledInputContainer>
-                                    <Controller
-                                        name="prompt"
-                                        control={control}
-                                        render={({ field }) => (
-                                            <TextField
-                                                {...field}
-                                                multiline
-                                                maxRows={4}
-                                                placeholder="Enter your prompt here..."
-                                                variant="outlined"
-                                                fullWidth
-                                                disabled={isLoading || isInsightLoading}
-                                            />
-                                        )}
-                                    />
-                                    <Button
-                                        type="submit"
-                                        variant="contained"
-                                        disabled={isLoading || !promptValue?.trim() || isInsightLoading}
-                                        sx={{ minWidth: '100px' }}
-                                    >
-                                        {isLoading ? <CircularProgress size={20} /> : 'Send'}
-                                    </Button>
-                                </StyledInputContainer>
-                            </form>
                         </StyledChatContainer>
                     </Stack>
                 </StyledPaper>

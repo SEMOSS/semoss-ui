@@ -50,8 +50,8 @@ const StyledParameterHeader = styled('div')(() => ({
 }));
 
 interface Model {
-    database_id: string;
-    database_name: string;
+    model_id: string;
+    model_name: string;
     tag?: string;
 }
 
@@ -89,20 +89,20 @@ export const EngineModelTestSidebar = ({
 
     // Fetch model information and validate it's a text-generation model
     useEffect(() => {
-        if (selectedModel.database_id) {
+        if (selectedModel.model_id) {
             const fetchModelInfo = async () => {
                 try {
-                    const pixel = `GetEngineInfo(engine="${selectedModel.database_id}")`;
+                    const pixel = `GetEngineInfo(engine="${selectedModel.model_id}")`;
                     const response = await monolithStore.runQuery(pixel);
                     const { output, operationType } = response.pixelReturn[0];
 
                     if (operationType.indexOf('ERROR') === -1) {
                         setModelInfo(output);
                         // Update model name if we got it from the info
-                        if (output.database_name && !selectedModel.database_name) {
+                        if (output.database_name && !selectedModel.model_name) {
                             setSelectedModel({
                                 ...selectedModel,
-                                database_name: output.database_name,
+                                model_name: output.database_name,
                                 tag: output.tag || selectedModel.tag,
                             });
                         }
@@ -119,7 +119,7 @@ export const EngineModelTestSidebar = ({
 
             fetchModelInfo();
         }
-    }, [selectedModel.database_id, monolithStore, selectedModel, setSelectedModel]);
+    }, [selectedModel.model_id, monolithStore, selectedModel, setSelectedModel]);
 
     const handleTemperatureChange = (event: Event, newValue: number | number[]) => {
         setTemperature(Array.isArray(newValue) ? newValue[0] : newValue);
@@ -151,11 +151,11 @@ export const EngineModelTestSidebar = ({
             <Stack spacing={2}>
                 <Typography variant="h6">Model Information</Typography>
                 <Typography variant="body2">
-                    <strong>Model ID:</strong> {selectedModel.database_id}
+                    <strong>Model ID:</strong> {selectedModel.model_id}
                 </Typography>
-                {selectedModel.database_name && (
+                {selectedModel.model_name && (
                     <Typography variant="body2">
-                        <strong>Model Name:</strong> {selectedModel.database_name}
+                        <strong>Model Name:</strong> {selectedModel.model_name}
                     </Typography>
                 )}
                 {selectedModel.tag && (
