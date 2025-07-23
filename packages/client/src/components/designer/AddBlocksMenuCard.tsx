@@ -95,7 +95,7 @@ export interface AddBlocksMenuItemProps {
     handleOnTrashClick: (blockId: string, blockName: string) => void;
 
     /** Handle the edit click */
-    handleOnEditClick?: (blockId: string, item: DesignerMenuItem) => void;
+    handleOnEditClick: (blockId: string, item: DesignerMenuItem) => void;
 }
 
 /**

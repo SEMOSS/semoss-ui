@@ -187,8 +187,6 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
             const response = await monolithStore.runQuery<[true]>(
                 `AddBlock(name=["${data.name}"], section=["${
                     data.section
-                }"], helperText=["${
-                    data.helperText
                 }"], json=["<encode>${JSON.stringify(
                     newClientBlock,
                 )}</encode>"]);`,
