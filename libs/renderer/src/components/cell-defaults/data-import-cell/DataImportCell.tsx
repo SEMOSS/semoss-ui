@@ -13,6 +13,7 @@ import {
 } from "@mui/icons-material";
 
 import { usePixel } from "@semoss/sdk/react";
+import { DATA_FRAME_TYPES as FRAME_TYPES } from "@semoss/sdk";
 import {
     styled,
     Button,
@@ -56,21 +57,6 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
-
-const FRAME_TYPES = {
-    PY: {
-        display: "Python",
-        value: "PY",
-    },
-    GRID: {
-        display: "Grid",
-        value: "GRID",
-    },
-    NATIVE: {
-        display: "Native",
-        value: "NATIVE",
-    },
-};
 
 const JOIN_ICONS = {
     inner: <JoinInner />,
