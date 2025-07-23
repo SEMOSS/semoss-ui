@@ -123,10 +123,8 @@ jobs:
               run: |
                 mkdir -p semoss-ui-build/packages
                 mkdir -p semoss-ui-build/packages/client
-                mkdir -p semoss-ui-build/packages/legacy
                 cp -r packages/client/dist semoss-ui-build/packages/client
-                cp -r packages/legacy/dist semoss-ui-build/packages/legacy
-                cp -r packages/legacy/app.constants.js semoss-ui-build/packages/legacy
+                cp -r packages/legacy semoss-ui-build/packages
                 mv semoss-ui-build/packages/legacy/index.html semoss-ui-build/ || true
             
             - name: Upload build artifacts
