@@ -151,21 +151,13 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
         e.stopPropagation();
         // For now, use a hardcoded file path - in a real implementation,
         // this would open a file picker dialog
-        const localFilePath = 'C:/Users/relkhishen/Downloads/file.txt';
+        const localFilePath = "C:/Users/relkhishen/Downloads/file.txt";
         onUpload(path, localFilePath);
     };
 
-    const handleDownloadClick = async (
-        e: React.MouseEvent<HTMLButtonElement>,
-    ) => {
+    const handleDownloadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
-        try {
-            await onDownload(path);
-        } catch (error) {
-            console.error('Download failed:', error);
-            // You could add a notification here to show the error to the user
-            alert(`Download failed: ${error.message}`);
-        }
+        onDownload(path);
     };
 
     // Transform storage files into structured format for storage type
