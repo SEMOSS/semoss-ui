@@ -1,10 +1,11 @@
 import { useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import { styled, ToggleButtonGroup, ToggleButton } from "@mui/material";
 
-import { useBlock, useDebounce } from "../../../hooks";
+import { styled, ToggleButtonGroup, ToggleButton } from "@mui/material";
+import { debounced } from "@semoss/sdk/react";
+
+import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
-import { debounced } from "../../../utility";
 
 const StyledContainer = styled("div")(() => ({
     padding: "4px",

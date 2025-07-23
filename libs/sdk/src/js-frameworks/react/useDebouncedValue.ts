@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from 'react';
 
 /**
  * Debouncea
@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
  * @param delay - delay timer
  * @returns debounced value
  */
-export const useDebounceValue = <T>(value: T, delay = 500) => {
+export const useDebouncedValue = <T>(value: T, delay = 500) => {
     const [debouncedValue, setDebouncedValue] = useState<T>(undefined);
     const timerRef = useRef<ReturnType<typeof setTimeout>>();
 
