@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import Autocomplete from '@mui/material/Autocomplete';
 import Chip from '@mui/material/Chip';
@@ -22,7 +22,7 @@ import {
     styled,
 } from '@semoss/ui';
 
-import { Env, usePixel } from '@semoss/sdk/react';
+import { Env, usePixel, debounced } from '@semoss/sdk/react';
 
 import { ENGINE_IMAGES } from '@/pages/import/import.constants';
 import BRAIN from '@/assets/img/BRAIN.png';
@@ -187,14 +187,20 @@ interface SearchProps {
 export const Search = observer(({ renderInput }: SearchProps) => {
     // TODO: navigation should be done through callback
     const navigate = useNavigate();
+    const location = useLocation();
     const { configStore } = useRootStore();
     const searchValue = configStore.store.globalSearch || '';
     const [open, setOpen] = useState(false);
     const [selectedCategories, setSelectedCategories] = useState([]);
+
+    const [inputValue, setInputValue] = useState('');
+
     let data = [];
+
     const isAll = selectedCategories.some(
         (category) => category.name === 'All',
     );
+
     const result = usePixel(`
         MyEngineProject(metaKeys = ${JSON.stringify(
             [],
@@ -202,6 +208,7 @@ export const Search = observer(({ renderInput }: SearchProps) => {
         isAll ? '' : selectedCategories.map((x) => `"${x.type}"`)
     }]]);
         `);
+
     if (result.data !== null && Array.isArray(result.data)) {
         data = result.data.map((x) => {
             return {
@@ -213,8 +220,18 @@ export const Search = observer(({ renderInput }: SearchProps) => {
             };
         });
     }
-    const handleInputChange = (event, newInputValue) => {
+
+    useEffect(() => {
+        configStore.setGlobalSearch('');
+    }, [location?.pathname]);
+
+    const debouncedSet = debounced((event, newInputValue) => {
         configStore.setGlobalSearch(newInputValue);
+    }, 300);
+
+    const handleInputChange = (event, newInputValue) => {
+        setInputValue(newInputValue);
+        debouncedSet(event, newInputValue);
     };
 
     const recentSearchItem = localStorage.getItem(
@@ -314,7 +331,7 @@ export const Search = observer(({ renderInput }: SearchProps) => {
             // onBlur={() => setOpen(false)}
             onClose={() => setOpen(false)}
             groupBy={(option) => option.section || ''}
-            inputValue={searchValue}
+            inputValue={inputValue}
             onInputChange={handleInputChange}
             options={!searchValue?.trim() ? [] : data}
             PopperComponent={CustomPopper}
@@ -357,7 +374,8 @@ export const Search = observer(({ renderInput }: SearchProps) => {
                                     label: option.label,
                                     id: option.id,
                                     type: option.section,
-                                });
+                                }),
+                                    configStore.setGlobalSearch(''); // Clear search after selection
                             }}
                         >
                             <CatalogItem
