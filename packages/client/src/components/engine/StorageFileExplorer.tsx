@@ -34,7 +34,7 @@ interface StorageFileExplorerProps {
 
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const { id } = props;
-    
+
     const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string>('');
     const [refreshCounter, setRefreshCounter] = useState(0);
@@ -142,7 +142,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     </Button>
                 </div>
             </StyledHeader>
-            
+
             <StyledFileExplorerContainer>
                 <FileExplorer
                     key={refreshCounter}
@@ -156,7 +156,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     onTrashClick={handleDelete}
                 />
             </StyledFileExplorerContainer>
-            
+
             {selectedFile && (
                 <Typography variant="body2" color="textSecondary">
                     Selected: {selectedFile}
