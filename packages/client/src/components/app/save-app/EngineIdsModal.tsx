@@ -49,7 +49,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 
     // Fetch available engines that user has access to
     const availableEngines = usePixel<engine[]>('MyEngines();');
-    console.log("availbale engines   :", availableEngines);
     useEffect(() => {
         // Initialize replacement state when modal opens
         if (open && failedIds.length > 0) {
@@ -241,44 +240,40 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                 )}
                                             </Typography>
                                             {engineDetails?.[id]?.files?.length > 0 && (
-                                                <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                                                    {engineDetails[id].files.map((file) => (
-                                                        <Typography
-                                                            key={file}
-                                                            variant="caption"
-                                                            sx={{
-                                                                backgroundColor: 'grey.100',
-                                                                color: 'text.secondary',
-                                                                px: 1,
-                                                                py: 0.5,
-                                                                borderRadius: 1,
-                                                                fontSize: '0.8rem',
-                                                                fontWeight: 500,
-                                                            }}
-                                                        >
-                                                            {file}
-                                                        </Typography>
-                                                    ))}
-                                                </Stack>
-                                            )}
-                                            {engineDetails?.[id]?.instances?.length > 0 && (
-                                                <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                                                    {engineDetails[id].instances.map((inst, idx) => (
-                                                        <Typography
-                                                            key={idx}
-                                                            variant="caption"
-                                                            sx={{
-                                                                backgroundColor: 'grey.200',
-                                                                color: 'primary.main',
-                                                                px: 1,
-                                                                py: 0.5,
-                                                                borderRadius: 1,
-                                                                fontSize: '0.8rem',
-                                                                fontWeight: 500,
-                                                            }}
-                                                        >
-                                                            {inst}
-                                                        </Typography>
+                                                <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
+                                                    {engineDetails[id].files.map((file, idx) => (
+                                                        <Stack key={file + idx} direction="row" spacing={1} alignItems="center">
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    backgroundColor: 'grey.100',
+                                                                    color: 'text.secondary',
+                                                                    px: 1,
+                                                                    py: 0.5,
+                                                                    borderRadius: 1,
+                                                                    fontSize: '0.8rem',
+                                                                    fontWeight: 500,
+                                                                }}
+                                                            >
+                                                                {file}
+                                                            </Typography>
+                                                            {engineDetails[id].instances?.[idx] !== undefined && (
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{
+                                                                        backgroundColor: 'grey.200',
+                                                                        color: 'primary.main',
+                                                                        px: 1,
+                                                                        py: 0.5,
+                                                                        borderRadius: 1,
+                                                                        fontSize: '0.8rem',
+                                                                        fontWeight: 500,
+                                                                    }}
+                                                                >
+                                                                    {engineDetails[id].instances[idx]}
+                                                                </Typography>
+                                                            )}
+                                                        </Stack>
                                                     ))}
                                                 </Stack>
                                             )}
@@ -381,44 +376,40 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                     {id}
                                                 </Typography>
                                                 {engineDetails?.[id]?.files?.length > 0 && (
-                                                    <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                                                        {engineDetails[id].files.map((file) => (
-                                                            <Typography
-                                                                key={file}
-                                                                variant="caption"
-                                                                sx={{
-                                                                    backgroundColor: 'grey.100',
-                                                                    color: 'text.secondary',
-                                                                    px: 1,
-                                                                    py: 0.5,
-                                                                    borderRadius: 1,
-                                                                    fontSize: '0.8rem',
-                                                                    fontWeight: 500,
-                                                                }}
-                                                            >
-                                                                {file}
-                                                            </Typography>
-                                                        ))}
-                                                    </Stack>
-                                                )}
-                                                {engineDetails?.[id]?.instances?.length > 0 && (
-                                                    <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-                                                        {engineDetails[id].instances.map((inst, idx) => (
-                                                            <Typography
-                                                                key={idx}
-                                                                variant="caption"
-                                                                sx={{
-                                                                    backgroundColor: 'grey.200',
-                                                                    color: 'primary.main',
-                                                                    px: 1,
-                                                                    py: 0.5,
-                                                                    borderRadius: 1,
-                                                                    fontSize: '0.8rem',
-                                                                    fontWeight: 500,
-                                                                }}
-                                                            >
-                                                                {inst}
-                                                            </Typography>
+                                                    <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
+                                                        {engineDetails[id].files.map((file, idx) => (
+                                                            <Stack key={file + idx} direction="row" spacing={1} alignItems="center">
+                                                                <Typography
+                                                                    variant="caption"
+                                                                    sx={{
+                                                                        backgroundColor: 'grey.100',
+                                                                        color: 'text.secondary',
+                                                                        px: 1,
+                                                                        py: 0.5,
+                                                                        borderRadius: 1,
+                                                                        fontSize: '0.8rem',
+                                                                        fontWeight: 500,
+                                                                    }}
+                                                                >
+                                                                    {file}
+                                                                </Typography>
+                                                                {engineDetails[id].instances?.[idx] !== undefined && (
+                                                                    <Typography
+                                                                        variant="caption"
+                                                                        sx={{
+                                                                            backgroundColor: 'grey.200',
+                                                                            color: 'primary.main',
+                                                                            px: 1,
+                                                                            py: 0.5,
+                                                                            borderRadius: 1,
+                                                                            fontSize: '0.8rem',
+                                                                            fontWeight: 500,
+                                                                        }}
+                                                                    >
+                                                                        {engineDetails[id].instances[idx]}
+                                                                    </Typography>
+                                                                )}
+                                                            </Stack>
                                                         ))}
                                                     </Stack>
                                                 )}
@@ -472,8 +463,8 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                                         }}
                                                                     >
                                                                         (
-                                                                        {engine.database_id ||
-                                                                            engine.app_id}
+                                                                        {engine.database_type ||
+                                                                            engine.app_type}
                                                                         )
                                                                     </span>
                                                                 </MenuItem>

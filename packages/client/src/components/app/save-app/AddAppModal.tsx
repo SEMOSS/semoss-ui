@@ -136,6 +136,8 @@ export const AddAppModal = (props: AddAppProps) => {
     const [successIds, setSuccessIds] = useState<string[]>([]);
     const [failedIds, setFailedIds] = useState<string[]>([]);
     const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
+    const [engineIdToName, setEngineIdToName] = useState<Record<string, string>>({});
+    const [engineDetails, setEngineDetails] = useState<Record<string, { files: string[]; instances: (string | number)[] }>>({});
 
 
     const defaultFormValues: AddAppForm = {
@@ -173,6 +175,31 @@ export const AddAppModal = (props: AddAppProps) => {
             const failed = output.engineIds.failed ? Object.keys(output.engineIds.failed) : [];
             setSuccessIds(success);
             setFailedIds(failed);
+            const idToName: Record<string, string> = {};
+            if (output.engineIds.success) {
+                Object.entries(output.engineIds.success).forEach(([id, obj]) => {
+                    idToName[id] = (obj as { engineName?: string }).engineName || '';
+                });
+            }
+            setEngineIdToName(idToName);
+            const engineDetails: Record<string, { files: string[]; instances: (string | number)[] }> = {};
+            if (output.engineIds.success) {
+                Object.entries(output.engineIds.success).forEach(([id, obj]) => {
+                    engineDetails[id] = {
+                        files: (obj as any).files?.map((f: any) => f.filename) || [],
+                        instances: (obj as any).files?.map((f: any) => f.instances) || [],
+                    };
+                });
+            }
+            if (output.engineIds.failed) {
+                Object.entries(output.engineIds.failed).forEach(([id, obj]) => {
+                    engineDetails[id] = {
+                        files: (obj as any).files?.map((f: any) => f.filename) || [],
+                        instances: (obj as any).files?.map((f: any) => f.instances) || [],
+                    };
+                });
+            }
+            setEngineDetails(engineDetails);
             setIsUploadProjectApp(true);
             setPendingProjectId(output.project_id);
             setShowEngineModal(true);
@@ -205,8 +232,7 @@ export const AddAppModal = (props: AddAppProps) => {
                 return;
             }
             const setProjectMetadataResponse = await monolithStore.runQuery(
-                `SetProjectMetadata(project=["${
-                    createProjectOutput.project_id
+                `SetProjectMetadata(project=["${createProjectOutput.project_id
                 }"], meta=[${JSON.stringify({
                     tag: data['tags'],
                     description: data['description'],
@@ -282,24 +308,25 @@ export const AddAppModal = (props: AddAppProps) => {
 
     return (
         <>
-        <SaveAppModal
-            open={open}
-            handleClose={handleClose}
-            title="Upload app from my computer"
-            steps={projectZipFormSteps}
-            defaultFormValues={defaultFormValues}
-            handleFormSubmit={createApp}
-            errorMessage="There was an error creating your app. Please check your zip file and try again."
-        />
-         <EngineIdsModal
-            open={showEngineModal}
-            successIds={successIds}
-            failedIds={failedIds}
-            onClose={handleEngineModalOk}
-            appId={pendingProjectId || ''}
-            isUploadProjectApp={isUploadProjectApp}
-            engineDetails={{}}
-        />
+            <SaveAppModal
+                open={open}
+                handleClose={handleClose}
+                title="Upload app from my computer"
+                steps={projectZipFormSteps}
+                defaultFormValues={defaultFormValues}
+                handleFormSubmit={createApp}
+                errorMessage="There was an error creating your app. Please check your zip file and try again."
+            />
+            <EngineIdsModal
+                open={showEngineModal}
+                successIds={successIds}
+                failedIds={failedIds}
+                onClose={handleEngineModalOk}
+                appId={pendingProjectId || ''}
+                isUploadProjectApp={isUploadProjectApp}
+                engineIdToName={engineIdToName}
+                engineDetails={engineDetails}
+            />
         </>
     );
 };
