@@ -4,6 +4,7 @@ on:
         branches:
             - dev
             - main
+            - artifact-generation
     pull_request:
         branches:
             - dev
@@ -89,6 +90,20 @@ jobs:
               run: |
                   /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
                   rm -rf .m2/repository/org/semoss
+
+            # - name: Prepare artifact folder structure
+            #   run: |
+            #     mkdir -p semoss-ui-build/packages
+            #     cp -r packages/client/dist semoss-ui-build/packages/
+            #     cp -r packages/legacy semoss-ui-build/packages/
+            #     mv semoss-ui-build/packages/legacy/index.html semoss-ui-build/ || true
+            
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                name: test-build
+                path: | 
+                    packages/
 
             # - name: Save artifacts
             #   if: success()
