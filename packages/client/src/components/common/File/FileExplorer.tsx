@@ -155,18 +155,29 @@ export const FileExplorer = (props: FileExplorerProps) => {
         if (type !== 'storage') return;
         
         try {
-            // First, pull the file from storage to the server
-            const pullQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="/");`;
-            const pullResponse = await monolithStore.runQuery(pullQuery);
-            console.log('Pull response:', pullResponse);
-            
             // Extract the file name from the path
             const fileName = filePath.split('/').pop() || 'download';
             
-            // Get the file key for download using DownloadAsset
-            const downloadQuery = `DownloadAsset(filePath=["/${fileName}"], space=["insight"]);`;
+            // First, pull the file from storage to the server with a unique path
+            const uniquePath = `/temp_${Date.now()}_${fileName}`;
+            const pullQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="${uniquePath}");`;
+            const pullResponse = await monolithStore.runQuery(pullQuery);
+            console.log('Pull response:', pullResponse);
+            
+            // Check if pull was successful
+            if (pullResponse.errors && pullResponse.errors.length > 0) {
+                throw new Error(`Failed to pull file from storage: ${pullResponse.errors.join(', ')}`);
+            }
+            
+            // Get the file key for download using DownloadAsset with the correct path
+            const downloadQuery = `DownloadAsset(filePath=["${uniquePath}"], space=["insight"]);`;
             const downloadResponse = await monolithStore.runQuery(downloadQuery);
             console.log('Download response:', downloadResponse);
+            
+            // Check if download asset was successful
+            if (downloadResponse.errors && downloadResponse.errors.length > 0) {
+                throw new Error(`Failed to get download key: ${downloadResponse.errors.join(', ')}`);
+            }
             
             // Get the file key from the response
             const fileKey = downloadResponse.pixelReturn[0]?.output;
@@ -178,10 +189,18 @@ export const FileExplorer = (props: FileExplorerProps) => {
             // Use the existing download mechanism to trigger browser download
             await monolithStore.download(configStore.store.insightID, fileKey);
             
+            // Clean up the temporary file
+            try {
+                await monolithStore.runQuery(`DeleteAsset(filePath=["${uniquePath}"], space=["insight"]);`);
+            } catch (cleanupError) {
+                console.warn('Failed to cleanup temporary file:', cleanupError);
+            }
+            
             onDownload(filePath);
         } catch (e) {
             console.error('Download error:', e);
             // You might want to show a notification here
+            throw e; // Re-throw to let the caller handle the error
         }
     };
 
