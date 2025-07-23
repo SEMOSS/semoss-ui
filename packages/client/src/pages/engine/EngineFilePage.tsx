@@ -3,7 +3,6 @@ import { useEngine } from '@/hooks';
 import { FileTable } from '@/components/settings';
 import { StorageFileExplorer } from '@/components/engine/StorageFileExplorer';
 
-
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
     display: 'flex',
@@ -38,10 +37,8 @@ export const EngineFilePage = () => {
 
             <StyledTableContainer>
                 {/* <FileTable id={active.id} /> */}
-                <StorageFileExplorer id={active.id}/>
+                <StorageFileExplorer id={active.id} />
             </StyledTableContainer>
         </StyledContainer>
     );
 };
-
- 
