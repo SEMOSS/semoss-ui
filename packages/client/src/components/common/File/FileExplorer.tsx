@@ -70,7 +70,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onToggleExpand,
     } = props;
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
 
     // Get assets for app/insight types
     const getAssets = usePixel<
@@ -154,14 +154,34 @@ export const FileExplorer = (props: FileExplorerProps) => {
     const handleDownload = async (filePath: string) => {
         if (type !== 'storage') return;
         
-        const downloadQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="/");`;
-
         try {
-            const response = await monolithStore.runQuery(downloadQuery);
-            console.log('Download response:', response);
+            // First, pull the file from storage to the server
+            const pullQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="/");`;
+            const pullResponse = await monolithStore.runQuery(pullQuery);
+            console.log('Pull response:', pullResponse);
+            
+            // Extract the file name from the path
+            const fileName = filePath.split('/').pop() || 'download';
+            
+            // Get the file key for download using DownloadAsset
+            const downloadQuery = `DownloadAsset(filePath=["/${fileName}"], space=["insight"]);`;
+            const downloadResponse = await monolithStore.runQuery(downloadQuery);
+            console.log('Download response:', downloadResponse);
+            
+            // Get the file key from the response
+            const fileKey = downloadResponse.pixelReturn[0]?.output;
+            
+            if (!fileKey) {
+                throw new Error('Failed to get file key for download');
+            }
+            
+            // Use the existing download mechanism to trigger browser download
+            await monolithStore.download(configStore.store.insightID, fileKey);
+            
             onDownload(filePath);
         } catch (e) {
             console.error('Download error:', e);
+            // You might want to show a notification here
         }
     };
 
