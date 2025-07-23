@@ -1,14 +1,8 @@
 import { CSSProperties } from "react";
-import { Upload } from "@mui/icons-material";
 
 import { BlockConfig } from "../../../store";
 import { UploadBlockDef, UploadBlock } from "./UploadBlock";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { buildListener, buildShowField } from "../block-defaults.shared";
-import { InputSettings, QuerySelectionSettings } from "../../block-settings";
-import { UploadSettings } from "../../block-settings/shared/UploadSettings";
-import { SelectSettings } from "../../block-settings/shared/SelectSettings";
-import { SwitchSettings } from "../../block-settings/shared/SwitchSettings";
 
 export const DefaultStyles: CSSProperties = {
     width: "100%",
@@ -70,80 +64,4 @@ export const config: BlockConfig<UploadBlockDef> = {
     },
     slots: {},
     render: UploadBlock,
-    icon: Upload,
-    contentMenu: [
-        {
-            name: "General",
-            children: [
-                {
-                    description: "Value",
-                    render: ({ id }) => (
-                        <UploadSettings
-                            id={id}
-                            label="Value"
-                            path={"value"}
-                            restrictPath={"extensions"}
-                        />
-                    ),
-                },
-                {
-                    description: "Extensions",
-                    render: ({ id }) => (
-                        <SelectSettings
-                            id={id}
-                            label="Extensions"
-                            path={"extensions"}
-                            options={FileTypes}
-                        />
-                    ),
-                },
-                {
-                    description: "Label",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Label" path="label" />
-                    ),
-                },
-                {
-                    description: "Hint",
-                    render: ({ id }) => (
-                        <InputSettings id={id} label="Hint" path="hint" />
-                    ),
-                },
-                {
-                    description: "Loading",
-                    render: ({ id }) => (
-                        <QuerySelectionSettings
-                            id={id}
-                            label="Loading"
-                            path="loading"
-                            queryPath="isLoading"
-                        />
-                    ),
-                },
-                {
-                    description: "Multiple Files",
-                    render: ({ id }) => (
-                        <SwitchSettings
-                            id={id}
-                            label="Multiple Files"
-                            path="multiple"
-                        />
-                    ),
-                },
-            ],
-        },
-        {
-            name: "Conditional",
-            children: [...buildShowField()],
-        },
-        {
-            name: "Pre Process",
-            children: [...buildListener("preProcess")],
-        },
-        {
-            name: "On Change",
-            children: [...buildListener("onChange")],
-        },
-    ],
-    styleMenu: [],
 };
