@@ -9,6 +9,7 @@ import {
     Checkbox,
 } from '@semoss/ui';
 import { useRootStore } from '@/hooks';
+import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
 
 interface AddFileOverlayProps {
     /** Type of file opened */
@@ -32,6 +33,21 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [uploadFile, setUploadFiles] = useState<File>(null);
     const [unzipFile, setUnzipFile] = useState<boolean>(false);
+    const [showEngineIdsModal, setShowEngineIdsModal] = useState(false);
+    const [successIds, setSuccessIds] = useState<string[]>([]);
+    const [failedIds, setFailedIds] = useState<string[]>([]);
+    const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
+    const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
+    const [engineIdToName, setEngineIdToName] = useState<Record<string, string>>({});
+    const [engineDetails, setEngineDetails] = useState<Record<string, { files: string[]; instances: (string | number)[] }>>({});
+
+    const handleEngineIdsModalClose = () => {
+        setShowEngineIdsModal(false);
+        if (pendingUploadPath) {
+            onClose(true, pendingUploadPath);
+            setPendingUploadPath(null);
+        }
+    };
 
     /**
      * Add the file to the app
@@ -63,6 +79,43 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                     await monolithStore.runQuery(
                         `UnzipFile(filePath=["${path}"], space=["${space}"])`,
                     );
+                    const extractResult = await monolithStore.runQuery(
+                        `ExtractAndSetDependencies(filePath=["version/assets"], space=["${space}"]);`
+                    );
+                    let extractOutput = extractResult.pixelReturn[0].output;
+                    const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
+                    const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
+                    setSuccessIds(success);
+                    setFailedIds(failed);
+                    const idToName: Record<string, string> = {};
+                    if (extractOutput.engineIds.success) {
+                        Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
+                            idToName[id] = (obj as { engineName?: string }).engineName || '';
+                        });
+                    }
+                    setEngineIdToName(idToName);
+                    const engineDetails: Record<string, { files: string[]; instances: (string | number)[] }> = {};
+                    if (extractOutput.engineIds.success) {
+                        Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
+                            engineDetails[id] = {
+                                files: (obj as any).files?.map((f: any) => f.filename) || [],
+                                instances: (obj as any).files?.map((f: any) => f.instances) || [],
+                            };
+                        });
+                    }
+                    if (extractOutput.engineIds.failed) {
+                        Object.entries(extractOutput.engineIds.failed).forEach(([id, obj]) => {
+                            engineDetails[id] = {
+                                files: (obj as any).files?.map((f: any) => f.filename) || [],
+                                instances: (obj as any).files?.map((f: any) => f.instances) || [],
+                            };
+                        });
+                    }
+                    setEngineDetails(engineDetails);
+                    setIsUploadProjectApp(false);
+                    setPendingUploadPath(path);
+                    setShowEngineIdsModal(true);
+                    return;
                 } else {
                     throw new Error('TODO');
                 }
@@ -122,6 +175,16 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 </Button>
             </Modal.Actions>
             {isLoading && <LinearProgress />}
+            <EngineIdsModal
+                open={showEngineIdsModal}
+                successIds={successIds}
+                failedIds={failedIds}
+                onClose={handleEngineIdsModalClose}
+                appId={space}
+                isUploadProjectApp={isUploadProjectApp}
+                engineIdToName={engineIdToName}
+                engineDetails={engineDetails}
+            />
         </>
     );
 };
