@@ -13,6 +13,7 @@ const SECTION_TEXT = 'Text';
 const SECTION_CHARTS = 'Data Charts';
 const SECTION_MISC = 'Miscellaneous';
 const SECTION_GROUPED = 'Grouped Blocks';
+const SECTION_GOOGLECALENDAR = 'GoogleCalendar';
 
 export const SECTION_ORDER = [
     SECTION_LAYOUT,
@@ -23,6 +24,7 @@ export const SECTION_ORDER = [
     SECTION_MISC,
     SECTION_CHARTS,
     // SECTION_GROUPED,
+    SECTION_GOOGLECALENDAR,
 ];
 
 // Development Environment Blocks
@@ -74,6 +76,44 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 header: [],
                 content: [],
             },
+        },
+    },
+
+    {
+        section: SECTION_GOOGLECALENDAR,
+        name: 'GoogleCalendar',
+        helperText: 'Integrate with Google Calendar to manage events',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'googlecalendartext',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Google Calendar Block',
+                isStreaming: false,
+                show: 'true',
+                showCalendarCreateForm: false,
+                showCreateForm: false,
+                showCalendarUpdateForm: false,
+                showUpdateForm: false,
+                showCalendarReadForm: false,
+                showReadForm: false,
+                showCalendarDeleteForm: false,
+                showDeleteForm: false,
+                listAllCalendar: false,
+                listedCalendar: false,
+                googlecalendarConnectionValue: '',
+                googlecalendarActionValue: '',
+                calendarSummaryValue: '',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
 
