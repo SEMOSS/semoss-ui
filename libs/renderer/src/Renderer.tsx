@@ -50,6 +50,7 @@ export const Renderer = observer((props: RendererProps) => {
     const [homePage, setHomePage] = useState("");
 
     const URLroute = window.location.href;
+    let testVar = 'hello'
 
     useEffect(() => {
         // if (isAuthorized) {

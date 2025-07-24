@@ -146,7 +146,6 @@ describe("toggle button block", () => {
         // const { container } = render(<ToggleButtonBlock id="toggle-button" />, {
         //     blocks: blocks,
         // });
-
         // const element = container.querySelector("[data-block='toggle-button']");
         // const elementList = container.querySelectorAll("[type='button']");
         // const onElement = container.querySelector("[value='on']");
