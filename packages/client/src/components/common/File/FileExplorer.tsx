@@ -92,12 +92,13 @@ export const FileExplorer = (props: FileExplorerProps) => {
     const getStorageFiles = usePixel<string[]>(
         type === 'storage'
             ? `Storage(storage = "${storageId}") | ListStoragePath(storagePath='/');`
-            : ''
+            : '',
     );
 
-    const initLoadComplete = type === 'storage'
-        ? getStorageFiles.status === 'SUCCESS'
-        : getAssets.status === 'SUCCESS';
+    const initLoadComplete =
+        type === 'storage'
+            ? getStorageFiles.status === 'SUCCESS'
+            : getAssets.status === 'SUCCESS';
     const [selected, setSelected] = React.useState<string[]>([]);
 
     /**
@@ -117,7 +118,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
      */
     const handleDelete = async (filePath: string) => {
         if (type !== 'storage') return;
-        
+
         const deleteQuery = `Storage(storage = "${storageId}") |
         DeleteFromStorage(storagePath="${filePath}", leaveFolderStructure=false);`;
 
@@ -136,7 +137,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
      */
     const handleUpload = async (storagePath: string, localFilePath: string) => {
         if (type !== 'storage') return;
-        
+
         const uploadQuery = `Storage("${storageId}") | PushToStorage(storagePath="${storagePath}", filePath="${localFilePath}");`;
 
         try {
@@ -153,31 +154,25 @@ export const FileExplorer = (props: FileExplorerProps) => {
      */
     const handleDownload = async (filePath: string) => {
         if (type !== 'storage') return;
-        
+
         try {
-            // First, pull the file from storage to the server
-            const pullQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="/");`;
-            const pullResponse = await monolithStore.runQuery(pullQuery);
-            console.log('Pull response:', pullResponse);
-            
-            // Extract the file name from the path
-            const fileName = filePath.split('/').pop() || 'download';
-            
-            // Get the file key for download using DownloadAsset
-            const downloadQuery = `DownloadAsset(filePath=["/${fileName}"], space=["insight"]);`;
-            const downloadResponse = await monolithStore.runQuery(downloadQuery);
-            console.log('Download response:', downloadResponse);
-            
+            // Use a simpler approach: pull the file and then download it
+            const downloadQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="/") | DownloadAsset(filePath=["/${filePath
+                .split('/')
+                .pop()}"], space=["insight"]);`;
+            const response = await monolithStore.runQuery(downloadQuery);
+            console.log('Download response:', response);
+
             // Get the file key from the response
-            const fileKey = downloadResponse.pixelReturn[0]?.output;
-            
+            const fileKey = response.pixelReturn[0]?.output;
+
             if (!fileKey) {
                 throw new Error('Failed to get file key for download');
             }
-            
+
             // Use the existing download mechanism to trigger browser download
             await monolithStore.download(configStore.store.insightID, fileKey);
-            
+
             onDownload(filePath);
         } catch (e) {
             console.error('Download error:', e);
@@ -188,29 +183,33 @@ export const FileExplorer = (props: FileExplorerProps) => {
     if (!initLoadComplete) {
         return (
             <LoadingScreen.Trigger
-                description={type === 'storage'
-                    ? "Retrieving files from storage..."
-                    : "Retrieving files from application..."
+                description={
+                    type === 'storage'
+                        ? 'Retrieving files from storage...'
+                        : 'Retrieving files from application...'
                 }
             />
         );
     }
 
     // Transform storage files into structured format
-    const files = type === 'storage' && getStorageFiles.status === 'SUCCESS'
-        ? getStorageFiles.data.map((filePath) => {
-            const pathParts = filePath.split('/').filter(Boolean);
-            const name = pathParts[pathParts.length - 1] || filePath;
-            const isDirectory = filePath.endsWith('/');
-            
-            return {
-                name,
-                path: filePath,
-                type: isDirectory ? 'directory' : 'file',
-                lastModified: '', // Storage API doesn't provide this
-            };
-        })
-        : getAssets.status === 'SUCCESS' ? getAssets.data : [];
+    const files =
+        type === 'storage' && getStorageFiles.status === 'SUCCESS'
+            ? getStorageFiles.data.map((filePath) => {
+                  const pathParts = filePath.split('/').filter(Boolean);
+                  const name = pathParts[pathParts.length - 1] || filePath;
+                  const isDirectory = filePath.endsWith('/');
+
+                  return {
+                      name,
+                      path: filePath,
+                      type: isDirectory ? 'directory' : 'file',
+                      lastModified: '', // Storage API doesn't provide this
+                  };
+              })
+            : getAssets.status === 'SUCCESS'
+            ? getAssets.data
+            : [];
 
     return (
         <StyledTreeView
