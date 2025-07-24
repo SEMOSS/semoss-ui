@@ -9,3 +9,16 @@ dist
 *.rollup.cache
 tsconfig.tsbuildinfo
 .turbo
+
+# Ignore the generated files for vscode extension
+*.vsix
+out/
+.vscode-test/
+.vscode-test-web/
+coverage/
+.nyc_output/
+npm-debug.log
+yarn-error.log
+*.tgz
+.vscode/.ropeproject
+.idea/

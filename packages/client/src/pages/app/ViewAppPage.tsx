@@ -25,7 +25,7 @@ import {
     Bookmark,
     BookmarkBorderOutlined,
 } from '@mui/icons-material';
-import { Env } from '@semoss/sdk';
+import { Env } from '@semoss/sdk/react';
 import { NavbarLeft, NavbarHeader, NavbarRight } from '../../components/shared';
 
 const StyledContent = styled('div')(({ theme }) => ({

@@ -1,4 +1,4 @@
-import { Env, get, post } from '@semoss/sdk';
+import { Env, get, post } from '@semoss/sdk/react';
 
 export const config = async () => {
     // get the response
