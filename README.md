@@ -9,7 +9,7 @@
 
 2. Run `pnpm install` in root directory.
 
-3. Launch the dev-server, by running `pnpm run dev:client`.
+3. Create a dev build by running `pnpm run build:dev` or launching the dev-server by running `pnpm run dev`. See `package.json` for additional commands.
 
 # Contributions and Standardized Commits 
 

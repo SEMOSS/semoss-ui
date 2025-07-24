@@ -9,6 +9,10 @@ import { RootStore } from '@/stores';
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
+
+/**
+ * @deprecated Will be removed in future release, use SDK instead
+ */
 export class MonolithStore {
     private _root: RootStore;
 

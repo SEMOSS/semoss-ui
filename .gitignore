@@ -8,11 +8,17 @@ dist
 .eslintcache
 *.rollup.cache
 tsconfig.tsbuildinfo
-
-# Only ignore the top level
-index.html
-index.html.gz
-!packages/**/index.html
-!packages/**/index.html.gz
-
 .turbo
+
+# Ignore the generated files for vscode extension
+*.vsix
+out/
+.vscode-test/
+.vscode-test-web/
+coverage/
+.nyc_output/
+npm-debug.log
+yarn-error.log
+*.tgz
+.vscode/.ropeproject
+.idea/
