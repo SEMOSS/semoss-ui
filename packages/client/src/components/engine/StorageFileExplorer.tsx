@@ -44,6 +44,8 @@ interface FileExplorerProps {
 }
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const { id } = props;
+    const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
 
     const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string>('');
@@ -190,14 +192,65 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     };
 
     /**
+     * Handle file upload to storage
+     */
+    const handleUploadToStorage = handleSubmit(async (data: FileUploadForm) => {
+        setIsUploading(true);
+
+        try {
+            // Upload files to the server first
+            const upload = await monolithStore.uploadFile(
+                data.PROJECT_UPLOAD,
+                configStore.store.insightID,
+            );
+
+            // For each uploaded file, push to storage
+            for (const file of upload) {
+                const { fileLocation } = file;
+                const fileName = fileLocation.split('/').pop() || 'unknown';
+                const storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
+
+                // Push file to storage using the storage pixel
+                const response = await monolithStore.runQuery(`
+                    Storage(storage = "${id}") | PushToStorage(storagePath="${storageFilePath}", filePath="${fileLocation}");
+                `);
+
+                const { output, operationType } = response.pixelReturn[0];
+
+                if (operationType.indexOf('ERROR') !== -1) {
+                    notification.add({
+                        color: 'error',
+                        message: `Failed to upload ${fileName}: ${output}`,
+                    });
+                } else {
+                    notification.add({
+                        color: 'success',
+                        message: `Successfully uploaded ${fileName} to storage`,
+                    });
+                }
+            }
+
+            // Close modal and refresh
+            setUploadModalOpen(false);
+            setValue('PROJECT_UPLOAD', []);
+            setValue('STORAGE_PATH', '/');
+            refreshFiles();
+
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
+        } finally {
+            setIsUploading(false);
+        }
+    });
+
+    /**
      * Handle global upload button click
      */
     const handleGlobalUpload = () => {
-        // In a real implementation, this would open a file picker
-        // and upload to the root directory
-        console.log('Global upload clicked');
-        console.log('test');
-        alert('todo - global upload functionality');
+        setUploadModalOpen(true);
     };
 
     return (
