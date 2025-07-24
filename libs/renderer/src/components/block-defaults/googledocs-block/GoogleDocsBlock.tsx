@@ -224,14 +224,18 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
         // Check if user is already logged in
         (async () => {
             try {
-                const response = await fetch(
-                    "/Monolith/api/auth/userinfo/google",
-                );
-                if (response.ok) {
-                    const userInfo = await response.json();
-                    if (userInfo.name) {
-                        setLoggedInUser(userInfo.name);
-                    }
+                const response = await oauth("google");
+                if (response.name) {
+                    setLoggedInUser(response.name);
+                    notification.add({
+                        color: "success",
+                        message: "Successfully logged into Google",
+                    });
+                } else {
+                    notification.add({
+                        color: "error",
+                        message: "Failed to fetch Google user info",
+                    });
                 }
             } catch (error) {
                 notification.add({
@@ -389,8 +393,8 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                 } else {
                     const errorMsg =
                         output &&
-                        typeof output === "object" &&
-                        "message" in output
+                            typeof output === "object" &&
+                            "message" in output
                             ? output.message
                             : "Create failed";
                     throw new Error(errorMsg);
@@ -507,22 +511,18 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         try {
-            await oauth("google");
+            const response = await oauth("google");
             setIsLoading(false);
-            notification.add({
-                color: "success",
-                message: "Successfully logged in",
-            });
-
-            // Fetch Google user info and set loggedInUser
-            const response = await fetch("/Monolith/api/auth/userinfo/google");
-            if (response.ok) {
-                const userInfo = await response.json();
-                setLoggedInUser(userInfo.name || "Google User");
+            if (response.name) {
+                setLoggedInUser(response.name);
+                notification.add({
+                    color: "success",
+                    message: "Successfully logged into Google",
+                });
             } else {
                 notification.add({
                     color: "error",
-                    message: "Google Login failed",
+                    message: "Failed to fetch Google user info",
                 });
             }
             // This will trigger the UI to show the doc list page
