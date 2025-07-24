@@ -11,14 +11,15 @@ import {
     styled,
     Alert,
     Markdown,
-    Divider
+    Divider,
+    Box
 } from '@semoss/ui';
 
 import { useEngine, useRootStore } from '@/hooks';
 import { EngineModelTestSidebar } from '@/components/settings';
 import { runPixel } from '@semoss/sdk/react';
-import { IconButton } from '@mui/material';
-import { Send as SendIcon, CopyAll as CopyAllIcon, Refresh as RefreshIcon } from '@mui/icons-material';
+import { IconButton, Avatar } from '@mui/material';
+import { Send, CopyAll, Refresh, ThumbUpOffAlt, ThumbDownOffAlt } from '@mui/icons-material';
 
 const StyledLayout = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -47,14 +48,23 @@ const StyledChatContainer = styled('div')(({ theme }) => ({
     flexDirection: 'column',
     gap: theme.spacing(2),
     overflow: 'hidden',
+    maxHeight: '80%'
+}));
+
+const StyledMessagesBox = styled('div')(({ theme }) => ({
+    // flex: 1,
+    // overflowY: 'auto',
+    border: `1px solid ${theme.palette.divider}`,
+    borderRadius: theme.shape.borderRadius,
+    backgroundColor: 'transparent',
+    maxHeight: '100%'
 }));
 
 const StyledMessagesContainer = styled('div')(({ theme }) => ({
     flex: 1,
     overflowY: 'auto',
-    border: `1px solid ${theme.palette.divider}`,
-    borderRadius: theme.shape.borderRadius,
     backgroundColor: 'transparent',
+    maxHeight: '100%'
 }));
 
 const StyledMessageBubble = styled('div')<{ isUser: boolean }>(({ theme, isUser }) => ({
@@ -89,6 +99,13 @@ const StyledSendButton = styled(IconButton)(({ theme }) => ({
     '&:hover': { backgroundColor: 'transparent', color: theme.palette.primary.main }
 }));
 
+const StyledRewriteButton = styled(Button)(({ theme }) => ({
+    color: 'black',
+    opacity: 0.7,
+    ...theme.typography.caption
+}));
+
+
 const StyledDivider = styled(Divider)({
     marginTop: 5,
     marginBottom: 1.5
@@ -101,6 +118,19 @@ const StyledChatTitle = styled('div')(({ theme }) => ({
     marginBottom: theme.spacing(2),
     padding: theme.spacing(1, 1),
     background: theme.palette.primary.selected
+}));
+
+const StyledAvatar = styled(Avatar)(({ theme }) => ({
+    '&&': {
+        marginRight: theme.spacing(1),
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+        float: 'inline-start',
+        bottom: '0.5em',
+        fontSize: 'small',
+        height: '2.5em',
+        width: '2.5em'
+    }
 }));
 
 interface Message {
@@ -138,8 +168,13 @@ export const EngineModelTestPage = () => {
         },
     });
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const promptValue = watch('prompt');
+
+    //Helper to extract user initials for avatar
+    function getInitials(name: string) {
+        return `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`
+    }
 
     // Helper to create a new insight from backend
     const createNewInsight = async () => {
@@ -190,7 +225,7 @@ export const EngineModelTestPage = () => {
                 }
             }
             const assistantMessage: Message = {
-                id: `assistant-${Date.now()}`,
+                id: output.messageId,
                 content: output.response || 'No response received',
                 isUser: false,
                 timestamp: new Date(),
@@ -204,6 +239,22 @@ export const EngineModelTestPage = () => {
             reset();
         }
     };
+
+    const sendFeedback = async (messageId: string, rating: boolean) => {
+        const pixel = `SubmitLLMFeedback(messageId="${messageId}", feedbackText="", rating="${rating}`;
+        try{
+            const response = await runPixel(pixel);
+            const { output, operationType } = response.pixelReturn[0];
+            if (operationType.indexOf('ERROR') > -1) {
+                const errorMessage = ""+output || 'An error occurred while submitting feedback';
+                throw new Error(errorMessage);
+            } else {
+                return output;
+            }
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'An error occurred while submitting feedback');
+        }
+    }
 
     return (
         <StyledLayout>
@@ -230,25 +281,25 @@ export const EngineModelTestPage = () => {
                                 {error}
                             </Alert>
                         )}
-                        <StyledChatContainer>
+                        <StyledMessagesBox>
+                            <StyledChatTitle>
+                                <Typography variant="subtitle1">Chat History</Typography>
+                                {messages.length > 0 && (
+                                    <Button
+                                        variant="text"
+                                        startIcon={<Refresh />}
+                                        size="small"
+                                        onClick={() => {
+                                            setMessages([]);
+                                            createNewInsight();
+                                        }}
+                                        disabled={isLoading || isInsightLoading}
+                                    >
+                                        Clear Chat
+                                    </Button>
+                                )}
+                            </StyledChatTitle>
                             <StyledMessagesContainer>
-                                <StyledChatTitle>
-                                    <Typography variant="subtitle1">Chat History</Typography>
-                                    {messages.length > 0 && (
-                                        <Button
-                                            variant="text"
-                                            startIcon={<RefreshIcon />}
-                                            size="small"
-                                            onClick={() => {
-                                                setMessages([]);
-                                                createNewInsight();
-                                            }}
-                                            disabled={isLoading || isInsightLoading}
-                                        >
-                                            Clear Chat
-                                        </Button>
-                                    )}
-                                </StyledChatTitle>
                                 {isInsightLoading ? (
                                     <Typography variant="body2" color="secondary" sx={{ textAlign: 'center', mt: 4 }}>
                                         Initializing chat session...
@@ -261,7 +312,8 @@ export const EngineModelTestPage = () => {
                                     messages.map((message, index) => (
                                         <div key={message.id}>
                                             <StyledMessageBubble isUser={message.isUser}>
-                                                {!message.isUser && <Typography variant="subtitle2" sx={{mb: 2}}>Response</Typography>}
+                                                {message.isUser && <StyledAvatar>{getInitials(configStore.store.user.name)}</StyledAvatar>}
+                                                {!message.isUser && <Typography variant="subtitle2" sx={{ mb: 2 }}>Response</Typography>}
                                                 <div><Markdown>{message.content}</Markdown></div>
                                                 {!message.isUser && <StyledDivider></StyledDivider>}
                                                 {message.tokens && (
@@ -269,13 +321,40 @@ export const EngineModelTestPage = () => {
                                                         <Typography variant="caption" sx={{ opacity: 0.7 }}>
                                                             Tokens: {message.tokens}
                                                         </Typography>
+                                                        <Divider orientation="vertical" flexItem />
+                                                        <StyledRewriteButton
+                                                            variant="text"
+                                                            startIcon={<Refresh />}
+                                                            size="small"
+                                                            onClick={() => handleSubmit(sendMessage)}
+                                                            disabled={isLoading || isInsightLoading}
+                                                        >
+                                                            Rewrite
+                                                        </StyledRewriteButton>
+                                                        <Box sx={{ flexGrow: 1 }} />
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => navigator.clipboard.writeText(message.content)}
+                                                            sx={{ padding: 0 }}
+                                                            aria-label="Liked the model's response"
+                                                        >
+                                                            <ThumbUpOffAlt fontSize="small" sx={{ opacity: 0.7 }} />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => navigator.clipboard.writeText(message.content)}
+                                                            sx={{ padding: 0 }}
+                                                            aria-label="Disliked the model's response"
+                                                        >
+                                                            <ThumbDownOffAlt fontSize="small" sx={{ opacity: 0.7 }} />
+                                                        </IconButton>
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => navigator.clipboard.writeText(message.content)}
                                                             sx={{ padding: 0 }}
                                                             aria-label="Copy tokens to clipboard"
                                                         >
-                                                            <CopyAllIcon fontSize="small" sx={{ opacity: 0.7 }} />
+                                                            <CopyAll fontSize="small" sx={{ opacity: 0.7 }} />
                                                         </IconButton>
                                                     </Stack>
                                                 )}
@@ -291,39 +370,39 @@ export const EngineModelTestPage = () => {
                                         </Typography>
                                     </StyledMessageBubble>
                                 )}
-                                <StyledForm onSubmit={handleSubmit(sendMessage)} >
-                                    <StyledInputContainer>
-                                        <Controller
-                                            name="prompt"
-                                            control={control}
-                                            render={({ field }) => (
-                                                <TextField
-                                                    {...field}
-                                                    multiline
-                                                    maxRows={4}
-                                                    placeholder="Ask a question..."
-                                                    variant="outlined"
-                                                    fullWidth
-                                                    disabled={isLoading || isInsightLoading}
-                                                    InputProps={{
-                                                        endAdornment: (
-                                                            <StyledSendButton
-                                                                type="submit"
-                                                                disabled={isLoading || !promptValue?.trim() || isInsightLoading}
-                                                                aria-label="Send message"
-                                                                disableRipple={true}
-                                                            >
-                                                                {isLoading ? <CircularProgress size={20} /> : <SendIcon />}
-                                                            </StyledSendButton>
-                                                        ),
-                                                    }}
-                                                />
-                                            )}
-                                        />
-                                    </StyledInputContainer>
-                                </StyledForm>
                             </StyledMessagesContainer>
-                        </StyledChatContainer>
+                            <StyledForm onSubmit={handleSubmit(sendMessage)} >
+                                <StyledInputContainer>
+                                    <Controller
+                                        name="prompt"
+                                        control={control}
+                                        render={({ field }) => (
+                                            <TextField
+                                                {...field}
+                                                multiline
+                                                maxRows={1}
+                                                placeholder="Ask a question..."
+                                                variant="outlined"
+                                                fullWidth
+                                                disabled={isLoading || isInsightLoading}
+                                                InputProps={{
+                                                    endAdornment: (
+                                                        <StyledSendButton
+                                                            type="submit"
+                                                            disabled={isLoading || !promptValue?.trim() || isInsightLoading}
+                                                            aria-label="Send message"
+                                                            disableRipple={true}
+                                                        >
+                                                            {isLoading ? <CircularProgress size={20} /> : <Send />}
+                                                        </StyledSendButton>
+                                                    ),
+                                                }}
+                                            />
+                                        )}
+                                    />
+                                </StyledInputContainer>
+                            </StyledForm>
+                        </StyledMessagesBox>
                     </Stack>
                 </StyledPaper>
             </StyledContainer>
