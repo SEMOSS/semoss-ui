@@ -8,11 +8,4 @@ dist
 .eslintcache
 *.rollup.cache
 tsconfig.tsbuildinfo
-
-# Only ignore the top level
-index.html
-index.html.gz
-!packages/**/index.html
-!packages/**/index.html.gz
-
 .turbo
