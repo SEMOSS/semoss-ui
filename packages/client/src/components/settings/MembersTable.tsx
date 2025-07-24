@@ -358,8 +358,7 @@ export const MembersTable = (props: MembersTableProps) => {
             return;
         }
 
-
-        const userData = userDetails.data as SETTINGS_PROVISIONED_USER
+        const userData = userDetails.data as SETTINGS_PROVISIONED_USER;
         if (adminMode) {
             const adminPermissionPriority = 'Author';
             setUserPermission(
@@ -367,6 +366,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     ?.permission as SETTINGS_ROLE,
             );
         } else {
+            console.log('user data', userData);
             setUserPermission(
                 permissionPriorityMapper(
                     userData.permission === 'OWNER'
@@ -375,7 +375,6 @@ export const MembersTable = (props: MembersTableProps) => {
                 )?.permission as SETTINGS_ROLE,
             );
         }
-
 
         setUserData(userData);
     };
@@ -555,17 +554,6 @@ export const MembersTable = (props: MembersTableProps) => {
         getMembers.status === 'SUCCESS' ? getMembers.data['totalMembers'] : 0;
     const hasMembers =
         getMembers.status === 'SUCCESS' && getMembers.data['totalMembers'] > 0;
-
-    // /**
-    // * Handle Table Sorting Logic
-    // *
-    // * @param sortingMethod
-    // */
-    // const handleRequestSort = (sortingMethod: string) => {
-    //     const isAsc = orderBy === sortingMethod && order === 'asc';
-    //     setOrder(isAsc ? 'desc' : 'asc');
-    //     setOrderBy(sortingMethod);
-    // };
 
     /**
      * Sort Members
