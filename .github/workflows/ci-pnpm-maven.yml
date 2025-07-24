@@ -47,12 +47,6 @@ jobs:
               with:
                 version: 10.13.1
 
-            - name: Set up Node.js 24
-              uses: actions/setup-node@v4
-              with:
-                node-version: '24'
-                cache: "pnpm"
-
             - name: Install npm dependencies
               run: |
                 node -v
