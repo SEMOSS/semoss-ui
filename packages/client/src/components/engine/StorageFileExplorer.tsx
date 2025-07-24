@@ -208,15 +208,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             for (const file of upload) {
                 const { fileLocation } = file;
                 const fileName = fileLocation.split('/').pop() || 'unknown';
-                
-                let storageFilePath;
-                if (data.STORAGE_PATH === '/' || data.STORAGE_PATH === '') {
-                    storageFilePath = `/${fileName}`;
-                    console.log(`Uploading to root: ${storageFilePath}`);
-                } else {
-                    storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
-                    console.log(`Uploading to folder: ${storageFilePath}`);
-                }
+                const storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
 
                 // Push file to storage using the storage pixel
                 const response = await monolithStore.runQuery(`
@@ -311,7 +303,40 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 <form onSubmit={handleUpload}>
                     <Modal.Content>
                         <Controller
+<<<<<<< HEAD
                             name={'PROJECT_UPLOAD'}
+=======
+                            name="STORAGE_PATH"
+                            control={control}
+                            rules={{ required: 'Storage path is required' }}
+                            render={({ field, fieldState }) => (
+                                <div style={{ marginBottom: '16px' }}>
+                                    <Typography variant="body2" style={{ marginBottom: '8px' }}>
+                                        Storage Path (e.g., /documents, /images):
+                                    </Typography>
+                                    <input
+                                        {...field}
+                                        type="text"
+                                        placeholder="/"
+                                        style={{
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            border: '1px solid #ccc',
+                                            borderRadius: '4px',
+                                            fontSize: '14px'
+                                        }}
+                                    />
+                                    {fieldState.error && (
+                                        <Typography variant="caption" color="error">
+                                            {fieldState.error.message}
+                                        </Typography>
+                                    )}
+                                </div>
+                            )}
+                        />
+                        <Controller
+                            name="PROJECT_UPLOAD"
+>>>>>>> e6dd70a50 (Revert "Update StorageFileExplorer.tsx")
                             control={control}
                             rules={{}}
                             render={({ field }) => {
