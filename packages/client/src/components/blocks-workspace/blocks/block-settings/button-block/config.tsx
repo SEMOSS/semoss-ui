@@ -42,6 +42,30 @@ export const config: BlockSettingsConfig = {
                         />
                     ),
                 },
+                 {
+                    description: "Type",
+                    render: ({ id }) => (
+                        <SelectInputSettings
+                            id={id}
+                            label="Type"
+                            path="type"
+                            options={[
+                                {
+                                    value: "submit",
+                                    display: "Submit",
+                                },
+                                {
+                                    value: "button",
+                                    display: "Button",
+                                },
+                                {
+                                    value: "reset",
+                                    display: "Reset",
+                                },
+                            ]}
+                        />
+                    ),
+                },
             ],
         },
         {

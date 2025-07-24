@@ -183,7 +183,7 @@ export const BlocksGuideTemplate: Template = {
                             'text--6115',
                             'text--5619',
                             'text--7984',
-                            'welcome-text-block',
+                            'text--1',
                         ],
                         name: 'children',
                     },
@@ -208,7 +208,7 @@ export const BlocksGuideTemplate: Template = {
                 },
                 id: 'container--9623',
             },
-            'welcome-text-block': {
+            'text--1': {
                 parent: {
                     id: 'container--9623',
                     slot: 'children',
@@ -230,7 +230,7 @@ export const BlocksGuideTemplate: Template = {
                         order: [],
                     },
                 },
-                id: 'welcome-text-block',
+                id: 'text--1',
             },
             'container--7223': {
                 parent: {

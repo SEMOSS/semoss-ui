@@ -12,7 +12,7 @@ import {
     STATE_VERSION,
 } from '@semoss/renderer';
 
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { WorkspaceStore, DesignerStore, WorkspaceOptions } from '@/stores';
 import { DesignerContext } from '../../contexts';
 import { LoadingScreen } from '../../components/ui';
@@ -38,6 +38,7 @@ import {
 import { BlocksWorkspaceActions } from './BlocksWorkspaceActions';
 
 const DEFAULT_BORDER_SIZE = 300;
+const BLOCK_SETTINGS_MIN_WIDTH = 450;
 
 const DEFAULT_OPTIONS: WorkspaceOptions = {
     version: '',
@@ -92,7 +93,8 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
             {
                 type: 'border',
                 location: 'right',
-                size: DEFAULT_BORDER_SIZE,
+                size: BLOCK_SETTINGS_MIN_WIDTH,
+                minSize: BLOCK_SETTINGS_MIN_WIDTH,
                 children: [
                     {
                         type: 'tab',
@@ -224,7 +226,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         workspace.setLoading(true);
 
         // load the app
-        runPixelTwo<[SerializedState]>(
+        runPixel<[SerializedState]>(
             `GetAppBlocksJson ( project=["${workspace.appId}"]);`,
             workspace.insightId ? workspace.insightId : 'new',
         )
