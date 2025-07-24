@@ -71,6 +71,11 @@ jobs:
                 cd packages/client
                 pnpm run build
 
+            - name: Build playground
+              run: |
+                cd packages/playground
+                pnpm run build
+
             # ---------- Download and Set Up semoss/bi -----------
             
             - name: Remove previous legacy folder
@@ -117,7 +122,9 @@ jobs:
               run: |
                 mkdir -p semoss-ui-build/packages
                 mkdir -p semoss-ui-build/packages/client
+                mkdir -p semoss-ui-build/packages/playground
                 cp -r packages/client/dist semoss-ui-build/packages/client
+                cp -r packages/playground/dist semoss-ui-build/packages/playground
                 cp -r packages/legacy semoss-ui-build/packages
                 cp -r index.html semoss-ui-build/
             
@@ -233,6 +240,11 @@ jobs:
             - name: Build semoss-ui
               run: |
                 cd packages/client
+                pnpm run build
+
+            - name: Build playground
+              run: |
+                cd packages/playground
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------
@@ -427,6 +439,11 @@ jobs:
             - name: Build semoss-ui
               run: |
                 cd packages/client
+                pnpm run build
+
+            - name: Build playground
+              run: |
+                cd packages/playground
                 pnpm run build
 
             # ---------- Download and Set Up semoss/bi -----------

@@ -6,6 +6,7 @@
     "prepare":"lefthook install",
     "dev": "turbo run dev",
     "dev:client": "turbo run dev --filter=@semoss/client...",
+    "dev:playground": "turbo run dev --filter=@semoss/playground...",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
     "test:watch": "turbo run test:watch",
