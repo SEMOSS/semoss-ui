@@ -1,0 +1,54 @@
+import fs from "fs";
+import path from 'path';
+
+let assetsFolderPath = "";
+let outputFilePath = "";
+
+/**
+ * Set folder paths based on the provided URI
+ * @param {vscode.Uri} uri - The URI from the context menu
+ */
+export function setFolderPaths(uri) {
+    assetsFolderPath = uri.fsPath.replace(/\\client|\/client|\\py|\/py|\\portals|\/portals/g, "");
+    const projectName = path.basename(assetsFolderPath);
+    outputFilePath = path.join(assetsFolderPath, `${projectName}.zip`);
+}
+
+/**
+ * Get the project ID from the smss file
+ * @returns {string} The project ID
+ */
+export function getProjectId() {
+    const projectFolderPath = assetsFolderPath.replace(/\\assets|\/assets/g, "");
+    const smssFile = fs.readdirSync(projectFolderPath).find(file => file.endsWith('.smss'));
+    if (!smssFile) {
+        throw new Error(`No .smss file found in project folder: ${projectFolderPath}`);
+    }
+    const smssContent = fs.readFileSync(path.join(projectFolderPath, smssFile), 'utf8');
+    const projectLines = smssContent.split('\n');
+
+    let projectId = "";
+    projectLines.forEach((line) => {
+        if (line.startsWith('PROJECT\t')) {
+            projectId = line.split('\t')[1];
+        }
+    });
+
+    return projectId;
+}
+
+/**
+ * Get the assets folder path
+ * @returns {string} The assets folder path
+ */
+export function getAssetsFolderPath() {
+    return assetsFolderPath;
+}
+
+/**
+ * Get the output file path
+ * @returns {string} The output file path
+ */
+export function getOutputFilePath() {
+    return outputFilePath;
+}
