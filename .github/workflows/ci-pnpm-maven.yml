@@ -49,7 +49,7 @@ jobs:
             - name: Install pnpm dependencies
               run: |
                 node -v
-                pnpm install
+                pnpm install --ignore-scripts
 
             - name: Build Component Library
               run: |
@@ -213,7 +213,7 @@ jobs:
             - name: Install npm dependencies
               run: |
                 node -v
-                pnpm install
+                pnpm install --ignore-scripts
 
             - name: Build Component Library
               run: |
@@ -286,7 +286,7 @@ jobs:
             #       apt-get update
             #       apt-get install -y maven
             #       npm install -g pnpm@10.10
-            #       pnpm install
+            #       pnpm install --ignore-scripts
 
             # - name: Build
             #   env:
@@ -361,7 +361,7 @@ jobs:
             #       apt-get update
             #       apt-get install -y maven
             #       npm install -g pnpm@10.10
-            #       pnpm install
+            #       pnpm install --ignore-scripts
 
             # - name: Build
             #   env:
@@ -407,7 +407,7 @@ jobs:
             - name: Install npm dependencies
               run: |
                 node -v
-                pnpm install
+                pnpm install --ignore-scripts
 
             - name: Build Component Library
               run: |
@@ -480,7 +480,7 @@ jobs:
             #       apt-get update
             #       apt-get install -y maven
             #       npm install -g pnpm@10.10
-            #       pnpm install
+            #       pnpm install --ignore-scripts
                   
             - name: Deploy with Maven
               shell: bash
