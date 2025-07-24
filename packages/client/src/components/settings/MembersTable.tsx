@@ -19,15 +19,17 @@ import {
     Box,
     Stack,
 } from '@semoss/ui';
+import { useDebouncedValue } from '@semoss/sdk/react';
 
 import { ALL_TYPES } from '@/types';
 import { LoadingScreen } from '@/components/ui';
-import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
+import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { SETTINGS_PROVISIONED_USER, SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
 import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
 import { UserPopover } from './UserPopover';
+
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
@@ -245,7 +247,7 @@ export const MembersTable = (props: MembersTableProps) => {
         useState<SETTINGS_ROLE>('Read-Only');
 
     // debounce the input
-    const debouncedSearch = useDebounceValue(search);
+    const debouncedSearch = useDebouncedValue(search);
 
     /** Delete Member */
     const [deleteMembersModal, setDeleteMembersModal] =
@@ -355,7 +357,8 @@ export const MembersTable = (props: MembersTableProps) => {
         if (!userDetails.data) {
             return;
         }
-        setUserData(userDetails.data);
+
+        const userData = userDetails.data as SETTINGS_PROVISIONED_USER;
         if (adminMode) {
             const adminPermissionPriority = 'Author';
             setUserPermission(
@@ -363,14 +366,17 @@ export const MembersTable = (props: MembersTableProps) => {
                     ?.permission as SETTINGS_ROLE,
             );
         } else {
+            console.log('user data', userData);
             setUserPermission(
                 permissionPriorityMapper(
-                    userDetails.data.permission === 'OWNER'
+                    userData.permission === 'OWNER'
                         ? 'Author'
-                        : userDetails.data.permission,
+                        : userData.permission,
                 )?.permission as SETTINGS_ROLE,
             );
         }
+
+        setUserData(userData);
     };
 
     /**
@@ -548,17 +554,6 @@ export const MembersTable = (props: MembersTableProps) => {
         getMembers.status === 'SUCCESS' ? getMembers.data['totalMembers'] : 0;
     const hasMembers =
         getMembers.status === 'SUCCESS' && getMembers.data['totalMembers'] > 0;
-
-    // /**
-    // * Handle Table Sorting Logic
-    // *
-    // * @param sortingMethod
-    // */
-    // const handleRequestSort = (sortingMethod: string) => {
-    //     const isAsc = orderBy === sortingMethod && order === 'asc';
-    //     setOrder(isAsc ? 'desc' : 'asc');
-    //     setOrderBy(sortingMethod);
-    // };
 
     /**
      * Sort Members
@@ -852,7 +847,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 <Table.Cell size="small">
                                                     <Table.Sort
                                                         active={true}
-                                                        direction={permissionOrder}
+                                                        direction={
+                                                            permissionOrder
+                                                        }
                                                         onClick={() =>
                                                             handlePermissionSort()
                                                         }
@@ -901,7 +898,9 @@ export const MembersTable = (props: MembersTableProps) => {
 
                                                 if (user) {
                                                     return (
-                                                        <Table.Row key={user.id}>
+                                                        <Table.Row
+                                                            key={user.id}
+                                                        >
                                                             <StyledTableCell
                                                                 size="medium"
                                                                 padding="checkbox"
@@ -972,7 +971,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                                 {user.name[0].toUpperCase()}
                                                                             </Avatar>
                                                                         </AvatarWrapper>
-                                                                        {user.name}
+                                                                        {
+                                                                            user.name
+                                                                        }
                                                                     </StyledNameStack>
                                                                 </StyledCenteredBox>
                                                             </Table.Cell>
@@ -993,7 +994,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         e,
                                                                     ) => {
                                                                         updateSelectedUsers(
-                                                                            [user],
+                                                                            [
+                                                                                user,
+                                                                            ],
                                                                             permissionPriorityMapper(
                                                                                 e
                                                                                     .target
@@ -1074,17 +1077,18 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 {user?.date_added ??
                                                                     'Not Available'}
                                                             </Table.Cell>
-                                                            {type === 'MODEL' && (
+                                                            {type ===
+                                                                'MODEL' && (
                                                                 <>
                                                                     <Table.Cell>
                                                                         {user.usage_restriction !==
                                                                         undefined
                                                                             ? formatValue(
-                                                                                user.usage_restriction,
-                                                                            )
+                                                                                  user.usage_restriction,
+                                                                              )
                                                                             : formatValue(
-                                                                                'null',
-                                                                            )}
+                                                                                  'null',
+                                                                              )}
                                                                     </Table.Cell>
                                                                     <Table.Cell>
                                                                         {user?.usage_restriction ===
@@ -1130,7 +1134,9 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 <IconButton
                                                                     onClick={() => {
                                                                         openDeleteMembersModal(
-                                                                            [user],
+                                                                            [
+                                                                                user,
+                                                                            ],
                                                                         );
                                                                     }}
                                                                     disabled={
@@ -1162,8 +1168,12 @@ export const MembersTable = (props: MembersTableProps) => {
                                                     }}
                                                     page={page}
                                                     rowsPerPage={rowsPerPage}
-                                                    rowsPerPageOptions={[5, 10, 20]}
-                                                    onRowsPerPageChange={(e) => {
+                                                    rowsPerPageOptions={[
+                                                        5, 10, 20,
+                                                    ]}
+                                                    onRowsPerPageChange={(
+                                                        e,
+                                                    ) => {
                                                         // set the new limit
                                                         setRowsPerPage(
                                                             parseInt(
@@ -1176,26 +1186,25 @@ export const MembersTable = (props: MembersTableProps) => {
                                                 />
                                             </Table.Row>
                                         </Table.Footer>
-                                    
                                     </StyledMemberTable>
                                     <UserPopover
                                         hoveredUser={
-                                                hoveredUser
-                                                    ? {
-                                                        id: hoveredUser.id,
-                                                        name:
-                                                            hoveredUser.name ||
-                                                            'Unknown',
-                                                        email:
-                                                            hoveredUser.email ||
-                                                            '',
-                                                    }
-                                                    : null
-                                            }
-                                            isPopoverOpen={Boolean(anchorEl)}
-                                            anchorEl={anchorEl}
+                                            hoveredUser
+                                                ? {
+                                                      id: hoveredUser.id,
+                                                      name:
+                                                          hoveredUser.name ||
+                                                          'Unknown',
+                                                      email:
+                                                          hoveredUser.email ||
+                                                          '',
+                                                  }
+                                                : null
+                                        }
+                                        isPopoverOpen={Boolean(anchorEl)}
+                                        anchorEl={anchorEl}
                                         handlePopoverClose={handlePopoverClose}
-                                        />
+                                    />
                                 </>
                             ) : (
                                 <StyledNoMembersDiv>
