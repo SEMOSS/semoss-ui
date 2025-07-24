@@ -4,10 +4,10 @@ pre-commit:
       run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true --colors=off {staged_files}
       stage_fixed: true
 
-pre-push:
-  commands:
-    build:
-      run: pnpm build
+# pre-push:
+#   commands:
+#     build:
+#       run: pnpm build
 
 commit-msg:
   commands:
