@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { observer } from "mobx-react-lite";
-import { Typography, CircularProgress, Paper, Box } from "@mui/material";
+import { Typography, CircularProgress, Paper, Box } from "@semoss/ui";
 import { styled } from "@mui/material/styles";
 import IconButton from "@mui/material/IconButton";
 import ClearIcon from "@mui/icons-material/Clear";
@@ -19,6 +19,7 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
             padding: string;
         };
         selectedPdf: string | null;
+        engineId?: string;
         show: string;
     };
     listeners: {
@@ -89,56 +90,54 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const downloadAndPrepareFile = useCallback(async (path: string) => {
+    const downloadAndPrepareFile = useCallback(async (path: string, engineIds?: string) => {
         try {
             setLoading(true);
 
-            // First call to get the jobId
-            const response = await runPixel<[string]>(
-                `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
-            );
-
-            const fileKey = response?.pixelReturn[0]?.output;
-
-            if (!fileKey) {
-                throw new Error("Failed to get file key");
-            }
-
-            // Create the download URL
-            const url = `${Env.MODULE}/api/engine/downloadFile?insightId=${
-                state.insightId
-            }&fileKey=${encodeURIComponent(fileKey as string)}`;
-
-            // Use fetch with no-cors mode and get blob
-            const fileResponse = await fetch(url, {
-                method: "GET",
-                headers: new Headers({
-                    "Content-Type": "application/pdf",
-                }),
-            });
-            const blob = await fileResponse.blob();
-
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64data = reader.result as string;
-                    // Ensure it has the correct data URL prefix
-                    if (
-                        !base64data.startsWith("data:application/pdf;base64,")
-                    ) {
+            let response;
+            if (engineIds) {
+                response = await runPixel<[string]>(
+                    `GetEngineAssetsBase64(filePath=["${path}"], engine=["${engineIds}"]);`,
+                );
+                // Directly use base64 from response
+                const base64Content = response?.pixelReturn[0]?.output;
+                if (!base64Content) throw new Error("Failed to get base64 PDF");
+                // Ensure prefix
+                const pdfPrefix = "data:application/pdf;base64,";
+                return base64Content.startsWith(pdfPrefix)
+                    ? base64Content
+                    : pdfPrefix + base64Content.replace(/^data:.*?;base64,/, "");
+            } else {
+                response = await runPixel<[string]>(
+                    `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
+                );
+                const fileKey = response?.pixelReturn[0]?.output;
+                const savedInsightId = response?.insightId;
+                if (!fileKey) throw new Error("Failed to get file key");
+                const url = `${Env.MODULE}/api/engine/downloadFile?insightId=${savedInsightId}&fileKey=${encodeURIComponent(fileKey as string)}`;
+                const fileResponse = await fetch(url, {
+                    method: "GET",
+                    headers: new Headers({
+                        "Content-Type": "application/pdf",
+                    }),
+                });
+                const blob = await fileResponse.blob();
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const base64data = reader.result as string;
                         const pdfPrefix = "data:application/pdf;base64,";
-                        const base64Content = base64data.replace(
-                            /^data:.*?;base64,/,
-                            "",
-                        );
-                        resolve(pdfPrefix + base64Content);
-                    } else {
-                        resolve(base64data);
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
+                        if (!base64data.startsWith(pdfPrefix)) {
+                            const base64Content = base64data.replace(/^data:.*?;base64,/, "");
+                            resolve(pdfPrefix + base64Content);
+                        } else {
+                            resolve(base64data);
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+            }
         } catch (err) {
             setError("Failed to load PDF");
             setLoading(false);
@@ -147,7 +146,7 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 
     useEffect(() => {
         if (data?.selectedPdf) {
-            downloadAndPrepareFile(data?.selectedPdf)
+            downloadAndPrepareFile(data?.selectedPdf, data?.engineId)
                 .then((content) => {
                     setPdfContent(content as string);
                     setLoading(false);
@@ -177,7 +176,7 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
     if (!data.selectedPdf) {
         return (
             <div style={data.style} {...attrs}>
-                <Typography variant="body2" color="textSecondary">
+                <Typography variant="body2" color="secondary">
                     Select a PDF from settings to view it here
                 </Typography>
             </div>

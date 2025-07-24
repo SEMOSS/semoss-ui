@@ -1035,6 +1035,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                     padding: '8px',
                 },
                 selectedPdf: null,
+                engineId: '',
                 show: 'true',
             },
             listeners: {

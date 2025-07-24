@@ -61,6 +61,12 @@ export interface AutocompleteProps<
         DisableClearable,
         FreeSolo
     >["renderInput"];
+    groupRenderer?: MuiAutocompleteProps<
+        T | string,
+        Multiple,
+        DisableClearable,
+        FreeSolo
+    >["renderGroup"];
     label?: React.ReactNode;
 }
 
@@ -72,6 +78,7 @@ export function Autocomplete<
     ChipComponent extends React.ElementType = ChipTypeMap["defaultComponent"],
 >({
     label,
+    groupRenderer,
     ...props
 }: AutocompleteProps<T, Multiple, DisableClearable, FreeSolo, ChipComponent>) {
     return (
@@ -92,6 +99,7 @@ export function Autocomplete<
                     }
                 />
             )}
+            renderGroup={groupRenderer}
             {...props}
         />
     );
