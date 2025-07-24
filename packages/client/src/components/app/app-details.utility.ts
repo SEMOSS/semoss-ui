@@ -16,6 +16,7 @@ export interface appDependency {
     engine_type: string;
     permission_name: string;
     description: string;
+    access_permission: number;
 }
 
 export interface modelledDependency {
@@ -26,6 +27,7 @@ export interface modelledDependency {
     isPublic: boolean;
     isDiscoverable: boolean;
     description: string;
+    access_permission: number;
 }
 
 export interface engine {
@@ -47,6 +49,7 @@ export interface engine {
     permission: number;
     user_permission: Role;
     description: string;
+    access_permission: number;
 }
 
 export interface AppDetailsRef {
@@ -173,7 +176,7 @@ export const fetchMainUses = async (monolithStore: any, appId: string) => {
 
 export const fetchDependencies = async (monolithStore: any, appId: string) => {
     const res = await monolithStore.runQuery(
-        `GetProjectDependencies(project="${appId}", details=[true])`,
+        `GetProjectDependencies(project="${appId}")`,
     );
 
     const type = res.pixelReturn[0].operationType;

@@ -382,6 +382,7 @@ export const AppDetailPage = () => {
             isPublic: !!dep.engine_global,
             isDiscoverable: !!dep.engine_discoverable,
             description: dep.description,
+            access_permission: dep.access_permission,
         }));
     };
     console.log('modelledDependencies', modelDependencies);

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from 'react';
-import { Add, Delete, Edit, Filter } from '@mui/icons-material';
+import { Add, Delete, Edit } from '@mui/icons-material';
 import SearchIcon from '@mui/icons-material/Search';
 import { AxiosResponse } from 'axios';
 
@@ -30,6 +30,7 @@ import { MembersDeleteOverlay } from './MembersDeleteOverlay';
 import { MembersAddOverlay } from './MembersAddOverlay';
 import { UserPopover } from './UserPopover';
 import FilteredIcon from '@/assets/img/FilteredIcon.png';
+
 const AvatarWrapper = styled('div')({
     display: 'inline-block',
     width: '50px',
@@ -42,9 +43,6 @@ const StyledMemberContent = styled('div')({
     alignItems: 'flex-start',
     gap: '25px',
     flexShrink: '0',
-    border: '1px solid #C4C4C4',
-    borderRadius: '12px',
-    borderBottom: 'none',
 });
 
 const StyledMemberInnerContent = styled('div')({
@@ -153,9 +151,6 @@ const StyledNoMembersDiv = styled('div')(({ theme }) => ({
     alignItems: 'center',
 }));
 
-const StyledSelectedTableRow = styled(Table.Row)({
-    backgroundColor: '#e3f0ff', // light blue, adjust as needed
-});
 
 const StyledTableCell = styled(Table.Cell)({
     paddingLeft: '16px',
@@ -173,6 +168,9 @@ const StyledCenteredBox = styled(Box)({
 const StyledNameStack = styled(Stack)({
     alignItems: 'center',
     flex: 1,
+});
+const StyledSelectedTableRow = styled(Table.Row)({
+    backgroundColor: '#e3f0ff', // light blue, adjust as needed
 });
 
 const formatValue = (input: string) => {
@@ -909,137 +907,144 @@ export const MembersTable = (props: MembersTableProps) => {
                                                         );
                                                 }
 
-                                            if (user) {
-                                                const RowComponent = isSelected
-                                                    ? StyledSelectedTableRow
-                                                    : Table.Row;
-                                                return (
-                                                    <RowComponent key={user.id}>
-                                                        <StyledTableCell
-                                                            size="medium"
-                                                            padding="checkbox"
+                                                if (user) {
+                                                    const RowComponent =
+                                                        isSelected
+                                                            ? StyledSelectedTableRow
+                                                            : Table.Row;
+                                                    return (
+                                                        <RowComponent
+                                                            key={user.id}
                                                         >
-                                                            <StyledCheckbox
-                                                                disabled={
-                                                                    userPermission ===
-                                                                    'Read-Only'
-                                                                }
-                                                                checked={
-                                                                    isSelected
-                                                                }
-                                                                onChange={() => {
-                                                                    if (
+                                                            <StyledTableCell
+                                                                size="medium"
+                                                                padding="checkbox"
+                                                            >
+                                                                <StyledCheckbox
+                                                                    disabled={
+                                                                        userPermission ===
+                                                                        'Read-Only'
+                                                                    }
+                                                                    checked={
                                                                         isSelected
-                                                                    ) {
-                                                                        const selMembers =
-                                                                            [];
-                                                                        selectedMembers.forEach(
-                                                                            (
-                                                                                u,
-                                                                            ) => {
-                                                                                if (
-                                                                                    u.id !==
-                                                                                    user.id
-                                                                                )
-                                                                                    selMembers.push(
-                                                                                        u,
-                                                                                    );
-                                                                            },
-                                                                        );
-                                                                        setSelectedMembers(
-                                                                            selMembers,
-                                                                        );
-                                                                    } else {
-                                                                        setSelectedMembers(
+                                                                    }
+                                                                    onChange={() => {
+                                                                        if (
+                                                                            isSelected
+                                                                        ) {
+                                                                            const selMembers =
+                                                                                [];
+                                                                            selectedMembers.forEach(
+                                                                                (
+                                                                                    u,
+                                                                                ) => {
+                                                                                    if (
+                                                                                        u.id !==
+                                                                                        user.id
+                                                                                    )
+                                                                                        selMembers.push(
+                                                                                            u,
+                                                                                        );
+                                                                                },
+                                                                            );
+                                                                            setSelectedMembers(
+                                                                                selMembers,
+                                                                            );
+                                                                        } else {
+                                                                            setSelectedMembers(
+                                                                                [
+                                                                                    ...selectedMembers,
+                                                                                    user,
+                                                                                ],
+                                                                            );
+                                                                        }
+                                                                    }}
+                                                                />
+                                                            </StyledTableCell>
+                                                            <Table.Cell>
+                                                                <StyledCenteredBox>
+                                                                    <StyledNameStack
+                                                                        direction="row"
+                                                                        onMouseEnter={(
+                                                                            event,
+                                                                        ) => {
+                                                                            setAnchorEl(
+                                                                                event.currentTarget,
+                                                                            );
+                                                                            setHoveredUser(
+                                                                                user,
+                                                                            );
+                                                                        }}
+                                                                        onMouseLeave={() =>
+                                                                            handlePopoverClose
+                                                                        }
+                                                                        aria-owns="mouse-over-popover"
+                                                                        aria-haspopup="true"
+                                                                    >
+                                                                        <AvatarWrapper>
+                                                                            <Avatar>
+                                                                                {user.name[0].toUpperCase()}
+                                                                            </Avatar>
+                                                                        </AvatarWrapper>
+                                                                        {
+                                                                            user.name
+                                                                        }
+                                                                    </StyledNameStack>
+                                                                </StyledCenteredBox>
+                                                            </Table.Cell>
+                                                            <Table.Cell size="medium">
+                                                                <RadioGroup
+                                                                    row
+                                                                    defaultValue={
+                                                                        permissionPriorityMapper(
+                                                                            user.permission,
+                                                                        )
+                                                                            ?.permission
+                                                                    }
+                                                                    sx={{
+                                                                        flexWrap:
+                                                                            'nowrap',
+                                                                    }}
+                                                                    onChange={(
+                                                                        e,
+                                                                    ) => {
+                                                                        updateSelectedUsers(
                                                                             [
-                                                                                ...selectedMembers,
                                                                                 user,
                                                                             ],
-                                                                        );
-                                                                    }
-                                                                }}
-                                                            />
-                                                        </StyledTableCell>
-                                                        <Table.Cell>
-                                                            <StyledCenteredBox>
-                                                                <StyledNameStack
-                                                                    direction="row"
-                                                                    onMouseEnter={(
-                                                                        event,
-                                                                    ) => {
-                                                                        setAnchorEl(
-                                                                            event.currentTarget,
-                                                                        );
-                                                                        setHoveredUser(
-                                                                            user,
+                                                                            permissionPriorityMapper(
+                                                                                e
+                                                                                    .target
+                                                                                    .value,
+                                                                            )
+                                                                                ?.permission,
                                                                         );
                                                                     }}
-                                                                    onMouseLeave={() =>
-                                                                        handlePopoverClose
-                                                                    }
-                                                                    aria-owns="mouse-over-popover"
-                                                                    aria-haspopup="true"
                                                                 >
-                                                                    <AvatarWrapper>
-                                                                        <Avatar>
-                                                                            {user.name[0].toUpperCase()}
-                                                                        </Avatar>
-                                                                    </AvatarWrapper>
-                                                                    {user.name}
-                                                                </StyledNameStack>
-                                                            </StyledCenteredBox>
-                                                        </Table.Cell>
-                                                        <Table.Cell size="medium">
-                                                            <RadioGroup
-                                                                row
-                                                                defaultValue={
-                                                                    permissionPriorityMapper(
-                                                                        user.permission,
-                                                                    )
-                                                                        ?.permission
-                                                                }
-                                                                sx={{
-                                                                    flexWrap:
-                                                                        'nowrap',
-                                                                }}
-                                                                onChange={(
-                                                                    e,
-                                                                ) => {
-                                                                    updateSelectedUsers(
-                                                                        [user],
-                                                                        permissionPriorityMapper(
-                                                                            e
-                                                                                .target
-                                                                                .value,
-                                                                        )
-                                                                            ?.permission,
-                                                                    );
-                                                                }}
-                                                            >
-                                                                <RadioGroup.Item
-                                                                    value="Author"
-                                                                    label="Author"
-                                                                    disabled={
-                                                                        (!configStore.isEngineOperationAvailable(
-                                                                            type,
-                                                                            'access',
-                                                                        ) ||
-                                                                            permissionPriorityMapper(
-                                                                                userPermission,
-                                                                            )
-                                                                                .priority >
-                                                                                1) &&
-                                                                        !adminMode
-                                                                    }
-                                                                />
-                                                                <RadioGroup.Item
-                                                                    value="Editor"
-                                                                    label="Editor"
-                                                                    disabled={
-                                                                        (isLastAuthor(
-                                                                            user,
-                                                                        ) ||
-                                                                            (userPermission ===
+                                                                    <RadioGroup.Item
+                                                                        value="Author"
+                                                                        label="Author"
+                                                                        disabled={
+                                                                            (!configStore.isEngineOperationAvailable(
+                                                                                type,
+                                                                                'access',
+                                                                            ) ||
+                                                                                permissionPriorityMapper(
+                                                                                    userPermission,
+                                                                                )
+                                                                                    .priority >
+                                                                                    1) &&
+                                                                            !adminMode
+                                                                        }
+                                                                    />
+                                                                    <RadioGroup.Item
+                                                                        value="Editor"
+                                                                        label="Editor"
+                                                                        disabled={
+                                                                            isLastAuthor(
+                                                                                user,
+                                                                            ) ||
+                                                                            (((userPermission ===
                                                                                 'Editor' &&
                                                                                 user.permission ===
                                                                                     'OWNER') ||
@@ -1123,45 +1128,47 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                             true,
                                                                         );
 
-                                                                    setAddModalUser(
-                                                                        user,
-                                                                    );
-                                                                    console.log(
-                                                                        user,
-                                                                    );
-                                                                }}
-                                                                disabled={
-                                                                    !configStore.isEngineOperationAvailable(
-                                                                        type,
-                                                                        'access',
-                                                                    ) ||
-                                                                    userPermission ===
-                                                                        'Read-Only'
-                                                                }
-                                                            >
-                                                                <Edit />
-                                                            </IconButton>
-                                                            <IconButton
-                                                                onClick={() => {
-                                                                    openDeleteMembersModal(
-                                                                        [user],
-                                                                    );
-                                                                }}
-                                                                disabled={
-                                                                    !configStore.isEngineOperationAvailable(
-                                                                        type,
-                                                                        'access',
-                                                                    ) ||
-                                                                    userPermission ===
-                                                                        'Read-Only'
-                                                                }
-                                                            >
-                                                                <Delete></Delete>
-                                                            </IconButton>
-                                                        </Table.Cell>
-                                                    </RowComponent>
-                                                );
-                                            }
+                                                                        setAddModalUser(
+                                                                            user,
+                                                                        );
+                                                                        console.log(
+                                                                            user,
+                                                                        );
+                                                                    }}
+                                                                    disabled={
+                                                                        !configStore.isEngineOperationAvailable(
+                                                                            type,
+                                                                            'access',
+                                                                        ) ||
+                                                                        userPermission ===
+                                                                            'Read-Only'
+                                                                    }
+                                                                >
+                                                                    <Edit />
+                                                                </IconButton>
+                                                                <IconButton
+                                                                    onClick={() => {
+                                                                        openDeleteMembersModal(
+                                                                            [
+                                                                                user,
+                                                                            ],
+                                                                        );
+                                                                    }}
+                                                                    disabled={
+                                                                        !configStore.isEngineOperationAvailable(
+                                                                            type,
+                                                                            'access',
+                                                                        ) ||
+                                                                        userPermission ===
+                                                                            'Read-Only'
+                                                                    }
+                                                                >
+                                                                    <Delete></Delete>
+                                                                </IconButton>
+                                                            </Table.Cell>
+                                                        </RowComponent>
+                                                    );
+                                                }
 
                                                 return null;
                                             })}

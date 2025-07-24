@@ -100,6 +100,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
             isPublic: !!d.database_global,
             isDiscoverable: !!d.database_discoverable,
             description: d.description,
+            access_permission: d.access_permission,
         }));
         return modelled;
     };

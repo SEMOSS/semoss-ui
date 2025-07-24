@@ -88,7 +88,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
     if (active?.role === 'OWNER' && !fromApp) {
         return null;
     }
-
+console.log('active', active.role, active?.id);
     return (
         <>
             <Button
@@ -98,7 +98,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
                 sx={fromApp ? { borderRadius: 10, px: 2, py: 0.5 } : undefined}
                 size={fromApp ? 'small' : undefined}
             >
-                {active?.role === 'DISCOVERABLE'
+                {active?.role === 'DISCOVERABLE'|| !active.role 
                     ? 'Request Access'
                     : 'Change Access'}
             </Button>
@@ -106,12 +106,11 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
                 open={open}
                 maxWidth={'md'}
                 onClose={() => {
-                    // close is
                     setOpen(false);
                 }}
             >
                 <Modal.Title>
-                    {active?.role === 'DISCOVERABLE'
+                    {active?.role === 'DISCOVERABLE' 
                         ? 'Request Access'
                         : 'Change Access'}
                 </Modal.Title>

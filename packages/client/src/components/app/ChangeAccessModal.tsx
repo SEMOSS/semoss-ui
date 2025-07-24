@@ -212,7 +212,9 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
             }
 
             const dependenciesToRequest = dependencies.filter(
-                (dep) => !dep.userPermission && !requestedDeps.has(dep.id),
+                (dep) =>
+                    dep.userPermission !== requestedRole &&
+                    !requestedDeps.has(dep.id),
             );
 
             if (dependenciesToRequest.length === 0) {
@@ -300,6 +302,28 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
             });
         }
     };
+
+    const PendingButton = () => (
+        <Button
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 10, px: 2, py: 0.5 }}
+            disabled
+        >
+            Pending Access
+        </Button>
+    );
+
+    const ActionButton = ({ label, onClick }) => (
+        <Button
+            variant="outlined"
+            size="small"
+            sx={{ borderRadius: 10, px: 2, py: 0.5, fontSize: '13px' }}
+            onClick={onClick}
+        >
+            {label}
+        </Button>
+    );
 
     return (
         <>
@@ -687,80 +711,30 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                                     </Stack>
 
                                                     <Box sx={{ ml: 2 }}>
-                                                        {!dep.userPermission ? (
-                                                            !requestedDeps.has(
-                                                                dep.id,
-                                                            ) ? (
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    size="small"
-                                                                    sx={{
-                                                                        borderRadius: 10,
-                                                                        px: 2,
-                                                                        py: 0.5,
-                                                                        fontSize:
-                                                                            '13px',
-                                                                    }}
-                                                                    onClick={() =>
-                                                                        handleSingleDependencyRequest(
-                                                                            dep.id,
-                                                                        )
-                                                                    }
-                                                                >
-                                                                    Request
-                                                                    Access
-                                                                </Button>
-                                                            ) : (
-                                                                <Button
-                                                                    variant="outlined"
-                                                                    size="small"
-                                                                    sx={{
-                                                                        borderRadius: 10,
-                                                                        px: 2,
-                                                                        py: 0.5,
-                                                                    }}
-                                                                    disabled
-                                                                >
-                                                                    Pending
-                                                                    Access
-                                                                </Button>
-                                                            )
-                                                        ) : // If dep.userPermission is not null or "none", show "Change Access"
-                                                        !requestedDeps.has(
+                                                        {dep.access_permission ? (
+                                                            <PendingButton />
+                                                        ) : requestedDeps.has(
                                                               dep.id,
                                                           ) ? (
-                                                            <Button
-                                                                variant="outlined"
-                                                                size="small"
-                                                                sx={{
-                                                                    borderRadius: 10,
-                                                                    px: 2,
-                                                                    py: 0.5,
-                                                                    fontSize:
-                                                                        '13px',
-                                                                }}
+                                                            <PendingButton />
+                                                        ) : !dep.userPermission ? (
+                                                            <ActionButton
+                                                                label="Request Access"
                                                                 onClick={() =>
                                                                     handleSingleDependencyRequest(
                                                                         dep.id,
                                                                     )
                                                                 }
-                                                            >
-                                                                Change Access
-                                                            </Button>
+                                                            />
                                                         ) : (
-                                                            <Button
-                                                                variant="outlined"
-                                                                size="small"
-                                                                color="secondary"
-                                                                sx={{
-                                                                    borderRadius: 10,
-                                                                    px: 2,
-                                                                    py: 0.5,
-                                                                }}
-                                                                disabled
-                                                            >
-                                                                Pending Access
-                                                            </Button>
+                                                            <ActionButton
+                                                                label="Change Access"
+                                                                onClick={() =>
+                                                                    handleSingleDependencyRequest(
+                                                                        dep.id,
+                                                                    )
+                                                                }
+                                                            />
                                                         )}
                                                     </Box>
                                                 </Stack>
