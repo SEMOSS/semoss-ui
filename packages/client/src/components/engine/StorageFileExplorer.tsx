@@ -157,15 +157,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             for (const file of upload) {
                 const { fileLocation } = file;
                 const fileName = fileLocation.split('/').pop() || 'unknown';
-                
-                let storageFilePath;
-                if (data.STORAGE_PATH === '/' || data.STORAGE_PATH === '') {
-                    storageFilePath = `/${fileName}`;
-                    console.log(`Uploading to root: ${storageFilePath}`);
-                } else {
-                    storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
-                    console.log(`Uploading to folder: ${storageFilePath}`);
-                }
+                const storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
 
                 // Push file to storage using the storage pixel
                 const response = await monolithStore.runQuery(`
@@ -265,8 +257,8 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                             rules={{ required: 'Storage path is required' }}
                             render={({ field, fieldState }) => (
                                 <div style={{ marginBottom: '16px' }}>
-                                    <Typography variant="body2" sx={{ marginBottom: '8px' }}>
-                                        Storage Path (use "/" for root, or "/foldername" for a folder):
+                                    <Typography variant="body2" style={{ marginBottom: '8px' }}>
+                                        Storage Path (e.g., /documents, /images):
                                     </Typography>
                                     <input
                                         {...field}
