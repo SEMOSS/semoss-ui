@@ -157,7 +157,13 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             for (const file of upload) {
                 const { fileLocation } = file;
                 const fileName = fileLocation.split('/').pop() || 'unknown';
-                const storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
+                
+                let storageFilePath;
+                if (data.STORAGE_PATH === '/' || data.STORAGE_PATH === '') {
+                    storageFilePath = fileName;
+                } else {
+                    storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
+                }
 
                 // Push file to storage using the storage pixel
                 const response = await monolithStore.runQuery(`
