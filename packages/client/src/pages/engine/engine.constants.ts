@@ -14,7 +14,6 @@ import { EngineSettingsPage } from './EngineSettingsPage';
 import { EngineFilePage } from './EngineFilePage';
 import { EngineQAPage } from './EngineQAPage';
 import { EngineQueryDataPage } from './EngineQueryDataPage';
-import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
 
@@ -148,12 +147,6 @@ export const ENGINE_ROUTES: {
                 path: 'query',
                 component: EngineQueryDataPage,
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
-            },
-            {
-                name: 'Replace',
-                path: 'replace',
-                component: EngineReplaceDataPage,
-                restrict: ['EDIT', 'OWNER'],
             },
             {
                 name: 'Access Control',
