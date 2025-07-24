@@ -13,8 +13,8 @@ import {
 } from '@semoss/ui';
 
 import { ClearRounded } from '@mui/icons-material';
-
-import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { useDebouncedValue } from '@semoss/sdk/react';
+import { useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { usePixel } from '@/hooks';
@@ -216,7 +216,7 @@ export const MemberDependencyOverlay = (
     }, [selectedMember, allDependencies, adminMode]);
 
     // debounce the input
-    const debouncedSearch = useDebounceValue(search);
+    const debouncedSearch = useDebouncedValue(search);
 
     const [infiniteOn, setInfiniteOn] = useState(true);
 
