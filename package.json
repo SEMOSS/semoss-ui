@@ -5,7 +5,7 @@
   "scripts": {
     "prepare": "husky install",
     "dev": "turbo run dev",
-    "dev:client": "turbo run dev --filter=@semoss/client",
+    "dev:client": "turbo run dev --filter=@semoss/client...",
     "lint": "turbo run lint",
     "build": "turbo run build",
     "build:dev": "turbo run build:dev",
