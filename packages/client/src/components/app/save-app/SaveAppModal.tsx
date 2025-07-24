@@ -38,6 +38,8 @@ interface SaveAppProps {
 
     /** Error message to display */
     errorMessage: string;
+
+    buttonTitle: string;
 }
 
 export const SaveAppModal = (props: SaveAppProps) => {
@@ -49,6 +51,7 @@ export const SaveAppModal = (props: SaveAppProps) => {
         open,
         steps,
         title,
+        buttonTitle,
     } = props;
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -93,7 +96,7 @@ export const SaveAppModal = (props: SaveAppProps) => {
     };
 
     const nextStepLabel =
-        currentStepIndex === steps.length - 1 ? 'Upload' : 'Next';
+        currentStepIndex === steps.length - 1 ? buttonTitle : 'Next';
 
     /**
      * Method that is called to create the app

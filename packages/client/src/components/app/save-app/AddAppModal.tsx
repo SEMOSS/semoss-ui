@@ -272,6 +272,7 @@ export const AddAppModal = (props: AddAppProps) => {
             defaultFormValues={defaultFormValues}
             handleFormSubmit={createApp}
             errorMessage="There was an error creating your app. Please check your zip file and try again."
+            buttonTitle="Upload"
         />
     );
 };

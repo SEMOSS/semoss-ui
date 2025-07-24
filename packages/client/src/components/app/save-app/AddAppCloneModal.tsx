@@ -121,6 +121,7 @@ export const AddAppCloneModal = (props: AddAppProps) => {
             defaultFormValues={defaultFormValues}
             handleFormSubmit={cloneApp}
             errorMessage="There was an error cloning your app. Please check your template files and try again."
+            buttonTitle="Clone"
         />
     );
 };
