@@ -106,6 +106,8 @@ import {
     VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
 
+import { config as JiraBlockConfig, JiraBlockDef } from "./jira-block";
+
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
     | PopoverBlockDef
@@ -148,7 +150,8 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | TimePickerBlockDef
     | VisualizationFilterBlockDef
-    | GridDynamicFrameBlockDef;
+    | GridDynamicFrameBlockDef
+    | JiraBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -192,6 +195,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
     [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
+    [JiraBlockConfig.widget]: JiraBlockConfig,
 };
 
 export {
@@ -234,4 +238,5 @@ export {
     FlipCardBlockConfig,
     VisualizationFilterBlockConfig,
     GridDynamicFrameBlockConfig,
+    JiraBlockConfig,
 };

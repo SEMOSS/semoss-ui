@@ -1,0 +1,143 @@
+import React, { useState,useEffect } from 'react';
+import { Autocomplete, TextField, Stack, Button } from '@semoss/ui';
+import { observer } from "mobx-react-lite";
+import { Controller, useForm } from 'react-hook-form';
+import { useBlockSettings } from '@/hooks';
+
+import {
+    Paths,
+    PathValue,
+    useBlocks,
+    Block,
+    BlockDef,
+} from '@semoss/renderer';
+
+interface JiraSettingsProps<D extends BlockDef = BlockDef> {
+    id: string;
+    paths: Paths<Block<D>["data"], 4>[];
+    userId: Paths<Block<D>["data"], 4>;
+    connections: Paths<Block<D>["data"], 4>[];
+}
+
+type JiraSettingsForm = {
+    JIRA_CONNECTION: string;
+    JIRA_ACTION: string;
+};
+
+
+export const JiraSettings = observer(
+    <D extends BlockDef = BlockDef>({
+            id,
+            paths,
+            userId,
+            connections,
+        }: JiraSettingsProps<D>) =>{
+            const [connectionValue, setConnectionValue] = useState('');
+            const [actionValue, setActionValue] = useState('');
+            const [jiraData, setJiraData] = useState<any>(null);
+            const { state } = useBlocks();
+            const { data, setData } = useBlockSettings(id);
+
+            const handleMouseDownChange = (event): void => {
+                const dropDownOption = event.target.innerText === "Create new ticket" ? "showCreateJiraForm" : "listAllTickets";
+                paths.map(path=>{
+                    const value = dropDownOption === path ? true : false;
+                    setData(path, value as PathValue<D["data"], typeof path>);
+                })             
+            };
+
+            useEffect(()=>{
+                async function fetchData() {
+                    const pixelCommand = `META | JiraGet()`;
+                    const response = await state.runSideEffect(pixelCommand);
+                    const output1 = response.pixelReturn[0].output as { userId: string }[];
+                    const userData = output1.map((item: any) => item.keyName);
+                    setJiraData(userData);
+                }
+                fetchData();
+            },[]);
+
+            useEffect(() => {
+                const persistedConnectionValue  = data.jiraConnectionValue;
+                const persistedActionValue = data.jiraActionValue;
+                if (persistedConnectionValue) {
+                    setConnectionValue(persistedConnectionValue as string);
+                }
+                if (persistedActionValue) {
+                    setActionValue(persistedActionValue as string);
+                }
+            }, [data.jiraConnectionValue, data.jiraActionValue]);
+            
+
+            const { getValues, handleSubmit, control, watch,reset } = useForm<JiraSettingsForm>({
+                        defaultValues: {
+                            JIRA_CONNECTION: '',
+                            JIRA_ACTION: '',
+                        },
+                    });
+
+            return (
+                <Stack direction="column" spacing={2}>
+                    <Controller
+                        name="JIRA_CONNECTION"
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field }) => (
+                            <Stack spacing={1}>
+                                <div>Connections</div>
+                                <Autocomplete
+                                    options={jiraData || []}
+                                    getOptionLabel={(option) => option}
+                                    multiple={false}
+                                    value={field.value || connectionValue || null}
+                                    onChange={(event, newValue) => {
+                                        field.onChange(newValue);
+                                        setData(userId, newValue as PathValue<D["data"], typeof userId>);
+                                        setConnectionValue(newValue);
+                                        setData(connections[0], newValue as PathValue<D["data"], typeof connections[0]>);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Connections"
+                                            fullWidth
+                                        />
+                                    )}
+                                />
+                            </Stack>
+                        )}
+                    />
+                    <Controller
+                        name="JIRA_ACTION"
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field }) => (
+                            <Stack spacing={1}>
+                                <div>Actions</div>
+                                <Autocomplete
+                                    options={[{ value: "List all tickets" }, { value: "Create new ticket" }]}
+                                    getOptionLabel={(option) => option['value']}
+                                    multiple={false}
+                                    value={field.value || actionValue || null}
+                                    onChange={(event, newValue) => {
+                                        field.onChange(newValue);
+                                        handleMouseDownChange({ target: { innerText: newValue['value'] } });
+                                        setActionValue(newValue as string);
+                                        setData(connections[1], newValue as PathValue<D["data"], typeof connections[1]>);
+                                    }}
+                                    renderInput={(params) => (
+                                        <TextField
+                                            {...params}
+                                            label="Actions"
+                                            fullWidth
+                                        />
+                                    )}
+                                />
+                            </Stack>
+                        )}
+                    />
+                </Stack>
+            );
+
+        }
+);

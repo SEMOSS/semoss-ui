@@ -235,7 +235,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 
                         // clear the line, add the buffer, move to the first position and then move to the buffer position
                         terminalInstance.write(
-                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${PROMPT_LENGTH + updatedBuffer.position
+                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${
+                                PROMPT_LENGTH + updatedBuffer.position
                             }C`,
                         );
                     }
@@ -344,7 +345,8 @@ export const Terminal: React.FC<TerminalProps> = ({
 
                         // clear the line, add the buffer, move to the first position and then move to the buffer position
                         terminalInstance.write(
-                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${PROMPT_LENGTH + updatedBuffer.position
+                            `\r\x1b[2K${PROMPT}${updatedBuffer.command}\r\x1b[${
+                                PROMPT_LENGTH + updatedBuffer.position
                             }C`,
                         );
                     }

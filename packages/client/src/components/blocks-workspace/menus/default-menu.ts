@@ -14,6 +14,8 @@ const SECTION_CHARTS = 'Data Charts';
 const SECTION_MISC = 'Miscellaneous';
 const SECTION_GROUPED = 'Grouped Blocks';
 
+const SECTION_JIRA = 'Jira';
+
 export const SECTION_ORDER = [
     SECTION_LAYOUT,
     SECTION_TEXT,
@@ -22,6 +24,7 @@ export const SECTION_ORDER = [
     SECTION_ELEMENT,
     SECTION_MISC,
     SECTION_CHARTS,
+    SECTION_JIRA,
     // SECTION_GROUPED,
 ];
 
@@ -506,6 +509,37 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 header: [],
                 content: [],
             },
+        },
+    },
+    {
+        section: SECTION_JIRA,
+        name: 'Jira',
+        helperText: 'Integrate with Jira to manage tasks and issues',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'jira',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Jira Block',
+                variant: 'p',
+                show: 'true',
+                showCreateJiraForm: false,
+                showCreatedJiraForm: false,
+                listAllTickets: false,
+                listedTickets: false,
+                userId: '',
+                jiraConnectionValue: '',
+                jiraActionValue: '',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
     {

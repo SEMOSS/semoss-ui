@@ -108,6 +108,7 @@ const IconMapper = {
     'Teams Management': <GroupRounded />,
     'Team Permissions': <Diversity3 />,
     'My Profile': <PersonRounded />,
+    'Jira Profile': <PersonRounded />,
     Theming: <PaintRounded />,
     Jobs: <Jobs />,
 };
