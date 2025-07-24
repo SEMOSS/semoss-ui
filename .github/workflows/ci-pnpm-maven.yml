@@ -27,7 +27,6 @@ jobs:
         runs-on: self-hosted
         if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
-            #image: node:18.16.1-bullseye  #nvm image which can use multiple versions of node
             image: node:24-bullseye
         steps:
             - name: Checkout code
@@ -153,7 +152,7 @@ jobs:
         runs-on: self-hosted
         if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
         container:
-            image: node:18.16.1-bullseye
+            image: node:24-bullseye
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -210,12 +209,6 @@ jobs:
               uses: pnpm/action-setup@v4
               with:
                 version: 10.13.1
-
-            - name: Set up Node.js 24
-              uses: actions/setup-node@v4
-              with:
-                node-version: '24'
-                cache: "pnpm"
 
             - name: Install npm dependencies
               run: |
@@ -356,7 +349,7 @@ jobs:
         runs-on: self-hosted
         if: ${{ vars.RELEASE == 'TRUE' && github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
         container:
-            image: node:18.16.1-bullseye
+            image: node:24-bullseye
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
@@ -410,12 +403,6 @@ jobs:
               uses: pnpm/action-setup@v4
               with:
                 version: 10.13.1
-
-            - name: Set up Node.js 24
-              uses: actions/setup-node@v4
-              with:
-                node-version: '24'
-                cache: "pnpm"
 
             - name: Install npm dependencies
               run: |
