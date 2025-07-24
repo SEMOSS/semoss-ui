@@ -28,7 +28,7 @@ jobs:
         if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
         container:
             #image: node:18.16.1-bullseye  #nvm image which can use multiple versions of node
-            image:24-bullseye
+            image: node:24-bullseye
         steps:
             - name: Checkout code
               uses: actions/checkout@v4
