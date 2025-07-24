@@ -307,8 +307,7 @@ export const LoginPage = observer(() => {
 
     // set initial selected login type from config.
     useEffect(() => {
-        if(configStore.theme.backgroundImg !== null && 
-             configStore.theme.backgroundImg === AICOREGIF){
+        if(configStore.theme.backgroundImg !== null){
              setBackgroundImg (AICOREGIF);
         }else{
              setBackgroundImg (GIF);
