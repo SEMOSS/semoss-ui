@@ -79,6 +79,11 @@ export const JiraProfilePage = () => {
         },
     });
 
+    const escapePixelString = (str: string) => {
+        if (typeof str !== 'string') return '';
+        return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\"/g, '\\"');
+    }
+
     useEffect(() => {
         getSavedApiKeysQuery();
     }, []);
@@ -88,6 +93,9 @@ export const JiraProfilePage = () => {
         monolithStore
             .runQuery(pixel)
             .then((response) => {
+                if (!response.pixelReturn?.length) {
+                    throw new Error("Empty response from Jira Pixel call");
+                }
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
                 if (type.indexOf('ERROR') === -1 ) {
@@ -101,10 +109,17 @@ export const JiraProfilePage = () => {
             });
     };
     const SaveAPIKey = async (data: SaveAPIKeyForm) => {
-        const pixel = `META | JiraInsert(userid="${data.USERID}",apikey="${data.APIKEY}",url="${data.URL}",keyname="${data.NAME}")`;
+        const safeUserId = escapePixelString(data.USERID);
+        const safeApiKey = escapePixelString(data.APIKEY);
+        const safeUrl = escapePixelString(data.URL);
+        const safeName = escapePixelString(data.NAME);
+        const pixel = `META | JiraInsert(userid="${safeUserId}",apikey="${safeApiKey}",url="${safeUrl}",keyname="${safeName}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
+                if (!response.pixelReturn?.length) {
+                    throw new Error("Empty response from Jira Pixel call");
+                }
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output.Success;
                 if (type.indexOf('ERROR') === -1 && output === true) {
@@ -129,10 +144,14 @@ export const JiraProfilePage = () => {
     };
 
     const DeleteAPIKey = async (keyName: string) => {
-        const pixel = `META | JiraDeleteDbUser(keyname="${keyName}")`;
+        const safeKeyName = escapePixelString(keyName);
+        const pixel = `META | JiraDeleteDbUser(keyname="${safeKeyName}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
+                if (!response.pixelReturn?.length) {
+                    throw new Error("Empty response from Jira Pixel call");
+                }
                 const type = response.pixelReturn[0].operationType;
                 const output = response.pixelReturn[0].output;
                 if (

@@ -101,12 +101,21 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
         typeof data.text == "string" ? data.text : JSON.stringify(data.text);
     let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
 
+    const escapePixelString = (str: string) => {
+        if (typeof str !== 'string') return '';
+        return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/\"/g, '\\"');
+    }
+
     useEffect(() => {
         async function fetchJiraData() {
+            const safeKeyName = escapePixelString(data.userId);
             try {
                 const response = await runPixel<[string]>(
-                    `META | JiraGetAllProject (keyname="${data.userId}" ) ;`,
+                    `META | JiraGetAllProject (keyname="${safeKeyName}" ) ;`,
                 );
+                if (!response.pixelReturn?.length) {
+                    throw new Error("Empty response from Jira Pixel call");
+                }
                 const outputProjects = response.pixelReturn[0].output;
                 const type = response.pixelReturn[0].operationType;
                 if (type.indexOf('ERROR') === -1) {
@@ -140,10 +149,18 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
 
     const onSubmit = handleSubmit(async (data1: CreateNewJiraForm) => {
         const inputValues = getValues();
+        const safeKeyName = escapePixelString(data.userId);
+        const safeSummary = escapePixelString(inputValues.JIRA_SUMMARY);
+        const safeDescription = escapePixelString(inputValues.JIRA_DESCRIPTION);
+        const safeIssueType = escapePixelString(inputValues.JIRA_ISSUE_TYPE);
+        const safeProject = escapePixelString(inputValues.JIRA_PROJECT);
         try{
             const response = await runPixel<[string]>(
-                `META | JiraCreateNewTicket(keyname="${data.userId}",summary = "${inputValues.JIRA_SUMMARY}",description = "${inputValues.JIRA_DESCRIPTION}",issuetype = "${inputValues.JIRA_ISSUE_TYPE}",project="${inputValues.JIRA_PROJECT}");`,
+                `META | JiraCreateNewTicket(keyname="${safeKeyName}",summary = "${safeSummary}",description = "${safeDescription}",issuetype = "${safeIssueType}",project="${safeProject}");`,
             );
+            if (!response.pixelReturn?.length) {
+                throw new Error("Empty response from Jira Pixel call");
+            }
             const output1 = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
             if (type.indexOf('ERROR') === -1) {
@@ -162,10 +179,15 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
 
     const onSubmit1 = handleSubmit1(async (data2: ListAllJiraTicketsForm) => {
         const inputValues = getValues1();
+        const safeKeyName = escapePixelString(data.userId);
+        const safeProjectId = escapePixelString(inputValues.JIRA_PROJECT_ID);
         try{
             const response = await runPixel<[string]>(
-                `META | JiraListAllTicket (keyname="${data.userId}",project="${inputValues.JIRA_PROJECT_ID}" ) ;`,
+                `META | JiraListAllTicket (keyname="${safeKeyName}",project="${safeProjectId}" ) ;`,
             );
+            if (!response.pixelReturn?.length) {
+                throw new Error("Empty response from Jira Pixel call");
+            }
             const output2 = response.pixelReturn[0].output;
             const type = response.pixelReturn[0].operationType;
             if (type.indexOf('ERROR') === -1) {
@@ -379,7 +401,7 @@ export const JiraBlock: BlockComponent = observer(({ id }) => {
                         <div>
                             <h3>Listed Jira Tickets</h3>
                             {showListedTickets.length > 0 ? (
-                                showListedTickets.map((ticket,id)=><h4>{`Ticket Number ${id}:${ticket}`}</h4>)
+                                showListedTickets.map((ticket,id)=><h4 key={`jira-ticket-${id}`}>{`Ticket Number ${id}:${ticket}`}</h4>)
                             ):''}
                         </div>
                     )}

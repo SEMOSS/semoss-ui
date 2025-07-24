@@ -48,11 +48,19 @@ export const JiraSettings = observer(
 
             useEffect(()=>{
                 async function fetchData() {
-                    const pixelCommand = `META | JiraGet()`;
-                    const response = await state.runSideEffect(pixelCommand);
-                    const output1 = response.pixelReturn[0].output as { userId: string }[];
-                    const userData = output1.map((item: any) => item.keyName);
-                    setJiraData(userData);
+                    try{
+                        const pixelCommand = `META | JiraGet()`;
+                        const response = await state.runSideEffect(pixelCommand);                       
+                        if (!response.pixelReturn?.length) {
+                            throw new Error("Empty response from Jira Pixel call");
+                        }
+                        const output1 = response.pixelReturn[0].output as { userId: string }[];
+                        const userData = output1.map((item: any) => item.keyName);
+                        setJiraData(userData);
+                    }
+                    catch (error) {
+                        console.error("Error listing Jira issue:", error);
+                    }
                 }
                 fetchData();
             },[]);
