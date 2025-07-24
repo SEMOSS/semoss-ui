@@ -26,11 +26,11 @@ const StyledBannerText = styled(Typography)(({ theme }) => ({
     width: '50%',
 }));
 
-const StyledButton = styled(Button)(({})=>({
-    "&.MuiButtonBase-root":{
+const StyledButton = styled(Button)(({ theme }) => ({
+    '&.MuiButtonBase-root': {
         marginTop: 'auto',
         borderRadius: '12px',
-        background: '#000',
+        background: theme.palette.primary.main,
     },
 }));
 
@@ -67,16 +67,24 @@ export const BannerSection = (props: BannerSectionProps) => {
         <div
             style={{
                 padding: '53px 21px',
-                backgroundImage: `url(${imageUrl})`,
+                // backgroundImage: `url(${imageUrl})`,
                 minHeight: '276px',
                 width: '100%',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: 'cover',
+                // backgroundRepeat: 'no-repeat',
+                // backgroundSize: 'cover',
+
                 backgroundPosition: 'center',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'flex-start',
                 borderRadius: '24px',
+                background: `linear-gradient(
+                270deg, rgba(235,244,254,0.7) 20.7%, 
+                rgba(233,245,253,0.7) 85.54%, rgba(219,214,249,0.7) 127.35%) 100% no-repeat, 
+                url(${imageUrl}) 100%, 
+                lightgray`,
+                // backgroundRepeat: 'no-repeat, no-repeat, no-repeat',
+                backgroundSize: 'cover, cover, cover',
             }}
         >
             <StyledBannerTitle variant="h5">{tagline}</StyledBannerTitle>

@@ -46,7 +46,7 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
             direction={'row'}
             alignItems={'center'}
             justifyContent={'flex-start'}
-            onMouseOver={() => page.openSidebar()}
+            // onMouseOver={() => page.openSidebar()}
             spacing={2}
         >
             <IconButton size="small" onClick={() => page.openSidebar()}>

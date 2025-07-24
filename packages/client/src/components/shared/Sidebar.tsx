@@ -6,10 +6,11 @@ import {
     GridView as GridViewIcon,
     Settings as SettingsIcon,
     Functions as FunctionsIcon,
-    Person as PersonIcon,
+    // Person as PersonIcon,
     TokenRounded,
     Inventory2Outlined,
     MenuOpenRounded,
+    AccountCircleRounded,
 } from '@mui/icons-material';
 
 import {
@@ -100,14 +101,14 @@ const StyledSidebar = styled(Drawer)(() => ({
 const StyledSidebarContent = styled(Stack)(({ theme }) => ({
     flexDirection: 'column',
     width: '100%',
-    paddingRight: theme.spacing(2),
-    paddingLeft: theme.spacing(2),
+    // paddingRight: theme.spacing(2),
+    // paddingLeft: theme.spacing(2),
     overflowY: 'auto',
 }));
 
 const StyledSidebarFooter = styled(Stack)(({ theme }) => ({
-    paddingRight: theme.spacing(2),
-    paddingLeft: theme.spacing(2),
+    // paddingRight: theme.spacing(2),
+    // paddingLeft: theme.spacing(2),
     overflowY: 'hidden',
 }));
 
@@ -117,15 +118,15 @@ const StyledList = styled(List)(() => ({
 
 const StyledListItem = styled(List.Item)(({ theme }) => ({
     gap: theme.spacing(1),
-    padding: theme.spacing(1),
+    padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
 }));
 
 const StyledListItemButton = styled(List.ItemButton, {
     shouldForwardProp: (prop) => prop !== 'selected',
 })<{ selected: boolean }>(({ theme, selected }) => ({
     gap: theme.spacing(1),
-    padding: theme.spacing(1),
-    backgroundColor: selected ? theme.palette.secondary.light : undefined,
+    padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+    backgroundColor: selected ? theme.palette.primary.selected : undefined,
 })) as unknown as typeof List.ItemButton;
 
 const StyledListItemIcon = styled(List.Icon)(() => ({
@@ -137,7 +138,24 @@ const StyledLink = styled(Link)(({ theme }) => ({
     color: 'inherit',
     textDecoration: 'none',
     cursor: 'pointer',
+    padding: '4px 0px',
 }));
+
+const StyledSettingsArea = styled(Stack)(({ theme }) => ({
+    flexDirection: 'column',
+    width: '100%',
+    // paddingRight: theme.spacing(2),
+    // paddingLeft: theme.spacing(2),
+    overflowY: 'auto',
+}));
+
+const EllipsisText = styled('span')({
+    display: 'block',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
+    maxWidth: '100%', // adjust as needed
+});
 
 export const Sidebar: React.FC = observer(() => {
     const { configStore } = useRootStore();
@@ -211,7 +229,7 @@ export const Sidebar: React.FC = observer(() => {
                         <MenuOpenRounded fontSize="medium" />
                     </IconButton>
                 </StyledNavHeader>
-                <Divider />
+                <Divider light />
                 <StyledSidebarContent>
                     <StyledList dense={true} aria-label="main navigation">
                         <StyledLink to={'/'} aria-label={'Home'}>
@@ -227,10 +245,10 @@ export const Sidebar: React.FC = observer(() => {
                         </StyledLink>
                     </StyledList>
                 </StyledSidebarContent>
-                <Divider />
+                <Divider light />
                 {viewSidebar ? (
                     <>
-                        <StyledSidebarContent flex={1}>
+                        <StyledSidebarContent>
                             <StyledList
                                 dense={true}
                                 aria-label="catalog navigation"
@@ -274,11 +292,11 @@ export const Sidebar: React.FC = observer(() => {
                         </StyledSidebarContent>
                     </>
                 ) : (
-                    <Stack flex={1} />
+                    <Stack />
                 )}
-                <Divider />
-                <StyledSidebarFooter>
-                    <StyledList dense={true} aria-label="main navigation">
+                <Divider light />
+                <StyledSettingsArea flex={1}>
+                    <StyledList>
                         <StyledLink to={'/settings'} aria-label={'Settings'}>
                             <StyledListItemButton
                                 selected={!!matchPath(`/settings/*`, pathname)}
@@ -290,17 +308,28 @@ export const Sidebar: React.FC = observer(() => {
                                 <List.ItemText primary={'Settings'} />
                             </StyledListItemButton>
                         </StyledLink>
-
+                    </StyledList>
+                </StyledSettingsArea>
+                <Divider light />
+                <StyledSidebarFooter>
+                    <StyledList dense={true} aria-label="main navigation">
                         <LoginPopover>
                             <StyledListItemButton
                                 aria-label={'Login'}
                                 dense={true}
                             >
                                 <StyledListItemIcon>
-                                    <PersonIcon />
+                                    <AccountCircleRounded />
                                 </StyledListItemIcon>
                                 <List.ItemText
-                                    primary={configStore.store.user.name || ''}
+                                    primary={
+                                        <EllipsisText>
+                                            <>
+                                                {configStore.store.user.name ||
+                                                    ''}
+                                            </>
+                                        </EllipsisText>
+                                    }
                                 />
                             </StyledListItemButton>
                         </LoginPopover>

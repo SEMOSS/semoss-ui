@@ -19,7 +19,7 @@ const StyledInnerContainer = styled('div')(({ theme }) => ({
     padding: '16px',
     justifyContent: 'space-between',
     flexDirection: 'column',
-    width:"fill-available",
+    width: 'fill-available',
 }));
 
 const StyledContainerTitleSection = styled('div')(({ theme }) => ({
@@ -43,7 +43,7 @@ const StyledContainerImageSection = styled('div')<{ backgroundImage: string }>(
         backgroundSize: '100% 100%',
         backgroundRepeat: 'no-repeat',
         borderRadius: '12px',
-        minWidth:"204px",
+        minWidth: '204px',
     }),
 );
 
@@ -55,9 +55,9 @@ const StyledContainerButtonSection = styled('div')(({ theme }) => ({
 
 const StyledChip = styled(Chip)(({ theme }) => ({
     borderRadius: '4px',
-    background: 'var(--Primary-Selected, #EBF4FE)',
+    background: 'var(--Primary-Selected, #FDF0E5)',
     '&.MuiChip-root > .MuiChip-label': {
-        color: 'var(--Primary-Main, #0471F0)',
+        color: 'var(--Primary-Main, #5F2B01)',
         fontFeatureSettings: "'liga' off, 'clig' off",
         /* Components/Chip */
         fontFamily: 'Inter',
@@ -135,12 +135,12 @@ export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
                 <StyledContainerButtonSection>
                     <Button
                         variant="text"
-                        disabled={true}
+                        // disabled={true}
                         endIcon={
                             <ArrowForwardIcon
                                 style={{
-                                    // color: '#0471F0',
-                                    color: 'rgba(0, 0, 0, 0.26)',
+                                    color: '#0471F0',
+                                    // color: 'rgba(0, 0, 0, 0.26)',
                                 }}
                             />
                         }

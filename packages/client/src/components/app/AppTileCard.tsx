@@ -59,6 +59,7 @@ const StyledTileCard = styled(
     minHeight: '247px',
     '&:hover': {
         cursor: disabled ? 'default' : 'pointer',
+        boxShadow: 'none',
     },
     borderRadius: theme.shape.borderRadius,
 }));
@@ -153,7 +154,7 @@ const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
 
 const ButtonName = styled('p')(({ theme }) => ({
     fontSize: '13px',
-    color: '#fff',
+    color: theme.palette.primary.main,
     fontFamily: 'Inter',
     fontStyle: 'normal',
     fontWeight: '500',
@@ -175,7 +176,7 @@ const StyledCardContent = styled(Card.Content)(({ theme }) => ({
     '&.MuiCardContent-root': {
         padding: '0px',
         margin: '0px',
-        gap: '0px',
+        // gap: '0px',//default spacing is 8px
     },
 }));
 
@@ -196,7 +197,7 @@ const StyledCardActions = styled(Card.Actions)({
     '&.MuiCardActions-root': {
         padding: '0px',
         position: 'relative',
-        bottom: '8px',
+        // bottom: '8px',
     },
 });
 
@@ -219,6 +220,9 @@ const StyledOpenButton = styled(IconButton)(({ theme }) => ({
     '&.MuiIconButton-root': {
         padding: '0px',
     },
+    '&.MuiIconButton-root :hover': {
+        backgroundColor: theme.palette.primary.hover,
+    },
 }));
 
 const StyledPlaceholder = styled('div')(({ theme }) => ({
@@ -226,7 +230,7 @@ const StyledPlaceholder = styled('div')(({ theme }) => ({
 }));
 
 const StyledMainDiv = styled('div')(({ theme }) => ({
-    width: '307px',
+    width: '322px',
     minHeight: '307px',
 }));
 
@@ -267,10 +271,12 @@ const StyledSkeletonFooter = styled('div')(({ theme }) => ({
 
 const StyledContent = styled('div')(({ theme }) => ({
     display: 'flex',
-    padding: '8px 16px',
+    padding: '0px 16px 8px 16px',
     flexDirection: 'column',
     gap: '8px',
     alignItems: 'flex-start',
+    borderTopLeftRadius: theme.shape.borderRadius,
+    borderTopRightRadius: theme.shape.borderRadius,
 }));
 
 const StyledFooter = styled('div')(({ theme }) => ({
@@ -279,17 +285,20 @@ const StyledFooter = styled('div')(({ theme }) => ({
     gap: '8px',
 }));
 
-const StyledFooterDiv = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    height: '30px',
-    width: '123px',
-    gap: '8px',
-    justifyContent: 'center',
-    flex: '1 0 0',
-    borderRadius: '12px',
-    background: '#0471F0',
-}));
+const StyledFooterDiv = styled('div')<{ theme?: any; showBorder?: boolean }>(
+    ({ theme, showBorder = false }) => ({
+        display: 'flex',
+        alignItems: 'center',
+        height: '30px',
+        width: '123px',
+        gap: '8px',
+        justifyContent: 'center',
+        flex: '1 0 0',
+        borderRadius: '12px',
+        background: theme.palette.background.paper,
+        border: showBorder ? '1px solid #0471F0' : undefined,
+    }),
+);
 
 interface AppTileCardProps {
     /**
@@ -382,7 +391,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     const [hasDownloaded, setHasDownloaded] = useState(false);
 
     const open = Boolean(anchorEl);
-
+    console.log('app', app);
     const navigateApp = (appId: string) => {
         if (!appId) {
             return;
@@ -745,7 +754,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
     return (
         <StyledMainDiv ref={cardRef}>
-            <StyledTileCard disabled={!href}>
+            <StyledTileCard disabled={!href} style={{ position: 'relative' }}>
                 {!systemApp && !isDiscoverable && (
                     <StyledContainer>
                         <StyledOverlayContent>
@@ -788,14 +797,30 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         <StyledTileCardMedia
                             src="img"
                             image={base64Image ? base64Image : ''}
+                            sx={{ position: 'relative' }}
                         />
                     ) : (
                         <StyledTileCardMedia
                             src="img"
                             image={image ? image : ''}
+                            sx={{ position: 'relative' }}
                         />
                     )}
-                    <StyledContent>
+                    <div
+                        style={{
+                            height: '12px',
+                            backgroundColor: '#FFFFFF',
+                            position: 'absolute',
+                            borderTopLeftRadius: '50px',
+                            borderTopRightRadius: '50px',
+                            width: '100%',
+                            top: '65px',
+                            border: '1px solid transparent',
+                        }}
+                    >
+                        &nbsp;
+                    </div>
+                    <StyledContent style={{ position: 'relative' }}>
                         <StyledCardHeader
                             title={
                                 <StyledName variant={'body2'}>
@@ -816,7 +841,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                 height={'24px'}
                             >
                                 {app.tag !== undefined &&
-                                    (Array.isArray(app.tag) ? (
+                                    (Array.isArray(app.tag) &&
+                                    app.tag.length > 0 ? (
                                         <>
                                             {app.tag.map((tag, i) => {
                                                 if (i <= 2) {
@@ -848,10 +874,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                             )}
                                         </>
                                     ) : (
-                                        <StyledTagChip
-                                            key={`${app.project_id}0`}
-                                            label={app.tag}
-                                        />
+                                        <></>
                                     ))}
                             </Stack>
                             {createdDate && (
@@ -875,12 +898,18 @@ export const AppTileCard = (props: AppTileCardProps) => {
                         <StyledCardActions>
                             {!href ? (
                                 <StyledFooter>
-                                    <StyledOpenButton onClick={onAction}>
-                                        <StyledFooterDiv>
+                                    <StyledOpenButton
+                                        onClick={onAction}
+                                        size="small"
+                                    >
+                                        <StyledFooterDiv showBorder={true}>
                                             <ButtonName>Open App</ButtonName>
                                             <OpenInNewOutlined
                                                 fontSize="small"
-                                                style={{ color: '#fff' }}
+                                                sx={{
+                                                    background: '#ffffff',
+                                                    color: '#0471F0',
+                                                }}
                                             />
                                         </StyledFooterDiv>
                                     </StyledOpenButton>
@@ -900,16 +929,37 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                                 );
                                             }
                                         }}
+                                        size="small"
                                     >
-                                        <StyledFooterDiv>
+                                        <StyledFooterDiv showBorder={true}>
                                             <ButtonName>Open App</ButtonName>
                                             <OpenInNewOutlined
                                                 fontSize="small"
-                                                style={{ color: '#fff' }}
+                                                sx={{
+                                                    background: '#ffffff',
+                                                    color: '#0471F0',
+                                                }}
                                             />
                                         </StyledFooterDiv>
                                     </StyledOpenButton>
                                 </StyledFooter>
+                            )}
+                            {app.project_created_by !== 'SYSTEM' ? (
+                                <StyledOpenButton
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        navigateApp(app.project_id);
+                                    }}
+                                    size="small"
+                                >
+                                    <StyledFooterDiv showBorder={false}>
+                                        <ViewDetailsButtonName>
+                                            View Details
+                                        </ViewDetailsButtonName>
+                                    </StyledFooterDiv>
+                                </StyledOpenButton>
+                            ) : (
+                                <></>
                             )}
                             {app.project_created_by !== 'SYSTEM' ? (
                                 <IconButton
@@ -921,6 +971,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                                             ) as HTMLElement | null,
                                         ); // Set the card as the anchor element
                                     }}
+                                    size="small"
                                 >
                                     <MoreVert />
                                 </IconButton>

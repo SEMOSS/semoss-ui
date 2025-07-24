@@ -33,18 +33,16 @@ const navCards = [
     },
 ];
 
-const StyledButton = styled(Button)(({})=>({
-        "&.app-navigation-buttons":{
-                    borderColor: '#C4C4C4',
-                    color: '#212121',
-                    borderRadius: '12px',
-                    padding: '4px 10px',
-                    alignSelf: 'flex-start',
-                    "> :hover":{
-                        background: "#F5F5F5",
-                        border: "#C4C4C4"
-                    }
-        }
+const StyledButton = styled(Button)(({}) => ({
+    '&.app-navigation-buttons': {
+        borderColor: '#C4C4C4',
+        borderRadius: '12px',
+        padding: '4px 10px',
+        alignSelf: 'flex-start',
+        '> :hover': {
+            border: '#C4C4C4',
+        },
+    },
 }));
 
 const NavCard = ({ title, description, type, image, setApp, testId }) => (
@@ -71,7 +69,8 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
         </Box>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <StyledButton
-                variant="outlined"
+                variant="text"
+                color="primary"
                 className="app-navigation-buttons"
                 data-testid={testId}
                 onClick={() => {

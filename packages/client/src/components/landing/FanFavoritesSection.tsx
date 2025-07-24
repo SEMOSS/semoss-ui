@@ -60,7 +60,7 @@ export const FanFavoritesSection = () => {
     return (
         <Stack gap={1}>
             <Typography variant={'h6'}>Try these fan favorites</Typography>
-            <Stack direction={'row'} gap={2}>
+            <Stack direction={'row'} gap={3}>
                 <AppTileCard
                     app={BUSINESS_INTELLIGENCE_APP}
                     background="#BADEFF"

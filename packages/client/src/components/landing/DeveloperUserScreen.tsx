@@ -17,11 +17,11 @@ import { BannerSection } from '@/components/landing/BannerSection';
 import CreateAppSection from './CreateAppSection';
 import { FanFavoritesSection } from './FanFavoritesSection';
 
-const StyledAppCard = styled('div')(({})=>({
-            display: 'flex',
-            width: '100%',
-            gap: '24px',
-            flexDirection: 'column',
+const StyledAppCard = styled('div')(({}) => ({
+    display: 'flex',
+    width: '100%',
+    gap: '24px',
+    flexDirection: 'column',
 }));
 
 export const DeveloperUserScreen = observer(() => {
@@ -105,12 +105,14 @@ export const DeveloperUserScreen = observer(() => {
                     }}
                 >
                     <FeaturedAppCard
-                        tagline={<span>Experiment in our Playground&trade;</span>}
+                        tagline={
+                            <span>Experiment in our Playground&trade;</span>
+                        }
                         description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
                         imageUrl={playground}
                         chip={{
                             label: 'FEATURED',
-                            color: '#EBF4FE',
+                            color: '#FDF0E5',
                         }}
                     />
                     <FeaturedAppCard
@@ -121,7 +123,7 @@ export const DeveloperUserScreen = observer(() => {
                         imageUrl={AIConductor}
                         chip={{
                             label: 'NEW',
-                            color: '#EBF4FE',
+                            color: '#FDF0E5',
                         }}
                     />
                 </Box>
