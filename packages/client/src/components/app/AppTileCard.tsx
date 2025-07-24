@@ -430,9 +430,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
         const observer = new window.IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
-                    // console.log(entry, 'entry');
                     if (entry.isIntersecting) {
-                        // console.log('Card is in view');
                         setIsInView(true);
                     }
                 });

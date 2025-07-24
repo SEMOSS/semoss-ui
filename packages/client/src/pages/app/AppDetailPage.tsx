@@ -173,12 +173,10 @@ export const AppDetailPage = () => {
     const markdown = watch('markdown');
     const tags = watch('tag');
     const appInfo = watch('appInfo');
-    console.log('appInfo', appInfo);
     const userRole = watch('userRole');
     const permission = watch('permission');
     const dependencies = watch('dependencies');
     const detailsForm = watch('detailsForm');
-    console.log(dependencies, ' dependencies');
     const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
@@ -239,8 +237,6 @@ export const AppDetailPage = () => {
             monolithStore
                 .runQuery(requested)
                 .then((response) => {
-                    console.log('pendingUserAccessPixel response', response);
-
                     const output = response?.pixelReturn?.[0]?.output;
                     if (Array.isArray(output) && output.length > 0) {
                         setPendingRequest(true);
@@ -249,13 +245,10 @@ export const AppDetailPage = () => {
                     }
                 })
                 .catch((error) => {
-                    console.error('pendingUserAccessPixel error', error);
                     setPendingRequest(false); // fallback in case of error
                 });
         }
     }, [appId]);
-
-    console.log(pendingRequest, ' pendingRequest');
 
     async function getPermission() {
         const { permission: role } =
@@ -385,8 +378,6 @@ export const AppDetailPage = () => {
             access_permission: dep.access_permission,
         }));
     };
-    console.log('modelledDependencies', modelDependencies);
-
     const emitMessage = (isError: boolean, message: string) => {
         notification.add({
             color: isError ? 'error' : 'success',
