@@ -8,6 +8,8 @@ export interface BoxProps {
     //** onClick function */
     onClick?: () => void;
 
+    flex?: number;
+
     /** custom style object */
     sx?: SxProps;
     title?: string;

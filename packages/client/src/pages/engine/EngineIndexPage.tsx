@@ -7,7 +7,9 @@ import {
     Button,
     ToggleTabsGroup,
     Grid,
+    TextField,
 } from '@semoss/ui';
+import { debounced } from '@semoss/sdk/react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -130,7 +132,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
         offsetRef.current = offset;
         let scrollEle, scrollTimeout, currentScroll, previousScroll;
 
-        const search = configStore.store.globalSearch || '';
+        const [inputValue, setInputValue] = useState('');
+        const [search, setSearch] = useState('');
 
         // which view we are on
         const [mode, setMode] = useState<MODE>('Mine');
@@ -201,6 +204,15 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                   } metaKeys = ${JSON.stringify(metaKeys)} ) ;`
                 : '',
         );
+
+        const debouncedSet = debounced((newInputValue) => {
+            setSearch(newInputValue);
+        }, 300);
+
+        const handleInputChange = (newInputValue) => {
+            setInputValue(newInputValue);
+            debouncedSet(newInputValue);
+        };
 
         /**
          * @name setGlobal
@@ -510,6 +522,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
                         </Typography>
                     </Stack>
                 </Stack>
+                <TextField
+                    size="small"
+                    label="Search"
+                    value={inputValue}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                />
                 <StyledContainer>
                     <Filterbox
                         type={route.type}

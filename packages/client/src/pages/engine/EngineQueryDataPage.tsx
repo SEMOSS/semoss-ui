@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { styled, Typography } from '@semoss/ui';
-import { 
-    useEngine, 
-    useDatabaseStructure, 
-    useQueryExecution, 
+import {
+    useEngine,
+    useDatabaseStructure,
+    useQueryExecution,
     useQueryEditor,
 } from '@/hooks';
 import {
@@ -55,13 +55,13 @@ const StyledRight = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
     backgroundColor: theme.palette.background.default,
-    minWidth: 0, 
+    minWidth: 0,
 }));
 
 export const EngineQueryDataPage = observer(() => {
     const { active } = useEngine();
     const [refreshMessage, setRefreshMessage] = useState<string | null>(null);
-    
+
     const handleRefresh = () => {
         setRefreshMessage('Refreshing database structure...');
         refreshDatabaseStructure();
@@ -79,7 +79,7 @@ export const EngineQueryDataPage = observer(() => {
         toggleAllTables,
         isLoading,
         error,
-        refreshDatabaseStructure
+        refreshDatabaseStructure,
     } = useDatabaseStructure(active.id || '');
 
     const {
@@ -91,15 +91,17 @@ export const EngineQueryDataPage = observer(() => {
         clearResults,
         executeQuery: executeQueryInternal,
         limit,
-        setLimit
+        setLimit,
     } = useQueryExecution(active.id || '', {
         onSchemaChange: () => {
-            setRefreshMessage('Database schema changed. Refreshing structure...');
+            setRefreshMessage(
+                'Database schema changed. Refreshing structure...',
+            );
             refreshDatabaseStructure();
             setTimeout(() => setRefreshMessage(null), 3000);
-        }
+        },
     });
-  
+
     const executeQuery = async () => {
         await executeQueryInternal();
         setRefreshMessage('Refreshing database structure after query...');
@@ -107,13 +109,9 @@ export const EngineQueryDataPage = observer(() => {
         setTimeout(() => setRefreshMessage(null), 3000);
     };
 
-    const {
-        editorRef,
-        handleEditorMount,
-        setValue
-    } = useQueryEditor({
+    const { editorRef, handleEditorMount, setValue } = useQueryEditor({
         onRun: executeQuery,
-        tables: structure.tables
+        tables: structure.tables,
     });
 
     const clearQuery = () => {

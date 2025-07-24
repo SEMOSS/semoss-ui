@@ -124,8 +124,8 @@ export const TerminalPanel: React.FC = observer(() => {
                     postfix = ` in ${minutes
                         .toString()
                         .padStart(2, '0')}:${seconds
-                        .toString()
-                        .padStart(2, '0')}`;
+                            .toString()
+                            .padStart(2, '0')}`;
                 }
 
                 let formatted: unknown = output;
@@ -215,6 +215,7 @@ export const TerminalPanel: React.FC = observer(() => {
                                             : undefined
                                     }
                                     onClick={() => {
+                                        setCommand("");
                                         setLanguage(value);
                                     }}
                                 >
@@ -239,6 +240,7 @@ export const TerminalPanel: React.FC = observer(() => {
                         variant="contained"
                         size={'small'}
                         onClick={() => runCommand()}
+                        disabled={command?.trim() === ''}
                     >
                         Run
                     </Button>

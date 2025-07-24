@@ -5,4 +5,3 @@ export * from './SQLQueryEditor';
 export * from './QueryResultsPanel';
 export * from './QueryActions';
 export * from './DatabaseStatistics';
-export * from './SimilarDatabases';

@@ -6,7 +6,7 @@ import { CellComponent, CellConfig, CellDef } from "./state.types";
 import { StateStore } from "./state.store";
 import { QueryState } from "./query.state";
 import {
-    getPixelConsole,
+    console as getPixelConsole,
     getPixelAsyncResult,
     runPixelAsync,
 } from "@semoss/sdk/react";

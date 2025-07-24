@@ -27,15 +27,20 @@ export const getSelector = (data, aggregates) => {
     };
 
     const getAggregates = (field) => {
-        if (!fields[field] || !aggregates[field] || Object.values(aggregates[field]).length === 0) return "";
+        if (
+            !fields[field] ||
+            !aggregates[field] ||
+            Object.values(aggregates[field]).length === 0
+        )
+            return "";
         return Object.values(aggregates[field])[0];
-    }
+    };
     const getSelectors = () => {
         return {
-            xAxis: getAggregates('XAxis'),
-            yAxis: getAggregates('YAxis'),
-            size: getAggregates('size'),
-            tooltip: getAggregates('tooltip'),
+            xAxis: getAggregates("XAxis"),
+            yAxis: getAggregates("YAxis"),
+            size: getAggregates("size"),
+            tooltip: getAggregates("tooltip"),
         };
     };
     const selectors = getSelectors();

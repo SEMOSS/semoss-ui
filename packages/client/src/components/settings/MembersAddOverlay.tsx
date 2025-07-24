@@ -23,10 +23,11 @@ import {
     TextField,
     Select,
 } from '@semoss/ui';
+import { useDebouncedValue } from '@semoss/sdk/react'
 
 import { ALL_TYPES } from '@/types';
 import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
-import { useDebounceValue, useRootStore, useSettings } from '@/hooks';
+import { useRootStore, useSettings } from '@/hooks';
 import { MembersAddOverlayUser } from './MembersAddOverlayUser';
 import { SETTINGS_ROLE } from './settings.types';
 import { permissionPriorityMapper } from '@/utility/general';
@@ -166,7 +167,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
     const [searchLoading, setSearchLoading] = useState(false);
 
     // debounce the input
-    const debouncedSearch = useDebounceValue(search);
+    const debouncedSearch = useDebouncedValue(search);
 
     const usageRestritctionTypes: Record<string, string> = {
         null: 'None',
