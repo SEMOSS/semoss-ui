@@ -51,7 +51,7 @@ export const SaveAppModal = (props: SaveAppProps) => {
         open,
         steps,
         title,
-        buttonTitle,
+        buttonTitle = 'Upload',
     } = props;
 
     const [isLoading, setIsLoading] = useState<boolean>(false);
