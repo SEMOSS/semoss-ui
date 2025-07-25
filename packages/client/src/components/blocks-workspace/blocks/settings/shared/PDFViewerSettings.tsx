@@ -14,6 +14,8 @@ import { Stack, Box, TextField, Tabs, styled, FileDropzone, Accordion, Typograph
 
 import { ExpandMore, InfoOutlined as InfoIcon, DeleteOutline } from "@mui/icons-material";
 
+const GRAY_COLOR = "#808080"; // Declare common gray color
+
 //styled section for the selected tab
 const StyledSubSection = styled("div")(() => ({
     padding: "0.5rem",
@@ -24,7 +26,7 @@ const StyledSubSection = styled("div")(() => ({
 //styled span of the selected tab
 const StyledSpanFrame = styled("span")(() => ({
     fontSize: "1rem",
-    color: "#808080",
+    color: GRAY_COLOR,
     paddingLeft: "9px",
     position: "relative",
 }));
@@ -43,13 +45,39 @@ const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
     height: theme.spacing(6),
 }));
 
+const StyledDeleteIcon = styled(DeleteOutline)(({ theme }) => ({
+    color: theme.palette.error.main,
+    cursor: "pointer",
+}));
+
+const StyledTypographyEror = styled(Typography)(({ theme }) => ({ 
+    color: theme.palette.error.main,
+    paddingLeft: 32
+}));
+
+const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
+    paddingLeft: "9px",
+     marginTop: '12px' 
+}));
+
+const StyledEngineContent = styled(Accordion.Content)(({ theme }) => ({
+    borderTop: "1px solid #e0e0e0",
+    marginTop: "5px",
+}));
+
 interface Option {
     id: string;
     path: string;
     display: string;
     group: string;
-    engineId?: string;
+    engineID?: string;
     app_name?: string;
+}
+
+type EngineIDType = {
+    app_id: string;
+    app_type: string;
+    app_name: string;
 }
 
 interface PDFViewerSettings<D extends BlockDef = BlockDef> {
@@ -66,12 +94,11 @@ interface PDFViewerSettings<D extends BlockDef = BlockDef> {
 
 export const PDFViewerSettings = observer(
     <D extends BlockDef = BlockDef>({ id, path }: PDFViewerSettings<D>) => {
-        const { data, setData } = useBlock<PDFViewerBlockDef>(id);
+        const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
         const notification = useNotification();
         const { appId } = useParams();
         const [appOptions, setAppOptions] = useState<any>([]);
-        const [engineOptions, setEngineOptions] = useState<{ file_name: string; file_type: string; app_type: string; file_path: string; engineId: string; app_name: string; }[]>([]);
-        const { insightId } = useBlock(id);
+        const [engineOptions, setEngineOptions] = useState<{ file_name: string; file_type: string; app_type: string; file_path: string; engineID: string; app_name: string; }[]>([]);
         const tabs = ['Insight', 'Engine', 'App'];
         const [selectedPdfPath, setSelectedPdfPath] = useState(data?.selectedPdf || "");
         const [selectedTab, setSelectedTab] = useState(tabs[1]);
@@ -125,50 +152,56 @@ export const PDFViewerSettings = observer(
             [appId]
         );
 
-        const getEngineId = useMemo(() =>
+        const getEngineID = useMemo(() =>
             `MyEngines(engineTypes=[${allEngineTypes.map(type => `"${type}"`).join(",")}]);`,
-            [allEngineTypes]
+            []
         );
 
-        const engineIDResponse = useMemo(() => runPixel(getEngineId), [getEngineId]);
+        const engineIDResponse = useMemo(() => runPixel(getEngineID), []);
 
         useEffect(() => {
             // Fetch App Assets
-            getAssetsApp.then((result) => {
-                const outputArray = result?.pixelReturn?.[0]?.output;
-                const outputNames = Array.isArray(outputArray)
-                    ? outputArray
-                        .filter((item: any) => typeof item.name === "string" && item.name.toLowerCase().endsWith(".pdf"))
-                        .map((item: any) => ({
-                            name: item.name,
-                            path: item.path,
-                        }))
-                    : [];
-                setAppOptions(outputNames);
-            }).catch((error) => {
-                console.error("Error fetching assets:", error);
-            });
-
-            // Fetch Engine IDs
-            engineIDResponse.then((result) => {
-                const output = result.pixelReturn?.[0]?.output;
-                const engineIds = Array.isArray(output)
-                    ? Array.from(
-                        new Map(
-                            output
-                                .map((item: any) => [item.app_id, { app_id: item.app_id, app_type: item.app_type, app_name: item.app_name }])
-                        ).values()
-                    )
-                    : [];
-                fetchEngineOptions(engineIds);
-            }).catch((error) => {
-                console.error("Error fetching engines:", error);
-            });
+            const fetchAssetsAndEngines = async () => {
+                try {
+                    const result = await getAssetsApp;
+                    const outputArray = result?.pixelReturn?.[0]?.output;
+                    const outputNames = Array.isArray(outputArray)
+                        ? outputArray
+                            .filter((item: any) => typeof item.name === "string" && item.name.toLowerCase().endsWith(".pdf"))
+                            .map((item: any) => ({
+                                name: item.name,
+                                path: item.path,
+                            }))
+                        : [];
+                    setAppOptions(outputNames);
+                } catch (error) {
+                    console.error("Error fetching assets:", error);
+                }
+        
+                // Fetch Engine IDs
+                try {
+                    const result = await engineIDResponse;
+                    const output = result.pixelReturn?.[0]?.output;
+                    const engineIDs = Array.isArray(output)
+                        ? Array.from(
+                            new Map(
+                                output
+                                    .map((item: any) => [item.app_id, { app_id: item.app_id, app_type: item.app_type, app_name: item.app_name }])
+                            ).values()
+                        )
+                        : [];
+                    fetchEngineOptions(engineIDs);
+                } catch (error) {
+                    console.error("Error fetching engines:", error);
+                }
+            };
+        
+            fetchAssetsAndEngines();
         }, []);
 
-        const fetchEngineOptions = async (engineIdsList) => {
-            let pdfFiles: { file_name: string; app_type: string; file_type: string; file_path: string; engineId: string; app_name: string; }[] = [];
-            const getFiles = engineIdsList.map((id) => ({
+        const fetchEngineOptions = async (engineIDsList: EngineIDType[]) => {
+            let pdfFiles: { file_name: string; app_type: string; file_type: string; file_path: string; engineID: string; app_name: string; }[] = [];
+            const getFiles = engineIDsList.map((id) => ({
                 promise: runPixel<any>(
                     `BrowseEngineAssets(engine=["${id.app_id}"], filePath=["/"]);`
                 ),
@@ -187,7 +220,7 @@ export const PDFViewerSettings = observer(
                             file_path: item.type === "pdf" ? item.path : "",
                             file_type: item.type === "pdf" ? item.type : "",
                             app_type: obj.app_type || "",
-                            engineId: obj.app_id || "",
+                            engineID: obj.app_id || "",
                             app_name: obj.app_name || "",
                         }))
                     pdfFiles = [...pdfFiles, ...files];
@@ -217,7 +250,7 @@ export const PDFViewerSettings = observer(
                     path: item.file_path,
                     display: item.file_name,
                     group: groupAliasMapper(item.app_type, "engine"),
-                    engineId: item.engineId,
+                    engineID: item.engineID,
                     app_name: item.app_name,
                 });
             });
@@ -232,7 +265,7 @@ export const PDFViewerSettings = observer(
                         group,
                     }]
             );
-        }, [allEngineTypes, engineOptions, groupAliasMapper]);
+        }, [engineOptions]);
 
         const nestedEngineOptions = engineOptionList.reduce((acc, option) => {
             if (!option.group || !option.app_name) return acc;
@@ -250,7 +283,7 @@ export const PDFViewerSettings = observer(
                 uploadTemp = await upload(file, insightId, appId, "version/assets/");
 
                 setData("selectedPdf", uploadTemp[0].fileLocation, true);
-                setData("engineId", "", true);
+                setData("engineID", "", true);
                 setSelectedPdfPath(uploadTemp[0].fileLocation || "");
 
                 notification.add({
@@ -317,7 +350,7 @@ export const PDFViewerSettings = observer(
                                         <InfoIcon
                                             sx={{
                                                 cursor: 'pointer',
-                                                color: '#808080',
+                                                color: GRAY_COLOR,
                                                 pointerEvents: 'auto',
                                             }}
                                         />
@@ -370,7 +403,7 @@ export const PDFViewerSettings = observer(
 );
 
 const InsightTab: React.FC<{ options: Option[] }> = ({ options }) => (
-    <Autocomplete
+    <StyledAutocomplete
         fullWidth
         id="PDFViewer-Insight"
         multiple={false}
@@ -399,7 +432,6 @@ const InsightTab: React.FC<{ options: Option[] }> = ({ options }) => (
         renderInput={(params) => (
             <TextField {...params} placeholder="Select File" size="small" variant="outlined" />
         )}
-        sx={{ marginTop: "12px", paddingLeft: "9px" }}
     />
 );
 
@@ -420,20 +452,20 @@ const EngineTab: React.FC<{
     setData,
     setSelectedPdfPath
 }) => (
-    <Autocomplete
+    <StyledAutocomplete
         fullWidth
         id="PDFViewer-Engine"
         multiple={false}
         options={engineOptionList}
-        groupBy={(option) => typeof option === "object" && "group" in option ? option.group : ""}
-        getOptionLabel={(option) => typeof option === "object" && "display" in option ? option.display : ""}
+        groupBy={(option) => typeof option === "object" && "group" in option ? String(option.group) : ""}
+        getOptionLabel={(option) => typeof option === "object" && "display" in option ? String(option.display) : ""}
         value={engineOptionList.find(opt => opt.path === selectedPdfPath) || null}
         open={engineAutocompleteOpen}
         onOpen={() => setEngineAutocompleteOpen(true)}
         onClose={() => setEngineAutocompleteOpen(false)}
         renderOption={(props, option) => (
-            <li {...props} key={typeof option === "object" && "id" in option ? option.id : undefined}>
-                <Typography variant="body2">{typeof option === "object" && "display" in option ? option.display : option}</Typography>
+            <li {...props} key={typeof option === "object" && "id" in option ? String(option.id) : undefined}>
+                <Typography variant="body2">{typeof option === "object" && "display" in option ? String(option.display) : String(option)}</Typography>
             </li>
         )}
         groupRenderer={(params) => {
@@ -454,12 +486,12 @@ const EngineTab: React.FC<{
                                             <StyledMenuSectionTitle expandIcon={<ExpandMore />}>
                                                 <Typography variant="body2" sx={{ pl: 2 }} fontWeight="bold">{appName}</Typography>
                                             </StyledMenuSectionTitle>
-                                            <Accordion.Content sx={{ borderTop: "1px solid #e0e0e0" }}>
+                                            <StyledEngineContent>
                                                 <List disablePadding>
                                                     {allEmpty ? (
-                                                        <Typography variant="body2" sx={{ marginTop: "5px", color: "#DA291C", paddingLeft: 4 }}>
+                                                        <StyledTypographyEror variant="body2">
                                                             No Files found
-                                                        </Typography>
+                                                        </StyledTypographyEror>
                                                     ) : (
                                                         optionsForApp.map(option =>
                                                             option.display && option.display.trim() ? (
@@ -467,13 +499,13 @@ const EngineTab: React.FC<{
                                                                     key={option.id}
                                                                     style={{ paddingLeft: 32, cursor: "pointer" }}
                                                                     onClick={() => {
-                                                                        setData("engineId", option.engineId, true);
+                                                                        setData("engineID", option.engineID, true);
                                                                         setData("selectedPdf", option.path, true);
                                                                         setSelectedPdfPath(option.path);
                                                                         setEngineAutocompleteOpen(false);
                                                                     }}
                                                                 >
-                                                                    <Typography variant="body2" sx={{ marginTop: "5px" }}>
+                                                                    <Typography variant="body2">
                                                                         {option.display}
                                                                     </Typography>
                                                                 </li>
@@ -481,7 +513,7 @@ const EngineTab: React.FC<{
                                                         )
                                                     )}
                                                 </List>
-                                            </Accordion.Content>
+                                            </StyledEngineContent>
                                         </StyledMenuSection>
                                     );
                                 })}
@@ -499,7 +531,6 @@ const EngineTab: React.FC<{
                 variant="outlined"
             />
         )}
-        sx={{ marginTop: '12px', paddingLeft: "9px" }}
     />
 );
 
@@ -529,8 +560,7 @@ const AppTab: React.FC<{
                     <Typography variant="body1">
                         {uploadFiles.name}
                     </Typography>
-                    <DeleteOutline
-                        style={{ cursor: 'pointer', color: '#DA291C' }}
+                    <StyledDeleteIcon
                         onClick={() => {
                             setUploadFiles(null);
                         }}
@@ -540,12 +570,12 @@ const AppTab: React.FC<{
                     <InfoIcon
                         sx={{
                             cursor: 'pointer',
-                            color: '#808080',
+                            color: GRAY_COLOR,
                         }}
                     />
                     <Typography
                         variant="body2"
-                        sx={{ color: '#808080', }}
+                        sx={{ color: GRAY_COLOR, }}
                     >
                         Delete current file to upload a new one
                     </Typography>
@@ -565,7 +595,7 @@ const AppTab: React.FC<{
                     }}
                     onChange={(_, value) => {
                         setData("selectedPdf", value?.path || "", true);
-                        setData("engineId", "", true);
+                        setData("engineID", "", true);
                         setSelectedPdfPath(value?.path || "");
                     }}
                     freeSolo={false}
@@ -573,8 +603,8 @@ const AppTab: React.FC<{
                         <TextField {...params} placeholder="Select File" size="small" variant="outlined" />
                     )}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', width: '100%' }}>
-                    <Typography sx={{ color: '#808080' }} variant="body2">Or</Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '8px'}}>
+                    <StyledSpanFrame>Or</StyledSpanFrame>
                 </Box>
                 <FileDropzone
                     multiple={false}
@@ -583,9 +613,6 @@ const AppTab: React.FC<{
                     onChange={(newValue: File) => {
                         setUploadFiles(newValue);
                         addFile(newValue);
-                    }}
-                    style={{
-                        marginTop: '10px',
                     }}
                 />
             </Stack>

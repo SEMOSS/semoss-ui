@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { observer } from "mobx-react-lite";
 import { Typography, CircularProgress, Paper, Box } from "@semoss/ui";
@@ -19,7 +19,7 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
             padding: string;
         };
         selectedPdf: string | null;
-        engineId?: string;
+        engineID?: string;
         show: string;
     };
     listeners: {
@@ -76,6 +76,8 @@ const PDFIframe = styled("iframe")({
     minHeight: 340,
 });
 
+export const PDF_FILE_PREFIX = "data:application/pdf;base64,";
+
 export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<PDFViewerBlockDef>(id);
     const { state } = useBlocks();
@@ -90,23 +92,23 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const downloadAndPrepareFile = useCallback(async (path: string, engineIds?: string) => {
+    const downloadAndPrepareFile = useCallback(async (path: string, engineIDs?: string) => {
         try {
             setLoading(true);
 
             let response;
-            if (engineIds) {
+            
+            if (engineIDs) {
                 response = await runPixel<[string]>(
-                    `GetEngineAssetsBase64(filePath=["${path}"], engine=["${engineIds}"]);`,
+                    `GetEngineAssetsBase64(filePath=["${path}"], engine=["${engineIDs}"]);`,
                 );
                 // Directly use base64 from response
                 const base64Content = response?.pixelReturn[0]?.output;
                 if (!base64Content) throw new Error("Failed to get base64 PDF");
                 // Ensure prefix
-                const pdfPrefix = "data:application/pdf;base64,";
-                return base64Content.startsWith(pdfPrefix)
+                return base64Content.startsWith(PDF_FILE_PREFIX)
                     ? base64Content
-                    : pdfPrefix + base64Content.replace(/^data:.*?;base64,/, "");
+                    : PDF_FILE_PREFIX + base64Content.replace(/^data:.*?;base64,/, "");
             } else {
                 response = await runPixel<[string]>(
                     `DownloadAsset(filePath=["${path}"], space=["${appId}"]);`,
@@ -126,10 +128,9 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
                         const base64data = reader.result as string;
-                        const pdfPrefix = "data:application/pdf;base64,";
-                        if (!base64data.startsWith(pdfPrefix)) {
+                        if (!base64data.startsWith(PDF_FILE_PREFIX)) {
                             const base64Content = base64data.replace(/^data:.*?;base64,/, "");
-                            resolve(pdfPrefix + base64Content);
+                            resolve(PDF_FILE_PREFIX + base64Content);
                         } else {
                             resolve(base64data);
                         }
@@ -142,11 +143,11 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
             setError("Failed to load PDF");
             setLoading(false);
         }
-    }, []);
+    }, [appId]);
 
     useEffect(() => {
         if (data?.selectedPdf) {
-            downloadAndPrepareFile(data?.selectedPdf, data?.engineId)
+            downloadAndPrepareFile(data?.selectedPdf, data?.engineID)
                 .then((content) => {
                     setPdfContent(content as string);
                     setLoading(false);
