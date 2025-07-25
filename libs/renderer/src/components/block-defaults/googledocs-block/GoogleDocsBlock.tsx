@@ -1,10 +1,9 @@
-import React, { CSSProperties, useEffect, useState } from "react";
+import React, { CSSProperties, useEffect, useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { useBlock, useTypeWriter, useBlocks } from "../../../hooks";
 import {
     BlockDef,
     BlockComponent,
-    ListenerActions,
     ActionMessages,
     Block,
 } from "../../../store";
@@ -21,7 +20,6 @@ import {
     Typography,
 } from "@semoss/ui";
 import { Paths, PathValue } from "../../../types";
-import { useCallback } from "react";
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     display: "flex",
@@ -84,22 +82,6 @@ interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
         path: P,
         value: PathValue<D["data"], P>,
     ) => void;
-
-    /**
-     * Dispatch a message to delete data
-     * @param path - path of the data to delete
-     */
-    deleteData: <P extends Paths<Block<D>["data"], 4>>(path: P) => void;
-
-    /**
-     * Dispatch a message to set the listeners
-     * @param listeners - listeners to attach to the block
-     */
-    setListener: (
-        listener: keyof Block<D>["listeners"],
-        actions: ListenerActions[],
-        type?: "sync" | "async",
-    ) => void;
 }
 
 const useBlockSettings = <D extends BlockDef = BlockDef>(
@@ -138,54 +120,10 @@ const useBlockSettings = <D extends BlockDef = BlockDef>(
         [id],
     );
 
-    /**
-     * Dispatch a message to delete data
-     * @param path - path of the data to delete
-     */
-    const deleteData = useCallback(
-        <P extends Paths<Block<D>["data"], 4>>(path: P | null): void => {
-            state.dispatch({
-                message: ActionMessages.DELETE_BLOCK_DATA,
-                payload: {
-                    id: id,
-                    path: path,
-                },
-            });
-        },
-        [],
-    );
-
-    /**
-     * Dispatch a message to set the listeners
-     * @param listener - listener to add to the block
-     * @param actions - actions to add to the block
-     *
-     */
-    const setListener = useCallback(
-        (
-            listener: keyof Block<D>["listeners"],
-            actions: ListenerActions[],
-            type: "sync" | "async",
-        ): void => {
-            state.dispatch({
-                message: ActionMessages.SET_LISTENER,
-                payload: {
-                    id: id,
-                    listener: listener as string,
-                    actions: actions,
-                    type: type,
-                },
-            });
-        },
-        [],
-    );
-
     return {
         data: block.data || {},
         listeners: block.listeners || {},
         setData: setData,
-        deleteData: deleteData,
-        setListener: setListener,
     };
 };
 
@@ -248,12 +186,12 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
 
     useEffect(() => {
         if (loggedInUser) {
-            fetchDocsOptions();
+            getGoogleDocs();
         }
     }, [loggedInUser]);
 
     useEffect(() => {
-        fetchDocsOptions();
+        getGoogleDocs();
     }, [data.showDocsUpdateForm, data.showDocsDeleteForm]);
 
     if (!data.isStreaming) displayTxt = textContent;
@@ -291,7 +229,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
         },
     });
 
-    const fetchDocsOptions = async () => {
+    const getGoogleDocs = async () => {
         try {
             const response = await runPixel<[string]>(
                 `META | GoogleDocsList();`,
@@ -389,7 +327,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                         >,
                     );
                     resetCreate();
-                    fetchDocsOptions();
+                    getGoogleDocs();
                 } else {
                     const errorMsg =
                         output &&
@@ -435,7 +373,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                     setData("showDocsUpdateForm", false);
                     setData("showUpdateForm", true);
                     resetUpdate();
-                    fetchDocsOptions();
+                    getGoogleDocs();
                 } else {
                     throw new Error("Update failed");
                 }
@@ -495,7 +433,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                 );
                 setDeleteMessage("document deleted successfully");
                 resetDelete();
-                fetchDocsOptions();
+                getGoogleDocs();
             } else {
                 setDeleteMessage("Delete failed!");
                 throw new Error("Delete failed!");
@@ -899,7 +837,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                     >,
                                 );
                                 setCreatedDoc(null);
-                                fetchDocsOptions();
+                                getGoogleDocs();
                             }}
                         >
                             <StyledModalContent>
@@ -919,7 +857,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                 >,
                                             );
                                             setCreatedDoc(null);
-                                            fetchDocsOptions();
+                                            getGoogleDocs();
                                         }}
                                     >
                                         Close
@@ -934,7 +872,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                             onClose={() => {
                                 setData("showUpdateForm", false);
                                 setUpdatedDoc(null);
-                                fetchDocsOptions();
+                                getGoogleDocs();
                             }}
                         >
                             <StyledModalContent>
@@ -947,7 +885,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                         onClick={() => {
                                             setData("showUpdateForm", false);
                                             setUpdatedDoc(null);
-                                            fetchDocsOptions();
+                                            getGoogleDocs();
                                         }}
                                     >
                                         Close
@@ -968,7 +906,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                     >,
                                 );
                                 setDeletedDoc(null);
-                                fetchDocsOptions();
+                                getGoogleDocs();
                             }}
                         >
                             <StyledModalContent>
@@ -988,7 +926,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                 >,
                                             );
                                             setDeletedDoc(null);
-                                            fetchDocsOptions();
+                                            getGoogleDocs();
                                         }}
                                     >
                                         Close
