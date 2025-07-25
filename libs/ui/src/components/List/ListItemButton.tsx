@@ -65,6 +65,6 @@ export interface ListItemButtonProps {
     onMouseLeave?: MuiListItemButtonProps["onMouseLeave"];
 }
 
-export const ListItemButton = (props: ListItemButtonProps) => {
+export const ListItemButton: React.FC<ListItemButtonProps> = (props) => {
     return <MuiListItemButton {...props} />;
 };

@@ -2,10 +2,11 @@ import { defineConfig } from "rollup";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
 import typescript from "@rollup/plugin-typescript";
+import terser from "@rollup/plugin-terser";
 
-import postcss from "rollup-plugin-postcss";
 import del from "rollup-plugin-delete";
-import { terser } from "rollup-plugin-terser";
+
+const isProduction = process.env.NODE_ENV === "production";
 
 export default defineConfig({
     input: {
@@ -15,8 +16,7 @@ export default defineConfig({
     output: {
         dir: "dist",
         format: "esm",
-        sourcemap: true,
-        plugins: [terser()],
+        sourcemap: isProduction,
         entryFileNames: "[name].mjs",
     },
     plugins: [
@@ -25,9 +25,11 @@ export default defineConfig({
         commonjs(),
         typescript({
             tsconfig: "./tsconfig.json",
-            outputToFilesystem: true,
         }),
-        postcss(),
+        isProduction && terser(),
     ],
     external: ["react"],
+    watch: {
+        clearScreen: false,
+    },
 });

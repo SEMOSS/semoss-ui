@@ -19,7 +19,7 @@ export interface StackProps extends MuiStackProps {
     direction?: "column-reverse" | "column" | "row-reverse" | "row";
 }
 
-export const Stack = (props: StackProps) => {
+export const Stack: React.FC<StackProps> = (props) => {
     const { sx, children, spacing = 1, direction = "column" } = props;
     return (
         <MuiStack sx={sx} spacing={spacing} direction={direction} {...props}>

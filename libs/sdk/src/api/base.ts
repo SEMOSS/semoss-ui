@@ -92,7 +92,7 @@ export const getSystemConfig = async (): Promise<{
 
     if (response.data && response.data.csrf) {
         const token = response.data["X-CSRF-Token"] as string;
-        
+
         // enable and store the token
         CSRF.isEnabled = true;
         CSRF.token = token;
@@ -240,7 +240,7 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
             insightID: string;
             pixelReturn: {
                 operationType: string[];
-                output: unknown;
+                output: O[number];
                 pixelExpression: string;
             }[];
         };
