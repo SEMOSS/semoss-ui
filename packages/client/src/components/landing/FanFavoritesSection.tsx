@@ -64,7 +64,7 @@ export const FanFavoritesSection = () => {
                 <AppTileCard
                     app={BUSINESS_INTELLIGENCE_APP}
                     background="#BADEFF"
-                    href="../../../"
+                    href="../../legacy/dist/"
                     systemApp={true}
                     appType={'BI'}
                     isLoading={false}
@@ -73,7 +73,7 @@ export const FanFavoritesSection = () => {
                 <AppTileCard
                     app={TERMINAL_APP}
                     background="#BADEFF"
-                    href="../../../#!/embed-terminal"
+                    href="../../legacy/dist/#!/embed-terminal"
                     systemApp={true}
                     appType={'TERMINAL'}
                     isLoading={false}

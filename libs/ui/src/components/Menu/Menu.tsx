@@ -1,6 +1,16 @@
-import { Menu as MuiMenu, SxProps, PopoverProps } from "@mui/material";
+import {
+    Menu as MuiMenu,
+    MenuProps as MuiMenuProps,
+    PopoverProps,
+} from "@mui/material";
 
 export interface MenuProps {
+    /**
+     * Id of the menu
+     */
+
+    id?: string;
+
     /**
      * An HTML element, or a function that returns one.
      * It's used to set the position of the menu.
@@ -46,7 +56,8 @@ export interface MenuProps {
     /**
      * The system prop that allows defining system overrides as well as additional CSS styles.
      */
-    sx?: SxProps;
+
+    sx?: MuiMenuProps["sx"];
 
     /**
      * The variant to use. Use `menu` to prevent selected items from impacting the initial focus.
@@ -54,18 +65,23 @@ export interface MenuProps {
      */
     variant?: "menu" | "selectedMenu";
 
+    /**
+     *
+     */
     anchorOrigin?: {
         vertical: "top" | "center" | "bottom" | number;
         horizontal: "left" | "center" | "right" | number;
     };
 
+    /**
+     *
+     */
     transformOrigin?: {
         vertical: "top" | "center" | "bottom" | number;
         horizontal: "left" | "center" | "right" | number;
     };
 }
 
-export const Menu = (props: MenuProps) => {
-    const { sx } = props;
-    return <MuiMenu sx={sx} {...props} />;
+export const Menu: React.FC<MenuProps> = ({ children, ...otherProps }) => {
+    return <MuiMenu {...otherProps}>{children}</MuiMenu>;
 };

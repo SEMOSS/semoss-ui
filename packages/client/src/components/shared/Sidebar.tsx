@@ -21,7 +21,6 @@ import {
     IconButton,
     styled,
     Stack,
-    ListItemText,
 } from '@semoss/ui';
 
 import { ModelBrain } from '@/assets/img/ModelBrain';
@@ -254,12 +253,12 @@ export const Sidebar: React.FC = observer(() => {
                                 aria-label="catalog navigation"
                             >
                                 <StyledListItem>
-                                    <ListItemText
+                                    <List.ItemText
                                         primary={'Catalog'}
                                         primaryTypographyProps={{
                                             variant: 'subtitle2',
                                         }}
-                                    ></ListItemText>
+                                    />
                                 </StyledListItem>
                                 {CATALOG_ROUTES.map((r) => {
                                     return (
