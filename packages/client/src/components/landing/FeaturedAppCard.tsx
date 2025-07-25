@@ -139,7 +139,6 @@ export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
 							endIcon={
 								<ArrowForwardIcon
 									style={{
-										// color: '#0471F0',
 										color: "rgba(0, 0, 0, 0.26)",
 									}}
 								/>
