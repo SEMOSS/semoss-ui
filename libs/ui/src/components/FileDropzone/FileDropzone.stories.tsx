@@ -1,5 +1,5 @@
 import { ComponentProps, useState, useEffect } from "react";
-import { Story } from "@storybook/react";
+import { Story } from "@storybook/react-webpack5";
 import { FileDropzone } from "./FileDropzone";
 import React from "react";
 

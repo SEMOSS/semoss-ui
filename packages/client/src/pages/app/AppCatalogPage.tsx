@@ -153,6 +153,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
     const [inputValue, setInputValue] = useState('');
     const [search, setSearch] = useState('');
 
+        let testVar = 'hello'
+
+        
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {

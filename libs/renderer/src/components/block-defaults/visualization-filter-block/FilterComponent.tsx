@@ -361,13 +361,13 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
                     }}
                 >
                     {showSearch && (
-                    <Box sx={{ flex: 1 }}>
-                        <SearchFilterHeader
-                            searchText={searchText}
-                            setSearchText={setSearchText}
-                            setChecked={setChecked}
-                        />
-                    </Box>
+                        <Box sx={{ flex: 1 }}>
+                            <SearchFilterHeader
+                                searchText={searchText}
+                                setSearchText={setSearchText}
+                                setChecked={setChecked}
+                            />
+                        </Box>
                     )}
                     <IconComponent handleReset={handleReset} />
                 </Box>
@@ -403,7 +403,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
 
             {mode === "dropdown" && (
                 <ClickAwayListener onClickAway={closeDropdown}>
-                    <Box sx={{ position: "relative", width: "100%" }} >
+                    <Box sx={{ position: "relative", width: "100%" }}>
                         <Box
                             sx={{
                                 display: "flex",
@@ -486,7 +486,15 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
             )}
 
             {mode === "multiselect" && (
-                <Box sx={{ display: "flex", flexDirection: "column", gap: 1, maxHeight: 200, overflowY: "auto" }}>
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        maxHeight: 200,
+                        overflowY: "auto",
+                    }}
+                >
                     <ChipsArray
                         chips={chipData.filter((chip) =>
                             chip.label
