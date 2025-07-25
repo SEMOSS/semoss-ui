@@ -208,7 +208,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
     //to throw a warning when the user tried to reload the page
     // this is to prevent the user from losing their work
     useEffect(() => {
-        if (process.env.NODE_ENV !== 'development') {
+        if (!import.meta.env.DEV) {
             const handleBeforeUnload = (e: BeforeUnloadEvent) => {
                 e.preventDefault();
                 e.returnValue = '';
