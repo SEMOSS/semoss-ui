@@ -14,20 +14,20 @@ const config: Migration = {
 
         Object.entries(newState.blocks).forEach((keyValue) => {
             const block = keyValue[1];
-                if(block.widget === "upload") {
-                    let copy = null;
-                    if(block.listeners["onClick"] ){
-                        copy = block.listeners["onClick"].order
-                    }
-    
-                    if(!block.listeners["onChange"]) {
-                        block.listeners["onChange"] = copy
-                    } 
-    
-                    if(block.listeners["onClick"] ){
-                        delete block.listeners["onClick"]
-                    }
+            if (block.widget === "upload") {
+                let copy = null;
+                if (block.listeners["onClick"]) {
+                    copy = block.listeners["onClick"].order;
                 }
+
+                if (!block.listeners["onChange"]) {
+                    block.listeners["onChange"] = copy;
+                }
+
+                if (block.listeners["onClick"]) {
+                    delete block.listeners["onClick"];
+                }
+            }
         });
 
         return newState;

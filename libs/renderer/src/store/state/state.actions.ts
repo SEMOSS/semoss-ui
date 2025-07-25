@@ -31,13 +31,13 @@ export enum ActionMessages {
     SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
     /**
      * Events
-    */
-   RUN_CELL = "RUN_CELL",
-   RUN_QUERY = "RUN_QUERY",
-   DISPATCH_EVENT = "DISPATCH_EVENT",
-   DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
-   RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
-   DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
+     */
+    RUN_CELL = "RUN_CELL",
+    RUN_QUERY = "RUN_QUERY",
+    DISPATCH_EVENT = "DISPATCH_EVENT",
+    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
+    RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+    DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 }
 
 export type Actions =
@@ -168,7 +168,7 @@ export interface SetListenerAction extends Action {
         id: string;
         listener: string;
         actions: ListenerActions[];
-        type: "sync" | "async"
+        type: "sync" | "async";
     };
 }
 
@@ -256,7 +256,6 @@ export interface UpdateCellAction extends Action {
         value: unknown;
     };
 }
-
 
 export interface DispatchEventAction extends Action {
     message: ActionMessages.DISPATCH_EVENT;

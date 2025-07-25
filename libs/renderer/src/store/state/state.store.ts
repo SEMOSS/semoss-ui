@@ -570,7 +570,7 @@ export class StateStore {
     parseVariable = (
         expression: string,
         id?: string,
-        _depth: number = 0,
+        _depth = 0,
         _seen: Set<string> = new Set(),
     ): unknown => {
         if (_depth > 10) return expression;
@@ -696,7 +696,7 @@ export class StateStore {
         if (this._store.variables[path[0]]) {
             // We should be able to interpret by varaible name as we do below
             const variable = this._store.variables[path[0]];
-            let value = this.getVariable(
+            const value = this.getVariable(
                 variable.to,
                 variable.type,
                 path,
