@@ -84,6 +84,7 @@ import CHROMADB from '@/assets/img/CHROMADB.png';
 import MILVUS from '@/assets/img/MILVUS.png';
 import PINECONE from '@/assets/img/PINECONE.png';
 import WEVIATE from '@/assets/img/WEVIATE.png';
+import PythonLogo from '@/assets/img/Python-logo.svg';
 
 // TODO: Get rid of this and throw it into Connection Options
 export const stepsOne = [
@@ -6541,6 +6542,23 @@ export const CONNECTION_OPTIONS = {
                     },
                 ],
             },
+            {
+                name: 'PYTHON',
+                disable: false,
+                icon: PythonLogo,
+                fields: [
+                    {
+                        fieldName: 'PYTHON',
+                        label: '',
+                        defaultValue: null,
+                        options: {
+                            component: 'python-configuration',
+                        },
+                        disabled: true,
+                        rules: {},
+                    },
+                ],
+            },
         ],
         'File Uploads': [
             {
@@ -6647,7 +6665,7 @@ export const CONNECTION_OPTIONS = {
                                 {
                                     display: 'Markdown',
                                     value: 'MARKDOWN',
-                                }
+                                },
                             ],
                         },
                         disabled: false,
@@ -6726,9 +6744,11 @@ export const CONNECTION_OPTIONS = {
                         },
                         disabled: false,
                         rules: {
-                            required: true, pattern: {
+                            required: true,
+                            pattern: {
                                 value: /^[a-z0-9](?:[a-z0-9-]{0,126}[a-z0-9])?$/,
-                                message: 'Index name must only contain lowercase letters, digits or dashes, cannot start or end with dashes and is limited to 128 characters',
+                                message:
+                                    'Index name must only contain lowercase letters, digits or dashes, cannot start or end with dashes and is limited to 128 characters',
                             },
                         },
                     },

@@ -205,22 +205,48 @@ export const ImportConnectionPage = () => {
             return;
         } else if (values.type === 'FUNCTION') {
             /** Function: START */
+            const fieldMap = values.fields as Record<string, any>;
+            const isLocalPython = fieldMap.FUNCTION_TYPE === 'LOCAL_PYTHON';
             let pixel;
-            if (values.secondaryFields['FILE']) {
+
+            if (isLocalPython) {
+                const functionDetails = {
+                    FUNCTION_NAME: 'main',
+                    FUNCTION_DESCRIPTION: fieldMap.FUNCTION_DESCRIPTION || '',
+                    FUNCTION_TYPE: fieldMap.FUNCTION_TYPE || '',
+                    FUNCTION_REQUIRED_PARAMETERS:
+                        fieldMap.FUNCTION_REQUIRED_PARAMETERS || '',
+                    FUNCTION_PARAMETERS: fieldMap.FUNCTION_PARAMETERS || '',
+                    PYTHON_FILE_NAME: fieldMap.PYTHON_FILE_NAME || '',
+                };
+
+                pixel = `
+                CreatePythonFunctionEngine(
+                    function=["${values.name}"],
+                    content=["${fieldMap.CONTENT}"],
+                    functionDetails=[${JSON.stringify(functionDetails)}]
+                );
+                `;
+            } else if (values.secondaryFields?.['FILE']) {
                 const upload = await monolithStore.uploadFile(
                     [values.secondaryFields['FILE']],
                     configStore.store.insightID,
                 );
+
                 pixel = `
-                    CreateRestFunctionEngine(function=["${
-                        values.name
-                    }"],functionDetails=[${JSON.stringify(values.fields)}],
-                    filePaths=["${upload[0].fileLocation}"]);`;
+                    CreateRestFunctionEngine(
+                        function=["${values.name}"],
+                        functionDetails=[${JSON.stringify(fieldMap)}],
+                        filePaths=["${upload[0].fileLocation}"]
+                    );
+                    `;
             } else {
                 pixel = `
-                    CreateRestFunctionEngine(function=["${
-                        values.name
-                    }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
+                    CreateRestFunctionEngine(
+                        function=["${values.name}"],
+                        functionDetails=[${JSON.stringify(fieldMap)}]
+                    );
+                    `;
             }
 
             monolithStore.runQuery(pixel).then((response) => {

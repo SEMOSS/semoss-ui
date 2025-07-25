@@ -17,6 +17,7 @@ import { EngineQAPage } from './EngineQAPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
+import { EngineConfigurePage } from '@/components/engine/EngineConfigurePage';
 
 export const ENGINE_ROUTES: {
     /** Name of the route */
@@ -76,8 +77,14 @@ export const ENGINE_ROUTES: {
                 restrict: ['EDIT', 'OWNER'],
             },
             {
-                name: 'SMSS',
-                path: 'smss',
+                name: 'Configure',
+                path: 'configure',
+                component: EngineConfigurePage,
+                restrict: ['OWNER'],
+            },
+            {
+                name: 'Settings',
+                path: 'settings',
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
