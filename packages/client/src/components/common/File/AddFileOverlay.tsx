@@ -11,6 +11,12 @@ import {
 import { useRootStore } from '@/hooks';
 import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
 
+type EngineInfo = {
+    name: string;
+    files: string[];
+    instances: (string | number)[];
+};
+
 interface AddFileOverlayProps {
     /** Type of file opened */
     type: 'app' | 'insight';
@@ -38,8 +44,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
     const [failedIds, setFailedIds] = useState<string[]>([]);
     const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
     const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
-    const [engineIdToName, setEngineIdToName] = useState<Record<string, string>>({});
-    const [engineDetails, setEngineDetails] = useState<Record<string, { files: string[]; instances: (string | number)[] }>>({});
+    const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>({});
 
     const handleEngineIdsModalClose = () => {
         setShowEngineIdsModal(false);
@@ -87,17 +92,11 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                     const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
                     setSuccessIds(success);
                     setFailedIds(failed);
-                    const idToName: Record<string, string> = {};
+                    const engineInfo: Record<string, EngineInfo> = {};
                     if (extractOutput.engineIds.success) {
                         Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
-                            idToName[id] = (obj as { engineName?: string }).engineName || '';
-                        });
-                    }
-                    setEngineIdToName(idToName);
-                    const engineDetails: Record<string, { files: string[]; instances: (string | number)[] }> = {};
-                    if (extractOutput.engineIds.success) {
-                        Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
-                            engineDetails[id] = {
+                            engineInfo[id] = {
+                                name: (obj as { engineName?: string }).engineName || '',
                                 files: (obj as any).files?.map((f: any) => f.filename) || [],
                                 instances: (obj as any).files?.map((f: any) => f.instances) || [],
                             };
@@ -105,13 +104,14 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                     }
                     if (extractOutput.engineIds.failed) {
                         Object.entries(extractOutput.engineIds.failed).forEach(([id, obj]) => {
-                            engineDetails[id] = {
+                            engineInfo[id] = {
+                                name: (obj as { engineName?: string }).engineName || '',
                                 files: (obj as any).files?.map((f: any) => f.filename) || [],
                                 instances: (obj as any).files?.map((f: any) => f.instances) || [],
                             };
                         });
                     }
-                    setEngineDetails(engineDetails);
+                    setEngineInfo(engineInfo);
                     setIsUploadProjectApp(false);
                     setPendingUploadPath(path);
                     setShowEngineIdsModal(true);
@@ -182,8 +182,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 onClose={handleEngineIdsModalClose}
                 appId={space}
                 isUploadProjectApp={isUploadProjectApp}
-                engineIdToName={engineIdToName}
-                engineDetails={engineDetails}
+                engineInfo={engineInfo}
             />
         </>
     );

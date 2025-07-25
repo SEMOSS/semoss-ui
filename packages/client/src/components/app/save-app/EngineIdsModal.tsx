@@ -22,8 +22,7 @@ interface EngineIdsModalProps {
     onEngineReplacement?: (replacements: Record<string, string>) => void;
     appId: string;
     isUploadProjectApp: boolean;
-    engineIdToName?: Record<string, string>;
-    engineDetails: Record<string, { files: string[]; instances: (string | number)[] }>;
+    engineInfo: Record<string, { name: string; files: string[]; instances: (string | number)[] }>;
 }
 
 const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
@@ -34,8 +33,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
     onEngineReplacement,
     appId,
     isUploadProjectApp,
-    engineIdToName,
-    engineDetails
+    engineInfo
 }) => {
     const [engineReplacements, setEngineReplacements] = useState<
         Record<string, string>
@@ -82,9 +80,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
             }, {} as Record<string, string>);
 
         // Format map as required
-        const mapStr = `[ { ${Object.entries(validReplacements)
-            .map(([failed, replacement]) => `"${failed}" : "${replacement}"`)
-            .join(', ')} } ]`;
+        const mapStr = JSON.stringify([validReplacements]);
         const response = await monolithStore.runQuery(
             `ReplaceInaccessibleEngines(filePath=["${myfilePath}"], space=["${appId}"], map=${mapStr});`
         );
@@ -233,15 +229,15 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                 }}
                                             >
                                                 {id}
-                                                {engineIdToName?.[id] && (
+                                                {engineInfo?.[id] && (
                                                     <span style={{ color: '#1976d2', fontWeight: 500, marginLeft: 12 }}>
-                                                        ({engineIdToName[id]})
+                                                        ({engineInfo[id].name})
                                                     </span>
                                                 )}
                                             </Typography>
-                                            {engineDetails?.[id]?.files?.length > 0 && (
+                                            {engineInfo?.[id]?.files?.length > 0 && (
                                                 <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-                                                    {engineDetails[id].files.map((file, idx) => (
+                                                    {engineInfo[id].files.map((file, idx) => (
                                                         <Stack key={file + idx} direction="row" spacing={1} alignItems="center">
                                                             <Typography
                                                                 variant="caption"
@@ -257,7 +253,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                             >
                                                                 {file}
                                                             </Typography>
-                                                            {engineDetails[id].instances?.[idx] !== undefined && (
+                                                            {engineInfo[id].instances?.[idx] !== undefined && (
                                                                 <Typography
                                                                     variant="caption"
                                                                     sx={{
@@ -270,7 +266,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                                         fontWeight: 500,
                                                                     }}
                                                                 >
-                                                                    {engineDetails[id].instances[idx]}
+                                                                    {engineInfo[id].instances[idx]}
                                                                 </Typography>
                                                             )}
                                                         </Stack>
@@ -375,9 +371,9 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                 >
                                                     {id}
                                                 </Typography>
-                                                {engineDetails?.[id]?.files?.length > 0 && (
+                                                {engineInfo?.[id]?.files?.length > 0 && (
                                                     <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
-                                                        {engineDetails[id].files.map((file, idx) => (
+                                                        {engineInfo[id].files.map((file, idx) => (
                                                             <Stack key={file + idx} direction="row" spacing={1} alignItems="center">
                                                                 <Typography
                                                                     variant="caption"
@@ -393,7 +389,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                                 >
                                                                     {file}
                                                                 </Typography>
-                                                                {engineDetails[id].instances?.[idx] !== undefined && (
+                                                                {engineInfo[id].instances?.[idx] !== undefined && (
                                                                     <Typography
                                                                         variant="caption"
                                                                         sx={{
@@ -406,7 +402,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
                                                                             fontWeight: 500,
                                                                         }}
                                                                     >
-                                                                        {engineDetails[id].instances[idx]}
+                                                                        {engineInfo[id].instances[idx]}
                                                                     </Typography>
                                                                 )}
                                                             </Stack>

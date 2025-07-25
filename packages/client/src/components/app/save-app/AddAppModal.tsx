@@ -33,6 +33,11 @@ type AddAppForm = {
     [ADD_APP_FORM_FIELD_IS_GLOBAL]: boolean;
     [ADD_APP_FORM_FIELD_TYPE]: string;
 };
+type EngineInfo = {
+    name: string;
+    files: string[];
+    instances: (string | number)[];
+};
 
 export type AddAppFormStep = {
     name: string;
@@ -136,8 +141,7 @@ export const AddAppModal = (props: AddAppProps) => {
     const [successIds, setSuccessIds] = useState<string[]>([]);
     const [failedIds, setFailedIds] = useState<string[]>([]);
     const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
-    const [engineIdToName, setEngineIdToName] = useState<Record<string, string>>({});
-    const [engineDetails, setEngineDetails] = useState<Record<string, { files: string[]; instances: (string | number)[] }>>({});
+    const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>({});
 
 
     const defaultFormValues: AddAppForm = {
@@ -175,17 +179,11 @@ export const AddAppModal = (props: AddAppProps) => {
             const failed = output.engineIds.failed ? Object.keys(output.engineIds.failed) : [];
             setSuccessIds(success);
             setFailedIds(failed);
-            const idToName: Record<string, string> = {};
+            const engineInfo: Record<string, EngineInfo> = {};
             if (output.engineIds.success) {
                 Object.entries(output.engineIds.success).forEach(([id, obj]) => {
-                    idToName[id] = (obj as { engineName?: string }).engineName || '';
-                });
-            }
-            setEngineIdToName(idToName);
-            const engineDetails: Record<string, { files: string[]; instances: (string | number)[] }> = {};
-            if (output.engineIds.success) {
-                Object.entries(output.engineIds.success).forEach(([id, obj]) => {
-                    engineDetails[id] = {
+                    engineInfo[id] = {
+                        name: (obj as { engineName?: string }).engineName || '',
                         files: (obj as any).files?.map((f: any) => f.filename) || [],
                         instances: (obj as any).files?.map((f: any) => f.instances) || [],
                     };
@@ -193,13 +191,14 @@ export const AddAppModal = (props: AddAppProps) => {
             }
             if (output.engineIds.failed) {
                 Object.entries(output.engineIds.failed).forEach(([id, obj]) => {
-                    engineDetails[id] = {
+                    engineInfo[id] = {
+                        name: (obj as { engineName?: string }).engineName || '',
                         files: (obj as any).files?.map((f: any) => f.filename) || [],
                         instances: (obj as any).files?.map((f: any) => f.instances) || [],
                     };
                 });
             }
-            setEngineDetails(engineDetails);
+            setEngineInfo(engineInfo);
             setIsUploadProjectApp(true);
             setPendingProjectId(output.project_id);
             setShowEngineModal(true);
@@ -301,7 +300,7 @@ export const AddAppModal = (props: AddAppProps) => {
             handleClose(createProjectOutput.project_id);
         }
     };
-    const handleEngineModalOk = () => {
+    const handleEngineModalClose = () => {
         setShowEngineModal(false);
         handleClose(pendingProjectId);
     };
@@ -321,11 +320,10 @@ export const AddAppModal = (props: AddAppProps) => {
                 open={showEngineModal}
                 successIds={successIds}
                 failedIds={failedIds}
-                onClose={handleEngineModalOk}
+                onClose={handleEngineModalClose}
                 appId={pendingProjectId || ''}
                 isUploadProjectApp={isUploadProjectApp}
-                engineIdToName={engineIdToName}
-                engineDetails={engineDetails}
+                engineInfo={engineInfo}
             />
         </>
     );

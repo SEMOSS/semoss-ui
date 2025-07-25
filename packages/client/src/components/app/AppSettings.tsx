@@ -228,6 +228,11 @@ interface AppSettingsProps {
 type EditAppForm = {
     PROJECT_UPLOAD: File;
 };
+type EngineInfo = {
+    name: string;
+    files: string[];
+    instances: (string | number)[];
+};
 
 export const AppSettings = (props: AppSettingsProps) => {
     const { id, condensed = false } = props;
@@ -239,8 +244,7 @@ export const AppSettings = (props: AppSettingsProps) => {
     const [successIds, setSuccessIds] = useState<string[]>([]);
     const [failedIds, setFailedIds] = useState<string[]>([]);
     const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
-    const [engineIdToName, setEngineIdToName] = useState<Record<string, string>>({});
-    const [engineDetails, setEngineDetails] = useState<Record<string, { files: string[]; instances: (string | number)[] }>>({});
+    const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>({});
 
     const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
         defaultValues: {
@@ -517,22 +521,16 @@ export const AppSettings = (props: AppSettingsProps) => {
                 `ExtractAndSetDependencies(filePath=["version/assets"], space=["${id}"]);`
             );
 
-            let extractOutput = extractResp.pixelReturn[0].output;
+            const extractOutput = extractResp.pixelReturn?.[0]?.output || { engineIds: {} };
             const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
             const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
             setSuccessIds(success);
             setFailedIds(failed);
-            const idToName: Record<string, string> = {};
+            const engineInfo: Record<string, EngineInfo> = {};
             if (extractOutput.engineIds.success) {
                 Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
-                    idToName[id] = (obj as { engineName?: string }).engineName || '';
-                });
-            }
-            setEngineIdToName(idToName);
-            const engineDetails: Record<string, { files: string[]; instances: (string | number)[] }> = {};
-            if (extractOutput.engineIds.success) {
-                Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
-                    engineDetails[id] = {
+                    engineInfo[id] = {
+                        name: (obj as { engineName?: string }).engineName || '',
                         files: (obj as any).files?.map((f: any) => f.filename) || [],
                         instances: (obj as any).files?.map((f: any) => f.instances) || [],
                     };
@@ -540,13 +538,14 @@ export const AppSettings = (props: AppSettingsProps) => {
             }
             if (extractOutput.engineIds.failed) {
                 Object.entries(extractOutput.engineIds.failed).forEach(([id, obj]) => {
-                    engineDetails[id] = {
+                    engineInfo[id] = {
+                        name: (obj as { engineName?: string }).engineName || '',
                         files: (obj as any).files?.map((f: any) => f.filename) || [],
                         instances: (obj as any).files?.map((f: any) => f.instances) || [],
                     };
                 });
             }
-            setEngineDetails(engineDetails);
+            setEngineInfo(engineInfo);
             setIsUploadProjectApp(false);
             setShowEngineModal(true);
 
@@ -943,8 +942,7 @@ export const AppSettings = (props: AppSettingsProps) => {
                     onClose={handleEngineModalOk}
                     appId={id}
                     isUploadProjectApp={isUploadProjectApp}
-                    engineIdToName={engineIdToName}
-                    engineDetails={engineDetails}
+                    engineInfo={engineInfo}
                 />
             </>
         );
