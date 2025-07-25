@@ -12,48 +12,47 @@ const config: Migration = {
     run: (state) => {
         const newState = { ...state };
 
-        // check each cell, convert each cell to a 
+        // check each cell, convert each cell to a
         Object.values(state.queries).forEach((q) => {
             q.cells.forEach((c) => {
-                let found = false
+                let found = false;
                 Object.values(newState.variables).forEach((variable) => {
-                    if(variable.to === q.id) {
+                    if (variable.to === q.id) {
                         if (c.id === variable.cellId) {
-                            found = true
+                            found = true;
                         }
                     }
-                })
+                });
 
                 // create a variable for cells that arent already there
-                if(!found) {
+                if (!found) {
                     const variableConfig = {
                         type: "cell",
                         to: q.id,
-                        cellId: c.id
-                    }
+                        cellId: c.id,
+                    };
 
                     // EDGE CASE: Check if someone coincidentally named there variable nbName--cellId
-                    let baseKey = `${q.id}--${c.id}`
+                    const baseKey = `${q.id}--${c.id}`;
                     let variableKey = baseKey;
                     let attemptCount = 0;
-                    
-                    while(newState.variables[variableKey]) {
-                        const randomSuffix = Math.floor(Math.random() * 100000)
-                        variableKey = `${baseKey}--${randomSuffix}`
 
-                        attemptCount++
+                    while (newState.variables[variableKey]) {
+                        const randomSuffix = Math.floor(Math.random() * 100000);
+                        variableKey = `${baseKey}--${randomSuffix}`;
 
-                        if(attemptCount > 100) {
-                            throw new Error(`Failed to generate unique id for variable pointing to -->  sheet: ${q.id} cell:${c.id}`)
+                        attemptCount++;
+
+                        if (attemptCount > 100) {
+                            throw new Error(
+                                `Failed to generate unique id for variable pointing to -->  sheet: ${q.id} cell:${c.id}`,
+                            );
                         }
-                        
-                    } 
-                    newState.variables[`${q.id}--${c.id}`] = variableConfig
+                    }
+                    newState.variables[`${q.id}--${c.id}`] = variableConfig;
                 }
-                
-            })
-
-        })
+            });
+        });
 
         return newState;
     },

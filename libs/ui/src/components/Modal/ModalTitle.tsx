@@ -12,10 +12,13 @@ export interface ModalTitleProps {
     sx?: SxProps;
 }
 
-export const ModalTitle = (props: ModalTitleProps) => {
-    const { sx, children } = props;
+export const ModalTitle: React.FC<ModalTitleProps> = ({
+    sx,
+    children,
+    ...otherProps
+}) => {
     return (
-        <MuiModalTitle sx={sx} {...props}>
+        <MuiModalTitle sx={sx} {...otherProps}>
             {children}
         </MuiModalTitle>
     );
