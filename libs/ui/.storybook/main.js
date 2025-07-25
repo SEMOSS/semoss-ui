@@ -1,28 +1,19 @@
+import { dirname, join } from "path";
 /** @type { import('@storybook/react-webpack5').StorybookConfig } */
 
 const config = {
     stories: ["../src/*.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
     addons: [
-        {
-            name: "@storybook/addon-storysource",
-            options: {
-                loaderOptions: {
-                    prettierConfig: { printWidth: 80, singleQuote: false },
-                },
-            },
-        },
-        "@storybook/addon-links",
-        "@storybook/addon-essentials",
-        "@storybook/addon-interactions",
-        "@storybook/addon-styling",
+        getAbsolutePath("@storybook/addon-links"),
+        getAbsolutePath("@storybook/addon-themes"),
+        getAbsolutePath("@storybook/addon-webpack5-compiler-swc"),
+        getAbsolutePath("@storybook/addon-docs"),
     ],
     framework: {
-        name: "@storybook/react-webpack5",
+        name: getAbsolutePath("@storybook/react-webpack5"),
         options: {},
     },
-    docs: {
-        autodocs: "tag",
-    },
+    docs: {},
     typescript: {
         check: true,
         reactDocgen: "react-docgen-typescript",
@@ -40,3 +31,7 @@ const config = {
     },
 };
 module.exports = config;
+
+function getAbsolutePath(value) {
+    return dirname(require.resolve(join(value, "package.json")));
+}
