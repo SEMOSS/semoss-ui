@@ -13,6 +13,7 @@ const SECTION_TEXT = 'Text';
 const SECTION_CHARTS = 'Data Charts';
 const SECTION_MISC = 'Miscellaneous';
 const SECTION_GROUPED = 'Grouped Blocks';
+const SECTION_GMAIL = 'Gmail';
 
 export const SECTION_ORDER = [
     SECTION_LAYOUT,
@@ -23,6 +24,7 @@ export const SECTION_ORDER = [
     SECTION_MISC,
     SECTION_CHARTS,
     // SECTION_GROUPED,
+    SECTION_GMAIL,
 ];
 
 // Development Environment Blocks
@@ -74,6 +76,46 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 header: [],
                 content: [],
             },
+        },
+    },
+    {
+        section: SECTION_GMAIL,
+        name: 'Gmail',
+        helperText:
+            'Integrate with Google Gmails to manange sending, reading, and deleting emails',
+        activeImage: BLOCK_IMAGES['PARAGRAPH_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['PARAGRAPH_HOVER'],
+        json: {
+            widget: 'gmailtext',
+            data: {
+                style: {
+                    padding: '4px',
+                    whiteSpace: 'pre-line',
+                    textOverflow: 'ellipsis',
+                },
+                text: 'Gmail Block',
+                isStreaming: false,
+                show: 'true',
+                showGmailSendForm: false,
+                showSendForm: false,
+                // showDocsUpdateForm: boolean;
+                // showUpdateForm: boolean;
+                showGmailReadForm: false,
+                showReadForm: false,
+                showGmailDeleteForm: false,
+                showDeleteForm: false,
+                listAllGmails: false,
+                listedGmails: false,
+                title: '',
+                content: '',
+                gmailConnectionValue: '',
+                gmailActionValue: '',
+                gmailTitleValue: '',
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+            },
+            slots: {} as BlockJSON['slots'],
         },
     },
 
