@@ -12,12 +12,6 @@ import { useRootStore } from '@/hooks';
 import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
 
-type EngineInfo = {
-    name: string;
-    files: string[];
-    instances: (string | number)[];
-};
-
 interface AddFileOverlayProps {
     /** Type of file opened */
     type: 'app' | 'insight';
@@ -41,11 +35,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
     const [uploadFile, setUploadFiles] = useState<File>(null);
     const [unzipFile, setUnzipFile] = useState<boolean>(false);
     const [showEngineIdsModal, setShowEngineIdsModal] = useState(false);
-    // const [successIds, setSuccessIds] = useState<string[]>([]);
-    // const [failedIds, setFailedIds] = useState<string[]>([]);
     const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
-    // const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
-    // const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>({});
     const { engineDependenciesState, updateEngineDependencies } = useEngineDependenciesState();
 
     const handleEngineIdsModalClose = () => {
@@ -89,40 +79,10 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                     const extractResult = await monolithStore.runQuery(
                         `ExtractAndSetDependencies(filePath=["version/assets"], space=["${space}"]);`
                     );
-                    // let extractOutput = extractResult.pixelReturn[0].output;
-                    // const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
-                    // const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
-                    // setSuccessIds(success);
-                    // setFailedIds(failed);
-                    // const engineInfo: Record<string, EngineInfo> = {};
-                    // if (extractOutput.engineIds.success) {
-                    //     Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
-                    //         engineInfo[id] = {
-                    //             name: (obj as { engineName?: string }).engineName || '',
-                    //             files: (obj as any).files?.map((f: any) => f.filename) || [],
-                    //             instances: (obj as any).files?.map((f: any) => f.instances) || [],
-                    //         };
-                    //     });
-                    // }
-                    // if (extractOutput.engineIds.failed) {
-                    //     Object.entries(extractOutput.engineIds.failed).forEach(([id, obj]) => {
-                    //         engineInfo[id] = {
-                    //             name: (obj as { engineName?: string }).engineName || '',
-                    //             files: (obj as any).files?.map((f: any) => f.filename) || [],
-                    //             instances: (obj as any).files?.map((f: any) => f.instances) || [],
-                    //         };
-                    //     });
-                    // }
-                    // setEngineInfo(engineInfo);
-                    // setIsUploadProjectApp(false);
-                    // setPendingUploadPath(path);
-                    // setShowEngineIdsModal(true);
-                    // return;
+
                     const extractOutput = extractResult.pixelReturn[0].output;
- 
                     // Process engine dependencies using utility function
                     updateEngineDependencies(extractOutput.engineIds);
-                    // setIsUploadProjectApp(false);
                     setPendingUploadPath(path);
                     setShowEngineIdsModal(true);
                     return;
@@ -185,15 +145,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 </Button>
             </Modal.Actions>
             {isLoading && <LinearProgress />}
-            {/* <EngineIdsModal
-                open={showEngineIdsModal}
-                successIds={successIds}
-                failedIds={failedIds}
-                onClose={handleEngineIdsModalClose}
-                appId={space}
-                isUploadProjectApp={isUploadProjectApp}
-                engineInfo={engineInfo}
-            /> */}
             <EngineIdsModal
                 open={showEngineIdsModal}
                 successIds={engineDependenciesState.successfulEngineIds}

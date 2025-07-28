@@ -229,11 +229,6 @@ interface AppSettingsProps {
 type EditAppForm = {
     PROJECT_UPLOAD: File;
 };
-// type EngineInfo = {
-//     name: string;
-//     files: string[];
-//     instances: (string | number)[];
-// };
 
 export const AppSettings = (props: AppSettingsProps) => {
     const { id, condensed = false } = props;
@@ -242,10 +237,6 @@ export const AppSettings = (props: AppSettingsProps) => {
     const { adminMode } = useSettings();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [showEngineModal, setShowEngineModal] = useState(false);
-    // const [successIds, setSuccessIds] = useState<string[]>([]);
-    // const [failedIds, setFailedIds] = useState<string[]>([]);
-    //const [isUploadProjectApp, setIsUploadProjectApp] = useState(false);
-    //const [engineInfo, setEngineInfo] = useState<Record<string, EngineInfo>>({});
     const { engineDependenciesState, updateEngineDependencies } = useEngineDependenciesState();
 
     const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
@@ -522,34 +513,6 @@ export const AppSettings = (props: AppSettingsProps) => {
             const extractResp = await monolithStore.runQuery(
                 `ExtractAndSetDependencies(filePath=["version/assets"], space=["${id}"]);`
             );
-
-            // const extractOutput = extractResp.pixelReturn?.[0]?.output || { engineIds: {} };
-            // const success = extractOutput.engineIds.success ? Object.keys(extractOutput.engineIds.success) : [];
-            // const failed = extractOutput.engineIds.failed ? Object.keys(extractOutput.engineIds.failed) : [];
-            // setSuccessIds(success);
-            // setFailedIds(failed);
-            // const engineInfo: Record<string, EngineInfo> = {};
-            // if (extractOutput.engineIds.success) {
-            //     Object.entries(extractOutput.engineIds.success).forEach(([id, obj]) => {
-            //         engineInfo[id] = {
-            //             name: (obj as { engineName?: string }).engineName || '',
-            //             files: (obj as any).files?.map((f: any) => f.filename) || [],
-            //             instances: (obj as any).files?.map((f: any) => f.instances) || [],
-            //         };
-            //     });
-            // }
-            // if (extractOutput.engineIds.failed) {
-            //     Object.entries(extractOutput.engineIds.failed).forEach(([id, obj]) => {
-            //         engineInfo[id] = {
-            //             name: (obj as { engineName?: string }).engineName || '',
-            //             files: (obj as any).files?.map((f: any) => f.filename) || [],
-            //             instances: (obj as any).files?.map((f: any) => f.instances) || [],
-            //         };
-            //     });
-            // }
-            // setEngineInfo(engineInfo);
-            // setIsUploadProjectApp(false);
-            // setShowEngineModal(true);
             const extractOutput = extractResp.pixelReturn?.[0]?.output || {
                 engineIds: {},
             };
@@ -945,15 +908,6 @@ export const AppSettings = (props: AppSettingsProps) => {
                         </StyledCardDiv>
                     </StyledCardContainer>
                 </StyledAppSettings>
-                {/* <EngineIdsModal
-                    open={showEngineModal}
-                    successIds={successIds}
-                    failedIds={failedIds}
-                    onClose={handleEngineModalOk}
-                    appId={id}
-                    isUploadProjectApp={isUploadProjectApp}
-                    engineInfo={engineInfo}
-                /> */}
                 <EngineIdsModal
                     open={showEngineModal}
                     successIds={engineDependenciesState.successfulEngineIds}
