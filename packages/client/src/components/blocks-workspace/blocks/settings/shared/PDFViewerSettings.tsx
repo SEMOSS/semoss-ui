@@ -8,13 +8,12 @@ import {
     Block,
     BlockDef,
     PDFViewerBlockDef
-} from '@semoss/renderer';
+} from "@semoss/renderer";
 import { upload, runPixel } from "@semoss/sdk/react";
 import { Stack, Box, TextField, Tabs, styled, FileDropzone, Accordion, Typography, List, useNotification, Tooltip, Autocomplete } from "@semoss/ui";
 
 import { ExpandMore, InfoOutlined as InfoIcon, DeleteOutline } from "@mui/icons-material";
-
-const GRAY_COLOR = "#808080"; // Declare common gray color
+import { lightTheme } from "../../../../../../../../libs/ui/src/theme";
 
 //styled section for the selected tab
 const StyledSubSection = styled("div")(() => ({
@@ -24,9 +23,9 @@ const StyledSubSection = styled("div")(() => ({
 }));
 
 //styled span of the selected tab
-const StyledSpanFrame = styled("span")(() => ({
+const StyledSpanFrame = styled("span")(({theme}) => ({
     fontSize: "1rem",
-    color: GRAY_COLOR,
+    color: theme.palette.secondary.dark,
     paddingLeft: "9px",
     position: "relative",
 }));
@@ -35,7 +34,7 @@ const StyledMenuSection = styled(Accordion)(({ theme }) => ({
     boxShadow: "none",
     borderRadius: "0 !important",
     border: "0px",
-    borderBottom: "1px solid #e0e0e0",
+    borderBottom: `1px solid ${theme.palette.divider}`,
     "&:before": { display: "none" },
     "&.Mui-expanded": { margin: "0" },
 }));
@@ -52,16 +51,16 @@ const StyledDeleteIcon = styled(DeleteOutline)(({ theme }) => ({
 
 const StyledTypographyEror = styled(Typography)(({ theme }) => ({ 
     color: theme.palette.error.main,
-    paddingLeft: 32
+    paddingLeft: "32px",
 }));
 
 const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
     paddingLeft: "9px",
-     marginTop: '12px' 
+    marginTop: "12px",
 }));
 
 const StyledEngineContent = styled(Accordion.Content)(({ theme }) => ({
-    borderTop: "1px solid #e0e0e0",
+    borderBottom: `1px solid ${theme.palette.divider}`,
     marginTop: "5px",
 }));
 
@@ -70,11 +69,11 @@ interface Option {
     path: string;
     display: string;
     group: string;
-    engineID?: string;
+    engineId?: string;
     app_name?: string;
 }
 
-type EngineIDType = {
+type engineIdType = {
     app_id: string;
     app_type: string;
     app_name: string;
@@ -98,8 +97,8 @@ export const PDFViewerSettings = observer(
         const notification = useNotification();
         const { appId } = useParams();
         const [appOptions, setAppOptions] = useState<any>([]);
-        const [engineOptions, setEngineOptions] = useState<{ file_name: string; file_type: string; app_type: string; file_path: string; engineID: string; app_name: string; }[]>([]);
-        const tabs = ['Insight', 'Engine', 'App'];
+        const [engineOptions, setEngineOptions] = useState<{ file_name: string; file_type: string; app_type: string; file_path: string; engineId: string; app_name: string; }[]>([]);
+        const tabs = ["Insight", "Engine", "App"];
         const [selectedPdfPath, setSelectedPdfPath] = useState(data?.selectedPdf || "");
         const [selectedTab, setSelectedTab] = useState(tabs[1]);
         const [uploadFiles, setUploadFiles] = useState<File>(null);
@@ -152,14 +151,14 @@ export const PDFViewerSettings = observer(
             [appId]
         );
 
-        const getEngineID = useMemo(() =>
-            `MyEngines(engineTypes=[${allEngineTypes.map(type => `"${type}"`).join(",")}]);`,
-            []
-        );
-
-        const engineIDResponse = useMemo(() => runPixel(getEngineID), []);
-
         useEffect(() => {
+            // Fetch Engine Ids
+            const getengineId =
+            `MyEngines(engineTypes=[${allEngineTypes.map(type => `"${type}"`).join(",")}]);`;
+
+            //Fetch Engine Details
+            const engineIdResponse = runPixel(getengineId);
+
             // Fetch App Assets
             const fetchAssetsAndEngines = async () => {
                 try {
@@ -180,9 +179,8 @@ export const PDFViewerSettings = observer(
         
                 // Fetch Engine IDs
                 try {
-                    const result = await engineIDResponse;
-                    const output = result.pixelReturn?.[0]?.output;
-                    const engineIDs = Array.isArray(output)
+                    const output = (await engineIdResponse).pixelReturn?.[0]?.output;
+                    const engineIds = Array.isArray(output)
                         ? Array.from(
                             new Map(
                                 output
@@ -190,7 +188,7 @@ export const PDFViewerSettings = observer(
                             ).values()
                         )
                         : [];
-                    fetchEngineOptions(engineIDs);
+                    fetchEngineOptions(engineIds);
                 } catch (error) {
                     console.error("Error fetching engines:", error);
                 }
@@ -199,9 +197,9 @@ export const PDFViewerSettings = observer(
             fetchAssetsAndEngines();
         }, []);
 
-        const fetchEngineOptions = async (engineIDsList: EngineIDType[]) => {
-            let pdfFiles: { file_name: string; app_type: string; file_type: string; file_path: string; engineID: string; app_name: string; }[] = [];
-            const getFiles = engineIDsList.map((id) => ({
+        const fetchEngineOptions = async (engineIdsList: engineIdType[]) => {
+            let pdfFiles: { file_name: string; app_type: string; file_type: string; file_path: string; engineId: string; app_name: string; }[] = [];
+            const getFiles = engineIdsList.map((id) => ({
                 promise: runPixel<any>(
                     `BrowseEngineAssets(engine=["${id.app_id}"], filePath=["/"]);`
                 ),
@@ -220,7 +218,7 @@ export const PDFViewerSettings = observer(
                             file_path: item.type === "pdf" ? item.path : "",
                             file_type: item.type === "pdf" ? item.type : "",
                             app_type: obj.app_type || "",
-                            engineID: obj.app_id || "",
+                            engineId: obj.app_id || "",
                             app_name: obj.app_name || "",
                         }))
                     pdfFiles = [...pdfFiles, ...files];
@@ -250,7 +248,7 @@ export const PDFViewerSettings = observer(
                     path: item.file_path,
                     display: item.file_name,
                     group: groupAliasMapper(item.app_type, "engine"),
-                    engineID: item.engineID,
+                    engineId: item.engineId,
                     app_name: item.app_name,
                 });
             });
@@ -314,9 +312,9 @@ export const PDFViewerSettings = observer(
                     }}
                     color="primary"
                     sx={{
-                        '& .MuiTabs-flexContainer': {
-                            justifyContent: 'space-between',
-                            width: '100%',
+                        "& .MuiTabs-flexContainer": {
+                            justifyContent: "space-between",
+                            width: "100%",
                         },
                     }}
                 >
@@ -326,9 +324,9 @@ export const PDFViewerSettings = observer(
                             label={
                                 <Box
                                     sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: '14px',
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "14px",
                                     }}
                                 >
                                     <span>
@@ -349,9 +347,8 @@ export const PDFViewerSettings = observer(
                                     >
                                         <InfoIcon
                                             sx={{
-                                                cursor: 'pointer',
-                                                color: GRAY_COLOR,
-                                                pointerEvents: 'auto',
+                                                cursor: "pointer",
+                                                pointerEvents: "auto",
                                             }}
                                         />
                                     </Tooltip>
@@ -370,10 +367,10 @@ export const PDFViewerSettings = observer(
                             selectedTab
                         )}
                     </StyledSpanFrame>
-                    {selectedTab === 'Insight' && (
+                    {selectedTab === "Insight" && (
                         <InsightTab options={options} />
                     )}
-                    {selectedTab === 'Engine' && (
+                    {selectedTab === "Engine" && (
                         <EngineTab
                             engineOptionList={engineOptionList}
                             nestedEngineOptions={nestedEngineOptions}
@@ -384,7 +381,7 @@ export const PDFViewerSettings = observer(
                             setSelectedPdfPath={setSelectedPdfPath}
                         />
                     )}
-                    {selectedTab === 'App' && (
+                    {selectedTab === "App" && (
                         <AppTab
                             appOptions={appOptions}
                             selectedPdfPath={selectedPdfPath}
@@ -497,9 +494,9 @@ const EngineTab: React.FC<{
                                                             option.display && option.display.trim() ? (
                                                                 <li
                                                                     key={option.id}
-                                                                    style={{ paddingLeft: 32, cursor: "pointer" }}
+                                                                    style={{ paddingLeft: "32px", cursor: "pointer" }}
                                                                     onClick={() => {
-                                                                        setData("engineID", option.engineID, true);
+                                                                        setData("engineID", option.engineId, true);
                                                                         setData("selectedPdf", option.path, true);
                                                                         setSelectedPdfPath(option.path);
                                                                         setEngineAutocompleteOpen(false);
@@ -553,10 +550,10 @@ const AppTab: React.FC<{
     isLoading,
     addFile
 }) => (
-    <Stack sx={{ paddingLeft: "9px", marginTop: '12px' }}>
+    <Stack sx={{ paddingLeft: "9px", marginTop: "12px" }}>
         {uploadFiles ? (
             <Stack>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", }}>
                     <Typography variant="body1">
                         {uploadFiles.name}
                     </Typography>
@@ -566,19 +563,16 @@ const AppTab: React.FC<{
                         }}
                     />
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center', paddingTop: '8px', gap: '8px' }}>
+                <Box sx={{ display: "flex", alignItems: "center", paddingTop: "8px",}}>
                     <InfoIcon
                         sx={{
-                            cursor: 'pointer',
-                            color: GRAY_COLOR,
+                            cursor: "pointer",
+                            color: lightTheme.palette.secondary.dark,
                         }}
                     />
-                    <Typography
-                        variant="body2"
-                        sx={{ color: GRAY_COLOR, }}
-                    >
+                    <StyledSpanFrame>
                         Delete current file to upload a new one
-                    </Typography>
+                    </StyledSpanFrame>
                 </Box>
             </Stack>
         ) : (
@@ -603,7 +597,7 @@ const AppTab: React.FC<{
                         <TextField {...params} placeholder="Select File" size="small" variant="outlined" />
                     )}
                 />
-                <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginBottom: '8px'}}>
+                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "8px"}}>
                     <StyledSpanFrame>Or</StyledSpanFrame>
                 </Box>
                 <FileDropzone

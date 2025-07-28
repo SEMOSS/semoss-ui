@@ -19,7 +19,7 @@ export interface PDFViewerBlockDef extends BlockDef<"pdfViewer"> {
             padding: string;
         };
         selectedPdf: string | null;
-        engineID?: string;
+        engineId?: string;
         show: string;
     };
     listeners: {
@@ -92,15 +92,15 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
         }
     }, []);
 
-    const downloadAndPrepareFile = useCallback(async (path: string, engineIDs?: string) => {
+    const downloadAndPrepareFile = useCallback(async (path: string, engineIds?: string) => {
         try {
             setLoading(true);
 
             let response;
             
-            if (engineIDs) {
+            if (engineIds) {
                 response = await runPixel<[string]>(
-                    `GetEngineAssetsBase64(filePath=["${path}"], engine=["${engineIDs}"]);`,
+                    `GetEngineAssetsBase64(filePath=["${path}"], engine=["${engineIds}"]);`,
                 );
                 // Directly use base64 from response
                 const base64Content = response?.pixelReturn[0]?.output;
@@ -147,7 +147,7 @@ export const PDFViewerBlock: BlockComponent = observer(({ id }) => {
 
     useEffect(() => {
         if (data?.selectedPdf) {
-            downloadAndPrepareFile(data?.selectedPdf, data?.engineID)
+            downloadAndPrepareFile(data?.selectedPdf, data?.engineId)
                 .then((content) => {
                     setPdfContent(content as string);
                     setLoading(false);
