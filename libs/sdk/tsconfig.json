@@ -1,13 +1,11 @@
 {
     "compilerOptions": {
         /* Lang and Env */
-        "lib": ["es6", "dom", "ES2015"],
-        "target": "es5",
+        "lib": ["ES2022", "dom"],
+        "target": "es6",
         "jsx": "react-jsx",
 
         /* Modules */
-        "baseUrl": "src",
-        "rootDir": "src",
         "module": "esnext",
         "moduleResolution": "bundler",
         "allowSyntheticDefaultImports": true,
@@ -15,6 +13,7 @@
 
         /* Emit */
         "declaration": true,
+        "outDir": "./dist",
         "declarationDir": "./dist/types",
         "emitDeclarationOnly": true,
 
@@ -23,12 +22,10 @@
         "allowJs": true,
         "esModuleInterop": true,
         "isolatedModules": true,
-        // "composite": true,
 
         /* Lang and Env */
-
         "paths": {
-            "@/*": ["*"],
+           "@/*": ["./src/*"],
         }
     },
     "include": ["src"],

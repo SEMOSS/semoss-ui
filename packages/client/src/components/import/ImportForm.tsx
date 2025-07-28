@@ -100,7 +100,14 @@ export const ImportForm = (props) => {
         setValue,
         getValues,
         setFocus,
-    } = useForm();
+        formState: { isValid },
+    } = useForm({
+        mode: 'onSubmit',
+        defaultValues: defaultFields.reduce((acc, field) => {
+            acc[field.fieldName] = field.defaultValue || '';
+            return acc;
+        }, {}),
+    });
 
     /** Used to Trigger useEffect anytime these vals change */
     const fieldsToWatch = useMemo(() => {
@@ -1206,7 +1213,7 @@ export const ImportForm = (props) => {
                 ) : null}
                 <StyledFlexEnd>
                     <StyledSubmitButton
-                        disabled={formLoading}
+                        disabled={formLoading || !isValid}
                         type="submit"
                         variant="contained"
                     >

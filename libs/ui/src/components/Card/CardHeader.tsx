@@ -37,14 +37,17 @@ export interface CardHeaderProps {
     titleTypographyProps?: TypographyProps;
 }
 
-export const CardHeader = (props: CardHeaderProps) => {
-    const { sx } = props;
+export const CardHeader: React.FC<CardHeaderProps> = ({
+    sx,
+    titleTypographyProps,
+    ...otherProps
+}) => {
     return (
         <MuiCardHeader
             sx={sx}
             subheaderTypographyProps={{ variant: "caption" }}
-            titleTypographyProps={{ variant: "body1" }}
-            {...props}
+            titleTypographyProps={{ variant: "body1", ...titleTypographyProps }}
+            {...otherProps}
         />
     );
 };
