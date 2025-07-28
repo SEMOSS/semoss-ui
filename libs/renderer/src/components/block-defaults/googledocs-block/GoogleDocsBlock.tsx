@@ -1,13 +1,11 @@
 import React, { CSSProperties, useEffect, useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useTypeWriter, useBlocks } from "../../../hooks";
+import { useBlock, useTypeWriter, useBlocks} from "../../../hooks";
 import {
     BlockDef,
     BlockComponent,
     ActionMessages,
-    Block,
 } from "../../../store";
-import { showBlock } from "../../blocks/RendererEngine";
 import { Controller, useForm } from "react-hook-form";
 import { oauth, getUserDetails, runPixel } from "@semoss/sdk/react";
 import {
@@ -19,7 +17,7 @@ import {
     styled,
     Typography,
 } from "@semoss/ui";
-import { Paths, PathValue } from "../../../types";
+import { PathValue } from "../../../types";
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     display: "flex",
@@ -66,72 +64,8 @@ export interface GoogleDocsBlockDef extends BlockDef<"googledocstext"> {
     listeners: never;
 }
 
-interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
-    /** Data for the block  */
-    data: Block<D>["data"];
-
-    /** Data for the block  */
-    listeners: Block<D>["listeners"];
-
-    /**
-     * Dispatch a message to set data
-     * @param path - path of the data to set
-     * @param value - value of the data to set
-     */
-    setData: <P extends Paths<Block<D>["data"], 4>>(
-        path: P,
-        value: PathValue<D["data"], P>,
-    ) => void;
-}
-
-const useBlockSettings = <D extends BlockDef = BlockDef>(
-    id: string,
-): useBlockSettingsReturn<D> => {
-    // get the store
-    const { state } = useBlocks();
-
-    // get the block
-    const block = state.getBlock(id);
-
-    // get block
-    if (!block) {
-        throw Error(`Cannot find block ${id}`);
-    }
-
-    /**
-     * Dispatch a message to set data
-     * @param path - path of the data to set
-     * @param value - value of the data to set
-     */
-    const setData = useCallback(
-        <P extends Paths<Block<D>["data"], 4>>(
-            path: P | null,
-            value: PathValue<Block<D>["data"], P>,
-        ): void => {
-            state.dispatch({
-                message: ActionMessages.SET_BLOCK_DATA,
-                payload: {
-                    id: id,
-                    path: path,
-                    value: value,
-                },
-            });
-        },
-        [id],
-    );
-
-    return {
-        data: block.data || {},
-        listeners: block.listeners || {},
-        setData: setData,
-    };
-};
-
 export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
-    const block = useBlock<GoogleDocsBlockDef>(id);
-    const state = useBlocks();
-    const { data } = block;
-    const { setData } = useBlockSettings(id);
+   const { data, setData} = useBlock<GoogleDocsBlockDef>(id);
     const [createdDoc, setCreatedDoc] = useState<{
         title: string;
         content: string;
@@ -475,7 +409,6 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <div data-block={id} style={{ position: "relative", ...data.style }}>
-            {showBlock(block, state) ? (
                 <div
                     style={{
                         ...data.style,
@@ -772,10 +705,6 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                                         true,
                                                                     );
                                                                     setData(
-                                                                        "showDocsReadForm",
-                                                                        false,
-                                                                    );
-                                                                    setData(
                                                                         "showDocsDeleteForm",
                                                                         false,
                                                                     );
@@ -798,10 +727,6 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                                     );
                                                                     setData(
                                                                         "showDocsUpdateForm",
-                                                                        false,
-                                                                    );
-                                                                    setData(
-                                                                        "showDocsReadForm",
                                                                         false,
                                                                     );
                                                                     setDeleteValue(
@@ -976,18 +901,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                             </StyledModalContent>
                         </Modal>
                     )}
-                </div>
-            ) : (
-                <p
-                    style={{
-                        ...data.style,
-                        marginBlockStart: "0px",
-                        marginBlockEnd: "0px",
-                    }}
-                >
-                    Google Docs Block
-                </p>
-            )}
+               </div>
         </div>
     );
 });
