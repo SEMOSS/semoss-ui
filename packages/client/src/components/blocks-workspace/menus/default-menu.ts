@@ -675,6 +675,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
       slots: {} as BlockJSON["slots"],
     },
   },
+// TODO: Uncomment when Date Picker is implemented
 //   {
 //     section: SECTION_INPUT,
 //     name: "Date Picker",
