@@ -231,15 +231,16 @@ export const JobBuilderModal = (props: {
     const updateJob = async () => {
         setIsLoading(true);
         const encode = getEncodeByJobType(builder);
-        await runPixel(
-            `META|EditScheduledJob(jobId="${builder.id}",jobName="${
-                builder.name
-            }",${
-                builder.tags.length
-                    ? `jobTags=${JSON.stringify(builder.tags)},`
-                    : ''
-                }jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${builder.jobType}", "jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}", "cronTimeZone":"${builder.cronTz}"}',triggerOnLoad=[false],triggerNow=[false]);`,
-            );
+        try {
+            const response = await runPixel(
+                `META|EditScheduledJob(jobId="${builder.id}",jobName="${
+                    builder.name
+                }",${
+                    builder.tags.length
+                        ? `jobTags=${JSON.stringify(builder.tags)},`
+                        : ''
+                    }jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${builder.jobType}", "jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}", "cronTimeZone":"${builder.cronTz}"}',triggerOnLoad=[false],triggerNow=[false]);`,
+                );
             if (response.errors.length) {
                 await notification.add({
                     color: 'error',
@@ -249,7 +250,7 @@ export const JobBuilderModal = (props: {
                 return;
             }
         } catch (e) {
-            await notification.add({
+            notification.add({
                 color: 'error',
                 message: 'Unable to update job',
             });
