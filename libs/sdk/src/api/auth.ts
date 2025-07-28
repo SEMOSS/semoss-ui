@@ -93,6 +93,16 @@ export const oauth = async (
     });
 };
 
+export const getUserDetails = async (
+    provider: string,
+): Promise<{ name?: string }> => {
+    const response = await get<{ name?: string }>(
+        `${Env.MODULE}/api/auth/userinfo/${provider}`,
+    );
+ 
+    return response.data;
+};
+
 /**
  * Allow the user to logout
  *

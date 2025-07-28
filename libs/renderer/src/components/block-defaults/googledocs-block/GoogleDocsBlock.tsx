@@ -9,7 +9,7 @@ import {
 } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 import { Controller, useForm } from "react-hook-form";
-import { oauth, runPixel } from "@semoss/sdk/react";
+import { oauth, getUserDetails, runPixel } from "@semoss/sdk/react";
 import {
     Button,
     TextField,
@@ -162,7 +162,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
         // Check if user is already logged in
         (async () => {
             try {
-                const response = await oauth("google");
+                const response = await getUserDetails("google");
                 if (response.name) {
                     setLoggedInUser(response.name);
                     notification.add({
