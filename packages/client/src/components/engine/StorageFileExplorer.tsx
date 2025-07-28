@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { Button, styled, Typography, IconButton } from '@semoss/ui';
+import { Button, styled, Typography, IconButton, Modal, FileDropzone, CircularProgress, LinearProgress, useNotification } from '@semoss/ui';
 import { CloudUploadOutlined, Refresh } from '@mui/icons-material';
 
 import { FileExplorer } from '../common/File/FileExplorer';
+import { Controller, useForm } from 'react-hook-form';
+import { useRootStore } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -31,13 +33,26 @@ interface StorageFileExplorerProps {
     /** Storage engine ID */
     id: string;
 }
+type FileUploadForm = {
+    PROJECT_UPLOAD: File[];
+};
 
+interface FileExplorerProps {
+    fileName: string;
+    fileSize: number;
+    lastModified: string;
+}
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const { id } = props;
 
     const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string>('');
     const [refreshCounter, setRefreshCounter] = useState(0);
+    const [openPopUp, setOpenPopUp] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
+
 
     /**
      * Refresh the file list
@@ -69,17 +84,83 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
     /**
      * Handle file upload
+     * 
      */
-    const handleUpload = (storagePath: string, localFilePath: string) => {
-        console.log(
-            'Upload completed for storage path:',
-            storagePath,
-            'local file:',
-            localFilePath,
-        );
+
+    const { control, watch, setValue, handleSubmit } = useForm<{
+        FILES: FileExplorerProps[];
+        PROJECT_UPLOAD: File[];
+        SEARCH_FILTER: string;
+    }>({
+        defaultValues: {
+            FILES: [],
+            SEARCH_FILTER: '',
+            PROJECT_UPLOAD: [],
+        },
+    });
+
+
+    const handleUpload = handleSubmit(async (data: FileUploadForm) => {
+
+        setIsLoading(true);
+        let fileLocations = '';
+        console.log("data: ", data);
+
+        try{            
+            const upload = await monolithStore.uploadFile(
+                data.PROJECT_UPLOAD,
+                configStore.store.insightID,
+            );
+
+            console.log(configStore.store.insightID);
+
+            upload.map(async (file, index) => {
+                let fileLocation = file.fileLocation.replace(/\\/g, '/');
+                if (index + 1 === upload.length) {
+                    fileLocations = fileLocations += `"${fileLocation}"`;
+                } else {
+                    fileLocations = fileLocations += `"${fileLocation}", `;
+                }        
+            });
+
+            console.log("location:", fileLocations);
+
+            const response = await monolithStore.runQuery(`
+            Storage(storage = "${id}") | SyncLocalToStorage(storagePath='/', filePath=[${fileLocations}]);
+            `);
+
+            const { output, operationType } = response.pixelReturn[0];
+            console.log(output);
+
+            if (operationType.indexOf('ERROR') === -1) {
+                notification.add({
+                    color: 'success',
+                    message: `Successfully added document`,
+                });
+            } else {
+                notification.add({
+                    color: 'error',
+                    message: output,
+                });
+            }
+        }
+        catch (e) {
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
+        } finally {
+            //turn off loading
+            refreshFiles();
+            setIsLoading(false);
+            setValue('PROJECT_UPLOAD', []);
+            setOpenPopUp(false);
+        }
+
+       
         // Refresh the file list after upload
-        refreshFiles();
-    };
+        
+    });
 
     /**
      * Handle file download
@@ -135,7 +216,8 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     <Button
                         variant="outlined"
                         startIcon={<CloudUploadOutlined />}
-                        onClick={handleGlobalUpload}
+                        // onClick={handleGlobalUpload}
+                        onClick={() => setOpenPopUp(true)}
                         size="small"
                     >
                         Upload Files
@@ -151,7 +233,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     expandedPaths={expandedPaths}
                     onToggleExpand={handleToggleExpand}
                     onSelect={handleFileSelect}
-                    onUpload={handleUpload}
+                    // onUpload={handleUpload}
                     onDownload={handleDownload}
                     onTrashClick={handleDelete}
                 />
@@ -162,6 +244,64 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     Selected: {selectedFile}
                 </Typography>
             )}
+
+            <Modal open={openPopUp} onClose={() => setOpenPopUp(false)} fullWidth>
+                <Modal.Title>Upload Files</Modal.Title>
+                <form onSubmit={handleUpload}>
+                    <Modal.Content>
+                        <Controller
+                            name={'PROJECT_UPLOAD'}
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => {
+                                return (
+                                    <FileDropzone
+                                        multiple={true}
+                                        value={field.value}
+                                        extensions={[
+                                            '.pdf',
+                                            '.csv',
+                                            '.txt',
+                                            '.doc',
+                                            '.ppt',
+                                            '.docx',
+                                            '.pptx',
+                                        ]}
+                                        disabled={isLoading}
+                                        onChange={(newValues) => {
+                                            field.onChange(newValues);
+                                        }}
+                                    />
+                                );
+                            }}
+                        />
+                    </Modal.Content>
+                    <Modal.Actions>
+                        <Button
+                            variant={'outlined'}
+                            disabled={isLoading}
+                            onClick={() => setOpenPopUp(false)}
+                        >
+                            Close
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant={'contained'}
+                            disabled={isLoading}
+                            startIcon={
+                                isLoading ? (
+                                    <CircularProgress size="1em" />
+                                ) : (
+                                    <></>
+                                )
+                            }
+                        >
+                            Upload
+                        </Button>
+                    </Modal.Actions>
+                </form>
+                {isLoading && <LinearProgress />}
+            </Modal>
         </StyledContainer>
     );
 };
