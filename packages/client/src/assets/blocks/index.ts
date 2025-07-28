@@ -82,6 +82,8 @@ export { default as VEGA_ACTIVE } from './Vega_Active.png';
 export { default as VEGA_HOVER } from './Vega_Hover.png';
 export { default as TIME_PICKER_ACTIVE } from './Timepicker_Active.png';
 export { default as TIME_PICKER_HOVER } from './Timepicker_Hover.png';
+export { default as DATE_PICKER_ACTIVE } from './Date Picker_Active.png';
+export { default as DATE_PICKER_HOVER } from './Date Picker_Hover.png';
 
 // CHARTS
 export { default as AREA_CHART_ACTIVE } from './Area_Chart_Active.png';
