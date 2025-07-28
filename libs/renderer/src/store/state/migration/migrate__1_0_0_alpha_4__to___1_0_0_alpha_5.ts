@@ -22,7 +22,7 @@ const config: Migration = {
                 block.listeners["preProcess"] = [];
             } else if (block.widget === "flip-card") {
                 block.listeners["preProcess"] = [];
-            }  else if (block.widget === "popover") {
+            } else if (block.widget === "popover") {
                 block.listeners["onOpen"] = [];
                 block.listeners["onClose"] = [];
 

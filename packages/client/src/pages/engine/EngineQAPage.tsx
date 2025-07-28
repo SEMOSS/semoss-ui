@@ -54,7 +54,7 @@ export interface VectorContext {
 }
 
 export const EngineQAPage = () => {
-    const { id } = useEngine();
+    const { active } = useEngine();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
     const [isAnswered, setIsAnswered] = useState(false);
@@ -94,7 +94,7 @@ export const EngineQAPage = () => {
         }
         try {
             let pixel = `
-            VectorDatabaseQuery(engine="${id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
+            VectorDatabaseQuery(engine="${active.id}" , command='<encode>${data.QUESTION}</encode>', limit=${limit})
             `;
 
             const response = await monolithStore.runQuery(pixel);

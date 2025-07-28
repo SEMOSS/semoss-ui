@@ -13,7 +13,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../runPixelTwo';
+import { runPixel } from '@semoss/sdk/react';
 import { JobBuilder } from './job.types';
 import { getEncodeByJobType } from './job.utils';
 import { JobTypesBuilder } from './JobTypesBuilder';
@@ -189,11 +189,22 @@ export const JobBuilderModal = (props: {
         setIsLoading(true);
         try {
             const encode = getEncodeByJobType(builder);
-            const response = await runPixelTwo(
-                `META|ScheduleJob(jobName=["${builder.name}"],${builder.tags.length
-                    ? ` jobTags=${JSON.stringify(builder.tags)},`
-                    : ''
-                } jobGroup=["defaultGroup"], cronExpression=["${builder.cronExpression}"], cronTz=["${builder.cronTz}"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${builder.jobType}","jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}","cronTimeZone":"${builder.cronTz}","recipe":"${builder.pixel}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+            const response = await runPixel(
+                `META|ScheduleJob(jobName=["${builder.name}"],${
+                    builder.tags.length
+                        ? ` jobTags=${JSON.stringify(builder.tags)},`
+                        : ''
+                } jobGroup=["defaultGroup"], cronExpression=["${
+                    builder.cronExpression
+                }"], cronTz=["${
+                    builder.cronTz
+                }"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${
+                    builder.jobType
+                }","jobName":"${builder.name}", "cronExpression":"${
+                    builder.cronExpression
+                }","cronTimeZone":"${builder.cronTz}","recipe":"${
+                    builder.pixel
+                }","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
             );
             if (response.errors.length) {
                 await notification.add({
@@ -219,10 +230,12 @@ export const JobBuilderModal = (props: {
     // Similar fix for updateJob
     const updateJob = async () => {
         setIsLoading(true);
-        try {
-            const encode = getEncodeByJobType(builder);
-            const response = await runPixelTwo(
-                `META|EditScheduledJob(jobId="${builder.id}",jobName="${builder.name}",${builder.tags.length
+        const encode = getEncodeByJobType(builder);
+        await runPixel(
+            `META|EditScheduledJob(jobId="${builder.id}",jobName="${
+                builder.name
+            }",${
+                builder.tags.length
                     ? `jobTags=${JSON.stringify(builder.tags)},`
                     : ''
                 }jobGroup=["defaultGroup"],cronExpression="${builder.cronExpression}",cronTz="${builder.cronTz}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${builder.jobType}", "jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}", "cronTimeZone":"${builder.cronTz}"}',triggerOnLoad=[false],triggerNow=[false]);`,
