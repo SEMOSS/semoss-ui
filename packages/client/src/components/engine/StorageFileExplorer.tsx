@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
+<<<<<<< HEAD
 import { Button, styled, Typography, IconButton, Modal, FileDropzone, CircularProgress, LinearProgress, useNotification } from '@semoss/ui';
 import { CloudUploadOutlined, Refresh } from '@mui/icons-material';
 
 import { FileExplorer } from '../common/File/FileExplorer';
 import { Controller, useForm } from 'react-hook-form';
+=======
+import { Controller, useForm } from 'react-hook-form';
+import { 
+    Button, 
+    styled, 
+    Typography, 
+    IconButton,
+    Modal,
+    LinearProgress,
+    CircularProgress,
+    useNotification,
+    FileDropzone
+} from '@semoss/ui';
+import { CloudUploadOutlined, Refresh } from '@mui/icons-material';
+
+import { FileExplorer } from '../common/File/FileExplorer';
+>>>>>>> ce5a45abb3e37aa040cb66443f4c60ae3018159b
 import { useRootStore } from '@/hooks';
 
 const StyledContainer = styled('div')(({ theme }) => ({
@@ -37,22 +55,48 @@ type FileUploadForm = {
     PROJECT_UPLOAD: File[];
 };
 
+<<<<<<< HEAD
 interface FileExplorerProps {
     fileName: string;
     fileSize: number;
     lastModified: string;
 }
+=======
+type FileUploadForm = {
+    PROJECT_UPLOAD: File[];
+    STORAGE_PATH: string;
+};
+
+>>>>>>> ce5a45abb3e37aa040cb66443f4c60ae3018159b
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const { id } = props;
+    const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
 
     const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string>('');
     const [refreshCounter, setRefreshCounter] = useState(0);
+<<<<<<< HEAD
     const [openPopUp, setOpenPopUp] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
 
+=======
+    const [uploadModalOpen, setUploadModalOpen] = useState<boolean>(false);
+    const [isUploading, setIsUploading] = useState<boolean>(false);
+
+    // Form for upload modal
+    const { control, handleSubmit, setValue, watch } = useForm<FileUploadForm>({
+        defaultValues: {
+            PROJECT_UPLOAD: [],
+            STORAGE_PATH: '/',
+        },
+    });
+
+    const uploadedFiles = watch('PROJECT_UPLOAD');
+    const storagePath = watch('STORAGE_PATH');
+>>>>>>> ce5a45abb3e37aa040cb66443f4c60ae3018159b
 
     /**
      * Refresh the file list
@@ -190,14 +234,65 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     };
 
     /**
+     * Handle file upload to storage
+     */
+    const handleUploadToStorage = handleSubmit(async (data: FileUploadForm) => {
+        setIsUploading(true);
+
+        try {
+            // Upload files to the server first
+            const upload = await monolithStore.uploadFile(
+                data.PROJECT_UPLOAD,
+                configStore.store.insightID,
+            );
+
+            // For each uploaded file, push to storage
+            for (const file of upload) {
+                const { fileLocation } = file;
+                const fileName = fileLocation.split('/').pop() || 'unknown';
+                const storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
+
+                // Push file to storage using the storage pixel
+                const response = await monolithStore.runQuery(`
+                    Storage(storage = "${id}") | PushToStorage(storagePath="${storageFilePath}", filePath="${fileLocation}");
+                `);
+
+                const { output, operationType } = response.pixelReturn[0];
+
+                if (operationType.indexOf('ERROR') !== -1) {
+                    notification.add({
+                        color: 'error',
+                        message: `Failed to upload ${fileName}: ${output}`,
+                    });
+                } else {
+                    notification.add({
+                        color: 'success',
+                        message: `Successfully uploaded ${fileName} to storage`,
+                    });
+                }
+            }
+
+            // Close modal and refresh
+            setUploadModalOpen(false);
+            setValue('PROJECT_UPLOAD', []);
+            setValue('STORAGE_PATH', '/');
+            refreshFiles();
+
+        } catch (e) {
+            notification.add({
+                color: 'error',
+                message: String(e),
+            });
+        } finally {
+            setIsUploading(false);
+        }
+    });
+
+    /**
      * Handle global upload button click
      */
     const handleGlobalUpload = () => {
-        // In a real implementation, this would open a file picker
-        // and upload to the root directory
-        console.log('Global upload clicked');
-        console.log('test');
-        alert('todo - global upload functionality');
+        setUploadModalOpen(true);
     };
 
     return (
@@ -245,6 +340,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 </Typography>
             )}
 
+<<<<<<< HEAD
             <Modal open={openPopUp} onClose={() => setOpenPopUp(false)} fullWidth>
                 <Modal.Title>Upload Files</Modal.Title>
                 <form onSubmit={handleUpload}>
@@ -274,10 +370,78 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                                     />
                                 );
                             }}
+=======
+            {/* Upload Modal */}
+            <Modal open={uploadModalOpen} onClose={() => setUploadModalOpen(false)} fullWidth>
+                <Modal.Title>Upload Files to Storage</Modal.Title>
+                <form onSubmit={handleUploadToStorage}>
+                    <Modal.Content>
+                        <Controller
+                            name="STORAGE_PATH"
+                            control={control}
+                            rules={{ required: 'Storage path is required' }}
+                            render={({ field, fieldState }) => (
+                                <div style={{ marginBottom: '16px' }}>
+                                    <Typography variant="body2" style={{ marginBottom: '8px' }}>
+                                        Storage Path (e.g., /documents, /images):
+                                    </Typography>
+                                    <input
+                                        {...field}
+                                        type="text"
+                                        placeholder="/"
+                                        style={{
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            border: '1px solid #ccc',
+                                            borderRadius: '4px',
+                                            fontSize: '14px'
+                                        }}
+                                    />
+                                    {fieldState.error && (
+                                        <Typography variant="caption" color="error">
+                                            {fieldState.error.message}
+                                        </Typography>
+                                    )}
+                                </div>
+                            )}
+                        />
+                        <Controller
+                            name="PROJECT_UPLOAD"
+                            control={control}
+                            rules={{}}
+                            render={({ field }) => (
+                                <FileDropzone
+                                    multiple={true}
+                                    value={field.value}
+                                    extensions={[
+                                        '.pdf',
+                                        '.csv',
+                                        '.txt',
+                                        '.doc',
+                                        '.ppt',
+                                        '.docx',
+                                        '.pptx',
+                                        '.jpg',
+                                        '.jpeg',
+                                        '.png',
+                                        '.gif',
+                                        '.mp4',
+                                        '.mp3',
+                                        '.zip',
+                                        '.rar'
+                                    ]}
+                                    disabled={isUploading}
+                                    onChange={(newValues) => {
+                                        field.onChange(newValues);
+                                    }}
+                                />
+                            )}
+>>>>>>> ce5a45abb3e37aa040cb66443f4c60ae3018159b
                         />
                     </Modal.Content>
                     <Modal.Actions>
                         <Button
+<<<<<<< HEAD
                             variant={'outlined'}
                             disabled={isLoading}
                             onClick={() => setOpenPopUp(false)}
@@ -301,6 +465,31 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     </Modal.Actions>
                 </form>
                 {isLoading && <LinearProgress />}
+=======
+                            variant="outlined"
+                            disabled={isUploading}
+                            onClick={() => setUploadModalOpen(false)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            type="submit"
+                            variant="contained"
+                            disabled={isUploading || uploadedFiles.length === 0}
+                            startIcon={
+                                isUploading ? (
+                                    <CircularProgress size="1em" />
+                                ) : (
+                                    <CloudUploadOutlined />
+                                )
+                            }
+                        >
+                            {isUploading ? 'Uploading...' : 'Upload to Storage'}
+                        </Button>
+                    </Modal.Actions>
+                </form>
+                {isUploading && <LinearProgress />}
+>>>>>>> ce5a45abb3e37aa040cb66443f4c60ae3018159b
             </Modal>
         </StyledContainer>
     );
