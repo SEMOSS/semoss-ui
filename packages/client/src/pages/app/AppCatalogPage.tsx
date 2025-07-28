@@ -1,5 +1,6 @@
 import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
+
 import {
     Stack,
     Typography,
@@ -9,6 +10,7 @@ import {
     TextField,
     InputAdornment,
 } from '@semoss/ui';
+import { debounced } from '@semoss/sdk/react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -147,8 +149,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
     const { favoritedApps, apps } = state;
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
-    const [search, setSearch] = useState("");
 
+    const [inputValue, setInputValue] = useState('');
+    const [search, setSearch] = useState('');
+
+        let testVar = 'hello'
+
+        
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {
@@ -229,6 +236,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
             value: getFavoritedApps.data,
         });
     }, [getFavoritedApps.status, getFavoritedApps.data]);
+
+    const debouncedSet = debounced((newInputValue) => {
+        setSearch(newInputValue);
+    }, 300);
+
+    const handleInputChange = (newInputValue) => {
+        setInputValue(newInputValue);
+        debouncedSet(newInputValue);
+    };
 
     /**
      * @name favoriteApp
@@ -325,11 +341,11 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         )}
                     </Stack>
                 </Stack>
-                <TextField 
+                <TextField
                     size="small"
                     label="Search"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    value={inputValue}
+                    onChange={(e) => handleInputChange(e.target.value)}
                 />
                 <StyledContainer>
                     {!configStore.store.config.adminOnlyViewMenuBarFlag &&
@@ -460,7 +476,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         )}
                         {mode != 'System' && getApps.status !== 'SUCCESS' ? (
                             <StyledSection>
-                                {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
+                                {Array.from({
+                                    length: SKELETON_CARD_COUNT,
+                                }).map((_, i) => (
                                     <AppTileCard
                                         key={`skeleton-${i}`}
                                         app={TERMINAL_APP}

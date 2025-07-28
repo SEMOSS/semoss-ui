@@ -16,7 +16,9 @@ import {
     Popover,
     Grid,
 } from '@semoss/ui';
-import { useRootStore, useAPI, useSettings, useDebounceValue } from '@/hooks';
+import { useDebouncedValue } from '@semoss/sdk/react';
+
+import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
 import SearchIcon from '@mui/icons-material/Search';
@@ -217,12 +219,12 @@ export const UserTable = (props: UserTableProps) => {
     const notification = useNotification();
 
     const [page, setPage] = useState<number>(0);
-    const [rowsPerPage, setRowsPerPage] = useState<number>(25);
+    const [rowsPerPage, setRowsPerPage] = useState<number>(10);
     const [isSearch, setIsSearch] = useState<boolean>(false);
     const [search, setSearch] = useState<string>('');
 
     // debounce the input
-    const debouncedSearch = useDebounceValue(search);
+    const debouncedSearch = useDebouncedValue(search);
 
     /** Member Table State */
     const [selectedMembers, setSelectedMembers] = useState([]);
@@ -242,7 +244,7 @@ export const UserTable = (props: UserTableProps) => {
         adminMode,
         debouncedSearch ? debouncedSearch : '',
         (page + 1) * rowsPerPage - rowsPerPage, // offset
-        0, // limit
+        rowsPerPage, // limit
     ]);
 
     // track if the page is loading
@@ -771,7 +773,7 @@ export const UserTable = (props: UserTableProps) => {
                                                 page={page}
                                                 rowsPerPage={rowsPerPage}
                                                 rowsPerPageOptions={[
-                                                    25, 50, 100,
+                                                    10, 25, 50, 100,
                                                 ]}
                                                 onRowsPerPageChange={(e) => {
                                                     // set the new limit

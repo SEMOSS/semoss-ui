@@ -1,6 +1,14 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState, Suspense, lazy } from "react";
 import {
+    CropFree,
+    KeyboardArrowDown,
+    DriveFileRenameOutlineRounded,
+} from "@mui/icons-material";
+
+import { usePixel } from "@semoss/sdk/react";
+import { DATA_FRAME_TYPES } from "@semoss/sdk";
+import {
     styled,
     Button,
     TextField,
@@ -9,16 +17,9 @@ import {
     Select,
 } from "@semoss/ui";
 
-import {
-    CropFree,
-    KeyboardArrowDown,
-    DriveFileRenameOutlineRounded,
-} from "@mui/icons-material";
 import { DatabaseTables } from "./DatabaseTables";
-
 import { ActionMessages, CellComponent, CellDef } from "../../../store";
 import { useBlocks } from "../../../hooks";
-import { usePixel } from "@semoss/sdk/react";
 
 const StyledSelect = styled(Select)(({ theme }) => ({
     "& .MuiSelect-select": {
@@ -46,25 +47,6 @@ const Editor = lazy(() => import("@monaco-editor/react"));
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
-
-const FRAME_TYPES = {
-    NATIVE: {
-        display: "GRID",
-        value: "NATIVE",
-    },
-    PY: {
-        display: "Python",
-        value: "PY",
-    },
-    R: {
-        display: "R",
-        value: "R",
-    },
-    GRID: {
-        display: "Grid",
-        value: "GRID",
-    },
-};
 
 const StyledContent = styled("div")(({ theme }) => ({
     position: "relative",
@@ -407,14 +389,16 @@ export const QueryImportCell: CellComponent<QueryImportCellDef> = observer(
                                     });
                                 }}
                             >
-                                {Object.values(FRAME_TYPES).map((frame, i) => (
-                                    <StyledSelectItem
-                                        key={`${i}-${cell.id}-${frame.value}`}
-                                        value={frame.value}
-                                    >
-                                        {frame.display}
-                                    </StyledSelectItem>
-                                ))}
+                                {Object.values(DATA_FRAME_TYPES).map(
+                                    (frame, i) => (
+                                        <StyledSelectItem
+                                            key={`${i}-${cell.id}-${frame.value}`}
+                                            value={frame.value}
+                                        >
+                                            {frame.display}
+                                        </StyledSelectItem>
+                                    ),
+                                )}
                             </StyledSelect>
                             <StyledTextField
                                 title="Set Frame Variable Name"

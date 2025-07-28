@@ -30,7 +30,7 @@ export const SECTION_ORDER = [
 // Development Environment Blocks
 const DEV_BLOCKS = [];
 // update the json structure also in VisualMapConstant.tsx
-if (process.env.NODE_ENV === 'development') {
+if (import.meta.env.DEV) {
     console.warn('PUSH DEV ENV BLOCKS');
 }
 

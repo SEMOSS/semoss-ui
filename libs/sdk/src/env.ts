@@ -10,7 +10,7 @@ export class Env {
         MODULE: "",
         ACCESS_KEY: "",
         SECRET_KEY: "",
-        CSRF: false
+        CSRF: false,
     };
 
     /**

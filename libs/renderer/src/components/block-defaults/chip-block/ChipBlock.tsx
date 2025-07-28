@@ -138,10 +138,8 @@ export const ChipBlock: BlockComponent = observer(({ id }) => {
                 );
             case "Link":
                 return (
-                    <a href={link} target="_blank">
-                        <Chip
-                            {...chipProps}
-                        />
+                    <a href={link} target="_blank" rel="noreferrer">
+                        <Chip {...chipProps} />
                     </a>
                 );
             default:

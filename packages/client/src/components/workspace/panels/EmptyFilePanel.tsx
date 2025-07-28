@@ -41,10 +41,10 @@ export const EmptyFilePanel = () => {
                         </StyledTypography>
                         <StyledTypography variant="body1">
                             Get started by selecting a file{' '}
-                            {process.env.NODE_ENV == 'development' && 'or'}
+                            {import.meta.env.DEV && 'or'}
                         </StyledTypography>
                     </div>
-                    {process.env.NODE_ENV == 'development' && (
+                    {import.meta.env.DEV && (
                         <div>
                             <TextEditorCodeGeneration />
                         </div>
