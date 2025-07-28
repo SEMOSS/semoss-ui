@@ -78,13 +78,13 @@ const config: Migration = {
                             b.data.aggregate ||
                             aggregateFormatter1(b.data.columns);
                     } else if (b.data.variation === "echart-gantt-chart") {
-                        let columns = Object.values(
+                        const columns = Object.values(
                             b.data.option["customSettings"]["columnDetails"],
                         );
                         b.data.aggregate =
                             b.data.aggregate || aggregateFormatter1(columns);
                     } else if (b.data.variation === "echart-pie-chart") {
-                        let fields = {
+                        const fields = {
                             Label: [b.data.option["_state"]["fields"]["Label"]],
                             Value: [b.data.option["_state"]["fields"]["Value"]],
                         };
@@ -106,7 +106,7 @@ const config: Migration = {
                                 b.data.option["_state"]["fields"],
                             );
                     } else if (b.data.variation === "echart-world-map-chart") {
-                        let fields = {};
+                        const fields = {};
                         Object.entries(
                             b.data.option["_state"]["fields"],
                         ).forEach(([key, value]) => {

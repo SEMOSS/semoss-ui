@@ -198,5 +198,4 @@ export const LLMComparisonBlock: BlockComponent = observer(({ id }) => {
     );
 
     return <div {...attrs}>Replace with compare block ui</div>;
- 
 });

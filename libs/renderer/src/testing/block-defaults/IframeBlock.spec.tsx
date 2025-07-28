@@ -70,7 +70,7 @@ describe("Iframe Block", () => {
         const { container } = render(<IframeBlock id="iframe" />, {
             blocks: hiddenBlocks,
         });
-                
+
         const block = container.querySelector("[data-block='iframe']");
         expect(block).toBeInTheDocument();
         expect(block).toBeEmptyDOMElement();
@@ -83,7 +83,7 @@ describe("Iframe Block", () => {
                 ...blocks.iframe,
                 data: {
                     ...blocks.iframe.data,
-                    style: { width: "80vw", height: "200px"},
+                    style: { width: "80vw", height: "200px" },
                 },
             },
         };
