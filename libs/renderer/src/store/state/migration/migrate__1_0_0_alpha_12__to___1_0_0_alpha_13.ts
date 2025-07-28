@@ -1,5 +1,11 @@
 import { ListenerActions } from "../state.types";
 import { Migration, MigrationState } from "./migration.types";
+
+/**
+ * Migration from version 1.0.0-alpha.12 to 1.0.0-alpha.13
+ * This migration adds the onOpen listener to select blocks if it does not exist.
+ */
+
 const migrate__1_0_0_alpha_12_to_1_0_0_alpha_13: Migration = {
     versionFrom: "1.0.0-alpha.12",
     versionTo: "1.0.0-alpha.13",
