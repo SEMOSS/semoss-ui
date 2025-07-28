@@ -18,7 +18,7 @@ import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { getValueByPath } from "../../../../../utility";
-import { updateColorData } from "../shared/chart-utility";
+import { updateColorData } from "../../../../shared/chart-utility";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -78,7 +78,7 @@ export interface EchartVisualizationBlockDef {
 }
 
 export const Map: BlockComponent = observer(({ id }) => {
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
     echarts.use([BarChart, CanvasRenderer, TooltipComponent]);
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;

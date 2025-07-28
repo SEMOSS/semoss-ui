@@ -1,39 +1,38 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { observer } from "mobx-react-lite";
-import { Delete, Edit } from "@mui/icons-material";
-import { PathValue } from "react-hook-form";
-import { computed } from "mobx";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { observer } from 'mobx-react-lite';
+import { Delete, Edit } from '@mui/icons-material';
+import { PathValue } from 'react-hook-form';
+import { computed } from 'mobx';
 
-import { Button, Select, Stack, styled, Table, TextField } from "@semoss/ui";
+import { Button, Select, Stack, styled, Table, TextField } from '@semoss/ui';
 
-import { BlockDef } from "../../../../store";
-// import { useBlockSettings } from "../../../../hooks";
-import { useBlock } from "../../../../hooks";
-import { getValueByPath } from "../../../../utility";
-import { EchartVisualizationBlockDef } from "../VisualizationBlock";
-import { columnComparisionList } from "../../../shared/chart-utility";
-import { ChartTypes } from "../Visualization.constants";
+import { BlockDef } from '@semoss/renderer/src';
+import { useBlockSettings } from '../../../../../../hooks';
+import { getValueByPath } from '@semoss/renderer/src/utility';
+import { EchartVisualizationBlockDef } from '@semoss/renderer/src';
+import { columnComparisionList } from '@semoss/renderer/src/components/shared/chart-utility';
+import { ChartTypes } from '@semoss/renderer/src/components/block-defaults/echart-visualization-block/Visualization.constants';
 
 // styled main section with custom styling
-const StyledMainSection = styled("div")(() => ({
-    display: "inline-flex",
-    width: "100%",
-    gap: "8px",
+const StyledMainSection = styled('div')(() => ({
+    display: 'inline-flex',
+    width: '100%',
+    gap: '8px',
 }));
 //select field with custom styling design to show two select fields in a row
 const StyledSelect = styled(Select)(() => ({
-    width: "48%",
+    width: '48%',
 }));
 //custom text field with reduced width
 const StyledTextField = styled(TextField)<{
     width?: string;
 }>(({ width }) => ({
-    width: width ?? "48%",
+    width: width ?? '48%',
 }));
 //styled span section
-const StyledSpan = styled("span")(() => ({
-    display: "flex",
-    justifyContent: "space-around",
+const StyledSpan = styled('span')(() => ({
+    display: 'flex',
+    justifyContent: 'space-around',
 }));
 
 //Color by value props
@@ -44,10 +43,10 @@ export interface ColourByValueProps {
 }
 //initial new rules for managing the state and for restoring
 const INITIAL_NEW_RULES = {
-    column: "",
-    columnColour: "#000000",
-    columnToColour: "",
-    columnComparision: "",
+    column: '',
+    columnColour: '#000000',
+    columnToColour: '',
+    columnComparision: '',
     valuesToColour: [],
     filterValue: 0,
     filterMinValue: 0,
@@ -57,7 +56,10 @@ const INITIAL_NEW_RULES = {
 
 const ColorByValue = observer(
     <D extends BlockDef = BlockDef>({ id, path, chartType }) => {
-        const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
+        const { data, setData } =
+            useBlockSettings<EchartVisualizationBlockDef>(id);
+        console.log('color by val data ', data);
+        console.log('color by val path ', path);
         const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
 
         const [valuesToColour, setValuesToColour] = useState([]);
@@ -75,7 +77,7 @@ const ColorByValue = observer(
         ) {
             columnData = data.columns
                 ? data.columns.filter(
-                      (item) => item.label?.toLowerCase() === "yaxis",
+                      (item) => item.label?.toLowerCase() === 'yaxis',
                   )
                 : [];
         } else if (chartType === ChartTypes.pie) {
@@ -93,12 +95,12 @@ const ColorByValue = observer(
         const computedValue = useMemo(() => {
             return computed(() => {
                 if (!data) {
-                    return "";
+                    return '';
                 }
                 const v = getValueByPath(data, path);
-                if (typeof v === "undefined") {
-                    return "";
-                } else if (typeof v === "string") {
+                if (typeof v === 'undefined') {
+                    return '';
+                } else if (typeof v === 'string') {
                     return v;
                 }
                 return v; //JSON.stringify(v, null, 2);
@@ -106,7 +108,7 @@ const ColorByValue = observer(
         }, [data, path]).get();
 
         const appliedRules =
-            computedValue["customSettings"]?.["appliedRules"] ?? [];
+            computedValue['customSettings']?.['appliedRules'] ?? [];
 
         useEffect(() => {
             return () => {
@@ -118,7 +120,7 @@ const ColorByValue = observer(
             const optionUpdated = {
                 ...computedValue,
                 customSettings: {
-                    ...computedValue["customSettings"],
+                    ...computedValue['customSettings'],
                     appliedRules: [...rules],
                     toolsUpdated: true,
                 },
@@ -133,7 +135,7 @@ const ColorByValue = observer(
             updateTimeOutRef.current = setTimeout(() => {
                 try {
                     setData(
-                        "option",
+                        'option',
                         updatedOption as PathValue<any, typeof path>,
                     );
                 } catch (e) {
@@ -143,10 +145,10 @@ const ColorByValue = observer(
         }
         //data array conversion function
         function convertSeriesDataToValue(item) {
-            if (typeof item === "object" && item.hasOwnProperty("value")) {
+            if (typeof item === 'object' && item.hasOwnProperty('value')) {
                 return item.value;
             }
-            if (typeof item === "number" || (item && typeof item === "string"))
+            if (typeof item === 'number' || (item && typeof item === 'string'))
                 return item;
             if (isNaN(item)) return 0;
         }
@@ -161,19 +163,19 @@ const ColorByValue = observer(
                 };
             });
 
-            if (column === "columnToColour") {
+            if (column === 'columnToColour') {
                 const option = data.option;
                 let valuesColor = [];
-                let name = "";
+                let name = '';
                 if (
                     chartType === ChartTypes.pie ||
                     chartType === ChartTypes.stackchart
                 ) {
                     name = event.target.value.name;
-                    valuesColor = option["series"].flatMap((item) =>
+                    valuesColor = option['series'].flatMap((item) =>
                         item.data?.map((item) => {
-                            const isStr = typeof item === "string";
-                            return item.hasOwnProperty("value")
+                            const isStr = typeof item === 'string';
+                            return item.hasOwnProperty('value')
                                 ? parseFloat(item.value)
                                 : isStr
                                 ? parseFloat(item)
@@ -185,7 +187,7 @@ const ColorByValue = observer(
                     chartType === ChartTypes.scatterplot
                 ) {
                     name = event.target.value.name;
-                    valuesColor = option["series"][0]?.["data"].map((item) => {
+                    valuesColor = option['series'][0]?.['data'].map((item) => {
                         return parseFloat(item[name]);
                     });
                 } else if (chartType === ChartTypes.bar) {
@@ -193,19 +195,19 @@ const ColorByValue = observer(
                         ? event.target.value.name[0]
                         : event.target.value.name;
                     const pixelId = event.target.value.selector;
-                    if (option["xAxis"]["pixelvalue"].includes(pixelId)) {
-                        valuesColor = option["xAxis"]["data"].map((item) => {
-                            return item.hasOwnProperty("value")
+                    if (option['xAxis']['pixelvalue'].includes(pixelId)) {
+                        valuesColor = option['xAxis']['data'].map((item) => {
+                            return item.hasOwnProperty('value')
                                 ? item.value
                                 : item;
                         });
                     } else if (
-                        option["yAxis"]["pixelvalue"].includes(pixelId)
+                        option['yAxis']['pixelvalue'].includes(pixelId)
                     ) {
-                        valuesColor = option["series"]
+                        valuesColor = option['series']
                             .find((item) => item.name === name)
-                            ["data"].map((item) => {
-                                return item.hasOwnProperty("value")
+                            ['data'].map((item) => {
+                                return item.hasOwnProperty('value')
                                     ? item.value
                                     : item;
                             });
@@ -218,7 +220,7 @@ const ColorByValue = observer(
                             (item) =>
                                 item > 0 &&
                                 item !== null &&
-                                typeof item !== "object",
+                                typeof item !== 'object',
                         ),
                     ),
                 );
@@ -226,11 +228,11 @@ const ColorByValue = observer(
                 setNewRules((prevValues) => {
                     return {
                         ...prevValues,
-                        ["column"]: name,
-                        ["columnName"]: name,
-                        ["columnNameToColour"]: name,
-                        ["filterMinValue"]: Math.min(...valuesColorSet),
-                        ["filterMaxValue"]: Math.max(...valuesColorSet),
+                        ['column']: name,
+                        ['columnName']: name,
+                        ['columnNameToColour']: name,
+                        ['filterMinValue']: Math.min(...valuesColorSet),
+                        ['filterMaxValue']: Math.max(...valuesColorSet),
                     };
                 });
             }
@@ -238,15 +240,15 @@ const ColorByValue = observer(
 
         function updateData() {
             if (
-                newRules.column !== "" &&
-                newRules.columnComparision !== "" &&
-                newRules.columnComparision !== ""
+                newRules.column !== '' &&
+                newRules.columnComparision !== '' &&
+                newRules.columnComparision !== ''
             ) {
                 if (newRules.index === -1) {
                     const appliedRulesLength = appliedRules.length;
                     const appliedRulesUpdated = [
                         ...appliedRules,
-                        { ...newRules, ["index"]: appliedRulesLength },
+                        { ...newRules, ['index']: appliedRulesLength },
                     ];
                     functionCallReference.current.applyRulesToChart = true;
                     applyRules(appliedRulesUpdated);
@@ -271,13 +273,13 @@ const ColorByValue = observer(
 
         //condition to show a text field, when the comparision is not '=='
         const conditionForShowingField =
-            newRules.columnComparision == "<" ||
-            newRules.columnComparision == ">" ||
-            newRules.columnComparision == "<=" ||
-            newRules.columnComparision == ">=";
+            newRules.columnComparision == '<' ||
+            newRules.columnComparision == '>' ||
+            newRules.columnComparision == '<=' ||
+            newRules.columnComparision == '>=';
 
         const accordionDetails = (
-            <Stack width={"100%"} style={{ padding: "0.95rem" }}>
+            <Stack width={'100%'} style={{ padding: '0.95rem' }}>
                 <StyledMainSection>
                     <h3>Applied Rules</h3>
                 </StyledMainSection>
@@ -303,17 +305,17 @@ const ColorByValue = observer(
                                             key={`applied-rule-${index}-${rule.columnToColour}`}
                                         >
                                             <td>
-                                                {rule.column}{" "}
+                                                {rule.column}{' '}
                                                 {rule.columnToColour}
                                             </td>
                                             <td>{`${rule.column} ${
                                                 rule.columnComparision
                                             } ${
                                                 rule.columnComparision ===
-                                                    "==" ||
-                                                rule.columnComparision === "!="
+                                                    '==' ||
+                                                rule.columnComparision === '!='
                                                     ? rule.valuesToColour.join(
-                                                          ",",
+                                                          ',',
                                                       )
                                                     : rule.filterValue
                                             }`}</td>
@@ -355,7 +357,7 @@ const ColorByValue = observer(
                         name="columnColour"
                         type="color"
                         value={newRules.columnColour}
-                        onChange={(e) => updateFields("columnColour", e)}
+                        onChange={(e) => updateFields('columnColour', e)}
                     ></StyledTextField>
                 </StyledMainSection>
                 <StyledMainSection>
@@ -367,7 +369,7 @@ const ColorByValue = observer(
                             const selected = columnData.find(
                                 (col) => col.selector === e.target.value,
                             );
-                            updateFields("columnToColour", {
+                            updateFields('columnToColour', {
                                 target: { value: selected },
                             });
                         }}
@@ -378,7 +380,7 @@ const ColorByValue = observer(
                                     value={cols.selector}
                                     key={`columnToColour_${cols.selector}`}
                                 >
-                                    {typeof cols.name === "string"
+                                    {typeof cols.name === 'string'
                                         ? cols.name
                                         : cols.name?.[0]}
                                 </Select.Item>
@@ -389,7 +391,7 @@ const ColorByValue = observer(
                         label="Select Comparision"
                         name="columnComparision"
                         value={newRules.columnComparision}
-                        onChange={(e) => updateFields("columnComparision", e)}
+                        onChange={(e) => updateFields('columnComparision', e)}
                     >
                         {columnComparisionList.map((cols, index) => {
                             return (
@@ -403,8 +405,8 @@ const ColorByValue = observer(
                         })}
                     </StyledSelect>
                 </StyledMainSection>
-                {(newRules.columnComparision == "==" ||
-                    newRules.columnComparision == "!=") && (
+                {(newRules.columnComparision == '==' ||
+                    newRules.columnComparision == '!=') && (
                     <StyledMainSection>
                         <StyledSelect
                             label="Select Values"
@@ -413,7 +415,7 @@ const ColorByValue = observer(
                                 multiple: true,
                             }}
                             value={newRules?.valuesToColour || []}
-                            onChange={(e) => updateFields("valuesToColour", e)}
+                            onChange={(e) => updateFields('valuesToColour', e)}
                         >
                             {(valuesToColour === undefined ||
                                 valuesToColour.length === 0) && (
@@ -457,7 +459,7 @@ const ColorByValue = observer(
                                 label="Select Value"
                                 name="filterValue"
                                 value={newRules.filterValue}
-                                onChange={(e) => updateFields("filterValue", e)}
+                                onChange={(e) => updateFields('filterValue', e)}
                             ></StyledTextField>
                         )}
                     </StyledMainSection>
@@ -477,7 +479,7 @@ const ColorByValue = observer(
             assignedRules = assignedRules.map((item, index) => {
                 return {
                     ...item,
-                    ["index"]: index,
+                    ['index']: index,
                 };
             });
             applyRules(assignedRules);

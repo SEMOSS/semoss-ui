@@ -30,7 +30,7 @@ import { useBlockSettings } from '@/hooks';
 import { Legend } from './Legend';
 import { EditXAxis } from './Edit-X-Axis';
 import { EditYAxis } from './Edit-Y-Axis';
-import ColourByValue from './ColourByValue';
+import ColorByValue from '../../ColorByValue';
 import { ChartStyling } from './ChartStyling';
 import { PieTitle } from '../pie-chart/PieTitle';
 import { PieLegend } from '../pie-chart/PieLegend';
@@ -82,6 +82,8 @@ import { CustomizeDendrogramSymbol } from '../dendrogram/CustomizeDendrogramSymb
 import { ChangeOrientation } from '../dendrogram/ChangeOrientation';
 import { LegendDendrogram } from '../dendrogram/LegendDendrogram';
 import { LabelsDendrogram } from '../dendrogram/LabelsDendrogram';
+import { ChartTypes } from '@semoss/renderer/src/components/block-defaults/echart-visualization-block/Visualization.constants';
+
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
 
 interface UpgradedVisualizationToolProps {
@@ -527,6 +529,36 @@ const StackChartTool = ({ id }) => {
                 <ListItemButtonTwo
                     onClick={(e) =>
                         setStackChartSelection((prevList) =>
+                            prevList === 'colourbyvalue' ? '' : 'colourbyvalue',
+                        )
+                    }
+                    selected={stackChartSelection === 'colourbyvalue'}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                stackChartSelection === 'colourbyvalue'
+                                    ? 'primary'
+                                    : 'disabled'
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButtonTwo>
+                {stackChartSelection === 'colourbyvalue' && (
+                    <ColorByValue
+                        id={id}
+                        chartType={ChartTypes.stackchart}
+                        path="option"
+                    />
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButtonTwo
+                    onClick={(e) =>
+                        setStackChartSelection((prevList) =>
                             prevList === 'editxaxis' ? '' : 'editxaxis',
                         )
                     }
@@ -723,10 +755,15 @@ const BarToolsList = ({ id }) => {
                     <InfoOutlined />
                 </ListItemButtonTwo>
                 {barSelection === 'colourbyvalue' && (
-                    <ColourByValue
+                    // <ColourByValue
+                    //     id={id}
+                    //     updateChart={updateChart}
+                    //     path="option"
+                    // />
+                    <ColorByValue
                         id={id}
-                        updateChart={updateChart}
                         path="option"
+                        chartType={ChartTypes.bar}
                     />
                 )}
             </StyledListItem>
@@ -948,6 +985,36 @@ const ScatterToolsList = ({ id }) => {
     return (
         <>
             <ColorpalatteTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButtonTwo
+                    onClick={(e) =>
+                        setScatterSelection((prevList) =>
+                            prevList === 'colourbyvalue' ? '' : 'colourbyvalue',
+                        )
+                    }
+                    selected={scatterSelection === 'colourbyvalue'}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                scatterSelection === 'colourbyvalue'
+                                    ? 'primary'
+                                    : 'disabled'
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButtonTwo>
+                {scatterSelection === 'colourbyvalue' && (
+                    <ColorByValue
+                        id={id}
+                        chartType={ChartTypes.scatterplot}
+                        path="option"
+                    />
+                )}
+            </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButtonTwo
                     onClick={(e) =>
@@ -1342,6 +1409,36 @@ const MapChartTools = ({ id }) => {
                 <ListItemButtonTwo
                     onClick={(e) =>
                         setMapSelection((prevList) =>
+                            prevList === 'colourbyvalue' ? '' : 'colourbyvalue',
+                        )
+                    }
+                    selected={mapSelection === 'colourbyvalue'}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                mapSelection === 'colourbyvalue'
+                                    ? 'primary'
+                                    : 'disabled'
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButtonTwo>
+                {mapSelection === 'colourbyvalue' && (
+                    <ColorByValue
+                        id={id}
+                        chartType={ChartTypes.map}
+                        path="option"
+                    />
+                )}
+            </StyledListItem>
+            <StyledListItem disablePadding>
+                <ListItemButtonTwo
+                    onClick={(e) =>
+                        setMapSelection((prevList) =>
                             prevList === 'tooltips' ? '' : 'tooltips',
                         )
                     }
@@ -1429,6 +1526,36 @@ const PieChartTools = ({ id }) => {
     return (
         <>
             <ColorpalatteTool id={id} />
+            <StyledListItem disablePadding>
+                <ListItemButtonTwo
+                    onClick={(e) =>
+                        setPieSelection((prevList) =>
+                            prevList === 'colourbyvalue' ? '' : 'colourbyvalue',
+                        )
+                    }
+                    selected={pieSelection === 'colourbyvalue'}
+                >
+                    <ListItemIcon>
+                        <ImageIcon
+                            fontSize="large"
+                            color={
+                                pieSelection === 'colourbyvalue'
+                                    ? 'primary'
+                                    : 'disabled'
+                            }
+                        />
+                    </ListItemIcon>
+                    <ListItemText primary="Colour By Value" />
+                    <InfoOutlined />
+                </ListItemButtonTwo>
+                {pieSelection === 'colourbyvalue' && (
+                    <ColorByValue
+                        id={id}
+                        chartType={ChartTypes.pie}
+                        path="option"
+                    />
+                )}
+            </StyledListItem>
             <StyledListItem disablePadding>
                 <ListItemButtonTwo
                     onClick={(e) =>

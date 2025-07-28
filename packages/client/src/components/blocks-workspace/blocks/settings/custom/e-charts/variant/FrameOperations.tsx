@@ -116,7 +116,6 @@ export const FrameOperations = observer(
     }) => {
         const { data, setData } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
-        const [columnsData, setColumnsData] = useState([]);
         const [search, setSearch] = useState('');
         const [isAdd, setIsAdd] = useState(false);
         const [addedColumnName, setAddedColumnName] = useState('');
@@ -136,10 +135,6 @@ export const FrameOperations = observer(
         ]);
         const accordionList = ['preProcess'];
         const [value, setValue] = useState('');
-        // get all of the frames
-        const getFrames = useBlocksPixel<string[]>('GetFrames();', {
-            data: [],
-        });
         // track the ref to debounce the input
         const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
         const [filteredColumns, setFilteredColumns] = useState([]);
@@ -161,11 +156,6 @@ export const FrameOperations = observer(
         useEffect(() => {
             const filteredColumnsString = JSON.stringify(filteredColumns);
             const columnsSelectorString = JSON.stringify(columnsSelector);
-            console.log(
-                filteredColumnsString,
-                columnsSelectorString,
-                'string comparision',
-            );
             if (
                 columnsSelector.length > 0 &&
                 filteredColumnsString !== columnsSelectorString
@@ -173,10 +163,6 @@ export const FrameOperations = observer(
                 setFilteredColumns(columnsSelector);
             }
         }, [columnsSelector]);
-        //to be removed in the later part, when chart's data section is working fine
-        useEffect(() => {
-            console.log('what is this');
-        }, [storedColumns]);
 
         useEffect(() => {
             setDroppedColumns({});
@@ -210,7 +196,10 @@ export const FrameOperations = observer(
                     },
                 };
             } else if (data.variation === 'echart-pie-chart') {
-                const { _state, ...mainParsedData } = parsedValue;
+                const { _state, ...mainParsedData } = parsedValue as {
+                    _state?: any;
+                    [key: string]: any;
+                };
                 parsedValue = {
                     ...mainParsedData,
                 };
@@ -237,7 +226,10 @@ export const FrameOperations = observer(
                     },
                 };
             } else if (data.variation === 'echart-line-graph') {
-                const { _state, ...mainParsedData } = parsedValue;
+                const { _state, ...mainParsedData } = parsedValue as {
+                    _state?: any;
+                    [key: string]: any;
+                };
                 parsedValue = {
                     ...mainParsedData,
                 };
@@ -262,8 +254,6 @@ export const FrameOperations = observer(
                         ['fields']: {},
                     },
                 };
-            } else {
-                //to be used for special case if nothing matches
             }
             //all the stored and dropped columns are resetted to empty
             storedColumns = {};
@@ -299,12 +289,12 @@ export const FrameOperations = observer(
                 }
                 return v; //JSON.stringify(v, null, 2);
             });
-        }, [data['option']]).get();
+        }, [data, path]).get();
         //useeffect to run the operations essential when a block is changed from another
         useEffect(() => {
             let tempStoredColumnsForDropped = {};
             if (data.variation === 'echart-bar-graph') {
-                const parsedOption = JSON.parse(computedValue) || {};
+                const parsedOption = computedValue || {};
                 if (
                     parsedOption.hasOwnProperty('xAxis') &&
                     parsedOption.hasOwnProperty('yAxis') &&
@@ -333,7 +323,7 @@ export const FrameOperations = observer(
                 }
             }
             if (data.variation === 'echart-dendrogram-chart') {
-                const parsedOption = JSON.parse(computedValue) || {};
+                const parsedOption = computedValue || {};
                 const dataTypeList = {};
                 if (
                     parsedOption.hasOwnProperty('_state') &&
@@ -367,7 +357,7 @@ export const FrameOperations = observer(
                 setSelectedColumn((preVCol) => tempStoredColumns);
             }
             if (data.variation === 'echart-pie-chart') {
-                const parsedOption = JSON.parse(computedValue) || {};
+                const parsedOption = computedValue || {};
                 if (
                     parsedOption.hasOwnProperty('_state') &&
                     parsedOption['_state'].hasOwnProperty('fields') &&
@@ -416,7 +406,7 @@ export const FrameOperations = observer(
                 }
             }
             if (data.variation === 'echart-line-graph') {
-                const parsedOption = JSON.parse(computedValue) || {};
+                const parsedOption = computedValue || {};
                 const dataTypeList = {};
                 if (
                     parsedOption.hasOwnProperty('_state') &&
@@ -466,7 +456,7 @@ export const FrameOperations = observer(
                 }
             }
             if (data.variation === 'echart-world-map-chart') {
-                const parsedJson = JSON.parse(computedValue);
+                const parsedJson = computedValue;
                 if (
                     parsedJson.hasOwnProperty('_state') &&
                     parsedJson['_state'].hasOwnProperty('fields') &&
@@ -529,7 +519,7 @@ export const FrameOperations = observer(
                 }
             }
             if (data.variation === 'echart-scatter-plots') {
-                const parsedOption = JSON.parse(computedValue) || {};
+                const parsedOption = computedValue || {};
                 if (
                     parsedOption.hasOwnProperty('_state') &&
                     parsedOption['_state'].hasOwnProperty('fields') &&
@@ -582,7 +572,7 @@ export const FrameOperations = observer(
                 }
             }
             if (data.variation === 'echart-stack-chart') {
-                const parsedJson = JSON.parse(computedValue);
+                const parsedJson = computedValue;
                 if (
                     parsedJson.hasOwnProperty('_state') &&
                     parsedJson['_state'].hasOwnProperty('fields') &&
@@ -627,7 +617,7 @@ export const FrameOperations = observer(
                 }
             }
             if (data.variation === 'echart-gantt-chart') {
-                const parsedJson = JSON.parse(computedValue);
+                const parsedJson = computedValue;
                 if (
                     parsedJson.hasOwnProperty('customSettings') &&
                     parsedJson['customSettings'].hasOwnProperty(
@@ -664,18 +654,7 @@ export const FrameOperations = observer(
                                         ][item]?.['name'] === col.name,
                                 )
                                 .map((col) => col.dataType) || [];
-                        console.log(
-                            parsedJson['customSettings']['columnDetails'][
-                                item
-                            ]?.['name'],
-                            columnsSelector.find(
-                                (col) =>
-                                    parsedJson['customSettings'][
-                                        'columnDetails'
-                                    ][item]?.['name'] === col.name,
-                            )?.selector,
-                            'selectorData',
-                        );
+
                         selectorList[item] =
                             columnsSelector.find(
                                 (col) =>
@@ -716,9 +695,9 @@ export const FrameOperations = observer(
         }, [data.variation, id, filteredColumns]);
 
         //update the local state value when computed value is getting updated
-        useEffect(() => {
-            setValue(computedValue);
-        }, [computedValue]);
+        // useEffect(() => {
+        //     setValue(computedValue);
+        // }, [computedValue]);
         // get the dropped columns data for the chart is selected or block is changed
         function getDraggedColumns(tempStoredColumns, chart) {
             console.log(chart);
@@ -773,24 +752,21 @@ export const FrameOperations = observer(
             const columns = { ...fieldsData };
 
             if (variation === 'echart-bar-graph') {
-                let tempVal = JSON.parse(computedValue) || {};
                 if (firstColumn?.label) {
                     columns[firstColumn?.label] = [];
                     columns[firstColumn?.label] = [
                         {
-                            ['name']: firstColumn?.values || '',
+                            ['name']: Array.isArray(firstColumn?.values)
+                                ? firstColumn?.values[0] || ''
+                                : firstColumn?.values,
                             ['selector']: firstColumn.selectors,
                             ['width']: undefined,
+                            label: firstColumn?.label,
                         },
                     ];
                     fieldsData = {
                         ...fieldsData,
                         [firstColumn?.label]: columns[firstColumn?.label],
-                    };
-                    selectedValues = {
-                        ...selectedValues,
-                        [firstColumn?.label]:
-                            columns[firstColumn?.label][0]['selector'],
                     };
                 }
                 if (secondColumn?.label) {
@@ -800,6 +776,7 @@ export const FrameOperations = observer(
                             ['name']: item,
                             ['selector']: secondColumn.selectors[index],
                             ['width']: undefined,
+                            label: secondColumn?.label,
                         });
                     });
                     fieldsData = {
@@ -816,20 +793,17 @@ export const FrameOperations = observer(
                     columns[firstColumn?.label] &&
                     columns[secondColumn?.label]
                 ) {
-                    const seriesIndex =
-                        tempVal['series'].findIndex((item) =>
-                            BAR_CHART_DATA.JSONVALUE.includes(item.type),
-                        ) || 0;
+                    let tempVal = data.option || {};
                     let columnsmerged = [];
                     if (columns[firstColumn?.label]?.length) {
                         tempVal[firstColumn?.label] = {
                             ...tempVal[firstColumn?.label],
                             ['name']:
-                                columns[firstColumn?.label][0]?.name || [],
+                                columns[firstColumn?.label][0]?.name || '',
                             ['pixelname']:
-                                columns[firstColumn?.label][0]?.name || [],
+                                columns[firstColumn?.label][0]?.name || '',
                             ['pixelvalue']:
-                                columns[firstColumn?.label][0]?.selector || [],
+                                columns[firstColumn?.label][0]?.selector || '',
                         };
                     } else {
                         tempVal['xAxis'] = {
@@ -846,6 +820,7 @@ export const FrameOperations = observer(
                             selector:
                                 columns[firstColumn?.label][0]?.selector[0] ||
                                 '',
+                            label: firstColumn?.label,
                         },
                     ];
                     const pixelName = [],
@@ -886,7 +861,7 @@ export const FrameOperations = observer(
                     ) {
                         tempVal['series'][i] = {
                             ...tempVal['series'][i],
-                            data: [],
+                            data: tempVal['series'][i]?.['data'] ?? [],
                             name: columns[secondColumn?.label][i]?.name,
                             type: 'bar',
                             barWidth: 5,
@@ -908,31 +883,59 @@ export const FrameOperations = observer(
                     setData('columns', columnsmerged);
                 }
             }
-            if (variation === 'echart-pie-chart') {
-                const tempValue = JSON.parse(computedValue);
-
-                tempValue['_state'] = {};
-                tempValue['_state']['fields'] = {};
-
-                tempValue['_state']['fields'] = {
-                    ...tempValue['_state']['fields'],
-                    Value: secondColumn?.values || [],
-                    Label: firstColumn?.values || [],
+            if (
+                variation === 'echart-pie-chart' &&
+                firstColumn !== null &&
+                secondColumn !== null
+            ) {
+                const columnsmerged = [];
+                const tempValue = {
+                    ...computedValue,
+                    series: computedValue['series']
+                        ? computedValue['series'].map((s, i) =>
+                              i < columns[secondColumn?.label]?.length
+                                  ? {
+                                        ...s,
+                                        data: s?.data ?? [],
+                                        name: columns[secondColumn?.label][i]
+                                            ?.name,
+                                        type: 'pie',
+                                    }
+                                  : { ...s },
+                          )
+                        : [],
+                    _state: {
+                        ...(computedValue['_state'] || {}),
+                        fields: {
+                            ...((computedValue['_state'] &&
+                                computedValue['_state'].fields) ||
+                                {}),
+                            Value: firstColumn?.values || [],
+                            Label: secondColumn?.values || [],
+                        },
+                    },
+                    customSettings: {
+                        ...(computedValue['customSettings'] ?? {}),
+                        toolsUpdated: false,
+                    },
                 };
-
-                // set the value
-                setValue(JSON.stringify(tempValue));
-                setData('option', tempValue);
+                columnsmerged.push({
+                    name: firstColumn?.values[0],
+                    selector: firstColumn.selectors?.[0],
+                    label: firstColumn?.values[0],
+                });
+                setData('columns', columnsmerged);
+                setData('option', { ...tempValue });
             }
             if (variation === 'echart-scatter-plots') {
-                const tempValue = JSON.parse(computedValue);
-
-                tempValue['_state'] =
-                    tempValue['_state'] &&
-                    Object.keys(tempValue['_state']).length > 0
-                        ? tempValue['_state']
-                        : {};
+                const tempValue = computedValue;
+                const columnsmerged = [];
                 if (firstColumn?.values) {
+                    tempValue['_state'] =
+                        tempValue['_state'] &&
+                        Object.keys(tempValue['_state']).length > 0
+                            ? tempValue['_state']
+                            : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         label: firstColumn?.values,
@@ -942,8 +945,18 @@ export const FrameOperations = observer(
                     // Update the series label name
                     tempValue['series'][0]['label']['name'] =
                         firstColumn?.values;
+                    columnsmerged.push({
+                        name: firstColumn?.values[0],
+                        selector: firstColumn?.selectors[0],
+                        label: firstColumn?.label,
+                    });
                 }
                 if (secondColumn?.values) {
+                    tempValue['_state'] =
+                        tempValue['_state'] &&
+                        Object.keys(tempValue['_state']).length > 0
+                            ? tempValue['_state']
+                            : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         XAxis: secondColumn?.values,
@@ -952,8 +965,18 @@ export const FrameOperations = observer(
                     // Update the series xAxis name
                     tempValue['xAxis']['name'] = secondColumn?.values;
                     tempValue['xAxis']['pixelName'] = secondColumn?.values;
+                    columnsmerged.push({
+                        name: secondColumn?.values[0],
+                        selector: secondColumn?.selectors[0],
+                        label: secondColumn?.label,
+                    });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
+                    tempValue['_state'] =
+                        tempValue['_state'] &&
+                        Object.keys(tempValue['_state']).length > 0
+                            ? tempValue['_state']
+                            : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         YAxis: columnsDrop[2]?.values,
@@ -962,8 +985,18 @@ export const FrameOperations = observer(
 
                     tempValue['yAxis']['name'] = columnsDrop[2]?.values;
                     tempValue['yAxis']['pixelName'] = columnsDrop[2]?.values;
+                    columnsmerged.push({
+                        name: columnsDrop[2]?.values[0],
+                        selector: columnsDrop[2]?.selectors[0],
+                        label: columnsDrop[2]?.label,
+                    });
                 }
                 if (columnsDrop[3]?.values.length > 0) {
+                    tempValue['_state'] =
+                        tempValue['_state'] &&
+                        Object.keys(tempValue['_state']).length > 0
+                            ? tempValue['_state']
+                            : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         size: columnsDrop[3]?.values,
@@ -971,6 +1004,11 @@ export const FrameOperations = observer(
                     };
                 }
                 if (columnsDrop[4]?.values.length > 0) {
+                    tempValue['_state'] =
+                        tempValue['_state'] &&
+                        Object.keys(tempValue['_state']).length > 0
+                            ? tempValue['_state']
+                            : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         color: columnsDrop[4]?.values,
@@ -978,17 +1016,23 @@ export const FrameOperations = observer(
                     };
                 }
                 if (columnsDrop[5]?.values.length > 0) {
+                    tempValue['_state'] =
+                        tempValue['_state'] &&
+                        Object.keys(tempValue['_state']).length > 0
+                            ? tempValue['_state']
+                            : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         tooltip: columnsDrop[5]?.values,
                         tooltipDataType: columnsDrop[5]?.dataType,
                     };
                 }
-                setValue(JSON.stringify(tempValue));
                 setData('option', tempValue);
+                setData('columns', columnsmerged);
             }
             if (variation === 'echart-stack-chart') {
-                const tempValue = JSON.parse(computedValue);
+                const tempValue = computedValue;
+                const columns = [];
                 if (firstColumn?.values) {
                     tempValue['_state'] =
                         tempValue['_state'] &&
@@ -1005,6 +1049,11 @@ export const FrameOperations = observer(
                     tempValue['xAxis']['pixelName'] = firstColumn?.values;
                     tempValue['xAxis']['flipAxisName'] = firstColumn?.values;
                     tempValue['xAxis']['axisName'] = firstColumn?.values;
+                    columns.push({
+                        name: firstColumn?.values,
+                        selector: firstColumn?.selectors,
+                        label: firstColumn?.label,
+                    });
                 }
                 if (secondColumn?.values) {
                     tempValue['_state'] =
@@ -1022,6 +1071,11 @@ export const FrameOperations = observer(
                     tempValue['yAxis']['pixelName'] = secondColumn?.values;
                     tempValue['yAxis']['flipAxisName'] = secondColumn?.values;
                     tempValue['yAxis']['axisName'] = secondColumn?.values;
+                    columns.push({
+                        name: secondColumn?.values[0],
+                        selector: secondColumn?.selectors[0],
+                        label: secondColumn?.label,
+                    });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
                     tempValue['_state'] =
@@ -1038,16 +1092,17 @@ export const FrameOperations = observer(
                 if (columnsDrop[3]?.values.length > 0) {
                     tempValue['_state'] =
                         tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
+                        Object.keys(tempValue['_state']).length > 0;
+                    Object.keys(tempValue['_state']).length > 0
+                        ? tempValue['_state']
+                        : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         tooltip: columnsDrop[3]?.values,
                         tooltipDataType: columnsDrop[3]?.dataType,
                     };
                 }
-                setValue(JSON.stringify(tempValue));
+                setData('columns', columns);
                 setData('option', tempValue);
             }
             if (
@@ -1055,7 +1110,7 @@ export const FrameOperations = observer(
                 firstColumn !== null &&
                 secondColumn !== null
             ) {
-                const tempValue = JSON.parse(computedValue);
+                const tempValue = computedValue;
                 tempValue['xAxis'] = {
                     ...tempValue['xAxis'],
                     name: firstColumn?.values,
@@ -1106,15 +1161,12 @@ export const FrameOperations = observer(
                     //Removing the field from the state if it is not selected
                     tempSeries = tempSeries.slice(0, 1);
                 }
-                tempValue['series'] = tempSeries;
-                // set the value
-                setValue(JSON.stringify(tempValue));
-                setData('option', tempValue);
+                setData('option', { ...tempValue, series: tempSeries });
             }
             if (variation === 'echart-world-map-chart') {
+                const tempValue = computedValue;
+                const columns = [];
                 if (firstColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue['_state'] =
                         tempValue['_state'] &&
                         Object.keys(tempValue['_state']).length > 0
@@ -1125,13 +1177,13 @@ export const FrameOperations = observer(
                         label: firstColumn?.values?.[0],
                         labelDataType: firstColumn?.dataType?.[0],
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                    columns.push({
+                        name: firstColumn?.values[0],
+                        selector: firstColumn?.selectors[0],
+                        label: firstColumn?.label,
+                    });
                 }
                 if (secondColumn?.values) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue['_state'] =
                         tempValue['_state'] &&
                         Object.keys(tempValue['_state']).length > 0
@@ -1142,13 +1194,13 @@ export const FrameOperations = observer(
                         Latitude: secondColumn?.values?.[0],
                         LatitudeDataType: secondColumn?.dataType?.[0],
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                    columns.push({
+                        name: secondColumn?.values[0],
+                        selector: secondColumn?.selectors[0],
+                        label: secondColumn?.label,
+                    });
                 }
                 if (columnsDrop[2]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue['_state'] =
                         tempValue['_state'] &&
                         Object.keys(tempValue['_state']).length > 0
@@ -1159,13 +1211,13 @@ export const FrameOperations = observer(
                         Longitude: columnsDrop[2]?.values?.[0],
                         LongitudeDataType: columnsDrop[2]?.dataType?.[0],
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
+                    columns.push({
+                        name: columnsDrop[2]?.values[0],
+                        selector: columnsDrop[2]?.selectors[0],
+                        label: columnsDrop[2]?.label,
+                    });
                 }
                 if (columnsDrop[3]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue['_state'] =
                         tempValue['_state'] &&
                         Object.keys(tempValue['_state']).length > 0
@@ -1176,13 +1228,8 @@ export const FrameOperations = observer(
                         size: columnsDrop[3]?.values?.[0],
                         sizeDataType: columnsDrop[3]?.dataType?.[0],
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
                 }
                 if (columnsDrop[4]?.values.length > 0) {
-                    const tempValue = JSON.parse(computedValue);
-
                     tempValue['_state'] =
                         tempValue['_state'] &&
                         Object.keys(tempValue['_state']).length > 0
@@ -1193,35 +1240,28 @@ export const FrameOperations = observer(
                         color: columnsDrop[4]?.values?.[0],
                         colorDataType: columnsDrop[4]?.dataType?.[0],
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
                 }
                 if (columnsDrop[5]?.values.length > 0) {
                     const tempValue = computedValue;
 
                     tempValue['_state'] =
                         tempValue['_state'] &&
-                        Object.keys(tempValue['_state']).length > 0
-                            ? tempValue['_state']
-                            : {};
+                        Object.keys(tempValue['_state']).length > 0;
+                    Object.keys(tempValue['_state']).length > 0
+                        ? tempValue['_state']
+                        : {};
                     tempValue['_state']['fields'] = {
                         ...tempValue['_state']['fields'],
                         tooltip: columnsDrop[5]?.values?.[0],
                         tooltipDataType: columnsDrop[5]?.dataType?.[0],
                     };
-
-                    setValue(JSON.stringify(tempValue));
-                    setData('option', tempValue);
                 }
                 setData('columns', columns);
                 setData('option', tempValue);
             }
             if (variation == 'echart-gantt-chart') {
                 let columnsToSet = [];
-                const columnsObject = {
-                    tooltip: [],
-                };
+                const columnsObject = { tooltip: [] };
                 const formattedArray = [];
 
                 const tempValue = computedValue;
@@ -1280,6 +1320,7 @@ export const FrameOperations = observer(
                             selector: firstColumn?.selectors?.[0],
                         },
                     };
+                    // setData('option', tempValue);
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1288,6 +1329,7 @@ export const FrameOperations = observer(
                             selector: '',
                         },
                     };
+                    // setData('option', tempValue);
                 }
                 if (secondColumn?.values) {
                     columnsToSet.push(secondColumn?.values);
@@ -1307,8 +1349,7 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    // setValue(JSON.stringify(tempValue));
-                    // setData("option", tempValue);
+                    // setData('option', tempValue);
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1335,6 +1376,7 @@ export const FrameOperations = observer(
                             selector: columnsDrop[2]?.selectors?.[0],
                         },
                     };
+                    // setData('option', tempValue);
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1361,6 +1403,7 @@ export const FrameOperations = observer(
                             selector: columnsDrop[3]?.selectors?.[0],
                         },
                     };
+                    // setData('option', tempValue);
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1387,6 +1430,7 @@ export const FrameOperations = observer(
                             selector: columnsDrop[4]?.selectors?.[0],
                         },
                     };
+                    // setData('option', tempValue);
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1414,8 +1458,7 @@ export const FrameOperations = observer(
                         },
                     };
 
-                    // setValue(JSON.stringify(tempValue));
-                    // setData("option", tempValue);
+                    // setData('option', tempValue);
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1453,6 +1496,7 @@ export const FrameOperations = observer(
                             selector: columnsDrop[6]?.selectors?.[0],
                         },
                     };
+                    // setData('option', { ...tempValue });
                 } else {
                     tempValue['customSettings']['columnDetails'] = {
                         ...tempValue['customSettings']['columnDetails'],
@@ -1462,7 +1506,6 @@ export const FrameOperations = observer(
                         },
                     };
                 }
-                setValue(JSON.stringify(tempValue));
                 setData('option', tempValue);
 
                 const tempDataSet = new Set(columnsToSet);
@@ -1472,7 +1515,6 @@ export const FrameOperations = observer(
                     columnsObj,
                     columnsToSet,
                 );
-                console.log(tooltip, columnsToSet, 'tooltipIndexToSetTest');
                 const tooltipIndexToSet = tooltip.reduce((acc, item) => {
                     columnsToSet.forEach((colSetItem, colSetIndex) => {
                         if (colSetItem.includes(item)) {
@@ -1489,7 +1531,6 @@ export const FrameOperations = observer(
                         ...{ tooltip: tooltipIndexToSet },
                     };
 
-                    setValue(JSON.stringify(tempValue));
                     setData('option', tempValue);
                 }
                 setData('columns', formattedArray);
@@ -1622,20 +1663,7 @@ export const FrameOperations = observer(
             };
             setData('aggregate', formatAggregates());
         };
-        function dispatchData(option) {
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
-            timeoutRef.current = setTimeout(() => {
-                try {
-                    // set the value
-                    setData('option', option as PathValue<any, typeof path>);
-                } catch (e) {
-                    console.log(e);
-                }
-            }, 100);
-        }
+
         function getColumnIndexToSetData(columnsObject, columnsToSet) {
             const colIndex = {};
             Object.keys(columnsObject).forEach((key) => {
@@ -1763,7 +1791,7 @@ export const FrameOperations = observer(
                     : {};
             tempValue['visual'] = value;
 
-            setValue(JSON.stringify(tempValue));
+            // setValue(tempValue);
             setData('option', tempValue);
         };
         const handleSelectedItem = (item: any) => {

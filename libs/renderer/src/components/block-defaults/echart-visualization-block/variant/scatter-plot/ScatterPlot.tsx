@@ -16,7 +16,7 @@ import { getSelector } from "./ScatterPlotSelector";
 import { processData } from "./ScatterPlotProcessData";
 import { formatdatapoints } from "./ScatterPlotTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
-import { updateColorData } from "../shared/chart-utility";
+import { updateColorData } from "../../../../shared/chart-utility";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",

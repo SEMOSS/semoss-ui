@@ -12,7 +12,7 @@ import { styled } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
 import { ChartContextMenu } from "../bar-chart/ChartContextMenu";
-import { updateColorData } from "../shared/chart-utility";
+import { updateColorData } from "../../../../shared/chart-utility";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",

@@ -7,21 +7,21 @@ import { EChartsOption } from "echarts";
 
 import { styled } from "@semoss/ui";
 
-import { useFrame, useBlock } from "../../../../../hooks";
+// import { useFrame, useBlock } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../..";
 
 import { CustomContextMenu } from "./CustomContextMenu";
 import { PathValue } from "../../../../../types";
-import { getValueByPath } from "../../../../../utility";
+// import { getValueByPath } from "../../../../../utility";
 import {
     useBlock,
     useFrame,
-    useBlocks,
-    useBlockSettings,
+    // useBlocks,
+    // useBlockSettings,
 } from "../../../../../hooks";
-import { EChartsOption } from "echarts";
-import { updateColorData } from "../shared/chart-utility";
+// import { EChartsOption } from "echarts";
+import { updateColorData } from "../../../../shared/chart-utility";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -304,20 +304,19 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             );
         }
     } else {
-        // const resultData =
-        //     data?.frame?.name &&
-        //     frame.data.values.length > 0 &&
-        //     frame.isLoading === false
-        //         ? formatDataPoints(parsedOption)
-        //         : parsedOption;
+        const resultData =
+            data?.frame?.name &&
+            frame.data.values.length > 0 &&
+            frame.isLoading === false
+                ? formatDataPoints(computedValue)
+                : computedValue;
         return (
             <StyledChartContainer>
                 <ReactECharts
-                    option={computedValue as EChartsOption}
+                    option={resultData as EChartsOption}
                     onEvents={onClickChart}
                     style={{
                         height: "inherit",
-                        //width: 'inherit'
                     }}
                 />
                 <CustomContextMenu

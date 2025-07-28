@@ -11,7 +11,7 @@ import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 import { ChartContextMenu } from "./ChartContextMenu";
-import { updateColorData } from "../shared/chart-utility";
+import { updateColorData } from "../../../../shared/chart-utility";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({

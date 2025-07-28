@@ -53,7 +53,7 @@ export const FontWeights = [
     "900",
 ];
 export const Title_Alignment = ["left", "right", "center"];
-export const ECHART_BAR_COLOUR = "#5470c6";
+// export const ECHART_BAR_COLOUR = "#5470c6";
 export const Line_Alignment = [
     "top",
     "bottom",
@@ -75,4 +75,27 @@ export const GANTT_CHART = {
     MILESTONE_COLOR: "#80af6c",
     MILESTONE_SYMBOL: "triangle",
     MILESTONE_SYMBOL_SIZE: 16,
+};
+
+export const ECHART_BAR_COLOUR = [
+    "#5470c6",
+    "#91cc75",
+    "#fac858",
+    "#ee6666",
+    "#73c0de",
+    "#3ba272",
+    "#fc8452",
+    "#9a60b4",
+    "#ea7ccc",
+];
+
+export const ChartTypes = {
+    bar: "bar",
+    pie: "pie",
+    scatterplot: "scatterplot",
+    stackchart: "stackchart",
+    map: "map",
+    line: "line",
+    gantt: "gantt",
+    dendrogram: "dendrogram",
 };
