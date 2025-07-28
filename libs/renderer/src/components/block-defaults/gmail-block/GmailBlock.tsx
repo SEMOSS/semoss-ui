@@ -1,17 +1,11 @@
 import { Tabs, Tab } from "@mui/material";
 import React, { CSSProperties, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useBlocks } from "../../../hooks";
-import {
-    BlockDef,
-    BlockComponent,
-    ListenerActions,
-    ActionMessages,
-    Block,
-} from "../../../store";
+import { useBlock } from "../../../hooks";
+import { BlockDef, BlockComponent } from "../../../store";
 
 import { Controller, useForm } from "react-hook-form";
-import { runPixel, oauth } from "@semoss/sdk/react";
+import { runPixel, oauth, getUserDetails } from "@semoss/sdk/react";
 import {
     Button,
     TextField,
@@ -23,8 +17,7 @@ import {
     Typography,
 } from "@semoss/ui";
 import { Add } from "@mui/icons-material";
-import { Paths, PathValue } from "../../../types";
-import { useCallback } from "react";
+import { PathValue } from "../../../types";
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
     display: "flex",
@@ -62,8 +55,6 @@ export interface GmailBlockDef extends BlockDef<"gmailtext"> {
         show: string;
         showGmailSendForm: boolean;
         showSendForm: boolean;
-        // showDocsUpdateForm: boolean;
-        // showUpdateForm: boolean;
         showGmailReadForm: boolean;
         showReadForm: boolean;
         showGmailDeleteForm: boolean;
@@ -79,139 +70,8 @@ export interface GmailBlockDef extends BlockDef<"gmailtext"> {
     slots: never;
     listeners: never;
 }
-
-//done
-
-//replacement of removed files
-
-interface useBlockSettingsReturn<D extends BlockDef = BlockDef> {
-    /** Data for the block  */
-    data: Block<D>["data"];
-
-    /** Data for the block  */
-    listeners: Block<D>["listeners"];
-
-    /**
-     * Dispatch a message to set data
-     * @param path - path of the data to set
-     * @param value - value of the data to set
-     */
-    setData: <P extends Paths<Block<D>["data"], 4>>(
-        path: P,
-        value: PathValue<D["data"], P>,
-    ) => void;
-
-    /**
-     * Dispatch a message to delete data
-     * @param path - path of the data to delete
-     */
-    deleteData: <P extends Paths<Block<D>["data"], 4>>(path: P) => void;
-
-    /**
-     * Dispatch a message to set the listeners
-     * @param listeners - listeners to attach to the block
-     */
-    setListener: (
-        listener: keyof Block<D>["listeners"],
-        actions: ListenerActions[],
-        type?: "sync" | "async",
-    ) => void;
-}
-
-const useBlockSettings = <D extends BlockDef = BlockDef>(
-    id: string,
-): useBlockSettingsReturn<D> => {
-    // get the store
-    const { state } = useBlocks();
-
-    // get the block
-    const block = state.getBlock(id);
-
-    // get block
-    if (!block) {
-        throw Error(`Cannot find block ${id}`);
-    }
-
-    /**
-     * Dispatch a message to set data
-     * @param path - path of the data to set
-     * @param value - value of the data to set
-     */
-    const setData = useCallback(
-        <P extends Paths<Block<D>["data"], 4>>(
-            path: P | null,
-            value: PathValue<Block<D>["data"], P>,
-        ): void => {
-            state.dispatch({
-                message: ActionMessages.SET_BLOCK_DATA,
-                payload: {
-                    id: id,
-                    path: path,
-                    value: value,
-                },
-            });
-        },
-        [id],
-    );
-
-    /**
-     * Dispatch a message to delete data
-     * @param path - path of the data to delete
-     */
-    const deleteData = useCallback(
-        <P extends Paths<Block<D>["data"], 4>>(path: P | null): void => {
-            state.dispatch({
-                message: ActionMessages.DELETE_BLOCK_DATA,
-                payload: {
-                    id: id,
-                    path: path,
-                },
-            });
-        },
-        [],
-    );
-
-    /**
-     * Dispatch a message to set the listeners
-     * @param listener - listener to add to the block
-     * @param actions - actions to add to the block
-     *
-     */
-    const setListener = useCallback(
-        (
-            listener: keyof Block<D>["listeners"],
-            actions: ListenerActions[],
-            type: "sync" | "async",
-        ): void => {
-            state.dispatch({
-                message: ActionMessages.SET_LISTENER,
-                payload: {
-                    id: id,
-                    listener: listener as string,
-                    actions: actions,
-                    type: type,
-                },
-            });
-        },
-        [],
-    );
-
-    return {
-        data: block.data || {},
-        listeners: block.listeners || {},
-        setData: setData,
-        deleteData: deleteData,
-        setListener: setListener,
-    };
-};
-
-//
-
 export const GmailBlock: BlockComponent = observer(({ id }) => {
-    const block = useBlock<GmailBlockDef>(id);
-    const state = useBlocks();
-    const { data } = block;
-    const { setData } = useBlockSettings(id);
+    const { data, setData } = useBlock<GmailBlockDef>(id);
     const [sentMail, setSentMail] = useState<{
         title: string;
         content: string;
@@ -294,14 +154,18 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
         // Check if user is already logged in
         (async () => {
             try {
-                const response = await fetch(
-                    "/Monolith/api/auth/userinfo/google",
-                );
-                if (response.ok) {
-                    const userInfo = await response.json();
-                    if (userInfo.name) {
-                        setLoggedInUser(userInfo.name);
-                    }
+                const response = await getUserDetails("google");
+                if (response.name) {
+                    setLoggedInUser(response.name);
+                    notification.add({
+                        color: "success",
+                        message: "Successfully logged into Google",
+                    });
+                } else {
+                    notification.add({
+                        color: "error",
+                        message: "Failed to fetch Google user info",
+                    });
                 }
             } catch (error) {
                 notification.add({
@@ -713,20 +577,14 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
     const handleGoogleLogin = async () => {
         setIsLoading(true);
         try {
-            await oauth("google");
+            const response = await oauth("google");
             setIsLoading(false);
-            notification.add({
-                color: "success",
-                message: "Successfully logged in",
-            });
-
-            // Fetch Google user info and set loggedInUser
-            const response = await fetch("/Monolith/api/auth/userinfo/google");
-            if (response.ok) {
-                const userInfo = await response.json();
-                setLoggedInUser(userInfo.name || "Google User");
-                // Always trigger summarizeTopK after login, regardless of tab
-                summarizeTopK(summarizeCount);
+            if (response.name) {
+                setLoggedInUser(response.name);
+                notification.add({
+                    color: "success",
+                    message: "Successfully logged into Google",
+                });
             } else {
                 notification.add({
                     color: "error",
@@ -738,7 +596,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
             setIsLoading(false);
             notification.add({
                 color: "error",
-                message: error.message,
+                message: "Failed to fetch Google user info",
             });
         }
     };
@@ -750,14 +608,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                 Gmail Block
             </div>
             {!loggedInUser && (
-                <div
-                // style={{
-                //     display: "flex",
-                //     justifyContent: "center",
-                //     alignItems: "center",
-                //     minHeight: 200,
-                // }}
-                >
+                <div>
                     <Button
                         variant="contained"
                         color="primary"
