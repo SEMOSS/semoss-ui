@@ -87,9 +87,7 @@ describe("Checkbox block", () => {
         // const { container } = render(<CheckboxBlock id="checkbox" />, {
         //     blocks: blocks,
         // });
-
         // const element = container.querySelector("[data-block='checkbox']");
-
         // expect(element).toBeInTheDocument();
         // expect(element.querySelector(".Mui-checked")).toBeNull();
         // expect(element.querySelector(".Mui-disabled")).toBeNull();

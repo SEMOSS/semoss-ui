@@ -1,47 +1,15 @@
-# First-Time Semoss-UI Setup Instructions
+# Getting Started
 
 | Software    | Version |
 | -------- | ------- |
-| Node.js |  v18.16.0|
-| pnpm | v10.10.x |
+| Node |  v24.4.0|
+| pnpm | v10.13.x |
 
 1. Git clone this repository to your `webapps` folder. `git clone git@repo.semoss.org:semoss/semoss-ui.git`
 
-2. Ensure your BE server is running in eclipse and at a minimum running on a version of pnpm@10.10.
+2. Run `pnpm install` in root directory.
 
-3. create a `.env.local` file and populate with the following. **Do not change the .env**
-
-```
-    MODULE=http://localhost:9090/Monolith_Dev
-
-    THEME_TITLE=SEMOSS
-    THEME_FAVICON=./src/assets/favicon.svg
-
-    NODE_ENV=development
-```
-
-**If you are coming from another client project (within SEMOSS)**, MODULE within the `.env.local` as well as `.packages/legacy/app.constants` may have to be adjusted for that client-specific endpoint; consult with your client project lead for details on that endpoint.
-
-1. Run `pnpm install` in root directory.
-
-2. Build legacy and client, run `pnpm run build`.
-
-3. For local development on our new ui (./packages/client) and the component library (./libs)  run `pnpm run dev:client`
-
-Application will be accesible at: `http://localhost:9090/semoss-ui/packages/client/dist/#/`
-
-4. Component library development through storybook. Change directories into libs `cd .\libs\` and run `pnpm run storybook`
-
-5. For local development on the legacy application, run `pnpm run dev:legacy`
-
-Legacy application will be accesible at: `http://localhost:9090/semoss-ui/#!/`
-
-## Common Errors
- 1. The following issue may error may appear if nx does not build correctly: Cannot find module '@semoss/sdk/react' or its corresponding type declarations. To fix, cd directly into .\libs\sdk and run `pnpm run build`.
- 2. `404` on REST calls to the BE, usually points to an issue with the MODULE you have specified in your `.env.local` and/or `.packages/legacy/app.constants` file.  Ask your client project lead what endpoint you hit to ensure you have the right pointer specified for MODULE.
-
- ### Must be on a version of Node 18
-1. We use a node version manager to handle swapping between different versions.  https://github.com/coreybutler/nvm-windows, Most members are on version `18.16.0`
+3. Create a dev build by running `pnpm run build:dev` or launching the dev-server by running `pnpm run dev`. See `package.json` for additional commands.
 
 # Contributions and Standardized Commits 
 
@@ -73,7 +41,6 @@ The scope should be the name of the package affected along with the overlying is
 The following is the list of supported scopes:
 
 * **(client):**
-* **(legacy):**
 * **(playsheet):**
 * **(sdk):**
 * **(ui):**
