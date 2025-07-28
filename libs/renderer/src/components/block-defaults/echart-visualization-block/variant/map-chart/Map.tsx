@@ -7,6 +7,7 @@ import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
 
 import { styled } from "@semoss/ui";
+import { debounced } from "@semoss/sdk/react";
 
 import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
@@ -16,7 +17,6 @@ import { getSelector } from "./MapSelector";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
-
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -69,24 +69,15 @@ export const Map: BlockComponent = observer(({ id }) => {
             ? mapRef.current.getOption()
             : {};
 
-    function debounce(fn, delay) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), delay);
-        };
-    }
-
-    const handleSelection = debounce(async (value: any, name: any, chart) => {
+    const handleSelection = debounced(async (value: any, name: any, chart) => {
         // update the frame
         await frame.filter(`SetFrameFilter(${name}==[${value}])`);
         disabledBrush(chart);
     }, 1000);
 
-    const echartsLoaded = debounce((chart) => {
+    const echartsLoaded = (chart) => {
         mapRef.current = chart;
         const option = data.option;
-        data.option = option;
 
         chart.setOption(option);
         chart.resize();
@@ -108,7 +99,7 @@ export const Map: BlockComponent = observer(({ id }) => {
                 );
             }
         });
-    }, 2000);
+    };
 
     const disabledBrush = (chart) => {
         chart.dispatchAction({
@@ -146,7 +137,6 @@ export const Map: BlockComponent = observer(({ id }) => {
         };
 
         data.option = option;
-        // mapRef.current?.setOption(option);
     }, []);
 
     const processedFrameData = processData(frame.data, data);
@@ -185,6 +175,13 @@ export const Map: BlockComponent = observer(({ id }) => {
     else if (maxDiff < 10) zoomLevel = 5;
     else if (maxDiff < 20) zoomLevel = 4;
     else zoomLevel = 1;
+
+    useEffect(() => {
+        if (mapRef.current) {
+            mapRef.current.setOption(data.option);
+            mapRef.current.resize();
+        }
+    }, [data.option]);
 
     if (frame.data.values.length > 0) {
         updatedOption["geo"][0]["center"] = [
@@ -275,9 +272,7 @@ export const Map: BlockComponent = observer(({ id }) => {
             <EChartsReact
                 option={data.option}
                 echarts={echarts}
-                onChartReady={(chart) => {
-                    echartsLoaded(chart);
-                }}
+                onChartReady={echartsLoaded}
                 opts={{ height: "auto", width: "auto" }}
                 style={{ height: "inherit", width: "inherit" }}
             />

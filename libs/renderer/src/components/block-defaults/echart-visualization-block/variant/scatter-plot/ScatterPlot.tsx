@@ -8,6 +8,7 @@ import { TooltipComponent } from "echarts/components";
 import { EChartsOption } from "echarts";
 
 import { styled } from "@semoss/ui";
+import { debounced } from "@semoss/sdk/react";
 
 import { useFrame, useBlock } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
@@ -62,14 +63,8 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
     const frame = useFrame(data?.frame?.name, {
         selector: getSelector(data, data?.aggregate),
     });
-    function debounce(fn, delay) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), delay);
-        };
-    }
-    const echartsLoaded = debounce((chart) => {
+
+    const echartsLoaded = debounced((chart) => {
         chart.on("brushSelected", (params) => {
             const selectedData = params.batch[0].selected[0].dataIndex;
             const currentOption = chart.getOption();
@@ -86,7 +81,7 @@ export const ScatterPlotBlock: BlockComponent = observer(({ id }) => {
         });
     }, 2000);
 
-    const handleSelection = debounce((value: any, name: any) => {
+    const handleSelection = debounced((value: any, name: any) => {
         // update the frame
         frame.filter(`SetFrameFilter(${name}==[${value}])`);
     }, 2000);

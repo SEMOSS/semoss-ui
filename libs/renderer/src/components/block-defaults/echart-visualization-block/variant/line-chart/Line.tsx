@@ -4,6 +4,7 @@ import { observer } from "mobx-react-lite";
 import ReactECharts, { EChartsOption } from "echarts-for-react";
 
 import { styled } from "@semoss/ui";
+import { debounced } from "@semoss/sdk/react";
 
 import { useFrame, useBlock } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
@@ -211,15 +212,8 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
         },
         [frame.data.values],
     );
-    function debounce(fn, delay) {
-        let timer;
-        return (...args) => {
-            clearTimeout(timer);
-            timer = setTimeout(() => fn(...args), delay);
-        };
-    }
 
-    const echartsLoaded = debounce((chart) => {
+    const echartsLoaded = debounced((chart) => {
         // Fires only once when brush is released
         chart.on("brushEnd", (params) => {
             if (!params.areas || !params.areas.length) return;
