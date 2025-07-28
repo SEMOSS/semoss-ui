@@ -4,7 +4,7 @@ import { fireEvent } from "@testing-library/react";
 import { RatingsBlock } from "@/components/block-defaults/ratings-block";
 
 const blocks = {
-    "ratings": {
+    ratings: {
         data: {
             style: {},
             size: "small",
@@ -41,7 +41,6 @@ describe("ratings block", async () => {
         // const { container } = await render(<RatingsBlock id="ratings"/>, {
         //     blocks: blocks,
         // });
-        
         // const element = container.querySelector("[data-block='ratings']");
         // expect(element).toBeInTheDocument();
     });
@@ -52,7 +51,7 @@ describe("ratings block", async () => {
     //     });
 
     //     const oneStar = screen.getByText("1 Star").parentElement;
-    //     const twoStar = screen.getByText("2 Stars").parentElement; 
+    //     const twoStar = screen.getByText("2 Stars").parentElement;
 
     //     // second star should be filled before click, and empty after
     //     expect(twoStar.querySelector(".MuiRating-iconFilled")).toBeInTheDocument();

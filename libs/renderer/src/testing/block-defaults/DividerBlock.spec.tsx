@@ -44,17 +44,16 @@ const blocks = {
 
 describe("divider block", () => {
     it("renders default divider", async () => {
-        const { container } = render(<DividerBlock id="divider"/>, {
+        const { container } = render(<DividerBlock id="divider" />, {
             blocks: blocks,
         });
 
         const dividerBlock = container.querySelector("[data-block='divider']");
         expect(dividerBlock).toBeInTheDocument();
-        
     });
 
     it("displays label text", async () => {
-        const { container } = render(<DividerBlock id="divider2"/>, {
+        const { container } = render(<DividerBlock id="divider2" />, {
             blocks: blocks,
         });
 
@@ -62,22 +61,30 @@ describe("divider block", () => {
     });
 
     it("displays correct orientation and variant 1", async () => {
-        const { container } = render(<DividerBlock id="divider"/>, {
+        const { container } = render(<DividerBlock id="divider" />, {
             blocks: blocks,
-        }); 
+        });
 
         const dividerBlock = container.querySelector("[data-block='divider']");
-        expect(dividerBlock.querySelector(".MuiDivider-vertical")).not.toBeInTheDocument();
-        expect(dividerBlock.querySelector(".MuiDivider-fullWidth")).toBeInTheDocument();
+        expect(
+            dividerBlock.querySelector(".MuiDivider-vertical"),
+        ).not.toBeInTheDocument();
+        expect(
+            dividerBlock.querySelector(".MuiDivider-fullWidth"),
+        ).toBeInTheDocument();
     });
 
     it("displays correct orientation and variant 2", async () => {
-        const { container } = render(<DividerBlock id="divider2"/>, {
+        const { container } = render(<DividerBlock id="divider2" />, {
             blocks: blocks,
-        }); 
-        
-        const dividerBlock = container.querySelector("[data-block='divider2']"); 
-        expect(dividerBlock.querySelector(".MuiDivider-vertical")).toBeInTheDocument();
-        expect(dividerBlock.querySelector(".MuiDivider-inset")).toBeInTheDocument();
+        });
+
+        const dividerBlock = container.querySelector("[data-block='divider2']");
+        expect(
+            dividerBlock.querySelector(".MuiDivider-vertical"),
+        ).toBeInTheDocument();
+        expect(
+            dividerBlock.querySelector(".MuiDivider-inset"),
+        ).toBeInTheDocument();
     });
 });

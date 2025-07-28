@@ -1,5 +1,5 @@
 import { useState, MouseEvent } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { Popover } from "./index";
 import { Button } from "../Button/index";
 import { Box } from "../Box/index";
