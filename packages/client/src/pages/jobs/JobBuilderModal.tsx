@@ -77,9 +77,6 @@ export const JobBuilderModal = (props: {
 
 	const cronValidation = useMemo(() => {
 		const result = cronValidator.validate(builder.cronExpression);
-		if (!result.isValid && result.errors.length > 0) {
-			console.log("Cron validation errors:", result.errors);
-		}
 		return result;
 	}, [builder.cronExpression]);
 
