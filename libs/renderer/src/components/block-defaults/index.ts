@@ -106,6 +106,11 @@ import {
     VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
 
+import {
+    config as SpreadsheetBlockConfig,
+    SpreadsheetBlockDef,
+} from "./spreadsheet-block";
+
 export type DefaultBlockDefinitions =
     | AccordionBlockDef
     | PopoverBlockDef
@@ -148,7 +153,8 @@ export type DefaultBlockDefinitions =
     | RadioBlockDef
     | TimePickerBlockDef
     | VisualizationFilterBlockDef
-    | GridDynamicFrameBlockDef;
+    | GridDynamicFrameBlockDef
+    | SpreadsheetBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -192,6 +198,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
     [VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
     [VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
     [GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
+    [SpreadsheetBlockConfig.widget]: SpreadsheetBlockConfig,
 };
 
 export {
@@ -234,4 +241,5 @@ export {
     FlipCardBlockConfig,
     VisualizationFilterBlockConfig,
     GridDynamicFrameBlockConfig,
+    SpreadsheetBlockConfig,
 };

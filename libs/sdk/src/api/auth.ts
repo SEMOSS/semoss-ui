@@ -31,7 +31,7 @@ export const login = async (
 export const oauth = async (
     provider: string,
     isPopup = false,
-): Promise<boolean> => {
+): Promise<{ name?: string }> => {
     // check if the user is logged in
     const response = await get<{ name?: string }>(
         `${Env.MODULE}/api/auth/userinfo/${provider}`,
@@ -39,7 +39,7 @@ export const oauth = async (
 
     //check if they are already logged in
     if (response.data && response.data.name) {
-        return true;
+        return response.data;
     }
 
     // if called from the popup, throw an error as the user was unable to login
@@ -91,6 +91,16 @@ export const oauth = async (
             }
         }, 1000);
     });
+};
+
+export const getUserDetails = async (
+    provider: string,
+): Promise<{ name?: string }> => {
+    const response = await get<{ name?: string }>(
+        `${Env.MODULE}/api/auth/userinfo/${provider}`,
+    );
+
+    return response.data;
 };
 
 /**
