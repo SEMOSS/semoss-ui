@@ -8,30 +8,11 @@ dist
 .eslintcache
 *.rollup.cache
 tsconfig.tsbuildinfo
-
-# Only ignore the top level
-index.html
-index.html.gz
-!packages/**/index.html
-!packages/**/index.html.gz
-
-# Ignore legacy playsheet branch
-packages/playsheet/
-
-# Project teams keep pushing their module into app.constants.js
-# will gitignore this now
-packages/legacy/app.constants.js
-
-
-
-.nx/cache
-.nx/workspace-data
+.turbo
 
 # Ignore the generated files for vscode extension
 *.vsix
 out/
-
-# VSCode extension
 .vscode-test/
 .vscode-test-web/
 coverage/

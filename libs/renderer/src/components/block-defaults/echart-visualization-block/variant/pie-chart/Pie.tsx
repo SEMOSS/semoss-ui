@@ -1,18 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import ReactECharts from "echarts-for-react";
-import { observer } from "mobx-react-lite";
-import { computed } from "mobx";
+
 import { EChartsOption } from "echarts";
+import ReactECharts from "echarts-for-react";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { styled } from "@semoss/ui";
-
-// import { useFrame, useBlock } from "../../../../../hooks";
-import { getValueByPath } from "../../../../../utility";
-import { EchartVisualizationBlockDef } from "../..";
-
-import { CustomContextMenu } from "./CustomContextMenu";
-import { PathValue } from "../../../../../types";
 // import { getValueByPath } from "../../../../../utility";
 import {
     useBlock,
@@ -20,8 +14,12 @@ import {
     // useBlocks,
     // useBlockSettings,
 } from "../../../../../hooks";
+// import { useFrame, useBlock } from "../../../../../hooks";
+import { getValueByPath } from "../../../../../utility";
 // import { EChartsOption } from "echarts";
 import { updateColorData } from "../../../../shared/chart-utility";
+import { EchartVisualizationBlockDef } from "../..";
+import { CustomContextMenu } from "../../CustomContextMenu";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "inherit",
@@ -55,7 +53,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
         mouseY: number;
         value: unknown;
     } | null>(null);
-    let resultData: unknown = {};
+    cons_resultDatata: unknown = {};
 
     /**
      * Builds a dynamic query string based on the provided input data.
@@ -110,7 +108,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             }
             return v; //JSON.stringify(v, null, 2);
         });
-    }, [data, "option"]).get();
+    }, [data]).get();
 
     /**
      * @description
@@ -218,10 +216,10 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             setData("option", { ...options });
         }
     }, [
-        data.frame.name,
-        frame.data.values,
-        frame.isLoading,
-        computedValue.customSettings?.appliedRules,
+        data.frame.name,    
+        frame.data.values,    
+        frame.isLoading,    
+        computedValue.customSettings?.appliedRules, frame.data.headers[1] computedValue setData computedValue.series
     ]);
 
     /**
@@ -250,7 +248,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
             }
             return resultData;
         },
-        [frame.data.values],
+        [frame.data.values, frame.data.headers.map, frame.data.headers],
     );
 
     /**
@@ -296,7 +294,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
                     />
                 </StyledChartContainer>
             );
-        } catch (e) {
+        } catch (_e) {
             return (
                 <StyledNoDataContainer error>
                     There was an issue parsing your JSON.

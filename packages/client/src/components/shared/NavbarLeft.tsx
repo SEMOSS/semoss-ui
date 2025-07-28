@@ -22,6 +22,6 @@ export const NavbarLeft: React.FC<NavbarLeftProps> = observer(
             return null;
         }
 
-        return createPortal(children, portalEle);
+        return <>{createPortal(children, portalEle)}</>;
     },
 );

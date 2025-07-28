@@ -132,7 +132,7 @@ export const FilterDataCell: CellComponent<FilterDataCellDef> = observer(
                             value["parameters"]?.["frameVariableName"] || null;
                         if (cellId || parsedId === null) return;
 
-                        const target = (parsedId as String)?.match(/\d+/);
+                        const target = (parsedId as string)?.match(/\d+/);
                         const targetID = target ? target[0] : null;
                         if (
                             targetID &&

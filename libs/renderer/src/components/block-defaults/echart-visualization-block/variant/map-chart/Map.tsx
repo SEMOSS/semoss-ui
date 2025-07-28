@@ -1,24 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { observer } from "mobx-react-lite";
-import EChartsReact from "echarts-for-react";
-import * as echarts from "echarts/core";
 import { BarChart } from "echarts/charts";
-import { CanvasRenderer } from "echarts/renderers";
 import { TooltipComponent } from "echarts/components";
+import * as echarts from "echarts/core";
+import { CanvasRenderer } from "echarts/renderers";
+import EChartsReact from "echarts-for-react";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
 
 import { styled } from "@semoss/ui";
 
 import { useBlock, useFrame } from "../../../../../hooks";
-import { computed } from "mobx";
 import { BlockComponent } from "../../../../../store";
-
-import fetchWorldMap from "./map-utility";
-import { getSelector } from "./MapSelector";
+import { getValueByPath } from "../../../../../utility";
+import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
-import { VizBlockContextMenu } from "../../VizBlockContextMenu";
-import { getValueByPath } from "../../../../../utility";
-import { updateColorData } from "../../../../shared/chart-utility";
+import { getSelector } from "./MapSelector";
+import fetchWorldMap from "./map-utility";t-utility";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -148,7 +145,7 @@ export const Map: BlockComponent = observer(({ id }) => {
         setMapIsLoaded(true);
     }, []);
 
-    useEffect(() => {
+    useEworldJsonffect(() => {
         if (mapIsLoaded && frame.data?.values?.length > 0) {
             const processedFrameData = processData(frame.data, data) ?? [];
             const headers = frame.data.headers;
@@ -198,10 +195,10 @@ export const Map: BlockComponent = observer(({ id }) => {
     }, [
         mapIsLoaded,
         frame.data.values,
-        frame.data.headers,
-        data.option.customSettings?.appliedRules,
-    ]);
-
+        frame.data.h      eaders,
+        data.option.custom      Settings?.appliedRules,
+    ]);      
+ setData frame.data data.option["symbolSize"] dat data data.optiona.option.tooltip
     // Calculate bounding box
     const lats =
         data.option["series"][0]?.["data"]?.map((d) => d.value[0]) ?? [];
