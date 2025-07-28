@@ -1,29 +1,25 @@
-import { useEffect, useState, useReducer, useRef } from "react";
 import { observer } from "mobx-react-lite";
-
-import {
-  Stack,
-  Typography,
-  Button,
-  styled,
-  ToggleTabsGroup,
-  TextField,
-  InputAdornment,
-} from "@semoss/ui";
-import { debounced } from "@semoss/sdk/react";
-
+import { useEffect, useReducer, useState, } from "react";
 import { useNavigate } from "react-router-dom";
-
+import { debounced } from "@semoss/sdk/react";
 import {
-  useInfiniteScroll,
-  usePixel,
-  useRootStore,
-  useInfinitePixel,
-} from "@/hooks";
+  Button,
+  Stack,
+  styled,
+  TextField,
+  ToggleTabsGroup,
+  Typography,
+} from "@semoss/ui";
 import { AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { NavbarLeft, NavbarHeader } from "../../components/shared";
+import {
+  useInfinitePixel,
+  useInfiniteScroll,
+  usePixel,
+  useRootStore,
+} from "@/hooks";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 const StyledContainer = styled("div")(({ theme }) => ({
   width: "100%",
@@ -155,9 +151,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
   const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
   const [mode, setMode] = useState<MODE>("Mine");
   const [search, setSearch] = useState("");
+  const [inputValue, setInputValue] = useState('');
 
-  const [sortOrder, setSortOrder] = useState("ASC");
-
+  const [_sortOrder,_setSortOrderr] = useState("ASC");
   //** amount of items to be loaded */
   const limit = 5;
   // const { offset, checkHasReached, reset } = useInfiniteScroll({
@@ -186,14 +182,16 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
   // const [offsetVal, setOffset] = useState(0);
 
-  let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
+//   let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
+// _pixel
+//   pixel += `(metaKeys = ${JSON.stringify([
+//   _pixelmetaKeys,
+//     "description",
+//   ])}, metaFilters=[${JSON.stringify(
+//     metaFilters
+//   )}], filterWord=["${search}"], onlyPortals=[true],limit=[${limit}],offset=[${0}]);`;
 
-  pixel += `(metaKeys = ${JSON.stringify([
-    ...metaKeys,
-    "description",
-  ])}, metaFilters=[${JSON.stringify(
-    metaFilters
-  )}], filterWord=["${search}"], onlyPortals=[true],limit=[${limit}],offset=[${0}]);`;
+  // const favoritePixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
 
   const { data, status, error, currLen, collect } = useInfinitePixel(
     mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects",
@@ -205,7 +203,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
     )}], filterWord=["${search}"], onlyPortals=[true], limit=[${limit}]`
   );
 
-  const { offset, reset } = useInfiniteScroll({
+  const { reset } = useInfiniteScroll({
     limit,
     length: currLen,
     collect,
@@ -218,7 +216,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
   //     setOffset(offset);
   // }, [offset]);
 
-  console.log("data", data, "status", status, "error", error);
+  // console.log("data --> ", data, "status", status, "error", error);
   // console.log('pixel ', pixel);
 
   /**
@@ -228,12 +226,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
   useEffect(() => {
     if (status !== "SUCCESS") {
+      return;
       // dispatch({
       //     type: 'field',
       //     field: 'apps',
       //     value: [],
       // });
-      return;
     }
 
     dispatch({
@@ -241,7 +239,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
       field: "apps",
       value: Array.isArray(data) ? data : [],
     });
-  }, [status, data, offset]);
+  }, [status, data]);
 
   /**
    * @desc Get & Sets Favorited Apps
@@ -277,6 +275,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
   }, 300);
 
   const handleInputChange = (newInputValue) => {
+    reset();
     setInputValue(newInputValue);
     debouncedSet(newInputValue);
   };
@@ -490,7 +489,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                 )}
               </StyledSection>
             )}
-            {mode != "System" && getApps.status !== "SUCCESS" ? (
+            {mode != "System" && status !== "SUCCESS" ? (
               <StyledSection>
                 {Array.from({
                   length: SKELETON_CARD_COUNT,
