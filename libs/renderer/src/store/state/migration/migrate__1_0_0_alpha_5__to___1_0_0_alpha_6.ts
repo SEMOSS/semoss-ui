@@ -2,7 +2,7 @@ import { Migration } from "./migration.types";
 
 /**
  * @name config
- * @description - 
+ * @description -
  *
  * 1. Go to all blocks and tie async to all events
  *  */
@@ -16,12 +16,12 @@ const config: Migration = {
             Object.keys(b.listeners).forEach((l) => {
                 const val = {
                     type: "sync",
-                    order: newState.blocks[b.id]['listeners'][l]
-                }
+                    order: newState.blocks[b.id]["listeners"][l],
+                };
 
-                newState.blocks[b.id]['listeners'][l] = val
-            })
-        })
+                newState.blocks[b.id]["listeners"][l] = val;
+            });
+        });
 
         return newState;
     },

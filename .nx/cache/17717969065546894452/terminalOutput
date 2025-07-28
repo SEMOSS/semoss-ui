@@ -1,0 +1,831 @@
+[2m> [22meslint . --fix
+
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\global.d.ts[24m[0m
+[0m   [2m2:18[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m7:18[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m12:18[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m17:18[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m22:18[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\assets\img\Function.tsx[24m[0m
+[0m  [2m4:18[22m  [33mwarning[39m  'CustomPaletteOptions' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m6:42[22m  [33mwarning[39m  'theme' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\assets\img\Vector.tsx[24m[0m
+[0m  [2m3:18[22m  [33mwarning[39m  'CustomPaletteOptions' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m5:42[22m  [33mwarning[39m  'theme' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppCards.tsx[24m[0m
+[0m   [2m2:5[22m   [33mwarning[39m  'Avatar' is defined but never used                              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m3:5[22m   [33mwarning[39m  'Box' is defined but never used                                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m4:5[22m   [33mwarning[39m  'ButtonGroup' is defined but never used                         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m5:5[22m   [33mwarning[39m  'Button' is defined but never used                              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m7:5[22m   [33mwarning[39m  'Chip' is defined but never used                                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m8:5[22m   [33mwarning[39m  'Icon' is defined but never used                                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m9:5[22m   [33mwarning[39m  'IconButton' is defined but never used                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:10[22m  [33mwarning[39m  'AccessTimeFilled' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:28[22m  [33mwarning[39m  'MoreVert' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m18:40[22m  [33mwarning[39m  'theme' is defined but never used                               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m40:7[22m   [33mwarning[39m  'StyledCardActions' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m42:7[22m   [33mwarning[39m  'StyledTileCardActionsLeft' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m49:38[22m  [33mwarning[39m  'props' is defined but never used                               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m54:36[22m  [33mwarning[39m  'modifiedDate' is assigned a value but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppDeleteModal.tsx[24m[0m
+[0m   [2m1:10[22m  [33mwarning[39m  'useEffect' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m4:24[22m  [33mwarning[39m  'usePixel' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m4:34[22m  [33mwarning[39m  'useSettings' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m9:12[22m  [33mwarning[39m  Unexpected any. Specify a different type             [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m16:28[22m  [33mwarning[39m  'configStore' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m19:12[22m  [33mwarning[39m  'deleteModal' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m19:25[22m  [33mwarning[39m  'setDeleteModal' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m20:12[22m  [33mwarning[39m  'loading' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppFilter.tsx[24m[0m
+[0m   [2m6:5[22m   [33mwarning[39m  'FormatListBulletedOutlined' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m7:5[22m   [33mwarning[39m  'SpaceDashboardOutlined' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m28:27[22m  [33mwarning[39m  'props' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppLandscapeCard.tsx[24m[0m
+[0m   [2m17:5[22m   [33mwarning[39m  'Popover' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m133:7[22m   [33mwarning[39m  'StyledBookmark' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m143:7[22m   [33mwarning[39m  'StyledPopoverItem' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m174:25[22m  [33mwarning[39m  'onAction' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m175:11[22m  [33mwarning[39m  'navigate' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m192:11[22m  [33mwarning[39m  'id' is assigned a value but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m229:11[22m  [33mwarning[39m  'favoriteProject' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppSettings.tsx[24m[0m
+[0m   [2m89:58[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m125:51[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m199:49[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m214:11[22m  [33mwarning[39m  'User' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppTemplates.tsx[24m[0m
+[0m   [2m1:25[22m  [33mwarning[39m  'Typography' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m1:37[22m  [33mwarning[39m  'Card' is defined but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m1:43[22m  [33mwarning[39m  'Button' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m1:51[22m  [33mwarning[39m  'Chip' is defined but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m2:10[22m  [33mwarning[39m  'Person' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m2:18[22m  [33mwarning[39m  'QueryBuilder' is defined but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m4:10[22m  [33mwarning[39m  'AppTileCard' is defined but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m7:5[22m   [33mwarning[39m  'AskCSVTemplate' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m33:42[22m  [33mwarning[39m  'theme' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\AppTileCard.tsx[24m[0m
+[0m   [2m52:12[22m  [33mwarning[39m  'disabled' is defined but never used                        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m104:54[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m117:52[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m125:53[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m143:49[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m154:35[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m164:7[22m   [33mwarning[39m  'ViewDetailsButtonName' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m164:46[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m174:51[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m184:30[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m216:48[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m224:44[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m228:40[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m233:46[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m241:48[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m249:45[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m254:45[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m261:47[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m268:40[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m276:39[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m282:42[22m  [33mwarning[39m  'theme' is defined but never used                           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m359:9[22m   [33mwarning[39m  'background' is assigned a value but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\BrowseTempateTitleCard.tsx[24m[0m
+[0m    [2m3:5[22m   [33mwarning[39m  'Chip' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m10:10[22m  [33mwarning[39m  'AccessTime' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m34:12[22m  [33mwarning[39m  'disabled' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m76:53[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m94:49[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m109:35[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m119:51[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m154:48[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m162:40[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m167:40[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m176:42[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m188:47[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m198:47[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m206:43[22m  [33mwarning[39m  'theme' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m283:9[22m   [33mwarning[39m  'background' is assigned a value but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m286:9[22m   [33mwarning[39m  'isFavorite' is assigned a value but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m287:9[22m   [33mwarning[39m  'favorite' is assigned a value but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m288:9[22m   [33mwarning[39m  'appType' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m289:9[22m   [33mwarning[39m  'systemApp' is assigned a value but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m290:9[22m   [33mwarning[39m  'isDiscoverable' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m291:9[22m   [33mwarning[39m  'onDelete' is assigned a value but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m292:9[22m   [33mwarning[39m  'isLoading' is assigned a value but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m293:9[22m   [33mwarning[39m  'showSkeleton' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\ChangeAccessModal.tsx[24m[0m
+[0m  [2m55:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\EditDependenciesModal.tsx[24m[0m
+[0m  [2m67:22[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m67:27[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m68:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m69:15[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m70:12[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\EditDetailsModal.tsx[24m[0m
+[0m  [2m49:22[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m49:27[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m50:15[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\NewAppStep.tsx[24m[0m
+[0m   [2m8:43[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m10:6[22m   [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m25:6[22m   [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m39:6[22m   [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\app-details.utility.ts[24m[0m
+[0m   [2m79:14[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m123:20[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m149:52[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m170:56[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m192:20[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m221:20[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\AddAppCloneModal.tsx[24m[0m
+[0m   [2m3:16[22m  [33mwarning[39m  'LocalOffer' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m6:5[22m   [33mwarning[39m  'ADD_APP_FORM_FIELD_DESCRIPTION' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m9:5[22m   [33mwarning[39m  'ADD_APP_FORM_FIELD_TAGS' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m10:5[22m   [33mwarning[39m  'ADD_APP_FORM_FIELD_UPLOAD' is defined but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m17:10[22m  [33mwarning[39m  'AppTagsStep' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m32:26[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m32:31[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\AddAppModal.tsx[24m[0m
+[0m   [2m41:26[22m  [33mwarning[39m  Unexpected any. Specify a different type              [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m41:31[22m  [33mwarning[39m  Unexpected any. Specify a different type              [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m59:57[22m  [33mwarning[39m  Unexpected any. Specify a different type              [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m59:62[22m  [33mwarning[39m  Unexpected any. Specify a different type              [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m126:12[22m  [33mwarning[39m  'addAppFormSteps' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\AppAccessStep.tsx[24m[0m
+[0m  [2m60:22[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m60:27[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\AppDetailsStep.tsx[24m[0m
+[0m  [2m8:58[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m8:63[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\AppTagsStep.tsx[24m[0m
+[0m  [2m5:55[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m5:60[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\AppUploadStep.tsx[24m[0m
+[0m  [2m11:10[22m  [33mwarning[39m  'valueArray' is defined but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m28:22[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m28:27[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\SaveAppModal.tsx[24m[0m
+[0m  [2m66:59[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\app\save-app\save-app.types.ts[24m[0m
+[0m  [2m8:26[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m8:31[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\blocks-workspace\panels\BlocksMenuPanel.tsx[24m[0m
+[0m   [2m44:7[22m   [33mwarning[39m  'StyledHeader' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m145:23[22m  [33mwarning[39m  'res' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m443:49[22m  [33mwarning[39m  'n' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\blocks-workspace\panels\LayersPanel.tsx[24m[0m
+[0m    [2m37:5[22m   [33mwarning[39m  'Block' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m203:11[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m213:40[22m  [33mwarning[39m  Forbidden non-null assertion                      [2m@typescript-eslint/no-non-null-assertion[22m[0m
+[0m   [2m259:12[22m  [33mwarning[39m  'activeNode' is assigned a value but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m431:15[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m432:19[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m452:9[22m   [33mwarning[39m  'onDropPositionChange' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m454:15[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m455:19[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m589:16[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m591:21[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m598:13[22m  [33mwarning[39m  'id' is defined but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m910:27[22m  [33mwarning[39m  'e' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m922:31[22m  [33mwarning[39m  'e' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m923:32[22m  [33mwarning[39m  'e' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m1241:55[22m  [33mwarning[39m  'e' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\blocks-workspace\panels\SelectedBlockPanel.tsx[24m[0m
+[0m   [2m67:40[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m76:50[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m84:48[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m94:48[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m141:47[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m143:42[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m147:36[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m157:39[22m  [33mwarning[39m  'theme' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m285:11[22m  [33mwarning[39m  'icon' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\blocks-workspace\panels\VariablesPanel.tsx[24m[0m
+[0m  [2m252:55[22m  [33mwarning[39m  'index' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\common\File\FileExplorerItem.tsx[24m[0m
+[0m  [2m17:45[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\common\MarkdownEditor\MarkdownEditor.tsx[24m[0m
+[0m  [2m85:50[22m  [33mwarning[39m  'e' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\common\TextEditor\TextEditorCodeGeneration.tsx[24m[0m
+[0m   [2m1:20[22m  [33mwarning[39m  'useMemo' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m16:18[22m  [33mwarning[39m  'usePixel' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\cookies\CookieWrapper.tsx[24m[0m
+[0m   [2m8:39[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m29:40[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\database\DatabaseStatistics.tsx[24m[0m
+[0m  [2m7:5[22m  [33mwarning[39m  'CustomPaletteOptions' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\database\SimilarDatabases.tsx[24m[0m
+[0m   [2m4:10[22m  [33mwarning[39m  'Stack' is defined but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m22:27[22m  [33mwarning[39m  'refresh' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\AddBlocksMenuCard.tsx[24m[0m
+[0m   [2m8:8[22m   [33mwarning[39m  'html2canvas' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m19:5[22m   [33mwarning[39m  'Button' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m66:11[22m  [33mwarning[39m  'ref' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m67:22[22m  [33mwarning[39m  'setImageSrc' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\AddClientBlockModal.tsx[24m[0m
+[0m    [2m1:10[22m  [33mwarning[39m  'useEffect' is defined but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m    [2m1:21[22m  [33mwarning[39m  'useState' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m    [2m2:10[22m  [33mwarning[39m  'Control' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m    [2m7:5[22m   [33mwarning[39m  'createFilterOptions' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m17:10[22m  [33mwarning[39m  'usePixel' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m40:15[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m47:17[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m58:22[22m  [33mwarning[39m  'setValue' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m60:28[22m  [33mwarning[39m  'configStore' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m61:13[22m  [33mwarning[39m  'registry' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m72:34[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m72:62[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m72:69[22m  [33mwarning[39m  Unexpected any. Specify a different type          [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m152:50[22m  [33mwarning[39m  'field' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\BlockAvatar.tsx[24m[0m
+[0m  [2m11:44[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\BlockMenuCardContent.tsx[24m[0m
+[0m  [2m2:8[22m  [33mwarning[39m  'html2canvas' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\DeleteDuplicateMask.tsx[24m[0m
+[0m   [2m6:5[22m  [33mwarning[39m  'Delete' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m21:5[22m  [33mwarning[39m  'Button' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\SelectedMask.tsx[24m[0m
+[0m  [2m367:51[22m  [33mwarning[39m  'index' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\SelectedMenuSection.tsx[24m[0m
+[0m  [2m3:10[22m  [33mwarning[39m  'BorderColor' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m3:23[22m  [33mwarning[39m  'ExpandMore' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\designer\settings-mask\TextSettingsMask.tsx[24m[0m
+[0m  [2m70:27[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\engine\EditEngineDetails.tsx[24m[0m
+[0m   [2m73:12[22m  [33mwarning[39m  'selectedModel' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m73:27[22m  [33mwarning[39m  'setSelectedModel' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m79:12[22m  [33mwarning[39m  'generateLoading' is assigned a value but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m128:36[22m  [33mwarning[39m  'setValue' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m134:37[22m  [33mwarning[39m  'queryType' is defined but never used                  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m149:11[22m  [33mwarning[39m  'handleGenerate' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\engine\GenericEngineCards.tsx[24m[0m
+[0m   [2m87:7[22m  [33mwarning[39m  'StyledLandscapeCardDescriptionContainer' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m94:7[22m  [33mwarning[39m  'StyledLandscapeCardRow' is assigned a value but never used                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m100:7[22m  [33mwarning[39m  'StyledLandscapeCardRowContainer' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m107:7[22m  [33mwarning[39m  'StyledLandscapeCardRowDiv' is assigned a value but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m115:7[22m  [33mwarning[39m  'StyledLandscapeCardDescription' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m328:9[22m  [33mwarning[39m  'description' is assigned a value but never used                              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m330:9[22m  [33mwarning[39m  'isGlobal' is assigned a value but never used                                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m333:9[22m  [33mwarning[39m  'isUpvoted' is assigned a value but never used                                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m336:9[22m  [33mwarning[39m  'owner' is assigned a value but never used                                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m337:9[22m  [33mwarning[39m  'votes' is assigned a value but never used                                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m343:9[22m  [33mwarning[39m  'upvote' is assigned a value but never used                                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m344:9[22m  [33mwarning[39m  'global' is assigned a value but never used                                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\help\Help.tsx[24m[0m
+[0m   [2m9:42[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m22:35[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\import\ImportForm.tsx[24m[0m
+[0m   [2m17:5[22m   [33mwarning[39m  'Tooltip' is defined but never used                  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m19:34[22m  [33mwarning[39m  'Help' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m23:10[22m  [33mwarning[39m  'useFieldArray' is defined but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m23:34[22m  [33mwarning[39m  'Form' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m31:7[22m   [33mwarning[39m  'StyledProperty' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m247:37[22m  [33mwarning[39m  'i' is defined but never used                        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m968:59[22m  [33mwarning[39m  'hasError' is assigned a value but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\import\refactor\CSVForm.tsx[24m[0m
+[0m   [2m92:65[22m  [33mwarning[39m  'i' is defined but never used                  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m207:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m226:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m244:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m267:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m283:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m301:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m326:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\import\refactor\CopyDatabaseForm.tsx[24m[0m
+[0m   [2m2:10[22m  [33mwarning[39m  'Button' is defined but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m15:31[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m32:31[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\import\refactor\ExcelForm.tsx[24m[0m
+[0m   [2m64:65[22m  [33mwarning[39m  'i' is defined but never used                  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m119:40[22m  [33mwarning[39m  'edges' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m128:15[22m  [33mwarning[39m  'resp' is assigned a value but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m162:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m181:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m199:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m217:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m233:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m255:39[22m  [33mwarning[39m  'hasError' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\insight\InsightCards.tsx[24m[0m
+[0m   [2m3:5[22m   [33mwarning[39m  'Avatar' is defined but never used                                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m4:5[22m   [33mwarning[39m  'Box' is defined but never used                                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m5:5[22m   [33mwarning[39m  'ButtonGroup' is defined but never used                              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m6:5[22m   [33mwarning[39m  'Button' is defined but never used                                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m8:5[22m   [33mwarning[39m  'Icon' is defined but never used                                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m9:5[22m   [33mwarning[39m  'IconButton' is defined but never used                               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m13:28[22m  [33mwarning[39m  'MoreVert' is defined but never used                                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m44:7[22m   [33mwarning[39m  'StyledTileCardActionsUserCount' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m89:38[22m  [33mwarning[39m  'props' is defined but never used                                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\landing\BannerSection.tsx[24m[0m
+[0m   [2m6:49[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m16:48[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m84:27[22m  [33mwarning[39m  'e' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\landing\FeaturedAppCard.tsx[24m[0m
+[0m   [2m5:18[22m  [33mwarning[39m  'Box' is defined but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m5:29[22m  [33mwarning[39m  'Container' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m7:47[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m15:47[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m24:54[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m30:56[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m38:8[22m   [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m47:55[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m53:36[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m69:45[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m80:49[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\llms\LLMSelectOverlay.tsx[24m[0m
+[0m  [2m4:44[22m  [33mwarning[39m  'Autocomplete' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\metamodel\Metamodel.tsx[24m[0m
+[0m   [2m15:28[22m  [33mwarning[39m  'MetamodelContextType' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m20:7[22m   [33mwarning[39m  'StyledMetamodelPage' is assigned a value but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m29:7[22m   [33mwarning[39m  'StyledMetamodelContainer' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m38:7[22m   [33mwarning[39m  'defaultViewport' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m67:23[22m  [33mwarning[39m  Unexpected any. Specify a different type                       [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m105:12[22m  [33mwarning[39m  'originalData' is assigned a value but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m105:26[22m  [33mwarning[39m  'setOriginalData' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\metamodel\MetamodelNode.tsx[24m[0m
+[0m    [2m5:10[22m  [33mwarning[39m  'AddCircleOutlineRounded' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m43:7[22m   [33mwarning[39m  'StyledNode' is assigned a value but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m79:7[22m   [33mwarning[39m  'StyledKeyCell' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m88:7[22m   [33mwarning[39m  'StyledKeyIconContainer' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m93:7[22m   [33mwarning[39m  'StyledPrimaryKeyIcon' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m100:7[22m   [33mwarning[39m  'StyledForeignKeyIcon' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m121:47[22m  [33mwarning[39m  'theme' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m129:46[22m  [33mwarning[39m  'theme' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m135:46[22m  [33mwarning[39m  'theme' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m140:47[22m  [33mwarning[39m  'theme' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m148:46[22m  [33mwarning[39m  'theme' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m164:7[22m   [33mwarning[39m  'StyledTableFooterRow' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m164:47[22m  [33mwarning[39m  'theme' is defined but never used                            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m178:7[22m   [33mwarning[39m  'StyledRow' is assigned a value but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m194:7[22m   [33mwarning[39m  'StyledIcon' is assigned a value but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m307:45[22m  [33mwarning[39m  'isInteractive' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m307:60[22m  [33mwarning[39m  'updateData' is assigned a value but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m309:12[22m  [33mwarning[39m  'openEditColumnModal' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m309:33[22m  [33mwarning[39m  'setOpenEditColumnModal' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m483:42[22m  [33mwarning[39m  'idx' is defined but never used                              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\notebook\AddVariablePopover.tsx[24m[0m
+[0m   [2m44:44[22m  [33mwarning[39m  'theme' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m49:38[22m  [33mwarning[39m  'theme' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m58:48[22m  [33mwarning[39m  'theme' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m64:7[22m   [33mwarning[39m  'StyledImg' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m140:12[22m  [33mwarning[39m  'monaco' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m340:46[22m  [33mwarning[39m  'e' is defined but never used                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\notebook\Notebook.tsx[24m[0m
+[0m   [2m45:37[22m  [33mwarning[39m  'theme' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m116:19[22m  [33mwarning[39m  'oldIndex' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m117:19[22m  [33mwarning[39m  'newIndex' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\notebook\NotebookAddCell.tsx[24m[0m
+[0m  [2m9:5[22m  [33mwarning[39m  'TextFields' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\notebook\NotebookCell.tsx[24m[0m
+[0m   [2m72:42[22m  [33mwarning[39m  'theme' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m97:67[22m  [33mwarning[39m  'theme' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m101:51[22m  [33mwarning[39m  'theme' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m166:7[22m   [33mwarning[39m  'StyledIdChip' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m176:48[22m  [33mwarning[39m  'theme' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m317:15[22m  [33mwarning[39m  'cellOrderNumber' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m457:71[22m  [33mwarning[39m  'idx' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m477:43[22m  [33mwarning[39m  'idx' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\notebook\NotebookVariable.tsx[24m[0m
+[0m   [2m32:42[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m45:45[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m53:53[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m60:36[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m72:44[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m77:38[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m222:43[22m  [33mwarning[39m  'e' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\notebook\VariablePreview.tsx[24m[0m
+[0m  [2m32:40[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\physical-database\EditColumnModal.tsx[24m[0m
+[0m    [2m1:17[22m  [33mwarning[39m  'useState' is defined but never used                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m34:7[22m   [33mwarning[39m  'ModalContainer' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m44:7[22m   [33mwarning[39m  'ModalContent' is assigned a value but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m53:7[22m   [33mwarning[39m  'StyledColumnItem' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m171:29[22m  [33mwarning[39m  'setValue' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m171:39[22m  [33mwarning[39m  'register' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m177:31[22m  [33mwarning[39m  Unexpected any. Specify a different type               [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m193:11[22m  [33mwarning[39m  'tableName' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m194:11[22m  [33mwarning[39m  'tableId' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m198:29[22m  [33mwarning[39m  'data' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m328:43[22m  [33mwarning[39m  'hasError' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\builder\PromptBuilder.tsx[24m[0m
+[0m  [2m165:11[22m  [33mwarning[39m  'navigateBuilderSteps' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\builder\step\PromptBuilderConstraintsStep.tsx[24m[0m
+[0m    [2m5:10[22m  [33mwarning[39m  'LoadingScreen' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m134:28[22m  [33mwarning[39m  'e' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m204:46[22m  [33mwarning[39m  'i' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m216:46[22m  [33mwarning[39m  'i' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\builder\step\PromptBuilderContextStep.tsx[24m[0m
+[0m  [2m17:10[22m  [33mwarning[39m  'PromptLibraryDialogButton' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m42:11[22m  [33mwarning[39m  'filter' is assigned a value but never used                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m44:11[22m  [33mwarning[39m  'isPromptLibraryDisabled' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\builder\step\PromptBuilderContextTestDialogButton.tsx[24m[0m
+[0m  [2m2:18[22m  [33mwarning[39m  'IconButton' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m3:21[22m  [33mwarning[39m  'Try' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\builder\step\PromptBuilderInputStep.tsx[24m[0m
+[0m  [2m249:35[22m  [33mwarning[39m  '_' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\library\PromptCard.tsx[24m[0m
+[0m   [2m1:10[22m  [33mwarning[39m  'useState' is defined but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m9:5[22m   [33mwarning[39m  'LinearProgress' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m38:43[22m  [33mwarning[39m  'theme' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m52:45[22m  [33mwarning[39m  'theme' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\library\PromptLibraryDialog.tsx[24m[0m
+[0m   [2m3:10[22m  [33mwarning[39m  'PromptLibraryCards' is defined but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m4:10[22m  [33mwarning[39m  'PromptLibraryList' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m20:20[22m  [33mwarning[39m  'setFilter' is assigned a value but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m22:11[22m  [33mwarning[39m  'filteredPrompts' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m42:20[22m  [33mwarning[39m  'openUIBuilderForTemplate' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\library\PromptLibraryList.tsx[24m[0m
+[0m  [2m10:7[22m  [33mwarning[39m  'LIBRARY_CATEGORIES' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\prompt.helpers.ts[24m[0m
+[0m  [2m221:15[22m  [33mwarning[39m  '_' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\shared\token\PromptReadonlyInputToken.tsx[24m[0m
+[0m  [2m1:10[22m  [33mwarning[39m  'Token' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\shared\token\PromptTokenChip.tsx[24m[0m
+[0m  [2m2:16[22m  [33mwarning[39m  'green' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m3:10[22m  [33mwarning[39m  'THEME' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\prompt\shared\token\PromptTokenTextButton.tsx[24m[0m
+[0m  [2m1:16[22m  [33mwarning[39m  'green' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m3:10[22m  [33mwarning[39m  'THEME' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\FileTable.tsx[24m[0m
+[0m  [2m366:46[22m  [33mwarning[39m  'event' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\MembersAddOverlay.tsx[24m[0m
+[0m  [2m403:27[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\MembersTable.tsx[24m[0m
+[0m   [2m57:46[22m  [33mwarning[39m  'theme' is defined but never used                         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m228:30[22m  [33mwarning[39m  'setPermissionFilter' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\PendingMembersTable.tsx[24m[0m
+[0m   [2m33:46[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m69:52[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m239:48[22m  [33mwarning[39m  'i' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\SettingsTiles.tsx[24m[0m
+[0m  [2m101:12[22m  [33mwarning[39m  'closeEngineModal' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m205:11[22m  [33mwarning[39m  'closeEngine' is assigned a value but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\UserAddOverlay.tsx[24m[0m
+[0m  [2m7:5[22m  [33mwarning[39m  'Flag' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\settings\UserTable.tsx[24m[0m
+[0m    [2m1:10[22m  [33mwarning[39m  'useEffect' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m16:5[22m   [33mwarning[39m  'Popover' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m17:5[22m   [33mwarning[39m  'Grid' is defined but never used                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m23:8[22m   [33mwarning[39m  'CopyAllIcon' is defined but never used                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m53:46[22m  [33mwarning[39m  'theme' is defined but never used                         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m101:7[22m   [33mwarning[39m  'StyledSecondaryText' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\shared\Search.tsx[24m[0m
+[0m   [2m21:5[22m   [33mwarning[39m  'Button' is defined but never used                               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m46:5[22m   [33mwarning[39m  'id' is assigned a value but never used                          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m173:7[22m   [33mwarning[39m  'StyledPublishedByContainer' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m184:27[22m  [33mwarning[39m  Unexpected any. Specify a different type                         [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m189:11[22m  [33mwarning[39m  'navigate' is assigned a value but never used                    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\shared\Sidebar.tsx[24m[0m
+[0m  [2m136:36[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\teams\AddTeamModal.tsx[24m[0m
+[0m  [2m39:49[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m73:7[22m   [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\teams\TeamEnginesTable.tsx[24m[0m
+[0m   [2m99:7[22m   [33mwarning[39m  'StyledTableTitleEngineCountContainer' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m109:7[22m   [33mwarning[39m  'StyledTableTitleEngineCount' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m877:54[22m  [33mwarning[39m  Unexpected any. Specify a different type                                   [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m883:57[22m  [33mwarning[39m  Unexpected any. Specify a different type                                   [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\teams\TeamMembersTable.tsx[24m[0m
+[0m  [2m833:54[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m839:57[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\teams\TeamProjectsTable.tsx[24m[0m
+[0m   [2m99:7[22m   [33mwarning[39m  'StyledTableTitleProjectCountContainer' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m109:7[22m   [33mwarning[39m  'StyledTableTitleProjectCount' is assigned a value but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m890:54[22m  [33mwarning[39m  Unexpected any. Specify a different type                                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m898:57[22m  [33mwarning[39m  Unexpected any. Specify a different type                                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\teams\TeamTileCard.tsx[24m[0m
+[0m  [2m566:54[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m572:57[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\ui\Filterbox\Filterbox.tsx[24m[0m
+[0m  [2m1:43[22m  [33mwarning[39m  'Fragment' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\workspace\Workspace.tsx[24m[0m
+[0m  [2m18:10[22m  [33mwarning[39m  'useBlocks' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m57:40[22m  [33mwarning[39m  'theme' is defined but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\workspace\panels\EmptyFilePanel.tsx[24m[0m
+[0m  [2m23:48[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m28:42[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\workspace\panels\GraphPanel.tsx[24m[0m
+[0m   [2m3:10[22m  [33mwarning[39m  'Typography' is defined but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m9:11[22m  [33mwarning[39m  'notification' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m11:13[22m  [33mwarning[39m  'state' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\components\workspace\panels\TerminalPanel.tsx[24m[0m
+[0m  [2m23:38[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\contexts\MetamodelContext.tsx[24m[0m
+[0m  [2m14:28[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\contexts\StepperContext.tsx[24m[0m
+[0m  [2m11:20[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\ErrorPage.tsx[24m[0m
+[0m  [2m3:10[22m  [33mwarning[39m  'Stack' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\LandingPage.tsx[24m[0m
+[0m  [2m14:7[22m   [33mwarning[39m  'StyledAppBuilder' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:48[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m30:7[22m   [33mwarning[39m  'StyledSwitch' is assigned a value but never used      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m30:40[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\app\AppCatalogPage.tsx[24m[0m
+[0m  [2m10:5[22m  [33mwarning[39m  'TextField' is defined but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m11:5[22m  [33mwarning[39m  'InputAdornment' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\app\AppDetailPage.tsx[24m[0m
+[0m   [2m17:5[22m   [33mwarning[39m  'Box' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m86:35[22m  [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m232:33[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m912:45[22m  [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\app\AppMarketplacePage.tsx[24m[0m
+[0m   [2m12:43[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m14:6[22m   [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m26:6[22m   [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m38:6[22m   [33mwarning[39m  'theme' is defined but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m166:37[22m  [33mwarning[39m  'filters' is defined but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\app\EditAppPage.tsx[24m[0m
+[0m  [2m14:40[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\app\NewPromptBuilderAppPage.tsx[24m[0m
+[0m  [2m1:10[22m  [33mwarning[39m  'useNavigate' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\app\ViewAppPage.tsx[24m[0m
+[0m  [2m26:40[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\engine\EngineIndexPage.tsx[24m[0m
+[0m    [2m1:51[22m  [33mwarning[39m  'useMemo' is defined but never used                 [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m14:10[22m  [33mwarning[39m  'ENGINE_TYPES' is defined but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m307:23[22m  [33mwarning[39m  'pixelResponse' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\engine\EngineLayout.tsx[24m[0m
+[0m   [2m35:67[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m244:43[22m  [33mwarning[39m  'tIdx' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\engine\EngineUsagePage.tsx[24m[0m
+[0m  [2m25:11[22m  [33mwarning[39m  'copy' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\import\EstablishConnectionPage.tsx[24m[0m
+[0m    [2m7:5[22m   [33mwarning[39m  'Skeleton' is defined but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m31:11[22m  [33mwarning[39m  'navigate' is assigned a value but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m32:11[22m  [33mwarning[39m  'insightId' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m258:56[22m  [33mwarning[39m  'value' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m277:56[22m  [33mwarning[39m  'value' is defined but never used               [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m409:65[22m  [33mwarning[39m  'i' is defined but never used                   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\import\ImportConnectionPage.tsx[24m[0m
+[0m   [2m9:34[22m  [33mwarning[39m  'theme' is defined but never used                         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m23:12[22m  [33mwarning[39m  'predictDataTypes' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m23:30[22m  [33mwarning[39m  'setPredictDataTypes' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m24:12[22m  [33mwarning[39m  'metamodel' is assigned a value but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m24:23[22m  [33mwarning[39m  'setMetamodel' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\import\ImportLayout.tsx[24m[0m
+[0m  [2m1:10[22m  [33mwarning[39m  'useEffect' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m2:10[22m  [33mwarning[39m  'Outlet' is defined but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\import\ImportPageContent.tsx[24m[0m
+[0m   [2m52:42[22m  [33mwarning[39m  'theme' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m72:7[22m   [33mwarning[39m  'StyledCard' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m87:7[22m   [33mwarning[39m  'StyledCardContent' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m146:50[22m  [33mwarning[39m  'theme' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m210:7[22m   [33mwarning[39m  'StyledSpan' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m229:7[22m   [33mwarning[39m  'IconMapper' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m256:20[22m  [33mwarning[39m  'activeStep' is assigned a value but never used         [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m261:12[22m  [33mwarning[39m  'importSearch' is assigned a value but never used       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m261:26[22m  [33mwarning[39m  'setImportSearch' is assigned a value but never used    [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m370:24[22m  [33mwarning[39m  Unexpected any. Specify a different type                [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m374:56[22m  [33mwarning[39m  Unexpected any. Specify a different type                [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m543:39[22m  [33mwarning[39m  Unexpected any. Specify a different type                [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\import\import.constants.ts[24m[0m
+[0m   [2m68:8[22m   [33mwarning[39m  'GOOGLE' is defined but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m148:31[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\jobs\HistoryRow.tsx[24m[0m
+[0m  [2m15:53[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\jobs\JobHistory.tsx[24m[0m
+[0m   [2m1:10[22m  [33mwarning[39m  'useEffect' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m51:24[22m  [33mwarning[39m  'e' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\jobs\JobsPage.tsx[24m[0m
+[0m   [2m15:5[22m   [33mwarning[39m  'Modal' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m20:5[22m   [33mwarning[39m  'Typography' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m172:23[22m  [33mwarning[39m  'successIds' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\jobs\JobsTable.tsx[24m[0m
+[0m  [2m247:51[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\jobs\job.types.ts[24m[0m
+[0m  [2m90:28[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\prompt\PromptModal.tsx[24m[0m
+[0m  [2m12:10[22m  [33mwarning[39m  'usePixel' is defined but never used                        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m13:10[22m  [33mwarning[39m  'ModeCommentOutlined' is defined but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m14:10[22m  [33mwarning[39m  'validateHeaderName' is defined but never used              [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m20:20[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m21:18[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m22:19[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m23:17[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m24:14[22m  [33mwarning[39m  Unexpected any. Specify a different type                    [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m43:7[22m   [33mwarning[39m  'StyledTypographyTitle' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m56:13[22m  [33mwarning[39m  'configStore' is assigned a value but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m73:21[22m  [33mwarning[39m  'pixelReturn' is assigned a value but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m90:21[22m  [33mwarning[39m  'pixelReturn' is assigned a value but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\prompt\PromptPage.tsx[24m[0m
+[0m  [2m3:37[22m  [33mwarning[39m  'useNotification' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\prompt\PromptRouter.tsx[24m[0m
+[0m  [2m4:10[22m  [33mwarning[39m  'PromptBuilder' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\AdminQueryPage.tsx[24m[0m
+[0m  [2m69:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\ConfigurationsPage.tsx[24m[0m
+[0m  [2m77:44[22m  [33mwarning[39m  'theme' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\EngineSettingsIndexPage.tsx[24m[0m
+[0m  [2m206:38[22m  [33mwarning[39m  'i' is defined but never used                       [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m233:20[22m  [33mwarning[39m  'response' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m287:19[22m  [33mwarning[39m  'pixelResponse' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m509:58[22m  [33mwarning[39m  'val' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m512:57[22m  [33mwarning[39m  'id' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m527:56[22m  [33mwarning[39m  'val' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m530:56[22m  [33mwarning[39m  'val' is defined but never used                     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\InsightSettingsPage.tsx[24m[0m
+[0m   [2m2:10[22m  [33mwarning[39m  'useRootStore' is defined but never used           [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m3:10[22m  [33mwarning[39m  'LoadingScreen' is defined but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m13:5[22m   [33mwarning[39m  'Typography' is defined but never used             [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m22:10[22m  [33mwarning[39m  'InsightLandscapeCard' is defined but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m55:51[22m  [33mwarning[39m  'theme' is defined but never used                  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m87:13[22m  [33mwarning[39m  'adminMode' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m98:11[22m  [33mwarning[39m  'searchbarRef' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\MyProfilePage.tsx[24m[0m
+[0m   [2m31:40[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m38:38[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m42:50[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m46:42[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m51:46[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m58:47[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m65:37[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m75:38[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m80:45[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m84:57[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m88:36[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m92:38[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m97:38[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m101:38[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m107:34[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m111:44[22m  [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m116:7[22m   [33mwarning[39m  'StyledCodeBlock' is assigned a value but never used   [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m132:7[22m   [33mwarning[39m  'theme' is defined but never used                      [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m171:37[22m  [33mwarning[39m  'loggedIn' is assigned a value but never used          [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m198:19[22m  [33mwarning[39m  'userInfoSetValue' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m200:16[22m  [33mwarning[39m  'userInfoWatch' is assigned a value but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\SettingsIndexPage.tsx[24m[0m
+[0m  [2m14:15[22m  [33mwarning[39m  'SearchIcon' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\SettingsLayout.tsx[24m[0m
+[0m  [2m31:39[22m  [33mwarning[39m  'theme' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m36:44[22m  [33mwarning[39m  'theme' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m66:39[22m  [33mwarning[39m  'theme' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m77:7[22m   [33mwarning[39m  'StyledLink' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m77:36[22m  [33mwarning[39m  'theme' is defined but never used                [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\SettingsRouter.tsx[24m[0m
+[0m  [2m11:10[22m  [33mwarning[39m  'DatabaseSettingsPage' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\TeamSettingsDetailPage.tsx[24m[0m
+[0m  [2m1:23[22m  [33mwarning[39m  'useSearchParams' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m1:40[22m  [33mwarning[39m  'useParams' is defined but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\settings\TeamsSettingsPage.tsx[24m[0m
+[0m    [2m6:5[22m   [33mwarning[39m  'Grid' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m279:52[22m  [33mwarning[39m  'i' is defined but never used     [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\stores\config\config.store.ts[24m[0m
+[0m  [2m671:15[22m  [33mwarning[39m  'response' is assigned a value but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\stores\designer\designer.store.ts[24m[0m
+[0m  [2m27:20[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\stores\monolith\monolith.store.ts[24m[0m
+[0m   [2m120:30[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m362:43[22m  [33mwarning[39m  'status' is defined but never used        [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m   [2m494:15[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m725:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m762:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m798:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m   [2m935:19[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m1919:9[22m   [33mwarning[39m  'id' is defined but never used            [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m  [2m2022:19[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2090:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2125:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2160:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2395:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2432:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2468:16[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2818:48[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m  [2m2876:44[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\stores\workspace\workspace.store.ts[24m[0m
+[0m  [2m1:30[22m  [33mwarning[39m  'reaction' is defined but never used  [2m@typescript-eslint/no-unused-vars[22m[0m
+[0m[0m
+[0m[4mD:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\types\types.d.ts[24m[0m
+[0m  [2m11:17[22m  [33mwarning[39m  Unexpected any. Specify a different type  [2m@typescript-eslint/no-explicit-any[22m[0m
+[0m[0m
+[0m[33m[1m✖ 558 problems (0 errors, 558 warnings)[22m[39m[0m
+[0m[33m[1m[22m[39m[0m

@@ -9,7 +9,7 @@ import { debounced } from "@semoss/sdk/react";
 import { useFrame, useBlock } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-import { CustomContextMenu } from "./CustomContextMenu";
+import { CustomContextMenu } from "../../CustomContextMenu";
 
 const StyledChartContainer = styled("div")(() => ({
     height: "100%",

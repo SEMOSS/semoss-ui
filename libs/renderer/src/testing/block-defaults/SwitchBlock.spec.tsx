@@ -8,23 +8,23 @@ import { SwitchBlock } from "../../components/block-defaults/switch-block/Switch
 const blocks = {
     switch: {
         data: {
-                style: {width: "fit-content",},
-                label: "Toggle Switch",
-                value: false,
-                disabled: false,
-                color: "primary",
-                size: "medium",
-                helperText: "",
-                required: false,
-                labelPlacement: "end",
-            },
+            style: { width: "fit-content" },
+            label: "Toggle Switch",
+            value: false,
+            disabled: false,
+            color: "primary",
+            size: "medium",
+            helperText: "",
+            required: false,
+            labelPlacement: "end",
+        },
         id: "switch",
         widget: "switch",
         slots: {},
         listeners: {
             onChange: {
                 type: "sync",
-                order: []
+                order: [],
             },
         },
     },
@@ -35,7 +35,6 @@ describe("switch block", () => {
         // const { container } = render(< SwitchBlock id="switch" />, {
         //     blocks: blocks,
         // });
-
         // const switchBlock = container.querySelector("[data-block='switch']");
         // expect(switchBlock).toBeInTheDocument();
     });
@@ -44,7 +43,6 @@ describe("switch block", () => {
         // const { container } = render(< SwitchBlock id="switch" />, {
         //     blocks: blocks,
         // });
-
         // expect(screen.getByText("Toggle Switch")).toBeVisible();
     });
 
@@ -53,14 +51,11 @@ describe("switch block", () => {
         //     blocks: blocks,
         // });
         // const switchElement = screen.getByRole("checkbox");
-
         // expect(switchElement).not.toBeChecked();
-
         // fireEvent.click(switchElement);
         // await waitFor(() => {
         //     expect(switchElement).toBeChecked();
         // });
-
         // fireEvent.click(switchElement);
         // await waitFor(() => {
         //     expect(switchElement).not.toBeChecked();

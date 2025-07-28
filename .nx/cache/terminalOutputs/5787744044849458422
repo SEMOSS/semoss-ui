@@ -1,0 +1,7 @@
+
+> @semoss/sdk@1.0.0-beta.28 build D:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\libs\sdk
+> rollup -c
+
+[36m
+[1msrc/index.ts, src/js-frameworks/react/index.ts[22m → [1mdist[22m...[39m
+[32mcreated [1mdist[22m in [1m7.3s[22m[39m

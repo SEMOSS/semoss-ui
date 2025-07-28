@@ -1,0 +1,126 @@
+[2m> [22mwebpack-cli build --node-env=production
+
+[BABEL] Note: The code generator has deoptimised the styling of D:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\packages\client\src\pages\import\import.constants.ts as it exceeds the max of 500KB.
+[BABEL] Note: The code generator has deoptimised the styling of D:\workspace\apache-tomcat-9.0.98\webapps\SemossWeb\libs\renderer\src\components\block-defaults\echart-visualization-block\variant\map-chart\world.tsx as it exceeds the max of 500KB.
+Entrypoint [1mmain[39m[22m [1m[33m[big][39m[22m 15.3 MiB (146 MiB) = [1m[32mruntime.e41b9b31050cc336.js[39m[22m 8.56 KiB [1m[32mmain.1409ace1886a1242.css[39m[22m 33.9 KiB [1m[32mmain.8d0becaf9d3195d3.js[39m[22m 15.2 MiB 89 auxiliary assets
+chunk (runtime: runtime) [1m[32m279.7cbd18935ac9d4ef.js[39m[22m 8.57 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m391.091fd06c17012253.js[39m[22m 6.13 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m583.16285e6439ec2ffd.js[39m[22m 6.83 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m587.68d7d23aebe7c7f0.js[39m[22m 10.3 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m823.7399d74b9632b2ad.js[39m[22m 12 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m947.a6af20733b25a4b9.js[39m[22m 8.09 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m951.90182ebb07ca0da6.js[39m[22m 3.74 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m971.539582e65a1c7d95.js[39m[22m (id hint: vendors) 21.4 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m989.bc8e7a3344530faa.js[39m[22m (id hint: vendors) 66.8 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m1049.122ce588347a943d.js[39m[22m 8.45 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1127.f98cdf92c7eb7629.js[39m[22m 5.29 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1239.93ffcc36d711c190.js[39m[22m 7.87 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1405.1edae8fca65ae663.js[39m[22m 4.1 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1431.6318987aa414a972.js[39m[22m 2.95 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1479.5ea028aed09b484b.js[39m[22m 5.42 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1690.76839c5950078c1c.js[39m[22m (id hint: vendors) 54.8 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m1745.cda8cb460c26d9a8.js[39m[22m 6.19 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1811.a22adcc73b1239a4.js[39m[22m 13.2 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m1975.c006d5e9342abbc6.js[39m[22m 7.21 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime)
+chunk (runtime: runtime) [1m[32mcommon.070ec96f3b35928a.js[39m[22m (common) (id hint: common) 28 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: common) (name: common)[39m[22m
+chunk (runtime: runtime) [1m[32m2273.849866b66e53bbb0.js[39m[22m (id hint: vendors) 64.1 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m2383.5ffab361deb532e9.js[39m[22m 3.83 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m2423.19ac01cbaa916cb4.js[39m[22m 5.01 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m2450.437c380602d4359a.js[39m[22m (id hint: default) 64.9 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m2455.962ae45f8a373351.js[39m[22m 7.93 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m2600.86b5317bd721b5ad.js[39m[22m (id hint: vendors) 1.55 MiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m2671.3b98861fbb07eea0.js[39m[22m 14.3 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m2741.2458049245fdf694.js[39m[22m (id hint: vendors) 596 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m2809.3935e513ab97b20c.js[39m[22m (id hint: vendors) 45.4 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m3105.572996d6a53af625.js[39m[22m 17.7 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m3223.f96932490643c141.js[39m[22m 5.2 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m3253.3bdf78f55cf80dc1.js[39m[22m 5.8 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m3276.173b58d1d496be54.js[39m[22m 9.61 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m3420.367c26e87d7a7919.js[39m[22m (id hint: vendors) 112 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m3620.48d9614bb68232e8.js[39m[22m (id hint: vendors) 139 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m3623.ff3e08b4f75d5dc2.js[39m[22m 3.76 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m3795.2eb4cb1af586dacf.js[39m[22m (id hint: default) 61 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m3803.bc8ff956328ca3da.js[39m[22m (id hint: vendors) 42.4 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m3809.1ca3b43d07ca62c6.js[39m[22m 5.5 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4031.90b591dacfbe7ca4.js[39m[22m 5.22 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4039.851ab7e0d29eb997.js[39m[22m 3.45 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4207.665a512da63ce811.js[39m[22m 1.98 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4327.4918bc412763d19e.js[39m[22m 3.19 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4439.ea944318c4c215e0.js[39m[22m 2.81 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4440.ab101d61321f4f80.js[39m[22m (id hint: vendors) 23.8 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m4475.b17945bf812a0df3.js[39m[22m (id hint: vendors) 43.4 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m4491.3896121231d65bd9.js[39m[22m 6.06 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4503.f86ca4964a80a80b.js[39m[22m 17.8 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4561.2b4755cfb54b58af.js[39m[22m (id hint: vendors) 20.7 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m4679.a5e7e011d234859e.js[39m[22m 8.65 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m4743.2cb030cfc6a5e83a.js[39m[22m 11.7 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5262.da27d9323ead5c91.js[39m[22m (id hint: vendors) 68.6 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m5317.dcb870723dd34b79.js[39m[22m 4.11 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5379.8ae458156185c50e.js[39m[22m (id hint: default) 24.4 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m5381.4dd458d1b4c9a010.js[39m[22m, [1m[32m5381.5532ea70ece97cf5.css[39m[22m (id hint: vendors) 7.91 MiB (javascript) 167 KiB (css/mini-extract) [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m5389.181f456c4bbc0072.js[39m[22m (id hint: default) 43.8 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m5499.040261738bdb7678.js[39m[22m 4.89 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5513.89b52c728fa1443a.js[39m[22m 1.15 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5551.553ffbf18485518a.js[39m[22m 5.06 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5623.2f4df67715e50875.js[39m[22m 2.72 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5681.c194f38057b240dd.js[39m[22m 4.72 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5719.814d111e85a15eca.js[39m[22m 1.77 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5731.589b7166e73fdcee.js[39m[22m 14.7 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m5744.4a32b217c06b0667.js[39m[22m (id hint: vendors) 39.3 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m5781.3bd6dbf8ca96da06.js[39m[22m (id hint: default) 116 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m6009.ca2445ff3d7db752.js[39m[22m (id hint: vendors) 70 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m6119.48e2cbac5330a341.js[39m[22m (id hint: vendors) 24.5 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m6179.fa1cf75d3b9b5c6a.js[39m[22m 3.39 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6247.e82af2f815566aa8.js[39m[22m 2.89 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6309.a27d0beb74d2fdb5.js[39m[22m 4.59 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6319.988cddbb4614d9ff.js[39m[22m 13.5 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6423.afdd706f6317d6e3.js[39m[22m 10.2 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6523.f94a96ba89350308.js[39m[22m 15.8 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6601.2bdd3c776c6aae09.js[39m[22m 3.17 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6643.5956fca2326d77fe.js[39m[22m (id hint: vendors) 1.26 MiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m6727.b2ff09276bbbceec.js[39m[22m 16 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6839.4e8b30d94843ef24.js[39m[22m 1.6 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6911.89e13c8f724577d6.js[39m[22m 11.1 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m6969.f8d1368c550bfdb0.js[39m[22m 4.43 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7035.cd139f0ba0395fd6.js[39m[22m 2.71 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7043.f8c6e36834ef0373.js[39m[22m 7.12 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7063.3d3bfa36085255ff.js[39m[22m 4.16 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7079.e3e4abdff7d71654.js[39m[22m 10.1 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7127.81292b31bfef19d0.js[39m[22m 3.85 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7141.8b529038c028e3cc.js[39m[22m 8.08 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7199.21c1b81e79c327a6.js[39m[22m (id hint: default) 245 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m7214.f413ca04aac00b4c.js[39m[22m (id hint: vendors) 67.6 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m7337.77c5dc5e5b518923.js[39m[22m (id hint: vendors) 42.8 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m7724.666d6f0aed5b8bc2.js[39m[22m (id hint: vendors) 82.3 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m7763.977b21df833546d1.js[39m[22m 5.14 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7767.d9bb43ec827f4812.js[39m[22m 3.42 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7847.1043b49b3f1be84c.js[39m[22m 12.7 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7943.7cf5719a92a63006.js[39m[22m 7.1 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m7975.8494a9d4a40d1465.js[39m[22m 6.08 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8007.82bd83bca87d2570.js[39m[22m 4.7 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8087.6c826c8f8ab8b60d.js[39m[22m 5.66 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8129.21471ba08fbd9406.js[39m[22m 12.2 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8207.9285c952034d00af.js[39m[22m 1.69 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8305.03b58a7feccf5c74.js[39m[22m (id hint: vendors) 66.4 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m8563.435563094980a2d7.js[39m[22m 8 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8595.e4e1d44a0bf1845e.js[39m[22m 4.64 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8597.aea5da97f58fb57e.js[39m[22m 4.28 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8628.6e304407973ff576.js[39m[22m (id hint: vendors) 52.1 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m8641.c33632639c28835f.js[39m[22m 6.3 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32mmain.1409ace1886a1242.css[39m[22m, [1m[32mmain.8d0becaf9d3195d3.js[39m[22m (main) 44.8 MiB (javascript) 146 MiB (asset) 43.3 KiB (css/mini-extract) [1m[33m[initial][39m[22m [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m8819.07bf2d6c4fffbdbb.js[39m[22m 3.7 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9012.3c28363626f4c07f.js[39m[22m (id hint: vendors) 41.3 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m9111.fb88ec8bdbb225f6.js[39m[22m (id hint: vendors) 25.2 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32mruntime.e41b9b31050cc336.js[39m[22m (runtime) 17.5 KiB [1m[33m[entry][39m[22m [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9282.49988bd028f10c88.js[39m[22m 14.5 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9309.82a101008400d338.js[39m[22m 11 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9399.134b976b0fa7c86e.js[39m[22m 11.6 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9481.40358fdb66d497b0.js[39m[22m 5.93 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9556.e56a3dc289dbcfd6.js[39m[22m (id hint: default) 76.3 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m9694.b5fb270e9a378c13.js[39m[22m (id hint: vendors) 26.4 KiB [1m[32m[rendered][39m[22m [1m[33mreused as split chunk (cache group: defaultVendors)[39m[22m
+chunk (runtime: runtime) [1m[32m9723.b00e37a5922e2ebe.js[39m[22m 18.1 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9803.d2f876494609251c.js[39m[22m (id hint: default) 46.3 KiB [1m[32m[rendered][39m[22m [1m[33msplit chunk (cache group: default)[39m[22m
+chunk (runtime: runtime) [1m[32m9829.442efbc15d09686c.js[39m[22m 10.6 KiB [1m[32m[rendered][39m[22m
+chunk (runtime: runtime) [1m[32m9879.00e1e7db4e825f39.js[39m[22m 5.35 KiB [1m[32m[rendered][39m[22m
+webpack compiled [1m[32msuccessfully[39m[22m (d80f507e7c0677c0)

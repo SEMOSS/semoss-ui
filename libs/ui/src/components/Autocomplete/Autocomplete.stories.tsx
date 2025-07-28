@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { Autocomplete } from "./index";
 import { Box } from "../Box/index";
 import Stack from "@mui/material/Stack";
