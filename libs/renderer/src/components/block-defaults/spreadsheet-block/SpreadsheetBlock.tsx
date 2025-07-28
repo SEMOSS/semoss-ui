@@ -1,6 +1,6 @@
 import React, { CSSProperties, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useTypeWriter, useBlocks} from "../../../hooks";
+import { useBlock, useTypeWriter} from "../../../hooks";
 import { BlockDef, BlockComponent} from "../../../store";
 import { useForm } from 'react-hook-form';
 import { runPixel, oauth,getUserDetails} from "@semoss/sdk/react";
@@ -134,20 +134,20 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     }, [data.titleSheetName,data.sheetName]);
     
     if (!data.isStreaming) displayTxt = textContent;
-    const { getValues:getSpreadValues, handleSubmit:handleSpreadSubmit, control:controlSpread,reset:resetSpread } = useForm<showSpreadSheetForm>({
+    const { handleSubmit:handleSpreadSubmit, control:controlSpread,reset:resetSpread } = useForm<showSpreadSheetForm>({
             defaultValues: {
                 TITLE_SHEET_NAME: '',
             },
         });
 
-    const { getValues : getCreateValues, handleSubmit : handleCreateSubmit, control : controlCreate, reset: resetCreate} = useForm<showCreateSheetForm>({
+    const { handleSubmit : handleCreateSubmit, control : controlCreate, reset: resetCreate} = useForm<showCreateSheetForm>({
         defaultValues: {
             TITLE_SHEET_NAME: '',
             SHEET_NAME: '',
         },
     });
 
-    const { getValues : getUpdateValues, handleSubmit : handleUpdateSubmit, control : controlUpdate, reset: resetUpdate } = useForm<showUpdateSheetForm>({
+    const { handleSubmit : handleUpdateSubmit, control : controlUpdate, reset: resetUpdate } = useForm<showUpdateSheetForm>({
         defaultValues: {
             TITLE_SHEET_NAME: '',
             SHEET_NAME: '',
@@ -260,7 +260,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
             }
         }
         catch (error) {
-            console.error("Error creating Jira issue:", error);
+            console.error("Error deleting spreadsheet:", error);
         }
     }
 
@@ -280,7 +280,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                     message: "Failed to fetch Google user info",
                 });
             }
-            // This will trigger the UI to show the doc list page
         } catch (error: any) {
             notification.add({
                 color: "error",
@@ -336,7 +335,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                                 startIcon={<Add />}
                                 onClick={handleGoogleLogin}
                                 style={{ marginTop: '10px' }}
-                                data-testid={'my-jira-profile-new-key-btn'}
+                                data-testid={'my-spreadsheet-profile-new-key-btn'}
                             >
                                 Login google
                             </Button>
@@ -357,7 +356,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                             </Button>
                         </div>
                     )}
-                    {<h1>{data.showListedSheets}</h1>}
                     {data.showListedSheets && (
                         <div
                             style={{
@@ -369,7 +367,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                         >
                             <div
                                 style={{
-                                    width: '600px', // or use maxWidth: '90vw'
+                                    width: '600px', 
                                     margin: '0 auto',
                                 }}
                             >
@@ -386,7 +384,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                                             boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
                                         }}
                                     >
-                                        {/* Title and Create button row */}
                                         <div
                                             style={{
                                                 display: 'flex',
@@ -419,7 +416,6 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                                                 Delete Title Sheet
                                             </Button>
                                         </div>
-                                        {/* Sheet names list below the title */}
                                         <div style={{ width: '100%', marginTop: '8px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                             {sheet['sheetNames'].map((sheetName, idx) => (
                                                 <div
@@ -532,7 +528,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                         </Modal>
                     )}
                     {isDelete &&(
-                        <Modal onClose={close} open={isDelete}>
+                        <Modal onClose={()=> setIsDelete(false)} open={isDelete}>
                             <Modal.Content>
                                 <Modal.Title>Delete Job</Modal.Title>
                                 <Modal.Content>

@@ -2,9 +2,7 @@ import {
     Button,
     TextField,
     Stack,
-    TextArea,
     styled,
-    Autocomplete,
 } from '@semoss/ui';
 import { Controller} from 'react-hook-form';
 import React from 'react';
@@ -59,10 +57,10 @@ export function SpreadsheetForm({ control, fields, onSubmit, handleSubmit, cance
         ))}
       </Stack>
       {formType === "create" && (
-        <EditableTable data={tableData} setData={setTableData} tableType={formType} />
+        <EditableTable data={tableData} setData={setTableData}/>
       )}
       {formType === "update" && tableData && tableData.length > 0 && (
-        <EditableTable data={tableData} setData={setTableData} tableType={formType}/>
+        <EditableTable data={tableData} setData={setTableData}/>
       )}
 
       <Stack direction="row" spacing={1} paddingX={2} paddingBottom={2}>

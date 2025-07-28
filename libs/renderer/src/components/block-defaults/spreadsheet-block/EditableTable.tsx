@@ -4,10 +4,9 @@ import { useEffect } from "react";
 type EditableTableProps = {
   data: string[][];
   setData: React.Dispatch<React.SetStateAction<string[][]>>;
-  tableType: "create" | "update"; 
 };
 
-const EditableTable = React.memo(function EditableTable({ data, setData,tableType }: EditableTableProps) {
+const EditableTable = React.memo(function EditableTable({ data, setData}: EditableTableProps) {
     useEffect(() => {
         if (!data || data.length === 0) {
         setData(Array.from({ length: 3 }, () => Array(3).fill("")));

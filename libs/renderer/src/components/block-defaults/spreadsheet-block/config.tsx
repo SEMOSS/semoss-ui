@@ -1,7 +1,6 @@
 import { CSSProperties } from "react";
 import { BlockConfig } from "../../../store";
 import { SpreadsheetBlockDef, SpreadsheetBlock } from "./SpreadsheetBlock";
-import { TextFields } from "@mui/icons-material";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 
 export const DefaultStyles: CSSProperties = {
