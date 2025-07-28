@@ -1,5 +1,5 @@
 import React, { useState, SyntheticEvent } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { Tabs } from ".";
 import { Box } from "../..";
 // import { Tab } from "../Tabs/index";

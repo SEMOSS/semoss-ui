@@ -20,8 +20,9 @@ import {
     Typography,
 } from '@semoss/ui';
 
-import { runPixelTwo } from '../../runPixelTwo';
-import { useDebounce, useRootStore } from '@/hooks';
+import { runPixel, debounced } from '@semoss/sdk/react';
+
+import { useRootStore } from '@/hooks';
 import { JobCard } from './JobCard';
 import { JobHistory } from './JobHistory';
 import {
@@ -214,7 +215,7 @@ export function JobsPage() {
             pixel += `PauseJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixelTwo(pixel);
+            await runPixel(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -231,7 +232,7 @@ export function JobsPage() {
             pixel += `ResumeJobTrigger(jobId=["${job.id}"], jobGroup=["${job.group}"]);`;
         });
         try {
-            await runPixelTwo(pixel);
+            await runPixel(pixel);
         } catch (e) {
             notification.add({
                 color: 'error',
@@ -520,6 +521,11 @@ export function JobsPage() {
         });
     }, [rowSelectionModel]);
 
+    // Create debounced version of getHistory function for search
+    const debouncedGetHistory = debounced(() => {
+        getHistory({ search: historySearchBuffer });
+    }, 400);
+
     useEffect(() => {
         // initial render
         getJobs();
@@ -527,13 +533,9 @@ export function JobsPage() {
         getFailedJobCount();
     }, []);
 
-    useDebounce(
-        () => {
-            getHistory({ search: historySearchBuffer });
-        },
-        [historySearchBuffer],
-        400,
-    );
+    useEffect(() => {
+        debouncedGetHistory();
+    }, [historySearchBuffer, debouncedGetHistory]);
 
     const deleteMutlipleJobs = () => {
         setDeleteMultiple(true);

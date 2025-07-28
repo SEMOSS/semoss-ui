@@ -1,4 +1,4 @@
-import { BlockConfig, } from "../../../store";
+import { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { RadioBlock, RadioBlockDef } from "./RadioBlock";
 

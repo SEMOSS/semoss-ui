@@ -13,3 +13,11 @@ export type Script = {
     /** Alias to load the script as */
     alias: string;
 };
+
+export type Role =
+    | 'OWNER'
+    | 'EDIT'
+    | 'VIEWER'
+    | 'READ_ONLY'
+    | 'DISCOVERABLE'
+    | 'EDITOR';

@@ -6,15 +6,7 @@ import {
     MoreVert,
 } from '@mui/icons-material';
 
-import {
-    alpha,
-    Icon,
-    IconButton,
-    Menu,
-    Stack,
-    styled,
-    Typography,
-} from '@semoss/ui';
+import { alpha, Icon, IconButton, Stack, styled, Typography } from '@semoss/ui';
 import DuplicateIcon from '../../../assets/img/Duplicate.svg';
 import { NotebookIcon } from '@/assets/img/NotebookIcon';
 
