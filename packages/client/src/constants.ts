@@ -1,8 +1,8 @@
 import { ALL_TYPES } from './types';
 import Logo from '@/assets/logo.svg';
 
-export const THEME_TITLE = process.env.THEME_TITLE;
-export const DOCUMENTATION_URL = process.env.DOCUMENTATION_URL;
+export const THEME_TITLE = import.meta.env.VITE_THEME_TITLE;
+export const DOCUMENTATION_URL = import.meta.env.VITE_DOCUMENTATION_URL;
 
 export const THEME = {
     name: THEME_TITLE || 'SEMOSS',
