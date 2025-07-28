@@ -810,9 +810,9 @@ export const LayersPanel = observer(
                                 title={`Copy variable`}
                                 color="default"
                                 size="small"
-                                onClick={(e: React.SyntheticEvent) => {
+                                onClick={async (e: React.SyntheticEvent) => {
                                     e.stopPropagation();
-                                    copy(`{{${variableName}}}`);
+                                    await copy(`{{${variableName}}}`);
                                 }}
                                 data-onhover
                             >
@@ -1269,6 +1269,7 @@ export const LayersPanel = observer(
          * handle the add page
          */
         const handlePageAdd = async () => {
+            try {
             const newPageId = await state.dispatch({
                 message: ActionMessages.ADD_BLOCK,
                 payload: {
@@ -1282,7 +1283,14 @@ export const LayersPanel = observer(
             } else {
                 console.error('Invalid newPageId:', newPageId);
             }
+        } catch (error) {
+            console.error('Error adding new page:', error);
+            notification.add({
+                color: 'error',
+                message: 'Failed to add new page',
+            });
         };
+    }
 
         return (
             <Panel>
@@ -1334,8 +1342,8 @@ export const LayersPanel = observer(
                                             </StyledTypography>
                                             <IconButton
                                                 className="layers-menu__add-layer-button"
-                                                onClick={(e) => {
-                                                    handlePageAdd();
+                                                onClick={async (e) => {
+                                                   await handlePageAdd();
                                                 }}
                                             >
                                                 <Add />

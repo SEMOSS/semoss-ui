@@ -242,7 +242,7 @@ export const DataTabStyling = observer(
             if (!columnsSelector || columnsSelector.length === 0) {
                 return;
             }
-            const parsedValue = JSON.parse(computedValue);
+            let parsedValue = JSON.parse(computedValue);
             const formattedArray = chart.map((item, index) => {
                 let value;
                 if (data.variation === 'echart-bar-graph') {

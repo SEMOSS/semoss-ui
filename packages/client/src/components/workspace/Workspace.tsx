@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { InfoOutlined, Menu, Public, RestartAlt } from '@mui/icons-material';
+import './flexlayout.css';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
-import './flexlayout.css';
+
 import {
     styled,
     Stack,
@@ -125,8 +126,8 @@ export const Workspace = observer((props: WorkspaceProps) => {
     const notification = useNotification();
     const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
     const layoutRef = useRef<Layout | null>(null);
-    const [settingsCehcked, setSettingsChecked] = useState(false);
     const model = workspace.model;
+
     // build the model from the layout
     useEffect(() => {
         page.navbar.search = false;
@@ -202,6 +203,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             window.removeEventListener('OPEN_EVENT', handler as EventListener);
         };
     }, []);
+
     useEffect(() => {
         // default options if not loaded from cache
         const defaultOptions = JSON.parse(JSON.stringify(options));
@@ -212,48 +214,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             workspace.load(defaultOptions);
         }
     }, [options]);
-    useEffect(() => {
-        if (model) {
-            if (settingsCehcked) {
-                model
-                    .getBorderSet()
-                    .getBorders()
-                    .forEach((border) => {
-                        border.setSelected(-1);
-                    });
-                model.visitNodes((node) => {
-                    if (node.getId() === 'settings') {
-                        model.doAction(Actions.selectTab(node.getId()));
-                    }
-                    if (node.getType() === 'tabset') {
-                        const newWeight =
-                            node.getId() === 'settings-tabset' ? 100 : 0;
-                        model.doAction(
-                            Actions.updateNodeAttributes(node.getId(), {
-                                weight: newWeight,
-                            }),
-                        );
-                    }
-                });
-            } else {
-                if (
-                    model?.getNodeById('main-tabset')?.getAttr('weight') === 0
-                ) {
-                    model.visitNodes((node) => {
-                        if (node.getType() === 'tabset') {
-                            const newWeight =
-                                node.getId() === 'settings-tabset' ? 0 : 100;
-                            model.doAction(
-                                Actions.updateNodeAttributes(node.getId(), {
-                                    weight: newWeight,
-                                }),
-                            );
-                        }
-                    });
-                }
-            }
-        }
-    }, [settingsCehcked]);
+
     useEffect(() => {
         openTab();
     }, [designer.selected]);
@@ -305,6 +266,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             //noop
         }
     };
+
     const handleRenderTabSet = (tabSetNode, renderValues) => {
         if (
             tabSetNode.getId() === 'border_left' ||
@@ -324,6 +286,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
     };
 
     const handlePageAdd = async () => {
+        try{
         const newPageId = await state.dispatch({
             message: ActionMessages.ADD_BLOCK,
             payload: {
@@ -336,12 +299,21 @@ export const Workspace = observer((props: WorkspaceProps) => {
         } else {
             console.error('Invalid newPageId:', newPageId);
         }
+    } catch (error) {
+        console.error('Error adding new page:', error);
+        notification.add({
+            color: 'error',
+            message: 'Failed to add new page',
+        });
     };
+    };
+
     const handlePageSelection = (block) => {
         accordionRefs.current = {};
         designer.setSelected(block.id);
         handleOnSelect(block);
     };
+
     const scrollIntoView = (
         element: Element | null,
         {
@@ -356,6 +328,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
             inline,
         });
     };
+
     const getNodeInfo = (id, model) => {
         let returnedNode: TabNode | null = null;
         // visit the notes, and see if it exists
@@ -380,6 +353,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
         return returnedNode;
     };
+
     const selectPanel = (id: string): boolean => {
         try {
             if (!id) {
@@ -413,6 +387,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
         return true;
     };
+
     const createPanel = (id: string): boolean => {
         try {
             if (!id) {
@@ -477,6 +452,28 @@ export const Workspace = observer((props: WorkspaceProps) => {
         }
     };
 
+    const updateModel = (action) => {
+        if (!model) return;
+
+        const isSettingsTab = action.data.tabNode === 'settings';
+        const mainTabsetWeight = model?.getNodeById('main-tabset')?.getAttr('weight');
+        
+        model.getBorderSet().getBorders().forEach((border) => {
+            border.setSelected(isSettingsTab ? -1 : border.getSelected());
+        });
+
+        if (isSettingsTab || mainTabsetWeight === 0) {
+            model.visitNodes((node) => {
+                if (node.getType() === 'tabset') {
+                    const newWeight = (isSettingsTab && node.getId() === 'settings-tabset') || (!isSettingsTab && mainTabsetWeight === 0 && node.getId() !== 'settings-tabset') ? 100 : 0;
+                    model.doAction(
+                        Actions.updateNodeAttributes(node.getId(), { weight: newWeight }),
+                    );
+                }
+            });
+        }
+    };
+    
     return (
         <WorkspaceContext.Provider
             value={{
@@ -545,13 +542,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                         workspace.saveToCache();
                                     }}
                                     onAction={(action) => {
-                                        if (
-                                            action.data.tabNode === 'settings'
-                                        ) {
-                                            setSettingsChecked(true);
-                                        } else {
-                                            setSettingsChecked(false);
-                                        }
+                                        updateModel(action);
                                         return action;
                                     }}
                                     onRenderTab={(tabNode, renderValues) => {

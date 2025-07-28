@@ -17,7 +17,7 @@ const StyledPanelContent = styled(Stack)(({ theme }) => ({
     height: '100%',
     width: '100%',
     overflow: 'hidden',
-    backgroundColor: '#FFF',
+    backgroundColor: theme.palette.background.paper,
 }));
 
 const StyledPanelFooter = styled(Stack)(({ theme }) => ({

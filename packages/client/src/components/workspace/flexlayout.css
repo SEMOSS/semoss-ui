@@ -8,15 +8,17 @@
     --smss-tab-border-radius: 4px;
 }
 .flexlayout__border_left {
+    width: 46px;
     margin-right: 10px;
-    border-radius: 12px !important;
-    background: var(--Background-Paper1, #fff) !important;
-    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08) !important;
-    border-right: none !important;
+    border-radius: 12px;
+    background: var(--Background-Paper1, #fff);
+    box-shadow: 0px 1px 2px rgba(0, 0, 0, 0.08);
+    border-right: none;
 }
 .flexlayout__border_button--unselected {
     background-color: #fff;
 }
+/*Should take another look into this*/
 .flexlayout__border_inner_tab_container.flexlayout__border_inner_tab_container_right{
     top: 6px !important;
     left: 84% !important;
@@ -26,7 +28,7 @@
     border-radius: var(--Shape-borderRadiusLg, 12px);
     background: var(--Background-Paper1, #FFF);
     margin-left: 8px;
-    border-left: none !important;
+    border-left: none;
 }
 
 .flexlayout__border_inner_tab_container {
@@ -40,7 +42,7 @@
     align-items: flex-start;
     align-self: stretch;
     transform: rotate(90deg);
-    padding: 0 !important;
+    padding: 0;
 }
 
 .flexlayout__border_button_right {
@@ -48,15 +50,8 @@
     border-radius: 16px;
     background: var(--Primary-Selected, #ebf4fe);
     color: var(--Primary-Dark, #1260dd);
-    font-feature-settings: 'liga' off, 'clig' off;
-
-    /* Components/Chip */
-    font-family: Inter;
     font-size: 13px;
-    font-style: normal;
-    font-weight: 400;
     line-height: 18px; /* 138.462% */
-    letter-spacing: 0.16px;
 }
 
 .flexlayout__border_left .flexlayout__border_button--selected {
@@ -66,7 +61,6 @@
 
 .flexlayout__border_bottom {
     border-top: none;
-    background: none !important;
     padding-left: 34px;
 }
 
@@ -132,15 +126,8 @@ Main Content tabs
     align-items: center;
     border-radius: 16px;
     background: var(--Secondary-Selected, #ebebeb);
-    font-feature-settings: 'liga' off, 'clig' off;
-
-    /* Components/Chip */
-    font-family: Inter;
     font-size: 13px;
-    font-style: normal;
-    font-weight: 400;
     line-height: 18px; /* 138.462% */
-    letter-spacing: 0.16px;
 }
 
 .flexlayout__tab_button:hover {
@@ -155,19 +142,6 @@ Main Content tabs
 }
 
 .flexlayout__tab_button--selected {
-    color: var(--Primary-Dark, #1260dd) !important;
-    font-feature-settings: 'liga' off, 'clig' off !important;
-
-    /* Components/Chip */
-    font-family: Inter !important;
-    font-size: 13px !important;
-    font-style: normal !important;
-    font-weight: 400 !important;
-    line-height: 18px !important; /* 138.462% */
-    letter-spacing: 0.16px !important;
-    background-color: #ebf4fe !important;
-}
-
-.flexlayout__border_inner {
-    width: 46px !important;
+    color: var(--Primary-Dark, #1260dd);
+    background-color: #ebf4fe;
 }

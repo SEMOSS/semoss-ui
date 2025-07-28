@@ -426,11 +426,11 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
     return (
         <Panel>
             <StyledMenu>
-                <StyledBlockTitle>
-                    {/* <StyledTitleSpan>
+                {/* <StyledBlockTitle>
+                    <StyledTitleSpan>
                         {title}
-                    </StyledTitleSpan> */}
-                </StyledBlockTitle>
+                    </StyledTitleSpan> 
+                </StyledBlockTitle> */}
                 <StyledMenuHeader>
                     <Stack
                         flex={1}
