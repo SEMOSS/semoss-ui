@@ -57,6 +57,7 @@ const TERMINAL_APP: AppMetadata = {
 const StyledSeeAllButton = styled(Button)(({ theme }) => ({
   justifyContent: "flex-end",
   color: theme.palette.text.primary,
+  fontWeight: 500,
   "&.MuiButtonBase-root: hover": {
     backgroundColor: "#F5F5F5",
   },

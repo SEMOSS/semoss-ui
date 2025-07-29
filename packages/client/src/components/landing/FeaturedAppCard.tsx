@@ -1,8 +1,8 @@
-import React, { ReactElement } from "react";
+import { ReactElement } from "react";
 import { observer } from "mobx-react-lite";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
-import { Button, Box, Chip, Container, Typography, styled } from "@semoss/ui";
+import { Button, Chip, Typography, styled, Link } from "@semoss/ui";
 
 const StyledOuterContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -16,7 +16,7 @@ const StyledInnerContainer = styled("div")(({ theme }) => ({
   display: "flex",
   // flex: '0.55 1 75%',
   alignItems: "center",
-  padding: "16px",
+  padding: theme.spacing(2),
   justifyContent: "space-between",
   flexDirection: "column",
   width: "fill-available",
@@ -32,7 +32,7 @@ const StyledContainerContentSection = styled("div")(({ theme }) => ({
   display: "flex",
   width: "100%",
   justifyContent: "space-between",
-  padding: "16px 0px",
+  padding: theme.spacing(2, 0),
 }));
 
 const StyledContainerImageSection = styled("div")<{ backgroundImage: string }>(
@@ -84,11 +84,18 @@ const StyledDescription = styled(Typography)(({ theme }) => ({
   fontFeatureSettings: "'liga' off, 'clig' off",
 }));
 
-const StyledArrowForwardIcon = styled(ArrowForwardIcon)(({ theme }) => ({
-  color: theme.palette.primary.main,
+const StyledArrowForwardIcon = styled(ArrowForwardIcon)<{
+  theme?: any;
+  colorValue?: string;
+}>(({ theme, colorValue }) => ({
+  color: colorValue ?? theme.palette.primary.main,
 }));
 
 interface FeaturedAppCardProps {
+  /**
+   * Where to navigate
+   */
+  href?: string | undefined;
   /**
    * Tagline
    */
@@ -114,7 +121,7 @@ interface FeaturedAppCardProps {
 }
 
 export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
-  const { tagline, imageUrl, description, chip } = props;
+  const { tagline, imageUrl, description, chip, href } = props;
   return (
     <StyledOuterContainer>
       <StyledInnerContainer>
@@ -134,10 +141,33 @@ export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
           <StyledDescription variant="body2">{description}</StyledDescription>
         </StyledContainerContentSection>
         <StyledContainerButtonSection>
-          <Button variant="text" endIcon={<StyledArrowForwardIcon />}>
-            {" "}
-            Try it out{" "}
-          </Button>
+          {!href ? (
+            <Button
+              variant="text"
+              disabled={true}
+              endIcon={
+                <StyledArrowForwardIcon colorValue="rgba(0, 0, 0, 0.26)" />
+              }
+            >
+              {" "}
+              Try it out{" "}
+            </Button>
+          ) : (
+            <Link
+              href={href}
+              rel="noopener noreferrer"
+              color="inherit"
+              underline="none"
+            >
+              <Button
+                variant="text"
+                endIcon={<StyledArrowForwardIcon colorValue="#0471F0" />}
+              >
+                {" "}
+                Try it out{" "}
+              </Button>
+            </Link>
+          )}
         </StyledContainerButtonSection>
       </StyledInnerContainer>
       <StyledContainerImageSection backgroundImage={`url(${imageUrl})`}>
