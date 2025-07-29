@@ -22,7 +22,7 @@ const StyledBannerText = styled(Typography)(({ theme }) => ({
   fontWeight: "500",
   lineHeight: "150%" /* 24px */,
   letterSpacing: "0.15px",
-  padding: "24px 0px",
+  padding: theme.spacing(3, 0),
   width: "50%",
 }));
 
@@ -33,6 +33,24 @@ const StyledButton = styled(Button)(({ theme }) => ({
     background: theme.palette.primary.main,
   },
 }));
+
+const StyledBannerSection = styled("div")<{ theme?: any; imageUrl: string }>(
+  ({ theme, imageUrl }) => ({
+    padding: "53px 21px",
+    minHeight: "276px",
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-start",
+    borderRadius: "24px",
+    background: `linear-gradient(
+                270deg, rgba(255,255,255,0.6) 20.7%, 
+                rgba(255,255,255,0.3) 85.54%, rgba(219,214,249,0.6) 127.35%) 100% no-repeat, 
+                url(${imageUrl}) 100% no-repeat,  
+                lightgray`,
+    backgroundSize: "cover, cover, cover",
+  })
+);
 
 interface BannerSectionProps {
   /**
@@ -64,23 +82,7 @@ export const BannerSection = (props: BannerSectionProps) => {
   const navigate = useNavigate();
 
   return (
-    <div
-      style={{
-        padding: "53px 21px",
-        minHeight: "276px",
-        width: "100%",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-start",
-        borderRadius: "24px",
-        background: `linear-gradient(
-                270deg, rgba(255,255,255,0.6) 20.7%, 
-                rgba(255,255,255,0.3) 85.54%, rgba(219,214,249,0.6) 127.35%) 100% no-repeat, 
-                url(${imageUrl}) 100% no-repeat,  
-                lightgray`,
-        backgroundSize: "cover, cover, cover",
-      }}
-    >
+    <StyledBannerSection imageUrl={imageUrl}>
       <StyledBannerTitle variant="h5">{tagline}</StyledBannerTitle>
       <StyledBannerText variant="body1">{description}</StyledBannerText>
       <StyledButton
@@ -91,6 +93,6 @@ export const BannerSection = (props: BannerSectionProps) => {
       >
         {link.label}
       </StyledButton>
-    </div>
+    </StyledBannerSection>
   );
 };

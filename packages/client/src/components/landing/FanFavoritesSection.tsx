@@ -1,6 +1,4 @@
-import React from "react";
-
-import { Typography, Stack } from "@semoss/ui";
+import { Typography, Stack, Button, styled } from "@semoss/ui";
 
 import { AppMetadata, AppTileCard } from "../app";
 
@@ -56,10 +54,33 @@ const TERMINAL_APP: AppMetadata = {
   description: "Execute commands and see a response",
 };
 
+const StyledSeeAllButton = styled(Button)(({ theme }) => ({
+  justifyContent: "flex-end",
+  color: theme.palette.text.primary,
+  "&.MuiButtonBase-root: hover": {
+    backgroundColor: "#F5F5F5",
+  },
+}));
+
 export const FanFavoritesSection = () => {
   return (
     <Stack gap={1}>
-      <Typography variant={"body1"}>Try these fan favorites</Typography>
+      <Stack
+        direction={"row"}
+        justifyContent={"space-between"}
+        alignItems={"baseline"}
+        width={"100%"}
+      >
+        <Typography variant={"body1"}>Try these fan favorites</Typography>
+        <StyledSeeAllButton
+          type="button"
+          size="small"
+          variant="text"
+          color="secondary"
+        >
+          See All
+        </StyledSeeAllButton>
+      </Stack>
       <Stack direction={"row"} gap={3}>
         <AppTileCard
           app={BUSINESS_INTELLIGENCE_APP}

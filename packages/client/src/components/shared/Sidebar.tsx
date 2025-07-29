@@ -6,7 +6,6 @@ import {
   GridView as GridViewIcon,
   Settings as SettingsIcon,
   Functions as FunctionsIcon,
-  // Person as PersonIcon,
   TokenRounded,
   Inventory2Outlined,
   AccountCircleRounded,
@@ -80,18 +79,13 @@ const StyledSidebar = styled(Drawer)(() => ({
   boxSizing: "border-box",
   "& .MuiDrawer-paper": {
     width: DRAWER_OPEN_WIDTH,
-    borderRadius: "0px",
-    // boxShadow: 'none',
-    // border: 'none',
+    borderRadius: 0,
   },
   variants: [
     {
       props: ({ variant }) => variant === "permanent",
       style: {
         width: DRAWER_OPEN_WIDTH,
-        "& .MuiDrawer-paper": {
-          // backgroundColor: 'transparent',
-        },
       },
     },
   ],
@@ -133,7 +127,7 @@ const StyledLink = styled(Link)(({ theme }) => ({
   color: "inherit",
   textDecoration: "none",
   cursor: "pointer",
-  padding: "4px 0px",
+  padding: theme.spacing(0.5, 0),
 }));
 
 const StyledSettingsArea = styled(Stack)(({ theme }) => ({

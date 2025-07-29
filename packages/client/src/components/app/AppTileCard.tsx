@@ -68,16 +68,14 @@ const StyledContainer = styled("div")({
   position: "relative",
 });
 
-const StyledOverlayContent = styled("div")(() => ({
-  // width: '100%',
-  // height: '134px',
+const StyledOverlayContent = styled("div")(({ theme }) => ({
   position: "absolute",
-  top: "0",
-  right: "0",
+  top: 0,
+  right: 0,
   display: "flex",
   justifyContent: "flex-end",
-  paddingTop: "16px",
-  paddingRight: "16px",
+  paddingTop: theme.spacing(2),
+  paddingRight: theme.spacing(2),
 }));
 
 const StyledTileCardMedia = styled(Card.Media)({
@@ -96,7 +94,7 @@ const StyledPublishedByContainer = styled("div")(({ theme }) => ({
   display: "flex",
   justifyContent: "flex-start",
   alignItems: "center",
-  gap: "4px",
+  gap: theme.spacing(0.5),
   alignSelf: "stretch",
   color: theme.palette.text.secondary,
   height: "24px",
@@ -137,14 +135,14 @@ const StyledCardDescription = styled(Typography)(({ theme }) => ({
   overflow: "hidden",
   textOverflow: "ellipsis",
   wordWrap: "break-word",
-  color: "#666",
+  color: theme.palette.text.secondary,
   height: "40px",
 }));
 
 const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
   "&.MuiCardHeader-root": {
-    padding: "0px",
-    margin: "0px",
+    padding: 0,
+    margin: 0,
   },
   display: "flex",
   flexDirection: "column",
@@ -174,8 +172,8 @@ const ViewDetailsButtonName = styled("p")(({ theme }) => ({
 
 const StyledCardContent = styled(Card.Content)(({ theme }) => ({
   "&.MuiCardContent-root": {
-    padding: "0px",
-    margin: "0px",
+    padding: 0,
+    margin: 0,
     // gap: '0px',//default spacing is 8px
   },
 }));
@@ -195,30 +193,29 @@ const StyledCardActions = styled(Card.Actions)({
   justifyContent: "space-between",
   alignSelf: "stretch",
   "&.MuiCardActions-root": {
-    padding: "0px",
+    padding: 0,
     position: "relative",
-    // bottom: '8px',
   },
 });
 
-const StyledIconButton = styled(IconButton)({
-  backgroundColor: "#FFFFFF",
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+  backgroundColor: theme.palette.background.paper,
   height: "28px",
   width: "28px",
   radius: "24px",
   "&:hover": {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: theme.palette.background.paper,
     $icon: {
       color: "red",
     },
   },
-});
+}));
 
 const StyledOpenButton = styled(IconButton)(({ theme }) => ({
   display: "flex",
   alignItems: "center",
   "&.MuiIconButton-root": {
-    padding: "0px",
+    padding: 0,
   },
   "&.MuiIconButton-root :hover": {
     backgroundColor: theme.palette.primary.hover,
@@ -244,9 +241,9 @@ const StyledSkeletonImage = styled("div")(({ theme }) => ({
 
 const StyledSkeletonContent = styled("div")(({ theme }) => ({
   display: "flex",
-  padding: "8px 16px",
+  padding: theme.spacing(1, 2),
   flexDirection: "column",
-  gap: "8px",
+  gap: theme.spacing(1),
   alignItems: "flex-start",
 }));
 
@@ -258,7 +255,7 @@ const StyledSkeletonChip = styled("div")(({ theme }) => ({
 const StyledSkeletonDate = styled("div")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  gap: "4px",
+  gap: theme.spacing(0.5),
   flexDirection: "row",
 }));
 
@@ -271,18 +268,19 @@ const StyledSkeletonFooter = styled("div")(({ theme }) => ({
 
 const StyledContent = styled("div")(({ theme }) => ({
   display: "flex",
-  padding: "8px 16px 8px 16px",
+  padding: theme.spacing(1, 2),
   flexDirection: "column",
-  gap: "8px",
+  gap: theme.spacing(1),
   alignItems: "flex-start",
   borderTopLeftRadius: theme.shape.borderRadius,
   borderTopRightRadius: theme.shape.borderRadius,
+  position: "relative",
 }));
 
 const StyledFooter = styled("div")(({ theme }) => ({
   display: "flex",
   alignItems: "center",
-  gap: "8px",
+  gap: theme.spacing(1),
 }));
 
 const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
@@ -299,6 +297,17 @@ const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
     border: showBorder ? "1px solid #0471F0" : undefined,
   })
 );
+
+const StyledCardContentSection = styled("div")(({ theme }) => ({
+  height: "8px",
+  backgroundColor: theme.palette.background.paper,
+  position: "absolute",
+  borderTopLeftRadius: "50px",
+  borderTopRightRadius: "50px",
+  width: "100%",
+  top: "70px",
+  border: "1px solid transparent",
+}));
 
 interface AppTileCardProps {
   /**
@@ -391,7 +400,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
   const [hasDownloaded, setHasDownloaded] = useState(false);
 
   const open = Boolean(anchorEl);
-  console.log("app", app);
   const navigateApp = (appId: string) => {
     if (!appId) {
       return;
@@ -794,21 +802,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
               sx={{ position: "relative" }}
             />
           )}
-          <div
-            style={{
-              height: "8px",
-              backgroundColor: "#FFFFFF",
-              position: "absolute",
-              borderTopLeftRadius: "50px",
-              borderTopRightRadius: "50px",
-              width: "100%",
-              top: "70px",
-              border: "1px solid transparent",
-            }}
-          >
-            &nbsp;
-          </div>
-          <StyledContent style={{ position: "relative" }}>
+          <StyledCardContentSection>&nbsp;</StyledCardContentSection>
+          <StyledContent>
             <StyledCardHeader
               title={
                 <StyledName variant={"body2"}>

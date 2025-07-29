@@ -12,7 +12,7 @@ import { BusinessUserScreen, DeveloperUserScreen } from "@/components/landing";
 import { NavbarLeft, NavbarRight, NavbarHeader } from "../components/shared";
 
 const StyledAppBuilder = styled(Typography)(({ theme }) => ({
-  color: "var(--Text-Secondary, #666)",
+  color: theme.palette.text.secondary,
   fontFeatureSettings: "'liga' off, 'clig' off",
   display: "flex",
   /* Typography/Caption */
@@ -30,11 +30,10 @@ const StyledAppBuilder = styled(Typography)(({ theme }) => ({
 
 const StyledSwitch = styled(Switch)(({ theme }) => ({
   display: "flex",
-  // width: '3.125rem',
-  padding: "2px 0px",
+  padding: theme.spacing(0.25, 0),
   flexDirection: "column",
   alignItems: "flex-start",
-  gap: "10px",
+  gap: theme.spacing(1.25),
 }));
 
 export const LandingPage: React.FC = observer(() => {
