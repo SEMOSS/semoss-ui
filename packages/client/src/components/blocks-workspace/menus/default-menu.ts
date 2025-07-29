@@ -881,6 +881,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
             listeners: {
                 preProcess: { type: 'sync', order: [] },
                 onChange: { type: 'sync', order: [] },
+                onOpen: { type: 'sync', order: [] },
             },
             slots: {
                 content: [],
