@@ -1,90 +1,71 @@
-import { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import ImageIcon from '@mui/icons-material/Image';
 import { InfoOutlined } from '@mui/icons-material';
-
+import ImageIcon from '@mui/icons-material/Image';
+import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
 import {
-    ListItemTwo,
+    EchartVisualizationBlockDef,
+} from '@semoss/renderer';
+import {
     List,
+    ListItemButtonTwo,
     ListItemIcon,
     ListItemText,
-    ListItemButtonTwo,
-    AutocompleteTwo,
-    TextField,
+    ListItemTwo,
     Stack,
     styled,
 } from '@semoss/ui';
-
-import {
-    PathValue,
-    BlockDef,
-    useBlocksPixel,
-    useFrameHeaders,
-    getValueByPath,
-    EchartVisualizationBlockDef,
-    EchartVisualizationBlockConfig,
-} from '@semoss/renderer';
-
 import { useBlockSettings } from '@/hooks';
-
-import { Legend } from './Legend';
-import { EditXAxis } from './Edit-X-Axis';
-import { EditYAxis } from './Edit-Y-Axis';
-import ColorByValue from '../../ColorByValue';
-import { ChartStyling } from './ChartStyling';
-import { PieTitle } from '../pie-chart/PieTitle';
-import { PieLegend } from '../pie-chart/PieLegend';
-import { ToggleTrendline } from './ToggleTrendline';
-import { ToogleDonut } from '../pie-chart/ToggleDonut';
-import { PieValueLabel } from '../pie-chart/PieValueLabel';
-import { CustomTooltip } from '../pie-chart/CustomTooltip';
-import { updateSeriesColor } from '../shared/chart-utility';
-import { VisualizationStyles } from './VisualizationStyles';
-import { CustomizeValueLabels } from './CustomizeValueLabels';
-import { BAR_CHART_DATA } from '../../Visualization.constants';
-import { SizeSettings, ResizeSetting } from '../../../../shared';
-import { ScatterPlotSymbol } from '../scatter-plot/ScatterPlotSymbol';
-import { TooltipScatterPlot } from '../scatter-plot/TooltipScatterPlot';
-import { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
-import { EditYAxisScatterPlot } from '../scatter-plot/EditYAxisScatterPlot';
-import { ValueLabelScatterPlot } from '../scatter-plot/ValueLabelScatterPlot';
-import { ScatterPlotChartTitle } from '../scatter-plot/ScatterPlotChartTitle';
-
-import { ColorPickerSettings } from '../../../../shared/ColorPickerSettings';
-import { ColorPalatteSettings } from '../../../../shared/ColorPalatteSettings';
-import { TooltipMapChart } from '../map-chart/TooltipMapChart';
-import { LegendToggleMapChart } from '../map-chart/LegendToggleMapChart';
-import { MapMarkerSize } from '../map-chart/MapMarkerSize';
-
-import { LineTitle } from '../line-chart/LineTitle';
-import { LineLegend } from '../line-chart/LineLegend';
-import { LineTooltip } from '../line-chart/LineTooltip';
-import { XAxisStyling } from '../line-chart/XAxisStyling';
-import { YAxisStyling } from '../line-chart/YAxisStyling';
-import { LineValueLabels } from '../line-chart/LineValueLabel';
-import { LineStyling } from '../line-chart/LineStyling';
-//upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
-import { GanttFiscal } from '../Gantt/GanttFiscal';
-import { GanttTargetLine } from '../Gantt/GanttTargetLine';
-import { CustomizeSymbol } from '../Gantt/CustomizeSymbol';
-import { GanttLegend } from '../Gantt/GanttLegend';
-import { GanttGroupView } from '../Gantt/GanttGroupView';
-import { GanttDisplayValueLabels } from '../Gantt/GanttDisplayValueLabels';
-import { ValueLabelStackChart } from '../stack-chart/ValueLabelStackChart';
-import { StackChartBarStyle } from '../stack-chart/StackChartBarStyle';
-import { LegendStackChart } from '../stack-chart/LegendStackChart';
-import { EditXAxisStackChart } from '../stack-chart/EditXAxisStackChart';
-import { EditYAxisStackChart } from '../stack-chart/EditYAxisStackChart';
-
 import { getShowFieldOptions } from '../../../../../block-settings/block-defaults.shared';
 import { SelectInputSettings } from '../../../../../settings';
-import { CustomizeDendrogramSymbol } from '../dendrogram/CustomizeDendrogramSymbol';
+import { ResizeSetting } from '../../../../shared';
+import { ColorPalatteSettings } from '../../../../shared/ColorPalatteSettings';
+import ColorByValue from '../../ColorByValue';
+import { BAR_CHART_DATA, ChartTypes } from '../../Visualization.constants';
 import { ChangeOrientation } from '../dendrogram/ChangeOrientation';
-import { LegendDendrogram } from '../dendrogram/LegendDendrogram';
+import { CustomizeDendrogramSymbol } from '../dendrogram/CustomizeDendrogramSymbol';
 import { LabelsDendrogram } from '../dendrogram/LabelsDendrogram';
-import { ChartTypes } from '@semoss/renderer/src/components/block-defaults/echart-visualization-block/Visualization.constants';
-
-//upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../ScatterPlot/EditXAxisScatterPlot';
+import { LegendDendrogram } from '../dendrogram/LegendDendrogram';
+import { CustomizeSymbol } from '../Gantt/CustomizeSymbol';
+import { GanttDisplayValueLabels } from '../Gantt/GanttDisplayValueLabels';
+//upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
+import { GanttFiscal } from '../Gantt/GanttFiscal';
+import { GanttGroupView } from '../Gantt/GanttGroupView';
+import { GanttLegend } from '../Gantt/GanttLegend';
+import { GanttTargetLine } from '../Gantt/GanttTargetLine';
+import { LineLegend } from '../line-chart/LineLegend';
+import { LineStyling } from '../line-chart/LineStyling';
+import { LineTitle } from '../line-chart/LineTitle';
+import { LineTooltip } from '../line-chart/LineTooltip';
+import { LineValueLabels } from '../line-chart/LineValueLabel';
+import { XAxisStyling } from '../line-chart/XAxisStyling';
+import { YAxisStyling } from '../line-chart/YAxisStyling';
+import { LegendToggleMapChart } from '../map-chart/LegendToggleMapChart';
+import { MapMarkerSize } from '../map-chart/MapMarkerSize';
+import { TooltipMapChart } from '../map-chart/TooltipMapChart';
+import { CustomTooltip } from '../pie-chart/CustomTooltip';
+import { PieLegend } from '../pie-chart/PieLegend';
+import { PieTitle } from '../pie-chart/PieTitle';
+import { PieValueLabel } from '../pie-chart/PieValueLabel';
+import { ToogleDonut } from '../pie-chart/ToggleDonut';
+import { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
+import { EditYAxisScatterPlot } from '../scatter-plot/EditYAxisScatterPlot';
+import { ScatterPlotChartTitle } from '../scatter-plot/ScatterPlotChartTitle';
+import { ScatterPlotSymbol } from '../scatter-plot/ScatterPlotSymbol';
+import { TooltipScatterPlot } from '../scatter-plot/TooltipScatterPlot';
+import { ValueLabelScatterPlot } from '../scatter-plot/ValueLabelScatterPlot';
+import { updateSeriesColor } from '../shared/chart-utility';
+import { EditXAxisStackChart } from '../stack-chart/EditXAxisStackChart';
+import { EditYAxisStackChart } from '../stack-chart/EditYAxisStackChart';
+import { LegendStackChart } from '../stack-chart/LegendStackChart';
+import { StackChartBarStyle } from '../stack-chart/StackChartBarStyle';
+import { ValueLabelStackChart } from '../stack-chart/ValueLabelStackChart';
+import { ChartStyling } from './ChartStyling';
+import { CustomizeValueLabels } from './CustomizeValueLabels';
+import { EditXAxis } from './Edit-X-Axis';
+import { EditYAxis } from './Edit-Y-Axis';
+import { Legend } from './Legend';
+import { ToggleTrendline } from './ToggleTrendline';
+import { VisualizationStyles } from './VisualizationStyles';
 
 interface UpgradedVisualizationToolProps {
     id: string;
@@ -225,9 +206,7 @@ const DendrogramToolsList = ({ id }) => {
 
 const ResizingTool = ({ id }) => {
     const [resizeSelection, setResizeSelection] = useState('');
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     return (
-        <>
             <StyledListItem disablePadding>
                 <ListItemButtonTwo
                     onClick={(e) =>
@@ -265,7 +244,6 @@ const ResizingTool = ({ id }) => {
                     </Stack>
                 )}
             </StyledListItem>
-        </>
     );
 };
 
@@ -476,9 +454,7 @@ const GanttToolsList = ({ id }) => {
                 </ListItemButtonTwo>
             </StyledListItem>
             {ganttSelection === 'togglegroupview' && (
-                <>
                     <GanttGroupView id={id} path={'option'} />
-                </>
             )}
             <ResizingTool id={id} />
             <StyledListItem disablePadding>
@@ -511,9 +487,7 @@ const GanttToolsList = ({ id }) => {
             </StyledListItem>
 
             {ganttSelection === 'displayvaluelabels' && (
-                <>
                     <GanttDisplayValueLabels id={id} path="option" />
-                </>
             )}
         </>
     );
@@ -521,7 +495,6 @@ const GanttToolsList = ({ id }) => {
 
 const StackChartTool = ({ id }) => {
     const [stackChartSelection, setStackChartSelection] = useState('');
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
     return (
         <>
             <ColorpalatteTool id={id} />
@@ -727,7 +700,7 @@ const StackChartTool = ({ id }) => {
 
 const BarToolsList = ({ id }) => {
     const [barSelection, setBarSelection] = useState('');
-    const { data, setData } = useBlockSettings(id);
+    const { data } = useBlockSettings(id);
     function updateChart() {}
     return (
         <>
@@ -980,7 +953,6 @@ const BarToolsList = ({ id }) => {
 
 const ScatterToolsList = ({ id }) => {
     const [scatterSelection, setScatterSelection] = useState('');
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
     return (
         <>
@@ -1197,7 +1169,7 @@ const ScatterToolsList = ({ id }) => {
 };
 const LineChartTools = ({ id }) => {
     const [lineSelection, setLineSelection] = useState('');
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+    const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
     return (
         <>
@@ -1521,7 +1493,6 @@ const MapChartTools = ({ id }) => {
 
 const PieChartTools = ({ id }) => {
     const [pieSelection, setPieSelection] = useState('');
-    const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
     return (
         <>
@@ -1693,16 +1664,10 @@ const PieChartTools = ({ id }) => {
 
 export const UpgradedVisualizationTool =
     observer<UpgradedVisualizationToolProps>(({ id }) => {
-        const { data, setData } =
+        const { data } =
             useBlockSettings<EchartVisualizationBlockDef>(id);
         const [selectedList, setSelectedList] = useState(''); // maintain the current selected list, for expansion and collapsing
-        const [generalSettings, setGeneralSettings] = useState({
-            showBlock: data.show,
-        });
-        const queriesList = getShowFieldOptions(id);
-        const [chartType, setChartType] = useState(data.variation);
         return (
-            <>
                 <List style={{ width: '100%' }}>
                     {/* 
                         Custom section to handle bar chart components for respective menu section 
@@ -1744,9 +1709,7 @@ export const UpgradedVisualizationTool =
                         )}
                     </ListItemTwo>
                     {data.variation === 'echart-world-map-chart' && (
-                        <>
                             <MapChartTools id={id} />
-                        </>
                     )}
                     {data.variation === 'echart-pie-chart' && (
                         <PieChartTools id={id} />
@@ -1770,6 +1733,5 @@ export const UpgradedVisualizationTool =
                         <DendrogramToolsList id={id} />
                     )}
                 </List>
-            </>
         );
     });

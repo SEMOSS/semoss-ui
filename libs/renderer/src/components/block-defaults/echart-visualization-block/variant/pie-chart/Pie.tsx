@@ -5,7 +5,6 @@ import ReactECharts from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useMemo, useState } from "react";
-
 import { styled } from "@semoss/ui";
 // import { getValueByPath } from "../../../../../utility";
 import {
@@ -51,16 +50,14 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     const [contextMenu, setContextMenu] = useState<{
         mouseX: number;
         mouseY: number;
-        value: unknown;
+        value: { label: string; value: string };
     } | null>(null);
-    cons_resultDatata: unknown = {};
-
     /**
      * Builds a dynamic query string based on the provided input data.
      * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
      * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
      */
-    const buildDynamicQuery = (inputData): string => {
+    const buildDynamicQuery = (inputData: [string, Record<string, string>][]): string => {
         const selectParts: string[] = [];
         const aliasParts: string[] = [];
         const groupByParts: string[] = [];
@@ -164,8 +161,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
     //     }
     //     return { ...options };
     // }, [computedValue, data.frame, frame.isLoading, frame.data.values]);
-    console.log("parse option ", computedValue);
-    console.log("  data option ", data.option);
+
     useEffect(() => {
         if (
             data.frame.name &&
@@ -214,19 +210,20 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
                 }
             }
             setData("option", { ...options });
-        }
-    }, [
-        data.frame.name,    
-        frame.data.values,    
-        frame.isLoading,    
-        computedValue.customSettings?.appliedRules, frame.data.headers[1] computedValue setData computedValue.series
+        }        
+    }, 
+    [
+        data.frame.name, 
+        frame.data.values, 
+        frame.isLoading, 
+        computedValue.customSettings?.appliedRules, frame.data.headers[1], setData, computedValue, computedValue.series
     ]);
 
     /**
      * @description format the frame option data for echart
      */
     const formatDataPoints = useCallback(
-        (resultData: unknown) => {
+        (resultData: any) => {
             if (frame.data.values.length > 0) {
                 const valuesDataSet = JSON.parse(
                     JSON.stringify(frame.data.values),

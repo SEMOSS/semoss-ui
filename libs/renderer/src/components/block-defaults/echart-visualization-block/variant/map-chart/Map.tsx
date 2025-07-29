@@ -5,17 +5,15 @@ import { CanvasRenderer } from "echarts/renderers";
 import EChartsReact from "echarts-for-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-
 import { styled } from "@semoss/ui";
-
 import { useBlock, useFrame } from "../../../../../hooks";
 import { BlockComponent } from "../../../../../store";
-import { getValueByPath } from "../../../../../utility";
+import { updateColorData } from "../../../../shared/chart-utility";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
 import { getSelector } from "./MapSelector";
-import fetchWorldMap from "./map-utility";t-utility";
+import fetchWorldMap from "./map-utility";
 
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
@@ -143,9 +141,9 @@ export const Map: BlockComponent = observer(({ id }) => {
     useEffect(() => {
         echarts.registerMap("world", worldJson);
         setMapIsLoaded(true);
-    }, []);
+    }, [worldJson]);
 
-    useEworldJsonffect(() => {
+    useEffect(() => {
         if (mapIsLoaded && frame.data?.values?.length > 0) {
             const processedFrameData = processData(frame.data, data) ?? [];
             const headers = frame.data.headers;
@@ -193,12 +191,11 @@ export const Map: BlockComponent = observer(({ id }) => {
             });
         }
     }, [
-        mapIsLoaded,
-        frame.data.values,
-        frame.data.h      eaders,
-        data.option.custom      Settings?.appliedRules,
-    ]);      
- setData frame.data data.option["symbolSize"] dat data data.optiona.option.tooltip
+        mapIsLoaded, 
+        frame.data.values, 
+        frame.data.headers, 
+        data.option.customSettings?.appliedRules, data, frame.data, setData
+    ]);
     // Calculate bounding box
     const lats =
         data.option["series"][0]?.["data"]?.map((d) => d.value[0]) ?? [];

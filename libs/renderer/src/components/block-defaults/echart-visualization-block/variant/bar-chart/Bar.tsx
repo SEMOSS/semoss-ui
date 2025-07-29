@@ -1,17 +1,13 @@
-import { useCallback, useMemo, useRef, useState } from "react";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import EChartsReact from "echarts-for-react";
 import { EChartsOption } from "echarts";
-
+import EChartsReact from "echarts-for-react";
+import { computed } from "mobx";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { styled } from "@semoss/ui";
-
 import { useBlock, useFrame } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
-
-import { ChartContextMenu } from "./ChartContextMenu";
 import { updateColorData } from "../../../../shared/chart-utility";
+import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { ChartContextMenu } from "./ChartContextMenu";
 
 //Main Container for displaying Bar chart
 const StyledMainContainer = styled("div")(({ theme }) => ({
@@ -43,7 +39,7 @@ interface BarProps {
     updateJson: (data: any, path: any) => void;
 }
 
-export const Bar = observer(({ id, updateJson }: BarProps) => {
+export const Bar = ({ id, updateJson }: BarProps) => {
     const { data } = useBlock<EchartVisualizationBlockDef>(id);
 
     const [contextMenu, setContextMenu] = useState<{
@@ -109,7 +105,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             }
             return v; //JSON.stringify(v, null, 2);
         });
-    }, [data, "option"]).get();
+    }, [data]).get();
 
     //update frame values to the series data when frame values are changed
     const receiveValueswithCorrections = useCallback(
@@ -214,7 +210,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
         },
         //After brushing in bar chart, this event will be triggered to filter the selected data
         brushend: (params) => {
-            const batch = params.batch;
+            const _batch = params.batch;
             const xAxisName = data.option["xAxis"]["pixelvalue"][0];
             const xAxisValue = chartOperationData.current.brushSelected.map(
                 (item) =>
@@ -291,7 +287,7 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
                     <EChartsReact option={options} />
                 </StyledMainContainer>
             );
-        } catch (e) {
+        } catch (_e) {
             return (
                 <StyledNoDataContainer>
                     There is an issue parsing your JSON.
@@ -326,4 +322,4 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
             </StyledMainContainer>
         );
     }
-});
+};

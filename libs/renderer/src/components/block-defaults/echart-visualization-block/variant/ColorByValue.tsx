@@ -1,18 +1,17 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { observer } from "mobx-react-lite";
 import { Delete, Edit } from "@mui/icons-material";
-import { PathValue } from "react-hook-form";
 import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { PathValue } from "react-hook-form";
 
-import { Button, Select, Stack, styled, Table, TextField } from "@semoss/ui";
-
-import { BlockDef } from "../../../../store";
+import { Button, Select, Stack, styled, TextField } from "@semoss/ui";
 // import { useBlockSettings } from "../../../../hooks";
-import { useBlock } from "../../../../hooks";
+import { useBlock, } from "../../../../hooks";
+import { BlockDef } from "../../../../store";
 import { getValueByPath } from "../../../../utility";
-import { EchartVisualizationBlockDef } from "../VisualizationBlock";
 import { columnComparisionList } from "../../../shared/chart-utility";
 import { ChartTypes } from "../Visualization.constants";
+import { EchartVisualizationBlockDef } from "../VisualizationBlock";
 
 // styled main section with custom styling
 const StyledMainSection = styled("div")(() => ({
@@ -56,7 +55,7 @@ const INITIAL_NEW_RULES = {
 };
 
 const ColorByValue = observer(
-    <D extends BlockDef = BlockDef>({ id, path, chartType }) => {
+    <_D extends BlockDef = BlockDef>({ id, path, chartType }) => {
         const { data, setData } = useBlock<EchartVisualizationBlockDef>(id);
         const [newRules, setNewRules] = useState(INITIAL_NEW_RULES);
 
