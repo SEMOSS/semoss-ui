@@ -1,8 +1,8 @@
 import {
     TextField as MuiTextField,
     SxProps,
-    InternalStandardProps as StandardProps,
     TextFieldProps as MuiTextFieldProps,
+    SelectProps as MuiSelectProps,
 } from "@mui/material";
 import { InputAdornment } from "../InputAdornment";
 
@@ -127,10 +127,17 @@ export interface SelectProps {
      */
     variant?: "outlined" | "standard";
 
+    /**
+     *  Icon to show in the dropdown
+     */
+    IconComponent?: MuiSelectProps["IconComponent"];
+
     InputProps?: unknown;
 }
 
-export const Select = (props: SelectProps) => {
-    const { variant = "outlined" } = props;
-    return <MuiTextField variant={variant} select {...props} />;
+export const Select: React.FC<SelectProps> = ({
+    variant = "outlined",
+    ...otherProps
+}) => {
+    return <MuiTextField variant={variant} select {...otherProps} />;
 };
