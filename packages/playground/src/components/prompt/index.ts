@@ -1,1 +1,1 @@
-export * from './PromptLibraryComponent';
+export * from "./PromptLibrary";
