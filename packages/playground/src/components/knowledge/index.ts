@@ -1,1 +1,1 @@
-export * from './KnowledgeOverlayComponent';
+export * from "./KnowledgeOverlay";
