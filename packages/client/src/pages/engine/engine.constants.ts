@@ -17,7 +17,7 @@ import { EngineQAPage } from './EngineQAPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
-import { EngineModelTestPage } from './EngineModelTestPage';
+import { EngineModelChatPage } from './EngineModelChatPage';
 
 export const ENGINE_ROUTES: {
     /** Name of the route */
@@ -99,9 +99,9 @@ export const ENGINE_ROUTES: {
                 restrict: false,
             },
             {
-                name: 'Test',
-                path: 'test',
-                component: EngineModelTestPage,
+                name: 'Chat',
+                path: 'chat',
+                component: EngineModelChatPage,
                 restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
             },
             {

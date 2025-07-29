@@ -230,3 +230,20 @@ export const permissionPriorityMapper = (permission: string | number) => {
             return { permission: '', priority: 0 };
     }
 };
+
+/**
+ * @name extractInitials
+ *
+ * Extract a initials for a string
+ *
+ * @param str
+ */
+export const extractInitials = (str: string): string => {
+    if (str.length < 1) {
+        return '';
+    }
+
+    return str.split(' ').reduce((prev, curr) => {
+        return prev + (curr[0] || '');
+    }, '');
+};

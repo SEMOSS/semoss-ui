@@ -12,8 +12,7 @@ import {
 } from '@semoss/ui';
 import { EditOutlined } from '@mui/icons-material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-
-import { useRootStore } from '@/hooks';
+import { runPixel } from '@semoss/sdk';
 
 const StyledSidebar = styled(Paper)(({ theme }) => ({
     width: '300px',
@@ -26,7 +25,7 @@ const StyledSidebar = styled(Paper)(({ theme }) => ({
 
 const StyledList = styled(List)(({ theme }) => ({
     width: '100%',
-    padding: '8px, 16px, 8px, 16px',
+    padding: '8px 16px 8px 16px',
     borderRadius: theme.shape.borderRadius,
     background: 'rgba(217, 217, 217, 0.3)',
 }));
@@ -72,7 +71,6 @@ export const EngineModelTestSidebar = ({
     maxTokens,
     setMaxTokens,
 }: EngineModelTestSidebarProps) => {
-    const { monolithStore } = useRootStore();
     const [modelInfo, setModelInfo] = useState<any>(null);
 
     const temperatureTooltipText = `
@@ -93,23 +91,23 @@ export const EngineModelTestSidebar = ({
             const fetchModelInfo = async () => {
                 try {
                     const pixel = `GetEngineInfo(engine="${selectedModel.model_id}")`;
-                    const response = await monolithStore.runQuery(pixel);
+                    const response = await runPixel(pixel);
                     const { output, operationType } = response.pixelReturn[0];
 
                     if (operationType.indexOf('ERROR') === -1) {
                         setModelInfo(output);
                         // Update model name if we got it from the info
-                        if (output.database_name && !selectedModel.model_name) {
+                        if (output['database_name'] && !selectedModel.model_name) {
                             setSelectedModel({
                                 ...selectedModel,
-                                model_name: output.database_name,
-                                tag: output.tag || selectedModel.tag,
+                                model_name: output['database_name'],
+                                tag: output['tag'] || selectedModel.tag,
                             });
                         }
 
                         // Check if this is a text-generation model
-                        if (output.tag && !output.tag.includes('text-generation')) {
-                            console.warn('Selected model may not support text generation:', output.tag);
+                        if (output['tag'] && !output['tag'].includes('text-generation')) {
+                            console.warn('Selected model may not support text generation:', output['tag']);
                         }
                     }
                 } catch (error) {
@@ -119,7 +117,7 @@ export const EngineModelTestSidebar = ({
 
             fetchModelInfo();
         }
-    }, [selectedModel.model_id, monolithStore, selectedModel, setSelectedModel]);
+    }, [selectedModel.model_id, selectedModel, setSelectedModel]);
 
     const handleTemperatureChange = (event: Event, newValue: number | number[]) => {
         setTemperature(Array.isArray(newValue) ? newValue[0] : newValue);

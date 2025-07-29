@@ -20,6 +20,8 @@ import { EngineModelTestSidebar } from '@/components/settings';
 import { runPixel } from '@semoss/sdk/react';
 import { IconButton, Avatar } from '@mui/material';
 import { Send, CopyAll, Refresh, ThumbUpOffAlt, ThumbDownOffAlt } from '@mui/icons-material';
+import { FeedbackButtons } from '@/components/engine/FeedbackButtons';
+import { extractInitials } from '@/utility/general';
 
 const StyledLayout = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -31,7 +33,8 @@ const StyledContainer = styled('div')(({ theme }) => ({
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
-    gap: theme.spacing(2),
+    overflow: 'hidden',
+    height: '840px'
 }));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
@@ -42,29 +45,22 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledChatContainer = styled('div')(({ theme }) => ({
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(2),
-    overflow: 'hidden',
-    maxHeight: '80%'
-}));
-
 const StyledMessagesBox = styled('div')(({ theme }) => ({
-    // flex: 1,
-    // overflowY: 'auto',
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
     backgroundColor: 'transparent',
-    maxHeight: '100%'
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    maxHeight: 'fit-content',
+    overflow: 'hidden'
 }));
 
-const StyledMessagesContainer = styled('div')(({ theme }) => ({
-    flex: 1,
+const StyledMessagesContainer = styled('div')(() => ({
     overflowY: 'auto',
     backgroundColor: 'transparent',
-    maxHeight: '100%'
+    minHeight: 'auto',
+    maxHeight: '80%'
 }));
 
 const StyledMessageBubble = styled('div')<{ isUser: boolean }>(({ theme, isUser }) => ({
@@ -147,7 +143,7 @@ interface Model {
     tag?: string;
 }
 
-export const EngineModelTestPage = () => {
+export const EngineModelChatPage = () => {
     const { active } = useEngine();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState('');
@@ -168,13 +164,8 @@ export const EngineModelTestPage = () => {
         },
     });
 
-    const { monolithStore, configStore } = useRootStore();
+    const { configStore } = useRootStore();
     const promptValue = watch('prompt');
-
-    //Helper to extract user initials for avatar
-    function getInitials(name: string) {
-        return `${name.split(' ')[0][0]}${name.split(' ')[1][0]}`
-    }
 
     // Helper to create a new insight from backend
     const createNewInsight = async () => {
@@ -212,10 +203,10 @@ export const EngineModelTestPage = () => {
         setMessages(prev => [...prev, userMessage]);
         try {
             const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
-            const response = await monolithStore.runQuery(pixel, insightId);
+            const response = await runPixel(pixel, insightId);
             const { output, operationType } = response.pixelReturn[0];
             if (operationType.indexOf('ERROR') > -1) {
-                const errorMessage = output.response || output || 'An error occurred while processing your request';
+                const errorMessage = output['response'] || output || 'An error occurred while processing your request';
                 if (errorMessage.toLowerCase().includes('token limit') || errorMessage.toLowerCase().includes('context length')) {
                     throw new Error('Prompt is larger than the token limit, please shorten/break it into multiple prompts');
                 } else if (errorMessage.toLowerCase().includes('permission') || errorMessage.toLowerCase().includes('access')) {
@@ -225,11 +216,11 @@ export const EngineModelTestPage = () => {
                 }
             }
             const assistantMessage: Message = {
-                id: output.messageId,
-                content: output.response || 'No response received',
+                id: output['messageId'],
+                content: output['response'] || 'No response received',
                 isUser: false,
                 timestamp: new Date(),
-                tokens: output.numberOfTokensInResponse || 0,
+                tokens: output['numberOfTokensInResponse'] || 0,
             };
             setMessages(prev => [...prev, assistantMessage]);
         } catch (err) {
@@ -240,13 +231,16 @@ export const EngineModelTestPage = () => {
         }
     };
 
-    const sendFeedback = async (messageId: string, rating: boolean) => {
-        const pixel = `SubmitLLMFeedback(messageId="${messageId}", feedbackText="", rating="${rating}`;
-        try{
+    const [feedbackMap, setFeedbackMap] = useState<{ [messageId: string]: 'true' | 'false' | null }>({});
+
+    //Call LLM Feedback reactor to save user's feedback on a message
+    const sendFeedback = async (messageId: string, rating: string) => {
+        const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}")`;
+        try {
             const response = await runPixel(pixel);
             const { output, operationType } = response.pixelReturn[0];
             if (operationType.indexOf('ERROR') > -1) {
-                const errorMessage = ""+output || 'An error occurred while submitting feedback';
+                const errorMessage = "" + output || 'An error occurred while submitting feedback';
                 throw new Error(errorMessage);
             } else {
                 return output;
@@ -255,6 +249,15 @@ export const EngineModelTestPage = () => {
             setError(err instanceof Error ? err.message : 'An error occurred while submitting feedback');
         }
     }
+
+    const handleFeedback = (messageId: string, value: 'true' | 'false') => {
+        setFeedbackMap(prev => ({
+            ...prev,
+            [messageId]: value
+        }));
+        sendFeedback(messageId, value);
+    }
+
 
     return (
         <StyledLayout>
@@ -268,9 +271,9 @@ export const EngineModelTestPage = () => {
             />
             <StyledContainer>
                 <StyledPaper variant="elevation" elevation={2} square>
-                    <Stack spacing={2}>
+                    <Stack spacing={2} sx={{ height: '100%', overflow: 'hidden' }}  >
                         <Stack direction="row" justifyContent="space-between" alignItems="center">
-                            <Typography variant="h4">Test Model</Typography>
+                            <Typography variant="h4">Chat with the Model</Typography>
                         </Stack>
                         <Typography variant="body1" sx={{ marginBottom: '20px' }}>
                             Test and interact with this LLM model. Ask questions, experiment with different prompts,
@@ -312,7 +315,7 @@ export const EngineModelTestPage = () => {
                                     messages.map((message, index) => (
                                         <div key={message.id}>
                                             <StyledMessageBubble isUser={message.isUser}>
-                                                {message.isUser && <StyledAvatar>{getInitials(configStore.store.user.name)}</StyledAvatar>}
+                                                {message.isUser && <StyledAvatar>{extractInitials(configStore.store.user.name)}</StyledAvatar>}
                                                 {!message.isUser && <Typography variant="subtitle2" sx={{ mb: 2 }}>Response</Typography>}
                                                 <div><Markdown>{message.content}</Markdown></div>
                                                 {!message.isUser && <StyledDivider></StyledDivider>}
@@ -332,22 +335,11 @@ export const EngineModelTestPage = () => {
                                                             Rewrite
                                                         </StyledRewriteButton>
                                                         <Box sx={{ flexGrow: 1 }} />
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => navigator.clipboard.writeText(message.content)}
-                                                            sx={{ padding: 0 }}
-                                                            aria-label="Liked the model's response"
-                                                        >
-                                                            <ThumbUpOffAlt fontSize="small" sx={{ opacity: 0.7 }} />
-                                                        </IconButton>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => navigator.clipboard.writeText(message.content)}
-                                                            sx={{ padding: 0 }}
-                                                            aria-label="Disliked the model's response"
-                                                        >
-                                                            <ThumbDownOffAlt fontSize="small" sx={{ opacity: 0.7 }} />
-                                                        </IconButton>
+                                                        <FeedbackButtons
+                                                            messageId={message.id}
+                                                            onFeedbackCall={handleFeedback}
+                                                            initialValue={feedbackMap[message.id] || null}
+                                                        />
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => navigator.clipboard.writeText(message.content)}
