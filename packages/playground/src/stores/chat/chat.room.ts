@@ -666,7 +666,6 @@ paramValues=[${JSON.stringify({
 	 * @param fileKey - key
 	 */
 	private upload = async (files: File[]) => {
-		console.log(this._insightID);
 		// get the response
 		return await upload(files, this._insightID, "", "/images");
 	};
