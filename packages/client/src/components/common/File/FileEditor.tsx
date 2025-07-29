@@ -372,47 +372,306 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                 return;
             }
 
-            monaco.languages.setMonarchTokensProvider('java', {
-                tokenizer: {
-                    root: [
-                        // Keywords
-                        [
-                            /\b(abstract|assert|boolean|break|byte|case|catch|char|class|const|continue|default|do|double|else|enum|extends|final|finally|float|for|goto|if|implements|import|instanceof|int|interface|long|native|new|null|package|private|protected|public|return|short|static|strictfp|super|switch|synchronized|this|throw|throws|transient|try|void|volatile|while)\b/,
-                            'keyword',
-                        ],
+             monaco.languages.setMonarchTokensProvider("java", {
+               defaultToken: "invalid",
+               keywords: [
+                 "abstract",
+                 "continue",
+                 "for",
+                 "new",
+                 "switch",
+                 "assert",
+                 "default",
+                 "goto",
+                 "package",
+                 "synchronized",
+                 "boolean",
+                 "do",
+                 "if",
+                 "private",
+                 "this",
+                 "break",
+                 "double",
+                 "implements",
+                 "protected",
+                 "throw",
+                 "byte",
+                 "else",
+                 "import",
+                 "public",
+                 "throws",
+                 "case",
+                 "enum",
+                 "instanceof",
+                 "return",
+                 "transient",
+                 "catch",
+                 "extends",
+                 "int",
+                 "short",
+                 "try",
+                 "char",
+                 "final",
+                 "interface",
+                 "static",
+                 "void",
+                 "class",
+                 "finally",
+                 "long",
+                 "strictfp",
+                 "volatile",
+                 "const",
+                 "float",
+                 "native",
+                 "super",
+                 "while",
+               ],
+               typeKeywords: [
+                 "byte",
+                 "short",
+                 "int",
+                 "long",
+                 "char",
+                 "float",
+                 "double",
+                 "boolean",
+                 "void",
+               ],
+               operators: [
+                 "=",
+                 ">",
+                 "<",
+                 "!",
+                 "~",
+                 "?",
+                 ":",
+                 "==",
+                 "<=",
+                 ">=",
+                 "!=",
+                 "&&",
+                 "||",
+                 "++",
+                 "--",
+                 "+",
+                 "-",
+                 "*",
+                 "/",
+                 "&",
+                 "|",
+                 "^",
+                 "%",
+                 "<<",
+                 ">>",
+                 ">>>",
+                 "+=",
+                 "-=",
+                 "*=",
+                 "/=",
+                 "&=",
+                 "|=",
+                 "^=",
+                 "%=",
+                 "<<=",
+                 ">>=",
+                 ">>>=",
+               ],
 
-                        // Types
-                        [
-                            /\b(String|Integer|Double|Boolean|Object|List|Map|Set|ArrayList|HashMap|HashSet|void)\b/,
-                            'type.identifier',
-                        ],
+               symbols: /[=><!~?:&|+\-*\/\^%]+/,
+               escapes: /\\(?:[btnfr"'\\]|u[0-9A-Fa-f]{4})/,
 
-                        // Annotations
-                        [/@\w+/, 'annotation'],
+               tokenizer: {
+                 root: [
+                   // ✅ Match method calls like doSomething()
+                   [/\b[a-zA-Z_][\w$]*(?=\s*\()/, "method"],
 
-                        // Function names (lookahead for `(`)
-                        [/[a-zA-Z_]\w*(?=\s*\()/, 'function'],
+                   // ✅ Keywords
+                   [
+                     /[a-z_$][\w$]*/,
+                     {
+                       cases: {
+                         "@keywords": "keyword",
+                         "@default": "identifier",
+                       },
+                     },
+                   ],
 
-                        // Variables
-                        [/[a-zA-Z_]\w*/, 'identifier'],
+                   // ✅ Types
+                   [/[A-Z][\w\$]*/, "type.identifier"],
 
-                        // Numbers
-                        [/\d+/, 'number'],
+                   { include: "@whitespace" },
+                   [/[{}()\[\]]/, "@brackets"],
+                   [
+                     /@symbols/,
+                     {
+                       cases: {
+                         "@operators": "operator",
+                         "@default": "",
+                       },
+                     },
+                   ],
+                   [/\d+\.\d+([eE][\-+]?\d+)?[fFdD]?/, "number.float"],
+                   [/0[xX][0-9a-fA-F]+[Ll]?/, "number.hex"],
+                   [/\d+[lL]?/, "number"],
+                   [/[;,.]/, "delimiter"],
+                   [
+                     /"/,
+                     {
+                       token: "string.quote",
+                       bracket: "@open",
+                       next: "@string",
+                     },
+                   ],
+                 ],
 
-                        // Strings
-                        [/".*?"/, 'string'],
+                 comment: [
+                   [/[^\/*]+/, "comment"],
+                   [/\*\//, "comment", "@pop"],
+                   [/[\/*]/, "comment"],
+                 ],
 
-                        // Comments
-                        [/\/\/.*$/, 'comment'],
-                        [/\/\*/, 'comment', '@comment'],
-                    ],
-                    comment: [
-                        [/[^\/*]+/, 'comment'],
-                        [/\*\//, 'comment', '@pop'],
-                        [/[\/*]/, 'comment'],
-                    ],
-                },
-            });
+                 string: [
+                   [/[^\\"]+/, "string"],
+                   [/@escapes/, "string.escape"],
+                   [/\\./, "string.escape.invalid"],
+                   [
+                     /"/,
+                     { token: "string.quote", bracket: "@close", next: "@pop" },
+                   ],
+                 ],
+
+                 whitespace: [
+                   [/[ \t\r\n]+/, ""],
+                   [/\/\*/, "comment", "@comment"],
+                   [/\/\/.*$/, "comment"],
+                 ],
+               },
+             });
+
+             monaco.languages.registerCompletionItemProvider("java", {
+               provideCompletionItems: (model, position) => {
+                 const word = model.getWordUntilPosition(position);
+                 const range = {
+                   startLineNumber: position.lineNumber,
+                   endLineNumber: position.lineNumber,
+                   startColumn: word.startColumn,
+                   endColumn: word.endColumn,
+                 };
+
+                 const suggestions = [
+                   {
+                     label: "System.out.println",
+                     kind: monaco.languages.CompletionItemKind.Function,
+                     insertText: "System.out.println($1);",
+                     insertTextRules:
+                       monaco.languages.CompletionItemInsertTextRule
+                         .InsertAsSnippet,
+                     documentation: "Prints a message to the console.",
+                     range,
+                   },
+                   {
+                     label: "Scanner init",
+                     kind: monaco.languages.CompletionItemKind.Snippet,
+                     insertText: "Scanner sc = new Scanner(System.in);",
+                     insertTextRules:
+                       monaco.languages.CompletionItemInsertTextRule
+                         .InsertAsSnippet,
+                     documentation: "Create a Scanner for input.",
+                     range,
+                   },
+                   {
+                     label: "public class",
+                     kind: monaco.languages.CompletionItemKind.Snippet,
+                     insertText: [
+                       "public class ${1:ClassName} {",
+                       "    public static void main(String[] args) {",
+                       "        $0",
+                       "    }",
+                       "}",
+                     ].join("\n"),
+                     insertTextRules:
+                       monaco.languages.CompletionItemInsertTextRule
+                         .InsertAsSnippet,
+                     documentation: "Java class with a main method.",
+                     range,
+                   },
+                   {
+                     label: "if-else",
+                     kind: monaco.languages.CompletionItemKind.Snippet,
+                     insertText: [
+                       "if (${1:condition}) {",
+                       "    $0",
+                       "} else {",
+                       "    ",
+                       "}",
+                     ].join("\n"),
+                     insertTextRules:
+                       monaco.languages.CompletionItemInsertTextRule
+                         .InsertAsSnippet,
+                     documentation: "Basic if-else structure.",
+                     range,
+                   },
+                   {
+                     label: "for loop",
+                     kind: monaco.languages.CompletionItemKind.Snippet,
+                     insertText: [
+                       "for (int ${1:i} = 0; ${1:i} < ${2:10}; ${1:i}++) {",
+                       "    $0",
+                       "}",
+                     ].join("\n"),
+                     insertTextRules:
+                       monaco.languages.CompletionItemInsertTextRule
+                         .InsertAsSnippet,
+                     documentation: "Basic for loop.",
+                     range,
+                   },
+                   {
+                     label: "while loop",
+                     kind: monaco.languages.CompletionItemKind.Snippet,
+                     insertText: [
+                       "while (${1:condition}) {",
+                       "    $0",
+                       "}",
+                     ].join("\n"),
+                     insertTextRules:
+                       monaco.languages.CompletionItemInsertTextRule
+                         .InsertAsSnippet,
+                     documentation: "Basic while loop.",
+                     range,
+                   },
+                 ];
+
+                 // Filter out duplicates based on current word
+                 const filtered = suggestions.filter((item) =>
+                   item.label.toLowerCase().startsWith(word.word.toLowerCase())
+                 );
+
+                 return {
+                   suggestions: filtered,
+                 };
+               },
+             });
+
+             monaco.editor.defineTheme("java-playground", {
+               base: "vs", //  light theme
+               inherit: true,
+               rules: [
+                 { token: "keyword", foreground: "0000FF", fontStyle: "bold" }, // Blue
+                 { token: "type.identifier", foreground: "2B91AF" }, // Teal blue
+                 { token: "method", foreground: "B58B00" }, // gold  for method
+                 {
+                   token: "comment",
+                   foreground: "008000",
+                   fontStyle: "italic",
+                 }, // Green
+                 { token: "string", foreground: "A31515" }, // Red-maroon
+                 { token: "number", foreground: "098658" }, // Dark green
+                 { token: "operator", foreground: "000000" }, // Black
+               ],
+               colors: {},
+             });
+
+             monaco.editor.setTheme("java-playground");
 
             // prevents redundant additions of new dropdown action
             if (LLMActionAdded === false) {
