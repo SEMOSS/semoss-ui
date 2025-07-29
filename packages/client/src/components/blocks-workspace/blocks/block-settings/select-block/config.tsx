@@ -95,6 +95,10 @@ export const config: BlockSettingsConfig = {
             name: 'On Change',
             children: [...buildListener('onChange')],
         },
+        {
+            name: 'On Open',
+            children: [...buildListener('onOpen')],
+        },
     ],
     styleMenu: [],
 };

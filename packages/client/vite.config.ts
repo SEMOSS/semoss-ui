@@ -1,51 +1,42 @@
-/// <reference types='vitest' />
-import { defineConfig } from 'vitest/config';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
-import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
-import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { resolve } from 'node:path';
 
-export default defineConfig({
-    root: __dirname,
-    cacheDir: '../../node_modules/.vite/packages/client',
+export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), '');
 
-    plugins: [
-        react({ include: /\.(js|jsx|ts|tsx)$/ }),
-        nxViteTsPaths(),
-        nxCopyAssetsPlugin(['*.md']),
-    ],
+    const isProduction = mode === 'production';
 
-    resolve: {
-        alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
-    },
-    // Uncomment this if you are using workers.
-    // worker: {
-    //  plugins: [ nxViteTsPaths() ],
-    // },
+    const MODULE = env.MODULE;
+    const ENDPOINT = env.ENDPOINT;
 
-    test: {
-        name: 'client',
-        watch: false,
-        globals: true,
-        environment: 'jsdom',
-        include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-        deps: {
-            // Required for vitest-canvas-mock
-            inline: ['vitest-canvas-mock'],
+    return {
+        base: './',
+        plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
+        resolve: {
+            alias: [{ find: '@', replacement: resolve(__dirname, './src') }],
         },
-        reporters: ['default'],
-        coverage: {
-            reportsDirectory: '../../coverage/packages/client',
-            provider: 'v8',
+        define: {
+            'import.meta.env.MODULE': JSON.stringify(MODULE),
         },
-        environmentOptions: {
-            jsdom: {
-                resources: 'usable',
+        build: {
+            minify: isProduction,
+            commonjsOptions: { transformMixedEsModules: true },
+        },
+        server: {
+            proxy: {
+                [MODULE]: {
+                    target: ENDPOINT,
+                    changeOrigin: true,
+                    secure: false,
+                    preserveHeaderKeyCase: true,
+                },
             },
         },
-        cache: {
-            dir: '../../node_modules/.vitest',
+        test: {
+            environment: 'jsdom',
+            globals: true,
+            setupFiles: ['./vitest.setup.ts'],
         },
-        setupFiles: ['./vitest.setup.ts'],
-    },
+    };
 });

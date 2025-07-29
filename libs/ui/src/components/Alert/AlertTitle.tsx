@@ -9,10 +9,13 @@ export interface AlertTitleProps {
     sx?: SxProps;
 }
 
-export const AlertTitle = (props: AlertTitleProps) => {
-    const { children, sx } = props;
+export const AlertTitle: React.FC<AlertTitleProps> = ({
+    children,
+    sx,
+    ...otherProps
+}) => {
     return (
-        <MuiAlertTitle sx={sx} {...props}>
+        <MuiAlertTitle sx={sx} {...otherProps}>
             {children}
         </MuiAlertTitle>
     );
