@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 
 import {
@@ -19,7 +19,7 @@ import { useEngine, useRootStore } from '@/hooks';
 import { EngineModelTestSidebar } from '@/components/settings';
 import { runPixel } from '@semoss/sdk/react';
 import { IconButton, Avatar } from '@mui/material';
-import { Send, CopyAll, Refresh, ThumbUpOffAlt, ThumbDownOffAlt } from '@mui/icons-material';
+import { Send, CopyAll, Refresh } from '@mui/icons-material';
 import { FeedbackButtons } from '@/components/engine/FeedbackButtons';
 import { extractInitials } from '@/utility/general';
 
@@ -29,7 +29,7 @@ const StyledLayout = styled('div')(({ theme }) => ({
     gap: theme.spacing(2),
 }));
 
-const StyledContainer = styled('div')(({ theme }) => ({
+const StyledContainer = styled('div')(() => ({
     flex: 1,
     display: 'flex',
     flexDirection: 'column',
@@ -166,6 +166,7 @@ export const EngineModelChatPage = () => {
 
     const { configStore } = useRootStore();
     const promptValue = watch('prompt');
+    const chatEndRef = useRef<HTMLDivElement>(null);
 
     // Helper to create a new insight from backend
     const createNewInsight = async () => {
@@ -188,6 +189,13 @@ export const EngineModelChatPage = () => {
         setMessages([]);
         createNewInsight(); // Get a new insightId from backend
     }, [active.id]);
+
+    useEffect(() => {
+        if (messages.length > 3) {
+            chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+        , [messages]);
 
     const sendMessage = async (data: { prompt: string }) => {
         if (!data.prompt.trim()) return;
@@ -256,6 +264,17 @@ export const EngineModelChatPage = () => {
             [messageId]: value
         }));
         sendFeedback(messageId, value);
+    }
+
+    const handleRewrite = async (messageId: string) => {
+        const modelMessageIndex = messages.findIndex(msg => msg.id === messageId);
+        const previousUserMessage = modelMessageIndex > 0 && messages[modelMessageIndex - 1].isUser ? messages[modelMessageIndex - 1] : null;
+        if (previousUserMessage) {
+            // reset({ prompt: messages[modelMessageIndex].content });
+            sendMessage({ prompt: previousUserMessage.content });
+        } else {
+            setError('No previous user message found to rewrite from.');
+        }
     }
 
 
@@ -329,7 +348,7 @@ export const EngineModelChatPage = () => {
                                                             variant="text"
                                                             startIcon={<Refresh />}
                                                             size="small"
-                                                            onClick={() => handleSubmit(sendMessage)}
+                                                            onClick={() => handleRewrite(message.id)}
                                                             disabled={isLoading || isInsightLoading}
                                                         >
                                                             Rewrite
@@ -343,7 +362,6 @@ export const EngineModelChatPage = () => {
                                                         <IconButton
                                                             size="small"
                                                             onClick={() => navigator.clipboard.writeText(message.content)}
-                                                            sx={{ padding: 0 }}
                                                             aria-label="Copy tokens to clipboard"
                                                         >
                                                             <CopyAll fontSize="small" sx={{ opacity: 0.7 }} />
@@ -362,6 +380,7 @@ export const EngineModelChatPage = () => {
                                         </Typography>
                                     </StyledMessageBubble>
                                 )}
+                                <div ref={chatEndRef} />
                             </StyledMessagesContainer>
                             <StyledForm onSubmit={handleSubmit(sendMessage)} >
                                 <StyledInputContainer>
@@ -371,12 +390,12 @@ export const EngineModelChatPage = () => {
                                         render={({ field }) => (
                                             <TextField
                                                 {...field}
-                                                multiline
-                                                maxRows={1}
+                                                maxRows={4}
                                                 placeholder="Ask a question..."
                                                 variant="outlined"
                                                 fullWidth
                                                 disabled={isLoading || isInsightLoading}
+                                                size='small'
                                                 InputProps={{
                                                     endAdornment: (
                                                         <StyledSendButton
