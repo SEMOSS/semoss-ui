@@ -1,10 +1,11 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 
-import { useBlock, useDebounce } from "../../../hooks";
+import { debounced } from "@semoss/sdk/react";
+
+import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { LinearProgress, TextField, styled } from "@mui/material";
-import { debounced } from "../../../utility";
 
 const StyledTextField = styled(TextField)({
     "& .MuiFormLabel-root.MuiInputLabel-root": {
