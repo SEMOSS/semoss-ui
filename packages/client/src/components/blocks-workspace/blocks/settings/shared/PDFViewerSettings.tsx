@@ -281,7 +281,7 @@ export const PDFViewerSettings = observer(
                 uploadTemp = await upload(file, insightId, appId, "version/assets/");
 
                 setData("selectedPdf", uploadTemp[0].fileLocation, true);
-                setData("engineID", "", true);
+                setData("engineId", "", true);
                 setSelectedPdfPath(uploadTemp[0].fileLocation || "");
 
                 notification.add({
@@ -496,7 +496,7 @@ const EngineTab: React.FC<{
                                                                     key={option.id}
                                                                     style={{ paddingLeft: "32px", cursor: "pointer" }}
                                                                     onClick={() => {
-                                                                        setData("engineID", option.engineId, true);
+                                                                        setData("engineId", option.engineId, true);
                                                                         setData("selectedPdf", option.path, true);
                                                                         setSelectedPdfPath(option.path);
                                                                         setEngineAutocompleteOpen(false);
@@ -589,7 +589,7 @@ const AppTab: React.FC<{
                     }}
                     onChange={(_, value) => {
                         setData("selectedPdf", value?.path || "", true);
-                        setData("engineID", "", true);
+                        setData("engineId", "", true);
                         setSelectedPdfPath(value?.path || "");
                     }}
                     freeSolo={false}
