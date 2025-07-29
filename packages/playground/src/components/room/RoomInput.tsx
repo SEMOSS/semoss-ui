@@ -200,8 +200,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 		const isEmpty = input.trim().length === 0;
 
-		console.log(isDragging, files);
-
 		return (
 			<>
 				<StyledContainer>

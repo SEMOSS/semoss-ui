@@ -178,6 +178,9 @@ export const NewRoomPage = observer(() => {
 		// create a new room
 		const room = await chat.createRoom(chat.models.selected, prompt);
 
+		// initialize it
+		await room.initialize();
+
 		// ask the room
 		await room.askModel(prompt, files, options);
 

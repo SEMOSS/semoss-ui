@@ -110,8 +110,6 @@ export const RoomPage = observer(() => {
 		);
 	}
 
-	console.log(room.modelId, chat.models.selected);
-
 	return (
 		<StyledPage direction={"column"} spacing={3}>
 			<Stack

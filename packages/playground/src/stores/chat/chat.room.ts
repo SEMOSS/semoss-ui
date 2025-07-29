@@ -271,13 +271,12 @@ export class ChatRoom {
 			const messages: Record<string, ChatMessage> = {};
 
 			// store the last model
-			let activeModelId = "";
+			let activeModelId = this._store.modelId;
 			let activeOptions: Pick<
 				ChatRoomInterface["options"],
 				"tokenLength" | "temperature"
 			> = {
-				tokenLength: TOKEN_LENGTH,
-				temperature: TEMPERATURE,
+				...this._store.options,
 			};
 
 			for (const pixelMessage of output) {
@@ -295,6 +294,7 @@ export class ChatRoom {
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
 					activeOptions = {
+						...activeOptions,
 						temperature: pixelMessage.paramMap.temperature,
 						tokenLength: pixelMessage.paramMap.max_new_tokens,
 					};
@@ -408,7 +408,7 @@ engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
 command=["<encode>${prompt}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-url=[${uploaded.map((file) => file.fileLocation).join(",")}],
+${files.length ? `url=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "url=[],"}
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
@@ -604,12 +604,12 @@ paramValues=[${JSON.stringify({
 			});
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
 			message.updateType("AGENT");
-			message.updateContent({
-				type: "APP",
-				name: pixelMessage.toolResponse.name,
-				id: pixelMessage.toolResponse.arguments.id,
-				map: pixelMessage.toolResponse.arguments.map,
-			});
+			// message.updateContent({
+			// 	type: "APP",
+			// 	name: pixelMessage.toolResponse.name,
+			// 	id: pixelMessage.toolResponse.arguments.id,
+			// 	map: pixelMessage.toolResponse.arguments.map,
+			// });
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			message.updateType("AGENT");
 			message.updateContent({
@@ -666,6 +666,7 @@ paramValues=[${JSON.stringify({
 	 * @param fileKey - key
 	 */
 	private upload = async (files: File[]) => {
+		console.log(this._insightID);
 		// get the response
 		return await upload(files, this._insightID, "", "/images");
 	};
