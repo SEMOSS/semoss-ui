@@ -1,6 +1,5 @@
-import { download, runPixel } from "@semoss/sdk/react";
 import { makeAutoObservable, runInAction } from "mobx";
-
+import { download, runPixel, upload } from "@semoss/sdk/react";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { Knowledge, PixelMessage, Tool } from "@/types";
 import { ChatMessage } from "./chat.message";
@@ -336,6 +335,7 @@ export class ChatRoom {
 	 */
 	askModel = async (
 		prompt: string,
+		files: File[],
 		options?: Partial<ChatRoomInterface["options"]>,
 	): Promise<void> => {
 		try {
@@ -365,6 +365,9 @@ export class ChatRoom {
 			});
 			// add it to the log
 			this._store.history.push(inputMessage);
+
+			// upload the files
+			const uploaded = await this.upload(files);
 
 			// build the context if it is there
 			let context = "";
@@ -405,8 +408,7 @@ engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
 command=["<encode>${prompt}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-image=[],
-url=[],
+url=[${uploaded.map((file) => file.fileLocation).join(",")}],
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
@@ -657,6 +659,15 @@ paramValues=[${JSON.stringify({
 	private download = async (fileKey: string) => {
 		// get the response
 		await download(this._insightID, fileKey);
+	};
+
+	/**
+	 * Upload a file
+	 * @param fileKey - key
+	 */
+	private upload = async (files: File[]) => {
+		// get the response
+		return await upload(files, this._insightID, "", "/images");
 	};
 
 	// /**

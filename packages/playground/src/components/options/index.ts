@@ -1,2 +1,2 @@
-export * from './OptionsMenuComponent';
-export * from './OptionsPickerComponent';
+export * from "./OptionsMenu";
+export * from "./OptionsPicker";
