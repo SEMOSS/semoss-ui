@@ -482,10 +482,10 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
                tokenizer: {
                  root: [
-                   // ✅ Match method calls like doSomething()
+                   //  Match method calls like doSomething()
                    [/\b[a-zA-Z_][\w$]*(?=\s*\()/, "method"],
 
-                   // ✅ Keywords
+                   //  Keywords
                    [
                      /[a-z_$][\w$]*/,
                      {
@@ -496,7 +496,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                      },
                    ],
 
-                   // ✅ Types
+                   //  Types
                    [/[A-Z][\w\$]*/, "type.identifier"],
 
                    { include: "@whitespace" },
