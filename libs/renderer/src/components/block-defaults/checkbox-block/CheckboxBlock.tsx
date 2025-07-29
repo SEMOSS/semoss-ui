@@ -2,10 +2,11 @@ import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Checkbox, styled } from "@mui/material";
 
+import { Box } from "@semoss/ui";
+import { debounced } from "@semoss/sdk/react";
+
 import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-import { debounced } from "../../../utility";
-import { Box } from "@semoss/ui";
 
 export interface CheckboxBlockDef extends BlockDef<"checkbox"> {
     widget: "checkbox";
@@ -50,22 +51,21 @@ export const CheckboxBlock: BlockComponent = observer(({ id }) => {
         listeners.onChange();
     }, 200);
 
-   return (
-    <StyledContainer {...attrs}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <StyledCheckbox
-                style={{ ...data.style }}
-                disabled={data.disabled}
-                checked={data.value}
-                onChange={(e) => {
-                    const value = e.target.checked;
-                    setData("value", value);
-                    debouncedCallback();
-                }}
-            />
-            <Box>{data.label}</Box>
-        </Box>
-    </StyledContainer>
-);
-
+    return (
+        <StyledContainer {...attrs}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <StyledCheckbox
+                    style={{ ...data.style }}
+                    disabled={data.disabled}
+                    checked={data.value}
+                    onChange={(e) => {
+                        const value = e.target.checked;
+                        setData("value", value);
+                        debouncedCallback();
+                    }}
+                />
+                <Box>{data.label}</Box>
+            </Box>
+        </StyledContainer>
+    );
 });

@@ -1,15 +1,16 @@
 import { useEffect, useState, useReducer } from 'react';
 import { observer } from 'mobx-react-lite';
+
 import {
     Stack,
     Typography,
     Button,
     styled,
-    Skeleton,
     ToggleTabsGroup,
     TextField,
     InputAdornment,
 } from '@semoss/ui';
+import { debounced } from '@semoss/sdk/react';
 
 import { useNavigate } from 'react-router-dom';
 
@@ -65,20 +66,13 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
     },
 }));
 
-const AppTileSkeleton = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    margin: theme.spacing(1),
-    marginRight: theme.spacing(0.5),
-    marginTop: theme.spacing(5),
-    marginBottom: theme.spacing(5),
-}));
 type MODE = 'Mine' | 'Discoverable' | 'System';
 
 const initialState = {
     favoritedApps: [],
     apps: [],
 };
+const SKELETON_CARD_COUNT = 6;
 
 const reducer = (state, action) => {
     switch (action.type) {
@@ -153,10 +147,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedApps, apps } = state;
-    const search = configStore.store.globalSearch || '';
     const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
     const [mode, setMode] = useState<MODE>('Mine');
 
+    const [inputValue, setInputValue] = useState('');
+    const [search, setSearch] = useState('');
+
+        let testVar = 'hello'
+
+        
     // get a list of the keys
     const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
         (k) => {
@@ -237,6 +236,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
             value: getFavoritedApps.data,
         });
     }, [getFavoritedApps.status, getFavoritedApps.data]);
+
+    const debouncedSet = debounced((newInputValue) => {
+        setSearch(newInputValue);
+    }, 300);
+
+    const handleInputChange = (newInputValue) => {
+        setInputValue(newInputValue);
+        debouncedSet(newInputValue);
+    };
 
     /**
      * @name favoriteApp
@@ -333,6 +341,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         )}
                     </Stack>
                 </Stack>
+                <TextField
+                    size="small"
+                    label="Search"
+                    value={inputValue}
+                    onChange={(e) => handleInputChange(e.target.value)}
+                />
                 <StyledContainer>
                     {!configStore.store.config.adminOnlyViewMenuBarFlag &&
                         configStore.isEngineOperationAvailable(
@@ -388,65 +402,43 @@ export const AppCatalogPage = observer((): JSX.Element => {
                             </StyledSectionLabel>
                         ) : null}
 
-                        {mode !== 'System' &&
-                            (getFavoritedApps.status === 'LOADING' ||
-                                favoritedApps.length > 0) && (
-                                <StyledSection>
-                                    {getFavoritedApps.status === 'LOADING'
-                                        ? Array.from({ length: 3 }).map(
-                                              (_, i) => (
-                                                  <AppTileSkeleton key={i}>
-                                                      <Skeleton
-                                                          variant="rectangular"
-                                                          width={250}
-                                                          height={118}
-                                                      />
-                                                      <Skeleton
-                                                          width="100%"
-                                                          height={25}
-                                                      />
-                                                      <Skeleton
-                                                          width="60%"
-                                                          height={25}
-                                                      />
-                                                  </AppTileSkeleton>
-                                              ),
-                                          )
-                                        : favoritedApps.map((app) => (
-                                              <AppTileCard
-                                                  key={app.project_id}
-                                                  app={app}
-                                                  systemApp={false}
-                                                  href={
-                                                      mode === 'Discoverable'
-                                                          ? `#/app/${app.project_id}/detail`
-                                                          : `#/app/${app.project_id}/view`
-                                                  }
-                                                  onAction={() => {
-                                                      if (
-                                                          mode ===
-                                                          'Discoverable'
-                                                      ) {
-                                                          navigate(
-                                                              `/app/${app.project_id}/detail`,
-                                                          );
-                                                      } else {
-                                                          navigate(
-                                                              `/app/${app.project_id}/view`,
-                                                          );
-                                                      }
-                                                  }}
-                                                  appType={app.project_type}
-                                                  isFavorite={isFavorited(
-                                                      app.project_id,
-                                                  )}
-                                                  favorite={() => {
-                                                      favoriteApp(app);
-                                                  }}
-                                              />
-                                          ))}
-                                </StyledSection>
-                            )}
+                        {mode != 'System' && favoritedApps.length > 0 ? (
+                            <StyledSection>
+                                {favoritedApps.map((app) => {
+                                    return (
+                                        <AppTileCard
+                                            key={app.project_id}
+                                            app={app}
+                                            systemApp={false}
+                                            href={
+                                                mode === 'Discoverable'
+                                                    ? `#/app/${app.project_id}/detail`
+                                                    : `#/app/${app.project_id}/view`
+                                            }
+                                            onAction={() => {
+                                                if (mode === 'Discoverable') {
+                                                    navigate(
+                                                        `/app/${app.project_id}/detail`,
+                                                    );
+                                                } else {
+                                                    navigate(
+                                                        `/app/${app.project_id}/view`,
+                                                    );
+                                                }
+                                            }}
+                                            appType={app.project_type}
+                                            isFavorite={isFavorited(
+                                                app.project_id,
+                                            )}
+                                            favorite={() => {
+                                                favoriteApp(app);
+                                            }}
+                                            isDiscoverable={mode !== 'Mine'}
+                                        />
+                                    );
+                                })}
+                            </StyledSection>
+                        ) : null}
 
                         {mode == 'System' && (
                             <StyledSectionLabel variant="subtitle1">
@@ -482,6 +474,22 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                 )}
                             </StyledSection>
                         )}
+                        {mode != 'System' && getApps.status !== 'SUCCESS' ? (
+                            <StyledSection>
+                                {Array.from({
+                                    length: SKELETON_CARD_COUNT,
+                                }).map((_, i) => (
+                                    <AppTileCard
+                                        key={`skeleton-${i}`}
+                                        app={TERMINAL_APP}
+                                        systemApp={false}
+                                        isDiscoverable={mode !== 'Mine'}
+                                        isLoading={true}
+                                        showSkeleton={true}
+                                    />
+                                ))}
+                            </StyledSection>
+                        ) : null}
                         {mode != 'System' && apps.length > 0 ? (
                             <StyledSectionLabel variant="subtitle1">
                                 All Apps
@@ -536,7 +544,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                                                     removeApp(app);
                                                 }}
                                                 isLoading={true}
-                                                showSkeleton={true}
+                                                showSkeleton={false}
                                             />
                                         );
                                     })}

@@ -10,10 +10,9 @@ import {
 } from "@mui/material";
 
 import { CircularProgress, InputAdornment } from "@semoss/ui";
-
-import { useBlock, useDebounce } from "../../../hooks";
+import { debounced } from "@semoss/sdk/react";
+import { useBlock } from "../../../hooks";
 import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-import { debounced } from "../../../utility";
 
 const StyledLoading = styled(CircularProgress)(({ theme }) => ({
     color: theme.palette.divider,
