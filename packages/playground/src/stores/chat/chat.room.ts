@@ -367,7 +367,7 @@ export class ChatRoom {
 			this._store.history.push(inputMessage);
 
 			// upload the files
-			const uploaded = await this.upload(files);
+			const uploaded = await this.upload(files, "");
 
 			// build the context if it is there
 			let context = "";
