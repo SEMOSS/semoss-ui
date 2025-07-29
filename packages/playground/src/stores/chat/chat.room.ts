@@ -408,7 +408,7 @@ engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
 command=["<encode>${prompt}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${files.length ? `url=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "url=[],"}
+${files.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
@@ -665,9 +665,9 @@ paramValues=[${JSON.stringify({
 	 * Upload a file
 	 * @param fileKey - key
 	 */
-	private upload = async (files: File[]) => {
+	private upload = async (files: File[], path: string = "") => {
 		// get the response
-		return await upload(files, this._insightID, "", "/images");
+		return await upload(files, this._insightID, "", path);
 	};
 
 	// /**
