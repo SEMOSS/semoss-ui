@@ -258,6 +258,13 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
         }
     }, [sentCount]);
 
+    // Refetch summarized mails when summarizeCount changes and tab is 'summarize'
+    useEffect(() => {
+        if (tab === "summarize") {
+            summarizeTopK(summarizeCount);
+        }
+    }, [summarizeCount]);
+
     // Send Mail
     const onSendSubmit = handleSendSubmit(
         async (sendData: showGmailSendForm) => {
@@ -322,6 +329,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                     });
                     // Refresh sent mails after sending
                     fetchSentMails(sentCount);
+                    summarizeTopK(summarizeCount);
                 }
             } catch (error) {
                 notification.add({
@@ -368,19 +376,12 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                         response.pixelReturn[0].output
                     ) {
                         const output = response.pixelReturn[0].output as any;
-                        if (
-                            output.from &&
-                            Array.isArray(output.from) &&
-                            output.from[0]?.address
-                        ) {
-                            from = output.from[0].address;
+                        // Handle both string and array/object for from/to
+                        if (output.from) {
+                            from = output.from;
                         }
-                        if (
-                            output.to &&
-                            Array.isArray(output.to) &&
-                            output.to[0]?.address
-                        ) {
-                            to = output.to[0].address;
+                        if (output.to) {
+                            to = output.to;
                         }
                         if (output.subject) {
                             subject = output.subject;
@@ -1093,7 +1094,6 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                                         if (isNaN(val) || val < 1) val = 1;
                                         setSummarizeCount(val);
                                         setSummarizeCountInput(String(val));
-                                        summarizeTopK(val);
                                     }}
                                     onKeyDown={(e) => {
                                         if (e.key === "Enter") {
@@ -1104,7 +1104,6 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                                             if (isNaN(val) || val < 1) val = 1;
                                             setSummarizeCount(val);
                                             setSummarizeCountInput(String(val));
-                                            summarizeTopK(val);
                                         }
                                     }}
                                     sx={{ width: 80 }}
