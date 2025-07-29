@@ -78,17 +78,17 @@ const StyledOverlayContent = styled("div")(({ theme }) => ({
   paddingRight: theme.spacing(2),
 }));
 
-const StyledTileCardMedia = styled(Card.Media)({
+const StyledTileCardMedia = styled(Card.Media)(({ theme }) => ({
   display: "flex",
   alignItems: "flex-start",
-  gap: "10px",
+  gap: theme.spacing(1.25),
   alignSelf: "stretch",
   overflowClipMargin: "content-box",
   overflow: "clip",
   objectFit: "cover",
   width: "100%",
   height: "77px",
-});
+}));
 
 const StyledPublishedByContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -289,7 +289,7 @@ const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
     alignItems: "center",
     height: "30px",
     width: "123px",
-    gap: "8px",
+    gap: theme.spacing(1),
     justifyContent: "center",
     flex: "1 0 0",
     borderRadius: "12px",
