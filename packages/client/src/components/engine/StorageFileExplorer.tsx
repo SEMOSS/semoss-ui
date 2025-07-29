@@ -52,9 +52,12 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const [refreshCounter, setRefreshCounter] = useState(0);
     const [openPopUp, setOpenPopUp] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+<<<<<<< HEAD
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
 
+=======
+>>>>>>> fa6a47710 (remove conflicts)
 
     /**
      * Refresh the file list
@@ -167,10 +170,16 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     /**
      * Handle file download
      */
-    const handleDownload = (path: string) => {
+    const handleDownload = async (path: string) => {
         console.log('Download initiated for path:', path);
         // In a real implementation, you might want to show download progress
         // or a success notification
+        const response = await monolithStore.runQuery(`
+            Storage(storage = "${id}") | SyncLocalToStorage(storagePath='/', filePath=[${fileLocations}]);
+            `);
+
+        let pixel = `Storage(storage = "8be5fb68-ffab-47bd-af2a-cd409b51e732") | SyncStorageToLocal(storagePath="/java_cheatsheet.pdf",filePath="/", space=[]);`;
+
     };
 
     /**
@@ -191,67 +200,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         refreshFiles();
     };
 
-    /**
-     * Handle file upload to storage
-     */
-    const handleUploadToStorage = handleSubmit(async (data: FileUploadForm) => {
-        setIsUploading(true);
-
-        try {
-            // Upload files to the server first
-            const upload = await monolithStore.uploadFile(
-                data.PROJECT_UPLOAD,
-                configStore.store.insightID,
-            );
-
-            // For each uploaded file, push to storage
-            for (const file of upload) {
-                const { fileLocation } = file;
-                const fileName = fileLocation.split('/').pop() || 'unknown';
-                const storageFilePath = `${data.STORAGE_PATH}/${fileName}`.replace(/\/+/g, '/');
-
-                // Push file to storage using the storage pixel
-                const response = await monolithStore.runQuery(`
-                    Storage(storage = "${id}") | PushToStorage(storagePath="${storageFilePath}", filePath="${fileLocation}");
-                `);
-
-                const { output, operationType } = response.pixelReturn[0];
-
-                if (operationType.indexOf('ERROR') !== -1) {
-                    notification.add({
-                        color: 'error',
-                        message: `Failed to upload ${fileName}: ${output}`,
-                    });
-                } else {
-                    notification.add({
-                        color: 'success',
-                        message: `Successfully uploaded ${fileName} to storage`,
-                    });
-                }
-            }
-
-            // Close modal and refresh
-            setUploadModalOpen(false);
-            setValue('PROJECT_UPLOAD', []);
-            setValue('STORAGE_PATH', '/');
-            refreshFiles();
-
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        } finally {
-            setIsUploading(false);
-        }
-    });
-
-    /**
-     * Handle global upload button click
-     */
-    const handleGlobalUpload = () => {
-        setUploadModalOpen(true);
-    };
 
     return (
         <StyledContainer>
@@ -269,7 +217,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     <Button
                         variant="outlined"
                         startIcon={<CloudUploadOutlined />}
-                        // onClick={handleGlobalUpload}
                         onClick={() => setOpenPopUp(true)}
                         size="small"
                     >
@@ -305,6 +252,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                         <Controller
 <<<<<<< HEAD
                             name={'PROJECT_UPLOAD'}
+<<<<<<< HEAD
 =======
                             name="STORAGE_PATH"
                             control={control}
@@ -337,6 +285,8 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                         <Controller
                             name="PROJECT_UPLOAD"
 >>>>>>> e6dd70a50 (Revert "Update StorageFileExplorer.tsx")
+=======
+>>>>>>> fa6a47710 (remove conflicts)
                             control={control}
                             rules={{}}
                             render={({ field }) => {
