@@ -202,9 +202,11 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
   backgroundColor: theme.palette.background.paper,
   height: "28px",
   width: "28px",
-  radius: "24px",
-  "&:hover": {
+  borderRadius: "24px",
+  zIndex: 1,
+  "&.MuiButtonBase-root :hover": {
     backgroundColor: theme.palette.background.paper,
+    borderRadius: "24px",
     $icon: {
       color: "red",
     },
@@ -434,7 +436,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     } else {
       setLoading(false);
     }
-  }, []);
+  }, [isLoading]);
 
   // Intersection Observer to detect if card is in viewport
   useEffect(() => {

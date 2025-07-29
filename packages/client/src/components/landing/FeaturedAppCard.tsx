@@ -1,4 +1,4 @@
-import { ReactElement } from "react";
+import { ReactNode } from "react";
 import { observer } from "mobx-react-lite";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
@@ -19,7 +19,7 @@ const StyledInnerContainer = styled("div")(({ theme }) => ({
   padding: theme.spacing(2),
   justifyContent: "space-between",
   flexDirection: "column",
-  width: "fill-available",
+  width: "100%",
 }));
 
 const StyledContainerTitleSection = styled("div")(({ theme }) => ({
@@ -99,7 +99,7 @@ interface FeaturedAppCardProps {
   /**
    * Tagline
    */
-  tagline: string | ReactElement;
+  tagline: ReactNode;
 
   /**
    * the chip to display
