@@ -263,31 +263,66 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
         async (sendData: showGmailSendForm) => {
             try {
                 // Pixel call for sending email with user-provided recipient
-                await runPixel(
-                    `GoogleSendGmail(toemail=\"${sendData.GMAIL_TO}\", subject=\"${sendData.GMAIL_TITLE}\", body=\"${sendData.GMAIL_CONTENT}\")`,
+                const response = await runPixel(
+                    `GoogleSendGmail(toemail="${sendData.GMAIL_TO}", subject="${sendData.GMAIL_TITLE}", body="${sendData.GMAIL_CONTENT}")`,
                 );
-                setSentMail({
-                    title: sendData.GMAIL_TITLE,
-                    content: sendData.GMAIL_CONTENT,
-                });
-                resetSend();
-                setData(
-                    "showGmailSendForm",
-                    false as PathValue<
-                        GmailBlockDef["data"],
-                        "showGmailSendForm"
-                    >,
-                );
-                setData(
-                    "showSendForm",
-                    true as PathValue<GmailBlockDef["data"], "showSendForm">,
-                );
-                notification.add({
-                    color: "success",
-                    message: "Mail sent successfully!",
-                });
-                // Refresh sent mails after sending
-                fetchSentMails(sentCount);
+                let isError = false;
+                let errorMsg = "";
+                if (
+                    response &&
+                    response.pixelReturn &&
+                    response.pixelReturn[0]
+                ) {
+                    const pixel = response.pixelReturn[0];
+                    const output = pixel.output;
+                    const opType = pixel.operationType;
+                    if (
+                        (Array.isArray(opType) && opType.includes("ERROR")) ||
+                        (typeof output === "string" &&
+                            (output.includes("Failed to send email") ||
+                                output.includes("Invalid To header") ||
+                                output.includes("400 Bad Request") ||
+                                output.includes("INVALID_ARGUMENT")))
+                    ) {
+                        isError = true;
+                        errorMsg =
+                            typeof output === "string"
+                                ? output
+                                : "Failed to send mail.";
+                    }
+                }
+                if (isError) {
+                    notification.add({
+                        color: "error",
+                        message: errorMsg || "Failed to send mail.",
+                    });
+                } else {
+                    setSentMail({
+                        title: sendData.GMAIL_TITLE,
+                        content: sendData.GMAIL_CONTENT,
+                    });
+                    resetSend();
+                    setData(
+                        "showGmailSendForm",
+                        false as PathValue<
+                            GmailBlockDef["data"],
+                            "showGmailSendForm"
+                        >,
+                    );
+                    setData(
+                        "showSendForm",
+                        true as PathValue<
+                            GmailBlockDef["data"],
+                            "showSendForm"
+                        >,
+                    );
+                    notification.add({
+                        color: "success",
+                        message: "Mail sent successfully!",
+                    });
+                    // Refresh sent mails after sending
+                    fetchSentMails(sentCount);
+                }
             } catch (error) {
                 notification.add({
                     color: "error",
