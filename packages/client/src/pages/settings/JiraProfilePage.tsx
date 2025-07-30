@@ -12,6 +12,7 @@ import {
     TextField,
     Paper,
     Modal,
+    Autocomplete
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
@@ -60,6 +61,7 @@ interface SaveAPIKeyForm {
     USERID: string;
     URL: string;
     NAME: string;
+    PROJECTS: string;
 }
 
 export const JiraProfilePage = () => {
@@ -69,13 +71,15 @@ export const JiraProfilePage = () => {
     const [addModal, setAddModal] = useState(false);
     const [savedApiKeys, setSavedApiKeys] = useState([]);
     const [deleteApiKey, setDeleteApiKey] = useState({});
+    const [projectsData, setProjectsData] = useState([]);
 
-    const { control, reset, handleSubmit } = useForm<SaveAPIKeyForm>({
+    const { getValues,control, reset, handleSubmit } = useForm<SaveAPIKeyForm>({
         defaultValues: {
             APIKEY: '',
             USERID: '',
             URL: '',
             NAME: '',
+            PROJECTS: '',
         },
     });
 
@@ -89,7 +93,7 @@ export const JiraProfilePage = () => {
     }, []);
 
     const getSavedApiKeysQuery = async () => {
-        const pixel = `META | JiraGet()`;
+        const pixel = `META | JiraGetApiKeys()`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -113,7 +117,8 @@ export const JiraProfilePage = () => {
         const safeApiKey = escapePixelString(data.APIKEY);
         const safeUrl = escapePixelString(data.URL);
         const safeName = escapePixelString(data.NAME);
-        const pixel = `META | JiraInsert(userid="${safeUserId}",apikey="${safeApiKey}",url="${safeUrl}",keyname="${safeName}")`;
+        const safeProject = escapePixelString(data.PROJECTS);
+        const pixel = `META | JiraInsertApikey(userid="${safeUserId}",apikey="${safeApiKey}",url="${safeUrl}",keyname="${safeName}",project="${safeProject}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -121,7 +126,7 @@ export const JiraProfilePage = () => {
                     throw new Error("Empty response from Jira Pixel call");
                 }
                 const type = response.pixelReturn[0].operationType;
-                const output = response.pixelReturn[0].output.Success;
+                const output = response.pixelReturn[0].output.success;
                 if (type.indexOf('ERROR') === -1 && output === true) {
                     notification.add({
                         color: 'success',
@@ -145,7 +150,7 @@ export const JiraProfilePage = () => {
 
     const DeleteAPIKey = async (keyName: string) => {
         const safeKeyName = escapePixelString(keyName);
-        const pixel = `META | JiraDeleteDbUser(keyname="${safeKeyName}")`;
+        const pixel = `META | JiraDeleteApiKey(keyname="${safeKeyName}")`;
         monolithStore
             .runQuery(pixel)
             .then((response) => {
@@ -153,11 +158,9 @@ export const JiraProfilePage = () => {
                     throw new Error("Empty response from Jira Pixel call");
                 }
                 const type = response.pixelReturn[0].operationType;
-                const output = response.pixelReturn[0].output;
-                if (
-                    type.indexOf('ERROR') === -1 &&
-                    output === `Record deleted successfully for user id ${keyName}`
-                ) {
+                const output = response.pixelReturn[0].output.success;
+                if (type.indexOf('ERROR') === -1 && output === true)
+ {
                     notification.add({
                         color: 'success',
                         message: 'Successfully deleted the API key.',
@@ -166,6 +169,35 @@ export const JiraProfilePage = () => {
                     getSavedApiKeysQuery();
                 } else {
                     throw new Error(response.errors[0]);
+                }
+            })
+            .catch((error) => {
+                notification.add({
+                    color: 'error',
+                    message: error.message,
+                });
+            });
+    };
+
+    const getProjectsData = async () => {
+        const projectDetails = getValues();
+        const pixelCommand = `META | JiraGetProjects(url="${escapePixelString(projectDetails.URL)}",userid="${escapePixelString(projectDetails.USERID)}",apikey="${escapePixelString(projectDetails.APIKEY)}")`;
+        monolithStore
+            .runQuery(pixelCommand)
+            .then((response) => {
+                if (!response.pixelReturn?.length) {
+                    throw new Error("Empty response from Jira Pixel call");
+                }
+                const type = response.pixelReturn[0].operationType;
+                const output = response.pixelReturn[0].output;
+                if (type.indexOf('ERROR') === -1) {
+                    setProjectsData(output);
+                    notification.add({
+                        color: 'success',
+                        message: 'Successfully fetched the projects.',
+                    });
+                } else {
+                    throw new Error(output);
                 }
             })
             .catch((error) => {
@@ -279,28 +311,6 @@ export const JiraProfilePage = () => {
                             className="my-jira-profile-page__generate-key-form"
                         >
                             <Stack direction="column" spacing={2}>
-                                <Controller
-                                    name={'USERID'}
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field }) => {
-                                        return (
-                                            <TextField
-                                                required
-                                                label="User Id"
-                                                value={
-                                                    field.value
-                                                        ? field.value
-                                                        : ''
-                                                }
-                                                onChange={(value) =>
-                                                    field.onChange(value)
-                                                }
-                                                inputProps={{ maxLength: 500 }}
-                                            ></TextField>
-                                        );
-                                    }}
-                                />
 
                                 <Controller
                                     name={'NAME'}
@@ -349,6 +359,29 @@ export const JiraProfilePage = () => {
                                 />
 
                                 <Controller
+                                    name={'USERID'}
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => {
+                                        return (
+                                            <TextField
+                                                required
+                                                label="User Id"
+                                                value={
+                                                    field.value
+                                                        ? field.value
+                                                        : ''
+                                                }
+                                                onChange={(value) =>
+                                                    field.onChange(value)
+                                                }
+                                                inputProps={{ maxLength: 500 }}
+                                            ></TextField>
+                                        );
+                                    }}
+                                />
+
+                                <Controller
                                     name={'APIKEY'}
                                     control={control}
                                     rules={{ required: true }}
@@ -369,6 +402,45 @@ export const JiraProfilePage = () => {
                                             ></TextField>
                                         );
                                     }}
+                                />
+
+                                <Button
+                                        type="button"
+                                        variant={'outlined'}
+                                        color="primary"
+                                        data-testid={
+                                            'my-jira-profile-page-generate-btn'
+                                        }
+                                        onClick={getProjectsData}
+                                    >
+                                        Get Projects
+                                </Button>
+
+                                <Controller
+                                    name="PROJECTS"
+                                    control={control}
+                                    rules={{ required: true }}
+                                    render={({ field }) => (
+                                        <Stack spacing={1}>
+                                            <Autocomplete
+                                                options={projectsData || []}
+                                                getOptionLabel={(option) => option}
+                                                multiple={false}
+                                                value={field.value}
+                                                onChange={(event, newValue) => {
+                                                    field.onChange(newValue);
+
+                                                }}
+                                                renderInput={(params) => (
+                                                    <TextField
+                                                        {...params}
+                                                        label="Projects"
+                                                        fullWidth
+                                                    />
+                                                )}
+                                            />
+                                        </Stack>
+                                    )}
                                 />
 
                                 <Stack direction="row" justifyContent={'start'}>
