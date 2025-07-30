@@ -133,7 +133,7 @@ export const ViewAppPage = observer(() => {
                         )}
                     </IconButton>
                 </Tooltip>
-                <Button
+                {/* <Button
                     variant="text"
                     size={'small'}
                     color="primary"
@@ -142,7 +142,7 @@ export const ViewAppPage = observer(() => {
                     to={`/app/${appId}`}
                 >
                     Go To App Details
-                </Button>
+                </Button> */}
                 <Tooltip title={'Share App'}>
                     <IconButton
                         size="small"

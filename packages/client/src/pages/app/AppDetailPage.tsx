@@ -61,13 +61,9 @@ import { Role } from '@/types';
 import { NavbarLeft, NavbarHeader } from '../../components/shared';
 
 const OuterContainer = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-    // display: 'flex',
-    // flexDirection: 'column',
     height: '100%',
     justifyContent: 'center',
     overflow: 'scroll',
-    paddingTop: '40px',
     width: '100%',
 }));
 
@@ -79,7 +75,6 @@ const InnerContainer = styled('div')(({ theme }) => ({
     margin: 'auto',
     maxWidth: '79rem',
     width: '100%',
-    padding: theme.spacing(4),
 }));
 
 const ActionBar = styled('div')(({ theme }) => ({
@@ -163,7 +158,7 @@ const StyledTabsSection = styled('div')(({ theme }) => ({
     gap: theme.spacing(3),
     padding: '2px',
     backgroundColor: 'white',
-    boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+   // boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
 }));
 
 export const AppDetailPage = () => {
@@ -772,6 +767,7 @@ export const AppDetailPage = () => {
                                             <Chip
                                                 key={`tag-${tag}-${idx}`}
                                                 label={tag}
+                                                variant='outlined'
                                             />
                                         ))}
                                     </TagsBodyWrapper>
