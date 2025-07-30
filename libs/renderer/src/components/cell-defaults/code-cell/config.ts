@@ -17,6 +17,8 @@ export const CodeCellConfig: CellConfig<CodeCellDef> = {
             return `Py("<encode>${code}</encode>");`;
         } else if (type === "pixel") {
             return code;
+        } else if (type === "markdown") {
+            return code;
         } else {
             throw new Error(
                 `Error converting toString ::: ${type} is not valid`,

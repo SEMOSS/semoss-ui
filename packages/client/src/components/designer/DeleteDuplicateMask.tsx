@@ -34,6 +34,7 @@ import { AddClientBlockModal } from './AddClientBlockModal';
 import { QuickMenu } from './QuickMenu';
 import { getRelativeSize, getBlockElement } from '@/stores';
 import { useDesigner, useRootStore } from '@/hooks';
+import DuplicateIcon from '../../assets/img/Duplicate.svg';
 
 const STYLED_BUTTON_GROUP_ICON_BUTTON_WIDTH = 48;
 const STYLED_BUTTON_GROUP_ICON_BUTTON_HEIGHT = 32;
@@ -100,7 +101,9 @@ export const DeleteDuplicateMask = observer(
 
         const hasChildren = block?.slots?.children?.children?.length > 0;
         const isIterationOrContainer =
-            block.widget === 'iteration' || block.widget === 'container';
+            block == null
+                ? false
+                : block.widget === 'iteration' || block.widget === 'container';
         const isChangeable = hasChildren && block.widget !== 'container';
         // check if it is visible
         const isVisible =
@@ -415,7 +418,7 @@ export const DeleteDuplicateMask = observer(
                             size="small"
                             onClick={onDuplicate}
                         >
-                            <ContentCopy />
+                            <img src={DuplicateIcon} alt="Duplicate Icon" />
                         </StyledButtonGroupIconButton>
                     </Tooltip>
                     <Tooltip title="Delete">

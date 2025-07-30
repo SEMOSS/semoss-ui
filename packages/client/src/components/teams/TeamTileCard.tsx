@@ -118,6 +118,17 @@ const StyledModalContentText = styled(Modal.ContentText)({
     marginTop: '12px',
 });
 
+const StyledDeleteModal = styled(Modal)({
+    '& .MuiPaper-root': {
+        width: '600px'
+    }
+});
+
+const StyledDeleteButton = styled(Button)({
+    fontWeight: 500,
+    padding: '6px 16px'
+});
+
 interface TeamCardProps {
     /** ID of team */
     id: string;
@@ -138,8 +149,6 @@ interface TeamCardProps {
     teams;
 
     onClick?: (value: string) => void;
-
-    isCustomGroup?: boolean;
 }
 
 const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
@@ -150,16 +159,7 @@ const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
 }));
 
 export const TeamTileCard = (props: TeamCardProps) => {
-    const {
-        id,
-        description,
-        type,
-        tag,
-        dispatch,
-        teams,
-        onClick,
-        isCustomGroup,
-    } = props;
+    const { id, description, type, tag, dispatch, teams, onClick } = props;
     const AUTOCOMPLETE_OFFSET = 0;
     const AUTOCOMPLETE_LIMIT = 10;
 
@@ -241,7 +241,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
             });
             notification.add({
                 color: 'success',
-                message: 'Successfully deleted group',
+                message: 'Successfully deleted team',
             });
         } catch (e) {
             console.error(e);
@@ -331,7 +331,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
             return;
         }
         setIsLoading(true);
-        if (isCustomGroup) {
+
+        if (type === 'CUSTOM') {
             try {
                 const response = await monolithStore.getNonTeamUsers(
                     id,
@@ -458,7 +459,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                         // transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                     >
                         <MenuList>
-                            {isCustomGroup && (
+                            {type === 'CUSTOM' && (
                                 <MenuItemTwo
                                     onClick={(e) => {
                                         e.stopPropagation();
@@ -473,7 +474,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     </Stack>
                                 </MenuItemTwo>
                             )}
-                            {/* <MenuItemTwo
+                            <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleClose(e);
@@ -484,7 +485,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     <EditIcon />
                                     <div>Edit team</div>
                                 </Stack>
-                            </MenuItemTwo> */}
+                            </MenuItemTwo>
                             <MenuItemTwo
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -515,7 +516,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     </Popover>
                 </StyledActionContainer>
             </StyledTileCard>
-            <Modal open={deleteModal}>
+            <StyledDeleteModal open={deleteModal}>
                 <StyledModalTitle>
                     <Typography sx={{ color: '#000000DE' }} variant="h6">
                         Delete Team
@@ -526,7 +527,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 </StyledModalTitle>
                 <Modal.Content>
                     <Typography sx={{ color: '#000000DE' }} variant="body1">
-                        Are you sure you want to delete group {id}
+                        Are you sure you want to delete this team: {id}
                     </Typography>
                 </Modal.Content>
                 <Modal.Actions
@@ -539,15 +540,15 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     >
                         Cancel
                     </Button>
-                    <Button
+                    <StyledDeleteButton
                         variant="contained"
                         color={'error'}
                         onClick={() => deleteGroup()}
                     >
                         Delete
-                    </Button>
+                    </StyledDeleteButton>
                 </Modal.Actions>
-            </Modal>
+            </StyledDeleteModal>
             <Modal open={addMembersModal} maxWidth="lg">
                 <StyledModalTitle>
                     <Typography sx={{ color: '#000000DE' }} variant="h6">
@@ -756,24 +757,25 @@ export const TeamTileCard = (props: TeamCardProps) => {
             <AddTeamModal
                 open={editTeam}
                 isEdit={true}
-                type={type?.toLocaleLowerCase()}
+                type={type}
                 id={id}
                 description={description}
                 onClose={(team) => {
                     if (team) {
-                        const obj = {
-                            id: team.id,
-                            description: team.description,
-                        };
-
-                        if (team.type != 'Custom') {
-                            obj['type'] = team.type;
-                        }
+                        const updatedTeams = teams.map((t) =>
+                            t.id === team.previousTeamName
+                                ? {
+                                      id: team.id,
+                                      description: team.description,
+                                      type: team.type,
+                                  }
+                                : t,
+                        );
 
                         dispatch({
                             type: 'field',
                             field: 'teams',
-                            value: [...teams, obj],
+                            value: updatedTeams, // Update the existing team in the array
                         });
                     }
                     setEditTeam(false);

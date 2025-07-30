@@ -4,9 +4,6 @@ import {
     VisualizationFilterBlock,
 } from "./VisualizationFilterBlock";
 import { BLOCK_TYPE_CHART } from "../block-defaults.constants";
-import { VisualizationFilterMenu } from "./VisualizationFilterMenu";
-
-import { Link } from "@mui/icons-material";
 
 export const config: BlockConfig<VisualizationFilterBlockDef> = {
     widget: "visualization-filter",
@@ -39,6 +36,4 @@ export const config: BlockConfig<VisualizationFilterBlockDef> = {
     },
     slots: {},
     render: VisualizationFilterBlock,
-    icon: Link,
-    menu: VisualizationFilterMenu,
 };

@@ -9,11 +9,12 @@ import { usePixel } from './usePixel';
 import { useDesigner } from './useDesigner';
 import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
-import { useDebounce } from './useDebounce';
-import { useDebounceValue } from './useDebounceValue';
+import { usePage } from './usePage';
+import { useBlockSettings } from './useBlockSettings';
 
 export {
     useAPI,
+    useBlockSettings,
     useCacheState,
     useEngine,
     useLLM,
@@ -24,6 +25,5 @@ export {
     useDesigner,
     useStepper,
     useWorkspace,
-    useDebounce,
-    useDebounceValue,
+    usePage,
 };

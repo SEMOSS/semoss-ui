@@ -9,6 +9,10 @@ import { RootStore } from '@/stores';
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
  */
+
+/**
+ * @deprecated Will be removed in future release, use SDK instead
+ */
 export class MonolithStore {
     private _root: RootStore;
 
@@ -176,17 +180,26 @@ export class MonolithStore {
             username,
         )}&password=${encodeURIComponent(password)}&disableRedirect=true`;
 
-        await axios
-            .post(`${Env.MODULE}/api/auth/login`, postData, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
+        try {
+            const response = await axios.post(
+                `${Env.MODULE}/api/auth/login`,
+                postData,
+                {
+                    headers: {
+                        'content-type': 'application/x-www-form-urlencoded',
+                    },
+                    validateStatus: () => true,
                 },
-            })
-            .catch((error) => {
-                throw Error(error);
-            });
+            );
 
-        return true;
+            if (response?.data?.errorMessage) {
+                throw new Error(response.data.errorMessage);
+            }
+
+            return true;
+        } catch (error) {
+            throw new Error(error.message);
+        }
     }
 
     /**
@@ -332,25 +345,25 @@ export class MonolithStore {
             encodeURIComponent(phoneextension) +
             '&countrycode=' +
             encodeURIComponent(countrycode);
-        return await axios
-            .post(`${Env.MODULE}/api/auth/createUser`, create, {
-                headers: {
-                    'content-type': 'application/x-www-form-urlencoded',
+        try {
+            const response = await axios.post(
+                `${Env.MODULE}/api/auth/createUser`,
+                create,
+                {
+                    headers: {
+                        'content-type': 'application/x-www-form-urlencoded',
+                    },
+                    validateStatus: () => true,
                 },
-            })
-            .catch((error) => {
-                if (
-                    error.response &&
-                    error.response.status === 401 &&
-                    error.response.data &&
-                    error.response.data.requirePwdChange
-                ) {
-                    return;
-                }
+            );
 
-                // throw the message
-                throw Error(error);
-            });
+            if (response.data?.errorMessage) {
+                throw new Error(response.data.errorMessage);
+            }
+            return response.data;
+        } catch (error) {
+            throw new Error(error.message);
+        }
     }
 
     /**     *
@@ -1063,15 +1076,9 @@ export class MonolithStore {
      * @param groupId
      * @param description
      * @param type
-     * @param isCustomGroup
      * @returns
      */
-    async addTeam(
-        groupId: string,
-        description: string,
-        isCustomGroup: boolean,
-        type?: string,
-    ) {
+    async addTeam(groupId: string, description: string, type?: string) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
@@ -1079,7 +1086,6 @@ export class MonolithStore {
 
         postData += 'groupId=' + encodeURIComponent(groupId);
         postData += '&description=' + encodeURIComponent(description);
-        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
         if (type) {
             postData += '&type=' + encodeURIComponent(type);
         }
@@ -1098,26 +1104,25 @@ export class MonolithStore {
      * @param groupId
      * @param description
      * @param type
-     * @param isCustomGroup
      * @returns
      */
     async editTeam(
         groupId: string,
         description: string,
-        isCustomGroup: boolean,
         type?: string,
+        previousTeamName?: string,
+        previousType?: string,
     ) {
         let url = `${Env.MODULE}/api/auth/admin/`,
             postData = '';
 
-        url += 'group/editGroup';
+        url += 'group/editGroupDetails';
 
-        postData += 'groupId=' + encodeURIComponent(groupId);
-        postData += '&description=' + encodeURIComponent(description);
-        postData += '&isCustomGroup=' + encodeURIComponent(isCustomGroup);
-        if (type) {
-            postData += '&type=' + encodeURIComponent(type);
-        }
+        postData += 'groupId=' + encodeURIComponent(previousTeamName);
+        postData += '&newGroupId=' + encodeURIComponent(groupId);
+        postData += '&newDescription=' + encodeURIComponent(description);
+        postData += '&type=' + encodeURIComponent(previousType);
+        postData += '&newType=' + encodeURIComponent(type);
 
         const response = await axios.post<{ success: boolean }>(url, postData, {
             headers: {
@@ -1892,7 +1897,7 @@ export class MonolithStore {
                 params: {
                     projectId: projectId,
                 },
-            })
+            });
 
             // there was no response, that is an error
             if (!response) {

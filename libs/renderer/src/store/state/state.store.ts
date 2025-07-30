@@ -1,1810 +1,1973 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
-
-import { runPixel, download } from "@semoss/sdk/react";
-import { 
-    cancellablePromise, 
-    getValueByPath, 
-    syncronousPromise, 
+import { download, runPixel } from "@semoss/sdk/react";
+import {
+	cancellablePromise,
+	getValueByPath,
+	syncronousPromise,
 } from "../../utility";
-
-import {
-    ActionMessages,
-    Actions,
-    AddBlockAction,
-    MoveBlockAction,
-    RemoveBlockAction,
-} from "./state.actions";
-import {
-    Block,
-    BlockJSON,
-    CellRegistry,
-    ListenerActions,
-    SerializedState,
-    Variable,
-    VariableType,
-    VariableWithId,
-    Frame,
-} from "./state.types";
-import { QueryState, QueryStateConfig } from "./query.state";
 import { CellStateConfig } from "./cell.state";
 import { STATE_VERSION } from "./migration/MigrationManager";
+import { QueryState, QueryStateConfig } from "./query.state";
+import {
+	ActionMessages,
+	Actions,
+	AddBlockAction,
+	MoveBlockAction,
+	RemoveBlockAction,
+} from "./state.actions";
+import {
+	Block,
+	BlockJSON,
+	CellRegistry,
+	Frame,
+	ListenerActions,
+	SerializedState,
+	Variable,
+	VariableType,
+	VariableWithId,
+} from "./state.types";
 
 interface StateStoreInterface {
-    /** Mode */
-    mode: "interactive" | "static";
+	/** Mode */
+	mode: "interactive" | "static";
 
-    /** insightID to load */
-    insightId: string;
+	/** insightID to load */
+	insightId: string;
 
-    /** token to reference (blocks, cells, constants) */
-    variables: Record<string, Variable>;
+	/** token to reference (blocks, cells, constants) */
+	variables: Record<string, Variable>;
 
-    /** Queries rendered in the insight */
-    queries: Record<string, QueryState>;
+	/** Queries rendered in the insight */
+	queries: Record<string, QueryState>;
 
-    /** Blocks rendered in the insight */
-    blocks: Record<string, Block>;
+	/** Blocks rendered in the insight */
+	blocks: Record<string, Block>;
 
-    /** Frames stored in the insight */
-    frames: Record<string, Frame>;
+	/** Frames stored in the insight */
+	frames: Record<string, Frame>;
 
-    /** Cells registered to the insight */
-    cellRegistry: CellRegistry;
+	/** Cells registered to the insight */
+	cellRegistry: CellRegistry;
 
-    /** What version the state store we currently are on link: https://semver.org/ */
-    version: string;
+	/** What version the state store we currently are on link: https://semver.org/ */
+	version: string;
 
-    /** Order of how we consume app as API */
-    executionOrder: string[];
+	/** Order of how we consume app as API */
+	executionOrder: string[];
 
-    /** Graph to track nodes and edges based on {{}} */
-    dependencyGraph: Record<string, unknown>;
+	/** Graph to track nodes and edges based on {{}} */
+	dependencyGraph: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
-    /** Mode */
-    mode: "interactive" | "static";
+	/** Mode */
+	mode: "interactive" | "static";
 
-    /** insightID to load */
-    insightId: string;
+	/** insightID to load */
+	insightId: string;
 
-    /** State to load into the store */
-    state: SerializedState;
+	/** State to load into the store */
+	state: SerializedState;
 
-    /** Cells registered to the insight */
-    cellRegistry: CellRegistry;
+	/** Cells registered to the insight */
+	cellRegistry: CellRegistry;
 
-    /** initial params for our variables can come from query params */
-    initialParams?: Record<string, unknown>;
+	/** initial params for our variables can come from query params */
+	initialParams?: Record<string, unknown>;
 }
 
 /**
  * Hold the state information for the insight
  */
 export class StateStore {
-    private _store: StateStoreInterface = {
-        mode: "interactive",
-        insightId: "",
-        version: "",
-        queries: {},
-        blocks: {},
-        frames: {},
-        cellRegistry: {},
-        variables: {},
-        executionOrder: [],
-        dependencyGraph: {}
-    };
-
-    /**
-     * Utility variables
-     */
-    private _utils: {
-        /**
-         * Track any executing queries
-         */
-        queryPromises: Record<
-            string,
-            ReturnType<typeof cancellablePromise> | null
-        >;
-    } = {
-        queryPromises: {},
-    };
-
-    constructor(config: StateStoreConfig) {
-        // save the connected insight
-        this._store.insightId = config.insightId;
-
-        // set the mode of the store based on how it is being used
-        this._store.mode = config.mode;
-
-        // register the cells
-        this._store.cellRegistry = config.cellRegistry || {};
-
-        // make it observable
-        makeAutoObservable(this);
-
-        // set the initial state after reactive to invoke it
-        this.setState(config.state, config.initialParams);
-
-        // console.log(this.toJSON())
-        // const r = this.buildDependencyGraph(this._store, {}, [])
-        // console.log(r);
-    }
-
-    /**
-     * Getters
-     */
-    /**
-     * Get the mode
-     * @returns the mode
-     */
-    get mode() {
-        return this._store.mode;
-    }
-
-    /**
-     * Get the Insight ID
-     * @returns the Insight ID
-     */
-    get insightId() {
-        return this._store.insightId;
-    }
-
-    /**
-     * Get the blocks
-     * @returns the blocks
-     */
-    get blocks() {
-        return this._store.blocks;
-    }
-
-    /**
-     * Get the queries
-     * @returns the queries
-     */
-    get queries() {
-        return this._store.queries;
-    }
-
-    /**
-     * Gets all tokens
-     * @returns the tokens
-     */
-    get variables() {
-        return this._store.variables;
-    }
-
-    /**
-     * Gets ordered list of sheet ids
-     * @returns the order sheets should be executed
-     */
-    get executionOrder() {
-        return this._store.executionOrder;
-    }
-
-    /**
-     * Get the cell type registry
-     * @returns the cell type registry
-     */
-    get cellRegistry() {
-        return this._store.cellRegistry;
-    }
-
-    /**
-     * Get the specific block information
-     * @param id - id of the block to get
-     * @returns the specific block information
-     */
-    getBlock(id: string) {
-        if (this._store.blocks[id]) {
-            return this._store.blocks[id];
-        }
-
-        return null;
-    }
-
-    /**
-     * Get all blocks of a specific type
-     * @param type - type of the block to get
-     * @returns all blocks of the specific type
-     */
-    getAllBlocksOfType(type: string) {
-        return Object.values(this._store.blocks).filter(
-            (block) => block.widget === type,
-        );
-    }
-
-    /**
-     * Get all parents of a block
-     * @param nodeId - id of the block to get the parents of
-     * @returns all parents of the block
-     */
-    getAllParents(nodeId: string) {
-        let selected = nodeId;
-        const parents = [];
-        while (selected) {
-            parents.push(selected);
-            selected = this._store.blocks[selected]?.parent?.id;
-        }
-        return parents;
-    }
-
-    /**
-     * Get a specific queries's state
-     * @param id - id of the queries to get
-     * @returns the specific block information
-     */
-    getQuery(id: string): QueryState | null {
-        if (this._store.queries[id]) {
-            return this._store.queries[id];
-        }
-
-        return null;
-    }
-
-    /**
-     * Gets the variable by it's pointer
-     * @param pointer
-     * @param type
-     * @param path - {{.isLoading}} {{.data.value}}
-     * @returns
-     */
-    getVariable(
-        pointer: string,
-        type: VariableType,
-        path?: string[],
-        cellId?: string,
-        value?: string,
-    ): Variable | unknown {
-        try {
-            if (pointer) {
-                if (type === "block") {
-                    const block = this._store.blocks[pointer];
-
-                    // Old Version of JSON - notebooks, will be dependent on the .value and may crash
-                    if (path && path.length === 1) {
-                        return block.data.value as string;
-                    } else {
-                        if (block) {
-                            // get the search path
-                            const s = path.slice(1).join(".");
-                            return getValueByPath(block.data, s);
-                        }
-                    }
-                } else if (type === "query") {
-                    const query = this._store.queries[pointer];
-                    if (query) {
-                        if (path.length === 1) {
-                            // Just get query output
-                            return query.output;
-                        } else {
-                            const key = path[1];
-                            if (query) {
-                                if (key in query._exposed) {
-                                    // get the search path
-                                    const s = path.slice(1).join(".");
-                                    return getValueByPath(query._exposed, s);
-                                }
-                            }
-                        }
-                    }
-                    // get the attribute key
-                } else if (type === "cell") {
-                    const query = this.getQuery(pointer);
-                    const cell = query.getCell(cellId);
-
-                    if (cell) {
-                        if (path.length === 1) {
-                            return cell.output;
-                        } else {
-                            const key = path[1];
-                            if (key in cell._exposed) {
-                                // get the search path
-                                const s = path.slice(1).join(".");
-                                return getValueByPath(cell._exposed, s);
-                            }
-                        }
-                    }
-                }
-                return undefined;
-            } else {
-                if (
-                    type === "database" ||
-                    type === "model" ||
-                    type === "vector" ||
-                    type === "function" ||
-                    type === "storage" ||
-                    type === "string" ||
-                    type === "date" ||
-                    type === "number"
-                ) {
-                    return value;
-                } else if (type === "array" || type === "JSON") {
-                    let v;
-                    if (value === "string") {
-                        v = JSON.parse(value as string);
-                    } else v = value;
-
-                    return v;
-                }
-                return undefined;
-            }
-        } catch (e) {
-            return undefined;
-        }
-    }
-
-    /**
-     * Gets the variable alias by it's pointer
-     * @param pointer
-     * @param type
-     * @returns
-     */
-    getAlias(pointer: string, cellId?: string): string {
-        let alias = "";
-
-        // Do we need to change how variables are stored to get rid of this iteration
-        Object.entries(this._store.variables).forEach((keyValue) => {
-            const variable = keyValue[1];
-
-            if (variable.to === pointer && !cellId && !variable.cellId) {
-                alias = keyValue[0];
-            } else if (variable.to === pointer && variable.cellId === cellId) {
-                alias = keyValue[0];
-            }
-        });
-        return alias;
-    }
-
-    /**
-     * Get a frame. Create one if it isn't there
-     * @param name
-     */
-    getFrameKey(name: string): Frame["key"] {
-        // create the frame if it is not there
-        if (!this._store.frames[name]) {
-            runInAction(() => {
-                this.createFrame(name);
-            });
-        }
-
-        return this._store.frames[name].key;
-    }
-
-    /**
-     * -------------------------------------
-     * Actions
-     * -------------------------------------
-     */
-    /**
-     * Dispatch a message to update the state
-     *
-     * @param action - Action to execute
-     */
-    dispatch = (action: Actions) => {
-        // TODO: Develop History + Invert + UNDO;
-        console.log(
-            "ACTION :::",
-            JSON.parse(JSON.stringify(action.message)),
-            JSON.parse(JSON.stringify(action.payload)),
-        );
-
-        try {
-            // apply the action
-            if (ActionMessages.SET_STATE === action.message) {
-                const { state } = action.payload;
-
-                this.setState(state);
-            } else if (ActionMessages.ADD_BLOCK === action.message) {
-                const { json, position } = action.payload;
-
-                return this.addBlock(json, position);
-            } else if (ActionMessages.MOVE_BLOCK === action.message) {
-                const { id, position } = action.payload;
-
-                this.moveBlock(id, position);
-            } else if (ActionMessages.REMOVE_BLOCK === action.message) {
-                const { id, keep } = action.payload;
-
-                this.removeBlock(id, keep);
-            } else if (ActionMessages.SET_BLOCK_DATA === action.message) {
-                const { id, path, value } = action.payload;
-
-                this.setBlockData(id, path, value);
-            } else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
-                const { id, path } = action.payload;
-
-                this.deleteBlockData(id, path);
-            } else if (ActionMessages.SET_LISTENER === action.message) {
-                const { id, listener, actions, type } = action.payload;
-
-                this.setListener(id, listener, actions, type);
-            } else if (ActionMessages.NEW_QUERY === action.message) {
-                const { queryId, config } = action.payload;
-
-                this.newQuery(queryId, config);
-            } else if (ActionMessages.DELETE_QUERY === action.message) {
-                const { queryId } = action.payload;
-
-                this.deleteQuery(queryId);
-            } else if (ActionMessages.UPDATE_QUERY === action.message) {
-                const { queryId, path, value } = action.payload;
-
-                this.updateQuery(queryId, path, value);
-            } else if (ActionMessages.RUN_QUERY === action.message) {
-                const { queryId } = action.payload;
-
-                return this.runQuery(queryId);
-            } else if (ActionMessages.NEW_CELL === action.message) {
-                const { queryId, config, previousCellId } =
-                    action.payload;
-
-                return this.newCell(queryId, config, previousCellId);
-            } else if (ActionMessages.MOVE_CELL === action.message) {
-                const { queryId, activeCellId, overCellId } = action.payload;
-
-                this.moveCell(queryId, activeCellId, overCellId);
-            } else if (ActionMessages.DELETE_CELL === action.message) {
-                const { queryId, cellId } = action.payload;
-
-                this.deleteCell(queryId, cellId);
-            } else if (ActionMessages.UPDATE_CELL === action.message) {
-                const { queryId, cellId, path, value } = action.payload;
-
-                this.updateCell(queryId, cellId, path, value);
-            } else if (ActionMessages.RUN_CELL === action.message) {
-                const { queryId, cellId } = action.payload;
-
-                this.runCell(queryId, cellId);
-            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
-                const { name, detail } = action.payload;
-
-                this.dispatchEvent(name, detail);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
-
-                this.dispatchOutputsEvent()
-            } else if (ActionMessages.RENAME_VARIABLE === action.message) {
-                const { id, alias } = action.payload;
-
-                return this.renameVariable(id, alias);
-            } else if (ActionMessages.ADD_VARIABLE === action.message) {
-                const { id, to, type, cellId, value, isInput, isOutput } =
-                    action.payload;
-
-                return this.addVariable(
-                    id,
-                    to,
-                    type,
-                    cellId,
-                    value,
-                    isInput,
-                    isOutput,
-                );
-            } else if (ActionMessages.EDIT_VARIABLE === action.message) {
-                const { id, from, to } = action.payload;
-
-                const newVariable = {
-                    type: to.type,
-                };
-
-                if (to.to) newVariable["to"] = to.to;
-                if (to.cellId) newVariable["cellId"] = to.cellId;
-                if (to.value) newVariable["value"] = to.value;
-
-                newVariable["isInput"] = to.isInput ? to.isInput : false;
-                newVariable["isOutput"] = to.isOutput ? to.isOutput : false;
-
-                this.editVariable(id, from, newVariable);
-            } else if (ActionMessages.DELETE_VARIABLE === action.message) {
-                const { id } = action.payload;
-
-                this.deleteVariable(id);
-            } else if (
-                ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
-            ) {
-                const { list } = action.payload;
-
-                return this.setExecutionOrder(list);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    
-    /**
-     * TODO: Needs to get folded into code above --> useBlock.tsx
-     * @param action 
-     * @returns 
-     */
-    dispatchEventAction = async (action: Actions, type: 'sync' | 'async') => {
-        try {
-            if (ActionMessages.RUN_QUERY === action.message) {
-                const { queryId } = action.payload;
-
-                const run = () => new Promise(async (resolve) => { 
-                    await this.runQuery(queryId, type)
-                    resolve(this._store.queries[queryId].output)
-                }); 
-                    
-                return await run();
-            } else if (ActionMessages.RUN_CELL === action.message) {
-                const { queryId, cellId } = action.payload;
-
-                this.runCell(queryId, cellId);
-            } else if (ActionMessages.DISPATCH_EVENT === action.message) {
-                const { name, detail } = action.payload;
-
-                this.dispatchEvent(name, detail);
-            } else if (ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message) {
-
-                this.dispatchOutputsEvent()
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }
-
-    /** Variable Methods */
-    /**
-     * TODO: Clean this fn up (split out iterator parsing?)
-     * Parse a variables and return the value if it exists (otherwise return the expression)
-     */
-    parseVariable = (expression: string, id?: string, _depth: number = 0, _seen: Set<string> = new Set()): unknown => {
-
-        if(_depth > 10) return expression;
-        if(_seen.has(expression)) return expression
-        
-        _seen.add(expression)
-
-        // trim the whitespace
-        let cleaned = expression.trim();
-
-        // Checks if it falls inline with special syntax
-        if (
-            !cleaned.startsWith("{{") &&
-            !cleaned.endsWith("}}") &&
-            !cleaned.startsWith("$")
-        ) {
-            return expression;
-        }
-
-        // Special Parsing for Iterators
-        if (cleaned.startsWith("$")) {
-            
-            // See if id is a descendant of an iterator block
-            const iteratorBlock = this.isDescendantOfIterator(id);
-
-
-            if (iteratorBlock) {
-                try {
-                    // Go see what index the iterator block children this id is a descendant of
-                    const index = this.findIteratorChildIndex(
-                        iteratorBlock,
-                        id,
-                    );
-                    const iteratorList = iteratorBlock.data.source as string;
-                    let list = this.parseVariable(iteratorList);
-
-                    if (typeof list === "string") {
-                        try {
-                            list = JSON.parse(list);
-                        } catch {
-                            return expression;
-                        }
-                    }
-
-                    let variable;
-
-                    if(expression.includes(".")) {
-                        variable = expression.match(/\$(.*?)\./)[1];
-                    } else {
-                        variable = expression.match(/^\$(\w+)/)?.[1]
-                    }
-
-                    const stripped = iteratorList.slice(2, -2);
-
-                    // TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
-                    // Do we just call this recursively
-                    if (variable === stripped) {
-                        const path = expression.split(".").splice(1);
-                        const test = path.join(".");
-                        const val = getValueByPath(list[index], test);
-
-                        // SHOW "" or expression
-                        return val ? val : "";
-                    } else {
-                        return expression;
-                    }
-                } catch {
-                    return expression;
-                }
-            } else {
-                console.warn(`Unable to find iterator descendant - ${id}: `);
-                return expression;
-            }
-        }
-
-        // remove the brackets
-        cleaned = cleaned.slice(2, -2);
-
-        // get the keys in the path
-        const path = cleaned.split(".");
-        const pointer = path[0];
-
-        // Special syntax to parse by cell order
-        const isNumber = !isNaN(parseFloat(path[1]))
-
-        if (isNumber) {
-            let q;
-
-            // TODO: Problem we want to reference cells by a special syntax
-            // I don't want to change ids to be numbered for cells, 
-            // i think we are good with our id generation
-            if(this._store.variables[pointer]) {
-                const variable = this._store.variables[path[0]];
-                if(variable.type === "query") {
-                    q = this._store.queries[variable.to]
-                }
-            } else if (this._store.queries[pointer]) {
-                q = this._store.queries[pointer]
-            }
-
-            if(q) {
-                try {
-                    const c = q.cellList[parseFloat(path[1]) - 1]
-                    const p = path
-                    p.splice(0,2)
-
-                    if(p.length === 0) {
-                        return c.output
-                    } else {
-                        const key = p[0];
-                        
-                        if (key in c._exposed) {
-                            // get the search path
-                            const s = p.join(".");
-
-                            return getValueByPath(c._exposed, s);
-                        }
-                    }
-                } catch (e) {
-                    return expression
-                }
-
-            }
-        }
-
-        if (this._store.variables[path[0]]) {
-            // We should be able to interpret by varaible name as we do below
-            const variable = this._store.variables[path[0]];
-            let value = this.getVariable(
-                variable.to,
-                variable.type,
-                path,
-                variable.cellId,
-                variable.type !== "cell" && variable.value
-                    ? variable.value
-                    : null,
-            );
-            
-
-            // TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
-            if (value !== undefined && value !== null) {
-                // RECURSIVE: If value is another {{var}}, resolve again
-                if(typeof value === "string" && value.trim().match(/^{{.*}}$/)) {
-                    return this.parseVariable(value, id, _depth + 1, _seen)
-                }
-                return value;
-            }
-
-            if (value === undefined) {
-                return value;
-            }
-        }
-
-        return expression;
-    };
-
-    /**
-     * Flatten a string containing multiple variables
-     * @param expression - expression to flatten
-     * @returns the flatten parameter
-     */
-    flattenVariable = (expression: string): string => {
-        return expression.replace(/{{(.*?)}}/g, (match) => {
-            // try to extract the variable
-            const v = this.parseVariable(match);
-
-            // if it is not a string, convert to a string
-            if (typeof v !== "string") {
-                return JSON.stringify(v);
-            }
-
-            return v;
-        });
-    };
-
-    /** Side effects Methods */
-    /**
-     * Run a side effect pixel and process the response
-     *
-     * @param pixel - side effect to run
-     */
-    runSideEffect = async <O extends unknown[] | []>(pixel: string) => {
-        const response = await runPixel<O>(pixel, this._store.insightId);
-
-        // process the side effects
-        for (const { operationType, output } of response.pixelReturn) {
-            this.processSideEffects(operationType, output);
-        }
-
-        // return the response
-        return response;
-    };
-
-    /**
-     * Process side-effects from running a pixel
-     *
-     * @param operation - operation that was run
-     * @param output - output fo the operation
-     */
-    processSideEffects = (operation: string[], output: unknown) => {
-        // download the file
-        if (operation.includes("FILE_DOWNLOAD")) {
-            download(this.insightId, output as string);
-        } else if (
-            operation.includes("FRAME_DATA_CHANGE") ||
-            operation.includes("FRAME_FILTER_CHANGE")
-        ) {
-            this.syncFrame((output as { name: string }).name);
-        }
-    };
-
-    /**
-     * Serialize to JSON
-     */
-    toJSON(): SerializedState {
-        return {
-            queries: Object.keys(this._store.queries).reduce((acc, val) => {
-                acc[val] = this._store.queries[val].toJSON();
-                return acc;
-            }, {} as SerializedState["queries"]),
-            blocks: toJS(this._store.blocks),
-            variables: toJS(this._store.variables),
-            executionOrder: toJS(this._store.executionOrder),
-            version: this._store.version,
-        };
-    }
-
-    /**
-     *
-     */
-
-    /**
-     * Internal
-     */
-    /**
-     * Helpers
-     */
-    /**
-     * Generate a new block from the json
-     * @param json - json of the block that we are generating
-     * @returns block
-     */
-    private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
-        // generate a new id
-        const id = `${json.widget}--${Math.floor(Math.random() * 10000)}`;
-
-        // create the block
-        const block = {
-            id: id,
-            widget: json.widget,
-            parent: null,
-            data: {},
-            listeners: {},
-            slots: {},
-        } as Block;
-
-        // add the data
-        block.data = json.data;
-
-        if(json.widget === "page") {
-            // Defaulting the route to the block id
-            block.data.route = id;
-        }
-
-        // add the listeners
-        block.listeners = json.listeners;
-
-        if (!json["parent"] && parent) {
-            block.parent = parent;
-        }
-
-        // generate the slots
-        for (const slot in json.slots) {
-            if (json.slots[slot]) {
-                block.slots[slot] = {
-                    name: slot,
-                    children: (Array.isArray(json.slots[slot]) ? json.slots[slot] : json.slots[slot]['children']).map((child) => {
-                        // form the parent object
-                        const parent = { id: id, slot: slot };
-
-                        // build the children, but only store the ids
-                        const b = this.generateBlock(child, parent);
-
-                        return b.id;
-                    }),
-                };
-            }
-        }
-
-        // register it
-        this._store.blocks[id] = block;
-
-        // return it
-        return block;
-    };
-
-    private isDescendantOfIterator = (blockId: string) => {
-        console.warn(`Is ${blockId} a descendant of an iterator`);
-
-        let currentBlock = this._store.blocks[blockId];
-
-        while (currentBlock) {
-            if (currentBlock.widget === "iteration") {
-                return currentBlock;
-            }
-            if (currentBlock.parent && currentBlock.parent.id) {
-                currentBlock = this._store.blocks[currentBlock.parent.id];
-            } else {
-                break;
-            }
-        }
-
-        return false;
-    };
-
-    private isDescendant = (containerId, blockId) => {
-        const container = this._store.blocks[containerId];
-
-        // TODO: may need to fix
-        if (!container || !container.slots || !container.slots.children) {
-            return false;
-        }
-
-        // TODO: will it always be .children? --> Accordion .content and .header
-        const children = container.slots.children.children;
-        if (children.includes(blockId)) {
-            return true;
-        }
-
-        for (const childId of children) {
-            if (this.isDescendant(childId, blockId)) {
-                return true;
-            }
-        }
-
-        return false;
-    };
-
-    private findIteratorChildIndex = (iteratorBlock, blockId) => {
-        const children = iteratorBlock.slots.children.children;
-
-        for (let i = 0; i < children.length; i++) {
-            const iteratorChildId = children[i];
-
-            // No need to search tree
-            if (iteratorChildId === blockId) return i;
-
-            if (this.isDescendant(iteratorChildId, blockId)) {
-                return i;
-            }
-        }
-
-        return -1; // Return -1 if not found
-    };
-
-    /**
-     * Check if a parent contains the child block
-     * @param parent - id of the parent block
-     * @param child - id of the child block
-     * @returns true if the child is in the parent
-     */
-    containsBlock = (parent: string, child: string): boolean => {
-        const queue = [parent];
-        while (queue.length) {
-            const current = queue.shift() as string;
-
-            if (current === child) {
-                return true;
-            }
-
-            // check if the block exists
-            const block = this._store.blocks[current];
-
-            // validate the children
-            for (const s in block.slots) {
-                queue.push(...block.slots[s].children);
-            }
-        }
-
-        return false;
-    };
-
-    extractDependenciesFromString = (str) => {
-        const regex = /{{\s*([\w_]+)\s*}}/g;
-        let match, deps = [];
-        while ((match = regex.exec(str)) !== null) {
-          deps.push(match[1]);
-        }
-    
-        return deps;
-    }
-
-    /**
-     * Attach a block to the parent block's slot. At this point, we assume that everything can be attached correctly.
-     * @param parent - id of the block that we are attaching to
-     * @param slot - slot that we are attaching to
-     * @param index - children index where we are attaching
-     * @param id - id of the block that we are attaching
-     */
-    private attachBlock = (
-        parent: string,
-        slot: string,
-        index: number,
-        id: string,
-    ) => {
-        const parentBlock = this._store.blocks[parent];
-
-        // if the slot is not valid, we cannot attach
-        if (!parentBlock.slots[slot]) {
-            return;
-        }
-
-        // if it is is already there, we cannot attach
-        if (parentBlock.slots[slot].children.indexOf(id) !== -1) {
-            return;
-        }
-
-        // get the block
-        const block = this._store.blocks[id];
-
-        // insert it
-        parentBlock.slots[slot].children.splice(index, 0, id);
-
-        // update the child block
-        block.parent = {
-            id: parent,
-            slot: slot,
-        };
-
-        return;
-    };
-
-    /**
-     * Detach a block from the current parent. At this point, we assume that everything can be detached correctly.
-     * @param id - id of the block that we are detaching
-     */
-    private detachBlock = (id: string) => {
-        const block = this._store.blocks[id];
-
-        // if there is no parent, there is no need to detach
-        if (!block.parent) {
-            return;
-        }
-
-        // get the parent
-        const parentBlock = this._store.blocks[block.parent.id];
-
-        // validate that the slot and index are correct
-        const parentSlot = parentBlock.slots[block.parent.slot];
-        if (!parentSlot) {
-            return;
-        }
-
-        //
-        const blockIdx = parentSlot.children.indexOf(id);
-        if (blockIdx === -1) {
-            return;
-        }
-
-        // remove it from the parent
-        parentSlot.children.splice(blockIdx, 1);
-
-        // update the child
-        block.parent = null;
-    };
-
-    /**
-     * Create a new frame
-     */
-    private createFrame = (name: string) => {
-        this._store.frames[name] = {
-            name: name,
-            key: 0,
-        };
-    };
-
-    /**
-     * Resync the frame and change the data key
-     */
-    private syncFrame = (name: string) => {
-        // create the frame if it is not there
-        if (!this._store.frames[name]) {
-            this.createFrame(name);
-        }
-
-        // increment the key
-        this._store.frames[name].key = this._store.frames[name].key + 1;
-    };
-
-    /**
-     * Actions
-     */
-    /**
-     * Set the state information
-     *
-     * @param state - pixel to execute
-     */
-    private setState = (
-        state: SerializedState,
-        initialParams?: Record<string, unknown>,
-    ) => {
-        // store the block information
-        this._store.blocks = state.blocks;
-
-        // load the queries
-        this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
-            acc[val] = new QueryState(state.queries[val], this);
-            return acc;
-        }, {});
-
-        // store the variables
-        this._store.variables = state.variables ? state.variables : {};
-
-        // store the execution order of notebooks
-        let order = [];
-        const sheets = Object.keys(this._store.queries);
-
-        if (state.executionOrder.length) {
-            order = state.executionOrder;
-        } else {
-            sheets.forEach((k) => {
-                order.push(k);
-            });
-        }
-
-        sheets.forEach(async (s) => {
-            const found = await order.find((o) => {
-                return o === s;
-            });
-
-            if (!found) {
-                order.push(s);
-            }
-        });
-
-        this._store.executionOrder = order;
-
-        // Replace initial param values provided from URL
-        if (initialParams) {
-            Object.entries(initialParams).forEach((keyValue) => {
-                const key = keyValue[0];
-                const value = keyValue[1];
-
-                const variable = this._store.variables[key];
-
-                if (variable) {
-                    // retrieve the "to" value
-                    const toValue = variable.to;
-                    if (variable.type == "block") {
-                        // Look into blocks section
-                        if (this._store.blocks[toValue]) {
-                            this._store.blocks[toValue].data.value = value;
-                        }
-                    } else if (
-                        variable.type == "cell" ||
-                        variable.type == "query"
-                    ) {
-                        // TODO: Handle query and cell types do we just swap output?
-                    } else {
-                        this._store.variables[key]["value"] = value;
-                    }
-                }
-            });
-        }
-
-        // store the version or the one we currently are on
-        this._store.version = state.version ? state.version : STATE_VERSION;
-    };
-
-    private buildDependencyGraph = (json, nodes = {}, edges = []) => {
-        if (typeof json === 'object' && json !== null) {
-            for (const [key, value] of Object.entries(json)) {
-              // If the key is 'id', treat it as a node
-              if (key === 'id' && typeof value === 'string') {
-                if (!nodes[value]) {
-                  nodes[value] = { id: value, data: { label: value }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
-                }
-              }
-              // If value is a string, look for dependencies
-              if (typeof value === 'string') {
-                const deps = this.extractDependenciesFromString(value);
-                if (json.id && deps.length) {
-                  deps.forEach(dep => {
-                    if (!nodes[dep]) {
-                      nodes[dep] = { id: dep, data: { label: dep }, position: { x: Math.random() * 400, y: Math.random() * 400 } };
-                    }
-                    edges.push({ id: `e${json.id}-${dep}`, source: json.id, target: dep });
-                  });
-                }
-              }
-              // Recurse into objects/arrays
-              if (typeof value === 'object') {
-                this.buildDependencyGraph(value, nodes, edges);
-              }
-            }
-        } else if (Array.isArray(json)) {
-          json.forEach(item => this.buildDependencyGraph(item, nodes, edges));
-        }
-
-        return { nodes: Object.values(nodes), edges };
-    }
-
-    /**
-     * Create a block and add it to the tree
-     * @param json - json of the block that we are adding
-     * @param position - where is the block going
-     * @returns id of new block
-     */
-    private addBlock = (
-        json: BlockJSON,
-        position?: AddBlockAction["payload"]["position"],
-    ): string => {
-        // generate the block
-        const block = this.generateBlock(json);
-
-        // try to place it if position
-        if (!position) {
-            if (block.widget === "page") return block.id;
-            return;
-        }
-
-        const { parent, slot } = position;
-
-        // get the parent
-        const parentBlock = this._store.blocks[parent];
-
-        if ("sibling" in position) {
-            const { sibling, type } = position;
-
-            // get the index of the sibling (it might have changed)
-            const siblingIdx =
-                parentBlock.slots[slot].children.indexOf(sibling);
-
-            if (type === "before") {
-                // attach the block before
-                this.attachBlock(parent, slot, siblingIdx, block.id);
-            } else if (type === "after") {
-                // attach the block after
-                this.attachBlock(parent, slot, siblingIdx + 1, block.id);
-            }
-        } else {
-            // attach the block
-            this.attachBlock(
-                parent,
-                slot,
-                parentBlock.slots[slot].children.length,
-                block.id,
-            );
-        }
-        return block.id;
-    };
-
-    /**
-     * Move a block in the tree
-     * @param id - id of the child block that we are moving
-     * @param position - where is the block going
-     */
-    private moveBlock = (
-        id: string,
-        position: MoveBlockAction["payload"]["position"],
-    ): void => {
-        if (!position) {
-            // detach the current block (this might not always be possible)
-            this.detachBlock(id);
-            return;
-        }
-
-        // if there is a parent see if you can detach
-        const { parent, slot } = position;
-
-        // if the parent block is a child of the moved block, we cannot move
-        if (this.containsBlock(id, parent)) {
-            return;
-        }
-
-        // get the parent
-        const parentBlock = this._store.blocks[parent];
-
-        // detach the current block (this might not always be possible)
-        this.detachBlock(id);
-
-        if ("sibling" in position) {
-            const { sibling, type } = position;
-
-            // get the index of the sibling (it might have changed)
-            const siblingIdx =
-                parentBlock.slots[slot].children.indexOf(sibling);
-
-            if (type === "before") {
-                // attach the block before
-                this.attachBlock(parent, slot, siblingIdx, id);
-            } else if (type === "after") {
-                // attach the block after
-                this.attachBlock(parent, slot, siblingIdx + 1, id);
-            }
-        } else {
-            // attach the block
-            this.attachBlock(
-                parent,
-                slot,
-                parentBlock.slots[slot].children.length,
-                id,
-            );
-        }
-    };
-
-    /**
-     * Remove the block from the tree
-     * @param id - id of the block that we are removing
-     * @param keep - keep the block
-     */
-    private removeBlock = (
-        id: string,
-        keep: RemoveBlockAction["payload"]["keep"],
-    ): void => {
-        // get the block
-        const block = this._store.blocks[id];
-
-        if (block) {
-            // Remove the variable
-            Object.entries(this._store.variables).forEach((keyValue) => {
-                const varId = keyValue[0];
-                const variable = keyValue[1];
-
-                if (variable.type === "block") {
-                    if (variable.to === id) {
-                        delete this._store.variables[varId];
-                    }
-                }
-            });
-
-            // remove the children
-            for (const slot in block.slots) {
-                const { children } = block.slots[slot];
-                // use copy of children so we can detach without breaking loop
-                for (const c of [...children]) {
-                    this.removeBlock(c, false);
-                }
-            }
-
-            // detach the current block (this might not always be possible)
-            this.detachBlock(id);
-
-            // delete it
-            if (!keep) {
-                delete this._store.blocks[id];
-            }
-        } else {
-            console.error("Block doesn't exist. Skipping.");
-        }
-    };
-
-    /**
-     * Set a block's data
-     * @param id - id of the block
-     * @param path - path of the data to set
-     * @param value - value of the data
-     */
-    private setBlockData = (
-        id: string,
-        path: string | null,
-        value: unknown,
-    ): void => {
-        if (!path) {
-            // set the value
-            this._store.blocks[id].data = value as Record<string, unknown>;
-            return;
-        }
-
-        // get the keys
-        const p = path.split(".");
-
-        // get the last key. If there is none, set the block data
-        const last = p.pop();
-        if (!last) {
-            return;
-        }
-
-        // traverse to the correct element
-        let current = this._store.blocks[id].data as Record<string, unknown>;
-        while (p.length) {
-            const key = p.shift();
-
-            if (!key) {
-                return;
-            }
-
-            // create the object if the key doesn't exist. This will allow us to have partials.
-            // TODO Generate with default?
-            if (!current[key]) {
-                current[key] = {};
-            }
-
-            current = current[key] as Record<string, unknown>;
-        }
-
-        // set the value
-        current[last] = value;
-    };
-
-    /**
-     * Delete a block's data
-     * @param id - id of the block
-     * @param path - path of the data to delete
-     */
-    private deleteBlockData = (id: string, path: string | null): void => {
-        if (!path) {
-            // clear the data
-            this._store.blocks[id].data = {};
-
-            return;
-        }
-
-        // get the keys
-        const p = path.split(".");
-
-        // get the last key
-        const last = p.pop();
-        if (!last) {
-            return;
-        }
-
-        // traverse to the correct element
-        let current = this._store.blocks[id].data as Record<string, unknown>;
-        while (p.length) {
-            const key = p.shift();
-
-            if (!key || !current) {
-                return;
-            }
-
-            current = current[key] as Record<string, unknown>;
-        }
-
-        // delete the value
-        delete current[last];
-    };
-
-    /**
-     * Set a listener on a block
-     * @param id - id of the block
-     * @param listener - listener to add to the block
-     * @param actions - actions to add to the block
-     */
-    private setListener = (
-        id: string,
-        listener: string,
-        actions: ListenerActions[],
-        type: "sync" | "async"
-    ): void => {
-        this._store.blocks[id].listeners[listener] = {
-            type: type,
-            order: actions
-        }
-    };
-
-    /**
-     * Create a new query
-     * @param queryId - name of the query that we are setting
-     */
-    private newQuery = (
-        queryId: string,
-        config: Omit<QueryStateConfig, "id">,
-    ): string => {
-        this._store.queries[queryId] = new QueryState(
-            {
-                ...config,
-                id: queryId,
-            },
-            this,
-        );
-
-        // TODO: Do we want this to be done here
-
-        // Automate variable creation for notebook and new cell
-        this.dispatch({
-            message: ActionMessages.ADD_VARIABLE,
-            payload: {
-                id: queryId,
-                type: "query",
-                to: queryId,
-                isOutput: true
-            }
-        })
-
-        Object.entries(this._store.queries[queryId].cells).forEach((c) => {
-            // Automate variable creation for notebook and new cell
-            const cId = c[0]
-            this.dispatch({
-                message: ActionMessages.ADD_VARIABLE,
-                payload: {
-                    id: `${queryId}--${cId}`,
-                    type: "cell",
-                    to: queryId,
-                    cellId: cId
-                }
-            })
-        })
-
-        this._store.executionOrder.push(queryId);
-
-
-        return queryId;
-    };
-
-    /**
-     * Delete a query
-     * @param queryId - name of the query that we are deleting
-     */
-    private deleteQuery = (queryId: string): void => {
-        // Delete the query
-        delete this._store.queries[queryId];
-
-        // Remove it from our execition order tracking
-        const index = this._store.executionOrder.indexOf(queryId);
-        this._store.executionOrder.splice(index, 1);
-
-        // clean up variables
-        Object.entries(this._store.variables).forEach((keyValue) => {
-            const id = keyValue[0];
-            const variable = keyValue[1];
-            if (variable.type === "query" || variable.type === "cell") {
-                if (variable.to === queryId) {
-                    delete this._store.variables[id];
-                }
-            }
-        });
-    };
-
-    /**
-     * Update the store in the query
-     * @param queryId - id of the updated query
-     * @param path - path of the data to set
-     * @param value - value of the data
-     */
-    private updateQuery = (
-        queryId: string,
-        path: string | null,
-        value: unknown,
-    ): void => {
-        const q = this._store.queries[queryId];
-
-        // set the value
-        q._update(path, value);
-    };
-
-    /**
-     * Run a query
-     * @param queryId - name of the query that we are running
-     */
-    private runQuery = (queryId: string, type?: 'sync' | 'async'): void => {
-        const q = this._store.queries[queryId];
-
-        const key = `query--${queryId};`;
-
-        // cancel a previous command
-        this._utils.queryPromises[key]?.cancel();
-        
-        let p;
-        let sync;
-
-        if(!type || type === 'async') {
-            sync = false
-        } else {
-            sync = true
-        }
-        
-        if (sync) {
-            p = syncronousPromise(async () => {
-                await q._run();
-                return true;
-            })
-        } else {
-            p = cancellablePromise(async () => {
-                await q._run()
-                return true
-            })
-        }
-        if(sync) {
-            return p.promise
-        } else  {
-            p.promise
-                .then((resp) => {
-                    // noop
-                })
-                .catch((e) => {
-                    console.error("ERROR:", e);
-                });
-        }
-
-        // save the promise
-        this._utils.queryPromises[key] = p;
-    };
-
-    /**
-     * Create a new cell
-     * @param queryId - id of the updated query
-     * @param cellId - id of the new cell
-     * @param config - config of the
-     * @param previousCellId: id of the previous cell,
-     */
-    private newCell = (
-        queryId: string,
-        config: Omit<CellStateConfig, "id">,
-        previousCellId: string,
-    ): string => {
-        // get the query
-        const q = this._store.queries[queryId];
-
-        // add the cell
-        return q._addCell(config, previousCellId) as string
-    };
-
-    /**
-     * Move a cell
-     * @param queryId - id of the updated query
-     * @param activeCellId - id of the active cell
-     * @param overCellId - id of the cell we are moving over
-     */
-    private moveCell = (queryId: string, activeCellId: string, overCellId: string): void => {
-        // get the query
-        const q = this._store.queries[queryId];
-
-        // move the cell
-        q._moveCell(activeCellId, overCellId);
-    }
-
-    /**
-     * Delete a cell
-     * @param queryId - id of the updated query
-     * @param cellId - id of the deleted cell
-     */
-    private deleteCell = (queryId: string, cellId: string): void => {
-        // get the query
-        const q = this._store.queries[queryId];
-
-        // remove the cell
-        q._removeCell(cellId);
-
-        // clean up variables
-        Object.entries(this._store.variables).forEach((keyValue) => {
-            const id = keyValue[0];
-            const variable = keyValue[1];
-            if (variable.type === "cell") {
-                if (variable.to === queryId && cellId === variable.cellId) {
-                    delete this._store.variables[id];
-                }
-            }
-        });
-
-        // always have at least one cell
-        if (q.list.length === 0) {
-            this.newCell(
-                queryId,
-                {
-                    parameters: {
-                        code: "",
-                        type: "pixel",
-                    },
-                    widget: "code",
-                } as Omit<CellStateConfig, "id">,
-                "",
-            );
-        }
-    };
-
-    /**
-     * Update the store in the cell
-     * @param queryId - id of the updated query
-     * @param cellId - id of the updated cell
-     * @param path - path of the data to set
-     * @param value - value of the data
-     */
-    private updateCell = (
-        queryId: string,
-        cellId: string,
-        path: string | null,
-        value: unknown,
-    ): void => {
-        const q = this._store.queries[queryId];
-        const s = q.getCell(cellId);
-
-        // set the value
-        s._update(path, value);
-    };
-
-    /**
-     * Run the cell
-     * @param queryId - id of the updated query
-     * @param cellId - id of the deleted cell
-     */
-    private runCell = (queryId: string, cellId: string): void => {
-        const q = this._store.queries[queryId];
-        const c = q.getCell(cellId);
-
-        const key = `cell--${cellId} (query--${queryId});`;
-
-        // cancel a previous command
-        this._utils.queryPromises[key]?.cancel();
-
-        // setup the promise
-        const p = cancellablePromise(async () => {
-            // run the cell
-            await c._run();
-
-            // turn it off
-            return true;
-        });
-
-        p.promise
-            .then(() => {
-                // noop
-            })
-            .catch((e) => {
-                console.error("ERROR:", e);
-            });
-
-        // save the promise
-        this._utils.queryPromises[key] = p;
-    };
-
-    /**
-     * Dispatch a custom event
-     * @param name - name of the event
-     * @param detail - payload associated with event
-     */
-    private dispatchEvent = (
-        name: string,
-        detail: Record<string, unknown> = {},
-    ): void => {
-        const event = new CustomEvent(name, {
-            detail: detail,
-        });
-        
-        // dispatch the event to the window
-        window.dispatchEvent(event);
-    };
-
-    /**
-     * 
-     * Dispatch an event
-     * @param detail - payload associated with event
-     */
-    private dispatchOutputsEvent = (): void => {
-
-        let outputMap = {};
-
-        Object.keys(this._store.variables).forEach((k) => {
-            if(this._store.variables[k].isOutput) {
-                outputMap[k] = this.parseVariable(`{{${k}}}`)
-            }
-        })
-
-        // Communication with Iframe
-        window.parent.postMessage({
-            type: "DISPATCH_APP_OUTPUTS",
-            data: outputMap
-        }, '*') // --> Cross Origin Communications
-    };
-
-    // -----------------------------------
-    // REVIEW VARIABLE AND DEPENDENCY CODE
-    // -----------------------------------
-    /**
-     * Adds to variable that can be referenced
-     * @param id - referenced as
-     * @param to - points to
-     * @param type - type of variable
-     */
-    private addVariable = (
-        id: string,
-        to: string,
-        type: VariableType,
-        cellId?: string,
-        value?,
-        isInput?,
-        isOutput?,
-    ) => {
-        if (id.includes(".")) {
-            return false;
-        }
-
-        if (this._store.variables[id]) {
-            return false;
-        }
-
-        const token = { type };
-
-        if (to) token["to"] = to;
-        if (cellId) token["cellId"] = cellId;
-        if (isInput) token["isInput"] = isInput;
-        if (isOutput) token["isOutput"] = isOutput;
-        if (value) token["value"] = value;
-
-        this._store.variables[id] = token as Variable;
-
-        return token;
-    };
-
-    /**
-     * Renames variable that can be referenced
-     * @param old - points to old id
-     * @param id - new id for variable
-     */
-    private renameVariable = (old: string, id: string): boolean => {
-        if (id.includes(".")) {
-            return false;
-        }
-
-        if (this._store.variables[id]) {
-            return false;
-        } else {
-            this._store.variables[id] = this._store.variables[old];
-
-            delete this._store.variables[old];
-
-            return true;
-        }
-    };
-
-    /**
-     * Replace old variable and remove old dependency
-     * @param from
-     * @param to
-     */
-    private editVariable = (id: string, oldVar: VariableWithId, newVar) => {
-        if (oldVar.id !== id) {
-            delete this._store.variables[oldVar.id];
-        }
-
-        this._store.variables[id] = newVar;
-    };
-
-    /**
-     * Deletes variable and corresponding dependency that can be referenced
-     * @param id - id to delete
-     */
-    private deleteVariable = async (id: string) => {
-        // Stringify blocks
-        const blocksToMutate = JSON.stringify(this._store.blocks);
-        // remove the references of it from ui (don't touch users code notebook)
-        const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, "g");
-
-        const modifiedBlocks = await blocksToMutate.replace(regex, "");
-
-        this._store.blocks = JSON.parse(modifiedBlocks);
-
-        delete this._store.variables[id];
-    };
-
-    /**
-     *
-     */
-    private setExecutionOrder = (orderedList: string[]) => {
-        this._store.executionOrder = orderedList;
-        return;
-    };
+	private _store: StateStoreInterface = {
+		mode: "interactive",
+		insightId: "",
+		version: "",
+		queries: {},
+		blocks: {},
+		frames: {},
+		cellRegistry: {},
+		variables: {},
+		executionOrder: [],
+		dependencyGraph: {},
+	};
+
+	/**
+	 * Utility variables
+	 */
+	private _utils: {
+		/**
+		 * Track any executing queries
+		 */
+		queryPromises: Record<
+			string,
+			ReturnType<typeof cancellablePromise> | null
+		>;
+	} = {
+		queryPromises: {},
+	};
+
+	constructor(config: StateStoreConfig) {
+		// save the connected insight
+		this._store.insightId = config.insightId;
+
+		// set the mode of the store based on how it is being used
+		this._store.mode = config.mode;
+
+		// register the cells
+		this._store.cellRegistry = config.cellRegistry || {};
+
+		// make it observable
+		makeAutoObservable(this);
+
+		// set the initial state after reactive to invoke it
+		this.setState(config.state, config.initialParams);
+	}
+
+	/**
+	 * Getters
+	 */
+	/**
+	 * Get the mode
+	 * @returns the mode
+	 */
+	get mode() {
+		return this._store.mode;
+	}
+
+	/**
+	 * Get the Insight ID
+	 * @returns the Insight ID
+	 */
+	get insightId() {
+		return this._store.insightId;
+	}
+
+	/**
+	 * Get the blocks
+	 * @returns the blocks
+	 */
+	get blocks() {
+		return this._store.blocks;
+	}
+
+	/**
+	 * Get the queries
+	 * @returns the queries
+	 */
+	get queries() {
+		return this._store.queries;
+	}
+
+	/**
+	 * Gets all tokens
+	 * @returns the tokens
+	 */
+	get variables() {
+		return this._store.variables;
+	}
+
+	/**
+	 * Gets ordered list of sheet ids
+	 * @returns the order sheets should be executed
+	 */
+	get executionOrder() {
+		return this._store.executionOrder;
+	}
+
+	/**
+	 * Get the cell type registry
+	 * @returns the cell type registry
+	 */
+	get cellRegistry() {
+		return this._store.cellRegistry;
+	}
+
+	/**
+	 * Get the specific block information
+	 * @param id - id of the block to get
+	 * @returns the specific block information
+	 */
+	getBlock(id: string) {
+		if (this._store.blocks[id]) {
+			return this._store.blocks[id];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Get all blocks of a specific type
+	 * @param type - type of the block to get
+	 * @returns all blocks of the specific type
+	 */
+	getAllBlocksOfType(type: string) {
+		return Object.values(this._store.blocks).filter(
+			(block) => block.widget === type,
+		);
+	}
+
+	/**
+	 * Get all parents of a block
+	 * @param nodeId - id of the block to get the parents of
+	 * @returns all parents of the block
+	 */
+	getAllParents(nodeId: string) {
+		let selected = nodeId;
+		const parents = [];
+		while (selected) {
+			parents.push(selected);
+			selected = this._store.blocks[selected]?.parent?.id;
+		}
+		return parents;
+	}
+
+	/**
+	 * Get a specific queries's state
+	 * @param id - id of the queries to get
+	 * @returns the specific block information
+	 */
+	getQuery(id: string): QueryState | null {
+		if (this._store.queries[id]) {
+			return this._store.queries[id];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Gets the variable by it's pointer
+	 * @param pointer
+	 * @param type
+	 * @param path - {{.isLoading}} {{.data.value}}
+	 * @returns
+	 */
+	getVariable(
+		pointer: string,
+		type: VariableType,
+		path?: string[],
+		cellId?: string,
+		value?: string,
+	): Variable | unknown {
+		try {
+			if (pointer) {
+				if (type === "block") {
+					const block = this._store.blocks[pointer];
+
+					// Old Version of JSON - notebooks, will be dependent on the .value and may crash
+					if (path && path.length === 1) {
+						return block.data.value as string;
+					} else {
+						if (block) {
+							// get the search path
+							const s = path.slice(1).join(".");
+							return getValueByPath(block.data, s);
+						}
+					}
+				} else if (type === "query") {
+					const query = this._store.queries[pointer];
+					if (query) {
+						if (path.length === 1) {
+							// Just get query output
+							return query.output;
+						} else {
+							const key = path[1];
+							if (query) {
+								if (key in query._exposed) {
+									// get the search path
+									const s = path.slice(1).join(".");
+									return getValueByPath(query._exposed, s);
+								}
+							}
+						}
+					}
+					// get the attribute key
+				} else if (type === "cell") {
+					const query = this.getQuery(pointer);
+					const cell = query.getCell(cellId);
+
+					if (cell) {
+						if (path.length === 1) {
+							return cell.output;
+						} else {
+							const key = path[1];
+							if (key in cell._exposed) {
+								// get the search path
+								const s = path.slice(1).join(".");
+								return getValueByPath(cell._exposed, s);
+							}
+						}
+					}
+				}
+				return undefined;
+			} else {
+				if (
+					type === "database" ||
+					type === "model" ||
+					type === "vector" ||
+					type === "function" ||
+					type === "storage" ||
+					type === "string" ||
+					type === "date" ||
+					type === "number"
+				) {
+					return value;
+				} else if (type === "array" || type === "JSON") {
+					let v;
+					if (value === "string") {
+						v = JSON.parse(value as string);
+					} else v = value;
+
+					return v;
+				}
+				return undefined;
+			}
+		} catch (e) {
+			console.error("state.store.getVariable: ", e);
+			return undefined;
+		}
+	}
+
+	/**
+	 * Gets the variable alias by it's pointer
+	 * @param pointer
+	 * @param type
+	 * @returns
+	 */
+	getAlias(pointer: string, cellId?: string): string {
+		let alias = "";
+
+		// Do we need to change how variables are stored to get rid of this iteration
+		Object.entries(this._store.variables).forEach((keyValue) => {
+			const variable = keyValue[1];
+
+			if (variable.to === pointer && !cellId && !variable.cellId) {
+				alias = keyValue[0];
+			} else if (variable.to === pointer && variable.cellId === cellId) {
+				alias = keyValue[0];
+			}
+		});
+		return alias;
+	}
+
+	/**
+	 * Get a frame. Create one if it isn't there
+	 * @param name
+	 */
+	getFrameKey(name: string): Frame["key"] {
+		// create the frame if it is not there
+		if (!this._store.frames[name]) {
+			runInAction(() => {
+				this.createFrame(name);
+			});
+		}
+
+		return this._store.frames[name].key;
+	}
+
+	/**
+	 * -------------------------------------
+	 * Actions
+	 * -------------------------------------
+	 */
+	/**
+	 * Dispatch a message to update the state
+	 *
+	 * @param action - Action to execute
+	 */
+	dispatch = (action: Actions) => {
+		// TODO: Develop History + Invert + UNDO;
+		console.log(
+			"ACTION :::",
+			JSON.parse(JSON.stringify(action.message)),
+			JSON.parse(JSON.stringify(action.payload)),
+		);
+
+		try {
+			// apply the action
+			if (ActionMessages.SET_STATE === action.message) {
+				const { state } = action.payload;
+
+				this.setState(state);
+			} else if (ActionMessages.ADD_BLOCK === action.message) {
+				const { json, position } = action.payload;
+
+				return this.addBlock(json, position);
+			} else if (ActionMessages.MOVE_BLOCK === action.message) {
+				const { id, position } = action.payload;
+
+				this.moveBlock(id, position);
+			} else if (ActionMessages.REMOVE_BLOCK === action.message) {
+				const { id, keep } = action.payload;
+
+				this.removeBlock(id, keep);
+			} else if (ActionMessages.SET_BLOCK_DATA === action.message) {
+				const { id, path, value } = action.payload;
+
+				this.setBlockData(id, path, value);
+			} else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
+				const { id, path } = action.payload;
+
+				this.deleteBlockData(id, path);
+			} else if (ActionMessages.SET_LISTENER === action.message) {
+				const { id, listener, actions, type } = action.payload;
+
+				this.setListener(id, listener, actions, type);
+			} else if (ActionMessages.NEW_QUERY === action.message) {
+				const { queryId, config } = action.payload;
+
+				this.newQuery(queryId, config);
+			} else if (ActionMessages.DELETE_QUERY === action.message) {
+				const { queryId } = action.payload;
+
+				this.deleteQuery(queryId);
+			} else if (ActionMessages.UPDATE_QUERY === action.message) {
+				const { queryId, path, value } = action.payload;
+
+				this.updateQuery(queryId, path, value);
+			} else if (ActionMessages.RUN_QUERY === action.message) {
+				const { queryId } = action.payload;
+
+				return this.runQuery(queryId);
+			} else if (ActionMessages.NEW_CELL === action.message) {
+				const { queryId, config, previousCellId } = action.payload;
+
+				return this.newCell(queryId, config, previousCellId);
+			} else if (ActionMessages.MOVE_CELL === action.message) {
+				const { queryId, activeCellId, overCellId } = action.payload;
+
+				this.moveCell(queryId, activeCellId, overCellId);
+			} else if (ActionMessages.DELETE_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				this.deleteCell(queryId, cellId);
+			} else if (ActionMessages.UPDATE_CELL === action.message) {
+				const { queryId, cellId, path, value } = action.payload;
+
+				this.updateCell(queryId, cellId, path, value);
+			} else if (ActionMessages.RUN_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				this.runCell(queryId, cellId);
+			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
+				const { name, detail } = action.payload;
+
+				this.dispatchEvent(name, detail);
+			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+				const { queryId, cellId, marked } = action.payload;
+
+				this.runMarkdownCell(queryId, cellId, marked);
+			} else if (
+				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+			) {
+				this.dispatchOutputsEvent();
+			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+				const { destinationType, destination } = action.payload;
+
+				this.dispatchOpenEvent(destinationType, destination);
+			} else if (ActionMessages.RENAME_VARIABLE === action.message) {
+				const { id, alias } = action.payload;
+
+				return this.renameVariable(id, alias);
+			} else if (ActionMessages.ADD_VARIABLE === action.message) {
+				const { id, to, type, cellId, value, isInput, isOutput } =
+					action.payload;
+
+				return this.addVariable(
+					id,
+					to,
+					type,
+					cellId,
+					value,
+					isInput,
+					isOutput,
+				);
+			} else if (ActionMessages.EDIT_VARIABLE === action.message) {
+				const { id, from, to } = action.payload;
+
+				const newVariable = {
+					type: to.type,
+				};
+
+				if (to.to) newVariable["to"] = to.to;
+				if (to.cellId) newVariable["cellId"] = to.cellId;
+				if (to.value) newVariable["value"] = to.value;
+
+				newVariable["isInput"] = to.isInput ? to.isInput : false;
+				newVariable["isOutput"] = to.isOutput ? to.isOutput : false;
+
+				this.editVariable(id, from, newVariable);
+			} else if (ActionMessages.DELETE_VARIABLE === action.message) {
+				const { id } = action.payload;
+
+				this.deleteVariable(id);
+			} else if (
+				ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
+			) {
+				const { list } = action.payload;
+
+				return this.setExecutionOrder(list);
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
+	/**
+	 * TODO: Needs to get folded into code above --> useBlock.tsx
+	 * @param action
+	 * @returns
+	 */
+	dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
+		try {
+			if (ActionMessages.RUN_QUERY === action.message) {
+				const { queryId } = action.payload;
+
+				const run = () =>
+					new Promise(async (resolve) => {
+						await this.runQuery(queryId, type);
+						resolve(this._store.queries[queryId].output);
+					});
+
+				return await run();
+			} else if (ActionMessages.RUN_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				const run = () =>
+					new Promise(async (resolve) => {
+						await this.runCell(queryId, cellId, type);
+
+						resolve(
+							this._store.queries[queryId].cells[cellId].output,
+						);
+					});
+				return await run();
+			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
+				const { name, detail } = action.payload;
+
+				this.dispatchEvent(name, detail);
+			} else if (
+				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+			) {
+				this.dispatchOutputsEvent();
+			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+				const { destinationType, destination } = action.payload;
+
+				this.dispatchOpenEvent(destinationType, destination);
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
+	/** Variable Methods */
+	/**
+	 * TODO: Clean this fn up (split out iterator parsing?)
+	 * Parse a variables and return the value if it exists (otherwise return the expression)
+	 */
+	parseVariable = (
+		expression: string,
+		id?: string,
+		_depth = 0,
+		_seen: Set<string> = new Set(),
+	): unknown => {
+		if (_depth > 10) return expression;
+		if (_seen.has(expression)) return expression;
+
+		_seen.add(expression);
+
+		// trim the whitespace
+		let cleaned = expression.trim();
+
+		// Checks if it falls inline with special syntax
+		if (
+			!cleaned.startsWith("{{") &&
+			!cleaned.endsWith("}}") &&
+			!cleaned.startsWith("$")
+		) {
+			return expression;
+		}
+
+		// Special Parsing for Iterators
+		if (cleaned.startsWith("$")) {
+			// See if id is a descendant of an iterator block
+			const iteratorBlock = this.isDescendantOfIterator(id);
+
+			if (iteratorBlock) {
+				try {
+					// Go see what index the iterator block children this id is a descendant of
+					const index = this.findIteratorChildIndex(
+						iteratorBlock,
+						id,
+					);
+					const iteratorList = iteratorBlock.data.source as string;
+					let list = this.parseVariable(iteratorList);
+
+					if (typeof list === "string") {
+						try {
+							list = JSON.parse(list);
+						} catch {
+							return expression;
+						}
+					}
+
+					let variable;
+
+					if (expression.includes(".")) {
+						variable = expression.match(/\$(.*?)\./)[1];
+					} else {
+						variable = expression.match(/^\$(\w+)/)?.[1];
+					}
+
+					const stripped = iteratorList.slice(2, -2);
+
+					// TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
+					// Do we just call this recursively
+					if (variable === stripped) {
+						const path = expression.split(".").splice(1);
+						const test = path.join(".");
+						const val = getValueByPath(list[index], test);
+
+						// SHOW "" or expression
+						return val ? val : "";
+					} else {
+						return expression;
+					}
+				} catch {
+					return expression;
+				}
+			} else {
+				console.warn(`Unable to find iterator descendant - ${id}: `);
+				return expression;
+			}
+		}
+
+		// remove the brackets
+		cleaned = cleaned.slice(2, -2);
+
+		// get the keys in the path
+		const path = cleaned.split(".");
+		const pointer = path[0];
+
+		// Special syntax to parse by cell order
+		const isNumber = !isNaN(parseFloat(path[1]));
+
+		if (isNumber) {
+			let q;
+
+			// TODO: Problem we want to reference cells by a special syntax
+			// I don't want to change ids to be numbered for cells,
+			// i think we are good with our id generation
+			if (this._store.variables[pointer]) {
+				const variable = this._store.variables[path[0]];
+				if (variable.type === "query") {
+					q = this._store.queries[variable.to];
+				}
+			} else if (this._store.queries[pointer]) {
+				q = this._store.queries[pointer];
+			}
+
+			if (q) {
+				try {
+					const c = q.cellList[parseFloat(path[1]) - 1];
+					const p = path;
+					p.splice(0, 2);
+
+					if (p.length === 0) {
+						return c.output;
+					} else {
+						const key = p[0];
+
+						if (key in c._exposed) {
+							// get the search path
+							const s = p.join(".");
+
+							return getValueByPath(c._exposed, s);
+						}
+					}
+				} catch (e) {
+					console.error(e);
+					return expression;
+				}
+			}
+		}
+
+		if (this._store.variables[path[0]]) {
+			// We should be able to interpret by varaible name as we do below
+			const variable = this._store.variables[path[0]];
+			const value = this.getVariable(
+				variable.to,
+				variable.type,
+				path,
+				variable.cellId,
+				variable.type !== "cell" && variable.value
+					? variable.value
+					: null,
+			);
+
+			// TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
+			if (value !== undefined && value !== null) {
+				// RECURSIVE: If value is another {{var}}, resolve again
+				if (
+					typeof value === "string" &&
+					value.trim().match(/^{{.*}}$/)
+				) {
+					return this.parseVariable(value, id, _depth + 1, _seen);
+				}
+				return value;
+			}
+
+			if (value === undefined) {
+				return value;
+			}
+		}
+
+		return expression;
+	};
+
+	/**
+	 * Flatten a string containing multiple variables
+	 * @param expression - expression to flatten
+	 * @returns the flatten parameter
+	 */
+	flattenVariable = (expression: string): string => {
+		return expression.replace(/{{(.*?)}}/g, (match) => {
+			// try to extract the variable
+			const v = this.parseVariable(match);
+
+			// if it is not a string, convert to a string
+			if (typeof v !== "string") {
+				return JSON.stringify(v);
+			}
+
+			return v;
+		});
+	};
+
+	/** Side effects Methods */
+	/**
+	 * Run a side effect pixel and process the response
+	 *
+	 * @param pixel - side effect to run
+	 */
+	runSideEffect = async <O extends unknown[] | []>(pixel: string) => {
+		const response = await runPixel<O>(pixel, this._store.insightId);
+
+		// process the side effects
+		for (const { operationType, output } of response.pixelReturn) {
+			this.processSideEffects(operationType, output);
+		}
+
+		// return the response
+		return response;
+	};
+
+	/**
+	 * Process side-effects from running a pixel
+	 *
+	 * @param operation - operation that was run
+	 * @param output - output fo the operation
+	 */
+	processSideEffects = (operation: string[], output: unknown) => {
+		// download the file
+		if (operation.includes("FILE_DOWNLOAD")) {
+			download(this.insightId, output as string);
+		} else if (
+			operation.includes("FRAME_DATA_CHANGE") ||
+			operation.includes("FRAME_FILTER_CHANGE")
+		) {
+			this.syncFrame((output as { name: string }).name);
+		}
+	};
+
+	/**
+	 * Serialize to JSON
+	 */
+	toJSON(): SerializedState {
+		return {
+			queries: Object.keys(this._store.queries).reduce(
+				(acc, val) => {
+					acc[val] = this._store.queries[val].toJSON();
+					return acc;
+				},
+				{} as SerializedState["queries"],
+			),
+			blocks: toJS(this._store.blocks),
+			variables: toJS(this._store.variables),
+			executionOrder: toJS(this._store.executionOrder),
+			version: this._store.version,
+		};
+	}
+
+	/**
+	 *
+	 */
+
+	/**
+	 * Internal
+	 */
+	/**
+	 * Helpers
+	 */
+
+	/**
+	 * Generates a unique page ID
+	 */
+	private generatePageId(): string {
+		let pageNum = 2;
+		while (this._store.blocks[`page--${pageNum}`]) {
+			pageNum++;
+		}
+		return `page--${pageNum}`;
+	}
+
+	/**
+	 * Generates a unique ID for non-page widgets
+	 */
+	private generateNonPageId(widget: string): string {
+		// Try sequential numbers starting from 1
+		let blockNum = 1;
+		while (this._store.blocks[`${widget}--${blockNum}`]) {
+			blockNum++;
+		}
+		return `${widget}--${blockNum}`;
+	}
+
+	/**
+	 * @description creates a new block id
+	 * @returns block id - string
+	 */
+	private generateBlockId = (json: BlockJSON): string => {
+		if (json.widget === "page") {
+			return this.generatePageId();
+		}
+		return this.generateNonPageId(json.widget);
+	};
+
+	/**
+	 * Generate a new block from the json
+	 * @param json - json of the block that we are generating
+	 * @returns block
+	 */
+	private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
+		// generate a new id
+		const id = this.generateBlockId(json);
+
+		// create the block
+		const block = {
+			id: id,
+			widget: json.widget,
+			parent: null,
+			data: {},
+			listeners: {},
+			slots: {},
+		} as Block;
+
+		// add the data
+		block.data = json.data;
+
+		if (json.widget === "page") {
+			// Defaulting the route to the block id
+			block.data.route = id;
+		}
+
+		// add the listeners
+		block.listeners = json.listeners;
+
+		if (!json["parent"] && parent) {
+			block.parent = parent;
+		}
+
+		// generate the slots
+		for (const slot in json.slots) {
+			if (json.slots[slot]) {
+				block.slots[slot] = {
+					name: slot,
+					children: (Array.isArray(json.slots[slot])
+						? json.slots[slot]
+						: json.slots[slot]["children"]
+					).map((child) => {
+						// form the parent object
+						const parent = { id: id, slot: slot };
+
+						// build the children, but only store the ids
+						const b = this.generateBlock(child, parent);
+
+						return b.id;
+					}),
+				};
+			}
+		}
+
+		// register it
+		this._store.blocks[id] = block;
+
+		// return it
+		return block;
+	};
+
+	private isDescendantOfIterator = (blockId: string) => {
+		console.warn(`Is ${blockId} a descendant of an iterator`);
+
+		let currentBlock = this._store.blocks[blockId];
+
+		while (currentBlock) {
+			if (currentBlock.widget === "iteration") {
+				return currentBlock;
+			}
+			if (currentBlock.parent && currentBlock.parent.id) {
+				currentBlock = this._store.blocks[currentBlock.parent.id];
+			} else {
+				break;
+			}
+		}
+
+		return false;
+	};
+
+	private isDescendant = (containerId, blockId) => {
+		const container = this._store.blocks[containerId];
+
+		// TODO: may need to fix
+		if (!container || !container.slots || !container.slots.children) {
+			return false;
+		}
+
+		// TODO: will it always be .children? --> Accordion .content and .header
+		const children = container.slots.children.children;
+		if (children.includes(blockId)) {
+			return true;
+		}
+
+		for (const childId of children) {
+			if (this.isDescendant(childId, blockId)) {
+				return true;
+			}
+		}
+
+		return false;
+	};
+
+	private findIteratorChildIndex = (iteratorBlock, blockId) => {
+		const children = iteratorBlock.slots.children.children;
+
+		for (let i = 0; i < children.length; i++) {
+			const iteratorChildId = children[i];
+
+			// No need to search tree
+			if (iteratorChildId === blockId) return i;
+
+			if (this.isDescendant(iteratorChildId, blockId)) {
+				return i;
+			}
+		}
+
+		return -1; // Return -1 if not found
+	};
+
+	/**
+	 * Check if a parent contains the child block
+	 * @param parent - id of the parent block
+	 * @param child - id of the child block
+	 * @returns true if the child is in the parent
+	 */
+	containsBlock = (parent: string, child: string): boolean => {
+		const queue = [parent];
+		while (queue.length) {
+			const current = queue.shift() as string;
+
+			if (current === child) {
+				return true;
+			}
+
+			// check if the block exists
+			const block = this._store.blocks[current];
+
+			// validate the children
+			for (const s in block.slots) {
+				queue.push(...block.slots[s].children);
+			}
+		}
+
+		return false;
+	};
+
+	extractDependenciesFromString = (str) => {
+		const regex = /{{\s*([\w_]+)\s*}}/g;
+		let match,
+			deps = [];
+		while ((match = regex.exec(str)) !== null) {
+			deps.push(match[1]);
+		}
+
+		return deps;
+	};
+
+	/**
+	 * Attach a block to the parent block's slot. At this point, we assume that everything can be attached correctly.
+	 * @param parent - id of the block that we are attaching to
+	 * @param slot - slot that we are attaching to
+	 * @param index - children index where we are attaching
+	 * @param id - id of the block that we are attaching
+	 */
+	private attachBlock = (
+		parent: string,
+		slot: string,
+		index: number,
+		id: string,
+	) => {
+		const parentBlock = this._store.blocks[parent];
+
+		// if the slot is not valid, we cannot attach
+		if (!parentBlock.slots[slot]) {
+			return;
+		}
+
+		// if it is is already there, we cannot attach
+		if (parentBlock.slots[slot].children.indexOf(id) !== -1) {
+			return;
+		}
+
+		// get the block
+		const block = this._store.blocks[id];
+
+		// insert it
+		parentBlock.slots[slot].children.splice(index, 0, id);
+
+		// update the child block
+		block.parent = {
+			id: parent,
+			slot: slot,
+		};
+
+		return;
+	};
+
+	/**
+	 * Detach a block from the current parent. At this point, we assume that everything can be detached correctly.
+	 * @param id - id of the block that we are detaching
+	 */
+	private detachBlock = (id: string) => {
+		const block = this._store.blocks[id];
+
+		// if there is no parent, there is no need to detach
+		if (!block.parent) {
+			return;
+		}
+
+		// get the parent
+		const parentBlock = this._store.blocks[block.parent.id];
+
+		// validate that the slot and index are correct
+		const parentSlot = parentBlock.slots[block.parent.slot];
+		if (!parentSlot) {
+			return;
+		}
+
+		//
+		const blockIdx = parentSlot.children.indexOf(id);
+		if (blockIdx === -1) {
+			return;
+		}
+
+		// remove it from the parent
+		parentSlot.children.splice(blockIdx, 1);
+
+		// update the child
+		block.parent = null;
+	};
+
+	/**
+	 * Create a new frame
+	 */
+	private createFrame = (name: string) => {
+		this._store.frames[name] = {
+			name: name,
+			key: 0,
+		};
+	};
+
+	/**
+	 * Resync the frame and change the data key
+	 */
+	private syncFrame = (name: string) => {
+		// create the frame if it is not there
+		if (!this._store.frames[name]) {
+			this.createFrame(name);
+		}
+
+		// increment the key
+		this._store.frames[name].key = this._store.frames[name].key + 1;
+	};
+
+	/**
+	 * Actions
+	 */
+	/**
+	 * Set the state information
+	 *
+	 * @param state - pixel to execute
+	 */
+	private setState = (
+		state: SerializedState,
+		initialParams?: Record<string, unknown>,
+	) => {
+		// store the block information
+		this._store.blocks = state.blocks;
+
+		// load the queries
+		this._store.queries = Object.keys(state.queries).reduce((acc, val) => {
+			acc[val] = new QueryState(state.queries[val], this);
+			return acc;
+		}, {});
+
+		// store the variables
+		this._store.variables = state.variables ? state.variables : {};
+
+		// store the execution order of notebooks
+		let order = [];
+		const sheets = Object.keys(this._store.queries);
+
+		if (state.executionOrder.length) {
+			order = state.executionOrder;
+		} else {
+			sheets.forEach((k) => {
+				order.push(k);
+			});
+		}
+
+		sheets.forEach(async (s) => {
+			const found = await order.find((o) => {
+				return o === s;
+			});
+
+			if (!found) {
+				order.push(s);
+			}
+		});
+
+		this._store.executionOrder = order;
+
+		// Replace initial param values provided from URL
+		if (initialParams) {
+			Object.entries(initialParams).forEach((keyValue) => {
+				const key = keyValue[0];
+				const value = keyValue[1];
+
+				const variable = this._store.variables[key];
+
+				if (variable) {
+					// retrieve the "to" value
+					const toValue = variable.to;
+					if (variable.type == "block") {
+						// Look into blocks section
+						if (this._store.blocks[toValue]) {
+							this._store.blocks[toValue].data.value = value;
+						}
+					} else if (
+						variable.type == "cell" ||
+						variable.type == "query"
+					) {
+						// TODO: Handle query and cell types do we just swap output?
+					} else {
+						this._store.variables[key]["value"] = value;
+					}
+				}
+			});
+		}
+
+		// store the version or the one we currently are on
+		this._store.version = state.version ? state.version : STATE_VERSION;
+	};
+
+	private buildDependencyGraph = (json, nodes = {}, edges = []) => {
+		if (typeof json === "object" && json !== null) {
+			for (const [key, value] of Object.entries(json)) {
+				// If the key is 'id', treat it as a node
+				if (key === "id" && typeof value === "string") {
+					if (!nodes[value]) {
+						nodes[value] = {
+							id: value,
+							data: { label: value },
+							position: {
+								x: Math.random() * 400,
+								y: Math.random() * 400,
+							},
+						};
+					}
+				}
+				// If value is a string, look for dependencies
+				if (typeof value === "string") {
+					const deps = this.extractDependenciesFromString(value);
+					if (json.id && deps.length) {
+						deps.forEach((dep) => {
+							if (!nodes[dep]) {
+								nodes[dep] = {
+									id: dep,
+									data: { label: dep },
+									position: {
+										x: Math.random() * 400,
+										y: Math.random() * 400,
+									},
+								};
+							}
+							edges.push({
+								id: `e${json.id}-${dep}`,
+								source: json.id,
+								target: dep,
+							});
+						});
+					}
+				}
+				// Recurse into objects/arrays
+				if (typeof value === "object") {
+					this.buildDependencyGraph(value, nodes, edges);
+				}
+			}
+		} else if (Array.isArray(json)) {
+			json.forEach((item) =>
+				this.buildDependencyGraph(item, nodes, edges),
+			);
+		}
+
+		return { nodes: Object.values(nodes), edges };
+	};
+
+	/**
+	 * Create a block and add it to the tree
+	 * @param json - json of the block that we are adding
+	 * @param position - where is the block going
+	 * @returns id of new block
+	 */
+	private addBlock = (
+		json: BlockJSON,
+		position?: AddBlockAction["payload"]["position"],
+	): string => {
+		// generate the block
+		const block = this.generateBlock(json);
+
+		// try to place it if position
+		if (!position) {
+			if (block.widget === "page") return block.id;
+			return;
+		}
+
+		const { parent, slot } = position;
+
+		// get the parent
+		const parentBlock = this._store.blocks[parent];
+
+		if ("sibling" in position) {
+			const { sibling, type } = position;
+
+			// get the index of the sibling (it might have changed)
+			const siblingIdx =
+				parentBlock.slots[slot].children.indexOf(sibling);
+
+			if (type === "before") {
+				// attach the block before
+				this.attachBlock(parent, slot, siblingIdx, block.id);
+			} else if (type === "after") {
+				// attach the block after
+				this.attachBlock(parent, slot, siblingIdx + 1, block.id);
+			}
+		} else {
+			// attach the block
+			this.attachBlock(
+				parent,
+				slot,
+				parentBlock.slots[slot].children.length,
+				block.id,
+			);
+		}
+		return block.id;
+	};
+
+	/**
+	 * Move a block in the tree
+	 * @param id - id of the child block that we are moving
+	 * @param position - where is the block going
+	 */
+	private moveBlock = (
+		id: string,
+		position: MoveBlockAction["payload"]["position"],
+	): void => {
+		if (!position) {
+			// detach the current block (this might not always be possible)
+			this.detachBlock(id);
+			return;
+		}
+
+		// if there is a parent see if you can detach
+		const { parent, slot } = position;
+
+		// if the parent block is a child of the moved block, we cannot move
+		if (this.containsBlock(id, parent)) {
+			return;
+		}
+
+		// get the parent
+		const parentBlock = this._store.blocks[parent];
+
+		// detach the current block (this might not always be possible)
+		this.detachBlock(id);
+
+		if ("sibling" in position) {
+			const { sibling, type } = position;
+
+			// get the index of the sibling (it might have changed)
+			const siblingIdx =
+				parentBlock.slots[slot].children.indexOf(sibling);
+
+			if (type === "before") {
+				// attach the block before
+				this.attachBlock(parent, slot, siblingIdx, id);
+			} else if (type === "after") {
+				// attach the block after
+				this.attachBlock(parent, slot, siblingIdx + 1, id);
+			}
+		} else {
+			// attach the block
+			this.attachBlock(
+				parent,
+				slot,
+				parentBlock.slots[slot].children.length,
+				id,
+			);
+		}
+	};
+
+	/**
+	 * Remove the block from the tree
+	 * @param id - id of the block that we are removing
+	 * @param keep - keep the block
+	 */
+	private removeBlock = (
+		id: string,
+		keep: RemoveBlockAction["payload"]["keep"],
+	): void => {
+		// get the block
+		const block = this._store.blocks[id];
+
+		if (block) {
+			// Remove the variable
+			Object.entries(this._store.variables).forEach((keyValue) => {
+				const varId = keyValue[0];
+				const variable = keyValue[1];
+
+				if (variable.type === "block") {
+					if (variable.to === id) {
+						delete this._store.variables[varId];
+					}
+				}
+			});
+
+			// remove the children
+			for (const slot in block.slots) {
+				const { children } = block.slots[slot];
+				// use copy of children so we can detach without breaking loop
+				for (const c of [...children]) {
+					this.removeBlock(c, false);
+				}
+			}
+
+			// detach the current block (this might not always be possible)
+			this.detachBlock(id);
+
+			// delete it
+			if (!keep) {
+				delete this._store.blocks[id];
+			}
+		} else {
+			console.error("Block doesn't exist. Skipping.");
+		}
+	};
+
+	/**
+	 * Set a block's data
+	 * @param id - id of the block
+	 * @param path - path of the data to set
+	 * @param value - value of the data
+	 */
+	private setBlockData = (
+		id: string,
+		path: string | null,
+		value: unknown,
+	): void => {
+		if (!path) {
+			// set the value
+			this._store.blocks[id].data = value as Record<string, unknown>;
+			return;
+		}
+
+		// get the keys
+		const p = path.split(".");
+
+		// get the last key. If there is none, set the block data
+		const last = p.pop();
+		if (!last) {
+			return;
+		}
+
+		// traverse to the correct element
+		let current = this._store.blocks[id].data as Record<string, unknown>;
+		while (p.length) {
+			const key = p.shift();
+
+			if (!key) {
+				return;
+			}
+
+			// create the object if the key doesn't exist. This will allow us to have partials.
+			// TODO Generate with default?
+			if (!current[key]) {
+				current[key] = {};
+			}
+
+			current = current[key] as Record<string, unknown>;
+		}
+
+		// set the value
+		current[last] = value;
+	};
+
+	/**
+	 * Delete a block's data
+	 * @param id - id of the block
+	 * @param path - path of the data to delete
+	 */
+	private deleteBlockData = (id: string, path: string | null): void => {
+		if (!path) {
+			// clear the data
+			this._store.blocks[id].data = {};
+
+			return;
+		}
+
+		// get the keys
+		const p = path.split(".");
+
+		// get the last key
+		const last = p.pop();
+		if (!last) {
+			return;
+		}
+
+		// traverse to the correct element
+		let current = this._store.blocks[id].data as Record<string, unknown>;
+		while (p.length) {
+			const key = p.shift();
+
+			if (!key || !current) {
+				return;
+			}
+
+			current = current[key] as Record<string, unknown>;
+		}
+
+		// delete the value
+		delete current[last];
+	};
+
+	/**
+	 * Set a listener on a block
+	 * @param id - id of the block
+	 * @param listener - listener to add to the block
+	 * @param actions - actions to add to the block
+	 */
+	private setListener = (
+		id: string,
+		listener: string,
+		actions: ListenerActions[],
+		type: "sync" | "async",
+	): void => {
+		this._store.blocks[id].listeners[listener] = {
+			type: type,
+			order: actions,
+		};
+	};
+
+	/**
+	 * Create a new query
+	 * @param queryId - name of the query that we are setting
+	 */
+	private newQuery = (
+		queryId: string,
+		config: Omit<QueryStateConfig, "id">,
+	): string => {
+		this._store.queries[queryId] = new QueryState(
+			{
+				...config,
+				id: queryId,
+			},
+			this,
+		);
+
+		// TODO: Do we want this to be done here
+
+		// Automate variable creation for notebook and new cell
+		this.dispatch({
+			message: ActionMessages.ADD_VARIABLE,
+			payload: {
+				id: queryId,
+				type: "query",
+				to: queryId,
+				isOutput: true,
+			},
+		});
+
+		Object.entries(this._store.queries[queryId].cells).forEach((c) => {
+			// Automate variable creation for notebook and new cell
+			const cId = c[0];
+			this.dispatch({
+				message: ActionMessages.ADD_VARIABLE,
+				payload: {
+					id: `${queryId}--${cId}`,
+					type: "cell",
+					to: queryId,
+					cellId: cId,
+				},
+			});
+		});
+
+		this._store.executionOrder.push(queryId);
+
+		return queryId;
+	};
+
+	/**
+	 * Delete a query
+	 * @param queryId - name of the query that we are deleting
+	 */
+	private deleteQuery = (queryId: string): void => {
+		// Delete the query
+		delete this._store.queries[queryId];
+
+		// Remove it from our execition order tracking
+		const index = this._store.executionOrder.indexOf(queryId);
+		this._store.executionOrder.splice(index, 1);
+
+		// clean up variables
+		Object.entries(this._store.variables).forEach((keyValue) => {
+			const id = keyValue[0];
+			const variable = keyValue[1];
+			if (variable.type === "query" || variable.type === "cell") {
+				if (variable.to === queryId) {
+					delete this._store.variables[id];
+				}
+			}
+		});
+	};
+
+	/**
+	 * Update the store in the query
+	 * @param queryId - id of the updated query
+	 * @param path - path of the data to set
+	 * @param value - value of the data
+	 */
+	private updateQuery = (
+		queryId: string,
+		path: string | null,
+		value: unknown,
+	): void => {
+		const q = this._store.queries[queryId];
+
+		// set the value
+		q._update(path, value);
+	};
+
+	/**
+	 * Run a query
+	 * @param queryId - name of the query that we are running
+	 */
+	private runQuery = (queryId: string, type?: "sync" | "async"): void => {
+		const q = this._store.queries[queryId];
+
+		const key = `query--${queryId};`;
+
+		// cancel a previous command
+		this._utils.queryPromises[key]?.cancel();
+
+		let p;
+		let sync;
+
+		if (!type || type === "async") {
+			sync = false;
+		} else {
+			sync = true;
+		}
+
+		if (sync) {
+			p = syncronousPromise(async () => {
+				await q._run();
+				return true;
+			});
+		} else {
+			p = cancellablePromise(async () => {
+				await q._run();
+				return true;
+			});
+		}
+		if (sync) {
+			return p.promise;
+		} else {
+			p.promise
+				.then((resp) => {
+					// noop
+				})
+				.catch((e) => {
+					console.error("ERROR:", e);
+				});
+		}
+
+		// save the promise
+		this._utils.queryPromises[key] = p;
+	};
+
+	/**
+	 * Create a new cell
+	 * @param queryId - id of the updated query
+	 * @param cellId - id of the new cell
+	 * @param config - config of the
+	 * @param previousCellId: id of the previous cell,
+	 */
+	private newCell = (
+		queryId: string,
+		config: Omit<CellStateConfig, "id">,
+		previousCellId: string,
+	): string => {
+		// get the query
+		const q = this._store.queries[queryId];
+
+		// add the cell
+		return q._addCell(config, previousCellId) as string;
+	};
+
+	/**
+	 * Move a cell
+	 * @param queryId - id of the updated query
+	 * @param activeCellId - id of the active cell
+	 * @param overCellId - id of the cell we are moving over
+	 */
+	private moveCell = (
+		queryId: string,
+		activeCellId: string,
+		overCellId: string,
+	): void => {
+		// get the query
+		const q = this._store.queries[queryId];
+
+		// move the cell
+		q._moveCell(activeCellId, overCellId);
+	};
+
+	/**
+	 * Delete a cell
+	 * @param queryId - id of the updated query
+	 * @param cellId - id of the deleted cell
+	 */
+	private deleteCell = (queryId: string, cellId: string): void => {
+		// get the query
+		const q = this._store.queries[queryId];
+
+		// remove the cell
+		q._removeCell(cellId);
+
+		// clean up variables
+		Object.entries(this._store.variables).forEach((keyValue) => {
+			const id = keyValue[0];
+			const variable = keyValue[1];
+			if (variable.type === "cell") {
+				if (variable.to === queryId && cellId === variable.cellId) {
+					delete this._store.variables[id];
+				}
+			}
+		});
+
+		// always have at least one cell
+		if (q.list.length === 0) {
+			this.newCell(
+				queryId,
+				{
+					parameters: {
+						code: "",
+						type: "pixel",
+					},
+					widget: "code",
+				} as Omit<CellStateConfig, "id">,
+				"",
+			);
+		}
+	};
+
+	/**
+	 * Update the store in the cell
+	 * @param queryId - id of the updated query
+	 * @param cellId - id of the updated cell
+	 * @param path - path of the data to set
+	 * @param value - value of the data
+	 */
+	private updateCell = (
+		queryId: string,
+		cellId: string,
+		path: string | null,
+		value: unknown,
+	): void => {
+		const q = this._store.queries[queryId];
+		const s = q.getCell(cellId);
+
+		// set the value
+		s._update(path, value);
+	};
+
+	/**
+	 * Run the cell
+	 * @param queryId - id of the updated query
+	 * @param cellId - id of the deleted cell
+	 */
+	private runCell = (
+		queryId: string,
+		cellId: string,
+		type?: string,
+	): void => {
+		const q = this._store.queries[queryId];
+		const c = q.getCell(cellId);
+
+		const key = `cell--${cellId} (query--${queryId});`;
+
+		// cancel a previous command
+		this._utils.queryPromises[key]?.cancel();
+
+		let p;
+		let sync;
+
+		if (!type || type === "async") {
+			sync = false;
+		} else {
+			sync = true;
+		}
+
+		if (sync) {
+			p = syncronousPromise(async () => {
+				await c._run();
+				return true;
+			});
+		} else {
+			p = cancellablePromise(async () => {
+				// run the cell
+				await c._run();
+				// turn it off
+				return true;
+			});
+		}
+
+		if (sync) {
+			return p.promise;
+		} else {
+			p.promise
+				.then((resp) => {
+					// noop
+				})
+				.catch((e) => {
+					console.error("ERROR:", e);
+				});
+		}
+
+		// save the promise
+		this._utils.queryPromises[key] = p;
+	};
+
+	private runMarkdownCell = (
+		queryId: string,
+		cellId: string,
+		marked: boolean,
+	): void => {
+		// make the cell as marked
+		this._store.queries[queryId].cells[cellId].parameters.marked = marked;
+	};
+	/**
+	 * Dispatch a custom event
+	 * @param name - name of the event
+	 * @param detail - payload associated with event
+	 */
+	private dispatchEvent = (
+		name: string,
+		detail: Record<string, unknown> = {},
+	): void => {
+		const event = new CustomEvent(name, {
+			detail: detail,
+		});
+
+		// dispatch the event to the window
+		window.dispatchEvent(event);
+	};
+
+	private dispatchOpenEvent = (
+		destinationType: string,
+		destination: string,
+	): void => {
+		const event = new CustomEvent("OPEN_EVENT", {
+			detail: { destinationType, destination },
+		});
+
+		if (this.mode === "interactive") {
+			if (destinationType === "Internal") {
+				const hash = window.location.hash;
+				// Match either #/s/:id/ or #/:id/view
+				const appPageMatch = hash.match(/^#\/app\/([^/]+)/);
+				const sharePageMatch = hash.match(/^#\/s\/([^/]+)/);
+
+				if (appPageMatch || sharePageMatch) {
+					const base = appPageMatch
+						? appPageMatch[0] + "/view"
+						: sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
+
+					const pageBlocks = this.getAllBlocksOfType("page");
+
+					const urlPageRouteMatch = pageBlocks.find(
+						(page) => page.data.route === destination,
+					);
+
+					if (urlPageRouteMatch) {
+						const newHash = destination.startsWith("/")
+							? base.replace(/\/$/, "") + destination
+							: base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
+
+						window.location.hash = newHash;
+					}
+
+					return;
+				}
+				4;
+			} else if (destinationType === "External") {
+				window.location.href = destination;
+			}
+		}
+
+		// dispatch the event to the window
+		window.dispatchEvent(event);
+	};
+
+	/**
+	 *
+	 * Dispatch an event
+	 * @param detail - payload associated with event
+	 */
+	private dispatchOutputsEvent = (): void => {
+		const outputMap = {};
+
+		Object.keys(this._store.variables).forEach((k) => {
+			if (this._store.variables[k].isOutput) {
+				outputMap[k] = this.parseVariable(`{{${k}}}`);
+			}
+		});
+
+		// Communication with Iframe
+		window.parent.postMessage(
+			{
+				type: "DISPATCH_APP_OUTPUTS",
+				data: outputMap,
+			},
+			"*",
+		); // --> Cross Origin Communications
+	};
+
+	// -----------------------------------
+	// REVIEW VARIABLE AND DEPENDENCY CODE
+	// -----------------------------------
+	/**
+	 * Adds to variable that can be referenced
+	 * @param id - referenced as
+	 * @param to - points to
+	 * @param type - type of variable
+	 */
+	private addVariable = (
+		id: string,
+		to: string,
+		type: VariableType,
+		cellId?: string,
+		value?,
+		isInput?,
+		isOutput?,
+	) => {
+		if (id.includes(".")) {
+			return false;
+		}
+
+		if (this._store.variables[id]) {
+			return false;
+		}
+
+		const token = { type };
+
+		if (to) token["to"] = to;
+		if (cellId) token["cellId"] = cellId;
+		if (isInput) token["isInput"] = isInput;
+		if (isOutput) token["isOutput"] = isOutput;
+		if (value) token["value"] = value;
+
+		this._store.variables[id] = token as Variable;
+
+		return token;
+	};
+
+	/**
+	 * Renames variable that can be referenced
+	 * @param old - points to old id
+	 * @param id - new id for variable
+	 */
+	private renameVariable = (old: string, id: string): boolean => {
+		if (id.includes(".")) {
+			return false;
+		}
+
+		if (this._store.variables[id]) {
+			return false;
+		} else {
+			this._store.variables[id] = this._store.variables[old];
+
+			delete this._store.variables[old];
+
+			return true;
+		}
+	};
+
+	/**
+	 * Replace old variable and remove old dependency
+	 * @param from
+	 * @param to
+	 */
+	private editVariable = (id: string, oldVar: VariableWithId, newVar) => {
+		if (oldVar.id !== id) {
+			delete this._store.variables[oldVar.id];
+		}
+
+		this._store.variables[id] = newVar;
+	};
+
+	/**
+	 * Deletes variable and corresponding dependency that can be referenced
+	 * @param id - id to delete
+	 */
+	private deleteVariable = async (id: string) => {
+		// Stringify blocks
+		const blocksToMutate = JSON.stringify(this._store.blocks);
+		// remove the references of it from ui (don't touch users code notebook)
+		const regex = RegExp(`{{${id}(\\.[^}]+)?}}`, "g");
+
+		const modifiedBlocks = await blocksToMutate.replace(regex, "");
+
+		this._store.blocks = JSON.parse(modifiedBlocks);
+
+		delete this._store.variables[id];
+	};
+
+	/**
+	 *
+	 */
+	private setExecutionOrder = (orderedList: string[]) => {
+		this._store.executionOrder = orderedList;
+		return;
+	};
 }

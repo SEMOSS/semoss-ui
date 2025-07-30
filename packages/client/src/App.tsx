@@ -1,15 +1,13 @@
-import { useEffect } from 'react';
-import axios, { isAxiosError } from 'axios';
-
 import { Env } from '@semoss/sdk/react';
-
-import { RootStore } from '@/stores';
+import axios, { isAxiosError } from 'axios';
+import { useEffect } from 'react';
 import { RootStoreContext } from '@/contexts';
+import { RootStore } from '@/stores';
 import { AppWrapper } from './AppWrapper';
 
-// use the environment variable to set the module if in development
+// use the environment variable to set the module
 Env.update({
-    MODULE: process.env.MODULE || '',
+    MODULE: import.meta.env.MODULE || '/Monolith',
 });
 
 const CSRF = {
@@ -36,7 +34,7 @@ async function getToken(): Promise<string> {
             '';
 
         return token;
-    } catch (error) {
+    } catch {
         return '';
     }
 }
@@ -137,7 +135,7 @@ export const App = () => {
             }
 
             const env = JSON.parse(
-                document.getElementById('semoss-env')?.textContent || '',
+                document.getElementById('semoss-env')?.textContent || null,
             ) as {
                 MODULE: string;
             };
@@ -148,10 +146,8 @@ export const App = () => {
                     MODULE: env.MODULE,
                 });
             }
-        } catch (e) {
-            console.error(e);
+        } catch (_e) {
         }
-
         // intialize it
         _store.configStore.initialize().then(() => {
             // set as enabled

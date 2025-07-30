@@ -7,27 +7,28 @@ import {
     SearchOff,
 } from '@mui/icons-material';
 
-import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
 import {
     styled,
     Stack,
     Typography,
     IconButton,
-    Divider,
     TextField,
     Collapse,
     useNotification,
-    Modal,
-    Tabs,
-    Tab,
     ToggleTabsGroup,
+    AlertTitle,
 } from '@semoss/ui';
+import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
 
+import { BlockSettingsRegistry } from '../blocks';
 import { useDesigner } from '@/hooks';
-import { BlockAvatar, SelectedMenuSection } from '@/components/designer';
+import { SelectedMenuSection } from '@/components/designer';
 import { AddVariableModal } from '@/components/notebook';
 import { Panel } from '@/components/workspace';
-import VariationIcon from '../../../../../../libs/renderer/src/assets/img/VariationLogo.svg';
+
+import MultiBlockIcon from '../../../assets/img/Multiple_Block.svg';
+import GroupIcon from '../../../assets/img/Group.svg';
+import VariationIcon from '../../../assets/img/VariationLogo.svg';
 
 const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
@@ -72,6 +73,35 @@ const StyledMessage = styled('div')(({ theme }) => ({
     width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
+    padding: '6px 0px',
+}));
+const StyledMultiBlockMessage = styled('div')(({ theme }) => ({
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    padding: '8px 0px',
+    flex: '1 0 0',
+}));
+const StyledAlertTitle = styled(AlertTitle)(({ theme }) => ({
+    alignSelf: 'stretch',
+    color: '#666',
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 500,
+    lineHeight: '150%',
+    letterSpacing: '0.15px',
+}));
+const StyledTypography = styled(Typography)(({ theme }) => ({
+    alignSelf: 'stretch',
+    color: '#666',
+    fontFamily: 'Inter',
+    fontSize: '14px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '150%',
+    letterSpacing: '0.17px',
 }));
 //Tab group with custom style with width and margin
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
@@ -112,6 +142,27 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 const StyledCustomTabPanel = styled('div')(({ theme }) => ({}));
 
+const StyledParentDiv = styled('div')(({ theme }) => ({
+    padding: '16px 8px',
+}));
+
+const StyledDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    padding: '6px 16px',
+    gap: '12px',
+    alignSelf: 'stretch',
+    borderRadius: '4px',
+    background: '#F5F5F5',
+}));
+
+const StyledImgDiv = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'flex-start',
+    width: '22px',
+    height: '22px',
+}));
+
 const StyledVariationIcon = styled('img')(({ theme }) => ({
     width: theme.spacing(4),
     height: theme.spacing(4),
@@ -119,7 +170,7 @@ const StyledVariationIcon = styled('img')(({ theme }) => ({
 
 export const SelectedBlockPanel = observer(() => {
     const { designer } = useDesigner();
-    const { state, registry } = useBlocks();
+    const { state } = useBlocks();
     const notification = useNotification();
 
     const [contentAccordion, setContentAccordion] = useState<
@@ -143,11 +194,15 @@ export const SelectedBlockPanel = observer(() => {
 
     // get the content menu
     const contentMenu = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return [];
         }
 
-        const m = registry[block.widget]?.contentMenu ?? [];
+        const m = BlockSettingsRegistry[block.widget]?.contentMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -180,15 +235,19 @@ export const SelectedBlockPanel = observer(() => {
             });
         }
         return m;
-    }, [registry, block ? block.widget : '', search]);
+    }, [BlockSettingsRegistry, block ? block.widget : '', search]);
 
     // get the style menu
     const styleMenu = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return [];
         }
 
-        const m = registry[block.widget]?.styleMenu ?? [];
+        const m = BlockSettingsRegistry[block.widget]?.styleMenu ?? [];
 
         // clear out the accordion
         const acc = {};
@@ -221,30 +280,38 @@ export const SelectedBlockPanel = observer(() => {
             });
         }
         return m;
-    }, [registry, block ? block.widget : '', search]);
+    }, [BlockSettingsRegistry, block ? block.widget : '', search]);
 
     // new custom righthand menu content
     const menu = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return null;
         }
 
-        return registry[block.widget]?.menu ?? null;
-    }, [registry, block ? block.widget : '']);
+        return BlockSettingsRegistry[block.widget]?.menu ?? null;
+    }, [BlockSettingsRegistry, block ? block.widget : '']);
 
     // get the icon
     const icon = useMemo(() => {
-        if (!registry || !block || !registry[block.widget]) {
+        if (
+            !BlockSettingsRegistry ||
+            !block ||
+            !BlockSettingsRegistry[block.widget]
+        ) {
             return null;
         }
 
-        const w = registry[block.widget];
+        const w = BlockSettingsRegistry[block.widget];
         if (!w) {
             return null;
         }
 
         return w.icon;
-    }, [registry, block ? block.widget : '']);
+    }, [BlockSettingsRegistry, block ? block.widget : '']);
 
     /**
      * Copy text and add it to the clipboard
@@ -283,16 +350,50 @@ export const SelectedBlockPanel = observer(() => {
             return '';
         }
     };
+    if (designer.selectedBlocks.length > 1) {
+        return (
+            <Panel>
+                <StyledParentDiv>
+                    <StyledDiv>
+                        <StyledImgDiv>
+                            <img
+                                src={MultiBlockIcon}
+                                alt="Multiple Blocks Selected"
+                            ></img>
+                        </StyledImgDiv>
+                        <StyledMultiBlockMessage>
+                            <StyledAlertTitle>
+                                Multiple Blocks Selected
+                            </StyledAlertTitle>
+                            <StyledTypography variant="body2">
+                                Select a single block to view its setting
+                            </StyledTypography>
+                        </StyledMultiBlockMessage>
+                    </StyledDiv>
+                </StyledParentDiv>
+            </Panel>
+        );
+    }
 
     // ignore if there is no menu
     if (!block) {
         return (
             <Panel>
-                <StyledMessage>
-                    <Typography variant="caption">
-                        Select a block to update
-                    </Typography>
-                </StyledMessage>
+                <StyledParentDiv>
+                    <StyledDiv>
+                        <StyledImgDiv>
+                            <img src={GroupIcon} alt="No Blocks Selected"></img>
+                        </StyledImgDiv>
+                        <StyledMessage>
+                            <StyledAlertTitle>
+                                No Block Selected
+                            </StyledAlertTitle>
+                            <StyledTypography variant="body2">
+                                Select a block to view its setting
+                            </StyledTypography>
+                        </StyledMessage>
+                    </StyledDiv>
+                </StyledParentDiv>
             </Panel>
         );
     }

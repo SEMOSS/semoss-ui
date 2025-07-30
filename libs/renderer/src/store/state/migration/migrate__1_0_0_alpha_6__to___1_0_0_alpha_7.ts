@@ -17,8 +17,8 @@ const config: Migration = {
 
             if (block.widget === "e-chart") {
                 block.listeners["preProcess"] = {
-                    type: 'sync',
-                    order: []
+                    type: "sync",
+                    order: [],
                 };
             }
         });

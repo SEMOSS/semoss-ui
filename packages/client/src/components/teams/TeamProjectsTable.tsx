@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
+
 import {
     styled,
     Button,
@@ -11,7 +12,6 @@ import {
     Autocomplete,
     Card,
     Box,
-    Chip,
     Avatar,
     Search,
     Stack,
@@ -19,6 +19,8 @@ import {
     RadioGroup,
     Icon,
 } from '@semoss/ui';
+import { debounced } from '@semoss/sdk/react';
+
 import {
     Delete,
     ClearRounded,
@@ -29,6 +31,10 @@ import { AxiosResponse } from 'axios';
 
 import { SETTINGS_ROLE } from '@/components/settings/settings.types';
 import { useRootStore } from '@/hooks';
+import codeApp2 from '@/assets/img/code_app_2.png';
+import codeApp3 from '@/assets/img/code_app_3.png';
+import codeApp4 from '@/assets/img/code_app_4.png';
+import codeApp5 from '@/assets/img/code_app_5.png';
 
 const colors = [
     '#22A4FF',
@@ -39,6 +45,8 @@ const colors = [
     '#22A4FF',
     '#4CAF50',
 ];
+
+const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
 
 const UserInfoTableCell = styled(Table.Cell)({
     display: 'flex',
@@ -171,6 +179,13 @@ const StyledCard = styled(Card)({
     borderRadius: '12px',
 });
 
+const StyledModal = styled(Modal)({
+    '& .MuiPaper-root': {
+        borderRadius: '12px',
+        padding: '24px',
+    },
+});
+
 // maps for permissions,
 const permissionMapper = {
     Author: 1, // BE: 'DISPLAY'
@@ -232,6 +247,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     const [canCollect, setCanCollect] = useState<boolean>(true);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [searchLoading, setSearchLoading] = useState(false);
+
+    const [projectImageMap, setProjectImageMap] = useState<Record<string, string>>({});
 
     const nearBottom = (
         target: {
@@ -550,45 +567,56 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     projects > 9 && paginationOptions.projectsPageCounts.push(10);
     projects > 19 && paginationOptions.projectsPageCounts.push(20);
 
-    function useDebounce(effect, dependencies, delay) {
-        const callback = useCallback(effect, dependencies);
+    const filterProjects = useCallback(() => {
+        monolithStore
+            .getTeamProjects(
+                groupId,
+                groupType,
+                limit,
+                projectsPage * limit - limit, // offset
+                searchFilter,
+                false,
+            )
+            .then((data) => {
+                setProjects(data);
+                setHasProject(true);
+            });
+        monolithStore
+            .getTeamProjects(
+                groupId,
+                groupType,
+                100,
+                0, // offset
+                searchFilter,
+                false,
+            )
+            .then((data) => setProjectCount(data.length));
+    }, [count, projectsPage, searchFilter]);
 
-        useEffect(() => {
-            const timeout = setTimeout(callback, delay);
-            return () => clearTimeout(timeout);
-        }, [callback, delay]);
-    }
+    const debouncedFilterProjects = debounced(filterProjects, 400);
 
-    // DeBounce Function
-    useDebounce(
-        () => {
-            monolithStore
-                .getTeamProjects(
-                    groupId,
-                    groupType,
-                    limit,
-                    projectsPage * limit - limit, // offset
-                    searchFilter,
-                    false,
-                )
-                .then((data) => {
-                    setProjects(data);
-                    setHasProject(true);
-                });
-            monolithStore
-                .getTeamProjects(
-                    groupId,
-                    groupType,
-                    100,
-                    0, // offset
-                    searchFilter,
-                    false,
-                )
-                .then((data) => setProjectCount(data.length));
-        },
-        [count, projectsPage, searchFilter],
-        200,
-    );
+    const handleInputChange = (newInputValue) => {
+        setValue('SEARCH_FILTER', newInputValue);
+        debouncedFilterProjects();
+    };
+
+    const getRandomImageForProject = useCallback((projectId: string) => {
+        if (projectImageMap[projectId]) {
+            return projectImageMap[projectId];
+        }
+        const randomIndex = Math.floor(Math.random() * projectImages.length);
+        const newImage = projectImages[randomIndex];
+        
+        // Only update state if we don't have an image for this project
+        if (!projectImageMap[projectId]) {
+            setProjectImageMap(prev => ({
+                ...prev,
+                [projectId]: newImage
+            }));
+        }
+        
+        return newImage;
+    }, [projectImageMap]);
 
     return (
         <StyledProjectContent>
@@ -607,10 +635,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                     size="small"
                                     value={searchFilter}
                                     onChange={(e) => {
-                                        setValue(
-                                            'SEARCH_FILTER',
-                                            e.target.value,
-                                        );
+                                        handleInputChange(e.target.value);
                                     }}
                                 />
                             </StyledSearchButtonContainer>
@@ -867,12 +892,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     </StyledNonProjectsContainer>
                 )}
             </StyledProjectInnerContent>
-            <Modal open={addProjectModal} maxWidth="lg">
-                <Modal.Title>Add App</Modal.Title>
+            <StyledModal open={addProjectModal} maxWidth="lg">
+                <Modal.Title>
+                    <Typography variant="h6">Add Projects</Typography>
+                </Modal.Title>
                 <Modal.Content sx={{ width: '50rem' }}>
                     <StyledModalContentText>
                         <Autocomplete
-                            label="Select App"
+                            label="Select Project"
                             loading={searchLoading}
                             multiple={true}
                             freeSolo={false}
@@ -921,15 +948,6 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         {selectedNonCredentialedProjects &&
                             selectedNonCredentialedProjects.map(
                                 (project, idx) => {
-                                    const space =
-                                        project.project_name.indexOf(' ');
-                                    const initial = project.project_name
-                                        ? space > -1
-                                            ? `${project.project_name[0].toUpperCase()}${project.project_name[
-                                                  space + 1
-                                              ].toUpperCase()}`
-                                            : project.project_name[0].toUpperCase()
-                                        : project.project_id[0].toUpperCase();
                                     return (
                                         <Box
                                             key={idx}
@@ -984,14 +1002,15 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                 display: 'flex',
                                                                 width: '50px',
                                                                 height: '50px',
-                                                                fontSize:
-                                                                    '24px',
-                                                                backgroundColor:
-                                                                    project.color,
+                                                                '& img': {
+                                                                    width: '100%',
+                                                                    height: '100%',
+                                                                    objectFit:
+                                                                        'cover',
+                                                                },
                                                             }}
-                                                        >
-                                                            {initial}
-                                                        </Avatar>
+                                                            src={getRandomImageForProject(project.project_id)}
+                                                        />
                                                     </Box>
                                                 </Box>
                                                 <Card.Header
@@ -1025,20 +1044,20 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                                                     opacity: 0.9,
                                                                     fontSize:
                                                                         '11px',
-                                                                    //height:'20px',
                                                                     width: '70%',
                                                                     gap: '4px',
                                                                 }}
                                                             >
                                                                 {`Project ID: `}
-                                                                <Chip
-                                                                    label={
+                                                                <Typography
+                                                                    variant="body2"
+                                                                    component="span"
+                                                                >
+                                                                    {
                                                                         project.project_id
                                                                     }
-                                                                    size="small"
-                                                                />
+                                                                </Typography>
                                                             </span>
-                                                            {`• `}
                                                         </Box>
                                                     }
                                                     action={
@@ -1084,9 +1103,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                                 pb: '12px',
                                 fontWeight: 'bold',
                                 fontSize: '16',
+                                color: '#000',
                             }}
                         >
-                            Permissions
+                            Project access
                         </Typography>
                         <Box
                             sx={{
@@ -1280,7 +1300,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                         Save
                     </Button>
                 </Modal.Actions>
-            </Modal>
+            </StyledModal>
             <Modal open={deleteProjectModal} maxWidth="md">
                 <Modal.Title>
                     <Typography variant="h6">Are you sure?</Typography>

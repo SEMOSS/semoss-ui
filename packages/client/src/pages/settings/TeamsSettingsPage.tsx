@@ -16,7 +16,9 @@ import {
     Menu,
     MenuItemTwo,
 } from '@semoss/ui';
-import { useRootStore, useAPI } from '@/hooks';
+import { debounced } from '@semoss/sdk/react'; 
+
+import { useRootStore } from '@/hooks';
 import { useSettings } from '@/hooks/useSettings';
 import { TeamTileCard } from '@/components/teams/TeamTileCard';
 import { AddTeamModal } from '@/components/teams/AddTeamModal';
@@ -121,8 +123,6 @@ export const TeamsSettingsPage = observer(() => {
     // To focus when getting new results
     const searchbarRef = useRef(null);
 
-    // All Teams -------------------------------------
-    const getTeams = useAPI(['getTeams', true]);
 
     /*
      **/
@@ -136,29 +136,23 @@ export const TeamsSettingsPage = observer(() => {
         });
     }, [adminMode, search]);
 
-    function useDebounce(effect, dependencies, delay) {
-        const callback = useCallback(effect, dependencies);
+    // Updated debounced filtering function
+    const filterTeams = useCallback(() => {
+        setFilteredTeams(
+            teams
+                .filter((d) =>
+                    d.id.toLowerCase().includes(search.toLowerCase()),
+                )
+                .sort((a, b) => a.id.localeCompare(b.id)),
+        );
+    }, [teams, search]);
 
-        useEffect(() => {
-            const timeout = setTimeout(callback, delay);
-            return () => clearTimeout(timeout);
-        }, [callback, delay]);
-    }
+    const debouncedFilterTeams = debounced(filterTeams, 150);
 
-    // DeBounce Function
-    useDebounce(
-        () => {
-            setFilteredTeams(
-                teams
-                    .filter((d) =>
-                        d.id.toLowerCase().includes(search.toLowerCase()),
-                    )
-                    .sort((a, b) => a.id.localeCompare(b.id)),
-            );
-        },
-        [teams, search],
-        150,
-    );
+    // Trigger debounced filtering when teams or search changes
+    useEffect(() => {
+        debouncedFilterTeams();
+    }, [teams, search, debouncedFilterTeams]);
 
     const handleMenuClick = (event) => {
         setAnchorEl(event.currentTarget);
@@ -194,18 +188,6 @@ export const TeamsSettingsPage = observer(() => {
 
     return (
         <>
-            <StyledBackdrop open={getTeams.status !== 'SUCCESS'}>
-                <Stack
-                    direction={'column'}
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                    spacing={1}
-                >
-                    <CircularProgress />
-                    <Typography variant="body2">Loading</Typography>
-                    <Typography variant="caption">Teams</Typography>
-                </Stack>
-            </StyledBackdrop>
             <StyledContainer>
                 <StyledSearchbarContainer>
                     <Box>
@@ -278,21 +260,13 @@ export const TeamsSettingsPage = observer(() => {
                     {filteredTeams.length
                         ? filteredTeams.map((team, i) => {
                               return (
-                                  <div
-                                  //   item
-                                  //   key={i}
-                                  //   sm={12}
-                                  //   md={6}
-                                  //   lg={4}
-                                  //   xl={3}
-                                  >
+                                  <div key={i}>
                                       <TeamTileCard
                                           id={team.id}
                                           type={team.type}
                                           description={team.description}
                                           dispatch={dispatch}
                                           teams={teams}
-                                          isCustomGroup={team.is_custom_group}
                                           onClick={() => {
                                               navigate(
                                                   `${team.id
@@ -306,16 +280,6 @@ export const TeamsSettingsPage = observer(() => {
                                                       },
                                                   },
                                               );
-                                              //   navigate(
-                                              //       `${team.id
-                                              //           .toLowerCase()
-                                              //           .replace(/['"]+/g, '')
-                                              //           .replace(/\s/g, '-')}${
-                                              //           team.type
-                                              //               ? `?type=${team.type}`
-                                              //               : ''
-                                              //       }`,
-                                              //   );
                                           }}
                                       />
                                   </div>
@@ -330,12 +294,9 @@ export const TeamsSettingsPage = observer(() => {
                         if (team) {
                             const obj = {
                                 id: team.id,
+                                type: team.type,
                                 description: team.description,
                             };
-
-                            if (team.type != 'Custom') {
-                                obj['type'] = team.type;
-                            }
 
                             dispatch({
                                 type: 'field',
