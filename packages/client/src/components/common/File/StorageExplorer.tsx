@@ -112,32 +112,76 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         }
     };
 
+    const sanitizeFilename = (filename: string): string => {
+        return filename
+            .replace(/[<>:"/\\|?*]/g, '_') 
+            .replace(/\s+/g, '_')
+            .replace(/_{2,}/g, '_')
+            .replace(/^_+|_+$/g, '');
+    };
+
+    const extractFilename = (filePath: string): string => {
+        const filename = filePath.split('/').pop() || 'downloaded_file';
+        
+        if (!filename || filename.trim() === '') {
+            return 'downloaded_file';
+        }
+
+        const sanitized = sanitizeFilename(filename);
+        
+        if (!sanitized) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            return `downloaded_file_${timestamp}`;
+        }
+
+        return sanitized;
+    };
+
     /**
      * Handle file download for storage
      */
     const handleDownload = async (filePath: string) => {
         try {
-            // Use a simpler approach: pull the file and then download it
-            const downloadQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="/") | DownloadAsset(filePath=["/${filePath
-                .split('/')
-                .pop()}"], space=["insight"]);`;
+            const filename = extractFilename(filePath);
+            
+            if (filePath.endsWith('/')) {
+                throw new Error('Cannot download a directory. Please select a file.');
+            }
+
+            const downloadQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${filePath}", filePath="${filename}") | DownloadAsset(filePath=["${filename}"], space=["insight"]);`;
+            
+            console.log('Download query:', downloadQuery);
             const response = await monolithStore.runQuery(downloadQuery);
             console.log('Download response:', response);
 
-            // Get the file key from the response
             const fileKey = response.pixelReturn[0]?.output;
 
             if (!fileKey) {
-                throw new Error('Failed to get file key for download');
+                throw new Error('Failed to get file key for download. The file may not exist or there was a server error.');
             }
 
-            // Use the existing download mechanism to trigger browser download
             await monolithStore.download(configStore.store.insightID, fileKey);
 
             onDownload(filePath);
         } catch (e) {
             console.error('Download error:', e);
-            // You might want to show a notification here
+            
+            let errorMessage = 'Download failed: ';
+            if (e instanceof Error) {
+                if (e.message.includes('directory')) {
+                    errorMessage += 'Cannot download directories. Please select a file.';
+                } else if (e.message.includes('file key')) {
+                    errorMessage += 'File not found or server error occurred.';
+                } else if (e.message.includes('network') || e.message.includes('fetch')) {
+                    errorMessage += 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += e.message;
+                }
+            } else {
+                errorMessage += 'An unexpected error occurred.';
+            }
+            
+            console.error(errorMessage);
         }
     };
 
@@ -149,7 +193,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         );
     }
 
-    // Transform storage files into structured format
     const files =
         getStorageFiles.status === 'SUCCESS'
             ? getStorageFiles.data.map((filePath) => {
@@ -161,7 +204,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                       name,
                       path: filePath,
                       type: isDirectory ? 'directory' : 'file',
-                      lastModified: '', // Storage API doesn't provide this
+                      lastModified: '', 
                   };
               })
             : [];

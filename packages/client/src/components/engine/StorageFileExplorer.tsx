@@ -163,13 +163,89 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         // Refresh the file list after upload
     });
 
+    const sanitizeFilename = (filename: string): string => {
+        return filename
+            .replace(/[<>:"/\\|?*]/g, '_')             .replace(/\s+/g, '_')
+            .replace(/_{2,}/g, '_')
+            .replace(/^_+|_+$/g, '');
+    };
+
+
+    const extractFilename = (filePath: string): string => {
+        const filename = filePath.split('/').pop() || 'downloaded_file';
+        
+        if (!filename || filename.trim() === '') {
+            return 'downloaded_file';
+        }
+
+        const sanitized = sanitizeFilename(filename);
+        
+        if (!sanitized) {
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            return `downloaded_file_${timestamp}`;
+        }
+
+        return sanitized;
+    };
+
     /**
      * Handle file download
      */
     const handleDownload = async (path: string) => {
-        console.log('Download initiated for path:', path);
-        // In a real implementation, you might want to show download progress
-        // or a success notification
+        try {
+            const filename = extractFilename(path);
+            
+            if (path.endsWith('/')) {
+                notification.add({
+                    color: 'error',
+                    message: 'Cannot download a directory. Please select a file.',
+                });
+                return;
+            }
+
+            const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${path}", filePath="${filename}") | DownloadAsset(filePath=["${filename}"], space=["insight"]);`;
+            
+            console.log('Download query:', downloadQuery);
+            const response = await monolithStore.runQuery(downloadQuery);
+            console.log('Download response:', response);
+
+            const fileKey = response.pixelReturn[0]?.output;
+
+            if (!fileKey) {
+                throw new Error('Failed to get file key for download. The file may not exist or there was a server error.');
+            }
+
+            await monolithStore.download(configStore.store.insightID, fileKey);
+
+            notification.add({
+                color: 'success',
+                message: `Successfully downloaded: ${filename}`,
+            });
+
+            console.log('Download initiated for path:', path);
+        } catch (e) {
+            console.error('Download error:', e);
+            
+            let errorMessage = 'Download failed: ';
+            if (e instanceof Error) {
+                if (e.message.includes('directory')) {
+                    errorMessage = 'Cannot download directories. Please select a file.';
+                } else if (e.message.includes('file key')) {
+                    errorMessage = 'File not found or server error occurred.';
+                } else if (e.message.includes('network') || e.message.includes('fetch')) {
+                    errorMessage = 'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += e.message;
+                }
+            } else {
+                errorMessage += 'An unexpected error occurred.';
+            }
+            
+            notification.add({
+                color: 'error',
+                message: errorMessage,
+            });
+        }
     };
 
     /**
