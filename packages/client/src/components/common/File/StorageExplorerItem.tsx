@@ -1,8 +1,6 @@
 import { useCallback, useState } from 'react';
 import {
     DeleteOutline,
-    DescriptionOutlined,
-    TopicOutlined,
     FolderOutlined,
     InsertDriveFileOutlined,
     CloudUploadOutlined,
@@ -52,12 +50,9 @@ const StyledActionContainer = styled('div')(({ theme }) => ({
     gap: theme.spacing(0.5),
 }));
 
-interface FileExplorerItemProps {
-    /** Type of file opened */
-    type: 'app' | 'insight';
-
-    /** Space where the file is located */
-    space?: string;
+interface StorageExplorerItemProps {
+    /** Storage engine ID */
+    storageId: string;
 
     /** file details */
     name: string;
@@ -83,12 +78,17 @@ interface FileExplorerItemProps {
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
+
+    /** Triggered when upload is requested */
+    onUpload?: (storagePath: string, localFilePath: string) => void;
+
+    /** Triggered when download is requested */
+    onDownload?: (path: string) => void;
 }
 
-export const FileExplorerItem = (props: FileExplorerItemProps) => {
+export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
     const {
-        type,
-        space,
+        storageId,
         path,
         name,
         isDirectory,
@@ -97,6 +97,8 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
         onDragStart = () => null,
         onDragEnd = () => null,
         onTrashClick = () => null,
+        onUpload = () => null,
+        onDownload = () => null,
     } = props;
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -104,19 +106,10 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 
     const isOpen = expanded.indexOf(path) > -1;
 
-    // Get child files based on type
-    const getAssets = usePixel<
-        {
-            lastModified: string;
-            name: string;
-            path: string;
-            type: 'directory' | 'file';
-        }[]
-    >(
+    // Get storage files for this directory
+    const getStorageFiles = usePixel<string[]>(
         isDirectory && isOpen
-            ? type === 'app'
-                ? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-                : ''
+            ? `Storage(storage = "${storageId}") | ListStoragePath(storagePath='${path}');`
             : '',
     );
 
@@ -126,8 +119,34 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
         });
     }, []);
 
-    // Get child files
-    const childFiles = getAssets.status === 'SUCCESS' ? getAssets.data : [];
+    const handleUploadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        // For now, use a hardcoded file path - in a real implementation,
+        // this would open a file picker dialog
+        const localFilePath = "C:/Users/relkhishen/Downloads/file.txt";
+        onUpload(path, localFilePath);
+    };
+
+    const handleDownloadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        onDownload(path);
+    };
+
+    // Transform storage files into structured format
+    const childFiles = getStorageFiles.status === 'SUCCESS'
+        ? getStorageFiles.data.map((filePath) => {
+            const pathParts = filePath.split('/').filter(Boolean);
+            const fileName = pathParts[pathParts.length - 1] || filePath;
+            const isChildDirectory = filePath.endsWith('/');
+            
+            return {
+                name: fileName,
+                path: filePath,
+                type: isChildDirectory ? 'directory' : 'file',
+                lastModified: '',
+            };
+        })
+        : [];
 
     return (
         <StyledNode
@@ -156,14 +175,34 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                 >
                     <Icon color={'disabled'} fontSize="small">
                         {isDirectory ? (
-                            <TopicOutlined fontSize="inherit" />
+                            <FolderOutlined fontSize="inherit" />
                         ) : (
-                            <DescriptionOutlined fontSize="inherit" />
+                            <InsertDriveFileOutlined fontSize="inherit" />
                         )}
                     </Icon>
                     <StyledTypography variant="body2">{name}</StyledTypography>
                     {isHovered ? (
                         <StyledActionContainer>
+                            {isDirectory && (
+                                <IconButton
+                                    title={`Upload to ${name}`}
+                                    onClick={handleUploadClick}
+                                    size="small"
+                                    color={'default'}
+                                >
+                                    <CloudUploadOutlined fontSize="inherit" />
+                                </IconButton>
+                            )}
+                            {!isDirectory && (
+                                <IconButton
+                                    title={`Download ${name}`}
+                                    onClick={handleDownloadClick}
+                                    size="small"
+                                    color={'default'}
+                                >
+                                    <CloudDownloadOutlined fontSize="inherit" />
+                                </IconButton>
+                            )}
                             <IconButton
                                 title={`Delete ${name}`}
                                 onClick={(e) => {
@@ -185,19 +224,18 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
         >
             {isDirectory ? (
                 <>
-                    {getAssets.status === 'INITIAL' ||
-                    getAssets.status === 'LOADING' ? (
+                    {getStorageFiles.status === 'INITIAL' ||
+                    getStorageFiles.status === 'LOADING' ? (
                         <Icon color="disabled">
                             <CircularProgress color="inherit" size={'small'} />
                         </Icon>
                     ) : null}
-                    {getAssets.status === 'SUCCESS'
+                    {getStorageFiles.status === 'SUCCESS'
                         ? childFiles.map((n) => {
                                return (
-                                   <FileExplorerItem
+                                   <StorageExplorerItem
                                        key={n.path}
-                                       type={type}
-                                       space={space}
+                                       storageId={storageId}
                                        isDirectory={n.type === 'directory'}
                                        name={n.name}
                                        path={n.path}
@@ -213,6 +251,12 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                                        onDragEnd={(e, path) => {
                                            onDragEnd(e, path);
                                        }}
+                                       onUpload={(storagePath, localPath) => {
+                                           onUpload(storagePath, localPath);
+                                       }}
+                                       onDownload={(path) => {
+                                           onDownload(path);
+                                       }}
                                    />
                                );
                            })
@@ -221,4 +265,4 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
             ) : null}
         </StyledNode>
     );
-};
+}; 

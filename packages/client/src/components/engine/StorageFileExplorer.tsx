@@ -1,8 +1,18 @@
 import React, { useState } from 'react';
-import { Button, styled, Typography, IconButton, Modal, FileDropzone, CircularProgress, LinearProgress, useNotification } from '@semoss/ui';
+import {
+    Button,
+    styled,
+    Typography,
+    IconButton,
+    Modal,
+    FileDropzone,
+    CircularProgress,
+    LinearProgress,
+    useNotification,
+} from '@semoss/ui';
 import { CloudUploadOutlined, Refresh } from '@mui/icons-material';
 
-import { FileExplorer } from '../common/File/FileExplorer';
+import { StorageExplorer } from '../common/File/StorageExplorer';
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
 
@@ -89,9 +99,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
     /**
      * Handle file upload
-     * 
      */
-
     const { control, watch, setValue, handleSubmit } = useForm<{
         FILES: FileExplorerProps[];
         PROJECT_UPLOAD: File[];
@@ -104,14 +112,12 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         },
     });
 
-
     const handleUpload = handleSubmit(async (data: FileUploadForm) => {
-
         setIsLoading(true);
         let fileLocations = '';
-        console.log("data: ", data);
+        console.log('data: ', data);
 
-        try{            
+        try {
             const upload = await monolithStore.uploadFile(
                 data.PROJECT_UPLOAD,
                 configStore.store.insightID,
@@ -120,15 +126,15 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             console.log(configStore.store.insightID);
 
             upload.map(async (file, index) => {
-                let fileLocation = file.fileLocation.replace(/\\/g, '/');
+                const fileLocation = file.fileLocation.replace(/\\/g, '/');
                 if (index + 1 === upload.length) {
                     fileLocations = fileLocations += `"${fileLocation}"`;
                 } else {
                     fileLocations = fileLocations += `"${fileLocation}", `;
-                }        
+                }
             });
 
-            console.log("location:", fileLocations);
+            console.log('location:', fileLocations);
 
             const response = await monolithStore.runQuery(`
             Storage(storage = "${id}") | SyncLocalToStorage(storagePath='/', filePath=[${fileLocations}]);
@@ -148,23 +154,19 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     message: output,
                 });
             }
-        }
-        catch (e) {
+        } catch (e) {
             notification.add({
                 color: 'error',
                 message: String(e),
             });
         } finally {
-            //turn off loading
+            // turn off loading
             refreshFiles();
             setIsLoading(false);
             setValue('PROJECT_UPLOAD', []);
             setOpenPopUp(false);
         }
-
-       
         // Refresh the file list after upload
-        
     });
 
     /**
@@ -174,12 +176,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         console.log('Download initiated for path:', path);
         // In a real implementation, you might want to show download progress
         // or a success notification
-        const response = await monolithStore.runQuery(`
-            Storage(storage = "${id}") | SyncLocalToStorage(storagePath='/', filePath=[${fileLocations}]);
-            `);
-
-        let pixel = `Storage(storage = "8be5fb68-ffab-47bd-af2a-cd409b51e732") | SyncStorageToLocal(storagePath="/java_cheatsheet.pdf",filePath="/", space=[]);`;
-
     };
 
     /**
@@ -226,14 +222,12 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             </StyledHeader>
 
             <StyledFileExplorerContainer>
-                <FileExplorer
+                <StorageExplorer
                     key={refreshCounter}
-                    type="storage"
                     storageId={id}
                     expandedPaths={expandedPaths}
                     onToggleExpand={handleToggleExpand}
                     onSelect={handleFileSelect}
-                    // onUpload={handleUpload}
                     onDownload={handleDownload}
                     onTrashClick={handleDelete}
                 />
@@ -245,7 +239,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 </Typography>
             )}
 
-            <Modal open={openPopUp} onClose={() => setOpenPopUp(false)} fullWidth>
+            <Modal
+                open={openPopUp}
+                onClose={() => setOpenPopUp(false)}
+                fullWidth
+            >
                 <Modal.Title>Upload Files</Modal.Title>
                 <form onSubmit={handleUpload}>
                     <Modal.Content>
