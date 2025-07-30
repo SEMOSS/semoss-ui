@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script>
+        // Preserve hash fragment during redirect
+        var hash = window.location.hash;
+        var newUrl = "packages/legacy/dist/" + hash;
+        window.location.href = newUrl;
+    </script>
+</head>
+
+<body>
+    <p>Redirecting...</p>
+</body>
+
+</html>

@@ -4,37 +4,37 @@ import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 
 // export the config for the block
 export const config: BlockConfig<ContainerBlockDef> = {
-    widget: "container",
-    type: BLOCK_TYPE_LAYOUT,
-    data: {
-        type: "custom",
-        dimension: null,
-        show: "true",
-        style: {
-            display: "flex",
-            flexDirection: "column",
-            padding: "4px",
-            gap: "8px",
-            flexWrap: "wrap",
-        },
-        boxShadowParts: {
-            offsetX: "",
-            offsetY: "",
-            blurRadius: "",
-            spreadRadius: "",
-            color: "",
-        },
-        loading: false,
-        loadSkeleton: "none",
+  widget: "container",
+  type: BLOCK_TYPE_LAYOUT,
+  data: {
+    type: "custom",
+    dimension: null,
+    show: "true",
+    style: {
+      display: "flex",
+      flexDirection: "column",
+      padding: "4px",
+      gap: "8px",
+      flexWrap: "wrap",
     },
-    listeners: {
-        preProcess: {
-            type: "sync",
-            order: [],
-        },
+    boxShadowParts: {
+      offsetX: "",
+      offsetY: "",
+      blurRadius: "",
+      spreadRadius: "",
+      color: "",
     },
-    slots: {
-        children: [],
+    loading: false,
+    loadSkeleton: "none",
+  },
+  listeners: {
+    preProcess: {
+      type: "sync",
+      order: [],
     },
-    render: ContainerBlock,
+  },
+  slots: {
+    children: [],
+  },
+  render: ContainerBlock,
 };
