@@ -160,11 +160,6 @@ export const EngineModelTestSidebar = ({
                         <strong>Model Name:</strong> {selectedModel.model_name}
                     </Typography>
                 )}
-                {selectedModel.tag && (
-                    <Typography variant="body2">
-                        <strong>Tag:</strong> {selectedModel.tag}
-                    </Typography>
-                )}
                 {modelInfo?.description && (
                     <Typography variant="body2">
                         <strong>Description:</strong> {modelInfo.description}
