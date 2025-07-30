@@ -43,6 +43,7 @@ type showGmailReadForm = {
 
 type showGmailDeleteForm = {
     GMAIL_TITLE: string;
+    GMAIL_ID: string;
 };
 
 export interface GmailBlockDef extends BlockDef<"gmailtext"> {
@@ -98,7 +99,6 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
         id: string;
     };
     const [sentMails, setSentMails] = useState<SentMail[]>([]);
-    // const [readContent, setReadContent] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const notification = useNotification();
     const [loggedInUser, setLoggedInUser] = useState("");
@@ -147,74 +147,9 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
     } = useForm<showGmailDeleteForm>({
         defaultValues: {
             GMAIL_TITLE: "",
+            GMAIL_ID: "",
         },
     });
-
-    useEffect(() => {
-        // Check if user is already logged in
-        (async () => {
-            try {
-                const response = await getUserDetails("google");
-                if (response.name) {
-                    setLoggedInUser(response.name);
-                    notification.add({
-                        color: "success",
-                        message: "Successfully logged into Google",
-                    });
-                } else {
-                    notification.add({
-                        color: "error",
-                        message: "Failed to fetch Google user info",
-                    });
-                }
-            } catch (error) {
-                notification.add({
-                    color: "error",
-                    message: "Failed to fetch Google user info",
-                });
-            }
-        })();
-    }, []);
-
-    // Fetch sent mails using Pixel API
-    const fetchSentMails = async (count = 5) => {
-        try {
-            const response = await runPixel(
-                `GoogleGmailList(number=\"${count}\")`,
-            );
-            let mails: SentMail[] = [];
-            if (
-                response &&
-                response.pixelReturn &&
-                response.pixelReturn[0] &&
-                response.pixelReturn[0].output
-            ) {
-                const output = response.pixelReturn[0].output;
-                if (Array.isArray(output)) {
-                    mails = output;
-                } else if (
-                    typeof output === "string" &&
-                    output.trim().startsWith("[")
-                ) {
-                    try {
-                        mails = JSON.parse(output);
-                    } catch {
-                        // ignore
-                    }
-                }
-            }
-            setSentMails(mails);
-        } catch (error) {
-            notification.add({
-                color: "error",
-                message: "Failed to fetch sent mails.",
-            });
-        }
-    };
-
-    // useEffect(() => {
-    //     fetchMailOptions();
-    // }, []);
 
     const [tab, setTab] = useState<"summarize" | "unread" | "sent">(
         "summarize",
@@ -264,6 +199,63 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
             summarizeTopK(summarizeCount);
         }
     }, [summarizeCount]);
+
+    useEffect(() => {
+        // Check if user is already logged in
+        (async () => {
+            try {
+                const response = await getUserDetails("google");
+                if (response.name) {
+                    setLoggedInUser(response.name);
+                    notification.add({
+                        color: "success",
+                        message: "Successfully logged into Google",
+                    });
+                }
+            } catch (error) {
+                notification.add({
+                    color: "error",
+                    message: "Failed to fetch Google user info",
+                });
+            }
+        })();
+    }, []);
+
+    // Fetch sent mails using Pixel API
+    const fetchSentMails = async (count = 5) => {
+        try {
+            const response = await runPixel(
+                `GoogleGmailList(number=\"${count}\")`,
+            );
+            let mails: SentMail[] = [];
+            if (
+                response &&
+                response.pixelReturn &&
+                response.pixelReturn[0] &&
+                response.pixelReturn[0].output
+            ) {
+                const output = response.pixelReturn[0].output;
+                if (Array.isArray(output)) {
+                    mails = output;
+                } else if (
+                    typeof output === "string" &&
+                    output.trim().startsWith("[")
+                ) {
+                    try {
+                        mails = JSON.parse(output);
+                    } catch {
+                        // ignore
+                    }
+                }
+            }
+            setSentMails(mails);
+        } catch (error) {
+            notification.add({
+                color: "error",
+                message: "Failed to fetch sent mails.",
+            });
+        }
+    };
 
     // Send Mail
     const onSendSubmit = handleSendSubmit(
@@ -509,10 +501,10 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
     const handleDeleteFormSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const values = getDeleteValues();
-        if (!values.GMAIL_TITLE) {
+        if (!values.GMAIL_ID) {
             notification.add({
                 color: "error",
-                message: "Mail title is required.",
+                message: "Mail id is required.",
             });
             return;
         }
@@ -522,24 +514,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
 
     const onDeleteSubmit = async (deleteValues?: showGmailDeleteForm) => {
         const values = deleteValues || getDeleteValues();
-        // Find the mail id by subject/title from the relevant list for the current tab
-        let mailId = "";
-        if (tab === "unread") {
-            const unread = unreadMails.find(
-                (m) => m.subject === values.GMAIL_TITLE,
-            );
-            if (unread) mailId = unread.id;
-        } else if (tab === "sent") {
-            const sent = sentMails.find(
-                (m) => m.subject === values.GMAIL_TITLE,
-            );
-            if (sent) mailId = sent.id;
-        } else if (tab === "summarize") {
-            const summarized = summarizedMails.find(
-                (m) => m.subject === values.GMAIL_TITLE,
-            );
-            if (summarized) mailId = summarized.id;
-        }
+        const mailId = values.GMAIL_ID;
         if (!mailId) {
             notification.add({
                 color: "error",
@@ -779,6 +754,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                                                         setPendingDeleteValues({
                                                             GMAIL_TITLE:
                                                                 mail.subject,
+                                                            GMAIL_ID: mail.id,
                                                         });
                                                         setShowDeleteConfirm(
                                                             true,
@@ -913,6 +889,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                                                         setPendingDeleteValues({
                                                             GMAIL_TITLE:
                                                                 mail.subject,
+                                                            GMAIL_ID: mail.id,
                                                         });
                                                         setShowDeleteConfirm(
                                                             true,
@@ -1050,6 +1027,7 @@ export const GmailBlock: BlockComponent = observer(({ id }) => {
                                                         setPendingDeleteValues({
                                                             GMAIL_TITLE:
                                                                 mail.subject,
+                                                            GMAIL_ID: mail.id,
                                                         });
                                                         setShowDeleteConfirm(
                                                             true,
