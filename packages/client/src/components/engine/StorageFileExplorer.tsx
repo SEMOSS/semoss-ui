@@ -137,7 +137,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             console.log('location:', fileLocations);
 
             const response = await monolithStore.runQuery(`
-            Storage(storage = "${id}") | SyncLocalToStorage(storagePath='/', filePath=[${fileLocations}]);
+            Storage(storage = "${id}") | PushToStorage(storagePath='/', filePath=[${fileLocations}]);
             `);
 
             const { output, operationType } = response.pixelReturn[0];
