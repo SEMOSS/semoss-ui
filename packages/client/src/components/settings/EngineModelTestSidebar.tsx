@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { EditOutlined } from '@mui/icons-material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import { runPixel } from '@semoss/sdk';
+import { runPixel } from '@semoss/sdk/react';
 
 const StyledSidebar = styled(Paper)(({ theme }) => ({
     width: '300px',
@@ -95,7 +95,7 @@ export const EngineModelTestSidebar = ({
 
         const fetchModelInfo = async () => {
             try {
-                const pixel = `GetEngineInfo(engine="${selectedModel.model_id}")`;
+                const pixel = `EngineInfo(engine="${selectedModel.model_id}")`;
                 const response = await runPixel(pixel);
                 const { output, operationType } = response.pixelReturn[0];
 
