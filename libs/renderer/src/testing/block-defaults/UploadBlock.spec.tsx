@@ -35,7 +35,6 @@ describe("Upload Block", () => {
         // const { container } = render(<UploadBlock id="upload" />, {
         //     blocks: blocks,
         // });
-    
         // const upload = container.querySelector("[data-block='upload']");
         // expect(upload).toBeInTheDocument();
     });
@@ -60,14 +59,14 @@ describe("Upload Block", () => {
     //     const mockFile = new File(["dummy content"], "example.jpg", {
     //         type: "image/jpeg",
     //     });
-    
+
     //     render(<UploadBlock id="upload" />, {
     //         blocks: blocks,
     //     });
-    
+
     //     const input = screen.getByLabelText(/Upload File/i) as HTMLInputElement;
     //     await fireEvent.change(input, { target: { files: [mockFile] } });
-    
+
     //     await waitFor(() => {
     //         expect(input.files?.[0]).toBe(mockFile);
     //         expect(input.files?.[0].name).toBe("example.jpg");

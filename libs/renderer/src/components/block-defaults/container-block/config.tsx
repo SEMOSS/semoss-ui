@@ -25,7 +25,7 @@ export const config: BlockConfig<ContainerBlockDef> = {
             blurRadius: "",
             spreadRadius: "",
             color: "",
-        }
+        },
     },
     listeners: {
         preProcess: {

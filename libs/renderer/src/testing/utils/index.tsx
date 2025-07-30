@@ -24,6 +24,8 @@ const MockProvider: React.FC<MockProviderProps> = ({
     queryConfig,
 }) => {
     const store = new StateStore({
+        mode: "interactive",
+        insightId: "new",
         state: {
             executionOrder: [],
             queries: queryConfig || {},
@@ -31,6 +33,8 @@ const MockProvider: React.FC<MockProviderProps> = ({
             version: "",
             blocks: blocks,
         },
+        cellRegistry: {},
+        initialParams: {},
     });
 
     return (
@@ -48,6 +52,8 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
     queryConfig,
 }) => {
     const store = new StateStore({
+        mode: "interactive",
+        insightId: "new",
         state: {
             executionOrder: [],
             queries: queryConfig || {},
@@ -55,6 +61,8 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
             version: "",
             blocks: blocks,
         },
+        cellRegistry: {},
+        initialParams: {},
     });
 
     return (
@@ -69,7 +77,7 @@ const MockHookProvider: React.FC<MockProviderProps> = ({
 type CustomRenderOptions = {
     blocks: Record<string, Block>;
     queryConfig?: Record<string, QueryStateConfig>;
-    renderOptions?: RenderOptions<unknown>;
+    renderOptions?: RenderOptions;
 } & Omit<RenderOptions, "wrapper">;
 
 // Override render method from testing-library
