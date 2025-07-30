@@ -31,8 +31,6 @@ const StyledList = styled(List)(({ theme }) => ({
 }));
 
 const StyledParameterSection = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
     gap: theme.spacing(2),
 }));
 
@@ -54,6 +52,12 @@ interface Model {
     tag?: string;
 }
 
+interface ModelInfo {
+    database_name?: string;
+    tag?: string;
+    description?: string;
+}
+
 interface EngineModelTestSidebarProps {
     selectedModel: Model;
     setSelectedModel: (model: Model) => void;
@@ -71,7 +75,7 @@ export const EngineModelTestSidebar = ({
     maxTokens,
     setMaxTokens,
 }: EngineModelTestSidebarProps) => {
-    const [modelInfo, setModelInfo] = useState<any>(null);
+    const [modelInfo, setModelInfo] = useState<ModelInfo | null>(null);
 
     const temperatureTooltipText = `
     This changes the randomness of the LLM's output. 
@@ -87,37 +91,37 @@ export const EngineModelTestSidebar = ({
 
     // Fetch model information and validate it's a text-generation model
     useEffect(() => {
-        if (selectedModel.model_id) {
-            const fetchModelInfo = async () => {
-                try {
-                    const pixel = `GetEngineInfo(engine="${selectedModel.model_id}")`;
-                    const response = await runPixel(pixel);
-                    const { output, operationType } = response.pixelReturn[0];
+        if (!selectedModel.model_id) return;
 
-                    if (operationType.indexOf('ERROR') === -1) {
-                        setModelInfo(output);
-                        // Update model name if we got it from the info
-                        if (output['database_name'] && !selectedModel.model_name) {
-                            setSelectedModel({
-                                ...selectedModel,
-                                model_name: output['database_name'],
-                                tag: output['tag'] || selectedModel.tag,
-                            });
-                        }
+        const fetchModelInfo = async () => {
+            try {
+                const pixel = `GetEngineInfo(engine="${selectedModel.model_id}")`;
+                const response = await runPixel(pixel);
+                const { output, operationType } = response.pixelReturn[0];
 
-                        // Check if this is a text-generation model
-                        if (output['tag'] && !output['tag'].includes('text-generation')) {
-                            console.warn('Selected model may not support text generation:', output['tag']);
-                        }
+                if (operationType.indexOf('ERROR') === -1) {
+                    const modelInfo = output as ModelInfo;
+                    setModelInfo(modelInfo);
+                    
+                    if (modelInfo.database_name && !selectedModel.model_name) {
+                        setSelectedModel({
+                            ...selectedModel,
+                            model_name: modelInfo.database_name,
+                            tag: modelInfo.tag || selectedModel.tag,
+                        });
                     }
-                } catch (error) {
-                    console.error('Failed to fetch model info:', error);
-                }
-            };
 
-            fetchModelInfo();
-        }
-    }, [selectedModel.model_id, selectedModel, setSelectedModel]);
+                    if (modelInfo.tag && !modelInfo.tag.includes('text-generation')) {
+                        console.warn('Selected model may not support text generation:', modelInfo.tag);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to fetch model info:', error);
+            }
+        };
+
+        fetchModelInfo();
+    }, [selectedModel.model_id]);
 
     const handleTemperatureChange = (event: Event, newValue: number | number[]) => {
         setTemperature(Array.isArray(newValue) ? newValue[0] : newValue);
