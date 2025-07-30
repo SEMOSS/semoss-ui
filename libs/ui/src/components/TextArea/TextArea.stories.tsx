@@ -1,6 +1,6 @@
 import React from "react";
 import { useState } from "react";
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { TextArea } from "./index";
 
 const meta: Meta<typeof TextArea> = {

@@ -1,5 +1,5 @@
 import { Command, Flags } from '@oclif/core';
-import { Env, Insight } from '@semoss/sdk';
+import { Env, Insight } from '@semoss/sdk/react';
 import AdmZip from 'adm-zip';
 import { glob } from 'glob';
 import { config } from 'dotenv';

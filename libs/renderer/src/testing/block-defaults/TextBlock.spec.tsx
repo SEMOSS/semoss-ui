@@ -60,7 +60,7 @@ describe("text block", () => {
         expect(textBlock).not.toBeInTheDocument();
     });
 
-    it("changes text type based on variant" , async () => {
+    it("changes text type based on variant", async () => {
         const tagNames = ["h1", "h2", "h3", "h4", "h5", "h6", "p", "span"];
         const variantBlock = blocks;
         tagNames.forEach((tag) => {
