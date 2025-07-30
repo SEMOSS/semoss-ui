@@ -59,11 +59,11 @@ export const ChangeOrientation = observer(({ id }: ChangeOrientationProps) => {
             typeof computedValue === 'string'
                 ? JSON.parse(computedValue)
                 : computedValue;
-        const seriesIndex = option['series'].findIndex(
+        let seriesIndex = option['series'].findIndex(
             (item) => item.type === 'tree',
         );
 
-        const orientation =
+        let orientation =
             option['series'][seriesIndex]['orient'] || orientationData;
         setOrientationData(orientation);
     }, []);
@@ -74,7 +74,7 @@ export const ChangeOrientation = observer(({ id }: ChangeOrientationProps) => {
                 typeof computedValue === 'string'
                     ? JSON.parse(computedValue)
                     : computedValue;
-            const seriesIndex = option['series'].findIndex(
+            let seriesIndex = option['series'].findIndex(
                 (item) => item.type === 'tree',
             );
             option['series'][seriesIndex]['orient'] = orientationData;

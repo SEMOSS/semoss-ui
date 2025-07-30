@@ -2,10 +2,10 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { observer } from 'mobx-react-lite';
 import { InfoOutlined, Menu, Public, RestartAlt } from '@mui/icons-material';
-import './flexlayout.css';
+
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
 import 'flexlayout-react/style/light.css';
-
+import './flexlayout.css';
 import {
     styled,
     Stack,

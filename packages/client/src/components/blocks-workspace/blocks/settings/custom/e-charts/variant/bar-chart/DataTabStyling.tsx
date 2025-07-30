@@ -257,11 +257,11 @@ export const DataTabStyling = observer(
                         parsedValue['_state']?.['fields']?.[chart[index].label];
                 }
                 value = value ? (Array.isArray(value) ? value : [value]) : [];
-                const selectorsList = [];
-                const dataTypeList = [];
-                const valueList = [];
+                let selectorsList = [];
+                let dataTypeList = [];
+                let valueList = [];
                 value.forEach((col) => {
-                    const selector = columnsSelector.find(
+                    let selector = columnsSelector.find(
                         (column) => column.name === col,
                     );
                     if (selector) {
@@ -287,13 +287,13 @@ export const DataTabStyling = observer(
             }
             const formattedArray = chart.map((item, index) => {
                 const key = `data-tab-drop-area-${index}`;
-                const value = selectedColumns[key]?.values ?? [];
-                const selectorsList = [];
-                const dataTypeList = [];
-                const valueList = [];
+                let value = selectedColumns[key]?.values ?? [];
+                let selectorsList = [];
+                let dataTypeList = [];
+                let valueList = [];
 
                 value.forEach((col) => {
-                    const selector = columnsSelector.find(
+                    let selector = columnsSelector.find(
                         (column) => column.name === col,
                     );
                     if (selector) {
@@ -327,7 +327,7 @@ export const DataTabStyling = observer(
         };
 
         const onAggregateChange = (selectedAggregate: string) => {
-            const targetDataType =
+            let targetDataType =
                 selectedColumns[
                     `data-tab-drop-area-${tempAggClickData.chartIndex}`
                 ]?.dataType;

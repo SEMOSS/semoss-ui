@@ -66,11 +66,11 @@ export const LegendDendrogram = observer(({ id }: LegendDendrogramProps) => {
         runStateUpdate(option);
     }, [legend]);
     useEffect(() => {
-        const option =
+        let option =
             typeof computedValue === 'string'
                 ? JSON.parse(computedValue)
                 : computedValue;
-        const legendData = option['legend']?.['show'] || false;
+        let legendData = option['legend']?.['show'] || false;
         setLegend(legendData);
     }, []);
     function runStateUpdate(option) {
