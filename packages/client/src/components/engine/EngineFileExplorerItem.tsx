@@ -127,6 +127,7 @@ export const EngineFileExplorerItem = (props: EngineFileExplorerItemProps) => {
                         <IconButton
                             title={`Delete ${name}`}
                             onClick={(e) => {
+                                // don't allow it to propagate
                                 e.stopPropagation();
                                 onTrashClick(e, path);
                             }}
