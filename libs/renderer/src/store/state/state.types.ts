@@ -149,6 +149,9 @@ export type Block<D extends BlockDef = BlockDef> = D extends D
                   children: string[];
               }
           >;
+
+          /** Mapping of community block ID to local block ID */
+          communityBlockMapping?: Record<string, string>;
       }
     : never;
 
@@ -229,6 +232,9 @@ export type BlockJSON<
           /** Slot information */
 
           slots: Record<keyof T["slots"], BlockJSON<A, A>[]>;
+
+          /** Source ID of the community block */
+          id?: string;
       }
     : never;
 

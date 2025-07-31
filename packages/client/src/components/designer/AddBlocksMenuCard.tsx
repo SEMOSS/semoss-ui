@@ -200,6 +200,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                                 sibling: siblingWidget.id,
                                 type: placeholderAction.type,
                             },
+                            isCommunity: isCommunity,
                         },
                     }) as string;
                 }
@@ -212,6 +213,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                             parent: placeholderAction.id,
                             slot: placeholderAction.slot,
                         },
+                        isCommunity: isCommunity,
                     },
                 }) as string;
 
@@ -230,7 +232,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 
         // TODO: REFACTOR
         // Add variables for all blocks that are inputs from user
-        if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1) {
+        if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1 && !isCommunity) {
             state.dispatch({
                 message: ActionMessages.ADD_VARIABLE,
                 payload: {
