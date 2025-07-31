@@ -24,7 +24,8 @@ export default defineConfig(({ mode }) => {
 			commonjsOptions: { transformMixedEsModules: true },
 		},
 		server: {
-			port: 5174,
+			port: parseInt(process.env.PLAYGROUND_SERVER_PORT || "5174", 10),
+			strictPort: true,
 			proxy: {
 				[MODULE]: {
 					target: ENDPOINT,
