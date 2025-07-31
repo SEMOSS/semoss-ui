@@ -486,11 +486,10 @@ export const AppTileCard = (props: AppTileCardProps) => {
     }, [app.project_date_created]);
     const lastEditedDate = useMemo(() => {
         const d = dayjs(app.project_date_last_edited);
-        if (!d.isValid()) {
-            return null;
+        if (!d.isValid() || !app.project_date_last_edited) {
+            return "Last edited N/A";
         }
-
-        return `Last Edited ${d.format('MMMM D, YYYY')}`;
+        return `Last edited ${d.format('MMMM D, YYYY')}`;
     }, [app.project_date_last_edited]);
 
     /**
