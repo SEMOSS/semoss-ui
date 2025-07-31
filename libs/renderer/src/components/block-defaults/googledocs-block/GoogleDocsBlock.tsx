@@ -103,11 +103,6 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                         color: "success",
                         message: "Successfully logged into Google",
                     });
-                } else {
-                    notification.add({
-                        color: "error",
-                        message: "Failed to fetch Google user info",
-                    });
                 }
             } catch (error) {
                 notification.add({
@@ -120,12 +115,12 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
 
     useEffect(() => {
         if (loggedInUser) {
-            getGoogleDocs();
+            getGoogleDocsList();
         }
     }, [loggedInUser]);
 
     useEffect(() => {
-        getGoogleDocs();
+        getGoogleDocsList();
     }, [data.showDocsUpdateForm, data.showDocsDeleteForm]);
 
     if (!data.isStreaming) displayTxt = textContent;
@@ -163,7 +158,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
         },
     });
 
-    const getGoogleDocs = async () => {
+    const getGoogleDocsList = async () => {
         try {
             const response = await runPixel<[string]>(
                 `META | GoogleDocsList();`,
@@ -179,10 +174,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
             if (
                 output &&
                 typeof output === "object" &&
-                Array.isArray(output.DocIdList)
+                Array.isArray(output.docIdList)
             ) {
                 setDocTitleList(
-                    output.DocIdList.map(([title, id]: [string, string]) => ({
+                    output.docIdList.map(([title, id]: [string, string]) => ({
                         title,
                         id,
                     })),
@@ -196,7 +191,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
-    const updateContent = async (docId: string, docTitle: string) => {
+    const getGoogleDoc = async (docId: string, docTitle: string) => {
         try {
             const response = await runPixel<[string]>(
                 `META | GoogleDocsRead(id="${docId}");`,
@@ -246,6 +241,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                     typeof output === "object" &&
                     output.success === true
                 ) {
+                    notification.add({
+                        color: "success",
+                        message: "Document created successfully!",
+                    });
                     setData(
                         "showDocsCreateForm",
                         false as PathValue<
@@ -261,7 +260,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                         >,
                     );
                     resetCreate();
-                    getGoogleDocs();
+                    getGoogleDocsList();
                 } else {
                     const errorMsg =
                         output &&
@@ -269,6 +268,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                             "message" in output
                             ? output.message
                             : "Create failed";
+                    notification.add({
+                        color: "error",
+                        message: errorMsg,
+                    });
                     throw new Error(errorMsg);
                 }
             } catch (error) {
@@ -285,7 +288,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                         doc.title === updatedata.GOOGLEDOCS_TITLE,
                 )?.id;
                 if (!docId) {
-                    alert("Document ID not found.");
+                    notification.add({
+                        color: "error",
+                        message: "Document ID not found.",
+                    });
                     return;
                 }
                 const response = await runPixel<[string]>(
@@ -304,11 +310,19 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                     typeof output === "object" &&
                     output.status === true
                 ) {
+                    notification.add({
+                        color: "success",
+                        message: "Document updated successfully!",
+                    });
                     setData("showDocsUpdateForm", false);
                     setData("showUpdateForm", true);
                     resetUpdate();
-                    getGoogleDocs();
+                    getGoogleDocsList();
                 } else {
+                    notification.add({
+                        color: "error",
+                        message: "Update failed",
+                    });
                     throw new Error("Update failed");
                 }
             } catch (error) {
@@ -321,7 +335,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
         e.preventDefault();
         const values = getDeleteValues();
         if (!values.GOOGLEDOCS_TITLE) {
-            alert("Google Docs Title is required.");
+            notification.add({
+                color: "error",
+                message: "Google Docs Title is required.",
+            });
             return;
         }
         setPendingDeleteValues(values);
@@ -331,7 +348,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
     const onDeleteSubmit = async (deleteValues?: showDocsDeleteForm) => {
         const values = deleteValues || getDeleteValues();
         if (!values.GOOGLEDOCS_ID) {
-            alert("Google Docs ID is required.");
+            notification.add({
+                color: "error",
+                message: "Google Docs ID is required.",
+            });
             return;
         }
         try {
@@ -351,6 +371,10 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                 typeof output === "object" &&
                 output.status === true
             ) {
+                notification.add({
+                    color: "success",
+                    message: "Document deleted successfully!",
+                });
                 setData(
                     "showDocsDeleteForm",
                     false as PathValue<
@@ -367,8 +391,12 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                 );
                 setDeleteMessage("document deleted successfully");
                 resetDelete();
-                getGoogleDocs();
+                getGoogleDocsList();
             } else {
+                notification.add({
+                    color: "error",
+                    message: "Delete failed!",
+                });
                 setDeleteMessage("Delete failed!");
                 throw new Error("Delete failed!");
             }
@@ -708,7 +736,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                                         "showDocsDeleteForm",
                                                                         false,
                                                                     );
-                                                                    updateContent(
+                                                                    getGoogleDoc(
                                                                         doc.id,
                                                                         doc.title,
                                                                     );
@@ -762,7 +790,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                     >,
                                 );
                                 setCreatedDoc(null);
-                                getGoogleDocs();
+                                getGoogleDocsList();
                             }}
                         >
                             <StyledModalContent>
@@ -782,7 +810,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                 >,
                                             );
                                             setCreatedDoc(null);
-                                            getGoogleDocs();
+                                            getGoogleDocsList();
                                         }}
                                     >
                                         Close
@@ -797,7 +825,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                             onClose={() => {
                                 setData("showUpdateForm", false);
                                 setUpdatedDoc(null);
-                                getGoogleDocs();
+                                getGoogleDocsList();
                             }}
                         >
                             <StyledModalContent>
@@ -810,7 +838,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                         onClick={() => {
                                             setData("showUpdateForm", false);
                                             setUpdatedDoc(null);
-                                            getGoogleDocs();
+                                            getGoogleDocsList();
                                         }}
                                     >
                                         Close
@@ -831,7 +859,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                     >,
                                 );
                                 setDeletedDoc(null);
-                                getGoogleDocs();
+                                getGoogleDocsList();
                             }}
                         >
                             <StyledModalContent>
@@ -851,7 +879,7 @@ export const GoogleDocsBlock: BlockComponent = observer(({ id }) => {
                                                 >,
                                             );
                                             setDeletedDoc(null);
-                                            getGoogleDocs();
+                                            getGoogleDocsList();
                                         }}
                                     >
                                         Close
