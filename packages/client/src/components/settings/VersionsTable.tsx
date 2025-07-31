@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Button, styled, Table, useNotification } from "@semoss/ui";
+import React, { useEffect, useState, useCallback } from "react";
+import { Button, styled, Table, useNotification, IconButton } from "@semoss/ui";
+import Refresh from "@mui/icons-material/Refresh";
 import { useRootStore } from "@/hooks";
 
 // Styled Components
@@ -56,16 +57,15 @@ export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [restoreLoading, setRestoreLoading] = useState<string | null>(null);
-
+	const [refreshing, setRefreshing] = useState(false);
 	/**
 	 * Fetch versions data from the API
 	 */
-	useEffect(() => {
-		if (!id) return;
 
-		const fetchVersions = async () => {
+		const fetchVersions = useCallback(async () => {
 			try {
 				setLoading(true);
+				setRefreshing(true);
 				setError(null);
 
 				const response = await monolithStore.runQuery(
@@ -98,11 +98,14 @@ export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 				setVersions([]);
 			} finally {
 				setLoading(false);
+				setRefreshing(false);
 			}
-		};
+		},[id, monolithStore]);
 
-		fetchVersions();
-	}, [id, monolithStore]);
+		useEffect(() => {
+			if (!id) return;
+			fetchVersions();
+    	}, [id, fetchVersions]);
 
 	/**
 	 * Handle restore action for a specific commit version
@@ -118,24 +121,24 @@ export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 			);
 
 			const { operationType } = response.pixelReturn[0];
-			const shortHash = version.hash.substring(0, 8);
 
 			if (operationType.some((type: string) => type.includes("ERROR"))) {
 				notification.add({
 					color: "error",
-					message: `Failed to restore to commit ${shortHash}`,
+					message: `Failed to restore to commit ${version.hash}`,
 				});
 			} else {
 				notification.add({
 					color: "success",
-					message: `Successfully restored to commit ${shortHash}`,
+					message: `Successfully restored to commit ${version.hash}`,
 				});
+				window.location.reload();
 			}
 		} catch (error) {
 			console.error("Error restoring commit:", error);
 			notification.add({
 				color: "error",
-				message: `Failed to restore to commit ${version.hash.substring(0, 8)}`,
+				message: `Failed to restore to commit ${version.hash}`,
 			});
 		} finally {
 			setRestoreLoading(null);
@@ -159,9 +162,21 @@ export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 	// Main table render
 	return (
 		<StyledContainer>
+			<div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", marginBottom: 8 }}>
+                <IconButton
+                    size="medium"
+                    color="primary"
+                    onClick={fetchVersions}
+                    disabled={refreshing}
+                    title="Refresh"
+                >
+                    <Refresh fontSize='inherit' />
+                </IconButton>
+            </div>
 			<Table>
 				<Table.Head>
 					<Table.Row>
+						<Table.Cell component="th">Commit ID</Table.Cell>
 						<Table.Cell component="th">Commit Message</Table.Cell>
 						<Table.Cell component="th">Date</Table.Cell>
 						<Table.Cell component="th">Action</Table.Cell>
@@ -170,6 +185,7 @@ export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 				<Table.Body>
 					{versions.map((version) => (
 						<Table.Row key={version.hash}>
+							<Table.Cell>{version.hash}</Table.Cell>
 							<Table.Cell>{version.message}</Table.Cell>
 							<Table.Cell>{version.date}</Table.Cell>
 							<Table.Cell>
