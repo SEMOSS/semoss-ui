@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Actions, TabNode } from 'flexlayout-react';
-import { IconButton, Stack, useNotification } from '@semoss/ui';
+import { IconButton, Stack, useNotification, Modal, Button, TextField, Box } from '@semoss/ui';
 
 import { useWorkspace } from '@/hooks';
 import { FileEditor, FileEditorRefDef } from '@/components/common';
@@ -21,6 +21,8 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
     const [isModified, setIsModified] = useState(false);
 
     const fileEditorRef = useRef<FileEditorRefDef>(null);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [commitMsg, setCommitMsg] = useState('');
 
     // get the name
     const name = path.split('/').pop();
@@ -106,6 +108,16 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
             });
         }
     };
+    // Save handler for modal
+    const handleModalSave = () => {
+        fileEditorRef.current?.saveFile();
+        setModalOpen(false);
+        notification.add({
+            color: 'success',
+            message: `Save successful! File is saved with the following commit message: ${commitMsg}`,
+        });
+        setCommitMsg('');
+    };
 
     return (
         <Panel
@@ -132,6 +144,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
                         onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            setModalOpen(true);
 
                             // trigger the save
                             fileEditorRef.current?.saveFile();
@@ -139,6 +152,60 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
                     >
                         <SaveOutlined fontSize="inherit" />
                     </IconButton>
+                    
+                    <Modal
+                        open={modalOpen}
+                        onClose={() => setModalOpen(false)}
+                        aria-labelledby="commit-modal-title"
+                        aria-describedby="commit-modal-description"
+                    >
+                        <Box
+                            sx={{
+                                position: 'absolute',
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -50%)',
+                                bgcolor: 'background.paper',
+                                boxShadow: 24,
+                                p: 5,
+                                width: '90vw',
+                                maxWidth: 600,
+                                minWidth: 300,
+                                height: 'auto',
+                                maxHeight: '80vh',
+                                borderRadius: 3,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: 3,
+                                alignItems: 'center',
+                                overflow: 'auto',
+                            }}
+                        >
+                            <h2 id="commit-modal-title" style={{ margin: 0, fontWeight: 700, fontSize: '2rem', textAlign: 'center' }}>
+                                Enter Commit Message
+                            </h2>
+                            <TextField
+                                autoFocus
+                                fullWidth
+                                multiline
+                                minRows={1}
+                                maxRows={5}
+                                label="Commit Message"
+                                value={commitMsg}
+                                onChange={e => setCommitMsg(e.target.value)}
+                                sx={{ mt: 2, fontSize: '1.1rem' }}
+                            />
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                disabled={!commitMsg.trim()}
+                                onClick={handleModalSave}
+                                sx={{ mt: 2, width: '20%', fontSize: '1.1rem', alignSelf: 'center' }}
+                            >
+                                Save
+                            </Button>
+                        </Box>
+                    </Modal>
                 </>
             }
         >

@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
 
-import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
+import { IconButton, Stack, useNotification, Tooltip, Modal, Button, TextField, Box } from '@semoss/ui';
 import { useBlocks } from '@semoss/renderer';
 import { runPixel } from '@semoss/sdk/react';
 
@@ -18,6 +18,8 @@ export const BlocksWorkspaceActions = observer(() => {
     const { monolithStore } = useRootStore();
     const notification = useNotification();
     const { workspace } = useWorkspace();
+    const [modalOpen, setModalOpen] = useState(false);
+    const [commitMsg, setCommitMsg] = useState('');
 
     const removePageIdsFromURL = () => {
         const url = window.location.href;
@@ -130,7 +132,9 @@ export const BlocksWorkspaceActions = observer(() => {
             const { errors } = await monolithStore.runQuery<[true]>(
                 `SaveAppBlocksJson(project=["${
                     workspace.appId
-                }"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
+                }"], json=["<encode>${JSON.stringify(json)}</encode>"],
+                comment="${commitMsg.replace(/"/g, '\\"')}"
+                );`,
             );
 
             if (errors.length > 0) {
@@ -139,8 +143,7 @@ export const BlocksWorkspaceActions = observer(() => {
 
             notification.add({
                 color: 'success',
-                message:
-                    'Save successful! Make sure to double-check your changes for correctness',
+                message: `Save successful !! File is saved with the following commit message: ${commitMsg}`,
             });
         } catch (e) {
             console.error(e);
@@ -152,7 +155,12 @@ export const BlocksWorkspaceActions = observer(() => {
         } finally {
             // turn of loading
             workspace.setLoading(false);
+            setCommitMsg('');
         }
+    };
+    const handleModalSave = async () => {
+        setModalOpen(false);
+        await saveApp();
     };
 
     /**
@@ -209,7 +217,7 @@ export const BlocksWorkspaceActions = observer(() => {
         const onDocumentKeydown = (event: KeyboardEvent) => {
             if ((event.ctrlKey || event.metaKey) && event.key === 's') {
                 event.preventDefault();
-                saveApp();
+                setModalOpen(true);
             }
         };
 
@@ -223,57 +231,112 @@ export const BlocksWorkspaceActions = observer(() => {
     }, []);
 
     return (
-        <Stack direction="row" spacing={1} alignItems={'center'}>
-            <Tooltip title={'Modal Selection'}>
-                <IconButton
-                    size={'small'}
-                    color="default"
-                    onClick={() => {
-                        selectModel();
-                    }}
+        <>
+            <Stack direction="row" spacing={1} alignItems={'center'}>
+                <Tooltip title={'Modal Selection'}>
+                    <IconButton
+                        size={'small'}
+                        color="default"
+                        onClick={() => {
+                            selectModel();
+                        }}
+                    >
+                        <ModelBrain
+                            width={'18'}
+                            height={'18'}
+                            color={
+                                workspace.agentModelEngine ? '#0471f0' : '#666666'
+                            }
+                        />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title="Preview App">
+                    <IconButton
+                        size={'small'}
+                        color="default"
+                        onClick={() => {
+                            previewApp();
+                        }}
+                    >
+                        <PlayArrow fontSize="inherit" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title={'Share App'}>
+                    <IconButton
+                        size={'small'}
+                        color="default"
+                        onClick={() => {
+                            shareApp();
+                        }}
+                    >
+                        <ShareRounded fontSize="inherit" />
+                    </IconButton>
+                </Tooltip>
+                <Tooltip title={'Save App (ctrl/command + s)'}>
+                    <IconButton
+                        size={'small'}
+                        color={'primary'}
+                        onClick={() => {
+                            setModalOpen(true);
+                        }}
+                    >
+                        <SaveOutlined fontSize="inherit" />
+                    </IconButton>
+                </Tooltip>
+            </Stack>
+            <Modal
+                    open={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                    aria-labelledby="commit-modal-title"
+                    aria-describedby="commit-modal-description"
                 >
-                    <ModelBrain
-                        width={'18'}
-                        height={'18'}
-                        color={
-                            workspace.agentModelEngine ? '#0471f0' : '#666666'
-                        }
-                    />
-                </IconButton>
-            </Tooltip>
-            <Tooltip title="Preview App">
-                <IconButton
-                    size={'small'}
-                    color="default"
-                    onClick={() => {
-                        previewApp();
-                    }}
-                >
-                    <PlayArrow fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-            <Tooltip title={'Share App'}>
-                <IconButton
-                    size={'small'}
-                    color="default"
-                    onClick={() => {
-                        shareApp();
-                    }}
-                >
-                    <ShareRounded fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-            <Tooltip title={'Save App (ctrl/command + s)'}>
-                <IconButton
-                    size={'small'}
-                    color={'primary'}
-                    onClick={() => {
-                        saveApp();
-                    }}
-                >
-                    <SaveOutlined fontSize="inherit" />
-                </IconButton>
-            </Tooltip>
-        </Stack>
+                    <Box
+                        sx={{
+                            position: 'absolute',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            bgcolor: 'background.paper',
+                            boxShadow: 24,
+                            p: 5,
+                            width: '90vw',
+                            maxWidth: 600,
+                            minWidth: 300,
+                            height: 'auto',
+                            maxHeight: '80vh',
+                            borderRadius: 3,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 3,
+                            alignItems: 'center',
+                            overflow: 'auto',
+                        }}
+                    >
+                        <h2 id="commit-modal-title" style={{ margin: 0, fontWeight: 700, fontSize: '2rem', textAlign: 'center' }}>
+                            Enter Commit Message
+                        </h2>
+                        <TextField
+                            autoFocus
+                            fullWidth
+                            multiline
+                            minRows={1}
+                            maxRows={5}
+                            label="Commit Message"
+                            value={commitMsg}
+                            onChange={e => setCommitMsg(e.target.value)}
+                            sx={{ mt: 2, fontSize: '1.1rem' }}
+                        />
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            disabled={!commitMsg.trim()}
+                            onClick={handleModalSave}
+                            sx={{ mt: 2, width: '20%', fontSize: '1.1rem', alignSelf: 'center' }}
+                        >
+                            Save
+                        </Button>
+                    </Box>
+                </Modal>
+        </>
     );
 });
