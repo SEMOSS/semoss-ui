@@ -1236,6 +1236,7 @@ export const LoginPage = observer(() => {
                     <StyledGradient />
                     <StyledImageHolder>
                        {configStore.theme.backgroundImg !== null && (
+                        
                         <StyledImage src={configStore.theme.backgroundImg} />
                        )}
                        {configStore.theme.backgroundImg === null && (
