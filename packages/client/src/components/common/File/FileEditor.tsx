@@ -1,773 +1,733 @@
 import {
-    useMemo,
-    useEffect,
-    useState,
-    useRef,
-    lazy,
-    Suspense,
-    forwardRef,
-    useImperativeHandle,
-} from 'react';
-import type { OnMount } from '@monaco-editor/react';
-import parserBabel from 'prettier/parser-babel';
-import parserCss from 'prettier/parser-postcss';
-import parserHtml from 'prettier/parser-html';
-import prettier from 'prettier';
+  useMemo,
+  useEffect,
+  useState,
+  useRef,
+  lazy,
+  Suspense,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import type { OnMount } from "@monaco-editor/react";
+import parserBabel from "prettier/parser-babel";
+import parserCss from "prettier/parser-postcss";
+import parserHtml from "prettier/parser-html";
+import prettier from "prettier";
 
-import { styled, useNotification } from '@semoss/ui';
-import { LoadingScreen } from '@/components/ui';
-import { runPixel } from '@semoss/sdk/react';
+import { styled, useNotification } from "@semoss/ui";
+import { LoadingScreen } from "@/components/ui";
+import { runPixel } from "@semoss/sdk/react";
 
-const Editor = lazy(() => import('@monaco-editor/react'));
+const Editor = lazy(() => import("@monaco-editor/react"));
 
 const IS_PRODUCTION = !import.meta.env.DEV;
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    height: '100%',
-    width: '100%',
-    background: theme.palette.background.paper,
-    overflow: 'hidden',
+const StyledContainer = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  height: "100%",
+  width: "100%",
+  background: theme.palette.background.paper,
+  overflow: "hidden",
 }));
 
 interface FileEditorProps {
-    /** Type of file opened */
-    type: 'app' | 'insight';
+  /** Type of file opened */
+  type: "app" | "insight";
 
-    /** Space where the file is located */
-    space: string;
+  /** Space where the file is located */
+  space: string;
 
-    /** Path to the file file */
-    path: string;
+  /** Path to the file file */
+  path: string;
 
-    /** insight id */
-    insightId?: string | null;
+  /** insight id */
+  insightId?: string | null;
 
-    /**
-     * Optional Model Engine to use
-     */
-    agentModelEngine?: string;
+  /**
+   * Optional Model Engine to use
+   */
+  agentModelEngine?: string;
 
-    /**
-     *
-     * @param isModified
-     * @returns
-     */
-    onChange: (content: string, isModified: boolean) => void;
+  /**
+   *
+   * @param isModified
+   * @returns
+   */
+  onChange: (content: string, isModified: boolean) => void;
 }
 
 export interface FileEditorRefDef {
-    /**
-     *
-     * @returns Save the file
-     */
-    saveFile: () => Promise<void>;
+  /**
+   *
+   * @returns Save the file
+   */
+  saveFile: () => Promise<void>;
 
-    /**
-     *
-     * @returns Format the file
-     */
-    formatFile: () => Promise<void>;
+  /**
+   *
+   * @returns Format the file
+   */
+  formatFile: () => Promise<void>;
 }
 
 export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
-    function FileEditor(props, ref) {
-        const {
-            type = 'app',
-            space = '',
-            path = '',
-            insightId = null,
-            agentModelEngine = '',
-            onChange = () => null,
-        } = props;
+  function FileEditor(props, ref) {
+    const {
+      type = "app",
+      space = "",
+      path = "",
+      insightId = null,
+      agentModelEngine = "",
+      onChange = () => null,
+    } = props;
 
-        const notification = useNotification();
-        const [content, setContent] = useState('');
-        const [initialContent, setInitialContent] = useState('');
-        const [isLoading, setIsLoading] = useState(false);
-        const [LLMActionAdded, setLLMActionAdded] = useState(false);
-        // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
-        const wordWrapRef = useRef(false);
-        const editorRef = useRef(null);
-        const [isModified, setIsModified] = useState(false);
+    const notification = useNotification();
+    const [content, setContent] = useState("");
+    const [initialContent, setInitialContent] = useState("");
+    const [isLoading, setIsLoading] = useState(false);
+    const [LLMActionAdded, setLLMActionAdded] = useState(false);
+    // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
+    const wordWrapRef = useRef(false);
+    const editorRef = useRef(null);
+    const [isModified, setIsModified] = useState(false);
 
-        // update whenever the content changes
-        useImperativeHandle(
-            ref,
-            () => {
-                return {
-                    saveFile: saveFile,
-                    formatFile: formatFile,
-                };
-            },
-            [content],
-        );
-
-        /**
-         * Set the initial file
-         */
-        useEffect(() => {
-            // load when the type space or path change
-            loadFile();
-        }, [type, space, path]);
-
-        /**
-         * Trigger the on change function
-         */
-        useEffect(() => {
-            onChange(content, isModified);
-        }, [isModified]);
-
-        const fileLanguage = useMemo<
-            | 'typescript'
-            | 'javascript'
-            | 'html'
-            | 'css'
-            | 'scss'
-            | 'python'
-            | 'java'
-            | 'mdx'
-            | 'markdown'
-            | 'txt'
-            | ''
-        >(() => {
-            const ext = path.split('.').pop();
-
-            if (ext === 'ts' || ext === 'tsx') {
-                return 'typescript';
-            }
-            if (ext === 'js' || ext === 'jsx') {
-                return 'javascript';
-            }
-            if (ext === 'html') {
-                return 'html';
-            }
-            if (ext === 'css') {
-                return 'css';
-            }
-            if (ext === 'scss') {
-                return 'scss';
-            }
-            if (ext === 'py' || ext === 'python') {
-                return 'python';
-            }
-            if (ext === 'java') {
-                return 'java';
-            }
-            if (ext === 'mdx') {
-                return 'mdx';
-            }
-            if (ext === 'md') {
-                return 'markdown';
-            }
-            if (ext === 'txt') {
-                return 'txt';
-            }
-
-            return '';
-        }, [path]);
-
-        /**
-         * Load the File
-         * @param type - type of the file
-         * @param id - ID of the file
-         * @param path - path to the file
-         */
-        const loadFile = async () => {
-            try {
-                setIsLoading(true);
-
-                let pixel = '';
-                if (type === 'app') {
-                    pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
-                } else if (type === 'insight') {
-                    throw Error('TODO');
-                    // TODO: add insight
-                    // pixel = `GetAsset(filePath=["${path}"], space=["${id}"]);`;
-                }
-
-                if (!pixel) {
-                    throw new Error('Error missing pixel to get file');
-                }
-
-                const response = await runPixel<[string]>(pixel, insightId);
-
-                // set the content
-                const content = response.pixelReturn[0].output;
-                setContent(content);
-                setInitialContent(content);
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
-
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
+    // update whenever the content changes
+    useImperativeHandle(
+      ref,
+      () => {
+        return {
+          saveFile: saveFile,
+          formatFile: formatFile,
         };
+      },
+      [content]
+    );
 
-        /**
-         * @name formatFile
-         * Use custom parsers to format file
-         * TODO: Save custom configs?
-         */
-        const formatFile = async () => {
-            try {
-                let formatted = content;
+    /**
+     * Set the initial file
+     */
+    useEffect(() => {
+      // load when the type space or path change
+      loadFile();
+    }, [type, space, path]);
 
-                if (fileLanguage === 'python') {
-                    //TODO:: Implement
-                } else {
-                    const prettierConfig = {};
+    /**
+     * Trigger the on change function
+     */
+    useEffect(() => {
+      onChange(content, isModified);
+    }, [isModified]);
 
-                    // parsers for other languages are needed
-                    if (fileLanguage === 'html') {
-                        prettierConfig['parser'] = 'html';
-                        prettierConfig['plugins'] = [parserHtml];
-                    } else if (
-                        fileLanguage === 'javascript' ||
-                        fileLanguage === 'typescript'
-                    ) {
-                        prettierConfig['parser'] = 'babel';
-                        prettierConfig['plugins'] = [parserBabel];
-                    } else if (
-                        fileLanguage === 'css' ||
-                        fileLanguage === 'scss'
-                    ) {
-                        prettierConfig['parser'] = 'css';
-                        prettierConfig['plugins'] = [parserCss];
-                    }
+    const fileLanguage = useMemo<
+      | "typescript"
+      | "javascript"
+      | "html"
+      | "css"
+      | "scss"
+      | "python"
+      | "java"
+      | "mdx"
+      | "markdown"
+      | "txt"
+      | ""
+    >(() => {
+      const ext = path.split(".").pop();
 
-                    // If we have a configuration for the selected language
-                    if (Object.keys(prettierConfig).length) {
-                        formatted = prettier.format(content, prettierConfig);
-                    }
+      if (ext === "ts" || ext === "tsx") {
+        return "typescript";
+      }
+      if (ext === "js" || ext === "jsx") {
+        return "javascript";
+      }
+      if (ext === "html") {
+        return "html";
+      }
+      if (ext === "css") {
+        return "css";
+      }
+      if (ext === "scss") {
+        return "scss";
+      }
+      if (ext === "py" || ext === "python") {
+        return "python";
+      }
+      if (ext === "java") {
+        return "java";
+      }
+      if (ext === "mdx") {
+        return "mdx";
+      }
+      if (ext === "md") {
+        return "markdown";
+      }
+      if (ext === "txt") {
+        return "txt";
+      }
 
-                    setContent(formatted);
-                }
+      return "";
+    }, [path]);
 
-                notification.add({
-                    color: 'success',
-                    message: 'Success formatting file',
-                });
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
+    /**
+     * Load the File
+     * @param type - type of the file
+     * @param id - ID of the file
+     * @param path - path to the file
+     */
+    const loadFile = async () => {
+      try {
+        setIsLoading(true);
 
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        let pixel = "";
+        if (type === "app") {
+          pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
+        } else if (type === "insight") {
+          throw Error("TODO");
+          // TODO: add insight
+          // pixel = `GetAsset(filePath=["${path}"], space=["${id}"]);`;
+        }
 
-        /**
-         * Save the File
-         */
-        const saveFile = async () => {
-            const content = editorRef.current.getValue();
-            try {
-                // setIsLoading(true);
+        if (!pixel) {
+          throw new Error("Error missing pixel to get file");
+        }
 
-                let pixel = '';
-                if (type === 'app') {
-                    pixel = `
+        const response = await runPixel<[string]>(pixel, insightId);
+
+        // set the content
+        const content = response.pixelReturn[0].output;
+        setContent(content);
+        setInitialContent(content);
+      } catch (e) {
+        notification.add({
+          color: "error",
+          message: e.message,
+        });
+
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    /**
+     * @name formatFile
+     * Use custom parsers to format file
+     * TODO: Save custom configs?
+     */
+    const formatFile = async () => {
+      try {
+        let formatted = content;
+
+        if (fileLanguage === "python") {
+          //TODO:: Implement
+        } else {
+          const prettierConfig = {};
+
+          // parsers for other languages are needed
+          if (fileLanguage === "html") {
+            prettierConfig["parser"] = "html";
+            prettierConfig["plugins"] = [parserHtml];
+          } else if (
+            fileLanguage === "javascript" ||
+            fileLanguage === "typescript"
+          ) {
+            prettierConfig["parser"] = "babel";
+            prettierConfig["plugins"] = [parserBabel];
+          } else if (fileLanguage === "css" || fileLanguage === "scss") {
+            prettierConfig["parser"] = "css";
+            prettierConfig["plugins"] = [parserCss];
+          }
+
+          // If we have a configuration for the selected language
+          if (Object.keys(prettierConfig).length) {
+            formatted = prettier.format(content, prettierConfig);
+          }
+
+          setContent(formatted);
+        }
+
+        notification.add({
+          color: "success",
+          message: "Success formatting file",
+        });
+      } catch (e) {
+        notification.add({
+          color: "error",
+          message: e.message,
+        });
+
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    /**
+     * Save the File
+     */
+    const saveFile = async () => {
+      const content = editorRef.current.getValue();
+      try {
+        // setIsLoading(true);
+
+        let pixel = "";
+        if (type === "app") {
+          pixel = `
                 SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"]); 
                 CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${space}"])
             `;
-                } else if (type === 'insight') {
-                    throw Error('TODO');
-                    // TODO: add insight
-                    //     pixel = `
-                    //     SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${id}"]);
-                    //     CommitAsset(filePath=["${path}"], comment=["Hardcoded comment from the App Page editor"], space=["${id}"])
-                    // `;
-                }
+        } else if (type === "insight") {
+          throw Error("TODO");
+          // TODO: add insight
+          //     pixel = `
+          //     SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${id}"]);
+          //     CommitAsset(filePath=["${path}"], comment=["Hardcoded comment from the App Page editor"], space=["${id}"])
+          // `;
+        }
 
-                if (!pixel) {
-                    throw new Error('Error missing pixel to get file');
-                }
+        if (!pixel) {
+          throw new Error("Error missing pixel to get file");
+        }
 
-                const { errors } = await runPixel(pixel, insightId);
+        const { errors } = await runPixel(pixel, insightId);
 
-                // bubble up the errors
-                for (const e of errors) {
-                    throw new Error(e);
-                }
+        // bubble up the errors
+        for (const e of errors) {
+          throw new Error(e);
+        }
 
-                // reload the file
-                loadFile();
-                setIsModified(false);
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
+        // reload the file
+        loadFile();
+        setIsModified(false);
+      } catch (e) {
+        notification.add({
+          color: "error",
+          message: e.message,
+        });
 
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+        console.error(e);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-        /**
-         * Runs LLM pixel and manages LLM loading
-         * @param string
-         * @returns LLM response string
-         */
-        const promptLLM = async (prompt: string) => {
-            // ideally add filetype to LLM pixel so it does not have to be in prompt string
-            // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
+    /**
+     * Runs LLM pixel and manages LLM loading
+     * @param string
+     * @returns LLM response string
+     */
+    const promptLLM = async (prompt: string) => {
+      // ideally add filetype to LLM pixel so it does not have to be in prompt string
+      // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
 
-            try {
-                setIsLoading(true);
+      try {
+        setIsLoading(true);
 
-                if (!agentModelEngine) {
-                    throw new Error('No Agent Model Engine');
-                }
+        if (!agentModelEngine) {
+          throw new Error("No Agent Model Engine");
+        }
 
-                const response = await runPixel(
-                    `LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
-                    insightId,
-                );
-
-                const LLMResponse = response.pixelReturn[0].output['response'];
-                let trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
-
-                trimmedStarterCode = trimmedStarterCode.substring(
-                    trimmedStarterCode.indexOf('\n') + 1,
-                );
-
-                return trimmedStarterCode;
-            } catch {
-                notification.add({
-                    color: 'error',
-                    message: 'Failed response from AI Code Generator',
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        /**
-         * Hanlder for setting content, isModified and onChange
-         */
-        const handleEditorOnChange = (value) => {
-            setContent(value);
-            setIsModified(value !== initialContent);
-            onChange(value, isModified);
-        };
-
-        /**
-         * Handler called when the editor is mounted
-         */
-        const onEditorMount: OnMount = (editor, monaco) => {
-            editorRef.current = editor;
-            if (IS_PRODUCTION) {
-                return;
-            }
-
-             monaco.languages.setMonarchTokensProvider("java", {
-               defaultToken: "invalid",
-               keywords: [
-                 "abstract",
-                 "continue",
-                 "for",
-                 "new",
-                 "switch",
-                 "assert",
-                 "default",
-                 "goto",
-                 "package",
-                 "synchronized",
-                 "boolean",
-                 "do",
-                 "if",
-                 "private",
-                 "this",
-                 "break",
-                 "double",
-                 "implements",
-                 "protected",
-                 "throw",
-                 "byte",
-                 "else",
-                 "import",
-                 "public",
-                 "throws",
-                 "case",
-                 "enum",
-                 "instanceof",
-                 "return",
-                 "transient",
-                 "catch",
-                 "extends",
-                 "int",
-                 "short",
-                 "try",
-                 "char",
-                 "final",
-                 "interface",
-                 "static",
-                 "void",
-                 "class",
-                 "finally",
-                 "long",
-                 "strictfp",
-                 "volatile",
-                 "const",
-                 "float",
-                 "native",
-                 "super",
-                 "while",
-               ],
-               typeKeywords: [
-                 "byte",
-                 "short",
-                 "int",
-                 "long",
-                 "char",
-                 "float",
-                 "double",
-                 "boolean",
-                 "void",
-               ],
-               operators: [
-                 "=",
-                 ">",
-                 "<",
-                 "!",
-                 "~",
-                 "?",
-                 ":",
-                 "==",
-                 "<=",
-                 ">=",
-                 "!=",
-                 "&&",
-                 "||",
-                 "++",
-                 "--",
-                 "+",
-                 "-",
-                 "*",
-                 "/",
-                 "&",
-                 "|",
-                 "^",
-                 "%",
-                 "<<",
-                 ">>",
-                 ">>>",
-                 "+=",
-                 "-=",
-                 "*=",
-                 "/=",
-                 "&=",
-                 "|=",
-                 "^=",
-                 "%=",
-                 "<<=",
-                 ">>=",
-                 ">>>=",
-               ],
-
-               symbols: /[=><!~?:&|+\-*\/\^%]+/,
-               escapes: /\\(?:[btnfr"'\\]|u[0-9A-Fa-f]{4})/,
-
-               tokenizer: {
-                 root: [
-                   //  Match method calls like doSomething()
-                   [/\b[a-zA-Z_][\w$]*(?=\s*\()/, "method"],
-
-                   //  Keywords
-                   [
-                     /[a-z_$][\w$]*/,
-                     {
-                       cases: {
-                         "@keywords": "keyword",
-                         "@default": "identifier",
-                       },
-                     },
-                   ],
-
-                   //  Types
-                   [/[A-Z][\w\$]*/, "type.identifier"],
-
-                   { include: "@whitespace" },
-                   [/[{}()\[\]]/, "@brackets"],
-                   [
-                     /@symbols/,
-                     {
-                       cases: {
-                         "@operators": "operator",
-                         "@default": "",
-                       },
-                     },
-                   ],
-                   [/\d+\.\d+([eE][\-+]?\d+)?[fFdD]?/, "number.float"],
-                   [/0[xX][0-9a-fA-F]+[Ll]?/, "number.hex"],
-                   [/\d+[lL]?/, "number"],
-                   [/[;,.]/, "delimiter"],
-                   [
-                     /"/,
-                     {
-                       token: "string.quote",
-                       bracket: "@open",
-                       next: "@string",
-                     },
-                   ],
-                 ],
-
-                 comment: [
-                   [/[^\/*]+/, "comment"],
-                   [/\*\//, "comment", "@pop"],
-                   [/[\/*]/, "comment"],
-                 ],
-
-                 string: [
-                   [/[^\\"]+/, "string"],
-                   [/@escapes/, "string.escape"],
-                   [/\\./, "string.escape.invalid"],
-                   [
-                     /"/,
-                     { token: "string.quote", bracket: "@close", next: "@pop" },
-                   ],
-                 ],
-
-                 whitespace: [
-                   [/[ \t\r\n]+/, ""],
-                   [/\/\*/, "comment", "@comment"],
-                   [/\/\/.*$/, "comment"],
-                 ],
-               },
-             });
-
-             monaco.languages.registerCompletionItemProvider("java", {
-               provideCompletionItems: (model, position) => {
-                 const word = model.getWordUntilPosition(position);
-                 const range = {
-                   startLineNumber: position.lineNumber,
-                   endLineNumber: position.lineNumber,
-                   startColumn: word.startColumn,
-                   endColumn: word.endColumn,
-                 };
-
-                 const suggestions = [
-                   {
-                     label: "System.out.println",
-                     kind: monaco.languages.CompletionItemKind.Function,
-                     insertText: "System.out.println($1);",
-                     insertTextRules:
-                       monaco.languages.CompletionItemInsertTextRule
-                         .InsertAsSnippet,
-                     documentation: "Prints a message to the console.",
-                     range,
-                   },
-                   {
-                     label: "Scanner init",
-                     kind: monaco.languages.CompletionItemKind.Snippet,
-                     insertText: "Scanner sc = new Scanner(System.in);",
-                     insertTextRules:
-                       monaco.languages.CompletionItemInsertTextRule
-                         .InsertAsSnippet,
-                     documentation: "Create a Scanner for input.",
-                     range,
-                   },
-                   {
-                     label: "public class",
-                     kind: monaco.languages.CompletionItemKind.Snippet,
-                     insertText: [
-                       "public class ${1:ClassName} {",
-                       "    public static void main(String[] args) {",
-                       "        $0",
-                       "    }",
-                       "}",
-                     ].join("\n"),
-                     insertTextRules:
-                       monaco.languages.CompletionItemInsertTextRule
-                         .InsertAsSnippet,
-                     documentation: "Java class with a main method.",
-                     range,
-                   },
-                   {
-                     label: "if-else",
-                     kind: monaco.languages.CompletionItemKind.Snippet,
-                     insertText: [
-                       "if (${1:condition}) {",
-                       "    $0",
-                       "} else {",
-                       "    ",
-                       "}",
-                     ].join("\n"),
-                     insertTextRules:
-                       monaco.languages.CompletionItemInsertTextRule
-                         .InsertAsSnippet,
-                     documentation: "Basic if-else structure.",
-                     range,
-                   },
-                   {
-                     label: "for loop",
-                     kind: monaco.languages.CompletionItemKind.Snippet,
-                     insertText: [
-                       "for (int ${1:i} = 0; ${1:i} < ${2:10}; ${1:i}++) {",
-                       "    $0",
-                       "}",
-                     ].join("\n"),
-                     insertTextRules:
-                       monaco.languages.CompletionItemInsertTextRule
-                         .InsertAsSnippet,
-                     documentation: "Basic for loop.",
-                     range,
-                   },
-                   {
-                     label: "while loop",
-                     kind: monaco.languages.CompletionItemKind.Snippet,
-                     insertText: [
-                       "while (${1:condition}) {",
-                       "    $0",
-                       "}",
-                     ].join("\n"),
-                     insertTextRules:
-                       monaco.languages.CompletionItemInsertTextRule
-                         .InsertAsSnippet,
-                     documentation: "Basic while loop.",
-                     range,
-                   },
-                 ];
-
-                 // Filter out duplicates based on current word
-                 const filtered = suggestions.filter((item) =>
-                   item.label.toLowerCase().startsWith(word.word.toLowerCase())
-                 );
-
-                 return {
-                   suggestions: filtered,
-                 };
-               },
-             });
-
-             monaco.editor.defineTheme("java-playground", {
-               base: "vs", //  light theme
-               inherit: true,
-               rules: [
-                 { token: "keyword", foreground: "0000FF", fontStyle: "bold" }, // Blue
-                 { token: "type.identifier", foreground: "2B91AF" }, // Teal blue
-                 { token: "method", foreground: "B58B00" }, // gold  for method
-                 {
-                   token: "comment",
-                   foreground: "008000",
-                   fontStyle: "italic",
-                 }, // Green
-                 { token: "string", foreground: "A31515" }, // Red-maroon
-                 { token: "number", foreground: "098658" }, // Dark green
-                 { token: "operator", foreground: "000000" }, // Black
-               ],
-               colors: {},
-             });
-
-             monaco.editor.setTheme("java-playground");
-
-            // prevents redundant additions of new dropdown action
-            if (LLMActionAdded === false) {
-                setLLMActionAdded(true);
-                editor.addCommand(
-                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-                    () => {
-                        saveFile();
-                    },
-                ); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
-                editor.addAction({
-                    contextMenuGroupId: '1_modification',
-                    contextMenuOrder: 1,
-                    id: 'prompt-LLM',
-                    label: 'Generate Code',
-                    keybindings: [
-                        monaco.KeyMod.CtrlCmd |
-                            monaco.KeyMod.Shift |
-                            monaco.KeyCode.KeyG,
-                    ],
-
-                    run: async (editor) => {
-                        const selection = editor.getSelection();
-                        const selectedText = editor
-                            .getModel()
-                            .getValueInRange(selection);
-
-                        const LLMReturnText = await promptLLM(
-                            `Create code for a ${fileLanguage} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-                        );
-
-                        editor.executeEdits('custom-action', [
-                            {
-                                range: new monaco.Range(
-                                    selection.endLineNumber + 2,
-                                    1,
-                                    selection.endLineNumber + 2,
-                                    1,
-                                ),
-                                text: `\n\n${LLMReturnText}\n`,
-                                forceMoveMarkers: true,
-                            },
-                        ]);
-
-                        editor.setSelection(
-                            new monaco.Range(
-                                selection.endLineNumber + 3,
-                                1,
-                                selection.endLineNumber +
-                                    2 +
-                                    LLMReturnText.split('\n').length,
-                                1,
-                            ),
-                        );
-                    },
-                });
-                editor.addAction({
-                    contextMenuGroupId: '1_modification',
-                    contextMenuOrder: 2,
-                    id: 'toggle-word-wrap',
-                    label: 'Toggle Word Wrap',
-                    keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-                    run: async (editor) => {
-                        wordWrapRef.current = !wordWrapRef.current;
-                        editor.updateOptions({
-                            wordWrap: wordWrapRef.current ? 'on' : 'off',
-                        });
-                    },
-                });
-            }
-        };
-
-        return (
-            <StyledContainer>
-                <Suspense
-                    fallback={
-                        <LoadingScreen.Trigger description="Loading..." />
-                    }
-                >
-                    {isLoading ? (
-                        <LoadingScreen.Trigger description="Loading..." />
-                    ) : (
-                        <Editor
-                            width={'100%'}
-                            height={'100%'}
-                            value={content}
-                            language={fileLanguage}
-                            options={{
-                                readOnly: false,
-                            }}
-                            onChange={handleEditorOnChange}
-                            onMount={onEditorMount}
-                        />
-                    )}
-                </Suspense>
-            </StyledContainer>
+        const response = await runPixel(
+          `LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+          insightId
         );
-    },
+
+        const LLMResponse = response.pixelReturn[0].output["response"];
+        let trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
+
+        trimmedStarterCode = trimmedStarterCode.substring(
+          trimmedStarterCode.indexOf("\n") + 1
+        );
+
+        return trimmedStarterCode;
+      } catch {
+        notification.add({
+          color: "error",
+          message: "Failed response from AI Code Generator",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    /**
+     * Hanlder for setting content, isModified and onChange
+     */
+    const handleEditorOnChange = (value) => {
+      setContent(value);
+      setIsModified(value !== initialContent);
+      onChange(value, isModified);
+    };
+
+    let syntaxSetupDone = false;
+
+    const setupSyntax = (monaco) => {
+      if (syntaxSetupDone) return;
+      syntaxSetupDone = true;
+
+      // --- Language definition ---
+      monaco.languages.setMonarchTokensProvider("java", {
+        defaultToken: "invalid",
+        keywords: [
+          "abstract",
+          "continue",
+          "for",
+          "new",
+          "switch",
+          "assert",
+          "default",
+          "goto",
+          "package",
+          "synchronized",
+          "boolean",
+          "do",
+          "if",
+          "private",
+          "this",
+          "break",
+          "double",
+          "implements",
+          "protected",
+          "throw",
+          "byte",
+          "else",
+          "import",
+          "public",
+          "throws",
+          "case",
+          "enum",
+          "instanceof",
+          "return",
+          "transient",
+          "catch",
+          "extends",
+          "int",
+          "short",
+          "try",
+          "char",
+          "final",
+          "interface",
+          "static",
+          "void",
+          "class",
+          "finally",
+          "long",
+          "strictfp",
+          "volatile",
+          "const",
+          "float",
+          "native",
+          "super",
+          "while",
+        ],
+        typeKeywords: [
+          "byte",
+          "short",
+          "int",
+          "long",
+          "char",
+          "float",
+          "double",
+          "boolean",
+          "void",
+        ],
+        operators: [
+          "=",
+          ">",
+          "<",
+          "!",
+          "~",
+          "?",
+          ":",
+          "==",
+          "<=",
+          ">=",
+          "!=",
+          "&&",
+          "||",
+          "++",
+          "--",
+          "+",
+          "-",
+          "*",
+          "/",
+          "&",
+          "|",
+          "^",
+          "%",
+          "<<",
+          ">>",
+          ">>>",
+          "+=",
+          "-=",
+          "*=",
+          "/=",
+          "&=",
+          "|=",
+          "^=",
+          "%=",
+          "<<=",
+          ">>=",
+          ">>>=",
+        ],
+        symbols: /[=><!~?:&|+\-*\/\^%]+/,
+        escapes: /\\(?:[btnfr"'\\]|u[0-9A-Fa-f]{4})/,
+        tokenizer: {
+          root: [
+            [/\b[a-zA-Z_][\w$]*(?=\s*\()/, "function"], // highlight methods
+            [
+              /[a-z_$][\w$]*/,
+              {
+                cases: {
+                  "@keywords": "keyword",
+                  "@default": "identifier",
+                },
+              },
+            ],
+            [/[A-Z][\w\$]*/, "type.identifier"],
+            { include: "@whitespace" },
+            [/[{}()\[\]]/, "@brackets"],
+            [
+              /(@symbols)/,
+              {
+                cases: {
+                  "@operators": "operator",
+                  "@default": "",
+                },
+              },
+            ],
+            [/\d+\.\d+([eE][\-+]?\d+)?[fFdD]?/, "number.float"],
+            [/0[xX][0-9a-fA-F]+[Ll]?/, "number.hex"],
+            [/\d+[lL]?/, "number"],
+            [/[;,.]/, "delimiter"],
+            [/"/, { token: "string.quote", bracket: "@open", next: "@string" }],
+          ],
+          comment: [
+            [/[^\/*]+/, "comment"],
+            [/\*\//, "comment", "@pop"],
+            [/[\/*]/, "comment"],
+          ],
+          string: [
+            [/[^\\"]+/, "string"],
+            [/@escapes/, "string.escape"],
+            [/\\./, "string.escape.invalid"],
+            [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
+          ],
+          whitespace: [
+            [/[ \t\r\n]+/, ""],
+            [/\/\*/, "comment", "@comment"],
+            [/\/\/.*$/, "comment"],
+          ],
+        },
+      });
+
+      // --- IntelliSense ---
+      monaco.languages.registerCompletionItemProvider("java", {
+        triggerCharacters: [".", "("],
+        provideCompletionItems: (model, position) => {
+          const word = model.getWordUntilPosition(position);
+          const range = {
+            startLineNumber: position.lineNumber,
+            endLineNumber: position.lineNumber,
+            startColumn: word.startColumn,
+            endColumn: word.endColumn,
+          };
+
+          const suggestions = [
+            {
+              label: "System.out.println",
+              kind: monaco.languages.CompletionItemKind.Function,
+              insertText: "System.out.println($1);",
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: "Prints a message to the console.",
+              range,
+            },
+            {
+              label: "Scanner init",
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: "Scanner sc = new Scanner(System.in);",
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: "Create a Scanner for input.",
+              range,
+            },
+            {
+              label: "public class",
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: [
+                "public class ${1:ClassName} {",
+                "    public static void main(String[] args) {",
+                "        $0",
+                "    }",
+                "}",
+              ].join("\n"),
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: "Java class with main method.",
+              range,
+            },
+            {
+              label: "if-else",
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: [
+                "if (${1:condition}) {",
+                "    $0",
+                "} else {",
+                "}",
+              ].join("\n"),
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: "If-else block.",
+              range,
+            },
+            {
+              label: "for loop",
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: [
+                "for (int ${1:i} = 0; ${1:i} < ${2:10}; ${1:i}++) {",
+                "    $0",
+                "}",
+              ].join("\n"),
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: "Basic for loop.",
+              range,
+            },
+            {
+              label: "while loop",
+              kind: monaco.languages.CompletionItemKind.Snippet,
+              insertText: ["while (${1:condition}) {", "    $0", "}"].join(
+                "\n"
+              ),
+              insertTextRules:
+                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+              documentation: "While loop.",
+              range,
+            },
+          ];
+
+          return {
+            suggestions: suggestions.filter((s) =>
+              s.label.toLowerCase().startsWith(word.word.toLowerCase())
+            ),
+          };
+        },
+      });
+
+      // --- Theme ---
+      monaco.editor.defineTheme("java-playground", {
+        base: "vs",
+        inherit: true,
+        rules: [
+          { token: "keyword", foreground: "0000FF", fontStyle: "bold" },
+          { token: "type.identifier", foreground: "2B91AF" },
+          { token: "function", foreground: "B58B00" },
+          { token: "comment", foreground: "008000", fontStyle: "italic" },
+          { token: "string", foreground: "A31515" },
+          { token: "number", foreground: "098658" },
+          { token: "operator", foreground: "000000" },
+        ],
+        colors: {},
+      });
+    };
+
+    /**
+     * Handler called when the editor is mounted
+     */
+    const onEditorMount: OnMount = (editor, monaco) => {
+      editorRef.current = editor;
+      if (IS_PRODUCTION) {
+        return;
+      }
+      setupSyntax(monaco);
+      monaco.editor.setTheme("java-playground");
+      // prevents redundant additions of new dropdown action
+      if (LLMActionAdded === false) {
+        setLLMActionAdded(true);
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+          saveFile();
+        }); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
+        editor.addAction({
+          contextMenuGroupId: "1_modification",
+          contextMenuOrder: 1,
+          id: "prompt-LLM",
+          label: "Generate Code",
+          keybindings: [
+            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
+          ],
+
+          run: async (editor) => {
+            const selection = editor.getSelection();
+            const selectedText = editor.getModel().getValueInRange(selection);
+
+            const LLMReturnText = await promptLLM(
+              `Create code for a ${fileLanguage} file with the user prompt: ${selectedText}` // filetype should be sent as param to LLM
+            );
+
+            editor.executeEdits("custom-action", [
+              {
+                range: new monaco.Range(
+                  selection.endLineNumber + 2,
+                  1,
+                  selection.endLineNumber + 2,
+                  1
+                ),
+                text: `\n\n${LLMReturnText}\n`,
+                forceMoveMarkers: true,
+              },
+            ]);
+
+            editor.setSelection(
+              new monaco.Range(
+                selection.endLineNumber + 3,
+                1,
+                selection.endLineNumber + 2 + LLMReturnText.split("\n").length,
+                1
+              )
+            );
+          },
+        });
+        editor.addAction({
+          contextMenuGroupId: "1_modification",
+          contextMenuOrder: 2,
+          id: "toggle-word-wrap",
+          label: "Toggle Word Wrap",
+          keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+          run: async (editor) => {
+            wordWrapRef.current = !wordWrapRef.current;
+            editor.updateOptions({
+              wordWrap: wordWrapRef.current ? "on" : "off",
+            });
+          },
+        });
+      }
+    };
+    const beforeMount = (monaco) => {
+    setupSyntax(monaco);
+    };
+    return (
+      <StyledContainer>
+        <Suspense fallback={<LoadingScreen.Trigger description="Loading..." />}>
+          {isLoading ? (
+            <LoadingScreen.Trigger description="Loading..." />
+          ) : (
+            <Editor
+              width={"100%"}
+              height={"100%"}
+              value={content}
+              language={fileLanguage}
+              options={{
+                readOnly: false,
+              }}
+              onChange={handleEditorOnChange}
+              onMount={onEditorMount}
+              beforeMount={beforeMount}
+            />
+          )}
+        </Suspense>
+      </StyledContainer>
+    );
+  }
 );
