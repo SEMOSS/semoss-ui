@@ -139,14 +139,30 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
                     if (seen.has(node)) continue;
                     seen.add(node);
 
-                    // RUN_QUERY or bare { queryId: "…" }
-                    const maybeId =
+                    const queryId =
                         (node as any).payload?.queryId ??
                         (node as any).queryId ??
-                        (node as any).id; // <- adjust if your schema differs
-                    if (typeof maybeId === 'string') qIds.add(maybeId);
+                        (node as any).id;
 
-                    // enqueue own enumerable values
+                    // query found, maybe add
+                    if (typeof queryId === 'string') qIds.add(queryId);
+
+                    // NEW LOGIC — check for { queryId, cellId }
+                    if (
+                        node.payload &&
+                        typeof node.payload.queryId === 'string' &&
+                        typeof node.payload.cellId === 'string'
+                    ) {
+                        const alias = state.getAlias(
+                            node.payload.queryId,
+                            node.payload.cellId
+                        );
+                        if (alias && alias in allVariables) {
+                            vIds.add(alias);
+                        }
+                    }
+
+                    // enqueue own values
                     for (const v of Object.values(node)) stack.push(v);
                     continue;
                 }
