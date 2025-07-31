@@ -1,8 +1,7 @@
-import { useMemo, CSSProperties, useEffect } from "react";
+import { CSSProperties, useEffect, useMemo, useState } from "react";
 import { observer } from "mobx-react-lite";
 import {
     Autocomplete,
-    LinearProgress,
     Stack,
     TextField,
     Typography,
@@ -44,6 +43,10 @@ export interface SelectBlockDef extends BlockDef<"select"> {
             type: "sync" | "async";
             order: ListenerActions[];
         };
+        onOpen: {
+            type: "sync" | "async";
+            order: ListenerActions[];
+        };
     };
 }
 
@@ -53,6 +56,7 @@ export interface SelectBlockDef extends BlockDef<"select"> {
  */
 export const SelectBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, setData, listeners } = useBlock<SelectBlockDef>(id);
+    const [dropdownLoading, setDropdownLoading] = useState(false);
 
     useEffect(() => {
         if (listeners.preProcess) {
@@ -96,6 +100,23 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
         return data.value || null;
     }, [data.multiple, data.value]);
 
+    const handleOpen = () => {
+        if (listeners?.onOpen) {
+            setDropdownLoading(true);
+
+            const result = listeners.onOpen();
+
+            // Handle both sync and async versions safely
+            Promise.resolve(result)
+                .catch((e) => {
+                    console.error("onOpen error:", e);
+                })
+                .finally(() => {
+                    setDropdownLoading(false);
+                });
+        }
+    };
+
     return (
         <Autocomplete
             fullWidth
@@ -104,6 +125,9 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
             options={stringifiedOptions}
             value={value}
             disabled={data?.disabled || data?.loading}
+            onOpen={handleOpen}
+            loading={dropdownLoading}
+            loadingText={"Loading options..."}
             renderOption={(props, option: string) => {
                 try {
                     // Parse the option string into an object
