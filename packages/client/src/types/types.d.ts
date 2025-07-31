@@ -1,3 +1,30 @@
+// Engine dependencies types (moved from utility/types.ts)
+export interface EngineFile {
+    filename: string;
+    instances: string | number;
+}
+
+export interface EngineData {
+    engineName?: string;
+    files?: EngineFile[];
+}
+
+export interface EngineDependenciesResponse {
+    success?: Record<string, EngineData>;
+    failed?: Record<string, EngineData>;
+}
+
+export interface EngineInfo {
+    name: string;
+    files: string[];
+    instances: (string | number)[];
+}
+
+export interface EngineDependenciesState {
+    successfulEngineIds: string[];
+    failedEngineIds: string[];
+    engineDetails: Record<string, EngineInfo>;
+}
 export type Role =
     | 'OWNER'
     | 'EDIT'

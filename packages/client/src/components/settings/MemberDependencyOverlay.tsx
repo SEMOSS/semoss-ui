@@ -585,6 +585,11 @@ export const MemberDependencyOverlay = (
                                                             }
                                                         />
                                                     </RadioGroup>
+                                                    <Typography variant="caption" sx={{ ml: 2 }}>
+                            Your Access:{" "}
+                            {loggedInUserEnginePermissions[dep.engine_id] ||
+                              "None"}
+                          </Typography>
                                                 </Box>
                                             ))}
                                     </Box>
@@ -695,6 +700,11 @@ export const MemberDependencyOverlay = (
                                                             }
                                                         />
                                                     </RadioGroup>
+                                                    <Typography variant="caption" sx={{ ml: 2 }}>
+                            Your Access:{" "}
+                            {loggedInUserEnginePermissions[dep.engine_id] ||
+                              "None"}
+                          </Typography>
                                                 </Box>
                                             ))}
                                     </Box>

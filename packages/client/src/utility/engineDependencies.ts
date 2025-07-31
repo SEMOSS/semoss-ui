@@ -1,35 +1,11 @@
 import React from "react";
- 
-/**
- * Utility functions for handling engine dependencies extraction and processing
- */
- 
-export interface EngineFile {
-    filename: string;
-    instances: string | number;
-}
- 
-export interface EngineData {
-    engineName?: string;
-    files?: EngineFile[];
-}
- 
-export interface EngineDependenciesResponse {
-    success?: Record<string, EngineData>;
-    failed?: Record<string, EngineData>;
-}
- 
-export interface EngineInfo {
-    name: string;
-    files: string[];
-    instances: (string | number)[];
-}
- 
-export interface EngineDependenciesState {
-    successfulEngineIds: string[];
-    failedEngineIds: string[];
-    engineDetails: Record<string, EngineInfo>;
-}
+import {
+    EngineFile,
+    EngineData,
+    EngineDependenciesResponse,
+    EngineInfo,
+    EngineDependenciesState,
+} from "../types/types";
  
 /**
  * Extracts successful engine IDs from engine dependencies response
