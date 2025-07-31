@@ -32,6 +32,10 @@ export const config: BlockConfig<SelectBlockDef> = {
             type: "sync",
             order: [],
         },
+        onOpen: {
+            type: "sync",
+            order: [],
+        },
     },
     slots: {
         content: [],
