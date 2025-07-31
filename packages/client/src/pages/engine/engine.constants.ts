@@ -83,8 +83,8 @@ export const ENGINE_ROUTES: {
                 restrict: ['OWNER'],
             },
             {
-                name: 'Settings',
-                path: 'settings',
+                name: 'SMSS',
+                path: 'smss',
                 component: EngineSmssPage,
                 restrict: ['OWNER'],
             },
