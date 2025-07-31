@@ -44,10 +44,10 @@ const StyledBannerSection = styled("div")<{ theme?: any; imageUrl: string }>(
     alignItems: "flex-start",
     borderRadius: "24px",
     background: `linear-gradient(
-                270deg, rgba(255,255,255,0.6) 20.7%, 
-                rgba(255,255,255,0.3) 85.54%, rgba(219,214,249,0.6) 127.35%) 100% no-repeat, 
-                url(${imageUrl}) 100% no-repeat,  
-                lightgray`,
+                270deg, rgba(255,255,255,0.00) 19.7%, 
+                rgba(255,255,255,0.3) 81.54%, rgba(219,214,249,0.6) 106.35%) 100%, 
+                url(${imageUrl}) no-repeat;`,
+    
     backgroundSize: "cover, cover, cover",
   })
 );

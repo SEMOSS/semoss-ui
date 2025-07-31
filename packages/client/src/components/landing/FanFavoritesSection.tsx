@@ -73,14 +73,14 @@ export const FanFavoritesSection = () => {
         width={"100%"}
       >
         <Typography variant={"body1"}>Try these fan favorites</Typography>
-        <StyledSeeAllButton
+        {/* <StyledSeeAllButton
           type="button"
           size="small"
           variant="text"
           color="secondary"
         >
           See All
-        </StyledSeeAllButton>
+        </StyledSeeAllButton> */}
       </Stack>
       <Stack direction={"row"} gap={3}>
         <AppTileCard

@@ -469,6 +469,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
     if (app && app.project_id && isInView && isLoading && !hasDownloaded) {
       const fetchImage = async () => {
         try {
+          setLoading(true);
           const img = new Image();
           img.src = generateProjectImageURL(app.project_id);
           img.crossOrigin = "Anonymous"; // Set crossOrigin to allow CORS
@@ -485,9 +486,13 @@ export const AppTileCard = (props: AppTileCardProps) => {
           };
           img.onerror = function () {
             console.error("Error loading image");
+            setLoading(false);
+            setHasDownloaded(true); // Mark as downloaded even on error to prevent retries
           };
         } catch (error) {
           console.error("Error fetching image:", error);
+          setLoading(false);
+          setHasDownloaded(true); // Mark as downloaded even on error to prevent retries
         }
       };
       fetchImage();
@@ -581,7 +586,9 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
   const image = findAppImage(appType);
   const appDetails = findAppDetails(appType);
-  if (loading && showSkeleton) {
+
+  // Show skeleton when image is loading or when showSkeleton is true
+  if ((loading && isLoading) || showSkeleton) {
     return (
       <StyledMainDiv ref={cardRef}>
         <StyledTileCard disabled>
@@ -791,17 +798,38 @@ export const AppTileCard = (props: AppTileCardProps) => {
           color="inherit"
           underline="none"
         >
-          {isLoading ? (
-            <StyledTileCardMedia
-              src="img"
-              image={base64Image ? base64Image : ""}
-              sx={{ position: "relative" }}
-            />
+          {loading && isLoading ? (
+            // Show skeleton for image when loading
+            <StyledSkeletonImage>
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height="77px"
+                sx={{
+                  backgroundImage: `url(${ImageSkeleton})`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                  backgroundSize: "contain",
+                  position: "relative",
+                  top: "5px",
+                  "&.MuiSkeleton-root": {
+                    backgroundColor: "#E9EAEC",
+                  },
+                }}
+              />
+            </StyledSkeletonImage>
           ) : (
             <StyledTileCardMedia
               src="img"
-              image={image ? image : ""}
+              image={base64Image ? base64Image : image ? image : ""}
               sx={{ position: "relative" }}
+              onError={(e) => {
+                // Fallback to default image if base64 image fails to load
+                const target = e.target as HTMLImageElement;
+                if (base64Image && image) {
+                  target.src = image;
+                }
+              }}
             />
           )}
           <StyledCardContentSection>&nbsp;</StyledCardContentSection>
@@ -915,7 +943,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                   </StyledOpenButton>
                 </StyledFooter>
               )}
-              {app.project_created_by !== "SYSTEM" ? (
+              {/* {app.project_created_by !== "SYSTEM" ? (
                 <StyledOpenButton
                   onClick={(e) => {
                     e.preventDefault();
@@ -929,7 +957,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </StyledOpenButton>
               ) : (
                 <></>
-              )}
+              )} */}
               {app.project_created_by !== "SYSTEM" ? (
                 <IconButton
                   onClick={(e) => {
