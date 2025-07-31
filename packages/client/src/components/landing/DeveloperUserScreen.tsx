@@ -102,6 +102,7 @@ export const DeveloperUserScreen = observer(() => {
           }}
         >
           <FeaturedAppCard
+            href={"../../playground/dist/"}
             tagline={<span>Experiment in our Playground&trade;</span>}
             description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
             imageUrl={playground}
