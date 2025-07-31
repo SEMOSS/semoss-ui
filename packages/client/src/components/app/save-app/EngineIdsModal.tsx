@@ -9,6 +9,7 @@ import {
     Select,
     FormControl,
     MenuItem,
+    useNotification,
 } from '@semoss/ui';
 import Close from '@mui/icons-material/Close';
 import { usePixel } from '@/hooks';
@@ -35,9 +36,8 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
     isUploadProjectApp,
     engineInfo
 }) => {
-    const [engineReplacements, setEngineReplacements] = useState<
-        Record<string, string>
-    >({});
+    const [engineReplacements, setEngineReplacements] = useState<Record<string, string>>({});
+    const notification = useNotification();
     const [showConfirmation, setShowConfirmation] = useState(false);
     const [replacementsToShow, setReplacementsToShow] = useState<Record<string, string>>({});
     const { monolithStore } = useRootStore();
@@ -84,23 +84,58 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
         const response = await monolithStore.runQuery(
             `ReplaceInaccessibleEngines(filePath=["${myfilePath}"], space=["${appId}"], map=${mapStr});`
         );
-        const successObj = response?.pixelReturn?.[0]?.output?.success ?? {};
+        const pixel = response?.pixelReturn?.[0];
+        const output = pixel?.output;
+        const operationType = pixel?.operationType || [];
+        const successObj = output?.success ?? {};
+        const failedObj = output?.failed ?? {};
+        const errorObj = output?.error ?? null;
         const successKeys = Object.keys(successObj);
+        const failedKeys = Object.keys(failedObj);
 
+        // Error if operationType includes 'ERROR' or output is a string (not object), or errorObj exists
+        if (
+            (Array.isArray(operationType) && operationType.includes('ERROR')) ||
+            (typeof output === 'string') ||
+            errorObj
+        ) {
+            let errorMsg = 'Failed to replace inaccessible engines.';
+            if (typeof output === 'string') {
+                errorMsg = output;
+            } else if (typeof errorObj === 'string') {
+                errorMsg = errorObj;
+            }
+            notification.add({
+                color: 'error',
+                message: errorMsg,
+            });
+            return;
+        }
 
         if (successKeys.length > 0) {
             const details: Record<string, { replacement: string; files: string[]; engineName: string }> = {};
-            successKeys.forEach((failedId) => {
-                details[failedId] = {
-                    replacement: validReplacements[failedId],
-                    files: successObj[failedId]?.files || [],
-                    engineName: successObj[failedId]?.engineName || '',
+            successKeys.forEach((SuccessId) => {
+                details[SuccessId] = {
+                    replacement: validReplacements[SuccessId],
+                    files: successObj[SuccessId]?.files || [],
+                    engineName: successObj[SuccessId]?.engineName || '',
                 };
             });
             setReplacementDetails(details);
             setReplacementsToShow(validReplacements);
             setShowDiscovery(false);
             setShowConfirmation(true);
+
+            // Show notification for any failed engine replacements
+            if (failedObj && typeof failedObj === 'object' && failedKeys.length > 0) {
+                failedKeys.forEach((failedId) => {
+                    const engineName = failedObj[failedId]?.engineName || '';
+                    notification.add({
+                    color: 'error',
+                    message: `"${failedId}" engine replacement${engineName ? ` (${engineName})` : ''} failed`,
+                    });
+                });
+            }
         } else {
             if (onEngineReplacement) {
                 onEngineReplacement(validReplacements);
