@@ -63,7 +63,7 @@ export interface FileEditorRefDef {
      *
      * @returns Save the file
      */
-    saveFile: () => Promise<void>;
+    saveFile: (commitMsg?: string) => Promise<void>;
 
     /**
      *
@@ -269,7 +269,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
         /**
          * Save the File
          */
-        const saveFile = async () => {
+        const saveFile = async (commitMsg = 'Save from editor') => {
             const content = editorRef.current.getValue();
             try {
                 // setIsLoading(true);
@@ -278,7 +278,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
                 if (type === 'app') {
                     pixel = `
                 SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"]); 
-                CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${space}"])
+                CommitAsset(filePath=["${path}"], comment=["${commitMsg.replace(/"/g, '\\"')}"], space=["${space}"])
             `;
                 } else if (type === 'insight') {
                     throw Error('TODO');

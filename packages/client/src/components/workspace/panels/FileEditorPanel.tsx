@@ -110,7 +110,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
     };
     // Save handler for modal
     const handleModalSave = () => {
-        fileEditorRef.current?.saveFile();
+        fileEditorRef.current?.saveFile(commitMsg);
         setModalOpen(false);
         notification.add({
             color: 'success',
@@ -145,9 +145,6 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
                             e.preventDefault();
                             e.stopPropagation();
                             setModalOpen(true);
-
-                            // trigger the save
-                            fileEditorRef.current?.saveFile();
                         }}
                     >
                         <SaveOutlined fontSize="inherit" />
