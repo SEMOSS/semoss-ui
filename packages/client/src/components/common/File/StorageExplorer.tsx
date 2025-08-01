@@ -317,6 +317,19 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                                     onDownload={(path) => {
                                         handleDownload(path);
                                     }}
+                                    onSelect={(path, isSelected) => {
+                                        let newSelected = [...selected];
+                                        if (isSelected) {
+                                            // Add to selection if not already selected
+                                            if (!newSelected.includes(path)) {
+                                                newSelected.push(path);
+                                            }
+                                        } else {
+                                            // Remove from selection if already selected
+                                            newSelected = newSelected.filter(p => p !== path);
+                                        }
+                                        handleOnNodeSelect(newSelected);
+                                    }}
                                 />
                             );
                         })
