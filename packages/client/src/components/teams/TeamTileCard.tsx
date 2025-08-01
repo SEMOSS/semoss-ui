@@ -396,7 +396,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				onClick={() => onClick(id)}
 				bordercolor={randomColor}
 			>
-				{/* Use Card.Media instead, uses img tag */}
 				<Card.Header
 					title={
 						<div
