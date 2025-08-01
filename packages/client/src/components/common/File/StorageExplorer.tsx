@@ -230,7 +230,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
 
         try {
             const pathsString = selected.map((path) => `"${path}"`).join(', ');
-            const downloadQuery = `Storage("${storageId}") | PullMultipleFromStorage(storagePaths=[${pathsString}], filePath="multiple_downloads") | DownloadAsset(filePath=["multiple_downloads"], space=["insight"]);`;
+            const downloadQuery = `Storage("${storageId}") | PullMultipleFromStorageAndZip(storagePaths=[${pathsString}], filePath="multiple_downloads") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
 
             console.log('Download multiple query:', downloadQuery);
             const response = await monolithStore.runQuery(downloadQuery);
@@ -251,7 +251,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         } catch (e) {
             console.error('Download multiple error:', e);
 
-            let errorMessage = 'Download failed: ';
+            let errorMessage = 'ZIP download failed: ';
             if (e instanceof Error) {
                 if (e.message.includes('directory')) {
                     errorMessage +=
@@ -312,7 +312,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                             size="small"
                             onClick={handleDownloadMultiple}
                         >
-                            Download Selected
+                            Download as ZIP
                         </Button>
                         <Button
                             variant="outlined"
