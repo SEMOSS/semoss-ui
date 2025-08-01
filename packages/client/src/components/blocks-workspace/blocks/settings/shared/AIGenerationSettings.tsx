@@ -9,6 +9,7 @@ import {
 	Box,
 	Button,
 	Divider,
+	FileDropzone,
 	MenuItem,
 	Select,
 	Slider,
@@ -117,8 +118,11 @@ export const AIGenerationSettings = observer(
 		const [_databases, _setDatabases] = useState<
 			{ app_id: string; app_name: string; tag: string }[]
 		>([]);
+
+		// Accordion variables
 		const [expandAccordion, setExpandAccordion] = useState<boolean>(false);
 
+		const [databaseValue, setDatabaseValue] = useState<string>("");
 		useEffect(() => {
 			modelIdRef.current = modelId;
 		}, [modelId]);
@@ -301,13 +305,22 @@ export const AIGenerationSettings = observer(
 									!cfgLibraryModels.ids.length ||
 									responseLoading
 								}
+								value={databaseValue}
+								onChange={(e) => {
+									setDatabaseValue(e.target.value);
+								}}
 							>
+								<MenuItem value="tempData">
+									Upload Temp Data
+								</MenuItem>
+								<Divider />
 								{_databases.map((db) => (
 									<MenuItem key={db.app_id} value={db.app_id}>
 										{db.app_name}
 									</MenuItem>
 								))}
 							</Select>
+							{databaseValue === "tempData" && <FileDropzone />}
 							<Divider />
 							<Select
 								label="Select Chart Type"
