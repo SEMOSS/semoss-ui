@@ -1,15 +1,14 @@
 import Refresh from "@mui/icons-material/Refresh";
-import React, { useCallback, useEffect, useState } from "react";
+import React from "react";
 import {
 	Button,
 	CircularProgress,
 	styled,
 	Table,
 	Typography,
-	useNotification,
 } from "@semoss/ui";
 import { Section } from "@/components/ui";
-import { useRootStore } from "@/hooks";
+import { useVersionsTable } from "@/hooks";
 
 // Styled Components
 const StyledContainer = styled("div")(() => ({
@@ -58,102 +57,24 @@ const StyledLoadingRow = styled("div")(({ theme }) => ({
 	gap: theme.spacing(1),
 }));
 
-/**
- * Represents a single commit version in the project history
- */
-interface CommitVersion {
-	commitId: string;
-	author: {
-		userId: string;
-		userEmail: string;
-	};
-	date: string;
-	commitMessage: string;
-}
+// VersionsTable component displays project commit history with restore functionality
 
-/**
- * VersionsTable component displays project commit history with restore functionality
- */
 export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
-	const { monolithStore } = useRootStore();
-	const notification = useNotification();
-	const [versions, setVersions] = useState<CommitVersion[]>([]);
-	const [loading, setLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [restoreLoading, setRestoreLoading] = useState<string | null>(null);
-	const [refreshing, setRefreshing] = useState(false);
-
-	// Fetch versions data from the API
-
-	const fetchVersions = useCallback(async () => {
-		try {
-			setLoading(true);
-			setRefreshing(true);
-			setError(null);
-
-			const response = await monolithStore.runQuery(
-				`ProjectCommitDetails(project="${id}")`,
-			);
-
-			const { output, operationType } = response.pixelReturn[0];
-
-			if (operationType.some((type: string) => type.includes("ERROR"))) {
-				setError("Failed to fetch commit details");
-				setVersions([]);
-				return;
-			}
-
-			// Transform API response to CommitVersion format
-			const transformedVersions: CommitVersion[] = output || [];
-			setVersions(transformedVersions);
-		} catch (err) {
-			console.error("Error fetching versions:", err);
-			setError("Failed to fetch commit details");
-			setVersions([]);
-		} finally {
-			setLoading(false);
-			setRefreshing(false);
-		}
-	}, [id, monolithStore]);
-
-	useEffect(() => {
-		if (!id) return;
-		fetchVersions();
-	}, [id, fetchVersions]);
-
-	//Handle restore action for a specific commit version
-	const handleRestore = async (version: CommitVersion) => {
-		try {
-			setRestoreLoading(version.commitId);
-
-			const response = await monolithStore.runQuery(
-				`ProjectCommitRestore(project="${id}", commitId="${version.commitId}")`,
-			);
-
-			const { operationType } = response.pixelReturn[0];
-
-			if (operationType.some((type: string) => type.includes("ERROR"))) {
-				notification.add({
-					color: "error",
-					message: `Failed to restore to commit ${version.commitId}`,
-				});
-			} else {
-				notification.add({
-					color: "success",
-					message: `Successfully restored to commit ${version.commitId}`,
-				});
-				window.location.reload();
-			}
-		} catch (error) {
-			console.error("Error restoring commit:", error);
-			notification.add({
-				color: "error",
-				message: `Failed to restore to commit ${version.commitId}`,
-			});
-		} finally {
-			setRestoreLoading(null);
-		}
-	};
+	const {
+		loading,
+		error,
+		restoreLoading,
+		refreshing,
+		allVersions,
+		currentVersions,
+		page,
+		rowsPerPage,
+		totalCount,
+		handlePageChange,
+		handleRowsPerPageChange,
+		handleRefresh,
+		handleRestore,
+	} = useVersionsTable(id);
 
 	// Early returns for loading and error states
 	if (loading) {
@@ -176,7 +97,7 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 						<Button
 							variant="outlined"
 							startIcon={<Refresh />}
-							onClick={fetchVersions}
+							onClick={handleRefresh}
 							disabled={refreshing}
 							size="small"
 						>
@@ -186,13 +107,13 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 				>
 					<Typography variant="subtitle1">
 						Project Version History
-						{versions.length > 0 && (
+						{currentVersions.length > 0 && (
 							<StyledVersionCount
 								component="span"
 								variant="body2"
 							>
-								({versions.length} version
-								{versions.length !== 1 ? "s" : ""})
+								({allVersions.length} version
+								{allVersions.length !== 1 ? "s" : ""})
 							</StyledVersionCount>
 						)}
 					</Typography>
@@ -211,7 +132,7 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 						</Table.Row>
 					</Table.Head>
 					<Table.Body>
-						{versions.map((version) => (
+						{currentVersions.map((version) => (
 							<Table.Row key={version.commitId}>
 								<Table.Cell>{version.commitId}</Table.Cell>
 								<Table.Cell>
@@ -249,6 +170,19 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 							</Table.Row>
 						))}
 					</Table.Body>
+					<Table.Footer>
+						<Table.Row>
+							<Table.Pagination
+								rowsPerPageOptions={[10, 25, 50, 100]}
+								onPageChange={handlePageChange}
+								page={page}
+								rowsPerPage={rowsPerPage}
+								onRowsPerPageChange={handleRowsPerPageChange}
+								count={totalCount}
+								disabled={loading || refreshing}
+							/>
+						</Table.Row>
+					</Table.Footer>
 				</Table>
 			</Section>
 		</StyledContainer>
