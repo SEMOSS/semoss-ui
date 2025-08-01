@@ -32,11 +32,6 @@ const StyledErrorContainer = styled("div")(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 }));
 
-const StyledVersionCount = styled(Typography)(({ theme }) => ({
-	marginLeft: theme.spacing(1),
-	color: theme.palette.text.secondary,
-}));
-
 const StyledAuthorContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
@@ -65,7 +60,6 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 		error,
 		restoreLoading,
 		refreshing,
-		allVersions,
 		currentVersions,
 		page,
 		rowsPerPage,
@@ -107,15 +101,6 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 				>
 					<Typography variant="subtitle1">
 						Project Version History
-						{currentVersions.length > 0 && (
-							<StyledVersionCount
-								component="span"
-								variant="body2"
-							>
-								({allVersions.length} version
-								{allVersions.length !== 1 ? "s" : ""})
-							</StyledVersionCount>
-						)}
 					</Typography>
 				</Section.Header>
 
@@ -123,10 +108,10 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 					<Table.Head>
 						<Table.Row>
 							<Table.Cell component="th">Commit ID</Table.Cell>
-							<Table.Cell component="th">Author</Table.Cell>
 							<Table.Cell component="th">
 								Commit Message
 							</Table.Cell>
+							<Table.Cell component="th">Author</Table.Cell>
 							<Table.Cell component="th">Date</Table.Cell>
 							<Table.Cell component="th">Action</Table.Cell>
 						</Table.Row>
@@ -135,6 +120,7 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 						{currentVersions.map((version) => (
 							<Table.Row key={version.commitId}>
 								<Table.Cell>{version.commitId}</Table.Cell>
+								<Table.Cell>{version.commitMessage}</Table.Cell>
 								<Table.Cell>
 									<StyledAuthorContainer>
 										<StyledAuthorName variant="body2">
@@ -145,7 +131,6 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 										</StyledAuthorEmail>
 									</StyledAuthorContainer>
 								</Table.Cell>
-								<Table.Cell>{version.commitMessage}</Table.Cell>
 								<Table.Cell>{version.date}</Table.Cell>
 								<Table.Cell>
 									<Button
