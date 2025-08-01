@@ -1,16 +1,14 @@
+import { Search as SearchIcon } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-
 import {
+  Container,
+  InputAdornment,
+  Stack,
   styled,
   TextField,
-  InputAdornment,
-  Container,
-  Stack,
 } from "@semoss/ui";
-
 import { usePage } from "@/hooks";
 import { Search } from "./Search";
-import { Search as SearchIcon } from "@mui/icons-material";
 
 const StyledNavbar = styled("div")(({ theme }) => ({
   position: "absolute",
