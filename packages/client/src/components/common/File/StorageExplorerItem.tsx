@@ -5,6 +5,8 @@ import {
     InsertDriveFileOutlined,
     CloudUploadOutlined,
     CloudDownloadOutlined,
+    CheckBoxOutlineBlank,
+    CheckBox,
 } from '@mui/icons-material';
 import {
     CircularProgress,
@@ -84,6 +86,9 @@ interface StorageExplorerItemProps {
 
     /** Triggered when download is requested */
     onDownload?: (path: string) => void;
+    
+    /** Triggered when item is selected/deselected */
+    onSelect?: (path: string, isSelected: boolean) => void;
 }
 
 export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
@@ -99,6 +104,7 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
         onTrashClick = () => null,
         onUpload = () => null,
         onDownload = () => null,
+        onSelect = () => null,
     } = props;
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -173,6 +179,22 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                         onDragEnd(e, path);
                     }}
                 >
+                    <Icon
+                        color={'disabled'}
+                        fontSize="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const isSelected = selected.includes(path);
+                            onSelect(path, !isSelected);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        {selected.includes(path) ? (
+                            <CheckBox fontSize="inherit" />
+                        ) : (
+                            <CheckBoxOutlineBlank fontSize="inherit" />
+                        )}
+                    </Icon>
                     <Icon color={'disabled'} fontSize="small">
                         {isDirectory ? (
                             <FolderOutlined fontSize="inherit" />
@@ -256,6 +278,9 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                                        }}
                                        onDownload={(path) => {
                                            onDownload(path);
+                                       }}
+                                       onSelect={(path, isSelected) => {
+                                           onSelect(path, isSelected);
                                        }}
                                    />
                                );
