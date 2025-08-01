@@ -266,6 +266,17 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         refreshFiles();
     };
 
+    const handleDeleteMultiple = (paths: string[]) => {
+        console.log('Multiple files deleted:', paths);
+        paths.forEach(path => {
+            setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
+            if (selectedFile === path) {
+                setSelectedFile('');
+            }
+        });
+        refreshFiles();
+    };
+
 
     return (
         <StyledContainer>
@@ -300,6 +311,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     onSelect={handleFileSelect}
                     onDownload={handleDownload}
                     onTrashClick={handleDelete}
+                    onDeleteMultiple={handleDeleteMultiple}
                 />
             </StyledFileExplorerContainer>
 
