@@ -32,7 +32,7 @@ export const EngineFilePage = () => {
     return (
         <StyledContainer>
             <StyledTopDiv>
-                <Typography variant={'h6'}>File Explorer</Typography>
+                {/* <Typography variant={'h6'}>File Explorer</Typography> */}
             </StyledTopDiv>
 
             <StyledTableContainer>
