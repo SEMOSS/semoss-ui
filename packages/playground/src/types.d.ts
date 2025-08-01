@@ -84,6 +84,7 @@ export type PixelMessage =
 interface AbstractPixelMessage {
 	type: string;
 	messageId: string;
+	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
 	ornaments: {
