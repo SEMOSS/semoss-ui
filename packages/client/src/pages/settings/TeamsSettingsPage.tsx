@@ -17,6 +17,7 @@ import {
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
 import { TeamTileCard } from "@/components/teams/TeamTileCard";
 import { useRootStore } from "@/hooks";
+import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {
 	ID: string;
@@ -95,6 +96,7 @@ const TeamsList = styled("div")({
 });
 
 export const TeamsSettingsPage = observer(() => {
+	const { adminMode } = useSettings();
 	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
 
@@ -106,7 +108,6 @@ export const TeamsSettingsPage = observer(() => {
 
 	const [search, setSearch] = useState("");
 
-	// To focus when getting new results
 	const searchbarRef = useRef(null);
 
 	useEffect(() => {
@@ -117,9 +118,8 @@ export const TeamsSettingsPage = observer(() => {
 				value: data,
 			});
 		});
-	}, [monolithStore.getTeams]); // Updated dependency array
+	}, [search, adminMode]);
 
-	// Updated debounced filtering function
 	const filterTeams = useCallback(() => {
 		setFilteredTeams(
 			teams
@@ -132,10 +132,9 @@ export const TeamsSettingsPage = observer(() => {
 
 	const debouncedFilterTeams = debounced(filterTeams, 150);
 
-	// Trigger debounced filtering when teams or search changes
 	useEffect(() => {
 		debouncedFilterTeams();
-	}, [debouncedFilterTeams]); // Updated dependency array
+	}, [debouncedFilterTeams, teams, search]);
 
 	const handleMenuClick = (event) => {
 		setAnchorEl(event.currentTarget);
