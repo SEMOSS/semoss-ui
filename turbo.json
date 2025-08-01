@@ -22,7 +22,6 @@
 			"dependsOn": ["^check-types"]
 		},
 		"dev": {
-			"dependsOn": ["^build:dev"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"cache": false,
 			"persistent": true
