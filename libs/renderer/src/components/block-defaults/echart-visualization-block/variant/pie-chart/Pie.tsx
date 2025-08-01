@@ -223,7 +223,7 @@ export const Pie = observer(({ id, updateJson }: PieProps) => {
                 <CustomContextMenu
                     id={id}
                     frame={frame}
-                    frameName={data?.frame?.name}
+                  
                     contextMenu={contextMenu}
                     onClose={() => setContextMenu(null)}
                 />

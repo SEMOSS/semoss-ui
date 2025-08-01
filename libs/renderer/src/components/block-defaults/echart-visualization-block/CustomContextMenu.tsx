@@ -10,8 +10,6 @@ export interface VizBlockContextMenuProps {
     id: string;
     /** Frame that the user is interacting with */
     frame: ReturnType<typeof useFrame>;
-    /**Name of the frame */
-    frameName: string;
     /** Context MenuTwo */
     contextMenu: {
         mouseX: number;
@@ -26,7 +24,6 @@ export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
     ({
         id = "",
         frame = null,
-        frameName = "",
         contextMenu = null,
         onClose = () => null,
     }) => {
@@ -50,7 +47,7 @@ export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
-                            frame.unfilter(frameName);
+                            frame.unfilter(data?.frame?.name);
                             onClose();
                         }}
                     >

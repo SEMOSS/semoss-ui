@@ -290,7 +290,6 @@ export const Bar = observer(({ id, updateJson }: BarProps) => {
                 <ChartContextMenu
                     id={id}
                     frame={frameData}
-                    frameName={data?.frame?.name}
                     contextMenu={contextMenu}
                     chartInstance={chartOperationData.current.chartInstance}
                     onClose={() => {

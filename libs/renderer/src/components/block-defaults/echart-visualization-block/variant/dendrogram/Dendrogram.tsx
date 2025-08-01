@@ -333,7 +333,6 @@ export const Dendrogram = observer(({ id, updateJson }: DendrogramProps) => {
             <VizBlockContextMenu
                 id={id}
                 frame={frame}
-                frameName={data?.frame?.name}
                 contextMenu={contextMenu}
                 onClose={() => {
                     setContextMenu(null);

@@ -279,7 +279,6 @@ export const Map: BlockComponent = observer(({ id }) => {
             <VizBlockContextMenu
                 id={id}
                 frame={frame}
-                frameName={data?.frame?.name}
                 contextMenu={contextMenu}
                 onClose={() => setContextMenu(null)}
             />
