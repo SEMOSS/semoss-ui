@@ -1,6 +1,6 @@
 import React from 'react';
 import { Icon, TreeView, styled, Button, Modal, Typography } from '@semoss/ui';
-import { ExpandMore, ChevronRight, DeleteOutline } from '@mui/icons-material';
+import { ExpandMore, ChevronRight, DeleteOutline, CloudDownloadOutlined } from '@mui/icons-material';
 
 import { usePixel, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
@@ -52,6 +52,8 @@ interface StorageExplorerProps {
     /** Triggered when download is requested */
     onDownload?: (path: string) => void;
     onDeleteMultiple?: (paths: string[]) => void;
+    /** Triggered when download multiple is requested */
+    onDownloadMultiple?: (paths: string[]) => void;
 }
 
 export const StorageExplorer = (props: StorageExplorerProps) => {
@@ -64,6 +66,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         onUpload = () => null,
         onDownload = () => null,
         onDeleteMultiple = () => null,
+        onDownloadMultiple = () => null,
         expandedPaths,
         onToggleExpand,
     } = props;
@@ -112,14 +115,14 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
     const handleDeleteMultiple = async () => {
         if (selected.length === 0) return;
 
-        const pathsString = selected.map(path => `"${path}"`).join(', ');
+        const pathsString = selected.map((path) => `"${path}"`).join(', ');
         const deleteQuery = `Storage(storage = "${storageId}") |
         DeleteFromStorage(storagePaths=[${pathsString}], leaveFolderStructure=false);`;
 
         try {
             const response = await monolithStore.runQuery(deleteQuery);
             console.log('Delete multiple response:', response);
-            
+
             onDeleteMultiple(selected);
             setSelected([]);
             setShowDeleteDialog(false);
@@ -201,14 +204,66 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
             let errorMessage = 'Download failed: ';
             if (e instanceof Error) {
                 if (e.message.includes('directory')) {
-                    errorMessage += 'Cannot download directories. Please select a file.';
+                    errorMessage +=
+                        'Cannot download directories. Please select a file.';
                 } else if (e.message.includes('file key')) {
                     errorMessage += 'File not found or server error occurred.';
                 } else if (
                     e.message.includes('network') ||
                     e.message.includes('fetch')
                 ) {
-                    errorMessage += 'Network error. Please check your connection and try again.';
+                    errorMessage +=
+                        'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += e.message;
+                }
+            } else {
+                errorMessage += 'An unexpected error occurred.';
+            }
+
+            console.error(errorMessage);
+        }
+    };
+
+    const handleDownloadMultiple = async () => {
+        if (selected.length === 0) return;
+
+        try {
+            const pathsString = selected.map((path) => `"${path}"`).join(', ');
+            const downloadQuery = `Storage("${storageId}") | PullMultipleFromStorage(storagePaths=[${pathsString}]) | DownloadAsset(filePath=["downloaded_files"], space=["insight"]);`;
+
+            console.log('Download multiple query:', downloadQuery);
+            const response = await monolithStore.runQuery(downloadQuery);
+            console.log('Download multiple response:', response);
+
+            const fileKey = response.pixelReturn[0]?.output;
+
+            if (!fileKey) {
+                throw new Error(
+                    'Failed to get file key for download. The files may not exist or there was a server error.',
+                );
+            }
+
+            await monolithStore.download(configStore.store.insightID, fileKey);
+
+            onDownloadMultiple(selected);
+            setSelected([]);
+        } catch (e) {
+            console.error('Download multiple error:', e);
+
+            let errorMessage = 'Download failed: ';
+            if (e instanceof Error) {
+                if (e.message.includes('directory')) {
+                    errorMessage +=
+                        'Cannot download directories. Please select files only.';
+                } else if (e.message.includes('file key')) {
+                    errorMessage += 'Files not found or server error occurred.';
+                } else if (
+                    e.message.includes('network') ||
+                    e.message.includes('fetch')
+                ) {
+                    errorMessage +=
+                        'Network error. Please check your connection and try again.';
                 } else {
                     errorMessage += e.message;
                 }
@@ -249,15 +304,26 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                     {selected.length > 0 ? `${selected.length} item(s) selected` : 'No items selected'}
                 </Typography>
                 {selected.length > 0 && (
-                    <Button
-                        variant="outlined"
-                        color="error"
-                        startIcon={<DeleteOutline />}
-                        size="small"
-                        onClick={() => setShowDeleteDialog(true)}
-                    >
-                        Delete Selected
-                    </Button>
+                    <>
+                        <Button
+                            variant="outlined"
+                            color="primary"
+                            startIcon={<CloudDownloadOutlined />}
+                            size="small"
+                            onClick={handleDownloadMultiple}
+                        >
+                            Download Selected
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<DeleteOutline />}
+                            size="small"
+                            onClick={() => setShowDeleteDialog(true)}
+                        >
+                            Delete Selected
+                        </Button>
+                    </>
                 )}
             </StyledHeader>
             <StyledTreeView
@@ -317,6 +383,9 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                                     onDownload={(path) => {
                                         handleDownload(path);
                                     }}
+                                    onDownloadMultiple={(paths) => {
+                                        handleDownloadMultiple();
+                                    }}
                                     onSelect={(path, isSelected) => {
                                         let newSelected = [...selected];
                                         if (isSelected) {
@@ -326,7 +395,9 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                                             }
                                         } else {
                                             // Remove from selection if already selected
-                                            newSelected = newSelected.filter(p => p !== path);
+                                            newSelected = newSelected.filter(
+                                                (p) => p !== path,
+                                            );
                                         }
                                         handleOnNodeSelect(newSelected);
                                     }}
