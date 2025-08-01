@@ -362,6 +362,13 @@ export const AIGenerationSettings = observer(
 									/>
 								</Box>
 							</Stack>
+							{/* incoming features:
+                                Color palette selection
+                                Font Styling
+                                Height and Width
+                                Axis Labels
+                                Tooltips
+                            */}
 						</_StyledAccordionContentStack>
 					</Accordion.Content>
 				</Accordion>
