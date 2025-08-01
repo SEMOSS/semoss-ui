@@ -529,12 +529,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                 variant: 'p',
                 show: 'true',
                 showCreateJiraForm: false,
-                showCreatedJiraForm: false,
                 listAllTickets: false,
-                listedTickets: false,
-                userId: '',
-                jiraConnectionValue: '',
-                jiraActionValue: '',
             },
             listeners: {
                 preProcess: { type: 'sync', order: [] },

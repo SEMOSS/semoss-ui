@@ -55,7 +55,6 @@ import { config as ToggleButtonSettingsConfig } from './block-settings/toggle-bu
 import { config as UploadSettingsConfig } from './block-settings/upload-block';
 import { config as VegaVisualizationSettingsConfig } from './block-settings/vega-visualization-block';
 import { config as VisualizationFilterSettingsConfig } from './block-settings/visualization-filter-block';
-import {config as JiraSettingsConfig} from './block-settings/jira-block';
 
 export const BlockSettingsRegistry = {
     ['accordion']: AccordionSettingsConfig,
@@ -99,5 +98,4 @@ export const BlockSettingsRegistry = {
     ['vega']: VegaVisualizationSettingsConfig,
     ['visualization-filter']: VisualizationFilterSettingsConfig,
     ['grid-dynamic-frame']: GridDynamicFrameSettingsConfig,
-    ['jira']:JiraSettingsConfig,
 };

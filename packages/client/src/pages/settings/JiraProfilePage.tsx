@@ -136,6 +136,7 @@ export const JiraProfilePage = () => {
                     getSavedApiKeysQuery();
                     setAddModal(false);
                     reset({});
+                    setProjectsData([]);
                 } else {
                     throw new Error(response.errors[0]);
                 }
@@ -211,6 +212,7 @@ export const JiraProfilePage = () => {
     const closeModel = () => {
         setAddModal(false);
         reset({});
+        setProjectsData([]);
     };
 
     return (
@@ -411,37 +413,40 @@ export const JiraProfilePage = () => {
                                         data-testid={
                                             'my-jira-profile-page-generate-btn'
                                         }
+                                        style={{ width: '150px' , margin: '15px auto 0 auto'}}
                                         onClick={getProjectsData}
                                     >
                                         Get Projects
                                 </Button>
 
-                                <Controller
-                                    name="PROJECTS"
-                                    control={control}
-                                    rules={{ required: true }}
-                                    render={({ field }) => (
-                                        <Stack spacing={1}>
-                                            <Autocomplete
-                                                options={projectsData || []}
-                                                getOptionLabel={(option) => option}
-                                                multiple={false}
-                                                value={field.value}
-                                                onChange={(event, newValue) => {
-                                                    field.onChange(newValue);
+                                {projectsData.length > 0 && (
+                                    <Controller
+                                        name="PROJECTS"
+                                        control={control}
+                                        rules={{ required: true }}
+                                        render={({ field }) => (
+                                            <Stack spacing={1}>
+                                                <Autocomplete
+                                                    options={projectsData || []}
+                                                    getOptionLabel={(option) => option}
+                                                    multiple={false}
+                                                    value={field.value}
+                                                    onChange={(event, newValue) => {
+                                                        field.onChange(newValue);
 
-                                                }}
-                                                renderInput={(params) => (
-                                                    <TextField
-                                                        {...params}
-                                                        label="Projects"
-                                                        fullWidth
-                                                    />
-                                                )}
-                                            />
-                                        </Stack>
-                                    )}
-                                />
+                                                    }}
+                                                    renderInput={(params) => (
+                                                        <TextField
+                                                            {...params}
+                                                            label="Projects"
+                                                            fullWidth
+                                                        />
+                                                    )}
+                                                />
+                                            </Stack>
+                                        )}
+                                    />
+                                )}
 
                                 <Stack direction="row" justifyContent={'start'}>
                                     <Button
@@ -451,6 +456,7 @@ export const JiraProfilePage = () => {
                                         data-testid={
                                             'my-jira-profile-page-generate-btn'
                                         }
+                                        disabled={projectsData.length === 0 ? true : false}
                                     >
                                         Save
                                     </Button>

@@ -19,12 +19,7 @@ export const config: BlockConfig<JiraBlockDef> = {
         isStreaming: false,
         show: "true",
         showCreateJiraForm: false,
-        showCreatedJiraForm: false,
         listAllTickets: false,
-        listedTickets: false,
-        userId: '',
-        jiraConnectionValue: '',
-        jiraActionValue: '',
     },
     listeners: {},
     slots: {

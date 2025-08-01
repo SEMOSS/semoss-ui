@@ -15,6 +15,5 @@ export { OptionsSettings } from './OptionsSettings';
 export { ChipSettings } from './ChipSettings';
 export { ContainerLayoutSettings } from './ContainerLayoutSettings';
 export { SizeSpacingSettings } from './SizeSpacingSettings';
-export { JiraSettings } from './JiraSettings';
 
 export * from './data-grid';
