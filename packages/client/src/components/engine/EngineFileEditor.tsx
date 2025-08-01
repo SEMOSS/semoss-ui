@@ -46,6 +46,10 @@ const StyledButton = styled(Button)({
   borderRadius: "12px",
 });
 
+const StyledRunButton = styled(Button)({
+  borderRadius: "12px",
+});
+
 const StyledPaper = styled(Paper)<{ readOnly: boolean }>(({ readOnly }) => ({
   position: "relative",
   border: "1px solid #90caf9",
@@ -109,6 +113,10 @@ const StyledInnerDiv = styled("div")({
   background: "rgba(0, 0, 0, 0.04)",
   padding: "6px 16px",
   borderRadius: "16px 16px 0 0",
+});
+
+const StyledTypography = styled(Typography)({
+  color: "rgba(0, 0, 0, 0.38)",
 });
 
 export const EngineFileEditor = ({
@@ -269,16 +277,15 @@ export const EngineFileEditor = ({
               Save
             </StyledButton>
           )}
-          <Button
+          <StyledRunButton
             onClick={() => {
               runEngine();
             }}
-            sx={{ borderRadius: "12px" }}
             variant="contained"
             startIcon={<PlayArrowRounded />}
           >
             Run
-          </Button>
+          </StyledRunButton>
         </Stack>
       </StyledButtonGroup>
       <StyledPaper elevation={1} readOnly={readOnly}>
@@ -320,9 +327,9 @@ export const EngineFileEditor = ({
       </StyledPaper>
       <StyledResultsWrapper>
         <StyledInnerDiv>
-          <Typography variant="button" sx={{ color: "rgba(0, 0, 0, 0.38)" }}>
+          <StyledTypography variant="button">
             Results
-          </Typography>
+          </StyledTypography>
           <StyledButton
             onClick={() => setResultValue("")}
             variant="outlined"

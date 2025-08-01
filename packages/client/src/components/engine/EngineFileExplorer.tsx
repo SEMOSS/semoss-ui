@@ -37,6 +37,13 @@ const StyledTreeView = styled(TreeView)(({ theme }) => ({
     overflow: 'auto',
 }));
 
+const StyledIconWrapper = styled(Icon)(({ theme }) => ({
+  color: theme.palette.action.disabled,
+  '& svg': {
+    color: '#757575',
+  },
+}));
+
 export const EngineFileExplorer = (props: EngineFileExplorerProps) => {
     const {
         type,
@@ -101,14 +108,14 @@ export const EngineFileExplorer = (props: EngineFileExplorerProps) => {
                 handleOnNodeSelect(v);
             }}
             defaultCollapseIcon={
-                <Icon color={'disabled'}>
-                    <ExpandMoreOutlined sx={{ color: '#757575' }} />
-                </Icon>
+                <StyledIconWrapper>
+                    <ExpandMoreOutlined />
+                </StyledIconWrapper>
             }
             defaultExpandIcon={
-                <Icon color={'disabled'}>
-                    <ChevronRightOutlined sx={{ color: '#757575' }} />
-                </Icon>
+                <StyledIconWrapper>
+                    <ChevronRightOutlined />
+                </StyledIconWrapper>
             }
         >
             <LoadingScreen>

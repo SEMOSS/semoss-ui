@@ -117,6 +117,10 @@ const StyledIconHeader = styled("div")({
   alignItems: "center",
 });
 
+const StyledTypography = styled(Typography)({
+  color: "#212121",
+});
+
 const StyledIconGroup = styled("div")({
   display: "flex",
   alignItems: "center",
@@ -351,9 +355,9 @@ export const EngineConfigurePage = () => {
             <Search size="small" placeholder="Search" value="" />
           </StyledFilterSearchContainer>
           <StyledIconHeader>
-            <Typography variant="body1" sx={{ color: "#212121" }}>
+            <StyledTypography variant="body1">
               Files
-            </Typography>
+            </StyledTypography>
             <StyledIconGroup>
               <Tooltip title={`Upload file(s) to ${fileUploadPath}`}>
                 <StyledIconButton

@@ -26,6 +26,8 @@ const StyledFormDiv = styled("div")({
   marginBottom: "20px",
 });
 
+const StyledFormBottomDiv = styled("div")({});
+
 const StyledTextArea = styled(TextArea)({
   borderRadius: "8px",
 });
@@ -113,7 +115,7 @@ export const PythonConfiguration = ({
                 }
               />
             </StyledFormDiv>
-            <StyledFormDiv sx={{ marginBottom: "0" }}>
+            <StyledFormBottomDiv>
               <StyledTextArea
                 fullWidth
                 placeholder="Content *"
@@ -122,7 +124,7 @@ export const PythonConfiguration = ({
                 value={value.CONTENT}
                 onChange={(e) => handleChange("CONTENT", e.target.value)}
               />
-            </StyledFormDiv>
+            </StyledFormBottomDiv>
           </StyledFormContainer>
         </StyledDiv>
       </StyledDiv>

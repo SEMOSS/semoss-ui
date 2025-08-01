@@ -37,6 +37,15 @@ const StyledTypography = styled(Typography)(() => ({
     flex: '1',
 }));
 
+const StyledIconWrapper = styled(Icon)({
+  color: 'inherit',
+  '& svg': {
+    color: '#9E9E9E',
+    width: 20,
+    height: 20,
+  },
+});
+
 interface EngineFileExplorerItemProps {
     type: 'engine';
     engine: string;
@@ -103,25 +112,9 @@ export const EngineFileExplorerItem = (props: EngineFileExplorerItemProps) => {
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                 >
-                    <Icon color={'disabled'} fontSize="small">
-                        {isDirectory ? (
-                            <TopicOutlined
-                                sx={{
-                                    color: '#9E9E9E',
-                                    width: 20,
-                                    height: 20,
-                                }}
-                            />
-                        ) : (
-                            <DescriptionOutlined
-                                sx={{
-                                    color: '#9E9E9E',
-                                    width: 20,
-                                    height: 20,
-                                }}
-                            />
-                        )}
-                    </Icon>
+                    <StyledIconWrapper color='disabled' fontSize='small'>
+                        {isDirectory ? <TopicOutlined /> : <DescriptionOutlined />}
+                    </StyledIconWrapper>
                     <StyledTypography variant="body2">{name}</StyledTypography>
                     {isHovered ? (
                         <IconButton
