@@ -87,6 +87,9 @@ interface StorageExplorerItemProps {
     /** Triggered when download is requested */
     onDownload?: (path: string) => void;
     
+    /** Triggered when download multiple is requested */
+    onDownloadMultiple?: (paths: string[]) => void;
+    
     /** Triggered when item is selected/deselected */
     onSelect?: (path: string, isSelected: boolean) => void;
 }
@@ -104,6 +107,7 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
         onTrashClick = () => null,
         onUpload = () => null,
         onDownload = () => null,
+        onDownloadMultiple = () => null,
         onSelect = () => null,
     } = props;
     const [isHovered, setIsHovered] = useState(false);
@@ -278,6 +282,9 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                                        }}
                                        onDownload={(path) => {
                                            onDownload(path);
+                                       }}
+                                       onDownloadMultiple={(paths) => {
+                                           onDownloadMultiple(paths);
                                        }}
                                        onSelect={(path, isSelected) => {
                                            onSelect(path, isSelected);

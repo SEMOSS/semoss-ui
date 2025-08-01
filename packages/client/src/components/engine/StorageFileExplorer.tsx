@@ -274,13 +274,20 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
     const handleDeleteMultiple = (paths: string[]) => {
         console.log('Multiple files deleted:', paths);
-        paths.forEach(path => {
+        paths.forEach((path) => {
             setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
             if (selectedFile === path) {
                 setSelectedFile('');
             }
         });
         refreshFiles();
+    };
+
+    const handleDownloadMultiple = (paths: string[]) => {
+        console.log('Multiple files downloaded:', paths);
+        paths.forEach((path) => {
+            handleDownload(path);
+        });
     };
 
 
@@ -318,6 +325,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     onDownload={handleDownload}
                     onTrashClick={handleDelete}
                     onDeleteMultiple={handleDeleteMultiple}
+                    onDownloadMultiple={handleDownloadMultiple}
                 />
             </StyledFileExplorerContainer>
 
