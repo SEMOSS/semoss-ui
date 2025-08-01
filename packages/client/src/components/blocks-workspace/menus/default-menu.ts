@@ -1443,27 +1443,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 			slots: {} as BlockJSON["slots"],
 		},
 	},
-	{
-		section: SECTION_MISC,
-		name: "Compare LLMs",
-		helperText: "Compare large language models against the same context",
-		activeImage: BLOCK_IMAGES["COMPARE_LLMS_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["COMPARE_LLMS_HOVER"],
-		json: {
-			widget: "llmComparison",
-			data: {
-				style: {
-					padding: "4px",
-					whiteSpace: "pre-line",
-					textOverflow: "ellipsis",
-				},
-				text: "",
-				variants: {},
-			},
-			listeners: {},
-			slots: {} as BlockJSON["slots"],
-		},
-	},
 	// -------------------------------------------------------------
 	// BLOCK END
 	// ----------------------------------------------------------
