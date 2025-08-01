@@ -59,16 +59,6 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	appendPrompt?: string;
 }
 
-const _StyledOptionsButton = styled(Button)(() => ({
-	//_StyledOptionsButtontransparent',
-	border: "1px solid",
-	// borderColor: 'divider',
-	// borderRadius: '4px',
-	// color: 'text.secondary',
-	"&:hover": {
-		backgroundColor: "action.hover",
-	},
-}));
 const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
 	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
 		transform: "rotate(180deg)",
@@ -83,14 +73,10 @@ const StyledSpan = styled("span")(() => ({
 	textTransform: "uppercase",
 	fontWeight: "bold",
 }));
-const _StyledOptionSelect = styled(Select)(() => ({
-	width: "100%",
-	// marginBottom: '8px',
-}));
 const _StyledAccordionContentStack = styled(Stack)(() => ({
 	maxHeight: "200px",
 	overflowY: "auto",
-	paddingY: "8px",
+	paddingTop: "6px",
 }));
 const _StyledSliderContainer = styled(Stack)(() => ({
 	justifyContent: "space-between",
@@ -128,6 +114,9 @@ export const AIGenerationSettings = observer(
 		const [_models, setModels] = useState<
 			{ app_id: string; app_name: string }[]
 		>([]);
+		const [_databases, _setDatabases] = useState<
+			{ app_id: string; app_name: string; tag: string }[]
+		>([]);
 		const [expandAccordion, setExpandAccordion] = useState<boolean>(false);
 
 		useEffect(() => {
@@ -144,6 +133,14 @@ export const AIGenerationSettings = observer(
 		const myModels = usePixel<
 			{ app_id: string; app_name: string; tag: string }[]
 		>(`MyEngines(engineTypes=['MODEL']);`);
+		//  const _getDatabases = usePixel("META | GetDatabaseList ( ) ;");
+		const _getDatabases = () => {
+			return usePixel("META | GetDatabaseList ( ) ;");
+		};
+		const _myDatabases =
+			usePixel<{ app_id: string; app_name: string; tag: string }[]>(
+				`GetDatabaseList( ) ;`,
+			);
 		useMemo(() => {
 			if (myModels.status !== "SUCCESS") {
 				return;
@@ -199,7 +196,19 @@ export const AIGenerationSettings = observer(
 				setModelId(myModels.data[0].app_id);
 			}
 		}, [myModels.status, myModels.data]);
-
+		useEffect(() => {
+			if (_myDatabases.status !== "SUCCESS") {
+				return;
+			}
+			console.log("_myDatabases.data", _myDatabases.data);
+			_setDatabases(
+				_myDatabases.data.map((d) => ({
+					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
+					app_id: d.app_id,
+					tag: d.tag,
+				})),
+			);
+		}, [_myDatabases.status, _myDatabases.data]);
 		const generateAIResponse = async () => {
 			try {
 				setResponseLoading(true);
@@ -293,9 +302,11 @@ export const AIGenerationSettings = observer(
 									responseLoading
 								}
 							>
-								<MenuItem value="db1">Database 1</MenuItem>
-								<MenuItem value="db2">Database 2</MenuItem>
-								<MenuItem value="db3">Database 3</MenuItem>
+								{_databases.map((db) => (
+									<MenuItem key={db.app_id} value={db.app_id}>
+										{db.app_name}
+									</MenuItem>
+								))}
 							</Select>
 							<Divider />
 							<Select
