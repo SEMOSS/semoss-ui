@@ -56,7 +56,6 @@ export type { PDFViewerBlockDef } from "./components/block-defaults/pdfViewer-bl
 export type { EchartVisualizationBlockDef } from "./components/block-defaults/echart-visualization-block";
 export type { GridDynamicFrameBlockDef } from "./components/block-defaults/grid-dynamic-frame-block";
 export type { GridBlockDef } from "./components/block-defaults/grid-block";
-export type { LLMComparisonBlockDef } from "./components/block-defaults/llm-comparison-block";
 export type {
     CellBackgroundSettings,
     ChartTitleSettings,
@@ -68,10 +67,6 @@ export type {
 export type {
     Paths,
     PathValue,
-    TypeLlmComparisonForm,
-    TypeLlmConfig,
-    TypeVariants,
-    TypeVariant,
 } from "./types";
 
 export { getValueByPath, copy } from "./utility";
@@ -82,7 +77,6 @@ export { DefaultBlocks } from "./components/block-defaults";
 
 export {
     BLOCK_TYPE_INPUT,
-    BLOCK_TYPE_COMPARE,
 } from "./components/block-defaults/block-defaults.constants";
 
 export * from "./components/block-defaults";
