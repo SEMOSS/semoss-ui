@@ -28,7 +28,6 @@ import {
     useBlocks,
     DefaultBlocks,
     BLOCK_TYPE_INPUT,
-    BLOCK_TYPE_COMPARE,
     Renderer,
 } from '@semoss/renderer';
 

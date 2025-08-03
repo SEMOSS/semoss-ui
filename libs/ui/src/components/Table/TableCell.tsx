@@ -14,7 +14,10 @@ export interface TableCellProps {
      * @default 'inherit'
      */
     align?: "inherit" | "left" | "center" | "right" | "justify";
-    /** children to be rendered */
+
+    /**
+     * children to be rendered
+     */
     children?: ReactNode;
 
     /**
@@ -47,21 +50,21 @@ export interface TableCellProps {
      */
     size?: "small" | "medium";
 
-    /** custom style object */
-    sx?: SxProps;
-
     /**
      * Specify the cell type.
      * The prop defaults to the value inherited from the parent TableHead, TableBody, or TableFooter components.
      */
     variant?: "head" | "body" | "footer";
+
+    /**
+     * Custom style object
+     */
+    sx?: SxProps;
 }
 
-export const TableCell = (props: TableCellProps) => {
-    const { children, sx } = props;
-    return (
-        <MuiTableCell sx={sx} {...props}>
-            {children}
-        </MuiTableCell>
-    );
+export const TableCell: React.FC<TableCellProps> = ({
+    children,
+    ...otherProps
+}) => {
+    return <MuiTableCell {...otherProps}>{children}</MuiTableCell>;
 };
