@@ -70,7 +70,7 @@ export const QueryActions: React.FC<QueryActionsProps> = ({
                     onClick={clearQuery}
                     sx={{ textTransform: 'none' }}
                 >
-                    Clear
+                    Cancel
                 </Button>
                 <Button
                     variant="outlined"
@@ -78,7 +78,7 @@ export const QueryActions: React.FC<QueryActionsProps> = ({
                     sx={{ textTransform: 'none' }}
                     disabled={previewLoading || !query.trim()}
                 >
-                    {previewLoading ? 'Running...' : 'Run'}
+                    {previewLoading ? 'Running...' : 'Visualize'}
                 </Button>
             </Box>
         </StyledActions>

@@ -7,6 +7,7 @@ import {
     TextField,
     IconButton,
     Box,
+    Card,
 } from '@semoss/ui';
 import {
     Search,
@@ -14,15 +15,39 @@ import {
     Storage,
     ExpandMore,
     ChevronRight,
+    Clear
 } from '@mui/icons-material';
 import { DatabaseColumnIcon } from './DatabaseColumnIcon';
 
-const StyledSearchSection = styled('div')(({ theme }) => ({
-    padding: `${theme.spacing(1)} 20px`,
+// Main card wrapper 
+const StyledCard = styled(Card)(({ theme }) => ({
+    borderRadius: '16px',
+    background: theme.palette.background.paper,
+    boxshadow: `0px 1px 2px 0px #00000014`,
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    border: `1px solid #C4C4C4`,
+}));
+
+// Header section 
+const StyledCardHeader = styled('div')(({ theme }) => ({
+    backgroundColor: '#EBF4FE', // Pale baby blue
+    padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
     borderBottom: `1px solid ${theme.palette.divider}`,
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+}));
+
+// Search section
+const StyledSearchSection = styled('div')(({ theme }) => ({
+    padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
     flexShrink: 0,
 }));
 
+// Content area for tables list
 const StyledTablesList = styled('div')(() => ({
     flex: 1,
     overflow: 'auto',
@@ -63,9 +88,9 @@ const StyledTableHeaderRow = styled('tr')(({ theme }) => ({
         '& th:last-child': {
             borderBottomRightRadius: theme.shape.borderRadius,
         },
-        '& th': {
-            borderBottom: `1px solid ${theme.palette.grey[300]}`,
-        },
+    },
+    '& th': {
+        borderBottom: `1px solid ${theme.palette.grey[300]}`,
     },
 }));
 
@@ -129,45 +154,56 @@ export const DatabaseStructureBrowser: React.FC<DatabaseStructureBrowserProps> =
     refreshMessage,
 }) => {
     return (
-        <>
+        <StyledCard>
+            {/* Header */}
+            <StyledCardHeader>
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Data Columns
+                </Typography>
+                <IconButton 
+                    size="small" 
+                    onClick={refreshDatabaseStructure}
+                    title="Refresh database structure"
+                    disabled={isLoading}
+                >
+                    <Refresh fontSize="small" />
+                </IconButton>
+            </StyledCardHeader>
+
+            {/* Search section */}
             <StyledSearchSection>
-                <Stack direction="row" spacing={1} sx={{ width: '100%', alignItems: 'center', mb: 2, justifyContent: 'space-between' }}>
-                    <Typography variant="h6" sx={{ fontSize: '0.875rem', fontWeight: 600 }}>
-                        Available Columns
-                    </Typography>
-                    <IconButton 
-                        size="small" 
-                        onClick={refreshDatabaseStructure}
-                        title="Refresh database structure"
-                        disabled={isLoading}
-                    >
-                        <Refresh fontSize="small" />
-                    </IconButton>
-                </Stack>
-               
-                <Stack direction="row" spacing={1} sx={{ width: '100%', alignItems: 'center', mb: 1 }}>
+                <Stack direction="row" spacing={1} sx={{ width: '100%', alignItems: 'center' }}>
                     <TextField
                         size="small"
-                        placeholder="Search available columns..."
+                        placeholder="Search"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         InputProps={{
                             startAdornment: <Search fontSize="small" sx={{ mr: 1, color: 'secondary' }} />,
+                            endAdornment: searchTerm && (
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setSearchTerm('')}
+                                    sx={{ mr: 1, color: 'secondary' }} 
+                                >
+                                    <Clear fontSize="small" />
+                                </IconButton>
+                            ),
                         }}
                         sx={{ flex: 1 }}
                     />
+                    <Button
+                        variant="text"
+                        size="small"
+                        onClick={toggleAllTables}
+                        sx={{ textTransform: 'none', p: 0, minWidth: 'auto', whiteSpace: 'nowrap' }}
+                    >
+                        {toggleState ? 'Collapse All' : 'Expand All'}
+                    </Button>
                 </Stack>
-               
-                <Button
-                    variant="text"
-                    size="small"
-                    onClick={toggleAllTables}
-                    sx={{ textTransform: 'none', p: 0, minWidth: 'auto' }}
-                >
-                    {toggleState ? 'Collapse All' : 'Expand All'}
-                </Button>
             </StyledSearchSection>
 
+            {/* Content area */}
             <StyledTablesList>
                 {refreshMessage && (
                     <Box sx={{ padding: 2, backgroundColor: 'info.light', mb: 1 }}>
@@ -245,6 +281,6 @@ export const DatabaseStructureBrowser: React.FC<DatabaseStructureBrowserProps> =
                     </div>
                 ))}
             </StyledTablesList>
-        </>
+        </StyledCard>
     );
 };

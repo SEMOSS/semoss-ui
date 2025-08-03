@@ -3,6 +3,7 @@ import {
   Typography,
   Box,
   Alert,
+  styled,
 } from '@semoss/ui';
 import {
   Error as ErrorIcon,
@@ -11,52 +12,182 @@ import {
 } from '@mui/icons-material';
 import { QueryResult, isErrorResponse, getErrorMessage, hasTabularData } from './useDatabaseQueryExecution';
 
+// Styled components
+const StyledEmptyStateContainer = styled(Box)(() => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  height: '100%',
+  color: 'secondary'
+}));
+
+const StyledResultsContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2)
+}));
+
+const StyledExecutionTimeContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1),
+  backgroundColor: theme.palette.grey[100],
+  borderRadius: theme.spacing(1),
+  fontSize: '12px'
+}));
+
+const StyledExecutionTimeContainerWithMargin = styled(StyledExecutionTimeContainer)(({ theme }) => ({
+  marginBottom: theme.spacing(2)
+}));
+
+const StyledTableContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(2)
+}));
+
+const StyledTable = styled(Box)(() => ({
+  border: 'none',
+  overflow: 'hidden'
+}));
+
+const StyledTableHeader = styled(Box)(() => ({
+  display: 'flex',
+  fontWeight: 'bold',
+  backgroundColor: '#F5F9FE',
+  color: '#0471F0',
+  borderBottom: '1px solid #e0e0e0'
+}));
+
+const StyledHeaderCell = styled(Box)(() => ({
+  flex: 1,
+  padding: '8px',
+  fontSize: '12px',
+  borderRight: 'none',
+  minWidth: '100px',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap'
+}));
+
+const StyledTableBody = styled(Box)<{ isExpanded: boolean }>(({ isExpanded }) => ({
+  maxHeight: isExpanded ? 'calc(100vh - 200px)' : '180px',
+  overflow: 'auto'
+}));
+
+const StyledEmptyDataContainer = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(3),
+  textAlign: 'center',
+  color: 'secondary'
+}));
+
+const StyledTableRow = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  borderBottom: '1px solid #e0e0e0',
+  '&:hover': {
+    backgroundColor: theme.palette.grey[50]
+  }
+}));
+
+const StyledDataCell = styled(Box)(() => ({
+  flex: 1,
+  padding: '8px',
+  fontSize: '12px',
+  borderRight: 'none',
+  minWidth: '100px',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap'
+}));
+
+const StyledOutputContainer = styled(Box)(({ theme }) => ({
+  marginTop: theme.spacing(2)
+}));
+
+const StyledOutputLabel = styled(Typography)(({ theme }) => ({
+  fontWeight: 600,
+  display: 'block',
+  marginBottom: theme.spacing(1)
+}));
+
+const StyledOutputContent = styled(Box)(({ theme }) => ({
+  padding: theme.spacing(1),
+  backgroundColor: theme.palette.grey[50],
+  border: '1px solid',
+  borderColor: theme.palette.grey[300],
+  borderRadius: theme.spacing(1),
+  fontSize: '12px',
+  fontFamily: 'monospace',
+  whiteSpace: 'pre-wrap',
+  maxHeight: '200px',
+  overflow: 'auto'
+}));
+
+const StyledPreBlock = styled('pre')(() => ({
+  fontSize: '11px',
+  overflow: 'auto',
+  margin: 0,
+  whiteSpace: 'pre-wrap',
+  padding: '8px',
+  maxHeight: '150px',
+  backgroundColor: '#f5f5f5',
+  border: '1px solid #ddd',
+  borderRadius: '4px'
+}));
+
+const StyledAlert = styled(Alert)(({ theme }) => ({
+  marginBottom: theme.spacing(2)
+}));
+
+const StyledErrorTypography = styled(Typography)(({ theme }) => ({
+  marginTop: theme.spacing(1),
+  whiteSpace: 'pre-wrap'
+}));
+
+const StyledOperationTypography = styled(Typography)(() => ({
+  display: 'block'
+}));
+
+const StyledSuccessTypography = styled(Typography)(({ theme }) => ({
+  fontWeight: 600
+}));
+
+const StyledInfoTypography = styled(Typography)(({ theme }) => ({
+  fontWeight: 600
+}));
+
+const StyledInfoBodyTypography = styled(Typography)(({ theme }) => ({
+  marginTop: theme.spacing(1)
+}));
+
 export function useQueryResults() {
-  const renderResults = (previewData: QueryResult | null, previewLimit: number) => {
+  const renderResults = (previewData: QueryResult | null, previewLimit: number, isExpanded: boolean = false) => {
     if (!previewData) {
       return (
-        <Box sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          height: '100%',
-          color: 'secondary'
-        }}>
+        <StyledEmptyStateContainer>
           <Typography variant="body2">
             Click "RUN" to see query results here
           </Typography>
-        </Box>
+        </StyledEmptyStateContainer>
       );
     }
 
     if (isErrorResponse(previewData)) {
       const errorMessage = getErrorMessage(previewData);
       return (
-        <Box sx={{ padding: 2 }}>
-          <Alert
+        <StyledResultsContainer>
+          <StyledAlert
             severity="error"
             icon={<ErrorIcon />}
-            sx={{ marginBottom: 2 }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            <StyledSuccessTypography variant="subtitle2">
               Query Error
-            </Typography>
-            <Typography variant="body2" sx={{ marginTop: 1, whiteSpace: 'pre-wrap' }}>
+            </StyledSuccessTypography>
+            <StyledErrorTypography variant="body2">
               {errorMessage}
-            </Typography>
-          </Alert>
+            </StyledErrorTypography>
+          </StyledAlert>
           
-          <Box sx={{
-            padding: 1,
-            backgroundColor: 'grey.100',
-            borderRadius: 1,
-            fontSize: '12px'
-          }}>
+          <StyledExecutionTimeContainer>
             <Typography variant="caption">
               Execution time: {previewData.timeToRun || 0}ms
             </Typography>
-          </Box>
-        </Box>
+          </StyledExecutionTimeContainer>
+        </StyledResultsContainer>
       );
     }
 
@@ -64,230 +195,123 @@ export function useQueryResults() {
       const isSuccess = previewData.isSuccess !== false;
       
       return (
-        <Box sx={{ padding: 2 }}>
-          <Alert
+        <StyledResultsContainer>
+          <StyledAlert
             severity={isSuccess ? "success" : "warning"}
             icon={isSuccess ? <CheckCircle /> : <Info />}
-            sx={{ marginBottom: 2 }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            <StyledSuccessTypography variant="subtitle2">
               {isSuccess
                 ? `Statement Executed`
                 : `Statement Completed`
               }
-            </Typography>
+            </StyledSuccessTypography>
+          </StyledAlert>
           
-          </Alert>
-          
-          <Box sx={{
-            padding: 1,
-            backgroundColor: 'grey.100',
-            borderRadius: 1,
-            fontSize: '12px',
-            marginBottom: 2
-          }}>
+          <StyledExecutionTimeContainerWithMargin>
             <Typography variant="caption">
               Execution time: {previewData.timeToRun || 0}ms
             </Typography>
             {previewData.operationType && (
-              <Typography variant="caption" sx={{ display: 'block' }}>
+              <StyledOperationTypography variant="caption">
                 Operation: {Array.isArray(previewData.operationType)
                   ? previewData.operationType.join(', ')
                   : previewData.operationType}
-              </Typography>
+              </StyledOperationTypography>
             )}
-          </Box>
+          </StyledExecutionTimeContainerWithMargin>
 
           {previewData.output && (
-            <Box sx={{ marginTop: 2 }}>
-              <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', marginBottom: 1 }}>
+            <StyledOutputContainer>
+              <StyledOutputLabel variant="caption">
                 Database Response:
-              </Typography>
-              <Box sx={{
-                padding: 1,
-                backgroundColor: 'grey.50',
-                border: '1px solid',
-                borderColor: 'grey.300',
-                borderRadius: 1,
-                fontSize: '12px',
-                fontFamily: 'monospace',
-                whiteSpace: 'pre-wrap',
-                maxHeight: '200px',
-                overflow: 'auto'
-              }}>
+              </StyledOutputLabel>
+              <StyledOutputContent>
                 {typeof previewData.output === 'string'
                   ? previewData.output
                   : JSON.stringify(previewData.output, null, 2)
                 }
-              </Box>
-            </Box>
+              </StyledOutputContent>
+            </StyledOutputContainer>
           )}
-        </Box>
+        </StyledResultsContainer>
       );
     }
 
     if (hasTabularData(previewData)) {
       return (
-        <Box>
-          <Box sx={{
-            padding: '8px',
-            backgroundColor: 'grey.100',
-            borderBottom: '1px solid',
-            borderColor: 'grey.300',
-            fontSize: '12px',
-            marginBottom: 1,
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center'
-          }}>
-            <Typography variant="caption">
-              {previewData.output.data.values?.length || 0} rows • {previewData.timeToRun || 0}ms
-            </Typography>
-            {previewData.output.numCollected > (previewData.output.data.values?.length || 0) && (
-              <Typography variant="caption" color="primary">
-                Limited to {previewLimit} rows
-              </Typography>
-            )}
-          </Box>
-          
-
-          <Box sx={{ border: '1px solid', borderColor: 'grey.300', borderRadius: 1, overflow: 'hidden' }}>
+        <StyledTableContainer>
+          <StyledTable>
             {previewData.output.data.headers && (
-              <Box sx={{
-                display: 'flex',
-                fontWeight: 'bold',
-                backgroundColor: 'grey.50',
-                borderBottom: '2px solid',
-                borderColor: 'grey.300'
-              }}>
+              <StyledTableHeader>
                 {previewData.output.data.headers.map((header: string, index: number) => (
-                  <Box key={index} sx={{
-                    flex: 1,
-                    padding: '8px',
-                    fontSize: '12px',
-                    borderRight: index < previewData.output.data.headers.length - 1 ? '1px solid' : 'none',
-                    borderColor: 'grey.300',
-                    minWidth: '100px',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap'
-                  }}>
+                  <StyledHeaderCell key={index}>
                     {header}
-                  </Box>
+                  </StyledHeaderCell>
                 ))}
-              </Box>
+              </StyledTableHeader>
             )}
             
             {previewData.output.data.values && (
-              <Box sx={{ maxHeight: '180px', overflow: 'auto' }}>
+              <StyledTableBody isExpanded={isExpanded}>
                 {previewData.output.data.values.length === 0 ? (
-                  <Box sx={{
-                    padding: 3,
-                    textAlign: 'center',
-                    color: 'secondary'
-                  }}>
+                  <StyledEmptyDataContainer>
                     <Typography variant="body2">
                       No data returned
                     </Typography>
-                  </Box>
+                  </StyledEmptyDataContainer>
                 ) : (
                   previewData.output.data.values.map((row: any[], rowIndex: number) => (
-                    <Box key={rowIndex} sx={{
-                      display: 'flex',
-                      borderBottom: rowIndex < previewData.output.data.values.length - 1 ? '1px solid' : 'none',
-                      borderColor: 'grey.200',
-                      '&:hover': { backgroundColor: 'grey.50' }
-                    }}>
+                    <StyledTableRow key={rowIndex}>
                       {row.map((cell: any, cellIndex: number) => (
-                        <Box key={cellIndex} sx={{
-                          flex: 1,
-                          padding: '8px',
-                          fontSize: '12px',
-                          borderRight: cellIndex < row.length - 1 ? '1px solid' : 'none',
-                          borderColor: 'grey.200',
-                          minWidth: '100px',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap'
-                        }}>
+                        <StyledDataCell key={cellIndex}>
                           {cell !== null && cell !== undefined ? String(cell) : '(null)'}
-                        </Box>
+                        </StyledDataCell>
                       ))}
-                    </Box>
+                    </StyledTableRow>
                   ))
                 )}
-              </Box>
+              </StyledTableBody>
             )}
-          </Box>
-          
-          {previewData.output.numCollected && (
-            <Box sx={{
-              padding: '8px',
-              backgroundColor: 'grey.100',
-              borderTop: '1px solid',
-              borderColor: 'grey.300',
-              fontSize: '11px',
-              marginTop: 1
-            }}>
-              <Typography variant="caption" color="secondary">
-                Showing {previewData.output.data.values?.length || 0} of {previewData.output.numCollected} collected rows
-              </Typography>
-            </Box>
-          )}
-        </Box>
+          </StyledTable>
+        </StyledTableContainer>
       );
     }
 
     return (
-      <Box sx={{ padding: 2 }}>
-        <Alert
+      <StyledResultsContainer>
+        <StyledAlert
           severity="info"
           icon={<Info />}
-          sx={{ marginBottom: 2 }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <StyledInfoTypography variant="subtitle2">
             Query Executed
-          </Typography>
-          <Typography variant="body2" sx={{ marginTop: 1 }}>
+          </StyledInfoTypography>
+          <StyledInfoBodyTypography variant="body2">
             The query was executed successfully but returned no tabular data
-          </Typography>
-        </Alert>
+          </StyledInfoBodyTypography>
+        </StyledAlert>
         
-        <Box sx={{
-          padding: 1,
-          backgroundColor: 'grey.100',
-          borderRadius: 1,
-          fontSize: '12px'
-        }}>
+        <StyledExecutionTimeContainer>
           <Typography variant="caption">
             Execution time: {previewData.timeToRun || 0}ms
           </Typography>
-        </Box>
+        </StyledExecutionTimeContainer>
 
         {previewData.output && (
-          <Box sx={{ marginTop: 2 }}>
-            <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', marginBottom: 1 }}>
+          <StyledOutputContainer>
+            <StyledOutputLabel variant="caption">
               Raw Output:
-            </Typography>
-            <pre style={{
-              fontSize: '11px',
-              overflow: 'auto',
-              margin: 0,
-              whiteSpace: 'pre-wrap',
-              padding: '8px',
-              maxHeight: '150px',
-              backgroundColor: '#f5f5f5',
-              border: '1px solid #ddd',
-              borderRadius: '4px'
-            }}>
+            </StyledOutputLabel>
+            <StyledPreBlock>
               {typeof previewData.output === 'string'
                 ? previewData.output
                 : JSON.stringify(previewData.output, null, 2)
               }
-            </pre>
-          </Box>
+            </StyledPreBlock>
+          </StyledOutputContainer>
         )}
-      </Box>
+      </StyledResultsContainer>
     );
   };
 
