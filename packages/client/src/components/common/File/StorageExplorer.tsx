@@ -230,7 +230,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
 
         try {
             const pathsString = selected.map((path) => `"${path}"`).join(', ');
-            const downloadQuery = `Storage("${storageId}") | PullMultipleFromStorageAndZip(storagePaths=[${pathsString}], filePath="multiple_downloads") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
+            const downloadQuery = `Storage("${storageId}") | PullMultipleFromStorageAndZip(storagePaths=[${pathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
 
             console.log('Download multiple query:', downloadQuery);
             const response = await monolithStore.runQuery(downloadQuery);
