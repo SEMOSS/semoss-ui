@@ -1,5 +1,7 @@
 import {
 	AppsRounded,
+	ChevronLeftOutlined,
+	ChevronRightOutlined,
 	CopyAllOutlined,
 	ThumbDownOffAltOutlined,
 	ThumbUpAltOutlined,
@@ -8,6 +10,7 @@ import { observer } from "mobx-react-lite";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Avatar,
+	Button,
 	Chip,
 	Divider,
 	IconButton,
@@ -131,6 +134,25 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 		}
 	};
 
+	/**
+	 * Copy the text
+	 * @param text - text to copy
+	 */
+	const rewriteMessage = async () => {
+		try {
+			// await room.recordFeedback(message, rating);
+			// notification.add({
+			// 	color: "success",
+			// 	message: "Succesfully saved feedback",
+			// });
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		}
+	};
+
 	if (message.type === "USER") {
 		return (
 			<StyledUserMessage
@@ -159,7 +181,7 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 					isSelected={
 						room.sidebar.isOpen &&
 						room.sidebar.options.type === "APP" &&
-						room.sidebar.options.messageId === message.messageId
+						room.sidebar.options.messageId === message.id
 					}
 					direction={"row"}
 					alignItems={"center"}
@@ -173,13 +195,13 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 						if (
 							room.sidebar.isOpen &&
 							room.sidebar.options.type === "APP" &&
-							room.sidebar.options.messageId === message.messageId
+							room.sidebar.options.messageId === message.id
 						) {
 							room.closeSidebar();
 						} else {
 							room.openSidebar({
 								type: "APP",
-								messageId: message.messageId,
+								messageId: message.id,
 								toolName: message.content.name,
 								toolId: message.content.id,
 								toolParameters: message.content.map,
@@ -216,7 +238,51 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 						alignItems={"center"}
 						justifyContent={"space-between"}
 					>
-						&nbsp;
+						<Stack direction={"row"} alignItems={"center"}>
+							<Button
+								variant="text"
+								size="small"
+								color="inherit"
+								disabled={true}
+								onClick={() => rewriteMessage()}
+							>
+								Rewrite
+							</Button>
+							{message.siblings.length > 1 && (
+								<>
+									<IconButton
+										size="small"
+										disabled={!message.previousSibling}
+										onClick={() => {
+											if (!message.previousSibling) {
+												return;
+											}
+
+											message.previousSibling.activateMessage();
+										}}
+									>
+										<ChevronLeftOutlined fontSize="small" />
+									</IconButton>
+									<Typography variant="caption">
+										{message.position + 1}/
+										{message.siblings.length}
+									</Typography>
+									<IconButton
+										size="small"
+										disabled={!message.nextSibling}
+										onClick={() => {
+											if (!message.nextSibling) {
+												return;
+											}
+
+											message.nextSibling.activateMessage();
+										}}
+									>
+										<ChevronRightOutlined fontSize="small" />
+									</IconButton>
+								</>
+							)}
+						</Stack>
 						<Stack
 							direction={"row"}
 							alignItems={"center"}
