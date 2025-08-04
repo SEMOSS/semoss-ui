@@ -10,7 +10,6 @@ import {
     styled,
     useNotification,
 } from "@semoss/ui";
-import { runPixelTwo } from '../../../../../../packages/client/src/runPixelTwo'
 import { useBlocks } from "../../../hooks";
 import {
     ActionMessages,
@@ -157,18 +156,19 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
     const [allFunctions, setAllFunctions] = useState([]);
     const [modelId, setModelId] = useState(agentModelEngine);
     // const { workspace } = useWorkspace();
-    const getReactors = async () => {
-        const response = await runPixelTwo(`HelpJson();`);
+    useEffect(() => {
+      async function fetchData() {
+        const response = await runPixel(`HelpJson();`);
         const outputKeys = Object.keys(response.pixelReturn[0].output);
-        const allOutputs = outputKeys.map(key => ({
-            key,
-            value: response.pixelReturn[0].output[key]
+        const allOutputs = outputKeys.map((key) => ({
+          key,
+          value: response.pixelReturn[0].output[key],
         }));
         setAllFunctions(allOutputs);
-    };
-    useEffect(() => {
-        getReactors();
-    }, [getReactors]);
+      }
+      fetchData();
+    }, []);
+
     /**
      * Ask a LLM a question to generate a response
      * @param prompt - prompt passed to the LLM
@@ -683,17 +683,17 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
     useEffect(() => {
         setModelId(agentModelEngine);
-        setCount(count + 1);
-    }, [agentModelEngine, count]);
+        setCount((count) => count + 1);
+    }, [agentModelEngine]);
 
     return (
-        <StyledContent>
+    <StyledContent>
             {LLMLoading && (
                 "Loading..."
                 // <LoadingScreen.Trigger description="Generating..." />
             )}
             <Stack direction="row" spacing={1}>
-                <StyledContainer
+                {allFunctions.length > 0 && (<StyledContainer
                     onDoubleClick={() =>
                         EDITOR_TYPE[cell.parameters.type].language ===
                             "Markdown" &&
@@ -845,7 +845,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                             )}
                         </Suspense>
                     )}
-                </StyledContainer>
+                </StyledContainer>)}
                 {/* {isExpanded && ( */}
                 <Stack direction="row" sx={{ paddingLeft: "10px" }}>
                     <StyledSelect

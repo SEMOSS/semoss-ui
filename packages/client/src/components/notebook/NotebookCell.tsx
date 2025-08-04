@@ -1,48 +1,44 @@
-import { useEffect, useState, createElement, useMemo, useRef } from 'react';
-import { observer } from 'mobx-react-lite';
 import {
+    ArrowDownward,
+    ArrowUpward,
+    CheckCircle,
     ContentCopy,
     Delete,
-    PlayCircle,
-    CheckCircle,
     Error,
-    Pending,
     KeyboardArrowRight,
-    MoreVert,
-    ArrowUpward,
-    ArrowDownward,
-    PlayArrowRounded,
-    LowPriority,
     LibraryAdd,
+    MoreVert,
+    Pending,
+    PlayArrowRounded,
+    PlayCircle,
 } from '@mui/icons-material';
-
+import { observer } from 'mobx-react-lite';
+import { createElement, useEffect, useMemo, useRef, useState } from 'react';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 import {
-    styled,
-    Stack,
-    Typography,
     ButtonGroup,
-    CircularProgress,
     Card,
-    Chip,
+    CircularProgress,
     Collapse,
-    useNotification,
-    IconButton,
-    Divider,
     CustomShapeOptions,
+    Divider,
+    IconButton,
     Menu,
     MenuProps,
+    Stack,
+    styled,
+    Typography,
+    useNotification,
 } from '@semoss/ui';
-
+import { useWorkspace } from '@/hooks';
+// TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
+import { copyTextToClipboard } from '@/utility';
+import DuplicateIcon from '../../assets/img/Duplicate.svg';
+import { AddVariableModal } from './AddVariableModal';
 import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
-import { AddVariableModal } from './AddVariableModal';
 
-// TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
-import { copyTextToClipboard } from '@/utility';
-import { useWorkspace } from '@/hooks';
-import DuplicateIcon from '../../assets/img/Duplicate.svg';
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
 }));
@@ -116,7 +112,7 @@ const StyledCard = styled(Card, {
     const shape = theme.shape as CustomShapeOptions;
 
     return {
-        overflow: 'hidden',
+        overflow: 'visible', // Changed from hidden to visible for display (Pixel) reactor methods auto-complete suggestions
         flexGrow: 1,
         cursor: isCardCellSelected ? 'inherit' : 'pointer',
         border: isCardCellSelected
@@ -163,9 +159,6 @@ const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
     border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledIdChip = styled(Chip)(({ theme }) => ({
-    height: theme.spacing(3.5),
-}));
 
 const StyledSidebar = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -246,7 +239,7 @@ interface NotebookCellProps {
     cellPlayCounter: number;
 
     /** Id of the cell of the query */
-    setCellPlayCounter: (count: number) => void;
+    setCellPlayCounter: React.Dispatch<React.SetStateAction<number>>;
 }
 
 /**
@@ -283,7 +276,7 @@ export const NotebookCell = observer(
         const cell = query.getCell(cellId);
 
         const variableName = state.getAlias(queryId, cellId);
-
+        
         useEffect(() => {
             if (cardContentRef.current) {
                 const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
@@ -299,43 +292,28 @@ export const NotebookCell = observer(
                 }
             }
         }, [
-            cardContentRef.current,
-            contentExpanded,
-            cardActionsRef.current,
-            outputExpanded,
         ]);
 
         useEffect(() => {
             if (cell.isExecuted == false) {
                 setLocalCellPlayNumber(null);
             } else {
-                const newPlayCount = cellPlayCounter + 1;
-                setCellPlayCounter(newPlayCount);
-                setLocalCellPlayNumber(newPlayCount);
+            //    const newPlayCount = cellPlayCounter + 1;
+                setCellPlayCounter((count: number) =>
+                  Number(count) ? count + 1 : count
+                );
+                // setLocalCellPlayNumber(newPlayCount);
             }
-        }, [cell.isExecuted]);
+        }, [cell.isExecuted, setCellPlayCounter]);
 
         useEffect(() => {
             if (cellPlayCounter == null) {
                 setLocalCellPlayNumber(null);
-                setCellPlayCounter(null);
+                // setCellPlayCounter(null);
+            }else {
+                setLocalCellPlayNumber(cellPlayCounter);
             }
         }, [cellPlayCounter]);
-
-        const cellOrderNumber = useMemo(() => {
-            const nbCellList = state.queries[cell.query.id].cellList;
-
-            let matchIndex = 0;
-            nbCellList.forEach((c, i) => {
-                if (c.id === cell.id) matchIndex = i;
-            });
-
-            return matchIndex + 1;
-        }, [
-            cell.id,
-            cell.query.list.indexOf(cell.id),
-            cell.query.cellList.length,
-        ]);
 
         /**
          * Create a duplicate cell
@@ -405,12 +383,7 @@ export const NotebookCell = observer(
                 isExpanded: contentExpanded,
                 agentModelEngine: workspace.agentModelEngine,
             });
-        }, [
-            cell.component ? cell.component : null,
-            contentExpanded,
-            workspace.agentModelEngine,
-        ]);
-
+        }, [cell, contentExpanded , workspace.agentModelEngine])
         const getExecutionTimeString = (
             timeMilliseconds: number | undefined,
         ) => {
@@ -798,9 +771,8 @@ export const NotebookCell = observer(
                             </StyledRunIconButton>
                             <StyledCardInput>{rendered}</StyledCardInput>
                         </StyledCardContent>
-                        {cell.parameters.type != 'markdown' && (
-                            <>
-                                {cell.widget === 'code' ? (
+                        {cell.parameters.type != 'markdown' && (                            
+                                cell.widget === 'code' ? (
                                     <>
                                         {cell.messages.length > 0 && (
                                             <>
@@ -918,8 +890,7 @@ export const NotebookCell = observer(
                                             )}
                                     </>
                                 ) : (
-                                    <>
-                                        {cell.isExecuted && (
+                                        cell.isExecuted && (
                                             <>
                                                 {(notebook?.selectedCell?.id ??
                                                     '') == cell.id && (
@@ -975,10 +946,9 @@ export const NotebookCell = observer(
                                                     </Stack>
                                                 </StyledCardActions>
                                             </>
-                                        )}
-                                    </>
-                                )}
-                            </>
+                                        )
+                                )
+                            
                         )}
                     </StyledCard>
                 </StyledRow>

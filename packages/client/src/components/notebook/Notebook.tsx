@@ -1,26 +1,24 @@
-import { useState } from 'react';
-import { observer } from 'mobx-react-lite';
-import {
-    styled,
-    Stack,
-    Container,
-    Button,
-    CircularProgress,
-    Box,
-} from '@semoss/ui';
-
-import { NotebookCell } from './NotebookCell';
-import { PlayArrowRounded, DragIndicator } from '@mui/icons-material';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import { closestCenter, DndContext } from '@dnd-kit/core';
+import { restrictToParentElement } from '@dnd-kit/modifiers';
 import {
     SortableContext,
     useSortable,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { restrictToParentElement } from '@dnd-kit/modifiers';
-
+import { DragIndicator, PlayArrowRounded } from '@mui/icons-material';
+import { observer } from 'mobx-react-lite';
+import { useState } from 'react';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
+import {
+    Box,
+    Button,
+    CircularProgress,
+    Container,
+    Stack,
+    styled,
+} from '@semoss/ui';
+import { NotebookCell } from './NotebookCell';
 
 const StyledSheet = styled('div')(({ theme }) => ({
     display: 'flex',
@@ -98,7 +96,7 @@ const SortableItems = ({
 export const Notebook = observer((props: NotebookProps): JSX.Element => {
     const { id } = props;
     const { state } = useBlocks();
-    const [cellPlayCounter, setCellPlayCounter] = useState(null);
+    const [cellPlayCounter, setCellPlayCounter] = useState<number | null>(null);
 
     /**
      * Handle drag end
@@ -113,8 +111,6 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 
         // If the active item is over a different item, swap them
         if (over && active.id !== over.id) {
-            const oldIndex = Number(active.id);
-            const newIndex = Number(over.id);
             state.dispatch({
                 message: ActionMessages.MOVE_CELL,
                 payload: {
