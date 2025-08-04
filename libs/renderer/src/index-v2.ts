@@ -1,20 +1,13 @@
 /**
- * ------------------------------------------------
- * MODULES THAT COME WITH OUR RENDERER PACKAGE
- * BE MINDFUL OF WHAT WE EXPORT
- *
- * TODO: clean up what gets exported
- * ------------------------------------------------
+ * V2 Renderer with Tailwind CSS
+ * This version replaces Material UI with Tailwind CSS styling
  */
 
 /**
  * PRE-CANNED MODULE THAT HANDLES APP INTERACTION (END-USER)
  */
-export * from "./Renderer";
-export { RendererEngine } from "./components/blocks";
-
-// V2 Renderer with Tailwind CSS
 export { RendererV2 } from "./RendererV2";
+export { RendererEngine } from "./components/blocks";
 
 /**
  * ------------------------------------------------
@@ -53,10 +46,16 @@ export type {
     Variant,
 } from "./store";
 
+// V2 Block Types
+export type { ButtonBlockDefV2 } from "./components/block-defaults/button-block/ButtonBlockV2";
+export type { TextBlockDefV2 } from "./components/block-defaults/text-block/TextBlockV2";
+export type { InputBlockDefV2 } from "./components/block-defaults/input-block/InputBlockV2";
+export type { CardBlockDefV2 } from "./components/block-defaults/card-block/CardBlockV2";
+
+// Existing Block Types
 export type { GridBlockColumn } from "./components/block-defaults/grid-block/grid-block.types";
 export type { RadioBlockDef } from "./components/block-defaults/radio-block";
 export type { PDFViewerBlockDef } from "./components/block-defaults/pdfViewer-block";
-export type { EchartVisualizationBlockDef } from "./components/block-defaults/echart-visualization-block";
 export type { GridDynamicFrameBlockDef } from "./components/block-defaults/grid-dynamic-frame-block";
 export type { GridBlockDef } from "./components/block-defaults/grid-block";
 export type { LLMComparisonBlockDef } from "./components/block-defaults/llm-comparison-block";
@@ -67,12 +66,6 @@ export type {
     HeaderBackgroundSettings,
     WrapTextSettings,
 } from "./components/block-defaults/grid-block/GridBlock";
-
-// V2 Block Types
-export type { ButtonBlockDefV2 } from "./components/block-defaults/button-block/ButtonBlockV2";
-export type { TextBlockDefV2 } from "./components/block-defaults/text-block/TextBlockV2";
-export type { InputBlockDefV2 } from "./components/block-defaults/input-block/InputBlockV2";
-export type { CardBlockDefV2 } from "./components/block-defaults/card-block/CardBlockV2";
 
 export type {
     Paths,
@@ -87,9 +80,6 @@ export { getValueByPath, copy } from "./utility";
 
 // REGISTRY AND MENUS
 export { DefaultCells } from "./components/cell-defaults";
-export { DefaultBlocks } from "./components/block-defaults";
-
-// V2 Registry
 export { DefaultBlocksV2 } from "./components/block-defaults/DefaultBlocksV2";
 
 export {
@@ -97,11 +87,9 @@ export {
     BLOCK_TYPE_COMPARE,
 } from "./components/block-defaults/block-defaults.constants";
 
-export * from "./components/block-defaults";
-export * from "./components/cell-defaults";
-
 // V2 Block Components
 export * from "./components/block-defaults/index-v2";
+export * from "./components/cell-defaults";
 
 export { QueryImportCellConfig } from "./components/cell-defaults/query-import-cell";
 export { FilterDataCellConfig } from "./components/cell-defaults/filter-data-cell";
@@ -120,5 +108,5 @@ export {
     useFrameHeaders,
 } from "./hooks";
 
-// V2 UTILITIES
-export { cn, getColorClasses, getSizeClasses } from "./utils/tailwind";
+// UTILITIES
+export { cn, getColorClasses, getSizeClasses } from "./utils/tailwind"; 

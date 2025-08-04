@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom base styles for the renderer */
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  
+  body {
+    @apply text-gray-900 bg-white;
+  }
+}
+
+/* Custom component styles */
+@layer components {
+  /* Renderer specific styles */
+  .renderer-container {
+    @apply w-full h-full;
+  }
+  
+  .renderer-loading {
+    @apply flex items-center justify-center;
+  }
+  
+  .renderer-spinner {
+    @apply animate-spin rounded-full border-b-2 border-primary-500;
+  }
+  
+  /* Block wrapper styles */
+  .block-wrapper {
+    @apply relative;
+  }
+  
+  .block-wrapper:hover {
+    @apply ring-2 ring-primary-200 ring-opacity-50;
+  }
+  
+  /* Slot styles */
+  .slot-container {
+    @apply min-h-[20px] border-2 border-dashed border-gray-200 rounded-md p-2;
+  }
+  
+  .slot-container:empty {
+    @apply border-gray-300;
+  }
+  
+  .slot-container:empty::before {
+    content: "Drop content here";
+    @apply text-gray-400 text-sm;
+  }
+}
+
+/* Custom utility classes */
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Component-specific animations */
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s ease-out;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.2s ease-out;
+} 

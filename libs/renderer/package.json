@@ -1,7 +1,7 @@
 {
     "name": "@semoss/renderer",
-    "version": "1.0.0-beta.1",
-    "description": "",
+    "version": "2.0.0",
+    "description": "Renderer library with Tailwind CSS styling",
     "type": "module",
     "main": "./dist/index.mjs",
     "module": "./dist/index.mjs",
@@ -19,14 +19,16 @@
         "test": "vitest run",
         "test:watch": "vitest --watch"
     },
-    "keywords": [],
+    "keywords": ["renderer", "tailwind", "react", "semoss"],
     "author": "",
     "license": "ISC",
     "dependencies": {
-        "@mui/x-data-grid": "^7.28.3",
-        "@mui/x-date-pickers": "6.8.0",
+        "@headlessui/react": "^1.7.18",
+        "@heroicons/react": "^2.1.1",
         "dayjs": "1.11.8",
-        "mermaid": "^10.9.1"
+        "mermaid": "^10.9.1",
+        "clsx": "^2.1.0",
+        "tailwind-merge": "^2.2.1"
     },
     "devDependencies": {
         "@monaco-editor/react": "^4.5.1",
@@ -41,16 +43,19 @@
         "@types/jest": "^29.5.14",
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
+        "autoprefixer": "^10.4.17",
         "dompurify": "^2.3.10",
         "echarts": "^5.5.1",
         "echarts-for-react": "^3.0.2",
         "monaco-editor": "^0.45.0",
+        "postcss": "^8.4.35",
         "react": "18.3.1",
         "react-beautiful-dnd": "^13.1.1",
         "react-hook-form": "^7.34.2",
         "react-vega": "^7.6.0",
         "rollup": "4.44.2",
         "rollup-plugin-delete": "3.0.1",
+        "tailwindcss": "^3.4.1",
         "tslib": "2.5.3",
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
@@ -59,10 +64,6 @@
         "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {
-        "@emotion/react": "11.11.1",
-        "@emotion/styled": "11.11.0",
-        "@mui/icons-material": "6.0.0",
-        "@mui/material": "6.0.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
         "mobx": "6.3.7",
