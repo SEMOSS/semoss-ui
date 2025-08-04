@@ -12,8 +12,6 @@ export { default as CHECKBOX_ACTIVE } from './Checkbox_Active.png';
 export { default as CHECKBOX_HOVER } from './Checkbox_Hover.png';
 export { default as CHIP_ACTIVE } from './Chip_Active.png';
 export { default as CHIP_HOVER } from './Chip_Hover.png';
-export { default as COMPARE_LLMS_ACTIVE } from './Compare_LLMS_Active.png';
-export { default as COMPARE_LLMS_HOVER } from './Compare_LLMS_Hover.png';
 export { default as CONTAINER_ACTIVE } from './Container_Active.png';
 export { default as CONTAINER_HOVER } from './Container_Hover.png';
 export { default as FLIP_CARD_ACTIVE } from './Flip_Card_Active.png';
