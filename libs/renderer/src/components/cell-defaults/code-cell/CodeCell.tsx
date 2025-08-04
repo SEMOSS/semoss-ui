@@ -2,7 +2,14 @@ import { useRef, useState, Suspense, lazy, useEffect } from "react";
 import { observer } from "mobx-react-lite";
 import { Code, KeyboardArrowDown } from "@mui/icons-material";
 
-import { styled, Button, Stack, Select, Markdown, useNotification } from "@semoss/ui";
+import {
+    styled,
+    Button,
+    Stack,
+    Select,
+    Markdown,
+    useNotification,
+} from "@semoss/ui";
 import { runPixel } from "@semoss/sdk/react";
 
 import {
@@ -706,7 +713,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     width="100%"
                                     height={cellHeight ?? getHeight()}
                                     language={
-                                        EDITOR_TYPE[cell.parameters.type].language
+                                        EDITOR_TYPE[cell.parameters.type]
+                                            .language
                                     }
                                     value={
                                         typeof cell.parameters.code === "string"
@@ -799,7 +807,8 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
                                     width="100%"
                                     height={cellHeight ?? getHeight()}
                                     language={
-                                        EDITOR_TYPE[cell.parameters.type].language
+                                        EDITOR_TYPE[cell.parameters.type]
+                                            .language
                                     }
                                     value={
                                         typeof cell.parameters.code === "string"

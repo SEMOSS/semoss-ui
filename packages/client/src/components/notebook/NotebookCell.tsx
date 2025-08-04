@@ -43,7 +43,7 @@ import { AddVariableModal } from './AddVariableModal';
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from '@/utility';
 import { useWorkspace } from '@/hooks';
-
+import DuplicateIcon from '../../assets/img/Duplicate.svg';
 const StyledStack = styled(Stack)(({ theme }) => ({
     paddingBottom: theme.spacing(2),
 }));
@@ -254,6 +254,14 @@ const StyledPlaySpacer = styled('span')(() => ({
     display: 'inline-block',
     width: '17px',
 }));
+
+const StyledDuplicateIcon = styled('img')({
+    width: '1.03rem',
+    height: '1.0625rem',
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    objectFit: 'contain',
+});
 
 interface NotebookCellProps {
     /** Id of the  the query */
@@ -671,11 +679,9 @@ export const NotebookCell = observer(
                                     }}
                                 >
                                     <StyledButtonLabel>
-                                        <LowPriority
-                                            fontSize="medium"
-                                            sx={{
-                                                padding: '2px',
-                                            }}
+                                        <StyledDuplicateIcon
+                                            src={DuplicateIcon}
+                                            alt="Duplicate Icon"
                                         />
                                     </StyledButtonLabel>
                                 </StyledButtonGroupButton>

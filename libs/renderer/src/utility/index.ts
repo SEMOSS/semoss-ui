@@ -1,9 +1,4 @@
 import { SerializedState } from "../store";
-import { useDebounced } from "./useDebounced";
-// import BRAIN from "../assets/BRAIN.png";
-// import { ENGINE_IMAGES } from "../constants";
-
-export { useDebounced as debounced };
 
 /**
  * @desc Checks if output and verify if its a JSON object
@@ -224,20 +219,6 @@ export const setValueByPath = <T extends object>(
 
     // set the value
     current[last] = value;
-};
-
-export const debounce = (func, wait) => {
-    let timeout;
-
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
-
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
 };
 
 /**

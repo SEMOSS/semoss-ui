@@ -29,6 +29,7 @@ import { AxiosResponse } from 'axios';
 
 import { SETTINGS_ROLE } from '@/components/settings/settings.types';
 import { useRootStore } from '@/hooks';
+import { debounced } from '@semoss/sdk/react';
 
 const colors = [
     '#22A4FF',
@@ -544,43 +545,36 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
     engines > 9 && paginationOptions.enginesPageCounts.push(10);
     engines > 19 && paginationOptions.enginesPageCounts.push(20);
 
-    function useDebounce(effect, dependencies, delay) {
-        const callback = useCallback(effect, dependencies);
+    const filterEngines = useCallback(() => {
+        monolithStore
+            .getTeamEngines(
+                groupId,
+                groupType,
+                limit,
+                enginesPage * limit - limit, // offset
+                searchFilter,
+            )
+            .then((data) => {
+                setEngines(data);
+                setHasEngines(true);
+            });
+        monolithStore
+            .getTeamEngines(
+                groupId,
+                groupType,
+                100,
+                0, // offset
+                searchFilter,
+            )
+            .then((data) => setEngineCount(data.length));
+    }, [count, enginesPage, searchFilter]);
 
-        useEffect(() => {
-            const timeout = setTimeout(callback, delay);
-            return () => clearTimeout(timeout);
-        }, [callback, delay]);
-    }
+    const debouncedFilterProjects = debounced(filterEngines, 400);
 
-    // DeBounce Function
-    useDebounce(
-        () => {
-            monolithStore
-                .getTeamEngines(
-                    groupId,
-                    groupType,
-                    limit,
-                    enginesPage * limit - limit, // offset
-                    searchFilter,
-                )
-                .then((data) => {
-                    setEngines(data);
-                    setHasEngines(true);
-                });
-            monolithStore
-                .getTeamEngines(
-                    groupId,
-                    groupType,
-                    100,
-                    0, // offset
-                    searchFilter,
-                )
-                .then((data) => setEngineCount(data.length));
-        },
-        [count, enginesPage, searchFilter],
-        200,
-    );
+    const handleInputChange = (newInputValue) => {
+        setValue('SEARCH_FILTER', newInputValue);
+        debouncedFilterProjects();
+    };
 
     return (
         <StyledEngineContent>
@@ -599,10 +593,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
                                     size="small"
                                     value={searchFilter}
                                     onChange={(e) => {
-                                        setValue(
-                                            'SEARCH_FILTER',
-                                            e.target.value,
-                                        );
+                                        handleInputChange(e.target.value);
                                     }}
                                 />
                             </StyledSearchButtonContainer>

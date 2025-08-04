@@ -17,7 +17,6 @@ import { processData } from "./MapChartProcessData";
 import { formatdatapoints } from "./MapChartTooltipData";
 import { VizBlockContextMenu } from "../../VizBlockContextMenu";
 
-
 const StyledNoDataContainer = styled("div", {
     shouldForwardProp: (prop) => prop !== "error",
 })<{ error?: boolean }>(({ error = false, theme }) => ({
