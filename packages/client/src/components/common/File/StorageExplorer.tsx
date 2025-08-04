@@ -225,6 +225,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         }
     };
 
+    /*
     const handleDownloadMultiple = async () => {
         if (selected.length === 0) return;
 
@@ -248,6 +249,81 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
 
             onDownloadMultiple(selected);
             setSelected([]);
+        } catch (e) {
+            console.error('Download multiple error:', e);
+
+            let errorMessage = 'ZIP download failed: ';
+            if (e instanceof Error) {
+                if (e.message.includes('directory')) {
+                    errorMessage +=
+                        'Cannot download directories. Please select files only.';
+                } else if (e.message.includes('file key')) {
+                    errorMessage += 'Files not found or server error occurred.';
+                } else if (
+                    e.message.includes('network') ||
+                    e.message.includes('fetch')
+                ) {
+                    errorMessage +=
+                        'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += e.message;
+                }
+            } else {
+                errorMessage += 'An unexpected error occurred.';
+            }
+
+            console.error(errorMessage);
+        }
+    };
+    */
+
+    const handleDownloadMultiple = async () => {
+        if (selected.length === 0) return;
+
+        try {
+            const downloadedFiles: string[] = [];
+            
+            for (const path of selected) {
+                if (path.endsWith('/')) {
+                    throw new Error(
+                        'Cannot download directories. Please select files only.',
+                    );
+                }
+
+                const filename = extractFilename(path);
+                const downloadQuery = `Storage("${storageId}") | PullFromStorage(storagePath="${path}", filePath="${filename}");`;
+
+                console.log('Downloading file:', path);
+                await monolithStore.runQuery(downloadQuery);
+                downloadedFiles.push(filename);
+            }
+
+            if (downloadedFiles.length > 0) {
+                const filePathsString = downloadedFiles
+                    .map((file) => `"${file}"`)
+                    .join(', ');
+                const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
+
+                console.log('Creating zip file with downloaded files');
+                const response = await monolithStore.runQuery(zipQuery);
+                console.log('Zip response:', response);
+
+                const fileKey = response.pixelReturn[0]?.output;
+
+                if (!fileKey) {
+                    throw new Error(
+                        'Failed to get file key for download. The files may not exist or there was a server error.',
+                    );
+                }
+
+                await monolithStore.download(
+                    configStore.store.insightID,
+                    fileKey,
+                );
+
+                onDownloadMultiple(selected);
+                setSelected([]);
+            }
         } catch (e) {
             console.error('Download multiple error:', e);
 
