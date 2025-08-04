@@ -28,7 +28,6 @@ import { config as IterationSettingsConfig } from './block-settings/iteration-bl
 
 import { config as LinkSettingsConfig } from './block-settings/link-block';
 import { config as LogsSettingsConfig } from './block-settings/logs-block';
-import { config as LLMComparisonSettingsConfig } from './block-settings/llm-comparison-block';
 
 import { config as MarkdownSettingsConfig } from './block-settings/markdown-block';
 import { config as MermaidSettingsConfig } from './block-settings/mermaid-block';
@@ -75,7 +74,6 @@ export const BlockSettingsRegistry = {
     ['input']: InputSettingsConfig,
     ['iteration']: IterationSettingsConfig,
     ['link']: LinkSettingsConfig,
-    ['llmComparison']: LLMComparisonSettingsConfig,
     ['logs']: LogsSettingsConfig,
     ['markdown']: MarkdownSettingsConfig,
     ['mermaid']: MermaidSettingsConfig,
