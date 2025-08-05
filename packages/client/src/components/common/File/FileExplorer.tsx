@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon, TreeView, styled } from '@semoss/ui';
 import { ExpandMore, ChevronRight } from '@mui/icons-material';
 
-import { usePixel, useRootStore } from '@/hooks';
+import { usePixel } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { FileExplorerItem } from './FileExplorerItem';
@@ -24,7 +24,7 @@ interface FileExplorerProps {
     type: 'app' | 'insight';
 
     /** Space where the file is located */
-    space?: string;
+    space: string;
 
     /** insight id */
     insightId?: string | null;
@@ -33,7 +33,7 @@ interface FileExplorerProps {
     onSelect?: (path: string) => void;
 
     /** Triggered when the Label starts dragging */
-    onDragStart?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
+    onDragStart: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
     /** Triggered when the item ends dragging */
     onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
@@ -58,9 +58,6 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onToggleExpand,
     } = props;
 
-    const { monolithStore } = useRootStore();
-
-    // Get assets for app/insight types
     const getAssets = usePixel<
         {
             lastModified: string;
@@ -91,18 +88,16 @@ export const FileExplorer = (props: FileExplorerProps) => {
         setSelected(selected);
     };
 
-
+    /**
+     * Triggered when a item is toggled
+     * @param expanded - newly expanded values
+     */
 
     if (!initLoadComplete) {
         return (
-            <LoadingScreen.Trigger
-                description="Retrieving files from application..."
-            />
+            <LoadingScreen.Trigger description="Retrieving files from application..." />
         );
     }
-
-    // Get files from assets
-    const files = getAssets.status === 'SUCCESS' ? getAssets.data : [];
 
     return (
         <StyledTreeView
@@ -132,10 +127,11 @@ export const FileExplorer = (props: FileExplorerProps) => {
             }
         >
             <LoadingScreen>
-                {getAssets.status === 'INITIAL' || getAssets.status === 'LOADING' ? (
+                {getAssets.status === 'INITIAL' ||
+                getAssets.status === 'LOADING' ? (
                     <LoadingScreen.Trigger />
                 ) : getAssets.status === 'SUCCESS' ? (
-                    files.map((n) => {
+                    getAssets.data.map((n) => {
                         return (
                             <FileExplorerItem
                                 key={n.path}
