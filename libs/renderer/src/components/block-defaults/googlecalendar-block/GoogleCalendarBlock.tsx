@@ -368,33 +368,6 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
           }
         }
 
-        // Get start and end dates with proper field mapping
-        const startDate =
-          outputRead?.starttime ||
-          outputRead?.startTime ||
-          outputRead?.start ||
-          "";
-        const endDate =
-          outputRead?.endtime || outputRead?.endTime || outputRead?.end || "";
-
-        const eventDetails = {
-          id: eventId,
-          summary: outputRead?.summary || "",
-          location: outputRead?.location || "",
-          description: outputRead?.description || "",
-          startDate: startDate,
-          endDate: endDate,
-          email: Array.isArray(outputRead?.attendees)
-            ? outputRead.attendees.map((a) => a.email).join(", ")
-            : "",
-          video: outputRead?.video || false,
-          // Only include frequency and until for recurring events
-          ...(isRecurringEvent && {
-            frequency: outputRead?.frequency || "",
-            until: formattedUntil,
-          }),
-        };
-
         // Handle different use cases
         if (options?.setFormData) {
           // For form-based reading (navigation bar)
@@ -426,6 +399,167 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
       }
 
       throw error;
+    }
+  };
+
+  // Function to populate update form with event details
+  const populateUpdateForm = async (event: {
+    id: string;
+    recurringId?: string;
+    summary: string;
+  }) => {
+    try {
+      let readEventId: string;
+      let updateEventId: string;
+
+      if (event.recurringId) {
+        readEventId = event.recurringId;
+        updateEventId = event.recurringId;
+      } else {
+        readEventId = event.id;
+        updateEventId = event.id;
+      }
+
+      // Use the existing readEventDetails function
+      const outputRead = await readEventDetails(readEventId);
+
+      const isRecurringEvent =
+        event.recurringId ||
+        outputRead?.recurrence ||
+        outputRead?.frequency ||
+        outputRead?.until;
+
+      setUpdateValue("GOOGLECALENDAR_ID", updateEventId);
+      setUpdateValue("GOOGLECALENDAR_SUMMARY", outputRead?.summary || "");
+
+      const location =
+        outputRead?.location ||
+        outputRead?.where ||
+        outputRead?.place ||
+        "";
+      setUpdateValue("GOOGLECALENDAR_LOCATION", location);
+
+      setUpdateValue("GOOGLECALENDAR_DESCRIPTION", outputRead?.description || "");
+
+      const startDate =
+        outputRead?.starttime ||
+        outputRead?.startTime ||
+        outputRead?.start?.dateTime ||
+        outputRead?.start ||
+        "";
+      const endDate =
+        outputRead?.endtime ||
+        outputRead?.endTime ||
+        outputRead?.end?.dateTime ||
+        outputRead?.end ||
+        "";
+
+      if (startDate) {
+        try {
+          const formattedStartDate = dayjs(startDate).isValid()
+            ? dayjs(startDate).toISOString()
+            : "";
+          setUpdateValue("GOOGLECALENDAR_STARTDATE", formattedStartDate);
+        } catch (e) {
+          setUpdateValue("GOOGLECALENDAR_STARTDATE", "");
+        }
+      } else {
+        setUpdateValue("GOOGLECALENDAR_STARTDATE", "");
+      }
+
+      if (endDate) {
+        try {
+          const formattedEndDate = dayjs(endDate).isValid()
+            ? dayjs(endDate).toISOString()
+            : "";
+          setUpdateValue("GOOGLECALENDAR_ENDDATE", formattedEndDate);
+        } catch (e) {
+          setUpdateValue("GOOGLECALENDAR_ENDDATE", "");
+        }
+      } else {
+        setUpdateValue("GOOGLECALENDAR_ENDDATE", "");
+      }
+
+      const attendees = outputRead?.attendees || outputRead?.guests || [];
+      const emails = Array.isArray(attendees)
+        ? attendees
+            .map((a) => a.email || a)
+            .filter(Boolean)
+            .join(", ")
+        : "";
+      setUpdateValue("GOOGLECALENDAR_EMAIL", emails);
+
+      setUpdateValue(
+        "GOOGLECALENDAR_VIDEO",
+        !!outputRead?.video || !!outputRead?.hangoutLink
+      );
+
+      const untilDate =
+        outputRead?.until ||
+        outputRead?.recurringUntil ||
+        outputRead?.recurrence?.until ||
+        outputRead?.endRecurrence ||
+        outputRead?.recurringEnd ||
+        "";
+
+      if (isRecurringEvent) {
+        const frequency =
+          outputRead?.frequency || outputRead?.recurrence?.freq || "DAILY";
+        setUpdateValue("GOOGLECALENDAR_FREQUENCY", frequency);
+        setUpdateFrequency(frequency);
+
+        if (untilDate) {
+          try {
+            let parsedDate;
+
+            if (
+              typeof untilDate === "string" &&
+              /^\d{8}T\d{6}Z$/.test(untilDate)
+            ) {
+              const year = untilDate.substring(0, 4);
+              const month = untilDate.substring(4, 6);
+              const day = untilDate.substring(6, 8);
+              const hour = untilDate.substring(9, 11);
+              const minute = untilDate.substring(11, 13);
+              const second = untilDate.substring(13, 15);
+
+              const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
+              parsedDate = dayjs(isoString);
+            } else if (dayjs(untilDate).isValid()) {
+              parsedDate = dayjs(untilDate);
+            }
+
+            if (parsedDate && parsedDate.isValid()) {
+              const formattedUntil = parsedDate.toISOString();
+              setUpdateValue("GOOGLECALENDAR_UNTIL", formattedUntil);
+            } else {
+              setUpdateValue("GOOGLECALENDAR_UNTIL", "");
+            }
+          } catch (e) {
+            setUpdateValue("GOOGLECALENDAR_UNTIL", "");
+          }
+        } else {
+          setUpdateValue("GOOGLECALENDAR_UNTIL", "");
+        }
+      } else {
+        setUpdateValue("GOOGLECALENDAR_FREQUENCY", "NONE");
+        setUpdateFrequency("NONE");
+        setUpdateValue("GOOGLECALENDAR_UNTIL", "");
+      }
+    } catch (error) {
+      console.error("Error fetching event for edit:", error);
+      // Fallback values
+      setUpdateValue("GOOGLECALENDAR_ID", event.recurringId || event.id);
+      setUpdateValue("GOOGLECALENDAR_SUMMARY", event.summary);
+      setUpdateValue("GOOGLECALENDAR_LOCATION", "");
+      setUpdateValue("GOOGLECALENDAR_DESCRIPTION", "");
+      setUpdateValue("GOOGLECALENDAR_STARTDATE", "");
+      setUpdateValue("GOOGLECALENDAR_ENDDATE", "");
+      setUpdateValue("GOOGLECALENDAR_EMAIL", "");
+      setUpdateValue("GOOGLECALENDAR_VIDEO", false);
+      setUpdateValue("GOOGLECALENDAR_FREQUENCY", "NONE");
+      setUpdateFrequency("NONE");
+      setUpdateValue("GOOGLECALENDAR_UNTIL", "");
     }
   };
 
@@ -883,7 +1017,7 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
                 rules={{ required: "Start Date is required" }}
                 render={({ field, fieldState }) => (
                   <DateTimePicker
-                    label="Start Date"
+                    label="Start Time"
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(dateString) => field.onChange(dateString || "")}
                     format="MM-DD-YYYY hh:mm A"
@@ -903,7 +1037,7 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
                 rules={{ required: "End Date is required" }}
                 render={({ field, fieldState }) => (
                   <DateTimePicker
-                    label="End Date"
+                    label="End Time"
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(dateString) => field.onChange(dateString || "")}
                     format="MM-DD-YYYY hh:mm A"
@@ -1134,7 +1268,7 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
                 }}
                 render={({ field, fieldState }) => (
                   <DateTimePicker
-                    label="Start Date"
+                    label="Start Time"
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(dateString) => field.onChange(dateString || "")}
                     format="MM-DD-YYYY hh:mm A"
@@ -1155,7 +1289,7 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
                 }}
                 render={({ field, fieldState }) => (
                   <DateTimePicker
-                    label="End Date"
+                    label="End Time"
                     value={field.value ? dayjs(field.value) : null}
                     onChange={(dateString) => field.onChange(dateString || "")}
                     format="MM-DD-YYYY hh:mm A"
@@ -1748,335 +1882,12 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
                                                 // For updating recurring events, also use the masterId so changes apply to entire series
                                                 updateEventId =
                                                   event.recurringId;
-                                              } else {
-                                                // For single events, use the regular event ID
-                                                readEventId = event.id;
-                                                updateEventId = event.id;
                                               }
 
-                                              const response = await runPixel<
-                                                [string]
-                                              >(
-                                                `META | GoogleCalendarReadEvent(id="${readEventId}")`
-                                              );
-                                              let outputRead: any =
-                                                response.pixelReturn[0].output;
-
-                                              if (
-                                                typeof outputRead === "string"
-                                              ) {
-                                                try {
-                                                  outputRead =
-                                                    JSON.parse(outputRead);
-                                                } catch (e) {
-                                                  outputRead = {};
-                                                }
-                                              }
-
-                                              // Check if this is a recurring event
-                                              const isRecurringEvent =
-                                                event.recurringId ||
-                                                outputRead?.recurrence ||
-                                                outputRead?.frequency ||
-                                                outputRead?.until;
-
-                                              // Set the ID field - use masterId for recurring events so changes apply to entire series
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_ID",
-                                                updateEventId
-                                              );
-
-                                              // Set basic event details with enhanced field mapping
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_SUMMARY",
-                                                outputRead?.summary || ""
-                                              );
-
-                                              // Enhanced location field mapping - check multiple possible field names
-                                              const location =
-                                                outputRead?.location ||
-                                                outputRead?.where ||
-                                                outputRead?.place ||
-                                                "";
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_LOCATION",
-                                                location
-                                              );
-
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_DESCRIPTION",
-                                                outputRead?.description || ""
-                                              );
-
-                                              // Enhanced date field mapping - check multiple possible field names
-                                              const startDate =
-                                                outputRead?.starttime ||
-                                                outputRead?.startTime ||
-                                                outputRead?.start?.dateTime ||
-                                                outputRead?.start ||
-                                                "";
-                                              const endDate =
-                                                outputRead?.endtime ||
-                                                outputRead?.endTime ||
-                                                outputRead?.end?.dateTime ||
-                                                outputRead?.end ||
-                                                "";
-
-                                              // Format dates properly for DateTimePicker
-                                              if (startDate) {
-                                                try {
-                                                  const formattedStartDate =
-                                                    dayjs(startDate).isValid()
-                                                      ? dayjs(
-                                                          startDate
-                                                        ).toISOString()
-                                                      : "";
-                                                  setUpdateValue(
-                                                    "GOOGLECALENDAR_STARTDATE",
-                                                    formattedStartDate
-                                                  );
-                                                } catch (e) {
-                                                  setUpdateValue(
-                                                    "GOOGLECALENDAR_STARTDATE",
-                                                    ""
-                                                  );
-                                                }
-                                              } else {
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_STARTDATE",
-                                                  ""
-                                                );
-                                              }
-
-                                              if (endDate) {
-                                                try {
-                                                  const formattedEndDate =
-                                                    dayjs(endDate).isValid()
-                                                      ? dayjs(
-                                                          endDate
-                                                        ).toISOString()
-                                                      : "";
-                                                  setUpdateValue(
-                                                    "GOOGLECALENDAR_ENDDATE",
-                                                    formattedEndDate
-                                                  );
-                                                } catch (e) {
-                                                  setUpdateValue(
-                                                    "GOOGLECALENDAR_ENDDATE",
-                                                    ""
-                                                  );
-                                                }
-                                              } else {
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_ENDDATE",
-                                                  ""
-                                                );
-                                              }
-
-                                              // Enhanced email field mapping
-                                              const attendees =
-                                                outputRead?.attendees ||
-                                                outputRead?.guests ||
-                                                [];
-                                              const emails = Array.isArray(
-                                                attendees
-                                              )
-                                                ? attendees
-                                                    .map((a) => a.email || a)
-                                                    .filter(Boolean)
-                                                    .join(", ")
-                                                : "";
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_EMAIL",
-                                                emails
-                                              );
-
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_VIDEO",
-                                                !!outputRead?.video ||
-                                                  !!outputRead?.hangoutLink
-                                              );
-
-                                              // Enhanced until date mapping
-                                              const untilDate =
-                                                outputRead?.until ||
-                                                outputRead?.recurringUntil ||
-                                                outputRead?.recurrence?.until ||
-                                                outputRead?.endRecurrence ||
-                                                outputRead?.recurringEnd ||
-                                                "";
-
-                                              // Handle frequency and until based on event type
-                                              if (isRecurringEvent) {
-                                                // For recurring events, populate frequency and until
-                                                const frequency =
-                                                  outputRead?.frequency ||
-                                                  outputRead?.recurrence
-                                                    ?.freq ||
-                                                  "DAILY";
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_FREQUENCY",
-                                                  frequency
-                                                );
-                                                setUpdateFrequency(frequency); // Update local state
-
-                                                if (untilDate) {
-                                                  try {
-                                                    // Try different date parsing approaches
-                                                    let parsedDate;
-
-                                                    // Check if it's Google Calendar format (20250805T093000Z)
-                                                    if (
-                                                      typeof untilDate ===
-                                                        "string" &&
-                                                      /^\d{8}T\d{6}Z$/.test(
-                                                        untilDate
-                                                      )
-                                                    ) {
-                                                      // Parse Google Calendar format: 20250805T093000Z
-                                                      const year =
-                                                        untilDate.substring(
-                                                          0,
-                                                          4
-                                                        );
-                                                      const month =
-                                                        untilDate.substring(
-                                                          4,
-                                                          6
-                                                        );
-                                                      const day =
-                                                        untilDate.substring(
-                                                          6,
-                                                          8
-                                                        );
-                                                      const hour =
-                                                        untilDate.substring(
-                                                          9,
-                                                          11
-                                                        );
-                                                      const minute =
-                                                        untilDate.substring(
-                                                          11,
-                                                          13
-                                                        );
-                                                      const second =
-                                                        untilDate.substring(
-                                                          13,
-                                                          15
-                                                        );
-
-                                                      const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
-                                                      parsedDate =
-                                                        dayjs(isoString);
-                                                    }
-                                                    // First try direct parsing
-                                                    else if (
-                                                      dayjs(untilDate).isValid()
-                                                    ) {
-                                                      parsedDate =
-                                                        dayjs(untilDate);
-                                                    }
-                                                    // Try parsing as ISO string
-                                                    else if (
-                                                      typeof untilDate ===
-                                                        "string" &&
-                                                      untilDate.includes("T")
-                                                    ) {
-                                                      parsedDate =
-                                                        dayjs(untilDate);
-                                                    }
-                                                    // Try parsing as date only
-                                                    else if (
-                                                      typeof untilDate ===
-                                                      "string"
-                                                    ) {
-                                                      parsedDate =
-                                                        dayjs(untilDate);
-                                                    }
-
-                                                    if (
-                                                      parsedDate &&
-                                                      parsedDate.isValid()
-                                                    ) {
-                                                      const formattedUntil =
-                                                        parsedDate.toISOString();
-                                                      setUpdateValue(
-                                                        "GOOGLECALENDAR_UNTIL",
-                                                        formattedUntil
-                                                      );
-                                                    } else {
-                                                      setUpdateValue(
-                                                        "GOOGLECALENDAR_UNTIL",
-                                                        ""
-                                                      );
-                                                    }
-                                                  } catch (e) {
-                                                    setUpdateValue(
-                                                      "GOOGLECALENDAR_UNTIL",
-                                                      ""
-                                                    );
-                                                  }
-                                                } else {
-                                                  setUpdateValue(
-                                                    "GOOGLECALENDAR_UNTIL",
-                                                    ""
-                                                  );
-                                                }
-                                              } else {
-                                                // For single events, set frequency to NONE and clear until
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_FREQUENCY",
-                                                  "NONE"
-                                                );
-                                                setUpdateFrequency("NONE"); // Update local state
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_UNTIL",
-                                                  ""
-                                                );
-                                              }
+                                              // Use the populateUpdateForm function
+                                              await populateUpdateForm(event);
                                             } catch (error) {
-                                              // Fallback values in case of error
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_ID",
-                                                event.recurringId || event.id
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_SUMMARY",
-                                                event.summary
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_LOCATION",
-                                                ""
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_DESCRIPTION",
-                                                ""
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_STARTDATE",
-                                                ""
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_ENDDATE",
-                                                ""
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_EMAIL",
-                                                ""
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_VIDEO",
-                                                false
-                                              );
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_FREQUENCY",
-                                                "NONE"
-                                              );
-                                              setUpdateFrequency("NONE"); // Update local state
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_UNTIL",
-                                                ""
-                                              );
+                                              console.error("Error fetching event for edit:", error);
                                             }
                                           }}
                                         >
@@ -2705,283 +2516,8 @@ export const GoogleCalendarBlock: BlockComponent = observer(({ id }) => {
                                       // Reset the local frequency state
                                       setUpdateFrequency("NONE");
 
-                                      // Fetch event details by ID - same logic as in list view
-                                      try {
-                                        let readEventId: string;
-                                        let updateEventId: string;
-
-                                        if (event.recurringId) {
-                                          readEventId = event.recurringId;
-                                          updateEventId = event.recurringId;
-                                        } else {
-                                          readEventId = event.id;
-                                          updateEventId = event.id;
-                                        }
-
-                                        const response = await runPixel<
-                                          [string]
-                                        >(
-                                          `META | GoogleCalendarReadEvent(id="${readEventId}")`
-                                        );
-                                        let outputRead: any =
-                                          response.pixelReturn[0].output;
-
-                                        if (typeof outputRead === "string") {
-                                          try {
-                                            outputRead = JSON.parse(outputRead);
-                                          } catch (e) {
-                                            outputRead = {};
-                                          }
-                                        }
-
-                                        const isRecurringEvent =
-                                          event.recurringId ||
-                                          outputRead?.recurrence ||
-                                          outputRead?.frequency ||
-                                          outputRead?.until;
-
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_ID",
-                                          updateEventId
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_SUMMARY",
-                                          outputRead?.summary || ""
-                                        );
-
-                                        const location =
-                                          outputRead?.location ||
-                                          outputRead?.where ||
-                                          outputRead?.place ||
-                                          "";
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_LOCATION",
-                                          location
-                                        );
-
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_DESCRIPTION",
-                                          outputRead?.description || ""
-                                        );
-
-                                        const startDate =
-                                          outputRead?.starttime ||
-                                          outputRead?.startTime ||
-                                          outputRead?.start?.dateTime ||
-                                          outputRead?.start ||
-                                          "";
-                                        const endDate =
-                                          outputRead?.endtime ||
-                                          outputRead?.endTime ||
-                                          outputRead?.end?.dateTime ||
-                                          outputRead?.end ||
-                                          "";
-
-                                        if (startDate) {
-                                          try {
-                                            const formattedStartDate = dayjs(
-                                              startDate
-                                            ).isValid()
-                                              ? dayjs(startDate).toISOString()
-                                              : "";
-                                            setUpdateValue(
-                                              "GOOGLECALENDAR_STARTDATE",
-                                              formattedStartDate
-                                            );
-                                          } catch (e) {
-                                            setUpdateValue(
-                                              "GOOGLECALENDAR_STARTDATE",
-                                              ""
-                                            );
-                                          }
-                                        } else {
-                                          setUpdateValue(
-                                            "GOOGLECALENDAR_STARTDATE",
-                                            ""
-                                          );
-                                        }
-
-                                        if (endDate) {
-                                          try {
-                                            const formattedEndDate = dayjs(
-                                              endDate
-                                            ).isValid()
-                                              ? dayjs(endDate).toISOString()
-                                              : "";
-                                            setUpdateValue(
-                                              "GOOGLECALENDAR_ENDDATE",
-                                              formattedEndDate
-                                            );
-                                          } catch (e) {
-                                            setUpdateValue(
-                                              "GOOGLECALENDAR_ENDDATE",
-                                              ""
-                                            );
-                                          }
-                                        } else {
-                                          setUpdateValue(
-                                            "GOOGLECALENDAR_ENDDATE",
-                                            ""
-                                          );
-                                        }
-
-                                        const attendees =
-                                          outputRead?.attendees ||
-                                          outputRead?.guests ||
-                                          [];
-                                        const emails = Array.isArray(attendees)
-                                          ? attendees
-                                              .map((a) => a.email || a)
-                                              .filter(Boolean)
-                                              .join(", ")
-                                          : "";
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_EMAIL",
-                                          emails
-                                        );
-
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_VIDEO",
-                                          !!outputRead?.video ||
-                                            !!outputRead?.hangoutLink
-                                        );
-
-                                        const untilDate =
-                                          outputRead?.until ||
-                                          outputRead?.recurringUntil ||
-                                          outputRead?.recurrence?.until ||
-                                          outputRead?.endRecurrence ||
-                                          outputRead?.recurringEnd ||
-                                          "";
-
-                                        if (isRecurringEvent) {
-                                          const frequency =
-                                            outputRead?.frequency ||
-                                            outputRead?.recurrence?.freq ||
-                                            "DAILY";
-                                          setUpdateValue(
-                                            "GOOGLECALENDAR_FREQUENCY",
-                                            frequency
-                                          );
-                                          setUpdateFrequency(frequency);
-
-                                          if (untilDate) {
-                                            try {
-                                              let parsedDate;
-
-                                              if (
-                                                typeof untilDate === "string" &&
-                                                /^\d{8}T\d{6}Z$/.test(untilDate)
-                                              ) {
-                                                const year =
-                                                  untilDate.substring(0, 4);
-                                                const month =
-                                                  untilDate.substring(4, 6);
-                                                const day = untilDate.substring(
-                                                  6,
-                                                  8
-                                                );
-                                                const hour =
-                                                  untilDate.substring(9, 11);
-                                                const minute =
-                                                  untilDate.substring(11, 13);
-                                                const second =
-                                                  untilDate.substring(13, 15);
-
-                                                const isoString = `${year}-${month}-${day}T${hour}:${minute}:${second}Z`;
-                                                parsedDate = dayjs(isoString);
-                                              } else if (
-                                                dayjs(untilDate).isValid()
-                                              ) {
-                                                parsedDate = dayjs(untilDate);
-                                              }
-
-                                              if (
-                                                parsedDate &&
-                                                parsedDate.isValid()
-                                              ) {
-                                                const formattedUntil =
-                                                  parsedDate.toISOString();
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_UNTIL",
-                                                  formattedUntil
-                                                );
-                                              } else {
-                                                setUpdateValue(
-                                                  "GOOGLECALENDAR_UNTIL",
-                                                  ""
-                                                );
-                                              }
-                                            } catch (e) {
-                                              setUpdateValue(
-                                                "GOOGLECALENDAR_UNTIL",
-                                                ""
-                                              );
-                                            }
-                                          } else {
-                                            setUpdateValue(
-                                              "GOOGLECALENDAR_UNTIL",
-                                              ""
-                                            );
-                                          }
-                                        } else {
-                                          setUpdateValue(
-                                            "GOOGLECALENDAR_FREQUENCY",
-                                            "NONE"
-                                          );
-                                          setUpdateFrequency("NONE");
-                                          setUpdateValue(
-                                            "GOOGLECALENDAR_UNTIL",
-                                            ""
-                                          );
-                                        }
-                                      } catch (error) {
-                                        console.error(
-                                          "Error fetching event for edit:",
-                                          error
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_ID",
-                                          event.recurringId || event.id
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_SUMMARY",
-                                          event.summary
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_LOCATION",
-                                          ""
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_DESCRIPTION",
-                                          ""
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_STARTDATE",
-                                          ""
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_ENDDATE",
-                                          ""
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_EMAIL",
-                                          ""
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_VIDEO",
-                                          false
-                                        );
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_FREQUENCY",
-                                          "NONE"
-                                        );
-                                        setUpdateFrequency("NONE");
-                                        setUpdateValue(
-                                          "GOOGLECALENDAR_UNTIL",
-                                          ""
-                                        );
-                                      }
+                                      // Use the populateUpdateForm function
+                                      await populateUpdateForm(event);
                                     }}
                                     sx={{
                                       textTransform: "none",
