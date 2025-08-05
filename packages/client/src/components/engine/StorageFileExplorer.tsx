@@ -496,12 +496,14 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                         </Icon>
                     }
                 >
-                    <LoadingScreen key={refreshCounter}>
-                        {getStorageFiles.status === 'INITIAL' ||
-                        getStorageFiles.status === 'LOADING' ? (
+                    {getStorageFiles.status === 'INITIAL' ||
+                    getStorageFiles.status === 'LOADING' ? (
+                        <LoadingScreen>
                             <LoadingScreen.Trigger />
-                        ) : getStorageFiles.status === 'SUCCESS' ? (
-                            files.map((n) => {
+                        </LoadingScreen>
+                    ) : getStorageFiles.status === 'SUCCESS' ? (
+                        <div key={refreshCounter}>
+                            {files.map((n) => {
                                 return (
                                     <StorageExplorerItem
                                         key={n.path}
@@ -533,9 +535,9 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                                         }}
                                     />
                                 );
-                            })
-                        ) : null}
-                    </LoadingScreen>
+                            })}
+                        </div>
+                    ) : null}
                 </StyledTreeView>
             </StyledFileExplorerContainer>
 
