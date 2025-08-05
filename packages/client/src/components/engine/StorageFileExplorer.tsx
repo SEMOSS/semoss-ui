@@ -75,7 +75,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
     const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
     const [selectedFile, setSelectedFile] = useState<string>('');
-    const [refreshCounter, setRefreshCounter] = useState(0);
     const [openPopUp, setOpenPopUp] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [selected, setSelected] = useState<string[]>([]);
@@ -89,7 +88,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
     const refreshFiles = () => {
         getStorageFiles.refresh();
-        setRefreshCounter((prev) => prev + 1);
     };
 
     const handleToggleExpand = (path: string) => {
@@ -441,7 +439,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 </div>
             </StyledHeader>
 
-            <StyledFileExplorerContainer key={refreshCounter}>
+            <StyledFileExplorerContainer>
                 <StyledTreeHeader>
                     <Typography variant="body2" color="textSecondary">
                         {selected.length > 0 ? `${selected.length} item(s) selected` : 'No items selected'}
