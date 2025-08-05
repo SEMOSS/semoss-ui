@@ -1,45 +1,43 @@
-import { useEffect, useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Close } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import html2canvas from 'html2canvas';
-import { ArrowBack, Close, PreviewOutlined } from '@mui/icons-material';
-
+import { ArrowBack, useBlocks, PreviewOutlined } from "@semoss/renderer";
 import {
-    styled,
-    createFilterOptions,
-    Typography,
-    Modal,
-    IconButton,
-    Button,
-    TextField,
-    Autocomplete,
-    useNotification,
+	Autocomplete,
+	Button,
+	createFilterOptions,
+	IconButton,
+	Modal,
+	styled,
+	TextField,
+	Typography,
+	useNotification,
     RadioGroup,
     Box,
     Tooltip,
-} from '@semoss/ui';
-
-import { useRootStore } from '@/hooks';
-import { useBlocks } from '@semoss/renderer';
-import { SECTION_ORDER } from '../blocks-workspace/menus/default-menu';
+} from "@semoss/ui";
+import { useRootStore } from "@/hooks";
+import { SECTION_ORDER } from "../blocks-workspace/menus/default-menu";
 import { getBlockElement } from '@/stores';
 import { DesignerMenuItem } from '../blocks-workspace/menus/menu-types';
 import { CommunityLayers } from './CommunityLayers';
 
 const StyledModalHeading = styled(Modal.Title)({
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+	display: "flex",
+	justifyContent: "space-between",
+	alignItems: "center",
 });
 
 const StyledTitle = styled(Typography)({
-    fontWeight: 500,
+	fontWeight: 500,
 });
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(2),
-    paddingTop: `${theme.spacing(1)}!important`,
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+	paddingTop: `${theme.spacing(1)}!important`,
     width: '100%',
 }));
 
@@ -57,37 +55,44 @@ const StyledButtonGroupIconButton = styled(IconButton)(({ theme }) => ({
 }));
 
 interface EditDetailsModalProps {
-    isOpen: boolean;
-    selected: any;
-    onClose: (reset?: boolean) => void;
+	isOpen: boolean;
+	selected: any;
+	onClose: (reset?: boolean) => void;
     isEdit?: boolean;
     block_json?: DesignerMenuItem;
 }
 
 interface AddAsClientBlockTypes {
-    name: string;
-    section: string;
+	name: string;
+	section: string;
     helperText: string;
     visibility: 'private' | 'public';
-    block_json: any;
+	block_json: any;
+}
+
+type Dict<T = any> = Record<string, T>;
+
+interface ScanResult {
+	queries: Dict;
+	variables: Dict;
 }
 
 export const AddAsClientBlock: AddAsClientBlockTypes = {
-    name: '',
-    section: '',
+	name: "",
+	section: "",
     helperText: '',
     visibility: 'private',
-    block_json: {},
+	block_json: {},
 };
 
 export const AddClientBlockModal = (props: EditDetailsModalProps) => {
-    const { isOpen, selected, onClose, isEdit, block_json } = props;
-    const { control, setValue, reset, handleSubmit } =
-        useForm<AddAsClientBlockTypes>({ defaultValues: AddAsClientBlock });
-    const { monolithStore, configStore } = useRootStore();
-    const { registry, state } = useBlocks();
-    const notification = useNotification();
-    const allowedKeys = ['widget', 'data', 'listeners', 'slots'];
+	const { isOpen, selected, onClose, isEdit, block_json } = props;
+	const { control, setValue, reset, handleSubmit } =
+		useForm<AddAsClientBlockTypes>({ defaultValues: AddAsClientBlock });
+	const { monolithStore, configStore } = useRootStore();
+	const { registry, state } = useBlocks();
+	const notification = useNotification();
+	const allowedKeys = ["widget", "data", "listeners", "slots", "id"];
     const [showPreviewModal, setShowPreviewModal] = useState(false);
     const [imageDimensions, setImageDimensions] = useState<{
         width: number;
@@ -124,92 +129,212 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
         }));
     };
 
-    /**
-     * Recursively processes the slots of a block to retain only the allowed keys.
-     *
-     * @param {any} value - The slots or part of slots to process.
-     * @param {Record<string, any>} blocks - The entire blocks object for reference.
-     * @returns {any} Processed slots with only allowed keys retained.
-     */
-    const processSlots = (value: any, blocks: Record<string, any>): any => {
-        // Check if the current value is an array
-        if (Array.isArray(value)) {
-            return value.map(
-                (item) =>
-                    // If the item is a string and exists in blocks, process it
-                    typeof item === 'string' && item in blocks
-                        ? Object.fromEntries(
-                              allowedKeys
-                                  .filter((key) => key in blocks[item]) // Filter allowed keys
-                                  .map((key) => [
-                                      key,
-                                      processSlots(blocks[item][key], blocks),
-                                  ]), // Process each key recursively
-                          )
-                        : processSlots(item, blocks), // Recursively process item if not a string or not in blocks
-            );
-            // Check if the current value is an object
-        } else if (typeof value === 'object' && value !== null) {
-            return Object.fromEntries(
-                Object.entries(value).map(([key, val]) => [
-                    key,
-                    processSlots(val, blocks), // Recursively process each entry
-                ]),
-            );
-        } else {
-            // Return value if it's neither an array nor an object
-            return value;
-        }
-    };
+	/**
+	 * Recursively processes the slots of a block to retain only the allowed keys.
+	 *
+	 * @param {any} value - The slots or part of slots to process.
+	 * @param {Record<string, any>} blocks - The entire blocks object for reference.
+	 * @returns {any} Processed slots with only allowed keys retained.
+	 */
+	const processSlots = (value: any, blocks: Record<string, any>): any => {
+		// Check if the current value is an array
+		if (Array.isArray(value)) {
+			return value.map(
+				(item) =>
+					// If the item is a string and exists in blocks, process it
+					typeof item === "string" && item in blocks
+						? Object.fromEntries(
+								allowedKeys
+									.filter((key) => key in blocks[item]) // Filter allowed keys
+									.map((key) => [
+										key,
+										processSlots(blocks[item][key], blocks),
+									]), // Process each key recursively
+							)
+						: processSlots(item, blocks), // Recursively process item if not a string or not in blocks
+			);
+			// Check if the current value is an object
+		} else if (typeof value === "object" && value !== null) {
+			return Object.fromEntries(
+				Object.entries(value).map(([key, val]) => [
+					key,
+					processSlots(val, blocks), // Recursively process each entry
+				]),
+			);
+		} else {
+			// Return value if it's neither an array nor an object
+			return value;
+		}
+	};
 
-    /**
-     * This function is a wrapper around the useForm's handleSubmit function.
-     * It processes the block's slots to remove any unnecessary keys and
-     * recursively calls itself until all the slots are processed.
-     *
-     * Once the slots are processed, it calls the monolith's AddBlock query to
-     * add the block to the monolith's database.
-     *
-     * @param {AddAsClientBlockTypes} data - The data to be sent to the monolith.
-     *
-     * @returns {Promise<void>}
-     */
-    const handleAddAsClientBlock = handleSubmit(
-        async (data: AddAsClientBlockTypes) => {
-            const block = state.blocks[selected];
-            const newClientBlock = {
-                widget: block.widget,
-                data: block.data,
-                listeners: block.listeners,
-                slots: processSlots(block.slots, state.blocks),
-            };
+	const scanBlocks = (
+		blocks: any,
+		allQueries: Dict,
+		allVariables: Dict,
+	): ScanResult => {
+		const qIds = new Set<string>();
+		const vIds = new Set<string>();
 
-            const response = await monolithStore.runQuery<[true]>(
-                `AddBlock(name=["${data.name}"], section=["${
-                    data.section
-                }"], json=["<encode>${JSON.stringify(
-                    newClientBlock,
-                )}</encode>"]);`,
-            );
-            const { output, operationType } = response.pixelReturn[0];
+		const mustacheRE = /{{\s*([^{}\s]+?)\s*}}/g;
 
-            if (operationType.indexOf('ERROR') === -1) {
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully added document',
-                });
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-            }
+		/** push-based walk = no recursion, cycle-safe */
+		function walk(root: any) {
+			const seen = new WeakSet<object>();
+			const stack: any[] = [root];
 
-            reset(AddAsClientBlock);
-            onClose();
+			while (stack.length) {
+				const node = stack.pop();
+				if (node == null) continue;
+
+				/* ---------- arrays ---------- */
+				if (Array.isArray(node)) {
+					for (let i = node.length - 1; i >= 0; --i)
+						stack.push(node[i]);
+					continue;
+				}
+
+				/* ---------- objects ---------- */
+				if (typeof node === "object") {
+					// avoid revisiting the same object (break cycles)
+					if (seen.has(node)) continue;
+					seen.add(node);
+
+					const queryId =
+						(node as any).payload?.queryId ??
+						(node as any).queryId ??
+						(node as any).id;
+
+					// query found, maybe add
+					if (typeof queryId === "string") qIds.add(queryId);
+
+					// NEW LOGIC — check for { queryId, cellId }
+					if (
+						node.payload &&
+						typeof node.payload.queryId === "string" &&
+						typeof node.payload.cellId === "string"
+					) {
+						const alias = state.getAlias(
+							node.payload.queryId,
+							node.payload.cellId,
+						);
+						if (alias && alias in allVariables) {
+							vIds.add(alias);
+						}
+					}
+
+					// enqueue own values
+					for (const v of Object.values(node)) stack.push(v);
+					continue;
+				}
+
+				/* ---------- strings ---------- */
+				if (typeof node === "string") {
+					let m: RegExpExecArray | null;
+					while ((m = mustacheRE.exec(node))) {
+						const rootId = m[1].split(".")[0]; // trim .prop chain
+						if (rootId in allQueries) qIds.add(rootId);
+						if (rootId in allVariables) vIds.add(rootId);
+					}
+				}
+			}
+		}
+
+		/* pass #1 – widget tree */
+		walk(blocks);
+
+		/* pass #2 – transitive scan of every used query */
+		const processed = new Set<string>();
+		const queue = Array.from(qIds);
+
+		while (queue.length) {
+			const qId = queue.pop()!;
+			if (processed.has(qId)) continue;
+			processed.add(qId);
+
+			const qObj = allQueries[qId];
+			if (!qObj) continue; // missing def – ignore
+
+			walk(qObj); // scan its internals
+
+			// if walk() encountered further queries, they’re now in qIds
+			for (const id of qIds) {
+				if (!processed.has(id)) queue.push(id);
+			}
+		}
+
+		/* shape the result */
+		const queries: Dict = {};
+		const variables: Dict = {};
+
+		qIds.forEach((id) => {
+			if (allQueries[id]) queries[id] = allQueries[id];
+		});
+		vIds.forEach((id) => {
+			if (allVariables[id]) variables[id] = allVariables[id];
+		});
+
+		return { queries, variables };
+	};
+
+	/**
+	 * This function is a wrapper around the useForm's handleSubmit function.
+	 * It processes the block's slots to remove any unnecessary keys and
+	 * recursively calls itself until all the slots are processed.
+	 *
+	 * Once the slots are processed, it calls the monolith's AddBlock query to
+	 * add the block to the monolith's database.
+	 *
+	 * @param {AddAsClientBlockTypes} data - The data to be sent to the monolith.
+	 *
+	 * @returns {Promise<void>}
+	 */
+	const handleAddAsClientBlock = handleSubmit(
+		async (data: AddAsClientBlockTypes) => {
+			const block = state.blocks[selected];
+			let newClientBlock = {
+				widget: block.widget,
+				data: block.data,
+				listeners: block.listeners,
+				slots: processSlots(block.slots, state.blocks),
+				id: block.id,
+			};
+			const result = scanBlocks(
+				newClientBlock,
+				state.queries,
+				state.variables,
+			);
+			newClientBlock = {
+				...newClientBlock,
+				queries: result.queries,
+				variables: result.variables,
+			} as typeof newClientBlock & { queries: Dict; variables: Dict };
+
+			const response = await monolithStore.runQuery<[true]>(
+				`AddBlock(name=["${data.name}"], section=["${
+					data.section
+				}"], json=["<encode>${JSON.stringify(
+					newClientBlock,
+				)}</encode>"]);`,
+			);
+			const { output, operationType } = response.pixelReturn[0];
+
+			if (operationType.indexOf("ERROR") === -1) {
+				notification.add({
+					color: "success",
+					message: 'Successfully added document',
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+			}
+
+			reset(AddAsClientBlock);
+			onClose();
             setShowPreviewModal(false);
-        },
-    );
+		},
+	);
 
     const handleSaveAsClientBlock = async () => {
         const itemToSave = localBlockItem;
@@ -256,12 +381,12 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
         onClose();
         setShowPreviewModal(false);
     };
-    const handleInputValidations = (val: string, field: string) => {
-        if (!/^[a-zA-Z_-]*$/.test(val)) {
-            return false;
-        }
-        return true;
-    };
+	const handleInputValidations = (val: string, field: string) => {
+		if (!/^[a-zA-Z_-]*$/.test(val)) {
+			return false;
+		}
+		return true;
+	};
 
     /** html2canvas to PNG conversion */
     const handleCanvasPreview = async () => {
@@ -312,17 +437,17 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
         setShowPreviewModal(false); // Close the second modal and show the first modal
     };
 
-    return (
+	return (
         <>
-            <Modal open={isOpen && !showPreviewModal} fullWidth>
-                <StyledModalHeading>
-                    <StyledTitle variant="h6">
+    		<Modal open={isOpen && !showPreviewModal} fullWidth>
+    			<StyledModalHeading>
+    				<StyledTitle variant="h6">
                         {isEdit ? 'Edit Block' : 'Add Block'}
                     </StyledTitle>
-                    <IconButton size="small" onClick={handleCloseModals}>
-                        <Close />
-                    </IconButton>
-                </StyledModalHeading>
+    				<IconButton size="small" onClick={handleCloseModals}>
+    					<Close />
+    				</IconButton>
+    			</StyledModalHeading>
 
                 <StyledModalContent>
                     {isEdit && (
