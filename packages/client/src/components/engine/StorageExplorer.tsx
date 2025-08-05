@@ -35,19 +35,10 @@ interface StorageExplorerProps {
 
     onSelect?: (path: string) => void;
 
-    onDragStart?: (
-        event: React.DragEvent<HTMLDivElement>,
-        path: string,
-    ) => void;
-
-    onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
-
     onTrashClick?: (
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
-
-    onUpload?: (storagePath: string, localFilePath: string) => void;
 
     onDownload?: (path: string) => void;
  
@@ -61,10 +52,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
     const {
         storageId,
         onSelect = () => null,
-        onDragStart = () => null,
-        onDragEnd = () => null,
         onTrashClick = () => null,
-        onUpload = () => null,
         onDownload = () => null,
         onDeleteMultiple = () => null,
         onDownloadMultiple = () => null,
@@ -81,7 +69,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
     const initLoadComplete = getStorageFiles.status === 'SUCCESS';
     const [selected, setSelected] = React.useState<string[]>([]);
     const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
-    const [filesToDelete, setFilesToDelete] = React.useState<string[]>([]);
 
     const handleOnNodeSelect = (selected: string[]) => {
         onSelect(selected[0] || '');
@@ -95,7 +82,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         try {
             const response = await monolithStore.runQuery(deleteQuery);
             console.log('Delete response:', response);
-            // Trigger the parent's callback
             onTrashClick({} as React.MouseEvent<HTMLButtonElement>, filePath);
         } catch (e) {
             console.error('Delete error:', e);
@@ -118,18 +104,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
             setShowDeleteDialog(false);
         } catch (e) {
             console.error('Delete multiple error:', e);
-        }
-    };
-
-    const handleUpload = async (storagePath: string, localFilePath: string) => {
-        const uploadQuery = `Storage("${storageId}") | PushToStorage(storagePath="${storagePath}", filePath="${localFilePath}");`;
-
-        try {
-            const response = await monolithStore.runQuery(uploadQuery);
-            console.log('Upload response:', response);
-            onUpload(storagePath, localFilePath);
-        } catch (e) {
-            console.error('Upload error:', e);
         }
     };
 
@@ -380,23 +354,11 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                                     lastModified={n.lastModified}
                                     expanded={expandedPaths}
                                     selected={selected}
-                                    onDragStart={(e, path) => {
-                                        onDragStart(e, path);
-                                    }}
-                                    onDragEnd={(e, path) => {
-                                        onDragEnd(e, path);
-                                    }}
                                     onTrashClick={(e, path) => {
                                         handleDelete(path);
                                     }}
-                                    onUpload={(storagePath, localPath) => {
-                                        handleUpload(storagePath, localPath);
-                                    }}
                                     onDownload={(path) => {
                                         handleDownload(path);
-                                    }}
-                                    onDownloadMultiple={(paths) => {
-                                        handleDownloadMultiple();
                                     }}
                                     onSelect={(path, isSelected) => {
                                         let newSelected = [...selected];

@@ -76,11 +76,7 @@ interface StorageExplorerItemProps {
         path: string,
     ) => void;
 
-    onUpload?: (storagePath: string, localFilePath: string) => void;
-
     onDownload?: (path: string) => void;
-    
-    onDownloadMultiple?: (paths: string[]) => void;
     
     onSelect?: (path: string, isSelected: boolean) => void;
 }
@@ -96,9 +92,7 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
         onDragStart = () => null,
         onDragEnd = () => null,
         onTrashClick = () => null,
-        onUpload = () => null,
         onDownload = () => null,
-        onDownloadMultiple = () => null,
         onSelect = () => null,
     } = props;
     const [isHovered, setIsHovered] = useState(false);
@@ -118,10 +112,6 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
             e.stopImmediatePropagation();
         });
     }, []);
-
-    const handleUploadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-
-    };
 
     const handleDownloadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
         e.stopPropagation();
@@ -195,7 +185,6 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                             {isDirectory && (
                                 <IconButton
                                     title={`Upload to ${name}`}
-                                    onClick={handleUploadClick}
                                     size="small"
                                     color={'default'}
                                 >
@@ -258,14 +247,8 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                                        onDragEnd={(e, path) => {
                                            onDragEnd(e, path);
                                        }}
-                                       onUpload={(storagePath, localPath) => {
-                                           onUpload(storagePath, localPath);
-                                       }}
                                        onDownload={(path) => {
                                            onDownload(path);
-                                       }}
-                                       onDownloadMultiple={(paths) => {
-                                           onDownloadMultiple(paths);
                                        }}
                                        onSelect={(path, isSelected) => {
                                            onSelect(path, isSelected);
