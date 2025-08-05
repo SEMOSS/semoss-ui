@@ -38,7 +38,7 @@ export function useVersionsTable(id: string) {
 				const limit = BACKEND_FETCH_SIZE;
 
 				const response = await monolithStore.runQuery(
-					`ProjectCommitDetails(project="${id}", offset="${offset}", limit="${limit}")`,
+					`ProjectCommitDetails(project="${id}", offset="${offset}", limit="${limit}");`,
 				);
 
 				const { output, operationType } = response.pixelReturn[0];

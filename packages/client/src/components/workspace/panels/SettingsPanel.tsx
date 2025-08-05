@@ -40,7 +40,7 @@ const StyledContent = styled("div")(({ theme }) => ({
 	flexShrink: "0",
 }));
 
-type VIEW = "CURRENT" | "PENDING" | "APP";
+type VIEW = "CURRENT" | "PENDING" | "APP" | "VERSIONS";
 
 export const SettingsPanel = () => {
 	const { configStore, monolithStore } = useRootStore();
