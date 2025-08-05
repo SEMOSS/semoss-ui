@@ -97,3 +97,15 @@ export interface CommitVersion {
 	date: string;
 	commitMessage: string;
 }
+
+// Interface for file saved custom event detail
+export interface FileSavedEventDetail {
+	appId: string;
+	path: string;
+	type?: 'file' | 'blocks';
+}
+
+// Custom event type for file saved events
+export interface FileSavedEvent extends CustomEvent<FileSavedEventDetail> {
+	type: 'fileSaved';
+}

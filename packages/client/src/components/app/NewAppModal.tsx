@@ -156,7 +156,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 const saveIndexFilePixel = `
                     SaveAsset(fileName=["${newIndexFilePath}"], content=["<encode>${newIndexFileContent}</encode>"], space=["${appId}"]); 
-                    CommitAsset(filePath=["${newIndexFilePath}"], comment=["Hardcoded comment from the App Page editor"], space=["${appId}"])
+                    CommitAsset(filePath=["${newIndexFilePath}"], comment=["Application initialized successfully"], space=["${appId}"])
                 `;
 
                 const response = await monolithStore.runQuery(

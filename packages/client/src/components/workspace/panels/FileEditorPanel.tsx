@@ -7,6 +7,7 @@ import { FileEditor, FileEditorRefDef } from '@/components/common';
 import { Panel } from './Panel';
 import { useRef, useState } from 'react';
 import { ContentCopyOutlined, SaveOutlined } from '@mui/icons-material';
+import type { FileSavedEventDetail } from '@/types/types';
 
 interface FileEditorPanelProps {
     /** Path to the file location */
@@ -108,18 +109,38 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
             });
         }
     };
-    // Save handler for modal
-    const handleModalSave = () => {
-        fileEditorRef.current?.saveFile(commitMsg);
-        setModalOpen(false);
-        notification.add({
-            color: 'success',
-            message: `Save successful! File is saved with the following commit message: ${commitMsg}`,
-        });
-        setCommitMsg('');
-    };
+	// Save handler for modal
+	const handleModalSave = async () => {
+		try {
+			await fileEditorRef.current?.saveFile(commitMsg);
+			setModalOpen(false);
+			setCommitMsg('');
+			notification.add({
+				color: 'success',
+				message: `Save successful! File is saved with the following commit message: ${commitMsg}`,
+			});
+		} catch (e) {
+			notification.add({
+				color: 'error',
+				message: e.message || 'Error saving file',
+			});
+		}
+	};
 
-    return (
+	
+	//  Handle file saved callback - trigger versions table refresh
+	 
+	const handleFileSaved = () => {
+		// Dispatch a custom event to notify other components that a file was saved
+		const event: CustomEvent<FileSavedEventDetail> = new CustomEvent('fileSaved', {
+			detail: {
+				appId: workspace.appId,
+				path: path,
+				type: 'file'
+			}
+		});
+		window.dispatchEvent(event);
+	};    return (
         <Panel
             actions={
                 <>
@@ -213,6 +234,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
                 insightId={workspace.insightId}
                 path={path}
                 agentModelEngine={workspace.agentModelEngine}
+                onFileSaved={handleFileSaved}
                 onChange={(content, isModified) => {
                     onFileEditorChange(isModified);
                 }}

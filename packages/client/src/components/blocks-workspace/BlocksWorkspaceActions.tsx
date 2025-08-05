@@ -18,6 +18,7 @@ import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { LLMSelectOverlay } from "../llms";
+import type { FileSavedEventDetail } from "@/types/types";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
@@ -154,6 +155,16 @@ export const BlocksWorkspaceActions = observer(() => {
 				color: "success",
 				message: `Save successful !! File is saved with the following commit message: ${commitMsg}`,
 			});
+
+			// Dispatch custom event to notify VersionsTable of the save
+			const event: CustomEvent<FileSavedEventDetail> = new CustomEvent('fileSaved', {
+				detail: {
+					appId: workspace.appId,
+					path: 'blocks.json', // Indicate this is a blocks save
+					type: 'blocks'
+				}
+			});
+			window.dispatchEvent(event);
 		} catch (e) {
 			console.error(e);
 

@@ -1,5 +1,5 @@
 import Refresh from "@mui/icons-material/Refresh";
-import React from "react";
+import React, { useEffect } from "react";
 import {
 	Button,
 	CircularProgress,
@@ -9,6 +9,7 @@ import {
 } from "@semoss/ui";
 import { Section } from "@/components/ui";
 import { useVersionsTable } from "@/hooks";
+import type { FileSavedEventDetail } from "@/types/types";
 
 // Styled Components
 const StyledContainer = styled("div")(() => ({
@@ -69,6 +70,22 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 		handleRefresh,
 		handleRestore,
 	} = useVersionsTable(id);
+
+	// Listen for file save events to automatically refresh the versions table
+	useEffect(() => {
+		const handleFileSaved = (event: CustomEvent<FileSavedEventDetail>) => {
+			// Check if the saved file belongs to the same app/project
+			if (event.detail?.appId === id) {
+				handleRefresh();
+			}
+		};
+
+		window.addEventListener('fileSaved', handleFileSaved as EventListener);
+
+		return () => {
+			window.removeEventListener('fileSaved', handleFileSaved as EventListener);
+		};
+	}, [id, handleRefresh]);
 
 	// Early returns for loading and error states
 	if (loading) {

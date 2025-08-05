@@ -50,6 +50,11 @@ interface FileEditorProps {
 	agentModelEngine?: string;
 
 	/**
+	 * Callback function called after file is successfully saved
+	 */
+	onFileSaved?: () => void;
+
+	/**
 	 *
 	 * @param isModified
 	 * @returns
@@ -79,6 +84,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			path = "",
 			insightId = null,
 			agentModelEngine = "",
+			onFileSaved = () => null,
 			onChange = () => null,
 		} = props;
 
@@ -296,6 +302,11 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 				// reload the file
 				loadFile();
 				setIsModified(false);
+				
+				// Call the callback function to notify that file was saved
+				if (onFileSaved) {
+					onFileSaved();
+				}
 			} catch (e) {
 				notification.add({
 					color: "error",
