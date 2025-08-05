@@ -1,18 +1,18 @@
 import React, { CSSProperties, useEffect, useState } from "react";
 import { observer } from "mobx-react-lite";
-import { useBlock, useTypeWriter} from "../../../hooks";
-import { BlockDef, BlockComponent} from "../../../store";
 import { useForm } from 'react-hook-form';
-import { runPixel, oauth,getUserDetails} from "@semoss/sdk/react";
+import { Add } from '@mui/icons-material';
 import {
     Button,
     Modal,
     Typography,
     useNotification,
 } from '@semoss/ui';
-import { PathValue,Paths } from "../../../types";
-import {SpreadsheetForm} from "./SpreadsheetForm";
-import { Add } from '@mui/icons-material';
+import { runPixel, oauth, getUserDetails } from "@semoss/sdk/react";
+import { useBlock, useTypeWriter } from "../../../hooks";
+import { BlockDef, BlockComponent } from "../../../store";
+import { PathValue, Paths } from "../../../types";
+import { SpreadsheetForm } from "./SpreadsheetForm";
 
 type showSpreadSheetForm = {
     TITLE_SHEET_NAME: string;
@@ -50,9 +50,9 @@ export interface SpreadsheetBlockDef extends BlockDef<"spreadsheet"> {
 
 export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     const { data, setData} = useBlock<SpreadsheetBlockDef>(id);
+    const notification = useNotification();
     const [isDelete, setIsDelete] = useState(false);
     const [allListedSheets, setAllListedSheets] = useState([]);
-    const notification = useNotification();
     const [loggedInUser,setLoggedInUser]= useState('');
     const [updateSheet, setUpdateSheet] = useState([]);
     const [createSheet, setCreateSheet] = useState([]);
@@ -288,7 +288,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         }
     };
 
-    const handleUpdateSheet= async (titleSheetId,sheetId) =>{
+    const handleUpdateSheet= async (titleSheetId,sheetId) => {
         const safeSheetId = escapePixelString(sheetId);
         const safeTitleSheetId = escapePixelString(titleSheetId);
         try{
