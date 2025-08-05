@@ -198,183 +198,184 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         return sanitized;
     };
 
-    const handleDelete = async (filePath: string) => {
-        const deleteQuery = `Storage(storage = "${id}") |
-        DeleteFromStorage(storagePath="${filePath}", leaveFolderStructure=false);`;
+    const handleDelete = async (filePath?: string) => {
+        const pathsToDelete = filePath ? [filePath] : selected;
+        
+        if (pathsToDelete.length === 0) return;
 
-        try {
-            const response = await monolithStore.runQuery(deleteQuery);
-            console.log('Delete response:', response);
-            console.log('File deleted:', filePath);
+        if (pathsToDelete.length === 1) {
+            const deleteQuery = `Storage(storage = "${id}") |
+            DeleteFromStorage(storagePath="${pathsToDelete[0]}", leaveFolderStructure=false);`;
 
-            setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(filePath)));
+            try {
+                const response = await monolithStore.runQuery(deleteQuery);
+                console.log('Delete response:', response);
+                console.log('File deleted:', pathsToDelete[0]);
 
-            if (selectedFile === filePath) {
-                setSelectedFile('');
-            }
-            refreshFiles();
-        } catch (e) {
-            console.error('Delete error:', e);
-        }
-    };
+                setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(pathsToDelete[0])));
 
-    const handleDeleteMultiple = async () => {
-        if (selected.length === 0) return;
-
-        const pathsString = selected.map((path) => `"${path}"`).join(', ');
-        const deleteQuery = `Storage(storage = "${id}") |
-        DeleteFromStorage(storagePaths=[${pathsString}], leaveFolderStructure=false);`;
-
-        try {
-            const response = await monolithStore.runQuery(deleteQuery);
-            console.log('Delete multiple response:', response);
-
-            console.log('Multiple files deleted:', selected);
-            selected.forEach((path) => {
-                setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
-                if (selectedFile === path) {
+                if (selectedFile === pathsToDelete[0]) {
                     setSelectedFile('');
                 }
-            });
-            setSelected([]);
-            setShowDeleteDialog(false);
-            refreshFiles();
-        } catch (e) {
-            console.error('Delete multiple error:', e);
-        }
-    };
+                refreshFiles();
+            } catch (e) {
+                console.error('Delete error:', e);
+            }
+        } else {
+            const pathsString = pathsToDelete.map((path) => `"${path}"`).join(', ');
+            const deleteQuery = `Storage(storage = "${id}") |
+            DeleteFromStorage(storagePaths=[${pathsString}], leaveFolderStructure=false);`;
 
-    const handleDownload = async (path: string) => {
-        try {
-            const filename = extractFilename(path);
-            
-            if (path.endsWith('/')) {
-                notification.add({
-                    color: 'error',
-                    message: 'Cannot download a directory. Please select a file.',
+            try {
+                const response = await monolithStore.runQuery(deleteQuery);
+                console.log('Delete multiple response:', response);
+
+                console.log('Multiple files deleted:', pathsToDelete);
+                pathsToDelete.forEach((path) => {
+                    setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
+                    if (selectedFile === path) {
+                        setSelectedFile('');
+                    }
                 });
-                return;
+                setSelected([]);
+                setShowDeleteDialog(false);
+                refreshFiles();
+            } catch (e) {
+                console.error('Delete multiple error:', e);
             }
-
-            const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${path}", filePath="${filename}") | DownloadAsset(filePath=["${filename}"], space=["insight"]);`;
-            
-            console.log('Download query:', downloadQuery);
-            const response = await monolithStore.runQuery(downloadQuery);
-            console.log('Download response:', response);
-
-            const fileKey = response.pixelReturn[0]?.output;
-
-            if (!fileKey) {
-                throw new Error('Failed to get file key for download. The file may not exist or there was a server error.');
-            }
-
-            await monolithStore.download(configStore.store.insightID, fileKey);
-
-            notification.add({
-                color: 'success',
-                message: `Successfully downloaded: ${filename}`,
-            });
-
-            console.log('Download initiated for path:', path);
-        } catch (e) {
-            console.error('Download error:', e);
-            
-            let errorMessage = 'Download failed: ';
-            if (e instanceof Error) {
-                if (e.message.includes('directory')) {
-                    errorMessage = 'Cannot download directories. Please select a file.';
-                } else if (e.message.includes('file key')) {
-                    errorMessage = 'File not found or server error occurred.';
-                } else if (e.message.includes('network') || e.message.includes('fetch')) {
-                    errorMessage = 'Network error. Please check your connection and try again.';
-                } else {
-                    errorMessage += e.message;
-                }
-            } else {
-                errorMessage += 'An unexpected error occurred.';
-            }
-            
-            notification.add({
-                color: 'error',
-                message: errorMessage,
-            });
         }
     };
 
-    const handleDownloadMultiple = async () => {
-        if (selected.length === 0) return;
+    const handleDownload = async (path?: string) => {
+        const pathsToDownload = path ? [path] : selected;
+        
+        if (pathsToDownload.length === 0) return;
 
-        try {
-            const downloadedFiles: string[] = [];
-            
-            for (const path of selected) {
-                if (path.endsWith('/')) {
-                    throw new Error(
-                        'Cannot download directories. Please select files only.',
-                    );
+        if (pathsToDownload.length === 1) {
+            try {
+                const filename = extractFilename(pathsToDownload[0]);
+                
+                if (pathsToDownload[0].endsWith('/')) {
+                    notification.add({
+                        color: 'error',
+                        message: 'Cannot download a directory. Please select a file.',
+                    });
+                    return;
                 }
 
-                const filename = extractFilename(path);
-                const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${path}", filePath="${filename}");`;
-
-                console.log('Downloading file:', path);
-                await monolithStore.runQuery(downloadQuery);
-                downloadedFiles.push(filename);
-            }
-
-            if (downloadedFiles.length > 0) {
-                const filePathsString = downloadedFiles
-                    .map((file) => `"${file}"`)
-                    .join(', ');
-                const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
-
-                console.log('Creating zip file with downloaded files');
-                const response = await monolithStore.runQuery(zipQuery);
-                console.log('Zip response:', response);
+                const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${pathsToDownload[0]}", filePath="${filename}") | DownloadAsset(filePath=["${filename}"], space=["insight"]);`;
+                
+                console.log('Download query:', downloadQuery);
+                const response = await monolithStore.runQuery(downloadQuery);
+                console.log('Download response:', response);
 
                 const fileKey = response.pixelReturn[0]?.output;
 
                 if (!fileKey) {
-                    throw new Error(
-                        'Failed to get file key for download. The files may not exist or there was a server error.',
-                    );
+                    throw new Error('Failed to get file key for download. The file may not exist or there was a server error.');
                 }
 
-                await monolithStore.download(
-                    configStore.store.insightID,
-                    fileKey,
-                );
+                await monolithStore.download(configStore.store.insightID, fileKey);
 
-                console.log('Multiple files downloaded:', selected);
-                selected.forEach((path) => {
-                    handleDownload(path);
+                notification.add({
+                    color: 'success',
+                    message: `Successfully downloaded: ${filename}`,
                 });
-                setSelected([]);
-            }
-        } catch (e) {
-            console.error('Download multiple error:', e);
 
-            let errorMessage = 'ZIP download failed: ';
-            if (e instanceof Error) {
-                if (e.message.includes('directory')) {
-                    errorMessage +=
-                        'Cannot download directories. Please select files only.';
-                } else if (e.message.includes('file key')) {
-                    errorMessage += 'Files not found or server error occurred.';
-                } else if (
-                    e.message.includes('network') ||
-                    e.message.includes('fetch')
-                ) {
-                    errorMessage +=
-                        'Network error. Please check your connection and try again.';
+                console.log('Download initiated for path:', pathsToDownload[0]);
+            } catch (e) {
+                console.error('Download error:', e);
+                
+                let errorMessage = 'Download failed: ';
+                if (e instanceof Error) {
+                    if (e.message.includes('directory')) {
+                        errorMessage = 'Cannot download directories. Please select a file.';
+                    } else if (e.message.includes('file key')) {
+                        errorMessage = 'File not found or server error occurred.';
+                    } else if (e.message.includes('network') || e.message.includes('fetch')) {
+                        errorMessage = 'Network error. Please check your connection and try again.';
+                    } else {
+                        errorMessage += e.message;
+                    }
                 } else {
-                    errorMessage += e.message;
+                    errorMessage += 'An unexpected error occurred.';
                 }
-            } else {
-                errorMessage += 'An unexpected error occurred.';
+                
+                notification.add({
+                    color: 'error',
+                    message: errorMessage,
+                });
             }
+        } else {
+            try {
+                const downloadedFiles: string[] = [];
+                
+                for (const path of pathsToDownload) {
+                    if (path.endsWith('/')) {
+                        throw new Error(
+                            'Cannot download directories. Please select files only.',
+                        );
+                    }
 
-            console.error(errorMessage);
+                    const filename = extractFilename(path);
+                    const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${path}", filePath="${filename}");`;
+
+                    console.log('Downloading file:', path);
+                    await monolithStore.runQuery(downloadQuery);
+                    downloadedFiles.push(filename);
+                }
+
+                if (downloadedFiles.length > 0) {
+                    const filePathsString = downloadedFiles
+                        .map((file) => `"${file}"`)
+                        .join(', ');
+                    const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
+
+                    console.log('Creating zip file with downloaded files');
+                    const response = await monolithStore.runQuery(zipQuery);
+                    console.log('Zip response:', response);
+
+                    const fileKey = response.pixelReturn[0]?.output;
+
+                    if (!fileKey) {
+                        throw new Error(
+                            'Failed to get file key for download. The files may not exist or there was a server error.',
+                        );
+                    }
+
+                    await monolithStore.download(
+                        configStore.store.insightID,
+                        fileKey,
+                    );
+
+                    console.log('Multiple files downloaded:', pathsToDownload);
+                    setSelected([]);
+                }
+            } catch (e) {
+                console.error('Download multiple error:', e);
+
+                let errorMessage = 'ZIP download failed: ';
+                if (e instanceof Error) {
+                    if (e.message.includes('directory')) {
+                        errorMessage +=
+                            'Cannot download directories. Please select files only.';
+                    } else if (e.message.includes('file key')) {
+                        errorMessage += 'Files not found or server error occurred.';
+                    } else if (
+                        e.message.includes('network') ||
+                        e.message.includes('fetch')
+                    ) {
+                        errorMessage +=
+                            'Network error. Please check your connection and try again.';
+                    } else {
+                        errorMessage += e.message;
+                    }
+                } else {
+                    errorMessage += 'An unexpected error occurred.';
+                }
+
+                console.error(errorMessage);
+            }
         }
     };
 
@@ -438,7 +439,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                                 color="primary"
                                 startIcon={<CloudDownloadOutlined />}
                                 size="small"
-                                onClick={handleDownloadMultiple}
+                                onClick={() => handleDownload()}
                             >
                                 Download Selected
                             </Button>
@@ -603,7 +604,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     <Button onClick={() => setShowDeleteDialog(false)}>
                         Cancel
                     </Button>
-                    <Button onClick={handleDeleteMultiple} color="error" variant="contained">
+                    <Button onClick={() => handleDelete()} color="error" variant="contained">
                         Delete
                     </Button>
                 </Modal.Actions>
