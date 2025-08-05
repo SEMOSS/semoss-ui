@@ -1,7 +1,6 @@
 import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { Markdown } from "@semoss/ui";
 import { useBlock, useTypeWriter } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 
@@ -45,9 +44,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
             }}
             {...attrs}
         >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {displayTxt}
-            </ReactMarkdown>
+            <Markdown>{displayTxt}</Markdown>
         </div>
     );
 });
