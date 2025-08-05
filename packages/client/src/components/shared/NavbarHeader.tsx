@@ -67,7 +67,5 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 				logo
 			)}
 		</StyledNavbarHeader>
-	) : (
-		null
-	);
+	) : null;
 });
