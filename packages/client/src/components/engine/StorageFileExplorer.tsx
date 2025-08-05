@@ -47,11 +47,6 @@ type FileUploadForm = {
     PROJECT_UPLOAD: File[];
 };
 
-interface FileExplorerProps {
-    fileName: string;
-    fileSize: number;
-    lastModified: string;
-}
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const { id } = props;
     const { monolithStore, configStore } = useRootStore();
@@ -89,14 +84,10 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         console.log('Selected file:', path);
     };
 
-    const { control, watch, setValue, handleSubmit } = useForm<{
-        FILES: FileExplorerProps[];
+    const { control, setValue, handleSubmit } = useForm<{
         PROJECT_UPLOAD: File[];
-        SEARCH_FILTER: string;
     }>({
         defaultValues: {
-            FILES: [],
-            SEARCH_FILTER: '',
             PROJECT_UPLOAD: [],
         },
     });
