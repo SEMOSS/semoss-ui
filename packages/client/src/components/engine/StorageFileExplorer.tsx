@@ -205,7 +205,13 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         try {
             const response = await monolithStore.runQuery(deleteQuery);
             console.log('Delete response:', response);
-            handleTrashClick({} as React.MouseEvent<HTMLButtonElement>, filePath);
+            console.log('File deleted:', filePath);
+
+            setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(filePath)));
+
+            if (selectedFile === filePath) {
+                setSelectedFile('');
+            }
             refreshFiles();
         } catch (e) {
             console.error('Delete error:', e);
@@ -223,7 +229,13 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             const response = await monolithStore.runQuery(deleteQuery);
             console.log('Delete multiple response:', response);
 
-            handleDeleteMultipleFiles(selected);
+            console.log('Multiple files deleted:', selected);
+            selected.forEach((path) => {
+                setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
+                if (selectedFile === path) {
+                    setSelectedFile('');
+                }
+            });
             setSelected([]);
             setShowDeleteDialog(false);
             refreshFiles();
@@ -333,7 +345,10 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     fileKey,
                 );
 
-                handleDownloadMultipleFiles(selected);
+                console.log('Multiple files downloaded:', selected);
+                selected.forEach((path) => {
+                    handleDownload(path);
+                });
                 setSelected([]);
             }
         } catch (e) {
@@ -363,35 +378,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         }
     };
 
-    const handleTrashClick = (
-        event: React.MouseEvent<HTMLButtonElement>,
-        path: string,
-    ) => {
-        console.log('File deleted:', path);
 
-        setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
-
-        if (selectedFile === path) {
-            setSelectedFile('');
-        }
-    };
-
-    const handleDeleteMultipleFiles = (paths: string[]) => {
-        console.log('Multiple files deleted:', paths);
-        paths.forEach((path) => {
-            setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
-            if (selectedFile === path) {
-                setSelectedFile('');
-            }
-        });
-    };
-
-    const handleDownloadMultipleFiles = (paths: string[]) => {
-        console.log('Multiple files downloaded:', paths);
-        paths.forEach((path) => {
-            handleDownload(path);
-        });
-    };
 
     if (!initLoadComplete) {
         return (
