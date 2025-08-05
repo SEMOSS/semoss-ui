@@ -4,7 +4,6 @@ import { useBlocksPixel } from "./useBlocksPixel";
 import { useTypeWriter } from "./useTypeWriter";
 import { useFrame } from "./useFrame";
 import { useFrameHeaders } from "./useFrameHeaders";
-import { useLLMComparison } from "./useLLMComparison";
 
 export {
     useBlock,
@@ -12,6 +11,5 @@ export {
     useBlocksPixel,
     useTypeWriter,
     useFrame,
-    useFrameHeaders,
-    useLLMComparison,
+    useFrameHeaders
 };
