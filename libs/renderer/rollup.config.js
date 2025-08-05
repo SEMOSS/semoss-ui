@@ -10,6 +10,20 @@ import del from "rollup-plugin-delete";
 
 const isProduction = process.env.NODE_ENV === "production";
 
+// Plugin to strip 'use client' directives
+const stripUseClient = () => ({
+    name: 'strip-use-client',
+    transform(code, id) {
+        if (id.includes('node_modules') && code.includes("'use client'")) {
+            return {
+                code: code.replace(/'use client';\s*/g, ''),
+                map: null
+            };
+        }
+        return null;
+    }
+});
+
 export default defineConfig({
     input: {
         index: "src/index.ts",
@@ -22,6 +36,7 @@ export default defineConfig({
     },
     plugins: [
         del({ targets: "dist" }),
+        stripUseClient(),
         resolve(),
         commonjs(),
         image(),
