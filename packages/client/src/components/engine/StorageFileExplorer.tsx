@@ -88,6 +88,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const initLoadComplete = getStorageFiles.status === 'SUCCESS';
 
     const refreshFiles = () => {
+        getStorageFiles.refresh();
         setRefreshCounter((prev) => prev + 1);
     };
 
@@ -207,6 +208,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             const response = await monolithStore.runQuery(deleteQuery);
             console.log('Delete response:', response);
             handleTrashClick({} as React.MouseEvent<HTMLButtonElement>, filePath);
+            refreshFiles();
         } catch (e) {
             console.error('Delete error:', e);
         }
@@ -226,6 +228,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             handleDeleteMultipleFiles(selected);
             setSelected([]);
             setShowDeleteDialog(false);
+            refreshFiles();
         } catch (e) {
             console.error('Delete multiple error:', e);
         }
@@ -373,8 +376,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         if (selectedFile === path) {
             setSelectedFile('');
         }
-
-        refreshFiles();
     };
 
     const handleDeleteMultipleFiles = (paths: string[]) => {
@@ -385,7 +386,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 setSelectedFile('');
             }
         });
-        refreshFiles();
     };
 
     const handleDownloadMultipleFiles = (paths: string[]) => {
@@ -470,7 +470,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     )}
                 </StyledTreeHeader>
                 <StyledTreeView
-                    key={refreshCounter}
                     multiSelect
                     expanded={expandedPaths}
                     selected={selected}
@@ -496,7 +495,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                         </Icon>
                     }
                 >
-                    <LoadingScreen>
+                    <LoadingScreen key={refreshCounter}>
                         {getStorageFiles.status === 'INITIAL' ||
                         getStorageFiles.status === 'LOADING' ? (
                             <LoadingScreen.Trigger />
