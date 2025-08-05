@@ -26,6 +26,8 @@ export * from "./components/Code";
 export * from "./components/Collapse";
 // export * from "./components/Colorpicker";
 export * from "./components/Container";
+export * from "./components/DatePicker";
+export * from "./components/DateTimePicker";
 export * from "./components/Divider";
 export * from "./components/Drawer";
 export * from "./components/FileDropzone";

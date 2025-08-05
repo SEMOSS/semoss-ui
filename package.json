@@ -3,7 +3,7 @@
   "name": "semoss",
   "description": "SEMOSS Analytics Platform",
   "scripts": {
-    "prepare":"lefthook install",
+    "prepare": "lefthook install",
     "dev": "turbo run dev",
     "dev:client": "turbo run dev --filter=@semoss/client...",
     "dev:playground": "turbo run dev --filter=@semoss/playground...",
@@ -19,6 +19,7 @@
     "@biomejs/biome": "2.1.1",
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
+    "@rollup/plugin-terser": "^0.4.4",
     "@types/jest": "^29.5.14",
     "@types/react": "18.3.1",
     "@types/react-dom": "18.3.0",
@@ -32,5 +33,8 @@
   "engines": {
     "pnpm": "~10.13.0",
     "node": ">=24.4.0 <25"
+  },
+  "dependencies": {
+    "dayjs": "^1.11.13"
   }
 }
