@@ -191,24 +191,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
     }, [state.queries]);
 
     // Get the LLM Comparison Blocks
+    // TODO: REMOVE DEAD CODE
     const comparisonBlocks = computed(() => {
-        return Object.values(state.blocks)
-            .filter(
-                (block) =>
-                    DefaultBlocks[block.widget].type === BLOCK_TYPE_COMPARE,
-            )
-            .sort((a, b) => {
-                const aId = a.id.toLowerCase(),
-                    bId = b.id.toLowerCase();
-
-                if (aId < bId) {
-                    return -1;
-                }
-                if (aId > bId) {
-                    return 1;
-                }
-                return 0;
-            });
+        return []
     }).get();
 
     /**
