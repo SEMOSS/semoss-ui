@@ -97,13 +97,13 @@ const mockApiData: EventData[] = [
 ];
 
 const EngineDashboard = () => {
-	const { monolithStore } = useRootStore();
+	const { configStore, monolithStore } = useRootStore();
 	const [logs, setLogs] = useState<EventData[]>([]);
 
 	const fetchLogs = async () => {
 		// Fetch logs from the monolith store
 		const response = await monolithStore.runQuery(
-			`AuditLog(auditEndpoint=["timelinedatas"], paramValues=[{"userId": "paulrobert","projectId":"4acbe913-df40-4ac0-b28a-daa5ad91b172","date":"2025-07-22T23:53:17.104", "roomId":"e8856a5e-03f3-4069-a934-67b7e32611fb"}]);`,
+			`AuditLog(auditEndpoint=["timelinedatas"], paramValues=[{"userId": "${configStore.store.user.id}","projectId":"4acbe913-df40-4ac0-b28a-daa5ad91b172","date":"2025-07-22T23:53:17.104", "roomId":"e8856a5e-03f3-4069-a934-67b7e32611fb"}]);`,
 		);
 		console.log("Response from API:", response);
 		// Return the logs from the response
