@@ -134,7 +134,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
     }, [data.titleSheetName,data.sheetName]);
     
     if (!data.isStreaming) displayTxt = textContent;
-    const { handleSubmit:handleSpreadSubmit, control:controlSpread,reset:resetSpread } = useForm<showSpreadSheetForm>({
+    const { handleSubmit:handleSpreadsheetSubmit, control:controlSpread,reset:resetSpread } = useForm<showSpreadSheetForm>({
             defaultValues: {
                 TITLE_SHEET_NAME: '',
             },
@@ -154,7 +154,7 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
         },
     });
 
-    const onSpreadSubmit = handleSpreadSubmit(async (spreadData: showSpreadSheetForm) => {
+    const onSpreadsheetSubmit = handleSpreadsheetSubmit(async (spreadData: showSpreadSheetForm) => {
         const safeTitleSheetName = escapePixelString(spreadData.TITLE_SHEET_NAME);
         try{
             const response = await runPixel<[string[]]>(
@@ -466,8 +466,8 @@ export const SpreadsheetBlock: BlockComponent = observer(({ id }) => {
                             fields={[
                             { name: "TITLE_SHEET_NAME", label: "Title Sheet Name", required: true},
                             ]}
-                            onSubmit={onSpreadSubmit}
-                            handleSubmit={handleSpreadSubmit}
+                            onSubmit={onSpreadsheetSubmit}
+                            handleSubmit={handleSpreadsheetSubmit}
                             cancel={()=>setCurrentSection('showListedSheets','','')}
                             formType="read"
                             tableData={null}

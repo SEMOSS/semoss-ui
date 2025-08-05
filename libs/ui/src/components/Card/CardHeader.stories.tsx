@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { Person, StarBorder } from "@mui/icons-material";
 import { Avatar, Icon, IconButton } from "../..";
 import { Card } from ".";
