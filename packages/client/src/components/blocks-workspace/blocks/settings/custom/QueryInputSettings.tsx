@@ -15,7 +15,7 @@ import {
 } from '@mui/icons-material';
 
 import {
-    AutocompleteTwo,
+    Autocomplete,
     Popper,
     Stack,
     Typography,
@@ -682,12 +682,13 @@ export const QueryInputSettings = observer(
                             </IconButton>
                         </Stack>
                     </Stack>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         disableClearable={value === ''}
                         size="small"
                         freeSolo
                         style={{ marginTop: '10px' }}
+                        multiple={false}
                         value={value}
                         inputValue={inputValue}
                         onInputChange={handleInputChange}

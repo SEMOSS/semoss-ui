@@ -6,7 +6,7 @@ import {
     Table,
     IconButton,
     Collapse,
-    ChipTwo,
+    Chip,
     Box,
     Stack,
     Typography,
@@ -51,11 +51,11 @@ export const HistoryRow = (props: {
                 <Table.Cell>{row.execStart}</Table.Cell>
                 <Table.Cell>{row.execDelta}</Table.Cell>
                 <Table.Cell>
-                    <ChipTwo
+                    <Chip
                         label={row.success ? 'Success' : 'Failed'}
                         avatar={null}
                         variant="filled"
-                        color={row.success ? 'success' : 'error'}
+                        color={row.success ? 'green' : 'red'}
                     />
                 </Table.Cell>
             </Table.Row>

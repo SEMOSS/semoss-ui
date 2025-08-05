@@ -15,6 +15,9 @@ export interface PopoverPosition {
     left: number;
 }
 
+// Define the type alias for anchorReference
+export type PopoverAnchorReference = 'anchorEl' | 'anchorPosition';
+
 export interface PopoverProps {
     /**
      * An HTML element, [PopoverVirtualElement](/material-ui/react-popover/#virtual-element),
@@ -63,6 +66,11 @@ export interface PopoverProps {
      * The coordinates are relative to the application's client area.
      */
     anchorPosition?: PopoverPosition;
+
+    /**
+     * Determines which anchor prop to use for positioning the popover.
+     */
+    anchorReference?: PopoverAnchorReference;
 
     /**
      * The content of the component.

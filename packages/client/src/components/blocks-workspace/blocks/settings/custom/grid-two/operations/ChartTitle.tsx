@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
-import { CheckboxTwo, Button, styled, TextField, Typography } from '@semoss/ui';
+import { Checkbox, Button, styled, TextField, Typography } from '@semoss/ui';
 import {
     GridBlockColumn,
     Paths,
@@ -154,10 +154,7 @@ export const ChartTitle = observer(
         ) => {
             return (
                 <li {...props}>
-                    <CheckboxTwo
-                        icon={icon}
-                        checkedIcon={checkedIcon}
-                        style={{ marginRight: 8 }}
+                    <Checkbox
                         checked={selected}
                     />
                     {option.name}

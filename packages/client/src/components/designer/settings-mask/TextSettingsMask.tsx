@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { styled, AutocompleteTwo, TextField, Divider } from '@semoss/ui';
+import { styled, Autocomplete, TextField, Divider } from '@semoss/ui';
 import { ActionMessages, useBlocks } from '@semoss/renderer';
 
 import { useDesigner } from '@/hooks';
@@ -110,7 +110,7 @@ export const TextSettingsMask = observer(() => {
 
     return (
         <StyledInputContainer>
-            <AutocompleteTwo
+            <Autocomplete
                 disablePortal
                 size="small"
                 options={FontStyleOptions.map((option) => option.value)}
@@ -118,6 +118,7 @@ export const TextSettingsMask = observer(() => {
                 renderInput={(params) => (
                     <TextField {...params} label="Fonts Style" />
                 )}
+                multiple={false}
                 value={value.fontFamily}
                 onChange={(e, newValue) =>
                     onChange('fontFamily', newValue, true)

@@ -17,7 +17,7 @@ import {
     TextField,
     useNotification,
     Stack,
-    BoxTwo,
+    Box,
 } from '@semoss/ui';
 import {
     useBlocksPixel,
@@ -232,7 +232,7 @@ const SortableItems = ({
     };
 
     return (
-        <BoxTwo
+        <Box
             key={`action-${id}`}
             ref={setNodeRef}
             {...attributes}
@@ -240,6 +240,6 @@ const SortableItems = ({
             sx={style}
         >
             {children}
-        </BoxTwo>
+        </Box>
     );
 };

@@ -3,7 +3,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
 import {
-    AutocompleteTwo,
+    Autocomplete,
     MenuItem,
     Select,
     TextField,
@@ -169,9 +169,10 @@ export const SelectInputSettings = observer(
         return (
             <BaseSettingSection label={label} description={tooltip}>
                 {allowCustomInput ? (
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         size="small"
+                        multiple={false}
                         value={value}
                         onChange={(_, newValue) => {
                             onChange(newValue.replace('Custom: ', ''));

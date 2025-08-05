@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Schema } from '@mui/icons-material';
 
-import { TextField, Typography, AutocompleteTwo } from '@semoss/ui';
+import { TextField, Typography, Autocomplete } from '@semoss/ui';
 
 import { BaseSettingSection, ColorSettings } from '../../settings';
 import {
@@ -71,15 +71,22 @@ const SettingAutocomplete = <D extends BlockDef>({
     };
 
     return (
-        <AutocompleteTwo
+        <Autocomplete
             fullWidth
             options={options}
+            multiple={false}
             value={options.find((opt) => opt.value === selectedValue) || null}
             onChange={(_, newValue) => {
-                setBlockData(newValue?.value);
+                setBlockData(typeof newValue === 'object' && newValue !== null ? newValue.value : undefined);
             }}
-            getOptionLabel={(option) => option.label}
+            getOptionLabel={(option) => typeof option === 'object' && option !== null ? option.label : ''}
             isOptionEqualToValue={(option, value) =>
+                typeof option === 'object' &&
+                option !== null &&
+                typeof value === 'object' &&
+                value !== null &&
+                'value' in option &&
+                'value' in value &&
                 option.value === value.value
             }
             renderInput={(params) => (

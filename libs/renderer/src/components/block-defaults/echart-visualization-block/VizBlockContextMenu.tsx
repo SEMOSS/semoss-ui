@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 
-import { MenuTwo, MenuItemTwo } from "@semoss/ui";
+import { Menu, MenuItem } from "@semoss/ui";
 
 import { useBlock, useFrame } from "../../../hooks";
 import { EchartVisualizationBlockDef } from "./VisualizationBlock";
@@ -12,7 +12,7 @@ export interface VizBlockContextMenuProps {
     /** Frame that the user is interacting with */
     frame: ReturnType<typeof useFrame>;
 
-    /** Context MenuTwo */
+    /** Context Menu */
     contextMenu: {
         mouseX: number;
         mouseY: number;
@@ -28,7 +28,7 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
     ({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
         const { data } = useBlock<EchartVisualizationBlockDef>(id);
         return (
-            <MenuTwo
+            <Menu
                 open={contextMenu !== null}
                 onClose={() => onClose()}
                 anchorReference="anchorPosition"
@@ -42,7 +42,7 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                 }
             >
                 {contextMenu && !data.contextMenu?.hideUnfilter ? (
-                    <MenuItemTwo
+                    <MenuItem
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
@@ -51,10 +51,10 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         }}
                     >
                         Unfilter
-                    </MenuItemTwo>
+                    </MenuItem>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItemTwo
+                    <MenuItem
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -70,10 +70,10 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         {typeof contextMenu.value.value === "string"
                             ? contextMenu.value.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItemTwo>
+                    </MenuItem>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideExclude ? (
-                    <MenuItemTwo
+                    <MenuItem
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -89,9 +89,9 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         {typeof contextMenu.value.value === "string"
                             ? contextMenu.value.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItemTwo>
+                    </MenuItem>
                 ) : null}
-            </MenuTwo>
+            </Menu>
         );
     },
 );

@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { AutoAwesome } from '@mui/icons-material';
 
 import {
-    AutocompleteTwo,
+    Autocomplete,
     Button,
     Stack,
     TextField,
@@ -234,10 +234,11 @@ export const AIGenerationSettings = observer(
                         shrink: true,
                     }}
                 />
-                <AutocompleteTwo
+                <Autocomplete
                     disabled={!cfgLibraryModels.ids.length || responseLoading}
                     disableClearable
                     fullWidth
+                    multiple={false}
                     id="model-autocomplete"
                     loading={cfgLibraryModels.loading}
                     options={cfgLibraryModels.ids}

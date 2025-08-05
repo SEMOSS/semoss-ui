@@ -1,10 +1,7 @@
-import { Autocomplete as MuiAutocomplete } from "@mui/material";
-import {
+import { 
+    ChipTypeMap,Autocomplete as MuiAutocomplete, 
     AutocompleteProps as MuiAutocompleteProps,
-    ChipTypeMap,
-    TextField as MuiTextField,
-} from "@mui/material";
-
+    TextField as MuiTextField,} from "@mui/material";
 import { Typography } from "../Typography";
 
 export interface AutocompleteProps<
@@ -28,32 +25,22 @@ export interface AutocompleteProps<
         | "clearText"
         | "closeText"
         | "componentsProps"
-        | "disablePortal"
         | "forcePopupIcon"
         | "ListboxComponent"
         | "openText"
         | "PaperComponent"
-        | "PopperComponent"
-        | "renderGroup"
         | "renderTags"
-        | "slotProps"
         | "unstable_classNamePrefix"
         | "unstable_isActiveElementInListbox"
         | "autoComplete"
         | "autoHighlight"
         | "autoSelect"
         | "blurOnSelect"
-        | "clearOnBlur"
         | "clearOnEscape"
         | "componentName"
-        | "disableClearable"
-        | "disableCloseOnSelect"
         | "disabledItemsFocusable"
         | "disableListWrap"
-        | "handleHomeEndKeys"
         | "openOnFocus"
-        | "selectOnFocus"
-        | "selectOnFocus"
     > {
     renderInput?: MuiAutocompleteProps<
         T | string,
@@ -62,6 +49,9 @@ export interface AutocompleteProps<
         FreeSolo
     >["renderInput"];
     label?: React.ReactNode;
+    value?: Multiple extends true
+        ? (T | string)[]
+        : T | string | null;
 }
 
 export function Autocomplete<

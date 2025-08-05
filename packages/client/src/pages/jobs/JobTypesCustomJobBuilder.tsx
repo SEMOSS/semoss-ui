@@ -1,6 +1,6 @@
 import {
     createFilterOptions,
-    AutocompleteTwo,
+    Autocomplete,
     Stack,
     TextField,
 } from '@semoss/ui';
@@ -23,15 +23,15 @@ export const JobTypesCustomJobBuilder = (props: {
                 multiline
                 rows={3}
             />
-            <AutocompleteTwo
+            <Autocomplete
                 value={(builder.tags as string[]) ?? []}
                 fullWidth
                 multiple
                 size="small"
                 onChange={(_, newValue) => {
-                    setBuilderField('tags', newValue);
+                    setBuilderField('tags', newValue.flat());
                 }}
-                filterOptions={(options, params) => {
+                filterOptions={(options: string[], params) => {
                     const filtered = filter(options, params);
 
                     const { inputValue } = params;

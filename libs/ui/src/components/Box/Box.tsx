@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, forwardRef } from "react";
 import { Box as MuiBox, SxProps } from "@mui/material";
 
 export interface BoxProps {
@@ -14,11 +14,11 @@ export interface BoxProps {
     sx?: SxProps;
     title?: string;
 }
-export const Box = (props: BoxProps) => {
+export const Box = forwardRef<HTMLDivElement, BoxProps>((props, ref) => {
     const { children, sx } = props;
     return (
-        <MuiBox sx={sx} {...props}>
+        <MuiBox ref={ref} sx={sx} {...props}>
             {children}
         </MuiBox>
     );
-};
+});

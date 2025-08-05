@@ -1,4 +1,4 @@
-import { AutocompleteTwo, Stack, TextField } from '@semoss/ui';
+import { Autocomplete, Stack, TextField } from '@semoss/ui';
 
 import {
     useBlocksPixel,
@@ -20,7 +20,7 @@ export const DynamicGridMenu: BlockComponent = ({ id }) => {
 
     return (
         <Stack>
-            <AutocompleteTwo
+            <Autocomplete
                 fullWidth
                 multiple={false}
                 disabled={getFrames.status !== 'SUCCESS'}

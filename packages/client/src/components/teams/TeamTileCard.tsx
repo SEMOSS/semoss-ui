@@ -17,7 +17,7 @@ import {
     Button,
     Popover,
     MenuList,
-    MenuItemTwo,
+    MenuItem,
     Autocomplete,
     Box,
     Avatar,
@@ -460,7 +460,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                     >
                         <MenuList>
                             {type === 'CUSTOM' && (
-                                <MenuItemTwo
+                                <MenuItem
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         handleClose(e);
@@ -472,9 +472,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                         <PersonAddIcon />
                                         <div>Add member to team</div>
                                     </Stack>
-                                </MenuItemTwo>
+                                </MenuItem>
                             )}
-                            <MenuItemTwo
+                            <MenuItem
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleClose(e);
@@ -485,8 +485,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                     <EditIcon />
                                     <div>Edit team</div>
                                 </Stack>
-                            </MenuItemTwo>
-                            <MenuItemTwo
+                            </MenuItem>
+                            <MenuItem
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setDeleteModal(true);
@@ -511,7 +511,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                                         Delete team
                                     </div>
                                 </Stack>
-                            </MenuItemTwo>
+                            </MenuItem>
                         </MenuList>
                     </Popover>
                 </StyledActionContainer>

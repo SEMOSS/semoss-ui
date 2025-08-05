@@ -4,11 +4,11 @@ import ImageIcon from '@mui/icons-material/Image';
 import { InfoOutlined } from '@mui/icons-material';
 
 import {
-    ListItemTwo,
-    ListItemButtonTwo,
+    ListItem,
+    ListItemButton,
     ListItemIcon,
     ListItemText,
-    BoxTwo,
+    Box,
     Button,
     List,
     Stack,
@@ -41,6 +41,12 @@ const StyledItemWithoutPadding = styled('div')(() => ({
     padding: '0.5rem 0',
 }));
 
+const StyledBox = styled(Box)(() => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px'
+}))
+
 export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
     const { data, setData } = useBlockSettings<GridBlockDef>(id);
     const [selectedList, setSelectedList] = useState(''); // maintain the current selected list, for expansion and collapsing
@@ -62,8 +68,8 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
         <>
             <List style={{ width: '100%' }}>
                 {/* Header Styling Section  */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'generalchartsettings'
@@ -83,21 +89,21 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Header Styling" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'generalchartsettings' && (
                         <StyledItem>
                             <HeaderStyling id={id} path={'option'} />
                         </StyledItem>
                     )}
-                </ListItemTwo>
+                </ListItem>
 
                 {/* Cell Styling section */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'cellStylingSettings'
@@ -117,11 +123,11 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Cell Styling" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'cellStylingSettings' && (
                         <StyledItem>
                             {/* <SelectInputSettings
@@ -134,11 +140,11 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                             <CellStyling id={id} path={'option'} />
                         </StyledItem>
                     )}
-                </ListItemTwo>
+                </ListItem>
 
                 {/* Title section  */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'titleSettings'
@@ -158,21 +164,21 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Title" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'titleSettings' && (
                         <StyledItem>
                             <ChartTitle id={id} path={'option'} />
                         </StyledItem>
                     )}
-                </ListItemTwo>
+                </ListItem>
 
                 {/* Color By Value  */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'colorByValue'
@@ -192,21 +198,21 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Color By Value" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'colorByValue' && (
                         <StyledItemWithoutPadding>
                             <ColorByValue id={id} path={'option'} />
                         </StyledItemWithoutPadding>
                     )}
-                </ListItemTwo>
+                </ListItem>
 
                 {/* Text Wrap  */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'wrapText' ? '' : 'wrapText',
@@ -224,21 +230,21 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Wrap Text" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'wrapText' && (
                         <StyledItem>
                             <ColumnTextWrap id={id} path={'option'} />
                         </StyledItem>
                     )}
-                </ListItemTwo>
+                </ListItem>
 
                 {/* Row Spanning  */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'rowSpanning' ? '' : 'rowSpanning',
@@ -256,22 +262,22 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Row Spanning" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'rowSpanning' && (
                         <StyledItem>
                             {/* <ColumnTextWrap id={id} path={"option"} /> */}
                             <RowSpanning id={id} path={'option'} />
                         </StyledItem>
                     )}
-                </ListItemTwo>
+                </ListItem>
 
                 {/* Resizing  */}
-                <ListItemTwo disablePadding style={{ display: 'block' }}>
-                    <ListItemButtonTwo
+                <ListItem disablePadding style={{ display: 'block' }}>
+                    <ListItemButton
                         onClick={(e) =>
                             setSelectedList((prevList) =>
                                 prevList === 'resizing' ? '' : 'resizing',
@@ -289,11 +295,11 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                                 }
                             />
                         </ListItemIcon>
-                        <BoxTwo display="flex" alignItems="center" gap={1}>
+                        <StyledBox>
                             <ListItemText primary="Resizing" />
                             <InfoOutlined color="disabled" />
-                        </BoxTwo>
-                    </ListItemButtonTwo>
+                        </StyledBox>
+                    </ListItemButton>
                     {selectedList === 'resizing' && (
                         <StyledItem>
                             <Stack
@@ -324,7 +330,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
                             </Stack>
                         </StyledItem>
                     )}
-                </ListItemTwo>
+                </ListItem>
             </List>
         </>
     );

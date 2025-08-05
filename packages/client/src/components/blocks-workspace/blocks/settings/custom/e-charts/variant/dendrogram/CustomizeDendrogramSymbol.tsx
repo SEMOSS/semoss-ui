@@ -6,8 +6,8 @@ import {
     styled,
     Typography,
     TextField,
-    SelectTwo,
-    MenuItemTwo,
+    Select,
+    MenuItem,
     Button,
 } from '@semoss/ui';
 
@@ -168,12 +168,11 @@ export const CustomizeDendrogramSymbol = observer(
             <StyledMainContainer>
                 <StyledSubSection display="flex" justifyContent="space-around">
                     <Typography variant="body2">Symbol Shape</Typography>
-                    <SelectTwo
+                    <Select
                         name="Symbol Shape"
                         value={customizeSymbol.symbolShape}
                         key={customizeSymbol.symbolShape}
-                        onChange={(e, value) => {
-                            console.log(e, value, 'symbolshape');
+                        onChange={(e) => {
                             updateFields('symbolShape', e.target.value);
                         }}
                         size="small"
@@ -181,12 +180,12 @@ export const CustomizeDendrogramSymbol = observer(
                         {symbolData.length > 0 &&
                             symbolData.map((item, index) => {
                                 return (
-                                    <MenuItemTwo value={item.value} key={index}>
+                                    <MenuItem value={item.value} key={index}>
                                         {item.label}
-                                    </MenuItemTwo>
+                                    </MenuItem>
                                 );
                             })}
-                    </SelectTwo>
+                    </Select>
                 </StyledSubSection>
                 <StyledSubSection display="flex" justifyContent="space-around">
                     <Typography variant="body2">Symbol Size</Typography>

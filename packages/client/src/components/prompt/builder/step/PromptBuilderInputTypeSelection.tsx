@@ -3,7 +3,7 @@ import { InfoOutlined } from '@mui/icons-material';
 
 import {
     styled,
-    AutocompleteTwo,
+    Autocomplete,
     Grid,
     Stack,
     Fade,
@@ -108,9 +108,10 @@ export const PromptBuilderInputTypeSelection = (props: {
             </Grid>
             <Grid item xs={9} md={6}>
                 <Stack spacing={2}>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         disableClearable
+                        multiple={false}
                         id="input-token-autocomplete"
                         options={INPUT_TYPES}
                         value={props.inputType}
@@ -133,11 +134,12 @@ export const PromptBuilderInputTypeSelection = (props: {
                     <Fade in={showMetaAutocomplete}>
                         <span>
                             <Stack direction="row" alignItems="center">
-                                <AutocompleteTwo
+                                <Autocomplete
                                     fullWidth
                                     disableClearable
                                     size="small"
                                     id="meta-autocomplete"
+                                    multiple={false}
                                     loading={getMetaSelectorLoading()}
                                     options={getMetaSelectorOptions()}
                                     value={props.inputTypeMeta ?? ''}

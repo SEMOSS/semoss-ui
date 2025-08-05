@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, forwardRef } from "react";
 import { Table as MuiTable, SxProps } from "@mui/material";
 
 export interface TableProps {
@@ -21,11 +21,11 @@ export interface TableProps {
     sx?: SxProps;
 }
 
-export const Table = (props: TableProps) => {
+export const Table = forwardRef<HTMLTableElement, TableProps>((props, ref) => {
     const { children, sx } = props;
     return (
-        <MuiTable sx={sx} {...props}>
+        <MuiTable ref={ref} sx={sx} {...props}>
             {children}
         </MuiTable>
     );
-};
+});

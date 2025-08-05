@@ -4,8 +4,8 @@ import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 
 import {
-    AutocompleteTwo,
-    CheckboxTwo,
+    Autocomplete,
+    Checkbox,
     Button,
     styled,
     Switch,
@@ -133,10 +133,7 @@ export const ColumnTextWrap = observer(
         ) => {
             return (
                 <li {...props}>
-                    <CheckboxTwo
-                        icon={icon}
-                        checkedIcon={checkedIcon}
-                        style={{ marginRight: 8 }}
+                    <Checkbox
                         checked={selected}
                     />
                     {option.name}
@@ -152,7 +149,7 @@ export const ColumnTextWrap = observer(
                             Select Column
                         </Typography>{' '}
                     </label>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         multiple
                         disableCloseOnSelect
@@ -162,7 +159,9 @@ export const ColumnTextWrap = observer(
                         )}
                         onChange={handleColumnChange}
                         options={data.columns || []}
-                        getOptionLabel={(option) => option.name}
+                        getOptionLabel={(option) =>
+                            typeof option === 'string' ? option : option.name
+                        }
                         renderOption={renderOption}
                         renderInput={(params) => (
                             <TextField

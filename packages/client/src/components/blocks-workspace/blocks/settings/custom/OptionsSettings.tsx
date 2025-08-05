@@ -11,7 +11,7 @@ import {
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 
-import { BoxTwo, Button, IconButton, Stack, TextField } from '@semoss/ui';
+import { Box, Button, IconButton, Stack, TextField } from '@semoss/ui';
 import {
     Paths,
     PathValue,
@@ -346,22 +346,23 @@ const SortableItems = ({
     };
 
     return (
-        <BoxTwo
+        <Box
             ref={setNodeRef}
-            sx={style}
-            display={'flex'}
-            gap={1}
-            alignItems={'center'}
+            sx={{
+                ...style,
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+            }}
         >
             {children}
-            <BoxTwo
+            <Box
                 {...attributes}
                 {...listeners}
-                display={'flex'}
-                alignItems={'center'}
+                sx={{ display: 'flex', alignItems: 'center' }}
             >
                 <DragIndicator />
-            </BoxTwo>
-        </BoxTwo>
+            </Box>
+        </Box>
     );
 };

@@ -4,11 +4,11 @@ import AddIcon from '@mui/icons-material/Add';
 import CloseIcon from '@mui/icons-material/Close';
 
 import {
-    AutocompleteTwo,
+    Autocomplete,
     Stack,
     Button,
     IconButton,
-    BoxTwo,
+    Box,
     Typography,
     TextField,
 } from '@semoss/ui';
@@ -91,15 +91,22 @@ const SettingAutocomplete = <D extends BlockDef>({
     };
 
     return (
-        <AutocompleteTwo
+        <Autocomplete
             fullWidth
+            multiple={false}
             options={options}
             value={options.find((opt) => opt.value === selectedValue) || null}
             onChange={(_, newValue) => {
-                setBlockData(newValue?.value);
+                setBlockData(typeof newValue === 'object' && newValue !== null ? newValue.value : undefined);
             }}
-            getOptionLabel={(option) => option.label}
+            getOptionLabel={(option) => typeof option === 'object' && option !== null ? option.label : ''}
             isOptionEqualToValue={(option, value) =>
+                typeof option === 'object' &&
+                option !== null &&
+                typeof value === 'object' &&
+                value !== null &&
+                'value' in option &&
+                'value' in value &&
                 option.value === value.value
             }
             renderInput={(params) => (
@@ -127,30 +134,30 @@ const OptionRow = ({
     onChange?: (field: 'label' | 'value', value: string) => void;
     onDelete?: () => void;
 }) => (
-    <BoxTwo sx={{ width: '100%', mb: 2 }}>
+    <Box sx={{ width: '100%', mb: 2 }}>
         <Stack direction="row" spacing={2} alignItems="center">
-            <BoxTwo flex={1}>
+            <Box sx={{ flex: 1 }}>
                 <TextField
                     size="small"
                     value={label}
                     onChange={(e) => onChange?.('label', e.target.value)}
                     fullWidth
                 />
-            </BoxTwo>
-            <BoxTwo flex={1}>
+            </Box>
+            <Box sx={{ flex: 1 }}>
                 <TextField
                     size="small"
                     value={value}
                     onChange={(e) => onChange?.('value', e.target.value)}
                     fullWidth
                 />
-            </BoxTwo>
+            </Box>
 
             <IconButton onClick={onDelete} size="small">
                 <CloseIcon />
             </IconButton>
         </Stack>
-    </BoxTwo>
+    </Box>
 );
 
 export const config: BlockSettingsConfig = {
@@ -309,27 +316,27 @@ export const config: BlockSettingsConfig = {
                         };
                         // Find the current option object for the selected value
                         return (
-                            <BoxTwo sx={{ width: '100%' }}>
+                            <Box sx={{ width: '100%' }}>
                                 {/* Headers */}
-                                <BoxTwo sx={{ mb: 2, display: 'flex', gap: 2 }}>
-                                    <BoxTwo flex={1}>
+                                <Box sx={{ mb: 2, display: 'flex', gap: 2 }}>
+                                    <Box sx={{ flex: 1 }}>
                                         <Typography
                                             variant="caption"
                                             fontWeight="medium"
                                         >
                                             Label
                                         </Typography>
-                                    </BoxTwo>
-                                    <BoxTwo flex={1}>
+                                    </Box>
+                                    <Box sx={{ flex: 1 }}>
                                         <Typography
                                             variant="caption"
                                             fontWeight="medium"
                                         >
                                             Value
                                         </Typography>
-                                    </BoxTwo>
-                                    <BoxTwo width={40} />
-                                </BoxTwo>
+                                    </Box>
+                                    <Box sx={{width: 40}} />
+                                </Box>
 
                                 {/* Options */}
                                 {configOptions.map((option) => (
@@ -364,7 +371,8 @@ export const config: BlockSettingsConfig = {
 
                                 {/* Current Value Selection */}
                                 <BaseSettingSection label="Selected Value">
-                                    <AutocompleteTwo
+                                    <Autocomplete
+                                        multiple={false}
                                         value={
                                             configOptions.find(
                                                 (opt) =>
@@ -380,14 +388,20 @@ export const config: BlockSettingsConfig = {
                                             if (newValue) {
                                                 setData(
                                                     'value',
-                                                    newValue.value,
+                                                    typeof newValue === 'object' && newValue !== null ? newValue.value : undefined,
                                                 );
                                             }
                                         }}
                                         getOptionLabel={(option) =>
-                                            option.label
+                                            typeof option === 'object' && option !== null ? option.label : ''
                                         }
                                         isOptionEqualToValue={(option, value) =>
+                                            typeof option === 'object' &&
+                                            option !== null &&
+                                            typeof value === 'object' &&
+                                            value !== null &&
+                                            'value' in option &&
+                                            'value' in value &&
                                             option.value === value.value
                                         }
                                         renderInput={(params) => (
@@ -400,7 +414,7 @@ export const config: BlockSettingsConfig = {
                                         fullWidth
                                     />
                                 </BaseSettingSection>
-                            </BoxTwo>
+                            </Box>
                         );
                     },
                 },

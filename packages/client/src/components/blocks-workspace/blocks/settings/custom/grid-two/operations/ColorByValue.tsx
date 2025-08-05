@@ -3,13 +3,13 @@ import { observer } from 'mobx-react-lite';
 import { Delete, Edit } from '@mui/icons-material';
 
 import {
-    AutocompleteTwo,
+    Autocomplete,
     IconButton,
-    TableTwo,
-    TableBodyTwo,
-    TableCellTwo,
-    TableHeadTwo,
-    TableRowTwo,
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableRow,
     Button,
     styled,
     Switch,
@@ -235,9 +235,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                             Select Column to Color
                         </Typography>{' '}
                     </label>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         size="small"
+                        multiple={false}
                         value={editingRule?.column}
                         onChange={(_, newValue) => {
                             updateFields('column', newValue || '');
@@ -286,9 +287,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                             Select Column of Values
                         </Typography>{' '}
                     </label>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         size="small"
+                        multiple={false}
                         value={editingRule?.valueColumn}
                         onChange={(_, newValue) => {
                             updateFields('valueColumn', newValue || '');
@@ -312,19 +314,25 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                             Select Comparator
                         </Typography>{' '}
                     </label>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         size="small"
+                        multiple={false}
                         value={
                             columnComparision.find(
                                 (c) => c.value === editingRule?.comparator,
                             ) ?? null
                         }
                         onChange={(_, newValue) => {
-                            updateFields('comparator', newValue?.value ?? '');
+                            updateFields(
+                                'comparator',
+                                typeof newValue === 'object' && newValue !== null ? newValue.value : ''
+                            );
                         }}
                         options={columnComparision}
-                        getOptionLabel={(option) => option.name}
+                        getOptionLabel={(option) =>
+                            typeof option === 'string' ? option : option.name
+                        }
                         renderInput={(params) => (
                             <TextField
                                 {...params}
@@ -343,9 +351,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                             Select Value
                         </Typography>{' '}
                     </label>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         size="small"
+                        multiple={false}
                         value={editingRule?.value}
                         onChange={(_, newValue) => {
                             updateFields('value', newValue || '');
@@ -384,24 +393,24 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
             {/* List of the applied rule  */}
             <div>
                 {rules.length > 0 && (
-                    <TableTwo size="small">
-                        <TableHeadTwo>
-                            <TableRowTwo>
-                                <TableCellTwo>Column</TableCellTwo>
-                                <TableCellTwo>Applied Rule</TableCellTwo>
-                                <TableCellTwo>Action</TableCellTwo>
-                            </TableRowTwo>
-                        </TableHeadTwo>
-                        <TableBodyTwo>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Column</TableCell>
+                                <TableCell>Applied Rule</TableCell>
+                                <TableCell>Action</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
                             {rules.map((rule) => (
-                                <TableRowTwo key={rule.id}>
-                                    <TableCellTwo>{rule.column}</TableCellTwo>
-                                    <TableCellTwo>
+                                <TableRow key={rule.id}>
+                                    <TableCell>{rule.column}</TableCell>
+                                    <TableCell>
                                         {rule.column}
                                         {rule.comparator}
                                         {rule.value}
-                                    </TableCellTwo>
-                                    <TableCellTwo>
+                                    </TableCell>
+                                    <TableCell>
                                         <div>
                                             <IconButton
                                                 onClick={() =>
@@ -418,11 +427,11 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                                                 <Delete />
                                             </IconButton>
                                         </div>
-                                    </TableCellTwo>
-                                </TableRowTwo>
+                                    </TableCell>
+                                </TableRow>
                             ))}
-                        </TableBodyTwo>
-                    </TableTwo>
+                        </TableBody>
+                    </Table>
                 )}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>

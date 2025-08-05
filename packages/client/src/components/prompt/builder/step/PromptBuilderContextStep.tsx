@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import {
     createFilterOptions,
     styled,
-    AutocompleteTwo,
+    Autocomplete,
     Box,
     Grid,
     Stack,
@@ -96,9 +96,10 @@ export const PromptBuilderContextStep = (props: {
                                 props.setBuilderValue('title', e.target.value)
                             }
                         />
-                        <AutocompleteTwo
+                        <Autocomplete
                             disableClearable
                             fullWidth
+                            multiple={false}
                             id="model-autocomplete"
                             loading={cfgLibraryModels.loading}
                             options={cfgLibraryModels.ids}

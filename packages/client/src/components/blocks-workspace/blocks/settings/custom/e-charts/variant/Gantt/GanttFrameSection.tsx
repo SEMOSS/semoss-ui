@@ -1,7 +1,7 @@
 import { ChangeEvent, useEffect, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 
-import { AutocompleteTwo, Button, Select, TextField, styled } from '@semoss/ui';
+import { Autocomplete, Button, Select, TextField, styled } from '@semoss/ui';
 import {
     PathValue,
     BlockDef,
@@ -242,7 +242,7 @@ export const GanttFrameSection = observer(
         return (
             <StyledMainContainer>
                 <StyledFrameSection>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         id="Echart-Frame"
                         multiple={false}

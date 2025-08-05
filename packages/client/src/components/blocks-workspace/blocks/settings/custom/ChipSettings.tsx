@@ -3,7 +3,7 @@ import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import { Face } from '@mui/icons-material';
 
-import { AutocompleteTwo, Chip, Stack, TextField, Avatar } from '@semoss/ui';
+import { Autocomplete, Chip, Stack, TextField, Avatar } from '@semoss/ui';
 import {
     ActionMessages,
     Block,
@@ -118,9 +118,10 @@ export const ChipSettings = observer(
             <Stack width="100%">
                 <BaseSettingSection label={label}>
                     <Stack flexDirection="column" width="100%">
-                        <AutocompleteTwo
+                        <Autocomplete
                             fullWidth
                             size="small"
+                            multiple={false}
                             value={value}
                             onChange={(_, newValue) => {
                                 onChange(newValue);

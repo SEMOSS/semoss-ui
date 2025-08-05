@@ -2,7 +2,7 @@ import { useRef, useState, useEffect, useMemo } from 'react';
 import { observer } from 'mobx-react-lite';
 import { computed } from 'mobx';
 
-import { AutocompleteTwo, TextField, styled } from '@semoss/ui';
+import { Autocomplete, TextField, styled } from '@semoss/ui';
 import { useBlocks, getValueByPath } from '@semoss/renderer';
 
 import { useBlockSettings } from '@/hooks';
@@ -96,10 +96,11 @@ export const LLMCellSelect = observer(({ id }: LLMCellSelectProps) => {
 
     return (
         <BaseSettingSection label="LLM Cell">
-            <AutocompleteTwo
+            <Autocomplete
                 fullWidth
                 disableClearable
                 size="small"
+                multiple={false}
                 value={value}
                 options={llmCells}
                 getOptionLabel={(cell) => cell.cellId || ''}

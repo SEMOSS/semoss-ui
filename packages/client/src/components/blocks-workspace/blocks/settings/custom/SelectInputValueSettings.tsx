@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
-import { AutocompleteTwo, TextField } from '@semoss/ui';
+import { Autocomplete, TextField } from '@semoss/ui';
 import {
     Paths,
     PathValue,
@@ -150,7 +150,7 @@ export const SelectInputValueSettings = observer(
 
         return (
             <BaseSettingSection label="Value">
-                <AutocompleteTwo
+                <Autocomplete
                     fullWidth
                     multiple={multipleple as boolean}
                     options={stringifiedOptions}

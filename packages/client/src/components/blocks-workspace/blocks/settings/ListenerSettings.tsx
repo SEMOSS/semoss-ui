@@ -17,7 +17,7 @@ import {
 } from '@dnd-kit/sortable';
 
 import {
-    BoxTwo,
+    Box,
     Typography,
     IconButton,
     Button,
@@ -218,7 +218,7 @@ export const ListenerSettings = observer(
             };
 
             return (
-                <BoxTwo
+                <Box
                     key={`action-${id}`}
                     ref={setNodeRef}
                     {...attributes}
@@ -226,7 +226,7 @@ export const ListenerSettings = observer(
                     sx={style}
                 >
                     {children}
-                </BoxTwo>
+                </Box>
             );
         };
 

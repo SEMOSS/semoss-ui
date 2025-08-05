@@ -69,35 +69,24 @@ export * from "./components/TextField";
 export * from "./components/TreeView";
 export * from "./components/SelectStack";
 export * from "./components/TextFieldStack";
+export * from "./components/List/ListItem";
+export * from "./components/List/ListItemButton";
+export * from "./components/Table/TableHead";
+export * from "./components/Table/TableRow";
+export * from "./components/Table/TableCell";
+export * from "./components/Table/TableBody";
 
 // TODO: fix miscellaneous mui components/functions
 import {
     OutlinedInput,
-    Checkbox,
     Box,
-    Autocomplete,
-    Chip,
     Fade,
-    ListItem,
-    ListItemButton,
     ListItemIcon,
     ListItemText,
-    Menu,
     MenuList,
-    MenuItem,
     Popper,
-    Tooltip,
-    TooltipProps,
     ClickAwayListener,
     SvgIcon,
-    Popover,
-    Switch,
-    Select,
-    Table,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableBody,
     Input,
     FormHelperText,
 } from "@mui/material";
@@ -106,35 +95,17 @@ import type { SvgIconProps } from "@mui/material";
 export type { SvgIconProps };
 
 export {
-    Input as InputTwo,
-    Checkbox as CheckboxTwo,
+    Input,
     OutlinedInput,
     SvgIcon,
     Box as BoxTwo,
     Fade,
-    ListItem as ListItemTwo,
     ListItemIcon,
     ListItemText,
-    ListItemButton as ListItemButtonTwo,
     MenuList,
     Popper,
-    Menu as MenuTwo,
-    MenuItem as MenuItemTwo,
-    Tooltip as TooltipTwo,
-    Chip as ChipTwo,
-    Autocomplete as AutocompleteTwo,
     ClickAwayListener,
-    Popover as PopoverTwo,
-    Switch as SwitchTwo,
-    Select as SelectTwo,
-    Table as TableTwo,
-    TableHead as TableHeadTwo,
-    TableRow as TableRowTwo,
-    TableCell as TableCellTwo,
-    TableBody as TableBodyTwo,
     FormHelperText,
 };
 
 export { blue, green } from "@mui/material/colors";
-
-export type { TooltipProps as TooltipPropsTwo };

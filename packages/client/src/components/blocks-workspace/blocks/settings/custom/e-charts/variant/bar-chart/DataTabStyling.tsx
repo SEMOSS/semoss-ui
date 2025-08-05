@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
@@ -7,9 +7,7 @@ import { ArrowDropDown } from '@mui/icons-material';
 import { Droppable } from 'react-beautiful-dnd';
 import { computed } from 'mobx';
 
-import { MenuItem, TextField, styled } from '@semoss/ui';
-
-import { AutocompleteTwo, PopoverTwo, SwitchTwo } from '@semoss/ui';
+import { MenuItem, TextField, styled, Autocomplete, Popover, Switch } from '@semoss/ui';
 
 import {
     BlockDef,
@@ -75,15 +73,15 @@ const StyledLabelSection = styled('div')(() => ({
 const StyledSwitchSection = styled('div')(() => ({
     display: 'flex',
     marginTop: '15px',
-    marginLeft: '8px',
+    marginLeft: '10px',
     width: '100%',
+    alignItems: 'center',
+    gap: '8px',
 }));
 //styled label for the constants
 const StyledSpanSwitch = styled('span')(() => ({
     fontSize: '1rem',
     color: '#808080',
-    marginTop: '5px',
-    position: 'relative',
 }));
 //droppable item styling
 const DropContainer = styled('div')(() => ({
@@ -369,7 +367,7 @@ export const DataTabStyling = observer(
             <StyledMain>
                 <StyledSpanFrame>Selected Frame</StyledSpanFrame>
                 <StyledSubSection>
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         id="Echart-Frame"
                         multiple={false}
@@ -398,7 +396,7 @@ export const DataTabStyling = observer(
                 <StyledSubSection
                     onClick={(e: any) => handleChangeVisual(initialVisual, e)}
                 >
-                    <AutocompleteTwo
+                    <Autocomplete
                         fullWidth
                         id="Echart-Visuals"
                         multiple={false}
@@ -656,27 +654,29 @@ export const DataTabStyling = observer(
                     </StyledDroppable>
                 ))}
                 <StyledSwitchSection>
-                    <SwitchTwo
+                    <Switch
                         checked={checkedInstruction}
-                        onChange={(event) =>
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                             setCheckedInstruction(event.target.checked)
                         }
+                        size='small'
                         inputProps={{ 'aria-label': 'controlled' }}
                     />
                     <StyledSpanSwitch>Show All Instruction</StyledSpanSwitch>
                 </StyledSwitchSection>
                 <StyledSwitchSection>
-                    <SwitchTwo
+                    <Switch
                         checked={checkedVisual}
-                        onChange={(event) =>
+                        onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                             setCheckedVisual(event.target.checked)
                         }
+                        size='small'
                         inputProps={{ 'aria-label': 'controlled' }}
                     />
                     <StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>
                 </StyledSwitchSection>
                 <div>
-                    <PopoverTwo
+                    <Popover
                         id={'visual-popover'}
                         open={initialVisual}
                         onClose={() => {
@@ -693,10 +693,10 @@ export const DataTabStyling = observer(
                             selectedItem={handleSelectedItem}
                             handleClose={handleCloseVisual}
                         />
-                    </PopoverTwo>
+                    </Popover>
                 </div>
                 <div>
-                    <PopoverTwo
+                    <Popover
                         id={'instruction-popover'}
                         open={Boolean(aggregateMenuAnchorEl)}
                         onClose={() => {
@@ -754,7 +754,7 @@ export const DataTabStyling = observer(
                                 </MenuItem>
                             ))}
                         </div>
-                    </PopoverTwo>
+                    </Popover>
                 </div>
             </StyledMain>
         );

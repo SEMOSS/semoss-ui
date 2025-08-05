@@ -2,8 +2,8 @@ import {
     styled,
     tooltipClasses,
     Paper,
-    TooltipTwo,
-    TooltipPropsTwo,
+    Tooltip,
+    TooltipProps,
 } from '@semoss/ui';
 
 export const StyledStepPaper = styled(Paper)(({ theme }) => ({
@@ -28,8 +28,8 @@ interface StyledTooltipProps {
     disableBorder?: boolean;
 }
 export const StyledTooltip = styled(
-    ({ className, ...props }: TooltipPropsTwo) => (
-        <TooltipTwo
+    ({ className, ...props }: TooltipProps) => (
+        <Tooltip
             {...props}
             classes={{ popper: className }}
             PopperProps={{

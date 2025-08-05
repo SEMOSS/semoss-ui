@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
-import { AutocompleteTwo, TextField } from '@semoss/ui';
+import { Autocomplete, TextField } from '@semoss/ui';
 import {
     Paths,
     PathValue,
@@ -99,10 +99,11 @@ export const QueryNameDropdownSettings = observer(
 
         return (
             <BaseSettingSection label={label}>
-                <AutocompleteTwo
+                <Autocomplete
                     fullWidth
                     disableClearable={value === ''}
                     size="small"
+                    multiple={false}
                     value={value}
                     options={queries}
                     getOptionLabel={(queryKey: string) => queryKey}

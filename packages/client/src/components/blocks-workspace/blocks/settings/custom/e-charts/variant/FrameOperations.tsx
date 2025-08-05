@@ -13,7 +13,7 @@ import {
     Autocomplete,
     Button,
     Select,
-    CheckboxTwo,
+    Checkbox,
     Tooltip,
     styled,
     TextField,
@@ -1941,9 +1941,7 @@ export const FrameOperations = observer(
                                                                         'flex-end',
                                                                 }}
                                                             >
-                                                                <CheckboxTwo
-                                                                    size="small"
-                                                                    color="primary"
+                                                                <Checkbox
                                                                     onChange={(
                                                                         e,
                                                                     ) => {
@@ -1956,9 +1954,7 @@ export const FrameOperations = observer(
                                                                                         ...prev,
                                                                                     };
                                                                                 if (
-                                                                                    e
-                                                                                        .target
-                                                                                        .checked
+                                                                                    (e.target as HTMLInputElement).checked
                                                                                 ) {
                                                                                     // Add the column name if checked
                                                                                     if (
