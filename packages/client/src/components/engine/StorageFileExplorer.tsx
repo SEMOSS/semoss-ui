@@ -12,7 +12,7 @@ import {
 } from '@semoss/ui';
 import { CloudUploadOutlined, Refresh } from '@mui/icons-material';
 
-import { StorageExplorer } from '../common/File/StorageExplorer';
+import { StorageExplorer } from './StorageExplorer';
 import { Controller, useForm } from 'react-hook-form';
 import { useRootStore } from '@/hooks';
 
@@ -40,9 +40,9 @@ const StyledFileExplorerContainer = styled('div')(({ theme }) => ({
 }));
 
 interface StorageFileExplorerProps {
-    /** Storage engine ID */
     id: string;
 }
+
 type FileUploadForm = {
     PROJECT_UPLOAD: File[];
 };
@@ -69,16 +69,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 =======
 >>>>>>> fa6a47710 (remove conflicts)
 
-    /**
-     * Refresh the file list
-     */
+
     const refreshFiles = () => {
         setRefreshCounter((prev) => prev + 1);
     };
 
-    /**
-     * Toggle expansion of a directory
-     */
     const handleToggleExpand = (path: string) => {
         setExpandedPaths((prev) => {
             if (prev.includes(path)) {
@@ -89,17 +84,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         });
     };
 
-    /**
-     * Handle file selection
-     */
     const handleFileSelect = (path: string) => {
         setSelectedFile(path);
         console.log('Selected file:', path);
     };
 
-    /**
-     * Handle file upload
-     */
     const { control, watch, setValue, handleSubmit } = useForm<{
         FILES: FileExplorerProps[];
         PROJECT_UPLOAD: File[];
@@ -160,13 +149,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 message: String(e),
             });
         } finally {
-            // turn off loading
             refreshFiles();
             setIsLoading(false);
             setValue('PROJECT_UPLOAD', []);
             setOpenPopUp(false);
         }
-        // Refresh the file list after upload
     });
 
     const sanitizeFilename = (filename: string): string => {
@@ -194,9 +181,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         return sanitized;
     };
 
-    /**
-     * Handle file download
-     */
+
     const handleDownload = async (path: string) => {
         try {
             const filename = extractFilename(path);
@@ -254,21 +239,19 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         }
     };
 
-    /**
-     * Handle file deletion
-     */
+
     const handleDelete = (
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => {
         console.log('File deleted:', path);
-        // Remove from expanded paths if it was a directory
+
         setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
-        // Clear selection if the deleted file was selected
+
         if (selectedFile === path) {
             setSelectedFile('');
         }
-        // Refresh the file list after deletion
+
         refreshFiles();
     };
 

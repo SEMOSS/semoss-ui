@@ -26,34 +26,35 @@ const StyledHeader = styled('div')(({ theme }) => ({
 }));
 
 interface StorageExplorerProps {
+
     expandedPaths: string[];
+
     onToggleExpand: (path: string) => void;
-    /** Storage engine ID */
+
     storageId: string;
 
-    /** Trigger a callback when a file is selected */
     onSelect?: (path: string) => void;
-    /** Triggered when the Label starts dragging */
+
     onDragStart?: (
         event: React.DragEvent<HTMLDivElement>,
         path: string,
     ) => void;
+
     onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
-    /** Triggered when the Track Icon is clicked */
     onTrashClick?: (
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
 
-    /** Triggered when upload is requested */
     onUpload?: (storagePath: string, localFilePath: string) => void;
 
-    /** Triggered when download is requested */
     onDownload?: (path: string) => void;
+ 
     onDeleteMultiple?: (paths: string[]) => void;
-    /** Triggered when download multiple is requested */
+ 
     onDownloadMultiple?: (paths: string[]) => void;
+    
 }
 
 export const StorageExplorer = (props: StorageExplorerProps) => {
@@ -73,7 +74,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
 
     const { monolithStore, configStore } = useRootStore();
 
-    // Get storage files
     const getStorageFiles = usePixel<string[]>(
         `Storage(storage = "${storageId}") | ListStoragePath(storagePath='/');`,
     );
@@ -83,21 +83,11 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
     const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
     const [filesToDelete, setFilesToDelete] = React.useState<string[]>([]);
 
-    /**
-     * Triggered when a node is selected
-     * @param selected - newly selected values
-     */
     const handleOnNodeSelect = (selected: string[]) => {
-        // trigger the callback on the first one
         onSelect(selected[0] || '');
-
-        // set the selected values
         setSelected(selected);
     };
 
-    /**
-     * Handle file deletion for storage
-     */
     const handleDelete = async (filePath: string) => {
         const deleteQuery = `Storage(storage = "${storageId}") |
         DeleteFromStorage(storagePath="${filePath}", leaveFolderStructure=false);`;
@@ -168,9 +158,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         return sanitized;
     };
 
-    /**
-     * Handle file download for storage
-     */
     const handleDownload = async (filePath: string) => {
         try {
             const filename = extractFilename(filePath);
@@ -225,57 +212,6 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
         }
     };
 
-    /*
-    const handleDownloadMultiple = async () => {
-        if (selected.length === 0) return;
-
-        try {
-            const pathsString = selected.map((path) => `"${path}"`).join(', ');
-            const downloadQuery = `Storage("${storageId}") | PullMultipleFromStorageAndZip(storagePaths=[${pathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
-
-            console.log('Download multiple query:', downloadQuery);
-            const response = await monolithStore.runQuery(downloadQuery);
-            console.log('Download multiple response:', response);
-
-            const fileKey = response.pixelReturn[0]?.output;
-
-            if (!fileKey) {
-                throw new Error(
-                    'Failed to get file key for download. The files may not exist or there was a server error.',
-                );
-            }
-
-            await monolithStore.download(configStore.store.insightID, fileKey);
-
-            onDownloadMultiple(selected);
-            setSelected([]);
-        } catch (e) {
-            console.error('Download multiple error:', e);
-
-            let errorMessage = 'ZIP download failed: ';
-            if (e instanceof Error) {
-                if (e.message.includes('directory')) {
-                    errorMessage +=
-                        'Cannot download directories. Please select files only.';
-                } else if (e.message.includes('file key')) {
-                    errorMessage += 'Files not found or server error occurred.';
-                } else if (
-                    e.message.includes('network') ||
-                    e.message.includes('fetch')
-                ) {
-                    errorMessage +=
-                        'Network error. Please check your connection and try again.';
-                } else {
-                    errorMessage += e.message;
-                }
-            } else {
-                errorMessage += 'An unexpected error occurred.';
-            }
-
-            console.error(errorMessage);
-        }
-    };
-    */
 
     const handleDownloadMultiple = async () => {
         if (selected.length === 0) return;
@@ -388,7 +324,7 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                             size="small"
                             onClick={handleDownloadMultiple}
                         >
-                            Download as ZIP
+                            Download Selected
                         </Button>
                         <Button
                             variant="outlined"
@@ -465,12 +401,10 @@ export const StorageExplorer = (props: StorageExplorerProps) => {
                                     onSelect={(path, isSelected) => {
                                         let newSelected = [...selected];
                                         if (isSelected) {
-                                            // Add to selection if not already selected
                                             if (!newSelected.includes(path)) {
                                                 newSelected.push(path);
                                             }
                                         } else {
-                                            // Remove from selection if already selected
                                             newSelected = newSelected.filter(
                                                 (p) => p !== path,
                                             );

@@ -53,44 +53,35 @@ const StyledActionContainer = styled('div')(({ theme }) => ({
 }));
 
 interface StorageExplorerItemProps {
-    /** Storage engine ID */
+
     storageId: string;
 
-    /** file details */
     name: string;
     path: string;
     isDirectory: boolean;
     lastModified: string;
 
-    /** node details */
     expanded: string[];
     selected: string[];
 
-    /** Triggered when the Label starts dragging */
     onDragStart?: (
         event: React.DragEvent<HTMLDivElement>,
         path: string,
     ) => void;
 
-    /** Triggered when the item ends dragging */
     onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
-    /** Triggered when the Track Icon is clicked */
     onTrashClick?: (
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => void;
 
-    /** Triggered when upload is requested */
     onUpload?: (storagePath: string, localFilePath: string) => void;
 
-    /** Triggered when download is requested */
     onDownload?: (path: string) => void;
     
-    /** Triggered when download multiple is requested */
     onDownloadMultiple?: (paths: string[]) => void;
     
-    /** Triggered when item is selected/deselected */
     onSelect?: (path: string, isSelected: boolean) => void;
 }
 
@@ -116,7 +107,6 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
 
     const isOpen = expanded.indexOf(path) > -1;
 
-    // Get storage files for this directory
     const getStorageFiles = usePixel<string[]>(
         isDirectory && isOpen
             ? `Storage(storage = "${storageId}") | ListStoragePath(storagePath='${path}');`
@@ -130,11 +120,7 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
     }, []);
 
     const handleUploadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-        e.stopPropagation();
-        // For now, use a hardcoded file path - in a real implementation,
-        // this would open a file picker dialog
-        const localFilePath = "C:/Users/relkhishen/Downloads/file.txt";
-        onUpload(path, localFilePath);
+
     };
 
     const handleDownloadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -142,7 +128,6 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
         onDownload(path);
     };
 
-    // Transform storage files into structured format
     const childFiles = getStorageFiles.status === 'SUCCESS'
         ? getStorageFiles.data.map((filePath) => {
             const pathParts = filePath.split('/').filter(Boolean);
@@ -173,13 +158,11 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                     onDragStart={(e) => {
                         setIsDragging(true);
 
-                        // trigger the callback
                         onDragStart(e, path);
                     }}
                     onDragEnd={(e) => {
                         setIsDragging(false);
 
-                        // trigger the callback
                         onDragEnd(e, path);
                     }}
                 >
@@ -232,10 +215,8 @@ export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
                             <IconButton
                                 title={`Delete ${name}`}
                                 onClick={(e) => {
-                                    // don't allow it to propagate
                                     e.stopPropagation();
 
-                                    // trigger
                                     onTrashClick(e, path);
                                 }}
                                 size="small"
