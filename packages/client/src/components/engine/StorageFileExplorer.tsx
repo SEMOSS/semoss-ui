@@ -9,12 +9,15 @@ import {
     CircularProgress,
     LinearProgress,
     useNotification,
+    Icon,
+    TreeView,
 } from '@semoss/ui';
-import { CloudUploadOutlined, Refresh } from '@mui/icons-material';
+import { CloudUploadOutlined, Refresh, ExpandMore, ChevronRight, DeleteOutline, CloudDownloadOutlined } from '@mui/icons-material';
 
-import { StorageExplorer } from './StorageExplorer';
+import { StorageExplorerItem } from './StorageExplorerItem';
 import { Controller, useForm } from 'react-hook-form';
-import { useRootStore } from '@/hooks';
+import { useRootStore, usePixel } from '@/hooks';
+import { LoadingScreen } from '@/components/ui';
 
 const StyledContainer = styled('div')(({ theme }) => ({
     width: '100%',
@@ -39,6 +42,24 @@ const StyledFileExplorerContainer = styled('div')(({ theme }) => ({
     overflow: 'auto',
 }));
 
+const StyledTreeView = styled(TreeView)(({ theme }) => ({
+    width: '100%',
+    maxHeight: '100%',
+    gap: theme.spacing(3),
+    '.MuiTreeItem-content': {
+        padding: theme.spacing(0.5),
+    },
+    overflow: 'auto',
+}));
+
+const StyledTreeHeader = styled('div')(({ theme }) => ({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: theme.spacing(1),
+    borderBottom: `1px solid ${theme.palette.divider}`,
+}));
+
 interface StorageFileExplorerProps {
     id: string;
 }
@@ -57,7 +78,14 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const [refreshCounter, setRefreshCounter] = useState(0);
     const [openPopUp, setOpenPopUp] = useState<boolean>(false);
     const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [selected, setSelected] = useState<string[]>([]);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+    const getStorageFiles = usePixel<string[]>(
+        `Storage(storage = "${id}") | ListStoragePath(storagePath='/');`,
+    );
+
+    const initLoadComplete = getStorageFiles.status === 'SUCCESS';
 
     const refreshFiles = () => {
         setRefreshCounter((prev) => prev + 1);
@@ -76,6 +104,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const handleFileSelect = (path: string) => {
         setSelectedFile(path);
         console.log('Selected file:', path);
+    };
+
+    const handleOnNodeSelect = (selected: string[]) => {
+        handleFileSelect(selected[0] || '');
+        setSelected(selected);
     };
 
     const { control, setValue, handleSubmit } = useForm<{
@@ -143,11 +176,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
     const sanitizeFilename = (filename: string): string => {
         return filename
-            .replace(/[<>:"/\\|?*]/g, '_')             .replace(/\s+/g, '_')
+            .replace(/[<>:"/\\|?*]/g, '_')
+            .replace(/\s+/g, '_')
             .replace(/_{2,}/g, '_')
             .replace(/^_+|_+$/g, '');
     };
-
 
     const extractFilename = (filePath: string): string => {
         const filename = filePath.split('/').pop() || 'downloaded_file';
@@ -166,6 +199,37 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         return sanitized;
     };
 
+    const handleDelete = async (filePath: string) => {
+        const deleteQuery = `Storage(storage = "${id}") |
+        DeleteFromStorage(storagePath="${filePath}", leaveFolderStructure=false);`;
+
+        try {
+            const response = await monolithStore.runQuery(deleteQuery);
+            console.log('Delete response:', response);
+            handleTrashClick({} as React.MouseEvent<HTMLButtonElement>, filePath);
+        } catch (e) {
+            console.error('Delete error:', e);
+        }
+    };
+
+    const handleDeleteMultiple = async () => {
+        if (selected.length === 0) return;
+
+        const pathsString = selected.map((path) => `"${path}"`).join(', ');
+        const deleteQuery = `Storage(storage = "${id}") |
+        DeleteFromStorage(storagePaths=[${pathsString}], leaveFolderStructure=false);`;
+
+        try {
+            const response = await monolithStore.runQuery(deleteQuery);
+            console.log('Delete multiple response:', response);
+
+            handleDeleteMultipleFiles(selected);
+            setSelected([]);
+            setShowDeleteDialog(false);
+        } catch (e) {
+            console.error('Delete multiple error:', e);
+        }
+    };
 
     const handleDownload = async (path: string) => {
         try {
@@ -224,8 +288,81 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         }
     };
 
+    const handleDownloadMultiple = async () => {
+        if (selected.length === 0) return;
 
-    const handleDelete = (
+        try {
+            const downloadedFiles: string[] = [];
+            
+            for (const path of selected) {
+                if (path.endsWith('/')) {
+                    throw new Error(
+                        'Cannot download directories. Please select files only.',
+                    );
+                }
+
+                const filename = extractFilename(path);
+                const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${path}", filePath="${filename}");`;
+
+                console.log('Downloading file:', path);
+                await monolithStore.runQuery(downloadQuery);
+                downloadedFiles.push(filename);
+            }
+
+            if (downloadedFiles.length > 0) {
+                const filePathsString = downloadedFiles
+                    .map((file) => `"${file}"`)
+                    .join(', ');
+                const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
+
+                console.log('Creating zip file with downloaded files');
+                const response = await monolithStore.runQuery(zipQuery);
+                console.log('Zip response:', response);
+
+                const fileKey = response.pixelReturn[0]?.output;
+
+                if (!fileKey) {
+                    throw new Error(
+                        'Failed to get file key for download. The files may not exist or there was a server error.',
+                    );
+                }
+
+                await monolithStore.download(
+                    configStore.store.insightID,
+                    fileKey,
+                );
+
+                handleDownloadMultipleFiles(selected);
+                setSelected([]);
+            }
+        } catch (e) {
+            console.error('Download multiple error:', e);
+
+            let errorMessage = 'ZIP download failed: ';
+            if (e instanceof Error) {
+                if (e.message.includes('directory')) {
+                    errorMessage +=
+                        'Cannot download directories. Please select files only.';
+                } else if (e.message.includes('file key')) {
+                    errorMessage += 'Files not found or server error occurred.';
+                } else if (
+                    e.message.includes('network') ||
+                    e.message.includes('fetch')
+                ) {
+                    errorMessage +=
+                        'Network error. Please check your connection and try again.';
+                } else {
+                    errorMessage += e.message;
+                }
+            } else {
+                errorMessage += 'An unexpected error occurred.';
+            }
+
+            console.error(errorMessage);
+        }
+    };
+
+    const handleTrashClick = (
         event: React.MouseEvent<HTMLButtonElement>,
         path: string,
     ) => {
@@ -240,7 +377,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         refreshFiles();
     };
 
-    const handleDeleteMultiple = (paths: string[]) => {
+    const handleDeleteMultipleFiles = (paths: string[]) => {
         console.log('Multiple files deleted:', paths);
         paths.forEach((path) => {
             setExpandedPaths((prev) => prev.filter((p) => !p.startsWith(path)));
@@ -251,13 +388,34 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
         refreshFiles();
     };
 
-    const handleDownloadMultiple = (paths: string[]) => {
+    const handleDownloadMultipleFiles = (paths: string[]) => {
         console.log('Multiple files downloaded:', paths);
         paths.forEach((path) => {
             handleDownload(path);
         });
     };
 
+    if (!initLoadComplete) {
+        return (
+            <LoadingScreen.Trigger description="Retrieving files from storage..." />
+        );
+    }
+
+    const files =
+        getStorageFiles.status === 'SUCCESS'
+            ? getStorageFiles.data.map((filePath) => {
+                  const pathParts = filePath.split('/').filter(Boolean);
+                  const name = pathParts[pathParts.length - 1] || filePath;
+                  const isDirectory = filePath.endsWith('/');
+
+                  return {
+                      name,
+                      path: filePath,
+                      type: isDirectory ? 'directory' : 'file',
+                      lastModified: '',
+                  };
+              })
+            : [];
 
     return (
         <StyledContainer>
@@ -284,17 +442,101 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             </StyledHeader>
 
             <StyledFileExplorerContainer>
-                <StorageExplorer
+                <StyledTreeHeader>
+                    <Typography variant="body2" color="textSecondary">
+                        {selected.length > 0 ? `${selected.length} item(s) selected` : 'No items selected'}
+                    </Typography>
+                    {selected.length > 0 && (
+                        <>
+                            <Button
+                                variant="outlined"
+                                color="primary"
+                                startIcon={<CloudDownloadOutlined />}
+                                size="small"
+                                onClick={handleDownloadMultiple}
+                            >
+                                Download Selected
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<DeleteOutline />}
+                                size="small"
+                                onClick={() => setShowDeleteDialog(true)}
+                            >
+                                Delete Selected
+                            </Button>
+                        </>
+                    )}
+                </StyledTreeHeader>
+                <StyledTreeView
                     key={refreshCounter}
-                    storageId={id}
-                    expandedPaths={expandedPaths}
-                    onToggleExpand={handleToggleExpand}
-                    onSelect={handleFileSelect}
-                    onDownload={handleDownload}
-                    onTrashClick={handleDelete}
-                    onDeleteMultiple={handleDeleteMultiple}
-                    onDownloadMultiple={handleDownloadMultiple}
-                />
+                    multiSelect
+                    expanded={expandedPaths}
+                    selected={selected}
+                    onNodeToggle={(e, nodeIds) => {
+                        const lastToggled =
+                            nodeIds.find((id) => !expandedPaths.includes(id)) ||
+                            expandedPaths.find((id) => !nodeIds.includes(id));
+                        if (lastToggled) {
+                            handleToggleExpand(lastToggled);
+                        }
+                    }}
+                    onNodeSelect={(e, v) => {
+                        handleOnNodeSelect(v);
+                    }}
+                    defaultCollapseIcon={
+                        <Icon color={'disabled'}>
+                            <ExpandMore />
+                        </Icon>
+                    }
+                    defaultExpandIcon={
+                        <Icon color={'disabled'}>
+                            <ChevronRight />
+                        </Icon>
+                    }
+                >
+                    <LoadingScreen>
+                        {getStorageFiles.status === 'INITIAL' ||
+                        getStorageFiles.status === 'LOADING' ? (
+                            <LoadingScreen.Trigger />
+                        ) : getStorageFiles.status === 'SUCCESS' ? (
+                            files.map((n) => {
+                                return (
+                                    <StorageExplorerItem
+                                        key={n.path}
+                                        storageId={id}
+                                        name={n.name}
+                                        path={n.path}
+                                        isDirectory={n.type === 'directory'}
+                                        lastModified={n.lastModified}
+                                        expanded={expandedPaths}
+                                        selected={selected}
+                                        onTrashClick={(e, path) => {
+                                            handleDelete(path);
+                                        }}
+                                        onDownload={(path) => {
+                                            handleDownload(path);
+                                        }}
+                                        onSelect={(path, isSelected) => {
+                                            let newSelected = [...selected];
+                                            if (isSelected) {
+                                                if (!newSelected.includes(path)) {
+                                                    newSelected.push(path);
+                                                }
+                                            } else {
+                                                newSelected = newSelected.filter(
+                                                    (p) => p !== path,
+                                                );
+                                            }
+                                            handleOnNodeSelect(newSelected);
+                                        }}
+                                    />
+                                );
+                            })
+                        ) : null}
+                    </LoadingScreen>
+                </StyledTreeView>
             </StyledFileExplorerContainer>
 
             {selectedFile && (
@@ -363,6 +605,24 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     </Modal.Actions>
                 </form>
                 {isLoading && <LinearProgress />}
+            </Modal>
+
+            <Modal open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)}>
+                <Modal.Title>Confirm Delete</Modal.Title>
+                <Modal.Content>
+                    <Typography variant="body1">
+                        Are you sure you want to delete {selected.length} selected item(s)?
+                        This action cannot be undone.
+                    </Typography>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button onClick={() => setShowDeleteDialog(false)}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleDeleteMultiple} color="error" variant="contained">
+                        Delete
+                    </Button>
+                </Modal.Actions>
             </Modal>
         </StyledContainer>
     );
