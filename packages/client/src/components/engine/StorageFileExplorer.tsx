@@ -441,7 +441,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                 </div>
             </StyledHeader>
 
-            <StyledFileExplorerContainer>
+            <StyledFileExplorerContainer key={refreshCounter}>
                 <StyledTreeHeader>
                     <Typography variant="body2" color="textSecondary">
                         {selected.length > 0 ? `${selected.length} item(s) selected` : 'No items selected'}
@@ -501,41 +501,39 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                             <LoadingScreen.Trigger />
                         </LoadingScreen>
                     ) : getStorageFiles.status === 'SUCCESS' ? (
-                        <div key={refreshCounter}>
-                            {files.map((n) => {
-                                return (
-                                    <StorageExplorerItem
-                                        key={n.path}
-                                        storageId={id}
-                                        name={n.name}
-                                        path={n.path}
-                                        isDirectory={n.type === 'directory'}
-                                        lastModified={n.lastModified}
-                                        expanded={expandedPaths}
-                                        selected={selected}
-                                        onTrashClick={(e, path) => {
-                                            handleDelete(path);
-                                        }}
-                                        onDownload={(path) => {
-                                            handleDownload(path);
-                                        }}
-                                        onSelect={(path, isSelected) => {
-                                            let newSelected = [...selected];
-                                            if (isSelected) {
-                                                if (!newSelected.includes(path)) {
-                                                    newSelected.push(path);
-                                                }
-                                            } else {
-                                                newSelected = newSelected.filter(
-                                                    (p) => p !== path,
-                                                );
+                        files.map((n) => {
+                            return (
+                                <StorageExplorerItem
+                                    key={n.path}
+                                    storageId={id}
+                                    name={n.name}
+                                    path={n.path}
+                                    isDirectory={n.type === 'directory'}
+                                    lastModified={n.lastModified}
+                                    expanded={expandedPaths}
+                                    selected={selected}
+                                    onTrashClick={(e, path) => {
+                                        handleDelete(path);
+                                    }}
+                                    onDownload={(path) => {
+                                        handleDownload(path);
+                                    }}
+                                    onSelect={(path, isSelected) => {
+                                        let newSelected = [...selected];
+                                        if (isSelected) {
+                                            if (!newSelected.includes(path)) {
+                                                newSelected.push(path);
                                             }
-                                            handleOnNodeSelect(newSelected);
-                                        }}
-                                    />
-                                );
-                            })}
-                        </div>
+                                        } else {
+                                            newSelected = newSelected.filter(
+                                                (p) => p !== path,
+                                            );
+                                        }
+                                        handleOnNodeSelect(newSelected);
+                                    }}
+                                />
+                            );
+                        })
                     ) : null}
                 </StyledTreeView>
             </StyledFileExplorerContainer>
