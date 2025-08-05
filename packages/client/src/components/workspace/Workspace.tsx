@@ -27,8 +27,8 @@ import { WorkspaceLoading } from './WorkspaceLoading';
 
 import { SIDEBAR_MENU } from '@/pages/import/import.constants';
 import SEMOSS_BLACK_LOGO from '@/assets/img/SEMOSS_BLACK_LOGO.png';
-import { PAGE_BLOCK } from '../blocks-workspace/panels/LayersPanel';
-import { AddPage } from '@/assets/img/AddPage';
+// import { PAGE_BLOCK } from '../blocks-workspace/panels/LayersPanel';
+// import { AddPage } from '@/assets/img/AddPage';
 import { ClosePage } from '@/assets/img/ClosePage';
 import { NavbarHeader, NavbarLeft, NavbarRight } from '../shared';
 
@@ -102,6 +102,19 @@ const StyledActions = styled(Stack)(({ theme }) => ({
     zIndex: 1,
 }));
 
+const StyledNavLeft = styled(Stack)(({ theme }) => ({
+    minWidth: 0, 
+    overflow: 'hidden', 
+    whiteSpace: 'nowrap', 
+    textOverflow: 'ellipsis'
+}));
+
+const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
+    '& .MuiBreadcrumbs-ol': {         
+        flexWrap: 'nowrap'                 
+    }
+}));
+
 type WorkspaceProps = {
     /** Actions to render in the navbar */
     navbarActions?: React.ReactNode;
@@ -118,19 +131,11 @@ type WorkspaceProps = {
 
 export const Workspace = observer((props: WorkspaceProps) => {
     const { navbarActions, workspace, options, factory = () => null } = props;
-    const { page } = usePage();
-    const { configStore } = useRootStore();
-    const accordionRefs = useRef({});
-    const { state } = useBlocks();
-    const { designer } = useDesigner();
-    const notification = useNotification();
-    const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
     const layoutRef = useRef<Layout | null>(null);
     const model = workspace.model;
-
+    
     // build the model from the layout
     useEffect(() => {
-        page.navbar.search = false;
         const handler = (e: CustomEvent) => {
             const { destinationType, destination } = e.detail;
             if (destinationType === 'App Page') {
@@ -207,6 +212,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
     useEffect(() => {
         // default options if not loaded from cache
         const defaultOptions = JSON.parse(JSON.stringify(options));
+
         // set the workspace options
         // try to load from cache
         const isLoaded = workspace.loadFromCache();
@@ -214,43 +220,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
             workspace.load(defaultOptions);
         }
     }, [options]);
-
-    useEffect(() => {
-        openTab();
-    }, [designer.selected]);
-
-    function getIdByName(iMap, targetName: string): string | null {
-        for (const [key, value] of iMap.entries()) {
-            if (value?.attributes?.name === targetName) {
-                if (!value?.visible) {
-                    return key;
-                }
-            }
-        }
-        return null;
-    }
-
-    const openTab = () => {
-        const layout = layoutRef.current;
-        if (!layout) return;
-        const model = workspace.model;
-        const tabId = getIdByName(model['idMap'], 'Block Settings');
-        model.doAction(Actions.selectTab(tabId));
-    };
-
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
-
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
-
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
 
     /**
      * reset the selected layout
@@ -267,191 +236,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
         }
     };
 
-    const handleRenderTabSet = (tabSetNode, renderValues) => {
-        if (
-            tabSetNode.getId() === 'border_left' ||
-            tabSetNode.getId() === 'border_right'
-        ) {
-            return;
-        }
-        renderValues.buttons.unshift(
-            <StyledRenderTabSet
-                key="custom-add-button"
-                title="Add Tab"
-                onClick={() => handlePageAdd()}
-            >
-                <AddPage />
-            </StyledRenderTabSet>,
-        );
-    };
-
-    const handlePageAdd = async () => {
-        try{
-        const newPageId = await state.dispatch({
-            message: ActionMessages.ADD_BLOCK,
-            payload: {
-                json: PAGE_BLOCK,
-            },
-        });
-        if (typeof newPageId === 'string') {
-            const block = state.blocks[newPageId];
-            handlePageSelection(block);
-        } else {
-            console.error('Invalid newPageId:', newPageId);
-        }
-    } catch (error) {
-        console.error('Error adding new page:', error);
-        notification.add({
-            color: 'error',
-            message: 'Failed to add new page',
-        });
-    };
-    };
-
-    const handlePageSelection = (block) => {
-        accordionRefs.current = {};
-        designer.setSelected(block.id);
-        handleOnSelect(block);
-    };
-
-    const scrollIntoView = (
-        element: Element | null,
-        {
-            behavior = 'smooth' as ScrollBehavior,
-            block = 'center' as ScrollLogicalPosition,
-            inline = 'start' as ScrollLogicalPosition,
-        } = {},
-    ) => {
-        (element as HTMLElement)?.scrollIntoView({
-            behavior,
-            block,
-            inline,
-        });
-    };
-
-    const getNodeInfo = (id, model) => {
-        let returnedNode: TabNode | null = null;
-        // visit the notes, and see if it exists
-        model.visitNodes((node) => {
-            // check if it is a tabNode
-            if (node instanceof TabNode) {
-                // it needs to be a notebook-viewer
-                const component = node.getComponent();
-                if (component !== 'designer') {
-                    return;
-                }
-
-                // path and space need to match
-                const config = node.getConfig();
-                if (config.id !== id) {
-                    return;
-                }
-
-                returnedNode = node;
-            }
-        });
-
-        return returnedNode;
-    };
-
-    const selectPanel = (id: string): boolean => {
-        try {
-            if (!id) {
-                return false;
-            }
-
-            let selectedNode: TabNode | null = null;
-
-            // get the model
-            const model = workspace.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
-            selectedNode = getNodeInfo(id, model);
-
-            // create a new panel if there is no node
-            if (!selectedNode) {
-                return false;
-            }
-            const selectedNodeId = selectedNode.getId();
-            model.doAction(Actions.selectTab(selectedNodeId));
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-
-            return false;
-        }
-
-        return true;
-    };
-
-    const createPanel = (id: string): boolean => {
-        try {
-            if (!id) {
-                return false;
-            }
-
-            // get the model
-            const model = workspace.model;
-            if (!model) {
-                throw new Error('Missing model');
-            }
-
-            // get the name
-            const name = id;
-
-            // where to add the node
-            const addId =
-                model.getActiveTabset()?.getId() ||
-                model.getRoot().getChildren()[0]?.getId() ||
-                '';
-
-            // create and select the panel
-            model.doAction(
-                Actions.addNode(
-                    {
-                        type: 'tab',
-                        name: name,
-                        component: 'designer',
-                        config: {
-                            id: id,
-                        },
-                        enableClose: true,
-                    },
-                    addId,
-                    DockLocation.CENTER,
-                    -1,
-                    true,
-                ),
-            );
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: e,
-            });
-
-            return false;
-        }
-
-        return true;
-    };
-
-    const handleOnSelect = (blockData) => {
-        const id = blockData.id;
-        if (blockData.widget !== 'page') {
-            scrollIntoView(getBlockElement(id));
-            return;
-        }
-        // try to select a panel, if it doesn't exist create it. Save the path
-        const IsSelected = selectPanel(id);
-        if (!IsSelected) {
-            createPanel(id);
-        }
-    };
-
+    
     const updateModel = (action) => {
         if (!model) return;
 
@@ -489,36 +274,38 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         ></StyledSemossImage>
                     }
                 />
-                <Breadcrumbs separator=" /">
-                    <StyledHeaderLogo to={'/'}>
-                        <Stack direction={'row'} alignItems={'center'}>
-                            <StyledAppTypography variant={'subtitle1'}>
-                                App Library
-                            </StyledAppTypography>
-                        </Stack>
-                    </StyledHeaderLogo>
-                    <StyledHeaderLogo
-                        to={`/app/${workspace.metadata.project_id}/view`}
-                    >
-                        <StyledAppTypography variant={'subtitle1'}>
-                            {workspace.metadata.project_name}
-                        </StyledAppTypography>
-                    </StyledHeaderLogo>
-                    <StyledHeaderLogo to={''}>
-                        <Typography
-                            variant={'subtitle1'}
-                            sx={{ display: 'inline', mr: 0.5 }}
+                <StyledNavLeft>
+                    <StyledBreadcrumbs separator=" /">
+                        <StyledHeaderLogo to={'/app'}>
+                            <Stack direction={'row'} alignItems={'center'}>
+                                <StyledAppTypography variant={'subtitle1'}>
+                                    App Library
+                                </StyledAppTypography>
+                            </Stack>
+                        </StyledHeaderLogo>
+                        <StyledHeaderLogo
+                            to={`/app/${workspace.metadata.project_id}/view`}
                         >
-                            {workspace.metadata.project_name} - Editor
-                        </Typography>
-                        {/* TODO : Info icon requires the text */}
-                        {/* <IconButton size={'small'}>
-                                    <InfoOutlined
-                                        sx={{ color: '#666', fontSize: 16 }}
-                                    />
-                                </IconButton>  */}
-                    </StyledHeaderLogo>
-                </Breadcrumbs>
+                            <StyledAppTypography variant={'subtitle1'}>
+                                {workspace.metadata.project_name}
+                            </StyledAppTypography>
+                        </StyledHeaderLogo>
+                        <StyledHeaderLogo to={''}>
+                            <Typography
+                                variant={'subtitle1'}
+                                sx={{ display: 'inline', mr: 0.5 }}
+                            >
+                                {workspace.metadata.project_name} - Editor
+                            </Typography>
+                            {/* TODO : Info icon requires the text */}
+                            {/* <IconButton size={'small'}>
+                                        <InfoOutlined
+                                            sx={{ color: '#666', fontSize: 16 }}
+                                        />
+                                    </IconButton>  */}
+                        </StyledHeaderLogo>
+                    </StyledBreadcrumbs>
+                </StyledNavLeft>
             </NavbarLeft>
             <NavbarRight>{navbarActions}</NavbarRight>
             <WorkspaceOverlay />
@@ -537,7 +324,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                                     icons={{
                                         close: <ClosePage />,
                                     }}
-                                    onRenderTabSet={handleRenderTabSet}
+                                    // onRenderTabSet={handleRenderTabSet}
                                     onModelChange={() => {
                                         workspace.saveToCache();
                                     }}
@@ -591,3 +378,222 @@ export const Workspace = observer((props: WorkspaceProps) => {
         </WorkspaceContext.Provider>
     );
 });
+
+
+// NOTES: WE HAVE TO FIX ALOT HERE.
+    // The code specific to blocks apps should not be here.
+    // Interacting with the model seems to be something that is needed for alot of these conventions that we have here. 
+    // One issue i see is the renderTabSet.  it is dependent on the useBlocks hook.  We will need to figure out how to do this without the useBlocks Dependency here.
+    // The quick fix is to comment out the action on the tabset
+    
+    // TODO: Should not be used in workspace this is a shared component for apps that aren't drag and drop
+    // const notification = useNotification();
+    // const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
+    // const { page } = usePage();
+    // const { state } = useBlocks();
+    // const { designer } = useDesigner();
+    // const { configStore } = useRootStore();
+    // const accordionRefs = useRef({});
+
+    // TODO: probably should be passed as callback to the BlocksWorkspace
+    // useEffect(() => {
+    //     openTab();
+    // }, [designer.selected]);
+
+    // const openTab = () => {
+    //     const layout = layoutRef.current;
+    //     if (!layout) return;
+    //     const model = workspace.model;
+    //     const tabId = getIdByName(model['idMap'], 'Block Settings');
+    //     model.doAction(Actions.selectTab(tabId));
+    // };
+    // const handlePageAdd = async () => {
+    //     try{
+    //     const newPageId = await state.dispatch({
+    //         message: ActionMessages.ADD_BLOCK,
+    //         payload: {
+    //             json: PAGE_BLOCK,
+    //         },
+    //     });
+    //     if (typeof newPageId === 'string') {
+    //         const block = state.blocks[newPageId];
+    //         handlePageSelection(block);
+    //     } else {
+    //         console.error('Invalid newPageId:', newPageId);
+    //     }
+    // } catch (error) {
+    //     console.error('Error adding new page:', error);
+    //     notification.add({
+    //         color: 'error',
+    //         message: 'Failed to add new page',
+    //     });
+    // };
+    // };
+    // function getIdByName(iMap, targetName: string): string | null {
+    //     for (const [key, value] of iMap.entries()) {
+    //         if (value?.attributes?.name === targetName) {
+    //             if (!value?.visible) {
+    //                 return key;
+    //             }
+    //         }
+    //     }
+    //     return null;
+    // }
+    // const handlePageSelection = (block) => {
+    //     accordionRefs.current = {};
+    //     // designer.setSelected(block.id);
+    //     handleOnSelect(block);
+    // };
+    // const handleRenderTabSet = (tabSetNode, renderValues) => {
+    //     if (
+    //         tabSetNode.getId() === 'border_left' ||
+    //         tabSetNode.getId() === 'border_right'
+    //     ) {
+    //         return;
+    //     }
+    //     renderValues.buttons.unshift(
+    //         <StyledRenderTabSet
+    //             key="custom-add-button"
+    //             title="Add Tab"
+    //             // onClick={() => handlePageAdd()}
+    //         >
+    //             <AddPage />
+    //         </StyledRenderTabSet>,
+    //     );
+    // };
+    // const handleOnSelect = (blockData) => {
+    //     const id = blockData.id;
+    //     if (blockData.widget !== 'page') {
+    //         scrollIntoView(getBlockElement(id));
+    //         return;
+    //     }
+    //     // try to select a panel, if it doesn't exist create it. Save the path
+    //     const IsSelected = selectPanel(id);
+    //     if (!IsSelected) {
+    //         createPanel(id);
+    //     }
+    // };
+    // const createPanel = (id: string): boolean => {
+    //     try {
+    //         if (!id) {
+    //             return false;
+    //         }
+
+    //         // get the model
+    //         const model = workspace.model;
+    //         if (!model) {
+    //             throw new Error('Missing model');
+    //         }
+
+    //         // get the name
+    //         const name = id;
+
+    //         // where to add the node
+    //         const addId =
+    //             model.getActiveTabset()?.getId() ||
+    //             model.getRoot().getChildren()[0]?.getId() ||
+    //             '';
+
+    //         // create and select the panel
+    //         model.doAction(
+    //             Actions.addNode(
+    //                 {
+    //                     type: 'tab',
+    //                     name: name,
+    //                     component: 'designer',
+    //                     config: {
+    //                         id: id,
+    //                     },
+    //                     enableClose: true,
+    //                 },
+    //                 addId,
+    //                 DockLocation.CENTER,
+    //                 -1,
+    //                 true,
+    //             ),
+    //         );
+    //     } catch (e) {
+    //         notification.add({
+    //             color: 'error',
+    //             message: e,
+    //         });
+
+    //         return false;
+    //     }
+
+    //     return true;
+    // };
+    // const scrollIntoView = (
+    //     element: Element | null,
+    //     {
+    //         behavior = 'smooth' as ScrollBehavior,
+    //         block = 'center' as ScrollLogicalPosition,
+    //         inline = 'start' as ScrollLogicalPosition,
+    //     } = {},
+    // ) => {
+    //     (element as HTMLElement)?.scrollIntoView({
+    //         behavior,
+    //         block,
+    //         inline,
+    //     });
+    // };
+
+    // const selectPanel = (id: string): boolean => {
+    //     try {
+    //         if (!id) {
+    //             return false;
+    //         }
+
+    //         let selectedNode: TabNode | null = null;
+
+    //         // get the model
+    //         const model = workspace.model;
+    //         if (!model) {
+    //             throw new Error('Missing model');
+    //         }
+
+    //         selectedNode = getNodeInfo(id, model);
+
+    //         // create a new panel if there is no node
+    //         if (!selectedNode) {
+    //             return false;
+    //         }
+    //         const selectedNodeId = selectedNode.getId();
+    //         model.doAction(Actions.selectTab(selectedNodeId));
+    //     } catch (e) {
+    //         notification.add({
+    //             color: 'error',
+    //             message: e,
+    //         });
+
+    //         return false;
+    //     }
+
+    //     return true;
+    // };
+
+     // const getNodeInfo = (id, model) => {
+    //     let returnedNode: TabNode | null = null;
+    //     // visit the notes, and see if it exists
+    //     model.visitNodes((node) => {
+    //         // check if it is a tabNode
+    //         if (node instanceof TabNode) {
+    //             // it needs to be a notebook-viewer
+    //             const component = node.getComponent();
+    //             if (component !== 'designer') {
+    //                 return;
+    //             }
+
+    //             // path and space need to match
+    //             const config = node.getConfig();
+    //             if (config.id !== id) {
+    //                 return;
+    //             }
+
+    //             returnedNode = node;
+    //         }
+    //     });
+
+    //     return returnedNode;
+    // };
+    
