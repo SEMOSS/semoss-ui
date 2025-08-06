@@ -11,7 +11,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { LayoutProps, Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
+import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
 
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
@@ -108,12 +108,12 @@ type WorkspaceProps = {
 	options: WorkspaceOptions;
 
 	/** Factor method */
-	factory: (node: TabNode, layout: Layout) => React.ReactNode;
+	factory: (node: TabNode, layout: typeof Layout) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
-	const layoutRef = useRef<Layout | null>(null);
+	const layoutRef = useRef<typeof Layout | null>(null);
 	const model = workspace.model;
 
 	// build the model from the layout
@@ -292,12 +292,6 @@ export const Workspace = observer((props: WorkspaceProps) => {
 							>
 								{workspace.metadata.project_name} - Editor
 							</Typography>
-							{/* TODO : Info icon requires the text */}
-							{/* <IconButton size={'small'}>
-                                        <InfoOutlined
-                                            sx={{ color: '#666', fontSize: 16 }}
-                                        />
-                                    </IconButton>  */}
 						</StyledHeaderLogo>
 					</StyledBreadcrumbs>
 				</StyledNavLeft>

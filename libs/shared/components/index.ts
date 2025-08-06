@@ -1,11 +1,4 @@
+import { Actions, DockLocation, TabNode } from "flexlayout-react";
+import { Layout } from "./flex-layout";
 
-import { 
-    Actions, 
-    DockLocation, 
-    ILayoutProps,
-    TabNode, 
-} from "flexlayout-react";
-import { Layout, LayoutProps } from './flex-layout';
-
-export type { LayoutProps, Actions, DockLocation, TabNode, ILayoutProps };
-export { Layout };
+export { Layout, Actions, DockLocation, TabNode };
