@@ -1,215 +1,215 @@
 export const Bar = [
     {
-        name: "X Axis",
+        name: 'X Axis',
         multiLabel: false,
-        label: "xAxis",
+        label: 'xAxis',
         aggregate: false,
     },
     {
-        name: "Y Axis",
+        name: 'Y Axis',
         multiLabel: true,
-        label: "yAxis",
+        label: 'yAxis',
         aggregate: true,
     },
 ];
 
 export const Pie = [
     {
-        name: "Label",
+        name: 'Label',
         multiLabel: false,
-        label: "Label",
+        label: 'Label',
         aggregate: false,
     },
     {
-        name: "Value",
+        name: 'Value',
         multiLabel: false,
-        label: "Value",
+        label: 'Value',
         aggregate: true,
-    }
+    },
 ];
 
 export const ScatterPlot = [
     {
-        name: "Label",
+        name: 'Label',
         multiLabel: false,
-        label: "label",
+        label: 'label',
         aggregate: false,
     },
     {
-        name: "X Axis",
+        name: 'X Axis',
         multiLabel: false,
-        label: "XAxis",
+        label: 'XAxis',
         aggregate: true,
     },
     {
-        name: "Y Axis",
+        name: 'Y Axis',
         multiLabel: false,
-        label: "YAxis",
+        label: 'YAxis',
         aggregate: true,
     },
     {
-        name: "Size",
+        name: 'Size',
         multiLabel: false,
-        label: "size",
+        label: 'size',
         aggregate: true,
     },
     {
-        name: "Color",
+        name: 'Color',
         multiLabel: false,
-        label: "color",
+        label: 'color',
         aggregate: true,
     },
     {
-        name: "Tooltip",
+        name: 'Tooltip',
         multiLabel: false,
-        label: "tooltip",
+        label: 'tooltip',
         aggregate: true,
     },
 ];
 
 export const StackChart = [
     {
-        name: "X Axis",
+        name: 'X Axis',
         multiLabel: false,
-        label: "XAxis",
+        label: 'XAxis',
         aggregate: false,
     },
     {
-        name: "Y Axis",
+        name: 'Y Axis',
         multiLabel: false,
-        label: "YAxis",
+        label: 'YAxis',
         aggregate: true,
     },
     {
-        name: "Category",
+        name: 'Category',
         multiLabel: false,
-        label: "category",
+        label: 'category',
         aggregate: false,
     },
     {
-        name: "Tooltip",
+        name: 'Tooltip',
         multiLabel: false,
-        label: "tooltip",
+        label: 'tooltip',
         aggregate: true,
     },
 ];
 
 export const Line = [
     {
-        name: "X Axis",
+        name: 'X Axis',
         multiLabel: false,
-        label: "xAxis",
+        label: 'xAxis',
         aggregate: false,
     },
     {
-        name: "Y Axis",
+        name: 'Y Axis',
         multiLabel: true,
-        label: "yAxis",
+        label: 'yAxis',
         aggregate: true,
     },
     {
-        name: "Tooltip",
+        name: 'Tooltip',
         multiLabel: false,
-        label: "tooltip",
+        label: 'tooltip',
         aggregate: true,
     },
 ];
 
 export const WorldMap = [
     {
-        name: "Label",
+        name: 'Label',
         multiLabel: false,
-        label: "label",
+        label: 'label',
         aggregate: false,
     },
     {
-        name: "Latitude",
+        name: 'Latitude',
         multiLabel: false,
-        label: "Latitude",
+        label: 'Latitude',
         aggregate: true,
     },
     {
-        name: "Longitude",
+        name: 'Longitude',
         multiLabel: false,
-        label: "Longitude",
+        label: 'Longitude',
         aggregate: true,
     },
     {
-        name: "Size",
+        name: 'Size',
         multiLabel: false,
-        label: "size",
+        label: 'size',
         aggregate: true,
     },
     {
-        name: "Color",
+        name: 'Color',
         multiLabel: false,
-        label: "color",
+        label: 'color',
         aggregate: true,
     },
     {
-        name: "Tooltip",
+        name: 'Tooltip',
         multiLabel: false,
-        label: "tooltip",
+        label: 'tooltip',
         aggregate: false,
     },
 ];
 
 export const Gantt = [
     {
-        name: "Task",
+        name: 'Task',
         multiLabel: false,
-        label: "task",
+        label: 'task',
         aggregate: false,
     },
     {
-        name: "Start Date",
+        name: 'Start Date',
         multiLabel: false,
-        label: "startdate",
+        label: 'startdate',
         aggregate: false,
     },
     {
-        name: "End Date",
+        name: 'End Date',
         multiLabel: false,
-        label: "enddate",
+        label: 'enddate',
         aggregate: false,
     },
     {
-        name: "Task Group",
+        name: 'Task Group',
         multiLabel: false,
-        label: "taskgroup",
+        label: 'taskgroup',
         aggregate: false,
     },
     {
-        name: "Task Progress",
+        name: 'Task Progress',
         multiLabel: false,
-        label: "taskprogress",
+        label: 'taskprogress',
         aggregate: true,
     },
     {
-        name: "MileStone",
+        name: 'MileStone',
         multiLabel: false,
-        label: "milestone",
+        label: 'milestone',
         aggregate: false,
     },
     {
-        name: "Tooltip",
+        name: 'Tooltip',
         multiLabel: true,
-        label: "tooltip",
+        label: 'tooltip',
         aggregate: true,
     },
 ];
 
 export const Dendrogram = [
     {
-        name: "Dimensions",
+        name: 'Dimensions',
         multiLabel: true,
-        label: "dimensions",
+        label: 'dimensions',
         aggregate: false,
     },
     {
-        name: "Facet",
+        name: 'Facet',
         multiLabel: false,
-        label: "facet",
+        label: 'facet',
         aggregate: false,
     },
 ];
