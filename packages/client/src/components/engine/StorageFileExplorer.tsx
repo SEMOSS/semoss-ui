@@ -245,7 +245,12 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             }
         }
     };
-
+/*
+ * @param path 
+ * @returns 
+ * 
+ * GetEngineMetadata(engine=["8be5fb68-ffab-47bd-af2a-cd409b51e732"], metaKeys=["engine_name"]);
+ */
     const handleDownload = async (path?: string) => {
         const pathsToDownload = path ? [path] : selected;
         
@@ -324,12 +329,21 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     await monolithStore.runQuery(downloadQuery);
                     downloadedFiles.push(filename);
                 }
-
                 if (downloadedFiles.length > 0) {
+                    const storageMetaData = await monolithStore.runQuery(`GetEngineMetadata(engine=["${id}"]);`);
+                    const storageName = storageMetaData.pixelReturn[0].output.database_name;
+                    const userName = configStore.store.user.name;
+                    const now = new Date();
+                    const formattedDate = now.toISOString()
+                        .replace(/[:]/g, '-')       
+                        .replace(/\..+/, '')        
+                        .replace('T', '_');         
+                    console.log("DATEEEEEE", formattedDate);
                     const filePathsString = downloadedFiles
-                        .map((file) => `"${file}"`)
-                        .join(', ');
-                    const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="multiple_files.zip") | DownloadAsset(filePath=["multiple_files.zip"], space=["insight"]);`;
+                    .map((file) => `"${file}"`)
+                    .join(', ');
+                    const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="${storageName}_${userName}_${formattedDate}.zip") 
+                                    | DownloadAsset(filePath=["${storageName}_${userName}_${formattedDate}.zip"], space=["insight"]);`;
 
                     console.log('Creating zip file with downloaded files');
                     const response = await monolithStore.runQuery(zipQuery);
