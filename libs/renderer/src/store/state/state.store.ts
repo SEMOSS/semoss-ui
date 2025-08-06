@@ -602,10 +602,8 @@ export class StateStore {
 						id,
 					);
 
-					console.log('index to parse on list', index)
 					const iteratorList = iteratorBlock.data.source as string;
-					console.log('iteratorList', iteratorList);
-					
+
 					let list = this.parseVariable(iteratorList);
 
 					if (typeof list === "string") {
@@ -616,9 +614,6 @@ export class StateStore {
 						}
 					}
 
-					console.log('list to parse on', list)
-
-
 					let variable;
 
 					if (expression.includes(".")) {
@@ -627,11 +622,7 @@ export class StateStore {
 						variable = expression.match(/^\$(\w+)/)?.[1];
 					}
 
-					const stripped = iteratorList.slice(2, -2);
-
-					console.log("variable", variable)
-					console.log("stripped", stripped)
-
+					const stripped = iteratorList.trim().slice(2, -2);
 
 					// TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
 					// Do we just call this recursively
@@ -960,8 +951,7 @@ export class StateStore {
 			}
 		}
 
-
-		console.warn(`${blockId} is not a descendent of iterator`)
+		console.warn(`${blockId} is not a descendent of iterator`);
 		return false;
 	};
 
@@ -985,7 +975,7 @@ export class StateStore {
 			}
 		}
 
-		console.warn(`${blockId} is not a descendent of ${containerId}`)
+		console.warn(`${blockId} is not a descendent of ${containerId}`);
 		return false;
 	};
 
@@ -1003,7 +993,7 @@ export class StateStore {
 			}
 		}
 
-		console.warn(`Unable find iterator child`)
+		console.warn(`Unable find iterator child`);
 		return -1; // Return -1 if not found
 	};
 
