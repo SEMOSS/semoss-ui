@@ -1,24 +1,21 @@
-import { useEffect, useState, useReducer } from "react";
 import { observer } from "mobx-react-lite";
-
-import {
-  Stack,
-  Typography,
-  Button,
-  styled,
-  ToggleTabsGroup,
-  TextField,
-  InputAdornment,
-} from "@semoss/ui";
-import { debounced } from "@semoss/sdk/react";
-
+import { useEffect, useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-import { usePixel, useRootStore } from "@/hooks";
+import { debounced } from "@semoss/sdk/react";
+import {
+  Button,
+  Stack,
+  styled,
+  TextField,
+  ToggleTabsGroup,
+  Typography,
+} from "@semoss/ui";
+import { setProjectFavorite } from "@/api";
 import { AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { NavbarLeft, NavbarHeader } from "../../components/shared";
+import { usePixel, useRootStore } from "@/hooks";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 const StyledContainer = styled("div")(({ theme }) => ({
   width: "100%",
@@ -142,7 +139,7 @@ const TERMINAL_APP: AppMetadata = {
  * App page
  */
 export const AppCatalogPage = observer((): JSX.Element => {
-  const { configStore, monolithStore } = useRootStore();
+  const { configStore } = useRootStore();
   const navigate = useNavigate();
 
   const [state, dispatch] = useReducer(reducer, initialState);
@@ -153,7 +150,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
   const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
 
-  let testVar = "hello";
+  const _testVar = "hello";
 
   // get a list of the keys
   const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -251,8 +248,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
    */
   const favoriteApp = (app) => {
     const favorite = !isFavorited(app.project_id);
-    monolithStore
-      .setProjectFavorite(app.project_id, favorite)
+    setProjectFavorite(app.project_id, favorite)
       .then(() => {
         if (!favorite) {
           const newFavorites = favoritedApps;
@@ -412,8 +408,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         favoriteApp(app);
                       }}
                       isDiscoverable={mode !== "Mine"}
-                      isLoading={true}
-                      showSkeleton={false}
                     />
                   );
                 })}

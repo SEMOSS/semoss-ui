@@ -580,9 +580,9 @@ export const uploadFile = async (
             fileLocation: string;
         }[]
     >(url, fd, {
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-        },
+        // headers: {
+        //     'content-type': 'application/x-www-form-urlencoded',
+        // },
     });
     return response.data;
 };
@@ -834,9 +834,9 @@ export const createUserAccessKey = async (
             TOKENNAME: string;
             TOKENDESCRIPTION?: string;
         }>(url, body, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
+            // headers: {
+            //     'content-type': 'application/x-www-form-urlencoded',
+            // },
         })
         .catch((error) => {
             throw Error(error);
@@ -850,9 +850,9 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
         'accessKey': accessKey
     };
     const response = await post<boolean>(url, body, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
+            // headers: {
+            //     'content-type': 'application/x-www-form-urlencoded',
+            // },
         })
         .catch((error) => {
             throw Error(error);

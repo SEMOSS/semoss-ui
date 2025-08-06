@@ -8,6 +8,7 @@ import React, { Dispatch, SetStateAction, useState } from "react";
 import { Control } from "react-hook-form";
 import { useNotification } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
+import { uploadFile } from "@/api";
 import { AppAccessStep } from "./AppAccessStep";
 import { AppDetailsStep } from "./AppDetailsStep";
 import { AppTagsStep } from "./AppTagsStep";
@@ -150,7 +151,7 @@ export const AddAppModal = (props: AddAppProps) => {
 		// upload the file
 
 		if (data[ADD_APP_FORM_FIELD_TYPE] === "App Zip") {
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFile(
 				[data[ADD_APP_FORM_FIELD_UPLOAD]],
 				configStore.store.insightID,
 			);
@@ -235,7 +236,7 @@ export const AddAppModal = (props: AddAppProps) => {
 				return;
 			}
 
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFile(
 				[data[ADD_APP_FORM_FIELD_UPLOAD]],
 				configStore.store.insightID,
 				createProjectOutput.project_id,

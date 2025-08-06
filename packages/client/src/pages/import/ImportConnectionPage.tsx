@@ -2,9 +2,8 @@ import React from 'react';
 import { styled, Box, useNotification } from '@semoss/ui';
 import { useNavigate } from 'react-router-dom';
 import { ImportForm } from '@/components/import';
-import { useRootStore } from '@/hooks';
-
-import { useStepper } from '@/hooks';
+import { useRootStore, useStepper } from '@/hooks';
+import { uploadFile } from '@/api';
 
 const StyledBox = styled(Box)(({ theme }) => ({
     boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
@@ -74,7 +73,7 @@ export const ImportConnectionPage = () => {
             /** Model: START */
             let pixel;
             if (values.secondaryFields['FILE']) {
-                const upload = await monolithStore.uploadFile(
+                const upload = await uploadFile(
                     [values.secondaryFields['FILE']],
                     configStore.store.insightID,
                 );
@@ -146,7 +145,7 @@ export const ImportConnectionPage = () => {
                 });
 
                 if (values.secondaryFields['EMBEDDINGS']) {
-                    const upload = await monolithStore.uploadFile(
+                    const upload = await uploadFile(
                         [values.secondaryFields['EMBEDDINGS']],
                         configStore.store.insightID,
                     );
@@ -207,7 +206,7 @@ export const ImportConnectionPage = () => {
             /** Function: START */
             let pixel;
             if (values.secondaryFields['FILE']) {
-                const upload = await monolithStore.uploadFile(
+                const upload = await uploadFile(
                     [values.secondaryFields['FILE']],
                     configStore.store.insightID,
                 );

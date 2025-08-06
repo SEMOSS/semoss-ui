@@ -18,6 +18,7 @@ import {
     Select,
     Switch,
 } from '@semoss/ui';
+import { editMemberInfo, createUser} from '@/api';
 import { useForm, Controller } from 'react-hook-form';
 import { useRootStore, useSettings } from '@/hooks';
 import { AxiosResponse } from 'axios';
@@ -231,7 +232,13 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
             let success = false;
 
             try {
-                let response: AxiosResponse<boolean> | null = null;
+                let response:
+                  | AxiosResponse<boolean>
+                  | {
+                      response: Response;
+                      data: boolean;
+                    }
+                  | null = null;
 
                 if (data.model_usage_restriction === 'token') {
                     data.model_max_response_time = null;
@@ -262,7 +269,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                             data.exporter = false;
                         }
                     }
-                    response = await monolithStore.editMemberInfo(
+                    response = await editMemberInfo(
                         adminMode,
                         data,
                     );

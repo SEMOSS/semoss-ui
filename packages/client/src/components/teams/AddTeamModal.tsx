@@ -18,6 +18,7 @@ import {
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
+import { addTeam } from "@/api/teams";
 
 import AMAZON_S3 from '@/assets/loginProviders/Amazon_S3.png';
 import newGoogle from '@/assets/loginProviders/google.png';

@@ -23,6 +23,7 @@ import { Delete, ClearRounded } from '@mui/icons-material';
 import { AxiosResponse } from 'axios';
 
 import { useRootStore } from '@/hooks';
+import { getTeamUsers, getNonTeamUsers, addTeamUser, deleteTeamUser } from '@/api/teams';
 import { debounced } from '@semoss/sdk/react';
 
 const colors = [
@@ -263,8 +264,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
      * @desc - sets members in react hook form
      */
     useEffect(() => {
-        monolithStore
-            .getTeamUsers(
+        getTeamUsers(
                 groupId,
                 limit,
                 membersPage * limit - limit, // offset
@@ -327,8 +327,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
             }
 
             for (let i = 0; i < requests.length; i++) {
-                let response: AxiosResponse<{ success: boolean }> | null = null;
-                response = await monolithStore.addTeamUser(
+                let response:
+                  | AxiosResponse<{ success: boolean }>
+                  | {
+                      response: Response;
+                      data: {
+                        success: boolean;
+                      };
+                    }
+                  | null = null;
+                response = await addTeamUser(
                     groupId,
                     requests[i].type,
                     requests[i].userid,
@@ -376,8 +384,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
      */
     const deleteUser = async (user) => {
         try {
-            let response: AxiosResponse<{ success: boolean }> | null = null;
-            response = await monolithStore.deleteTeamUser(user);
+            let response:
+                  | AxiosResponse<{ success: boolean }>
+                  | {
+                      response: Response;
+                      data: {
+                        success: boolean;
+                      };
+                    }
+                  | null = null;
+            response = await deleteTeamUser(user);
 
             if (!response) {
                 return;
@@ -407,9 +423,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
         try {
             for (let i = 0; i < selectedMembers.length; i++) {
                 try {
-                    let response: AxiosResponse<{ success: boolean }> | null =
-                        null;
-                    response = await monolithStore.deleteTeamUser(
+                    let response:
+                      | AxiosResponse<{ success: boolean }>
+                      | {
+                          response: Response;
+                          data: {
+                            success: boolean;
+                          };
+                        }
+                      | null = null;
+                    response = await deleteTeamUser(
                         selectedMembers[i],
                     );
 
@@ -450,7 +473,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
             let response;
             // possibly add more db table columns / keys here to get id type for display under username
             // eslint-disable-next-line prefer-const
-            response = await monolithStore.getNonTeamUsers(
+            response = await getNonTeamUsers(
                 groupId,
                 AUTOCOMPLETE_LIMIT,
                 offset,
@@ -511,8 +534,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     teamMembers > 19 && paginationOptions.membersPageCounts.push(20);
 
     const filterUsers = useCallback(() => {
-        monolithStore
-            .getTeamUsers(
+        getTeamUsers(
                 groupId,
                 limit,
                 membersPage * limit - limit, // offset
@@ -525,14 +547,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
     }, [count, membersPage, searchFilter]);
 
     const filterUsersTwo = useCallback(() => {
-        monolithStore
-            .getTeamUsers(
+        getTeamUsers(
                 groupId,
                 100,
                 0, // offset
                 searchFilter,
             )
-            .then((data) => setMemberCount(data.length));
+            .then((data :any[]) => setMemberCount(data.length));
     }, [count, membersPage, searchFilter]);
 
     const filter = () => {

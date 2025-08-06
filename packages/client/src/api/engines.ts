@@ -136,11 +136,7 @@ export const addEngineUserPermissions = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
   // figure out whether we want to do .catch here
 };
@@ -162,11 +158,7 @@ export const removeEngineUserPermissions = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, postData, {});
   return response;
 };
 
@@ -211,11 +203,7 @@ export const setEngineVisiblity = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
 };
 
@@ -256,11 +244,7 @@ export const approveEngineUserAccessRequest = async (
   };
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
 };
 
@@ -280,11 +264,7 @@ export const denyEngineUserAccessRequest = async (
   };
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
 };
 
@@ -311,11 +291,7 @@ export const addEnginePermission = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
 };
 
@@ -344,11 +320,7 @@ export const editEnginePermission = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
 };
 
@@ -372,13 +344,42 @@ export const deleteEnginePermission = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {
-    headers: {
-      "content-type": "application/x-www-form-urlencoded",
-    },
-  });
+  }>(url, processPostData(postData), {});
   return response;
 };
+
+  /**
+   * @name editEngineUserPermissions
+   * @param admin
+   * @param appId
+   * @param users
+   * @returns
+   */
+  export const editEngineUserPermissions = async (admin: boolean, appId: string, users: any[]) => {
+    let url = `${Env.MODULE}/api/auth/`,
+      postData = {};
+
+    if (admin) {
+      url += "admin/";
+    }
+
+    url += "engine/editEngineUserPermissions";
+
+    postData = {
+      engineId: appId,
+      userpermissions: users,
+    };
+
+    const response = await post<{ success: boolean }>(url, processPostData(postData), {
+      // headers: {
+      //   "content-type": "application/x-www-form-urlencoded",
+      // },
+    });
+
+    return response;
+
+    // figure out whether we want to do .catch here
+  }
 
 const processPostData = (data: any) => {
   let postRecordData: Record<string, unknown> = {};

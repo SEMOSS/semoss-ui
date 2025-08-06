@@ -17,7 +17,7 @@ import {
     Grid,
 } from '@semoss/ui';
 import { useDebouncedValue } from '@semoss/sdk/react';
-
+import { editMemberInfo, deleteMember } from '@/api';
 import { useRootStore, useAPI, useSettings } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { UserAddOverlay } from './UserAddOverlay';
@@ -273,7 +273,7 @@ export const UserTable = (props: UserTableProps) => {
                     user.exporter = false;
                 }
             }
-            const response = await monolithStore.editMemberInfo(
+            const response = await editMemberInfo(
                 adminMode,
                 user,
             );
@@ -312,7 +312,7 @@ export const UserTable = (props: UserTableProps) => {
      */
     const deleteUser = async (user: User) => {
         try {
-            const response = await monolithStore.deleteMember(
+            const response = await deleteMember(
                 adminMode,
                 user.id,
                 user.type,
@@ -354,7 +354,7 @@ export const UserTable = (props: UserTableProps) => {
         try {
             for (let i = 0; i < selectedMembers.length; i++) {
                 try {
-                    const response = await monolithStore.deleteMember(
+                    const response = await deleteMember(
                         adminMode,
                         selectedMembers[i].id,
                         selectedMembers[i].type,

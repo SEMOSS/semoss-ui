@@ -28,6 +28,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import { useRootStore } from '@/hooks';
 import { AxiosResponse } from 'axios';
 import { AddTeamModal } from './AddTeamModal';
+import { deleteTeam, getNonTeamUsers, addTeamUser } from '@/api/teams';
 
 const colors = [
     'rgba(111, 212, 203, 1)',
@@ -233,7 +234,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
     const deleteGroup = () => {
         try {
-            monolithStore.deleteTeam(id, type);
+            deleteTeam(id, type);
             dispatch({
                 type: 'field',
                 field: 'teams',
@@ -284,13 +285,20 @@ export const TeamTileCard = (props: TeamCardProps) => {
             }
 
             for (let i = 0; i < requests.length; i++) {
-                const response: AxiosResponse<{ success: boolean }> | null =
-                    await monolithStore.addTeamUser(
-                        id,
-                        requests[i].type,
-                        requests[i].userid,
-                        true,
-                    );
+                const response:
+                  | AxiosResponse<{ success: boolean }>
+                  | {
+                      response: Response;
+                      data: {
+                        success: boolean;
+                      };
+                    }
+                  | null = await addTeamUser(
+                  id,
+                  requests[i].type,
+                  requests[i].userid,
+                  true
+                );
 
                 if (!response) {
                     return;
@@ -334,7 +342,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
         if (type === 'CUSTOM') {
             try {
-                const response = await monolithStore.getNonTeamUsers(
+                const response = await getNonTeamUsers(
                     id,
                     AUTOCOMPLETE_LIMIT,
                     offset,
@@ -344,7 +352,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
                 // ignore if there is no response
                 if (response) {
                     let requests = reset ? [] : nonCredentialedUsers;
-                    const users = response.map((val) => {
+                    const users = (response as unknown as any[]).map((val) => {
                         return {
                             ...val,
                             color: colors[

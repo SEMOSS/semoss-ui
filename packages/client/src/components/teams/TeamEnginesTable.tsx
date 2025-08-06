@@ -26,6 +26,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { getTeamEngines, getUnassignedTeamEngines, addEnginePermission, editEnginePermission, deleteEnginePermission } from "@/api";
 import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
@@ -273,7 +274,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			let response;
 			// possibly add more db table columns / keys here to get id type for display under engines
 			// eslint-disable-next-line prefer-const
-			response = await monolithStore.getUnassignedTeamEngines(
+			response = await getUnassignedTeamEngines(
 				groupId,
 				groupType,
 				AUTOCOMPLETE_LIMIT,
@@ -368,20 +369,18 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 * @desc - sets engines in react hook form
 	 */
 	useEffect(() => {
-		monolithStore
-			.getTeamEngines(
+		getTeamEngines(
 				groupId,
 				groupType,
 				limit,
 				enginesPage * limit - limit, // offset
 				searchFilter,
 			)
-			.then((data) => {
+			.then((data: any[]) => {
 				setEngines(data);
 				setHasEngines(true);
 			});
 	}, [
-		monolithStore.getTeamEngines,
 		groupId,
 		groupType,
 		enginesPage,
@@ -437,8 +436,16 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response: AxiosResponse<{ success: boolean }> | null = null;
-				response = await monolithStore.addEnginePermission(
+				let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+						}
+					| null = null;
+				response = await addEnginePermission(
 					groupId,
 					requests[i].engine_id,
 					permissionMapper[addEngineRole],
@@ -486,8 +493,16 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 */
 	const deleteEngine = async (engine: Engine) => {
 		try {
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.deleteEnginePermission(
+			let response:
+			| AxiosResponse<{ success: boolean }>
+			| {
+				response: Response;
+				data: {
+				success: boolean;
+				};
+			}
+			| null = null;
+			response = await deleteEnginePermission(
 				groupId,
 				groupType,
 				engine,
@@ -520,9 +535,16 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		try {
 			for (let i = 0; i < selectedEngines.length; i++) {
 				try {
-					let response: AxiosResponse<{ success: boolean }> | null =
-						null;
-					response = await monolithStore.deleteEnginePermission(
+					let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+						response: Response;
+						data: {
+						success: boolean;
+						};
+					}
+					| null = null;
+					response = await deleteEnginePermission(
 						groupId,
 						groupType,
 						selectedEngines[i],
@@ -563,8 +585,16 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.editEnginePermission(
+			let response:
+        | AxiosResponse<{ success: boolean }>
+        | {
+            response: Response;
+            data: {
+              success: boolean;
+            };
+          }
+        | null = null;
+			response = await editEnginePermission(
 				groupId,
 				engine,
 			);
@@ -604,33 +634,30 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	engines?.length > 19 && paginationOptions.enginesPageCounts.push(20);
 
 	const filterEngines = useCallback(() => {
-		monolithStore
-			.getTeamEngines(
+		getTeamEngines(
 				groupId,
 				groupType,
 				limit,
 				enginesPage * limit - limit, // offset
 				searchFilter,
 			)
-			.then((data) => {
+			.then((data: any[]) => {
 				setEngines(data);
 				setHasEngines(true);
 			});
-		monolithStore
-			.getTeamEngines(
+		getTeamEngines(
 				groupId,
 				groupType,
 				100,
 				0, // offset
 				searchFilter,
 			)
-			.then((data) => setEngineCount(data.length));
+			.then((data: any[]) => setEngineCount(data.length));
 	}, [
 		enginesPage,
 		searchFilter,
 		groupId,
 		groupType,
-		monolithStore.getTeamEngines,
 	]);
 
 	const debouncedFilterProjects = debounced(filterEngines, 400);

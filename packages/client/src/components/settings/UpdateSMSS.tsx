@@ -7,7 +7,7 @@ import {
     Typography,
     Box,
 } from '@semoss/ui';
-
+import { updateDatabaseSmssProperties } from '@/api';
 import { ALL_TYPES } from '@/types';
 import { useRootStore, usePixel, useSettings } from '@/hooks';
 
@@ -84,8 +84,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
      * @desc hit endpoint to update smss file
      */
     const updateSMSSProperties = () => {
-        monolithStore
-            .updateDatabaseSmssProperties(id, value)
+        updateDatabaseSmssProperties(id, value)
             .then((resp) => {
                 const { data } = resp;
 

@@ -15,6 +15,7 @@ import {
     useNotification,
 } from '@semoss/ui';
 import { Add, Delete, SimCardDownload } from '@mui/icons-material';
+import { uploadFile } from '@/api';
 import { usePixel, useRootStore } from '@/hooks';
 
 const StyledTableContainer = styled(Table.Container)({
@@ -209,7 +210,7 @@ export const FileTable = (props: FileTableProps) => {
 
         try {
             //upload the file
-            const upload = await monolithStore.uploadFile(
+            const upload = await uploadFile(
                 data.PROJECT_UPLOAD,
                 configStore.store.insightID,
             );

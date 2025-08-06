@@ -23,7 +23,7 @@ import {
     Alert,
     Collapse,
 } from '@semoss/ui';
-
+import { editMemberInfo, createUserAccessKey, deleteUserAccessKeys } from '@/api/auth';
 import { useAPI, useRootStore } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 import { useState } from 'react';
@@ -236,7 +236,7 @@ export const MyProfilePage = () => {
             data.USERNAME !== id && (userObj['newUsername'] = data.USERNAME);
             data.EMAIL !== email && (userObj['newEmail'] = data.EMAIL);
 
-            const response = await monolithStore.editMemberInfo(true, userObj);
+            const response = await editMemberInfo(true, userObj);
 
             if (response.data) {
                 notification.add({
@@ -263,7 +263,7 @@ export const MyProfilePage = () => {
      */
     const createAccessKey = async (data: CreateAccessKeyForm) => {
         try {
-            const output = await monolithStore.createUserAccessKey(
+            const output = await createUserAccessKey(
                 data.TOKENNAME,
                 data.TOKENDESCRIPTION || '',
             );
@@ -293,7 +293,7 @@ export const MyProfilePage = () => {
      */
     const deleteAccessKey = async (accessKey: string) => {
         try {
-            const response = await monolithStore.deleteUserAccessKeys(
+            const response = await deleteUserAccessKeys(
                 accessKey,
             );
 

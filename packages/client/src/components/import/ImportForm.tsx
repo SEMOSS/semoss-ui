@@ -17,7 +17,7 @@ import {
     Tooltip,
 } from '@semoss/ui';
 import { ExpandLess, ExpandMore, Help } from '@mui/icons-material';
-
+import { uploadFile } from '@/api';
 import { useStepper, useRootStore } from '@/hooks';
 import { useNavigate } from 'react-router-dom';
 import { useFieldArray, useForm, Form, Controller } from 'react-hook-form';
@@ -476,7 +476,7 @@ export const ImportForm = (props) => {
         // If it's a File Upload
         if (steps[1].id.includes('File Uploads')) {
             if (steps[1].title === 'ZIP') {
-                const upload = await monolithStore.uploadFile(
+                const upload = await uploadFile(
                     [data.ZIP],
                     configStore.store.insightID,
                 );
