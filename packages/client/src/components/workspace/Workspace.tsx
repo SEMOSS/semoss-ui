@@ -12,6 +12,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
+import { Layout as FlexLayout } from "flexlayout-react" // TODO: Why cant i export from shared 
 
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
@@ -108,12 +109,12 @@ type WorkspaceProps = {
 	options: WorkspaceOptions;
 
 	/** Factor method */
-	factory: (node: TabNode, layout: typeof Layout) => React.ReactNode;
+	factory: (node: TabNode, layout: FlexLayout) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
-	const layoutRef = useRef<typeof Layout | null>(null);
+	const layoutRef = useRef<FlexLayout | null>(null);
 	const model = workspace.model;
 
 	// build the model from the layout
