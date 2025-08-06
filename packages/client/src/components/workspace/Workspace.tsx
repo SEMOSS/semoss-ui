@@ -1,8 +1,9 @@
 import { RestartAlt } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import React, { useEffect, useRef } from "react";
+import type React from "react";
+import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-
+import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
 import {
 	Breadcrumbs,
 	IconButton,
@@ -11,18 +12,16 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
-
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
 import { WorkspaceContext } from "@/contexts";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
-import { WorkspaceOptions, WorkspaceStore } from "@/stores";
+import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
 
-type LayoutType = React.ElementRef<typeof Layout>
+type LayoutType = React.ElementRef<typeof Layout>;
 
 const StyledMain = styled("div")(() => ({
 	position: "relative",

@@ -19,7 +19,7 @@
 
 		/* Lang and Env */
 		"paths": {
-           "@/*": ["./src/*"],
+			"@/*": ["./src/*"]
 		}
 	},
 	"include": ["src"],

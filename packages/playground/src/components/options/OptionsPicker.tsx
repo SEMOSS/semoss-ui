@@ -11,7 +11,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { ChatRoom } from "@/stores";
+import type { ChatRoom } from "@/stores";
 
 const StyledPopover = styled(Popover)(({ theme }) => ({
 	"& .MuiPaper-root": {
