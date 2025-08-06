@@ -1,6 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Actions, DockLocation, Layout, TabNode } from 'flexlayout-react';
-import { useNotification, IconButton, Stack, Tooltip } from '@semoss/ui';
+import {
+    useNotification,
+    IconButton,
+    Stack,
+    Tooltip,
+    styled,
+    InputAdornment,
+    TextField,
+} from '@semoss/ui';
 import {
     CreateNewFolderOutlined,
     NoteAddOutlined,
@@ -8,6 +16,7 @@ import {
     Refresh,
     PublishedWithChangesOutlined,
     CoffeeOutlined,
+    Search,
 } from '@mui/icons-material';
 
 import { useRootStore, useWorkspace } from '@/hooks';
@@ -22,12 +31,58 @@ import { Panel } from './Panel';
 const EXPLORER_TYPE = 'app';
 
 interface FileExplorerPanelProps {
+    title: string;
     /** Current layoutobject */
     layout: Layout;
 }
 
+const StyledTitle = styled('div')(({ theme }) => ({
+    borderRadius: '16px',
+    background: ' #EBF4FE',
+    width: 'fit-content',
+    marginTop: '4px',
+    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    marginBottom: '8px',
+
+    backgroundColor: theme.palette.primary.selected,
+    color: theme.palette.info.dark,
+}));
+
+const StyledFileSpan = styled('span')(({ theme }) => ({
+    color: 'var(--Text-Primary, #212121)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontFamily: 'Inter',
+    fontSize: '16px',
+    fontStyle: 'normal',
+    fontWeight: 400,
+    lineHeight: '150%', // or '24px' if you prefer fixed px value
+    letterSpacing: '0.15px',
+}));
+
+const StyledTitleSpan = styled('span')(({ theme }) => ({
+    color: 'var(--Primary-Dark, #1260DD)',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontSize: '13px',
+    fontFamily: 'Inter',
+    fontWeight: 400,
+    fontStyle: 'normal',
+    letterSpacing: '0.16px',
+    lineHeight: '18px',
+    marginBottom: '8px',
+    marginTop: '8px',
+}));
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+    paddingRight: '16px',
+    paddingLeft: '16px',
+    marginTop: '8px',
+    width: '100%',
+    borderRadius: '8px',
+}));
+
 export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
-    const { layout } = props;
+    const { title, layout } = props;
 
     const { workspace } = useWorkspace();
     const { monolithStore } = useRootStore();
@@ -474,78 +529,128 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
         <Panel
             actions={
                 <>
-                    <IconButton
-                        size={'small'}
-                        color={'default'}
-                        title={'Refresh'}
-                        onClick={() => {
-                            refreshFiles();
-                        }}
+                    <Stack
+                        direction={'column'}
+                        spacing={0}
+                        className="notebook-variables-menu"
+                        width={'100%'}
                     >
-                        <Refresh fontSize="inherit" />
-                    </IconButton>
-                    <Stack flex={1}>&nbsp;</Stack>
-                    <Tooltip title={`Publish files`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                publishApp();
+                        <StyledTitle>
+                            <StyledTitleSpan>{title}</StyledTitleSpan>
+                        </StyledTitle>
+                        {/* TODO: Implement Search functionality and remove the comments */}
+                        {/* <StyledTextField
+                            placeholder="Search"
+                            size="small"
+                            fullWidth
+                            // value={search}
+                            // onChange={(e) => setSearch(e.target.value)}
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search />
+                                    </InputAdornment>
+                                ),
+                                // endAdornment: (
+                                //     <InputAdornment position="end">
+                                //         <IconButton
+                                //             size="small"
+                                //             onClick={(e) =>
+                                //                 setMenuAnchorEl(e.currentTarget)
+                                //             }
+                                //         >
+                                //             <Badge
+                                //                 variant="dot"
+                                //                 invisible={!anyEnabledFilter}
+                                //                 color="primary"
+                                //             >
+                                //                 <Tune />
+                                //             </Badge>
+                                //         </IconButton>
+                                //     </InputAdornment>
+                                // ),
                             }}
+                        /> */}
+                        <Stack
+                            direction={'row'}
+                            alignItems={'center'}
+                            justifyContent={'space-between'}
+                            paddingLeft={'16px'}
+                            paddingRight={'16px'}
+                            paddingTop={'16px'}
                         >
-                            <PublishedWithChangesOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Recompile reactors`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                recompileApp();
-                            }}
-                        >
-                            <CoffeeOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Upload file(s) to ${fileUploadPath}`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenAddFile();
-                            }}
-                        >
-                            <FileUpload fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Create new file at ${fileUploadPath}`}>
-                        <IconButton
-                            title={`Create new file at ${fileUploadPath}`}
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreateFile('file');
-                            }}
-                        >
-                            <NoteAddOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
-                    <Tooltip title={`Create new folder at ${fileUploadPath}`}>
-                        <IconButton
-                            size={'small'}
-                            color={'default'}
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleOpenCreateFile('directory');
-                            }}
-                        >
-                            <CreateNewFolderOutlined fontSize="inherit" />
-                        </IconButton>
-                    </Tooltip>
+                            <StyledFileSpan>Files</StyledFileSpan>
+                            <Stack direction={'row'} spacing={0.5}>
+                                <Tooltip title={`Publish files`}>
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            publishApp();
+                                        }}
+                                    >
+                                        <PublishedWithChangesOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip title={`Recompile reactors`}>
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            recompileApp();
+                                        }}
+                                    >
+                                        <CoffeeOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip
+                                    title={`Upload file(s) to ${fileUploadPath}`}
+                                >
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenAddFile();
+                                        }}
+                                    >
+                                        <FileUpload fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip
+                                    title={`Create new file at ${fileUploadPath}`}
+                                >
+                                    <IconButton
+                                        title={`Create new file at ${fileUploadPath}`}
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenCreateFile('file');
+                                        }}
+                                    >
+                                        <NoteAddOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+                                <Tooltip
+                                    title={`Create new folder at ${fileUploadPath}`}
+                                >
+                                    <IconButton
+                                        size={'small'}
+                                        color={'default'}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenCreateFile('directory');
+                                        }}
+                                    >
+                                        <CreateNewFolderOutlined fontSize="inherit" />
+                                    </IconButton>
+                                </Tooltip>
+                            </Stack>
+                        </Stack>
+                    </Stack>
                 </>
             }
         >

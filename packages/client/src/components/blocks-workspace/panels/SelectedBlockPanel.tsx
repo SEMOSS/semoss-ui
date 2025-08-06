@@ -34,7 +34,15 @@ const StyledTitle = styled(Typography)(() => ({
     textTransform: 'capitalize',
     fontWeight: 'bold',
 }));
-
+const StyledBlockTitle = styled('div')(({ theme }) => ({
+    borderRadius: '16px',
+    background: ' #EBF4FE',
+    width: 'fit-content',
+    paddingRight: theme.spacing(2),
+    paddingLeft: theme.spacing(2),
+    backgroundColor: theme.palette.primary.selected,
+    color: theme.palette.info.dark,
+}));
 const StyledMenu = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'column',
@@ -113,6 +121,7 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
     width: '100%',
     margin: '0 auto',
     display: 'flex',
+    alignSelf: 'stretch',
     justifyContent: 'space-between',
     '.MuiTabs-scroller': {
         display: 'flex',
@@ -167,12 +176,28 @@ const StyledVariationIcon = styled('img')(({ theme }) => ({
     width: theme.spacing(4),
     height: theme.spacing(4),
 }));
+export interface SelectedBlocksProps {
+    /** Title to render in the menu */
+    title: string;
+}
 
-export const SelectedBlockPanel = observer(() => {
+const StyledTitleSpan = styled('span')(() => ({
+    color: 'var(--Primary-Dark, #1260DD)',
+    fontFamily: 'Inter',
+    fontFeatureSettings: "'liga' off, 'clig' off",
+    fontStyle: 'normal',
+    fontSize: '13px',
+    lineHeight: '18px',
+    fontWeight: 400,
+    letterSpacing: '0.16px',
+    marginLeft: '0px !important',
+}));
+
+export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
+    const { title } = props;
     const { designer } = useDesigner();
     const { state } = useBlocks();
     const notification = useNotification();
-
     const [contentAccordion, setContentAccordion] = useState<
         Record<string, boolean>
     >({});
@@ -401,6 +426,11 @@ export const SelectedBlockPanel = observer(() => {
     return (
         <Panel>
             <StyledMenu>
+                {/* <StyledBlockTitle>
+                    <StyledTitleSpan>
+                        {title}
+                    </StyledTitleSpan> 
+                </StyledBlockTitle> */}
                 <StyledMenuHeader>
                     <Stack
                         flex={1}
@@ -483,7 +513,6 @@ export const SelectedBlockPanel = observer(() => {
                         )}
                     </Stack>
                 </StyledMenuHeader>
-                {/* <Divider /> */}
                 <StyledMenuScroll>
                     {!!menu &&
                         createElement(menu, {
@@ -499,12 +528,6 @@ export const SelectedBlockPanel = observer(() => {
                             <StyledToggleTabsGroup
                                 variant="fullWidth"
                                 value={settingSection}
-                                sx={{
-                                    display: 'flex',
-                                    padding: '8px 16px',
-                                    alignItems: 'center',
-                                    alignSelf: 'stretch',
-                                }}
                                 onChange={(
                                     e: React.SyntheticEvent,
                                     val: string,

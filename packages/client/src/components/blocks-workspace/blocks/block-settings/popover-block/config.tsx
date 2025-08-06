@@ -4,13 +4,7 @@ import { Schema } from '@mui/icons-material';
 import { TextField, Typography, AutocompleteTwo } from '@semoss/ui';
 
 import { BaseSettingSection, ColorSettings } from '../../settings';
-import {
-    Paths,
-    PathValue,
-    useBlocks,
-    BlockDef,
-    Block,
-} from '@semoss/renderer';
+import { Paths, PathValue, useBlocks, BlockDef, Block } from '@semoss/renderer';
 
 import { useBlockSettings } from '@/hooks';
 import { BLOCK_TYPE_LAYOUT } from '../block-defaults.constants';

@@ -23,7 +23,7 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import { usePage, useRootStore } from "@/hooks";
-import { LoginPopover } from "./LoginPopover";
+import { LogoutPopover } from "./LogoutPopover";
 
 const DRAWER_OPEN_WIDTH = 288;
 
@@ -285,7 +285,7 @@ export const Sidebar: React.FC = observer(() => {
 			<Divider light />
 			<StyledSidebarFooter>
 				<StyledList dense={true} aria-label="main navigation">
-					<LoginPopover>
+					<LogoutPopover>
 						<StyledListItemButton aria-label={"Login"} dense={true}>
 							<StyledListItemIcon>
 								<AccountCircleRounded />
@@ -298,7 +298,7 @@ export const Sidebar: React.FC = observer(() => {
 								}
 							/>
 						</StyledListItemButton>
-					</LoginPopover>
+					</LogoutPopover>
 				</StyledList>
 			</StyledSidebarFooter>
 		</StyledSidebar>
