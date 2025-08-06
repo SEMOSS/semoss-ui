@@ -52,7 +52,7 @@ export const VisualMap = observer(
 
         const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
             setSearch(e.target.value);
-            let searchValue = e.target.value;
+            const searchValue = e.target.value;
             if (searchValue === '') {
                 setFilteredData(VisualMapConstant);
                 return;
