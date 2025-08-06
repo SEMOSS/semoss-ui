@@ -1,10 +1,8 @@
 import { RestartAlt } from "@mui/icons-material";
-import { Actions, DockLocation, Layout, TabNode } from "flexlayout-react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import "flexlayout-react/style/light.css";
-import "./flexlayout.css";
+
 import {
 	Breadcrumbs,
 	IconButton,
@@ -13,6 +11,8 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
+import { LayoutProps, Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
+
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
 import { WorkspaceContext } from "@/contexts";
