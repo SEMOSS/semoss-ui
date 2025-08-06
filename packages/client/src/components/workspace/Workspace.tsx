@@ -12,7 +12,6 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
-import { Layout as FlexLayout } from "flexlayout-react" // TODO: Why cant i export from shared 
 
 import { ClosePage } from "@/assets/img/ClosePage";
 import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
@@ -22,6 +21,8 @@ import { WorkspaceOptions, WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
+
+type LayoutType = React.ElementRef<typeof Layout>
 
 const StyledMain = styled("div")(() => ({
 	position: "relative",
@@ -109,12 +110,12 @@ type WorkspaceProps = {
 	options: WorkspaceOptions;
 
 	/** Factor method */
-	factory: (node: TabNode, layout: FlexLayout) => React.ReactNode;
+	factory: (node: TabNode, layout: LayoutType) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
-	const layoutRef = useRef<FlexLayout | null>(null);
+	const layoutRef = useRef<LayoutType | null>(null);
 	const model = workspace.model;
 
 	// build the model from the layout
