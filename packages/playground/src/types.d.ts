@@ -84,6 +84,7 @@ export type PixelMessage =
 interface AbstractPixelMessage {
 	type: string;
 	messageId: string;
+	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
 	ornaments: {
@@ -95,7 +96,7 @@ interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	visible: true;
 	inputUIPrompt: string;
-    modelId: string;
+	modelId: string;
 	paramMap: {
 		max_new_tokens: number;
 		temperature: number;
@@ -121,7 +122,7 @@ interface InputToolExecPixelMessage extends AbstractPixelMessage {
 			/** Parameters for app */
 			map: Record<string, unknown>;
 		};
-	};
+	}[];
 }
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {

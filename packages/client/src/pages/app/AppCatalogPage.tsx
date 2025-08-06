@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useReducer, useState, } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
@@ -10,7 +10,9 @@ import {
   ToggleTabsGroup,
   Typography,
 } from "@semoss/ui";
-import { AppMetadata, AppTileCard } from "@/components/app";
+
+nents/app";
+
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import {
@@ -68,14 +70,26 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 
 type MODE = "Mine" | "Discoverable" | "System";
+type MODE = "Mine" | "Discoverable" | "System";
 
 const initialState = {
+  favoritedApps: [],
+  apps: [],
   favoritedApps: [],
   apps: [],
 };
 const SKELETON_CARD_COUNT = 6;
 
 const reducer = (state, action) => {
+  switch (action.type) {
+    case "field": {
+      return {
+        ...state,
+        [action.field]: action.value,
+      };
+    }
+  }
+  return state;
   switch (action.type) {
     case "field": {
       return {
@@ -178,6 +192,10 @@ export const AppCatalogPage = observer((): JSX.Element => {
   // get metakeys to the ones we want
   const metaKeys = projectMetaKeys.map((k) => {
     return k.metakey;
+  });_metaKeys
+  // get metakeys to the ones we want
+  const metaKeys = projectMetaKeys.map((k) => {
+    return k.metakey;
   });
 
   // const [offsetVal, setOffset] = useState(0);
@@ -262,9 +280,24 @@ export const AppCatalogPage = observer((): JSX.Element => {
       });
       return;
     }
+  useEffect(() => {
+    if (getFavoritedApps.status !== "SUCCESS") {
+      dispatch({
+        type: "field",
+        field: "favoritedApps",
+        value: [],
+      });
+      return;
+    }
 
     dispatch({
       type: "field",
+      field: "favoritedApps",
+      value: getFavoritedApps.data,
+    });
+  }, [getFavoritedApps.status, getFavoritedApps.data]);
+    dispatch({
+      
       field: "favoritedApps",
       value: getFavoritedApps.data,
     });
@@ -449,6 +482,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
                         favoriteApp(app);
                       }}
                       isDiscoverable={mode !== "Mine"}
+                      isLoading={true}
+                      showSkeleton={false}
                     />
                   );
                 })}
@@ -461,6 +496,19 @@ export const AppCatalogPage = observer((): JSX.Element => {
               </StyledSectionLabel>
             )}
 
+            {mode == "System" && (
+              <StyledSection>
+                {"bi".includes(search.toLowerCase()) && (
+                  <AppTileCard
+                    app={BUSINESS_INTELLIGENCE_APP}
+                    background="#BADEFF"
+                    href="../../../"
+                    systemApp={true}
+                    appType={"BI"}
+                    isLoading={false}
+                    showSkeleton={false}
+                  />
+                )}
             {mode == "System" && (
               <StyledSection>
                 {"bi".includes(search.toLowerCase()) && (
@@ -489,7 +537,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                 )}
               </StyledSection>
             )}
-            {mode != "System" && status !== "SUCCESS" ? (
+            {mode != "System" && getApps.status !== "SUCCESS" ? (
               <StyledSection>
                 {Array.from({
                   length: SKELETON_CARD_COUNT,
@@ -511,6 +559,56 @@ export const AppCatalogPage = observer((): JSX.Element => {
               </StyledSectionLabel>
             ) : null}
 
+            {/* do not show favorited apps in all apps view */}
+            {mode != "System" && apps.length > 0 ? (
+              <StyledSection>
+                {apps
+                  .filter(
+                    (app) =>
+                      !favoritedApps.some(
+                        (filterApp) => filterApp.project_id === app.project_id
+                      )
+                  )
+                  .map((app, i) => {
+                    return (
+                      <AppTileCard
+                        key={i}
+                        app={app}
+                        systemApp={false}
+                        isDiscoverable={mode !== "Mine"}
+                        href={
+                          mode === "Discoverable"
+                            ? `#/app/${app.project_id}/detail`
+                            : `#/app/${app.project_id}/view`
+                        }
+                        onAction={() => {
+                          if (mode === "Discoverable") {
+                            navigate(`/app/${app.project_id}/detail`);
+                          } else {
+                            navigate(`/app/${app.project_id}/view`);
+                          }
+                        }}
+                        appType={app.project_type}
+                        isFavorite={isFavorited(app.project_id)}
+                        favorite={() => {
+                          favoriteApp(app);
+                        }}
+                        onDelete={() => {
+                          removeApp(app);
+                        }}
+                        isLoading={true}
+                        showSkeleton={false}
+                      />
+                    );
+                  })}
+              </StyledSection>
+            ) : null}
+          </StyledContentContainer>
+        </StyledContainer>
+        <Help />
+      </Stack>
+    </>
+  );
             {/* do not show favorited apps in all apps view */}
             {mode != "System" && apps.length > 0 ? (
               <StyledSection>

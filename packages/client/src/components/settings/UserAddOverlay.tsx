@@ -52,6 +52,10 @@ const StyledPermissions = styled(Typography)({
     padding: '25px 0',
 });
 
+const StyledSubmitForm = styled('form')(({ theme }) => ({
+    overflowY: 'auto',
+}));
+
 interface User {
     id: string;
     type: string;
@@ -330,7 +334,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
             <Modal.Title>
                 {isNewUser ? 'Add Member' : 'Edit Member'}
             </Modal.Title>
-            <form onSubmit={editUser}>
+            <StyledSubmitForm onSubmit={editUser}>
                 <StyledModalContent>
                     <StyledForm>
                         <Typography variant="subtitle1">Credentials</Typography>
@@ -775,7 +779,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 </List.Icon>
                                 <List.ItemText
                                     primary={<strong>Admin</strong>}
-                                    secondary="All-Access pass to app information"
+                                    secondary="Complete access to platform"
                                 />
                             </StyledListItem>
 
@@ -805,7 +809,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 </List.Icon>
                                 <List.ItemText
                                     primary={<strong>Publisher</strong>}
-                                    secondary="Anyone on the platform can access"
+                                    secondary=" Able to upload data to platform"
                                 />
                             </StyledListItem>
 
@@ -835,13 +839,14 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                                 </List.Icon>
                                 <List.ItemText
                                     primary={<strong>Exporter</strong>}
-                                    secondary="Anyone on the platform can access"
+                                    secondary="Able to export data from platform"
                                 />
                             </StyledListItem>
                         </StyledList>
                     </StyledForm>
-                </StyledModalContent>
-                <Modal.Actions>
+                </StyledModalContent>               
+            </StyledSubmitForm>
+            <Modal.Actions>
                     <Button variant="outlined" onClick={() => onClose(false)}>
                         Cancel
                     </Button>
@@ -852,8 +857,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                     >
                         Save
                     </Button>
-                </Modal.Actions>
-            </form>
+            </Modal.Actions>
         </Modal>
     );
 });

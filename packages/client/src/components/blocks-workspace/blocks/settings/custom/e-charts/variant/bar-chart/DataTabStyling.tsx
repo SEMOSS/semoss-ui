@@ -16,7 +16,7 @@ import {
     useBlocksPixel,
     useFrameHeaders,
     getValueByPath,
-    EchartVisualizationBlockDef
+    EchartVisualizationBlockDef,
 } from '@semoss/renderer';
 
 import { useBlockSettings } from '@/hooks';
