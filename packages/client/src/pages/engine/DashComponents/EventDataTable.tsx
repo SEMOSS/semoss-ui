@@ -12,7 +12,7 @@ import {
 	Table,
 	Typography,
 } from "@semoss/ui";
-import { EventData } from "../EngineDashboard";
+import { EventData, TimeDateFormatter } from "../EngineDashboard";
 
 // Styled Components
 const Container = styled(Paper)({
@@ -75,7 +75,7 @@ const StyledTableCell = styled(Table.Cell)({
 	fontSize: "14px",
 	color: "#333",
 	verticalAlign: "middle",
-	"&:first-of-type, &:nth-of-type(2), &:nth-of-type(5)": {
+	"&:first-of-type, &:nth-of-type(2), &:nth-of-type(6)": {
 		width: "20%",
 		maxWidth: "20%",
 	},
@@ -186,11 +186,11 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 	};
 
 	const formatTimestamp = (startTime: string, endTime: string) => {
-		return `${startTime} - ${endTime}`;
+		return `${TimeDateFormatter(startTime).time} - ${TimeDateFormatter(endTime).time}`;
 	};
 
-	const ellipsed = (text: string) => {
-		return text.length > 50 ? `${text.substring(0, 47)}...` : text;
+	const ellipsed = (text: string | null) => {
+		return text?.length > 50 ? `${text.substring(0, 47)}...` : text;
 	};
 
 	return (
@@ -218,6 +218,11 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 								</Table.Cell>
 								<Table.Cell>
 									<Typography variant="subtitle2">
+										Engine Type
+									</Typography>
+								</Table.Cell>
+								<Table.Cell>
+									<Typography variant="subtitle2">
 										Latency
 									</Typography>
 								</Table.Cell>
@@ -233,7 +238,7 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 								</Table.Cell>
 								<Table.Cell>
 									<Typography variant="subtitle2">
-										Date
+										Status
 									</Typography>
 								</Table.Cell>
 							</Table.Row>
@@ -247,9 +252,9 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 									<StyledTableCell>
 										<Typography
 											variant="body2"
-											title={event.prompt}
+											title={event.payload}
 										>
-											{ellipsed(event.prompt)}
+											{ellipsed(event.payload)}
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell>
@@ -258,6 +263,11 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 											title={event.response}
 										>
 											{ellipsed(event.response)}
+										</Typography>
+									</StyledTableCell>
+									<StyledTableCell>
+										<Typography variant="body2">
+											{event.engineType}
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell>
@@ -285,8 +295,15 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell>
-										<Typography variant="body2">
-											{event.date}
+										<Typography
+											variant="body2"
+											color={
+												event.status === "Success"
+													? "#28a745"
+													: "#dc3545"
+											}
+										>
+											{event.status.toUpperCase()}
 										</Typography>
 									</StyledTableCell>
 								</StyledTableRow>
@@ -331,7 +348,7 @@ const EventDataTable: React.FC<EventDataTableProps> = ({ logs = [] }) => {
 								</ContentTitle>
 								<ContentBox>
 									<ContentText variant="body2">
-										{selectedEvent.prompt}
+										{selectedEvent.payload}
 									</ContentText>
 								</ContentBox>
 

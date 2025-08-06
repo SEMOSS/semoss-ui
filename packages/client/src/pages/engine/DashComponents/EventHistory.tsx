@@ -12,7 +12,7 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
-import { EventData } from "../EngineDashboard";
+import { EventData, TimeDateFormatter } from "../EngineDashboard";
 
 // Type definitions
 interface ProcessedEventData {
@@ -164,8 +164,8 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
 		const timeToPosition = new Map<string, number>();
 
 		logs.forEach((event) => {
-			allTimes.add(event.startTime);
-			allTimes.add(event.endTime);
+			allTimes.add(TimeDateFormatter(event.startTime).time);
+			allTimes.add(TimeDateFormatter(event.endTime).time);
 		});
 
 		const sortedTimes = Array.from(allTimes).sort((a, b) => {
@@ -181,8 +181,12 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
 		const eventData: ProcessedEventData[] = [];
 
 		logs.forEach((event, index) => {
-			const startPos = timeToPosition.get(event.startTime)!;
-			const endPos = timeToPosition.get(event.endTime)!;
+			const startPos = timeToPosition.get(
+				TimeDateFormatter(event.startTime).time,
+			)!;
+			const endPos = timeToPosition.get(
+				TimeDateFormatter(event.endTime).time,
+			)!;
 
 			const dataPoint: ProcessedEventData = {
 				value: [startPos, event.latency, endPos],
@@ -270,10 +274,10 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
 						const eventData = params.data.eventData;
 
 						const truncateText = (
-							text: string,
+							text: string | null,
 							maxLength: number = 50,
 						): string => {
-							return text.length > maxLength
+							return text?.length > maxLength
 								? text.substring(0, maxLength) + "..."
 								: text;
 						};
@@ -293,8 +297,8 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
                   border-bottom: 1px solid #f0f0f0;
                 ">
                   <div style="font-weight: 600; color: #333; font-size: 12px;">${
-						eventData.startTime
-					} - ${eventData.endTime}</div>
+						TimeDateFormatter(eventData.startTime).time
+					} - ${TimeDateFormatter(eventData.endTime).time}</div>
                   <div style="
                     background: linear-gradient(135deg, #e3f2fd, #bbdefb);
                     padding: 2px 8px;
@@ -326,7 +330,7 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
                     display: flex;
                     align-items: center;
                     overflow: hidden;
-                  ">${truncateText(eventData.prompt)}</div>
+                  ">${truncateText(eventData.payload)}</div>
                 </div>
                 
                 <div style="margin-bottom: 8px;">

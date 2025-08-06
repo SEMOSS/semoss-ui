@@ -23,12 +23,20 @@ const DashboardHeader = styled("div")(({ theme }) => ({
 export interface EventData {
 	startTime: string;
 	endTime: string;
-	prompt: string;
+	payload: string;
 	response: string;
-	tokens: number;
+	tokens: string | null;
 	latency: number;
-	date: string;
+	status: string | null;
+	engineName: string;
+	engineType: string;
 }
+
+export const TimeDateFormatter = (timeStamp: string) => {
+	const date = timeStamp.split("T")[0];
+	const time = timeStamp.split("T")[1];
+	return { date, time };
+};
 const EngineDashboard = ({ catalogName }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const [logs, setLogs] = useState<EventData[]>([]);
@@ -53,7 +61,7 @@ const EngineDashboard = ({ catalogName }) => {
 					return;
 				}
 				// Return the logs from the response
-				setLogs(JSON.parse(output));
+				setLogs(JSON.parse(output) as EventData[]);
 			})
 			.catch((error) => {
 				console.error("Error fetching logs:", error);
