@@ -11,6 +11,7 @@ import {
   InputAdornment,
 } from "@semoss/ui";
 import { debounced } from "@semoss/sdk/react";
+import { TestComponent } from "@semoss/shared";
 
 import { useNavigate } from "react-router-dom";
 
@@ -315,6 +316,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
             justifyContent={"space-between"}
             spacing={4}
           >
+            <TestComponent />
             <Typography data-tour="app-library-title" variant={"h4"}>
               Apps
             </Typography>

@@ -205,6 +205,25 @@ importers:
         specifier: ~5.5.2
         version: 5.5.4
 
+  libs/shared:
+    dependencies:
+      react:
+        specifier: ^18.2.0
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.2.0
+        version: 18.3.1(react@18.3.1)
+    devDependencies:
+      '@types/react':
+        specifier: 18.3.1
+        version: 18.3.1
+      '@types/react-dom':
+        specifier: 18.3.0
+        version: 18.3.0
+      typescript:
+        specifier: ~5.5.2
+        version: 5.5.4
+
   libs/ui:
     dependencies:
       '@emotion/react':
@@ -440,6 +459,9 @@ importers:
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
+      '@semoss/shared':
+        specifier: workspace:*
+        version: link:../../libs/shared
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui
