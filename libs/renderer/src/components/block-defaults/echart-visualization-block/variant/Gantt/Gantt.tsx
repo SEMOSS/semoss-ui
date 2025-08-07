@@ -5,10 +5,6 @@ import ReactECharts from "echarts-for-react";
 
 import {
     Table,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableBody,
     styled,
 } from "@semoss/ui";
 
@@ -37,7 +33,7 @@ const StyledContainer = styled("div")(() => ({
 //styled span to render series name
 const StyledDataSpan = styled("span")(({}) => ({}));
 //styled table cell to have background color
-const StyledTableCell = styled(TableCell)<{ backgroundColor?: string }>(
+const StyledTableCell = styled(Table.Cell)<{ backgroundColor?: string }>(
     ({ backgroundColor }) => ({
         backgroundColor: backgroundColor ?? "#fff",
         border: "1px solid #e6e6e6",
@@ -823,8 +819,8 @@ export const Gantt = observer(
                                 aria-label="simple table"
                                 ref={(e) => (tableRef.current = e)}
                             >
-                                <TableHead>
-                                    <TableRow>
+                                <Table.Head>
+                                    <Table.Row>
                                         {quarterAndMonth.length &&
                                             quarterAndMonth.map((item, i) => (
                                                 <StyledTableCell
@@ -845,10 +841,10 @@ export const Gantt = observer(
                                                         : ""}
                                                 </StyledTableCell>
                                             ))}
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    <TableRow
+                                    </Table.Row>
+                                </Table.Head>
+                                <Table.Body>
+                                    <Table.Row
                                         sx={{
                                             "&:last-child td, &:last-child th":
                                                 {
@@ -871,8 +867,8 @@ export const Gantt = observer(
                                                     ),
                                                 ),
                                             )}
-                                    </TableRow>
-                                </TableBody>
+                                    </Table.Row>
+                                </Table.Body>
                             </Table>
                         </StyledContainer>
                     )}

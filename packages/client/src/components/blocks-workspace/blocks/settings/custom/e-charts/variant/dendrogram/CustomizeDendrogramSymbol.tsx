@@ -7,7 +7,7 @@ import {
     Typography,
     TextField,
     Select,
-    MenuItem,
+    Menu,
     Button,
 } from '@semoss/ui';
 
@@ -180,9 +180,9 @@ export const CustomizeDendrogramSymbol = observer(
                         {symbolData.length > 0 &&
                             symbolData.map((item, index) => {
                                 return (
-                                    <MenuItem value={item.value} key={index}>
+                                    <Menu.Item value={item.value} key={index}>
                                         {item.label}
-                                    </MenuItem>
+                                    </Menu.Item>
                                 );
                             })}
                     </Select>

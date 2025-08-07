@@ -3,7 +3,7 @@ import { useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 import { PathValue } from "react-hook-form";
 
-import { Menu, MenuItem} from "@semoss/ui";
+import { Menu } from "@semoss/ui";
 
 import { useBlock, useFrame } from "../../../../../hooks";
 import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
@@ -129,7 +129,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                 }
             >
                 {contextMenu && !data.contextMenu?.hideUnfilter ? (
-                    <MenuItem
+                    <Menu.Item
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
@@ -152,10 +152,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                         }}
                     >
                         Unfilter
-                    </MenuItem>
+                    </Menu.Item>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItem
+                    <Menu.Item
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -179,10 +179,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                         {typeof contextMenu.value === "string"
                             ? contextMenu.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItem>
+                    </Menu.Item>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideExclude ? (
-                    <MenuItem
+                    <Menu.Item
                         dense={true}
                         value={"exclude"}
                         onClick={() => {
@@ -202,7 +202,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                     >
                         Exclude {contextMenu.value.name} !={" "}
                         {contextMenu?.value?.value}
-                    </MenuItem>
+                    </Menu.Item>
                 ) : null}
             </Menu>
         );

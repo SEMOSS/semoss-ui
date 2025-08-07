@@ -7,7 +7,7 @@ import {
     Typography,
     Tooltip,
     List,
-    MenuItem,
+    Menu,
 } from '@semoss/ui';
 import { EditOutlined } from '@mui/icons-material';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
@@ -88,9 +88,9 @@ export const EngineQASidebar = ({
             >
                 {modelOptions.map((option, i) => {
                     return (
-                        <MenuItem value={option} key={i}>
+                        <Menu.Item value={option} key={i}>
                             {option.database_name}
-                        </MenuItem>
+                        </Menu.Item>
                     );
                 })}
             </Select>

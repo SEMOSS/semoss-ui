@@ -15,7 +15,7 @@ import {
 } from '@mui/icons-material';
 
 import {
-    MenuItem,
+    Menu,
     Select,
     Stack,
     styled,
@@ -451,14 +451,14 @@ export const ContainerLayoutSettings = observer(
                                     modifyGrid(e.target.value);
                                 }}
                             >
-                                {/* <MenuItem value={"33.33%"}>3 columns</MenuItem>
-                                <MenuItem value={"25%"}>4 columns</MenuItem>
-                                <MenuItem value={"20%"}>5 columns</MenuItem>
-                                <MenuItem value={"16.66%"}>6 columns</MenuItem> */}
-                                <MenuItem value={'3'}>3 columns</MenuItem>
-                                <MenuItem value={'4'}>4 columns</MenuItem>
-                                <MenuItem value={'5'}>5 columns</MenuItem>
-                                <MenuItem value={'6'}>6 columns</MenuItem>
+                                {/* <Menu.Item value={"33.33%"}>3 columns</Menu.Item>
+                                <Menu.Item value={"25%"}>4 columns</Menu.Item>
+                                <Menu.Item value={"20%"}>5 columns</Menu.Item>
+                                <Menu.Item value={"16.66%"}>6 columns</Menu.Item> */}
+                                <Menu.Item value={'3'}>3 columns</Menu.Item>
+                                <Menu.Item value={'4'}>4 columns</Menu.Item>
+                                <Menu.Item value={'5'}>5 columns</Menu.Item>
+                                <Menu.Item value={'6'}>6 columns</Menu.Item>
                             </Select>
                         </BaseSettingSection>
 

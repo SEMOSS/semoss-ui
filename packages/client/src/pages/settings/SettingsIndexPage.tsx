@@ -3,7 +3,7 @@ import {
     Card,
     Grid,
     IconButton,
-    MenuItem,
+    Menu,
     Select,
     Search,
     styled,
@@ -150,7 +150,7 @@ export const SettingsIndexPage = () => {
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                 >
-                    <MenuItem value="Name">Name</MenuItem>
+                    <Menu.Item value="Name">Name</Menu.Item>
                 </StyledSort>
             </StyledSearchbarContainer>
 

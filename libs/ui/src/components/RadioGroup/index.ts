@@ -8,5 +8,3 @@ const RadioGroupNameSpace = Object.assign(RadioGroup, {
 });
 
 export { RadioGroupNameSpace as RadioGroup };
-
-export { Radio };

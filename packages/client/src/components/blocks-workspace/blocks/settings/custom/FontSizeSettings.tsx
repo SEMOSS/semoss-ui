@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
-import { MenuItem, Select } from '@semoss/ui';
+import { Menu, Select } from '@semoss/ui';
 import {
     Paths,
     PathValue,
@@ -120,14 +120,14 @@ export const FontSizeSettings = observer(
                         onChange(e.target.value);
                     }}
                 >
-                    <MenuItem value={'1rem'}>Body</MenuItem>
-                    <MenuItem value={'1.125rem'}>
+                    <Menu.Item value={'1rem'}>Body</Menu.Item>
+                    <Menu.Item value={'1.125rem'}>
                         <span style={{ fontSize: '1.125rem' }}>Subtitle 2</span>
-                    </MenuItem>
-                    <MenuItem value={'1.25rem'}>
+                    </Menu.Item>
+                    <Menu.Item value={'1.25rem'}>
                         <span style={{ fontSize: '1.25rem' }}>Subtitle 1</span>
-                    </MenuItem>
-                    <MenuItem value={'1.5rem'}>
+                    </Menu.Item>
+                    <Menu.Item value={'1.5rem'}>
                         <span
                             style={{
                                 fontSize: '1.5rem',
@@ -136,8 +136,8 @@ export const FontSizeSettings = observer(
                         >
                             Header 3
                         </span>
-                    </MenuItem>
-                    <MenuItem value={'1.875rem'}>
+                    </Menu.Item>
+                    <Menu.Item value={'1.875rem'}>
                         <span
                             style={{
                                 fontSize: '1.875rem',
@@ -147,8 +147,8 @@ export const FontSizeSettings = observer(
                         >
                             Header 2
                         </span>
-                    </MenuItem>
-                    <MenuItem value={'2.125rem'}>
+                    </Menu.Item>
+                    <Menu.Item value={'2.125rem'}>
                         <span
                             style={{
                                 fontSize: '2.125rem',
@@ -158,7 +158,7 @@ export const FontSizeSettings = observer(
                         >
                             Header 1
                         </span>
-                    </MenuItem>
+                    </Menu.Item>
                 </Select>
             </BaseSettingSection>
         );

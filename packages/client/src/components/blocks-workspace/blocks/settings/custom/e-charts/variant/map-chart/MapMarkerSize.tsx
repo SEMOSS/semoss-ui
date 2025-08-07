@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 import {
-    MenuItem,
+    Menu,
     Select,
     styled,
     Switch,

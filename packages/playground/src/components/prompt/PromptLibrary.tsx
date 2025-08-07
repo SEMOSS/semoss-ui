@@ -6,7 +6,7 @@ import {
 	CircularProgress,
 	Grid,
 	IconButton,
-	MenuItem,
+	Menu,
 	Modal,
 	Search,
 	Stack,
@@ -131,11 +131,11 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({ onClose }) => {
 							}}
 							onChange={(e) => setFilter(e.target.value)}
 						>
-							<MenuItem value={""}>All</MenuItem>
+							<Menu.Item value={""}>All</Menu.Item>
 							{getAllTags.data.map((t, tIdx) => (
-								<MenuItem key={tIdx} value={t.METAVALUE}>
+								<Menu.Item key={tIdx} value={t.METAVALUE}>
 									{t.METAVALUE}
-								</MenuItem>
+								</Menu.Item>
 							))}
 						</TextField>
 					</Stack>

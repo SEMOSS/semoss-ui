@@ -8,7 +8,7 @@ import {
     Grid,
     Search,
     Select,
-    MenuItem,
+    Menu,
     ToggleButton,
     ToggleButtonGroup,
     styled,
@@ -257,11 +257,11 @@ export const ProjectSettingsPage = () => {
                         value={sort}
                         onChange={(e) => setSort(e.target.value)}
                     >
-                        <MenuItem value="Name">Name</MenuItem>
-                        <MenuItem value="Date Created">Date Created</MenuItem>
-                        <MenuItem value="Views">Views</MenuItem>
-                        <MenuItem value="Trending">Trending</MenuItem>
-                        <MenuItem value="Upvotes">Upvotes</MenuItem>
+                        <Menu.Item value="Name">Name</Menu.Item>
+                        <Menu.Item value="Date Created">Date Created</Menu.Item>
+                        <Menu.Item value="Views">Views</Menu.Item>
+                        <Menu.Item value="Trending">Trending</Menu.Item>
+                        <Menu.Item value="Upvotes">Upvotes</Menu.Item>
                     </StyledSort>
 
                     <ToggleButtonGroup

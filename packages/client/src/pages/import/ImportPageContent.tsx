@@ -27,7 +27,6 @@ import {
     Box,
     Grid,
     Tabs,
-    Tab,
     Stack,
     Link,
 } from '@semoss/ui';
@@ -219,7 +218,7 @@ const StyledCategoryTitle = styled(Box)({
     padding: '16px',
 });
 
-const StyledTab = styled(Tab)({
+const StyledTab = styled(Tabs.Item)({
     fontSize: '14px',
     fontWeight: '500',
     letterSpacing: '0.4px',

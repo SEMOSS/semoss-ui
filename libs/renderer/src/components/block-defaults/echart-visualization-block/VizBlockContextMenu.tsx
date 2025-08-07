@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 
-import { Menu, MenuItem } from "@semoss/ui";
+import { Menu } from "@semoss/ui";
 
 import { useBlock, useFrame } from "../../../hooks";
 import { EchartVisualizationBlockDef } from "./VisualizationBlock";
@@ -42,7 +42,7 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                 }
             >
                 {contextMenu && !data.contextMenu?.hideUnfilter ? (
-                    <MenuItem
+                    <Menu.Item
                         dense={true}
                         value={"unfilter"}
                         onClick={() => {
@@ -51,10 +51,10 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         }}
                     >
                         Unfilter
-                    </MenuItem>
+                    </Menu.Item>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItem
+                    <Menu.Item
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -70,10 +70,10 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         {typeof contextMenu.value.value === "string"
                             ? contextMenu.value.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItem>
+                    </Menu.Item>
                 ) : null}
                 {contextMenu && !data.contextMenu?.hideExclude ? (
-                    <MenuItem
+                    <Menu.Item
                         dense={true}
                         value={"filter"}
                         onClick={() => {
@@ -89,7 +89,7 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
                         {typeof contextMenu.value.value === "string"
                             ? contextMenu.value.value
                             : JSON.stringify(contextMenu.value.value)}
-                    </MenuItem>
+                    </Menu.Item>
                 ) : null}
             </Menu>
         );

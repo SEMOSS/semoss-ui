@@ -12,7 +12,7 @@ import {
     Tabs,
     Select,
     darkTheme,
-    MenuItem,
+    Menu,
 } from '@semoss/ui';
 
 import {
@@ -91,9 +91,9 @@ export const config: BlockSettingsConfig = {
                             >
                                 {Array.from(options, (option, i) => {
                                     return (
-                                        <MenuItem key={i} value={option.value}>
+                                        <Menu.Item key={i} value={option.value}>
                                             {option.display}
-                                        </MenuItem>
+                                        </Menu.Item>
                                     );
                                 })}
                             </Select>

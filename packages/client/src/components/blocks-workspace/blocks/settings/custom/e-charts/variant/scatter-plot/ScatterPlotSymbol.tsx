@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { computed } from 'mobx';
 import { observer } from 'mobx-react-lite';
 
-import { MenuItem, Select, styled, TextField, Typography } from '@semoss/ui';
+import { Menu, Select, styled, TextField, Typography } from '@semoss/ui';
 import {
     Block,
     BlockDef,
@@ -130,13 +130,13 @@ export const ScatterPlotSymbol = observer(
                         onChange={handleSymbolShape}
                         size="small"
                     >
-                        <MenuItem value="circle">Circle</MenuItem>
-                        <MenuItem value="rect">Rectangle</MenuItem>
-                        <MenuItem value="roundRect">Round Rectangle</MenuItem>
-                        <MenuItem value="triangle">traingle</MenuItem>
-                        <MenuItem value="arrow">Arrow</MenuItem>
-                        <MenuItem value="pin">Pin</MenuItem>
-                        <MenuItem value="diamond">Diamond</MenuItem>
+                        <Menu.Item value="circle">Circle</Menu.Item>
+                        <Menu.Item value="rect">Rectangle</Menu.Item>
+                        <Menu.Item value="roundRect">Round Rectangle</Menu.Item>
+                        <Menu.Item value="triangle">traingle</Menu.Item>
+                        <Menu.Item value="arrow">Arrow</Menu.Item>
+                        <Menu.Item value="pin">Pin</Menu.Item>
+                        <Menu.Item value="diamond">Diamond</Menu.Item>
                     </Select>
                 </StyledAxisColDiv>
                 <StyledAxisColDiv display="flex" justifyContent="space-around">

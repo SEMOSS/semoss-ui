@@ -7,7 +7,7 @@ import { ArrowDropDown } from '@mui/icons-material';
 import { Droppable } from 'react-beautiful-dnd';
 import { computed } from 'mobx';
 
-import { MenuItem, TextField, styled, Autocomplete, Popover, Switch } from '@semoss/ui';
+import { Menu, TextField, styled, Autocomplete, Popover, Switch } from '@semoss/ui';
 
 import {
     BlockDef,
@@ -740,7 +740,7 @@ export const DataTabStyling = observer(
                                   )
                                 : aggregateOptions
                             ).map((key) => (
-                                <MenuItem
+                                <Menu.Item
                                     key={key}
                                     value={key}
                                     onClick={() => {
@@ -751,7 +751,7 @@ export const DataTabStyling = observer(
                                     }}
                                 >
                                     {key}
-                                </MenuItem>
+                                </Menu.Item>
                             ))}
                         </div>
                     </Popover>

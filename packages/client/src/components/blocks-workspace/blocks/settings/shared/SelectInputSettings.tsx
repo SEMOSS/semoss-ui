@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite';
 
 import {
     Autocomplete,
-    MenuItem,
+    Menu,
     Select,
     TextField,
     createFilterOptions,
@@ -231,15 +231,15 @@ export const SelectInputSettings = observer(
                         }}
                     >
                         {allowUnset ? (
-                            <MenuItem value={''}>
+                            <Menu.Item value={''}>
                                 <em>None</em>
-                            </MenuItem>
+                            </Menu.Item>
                         ) : null}
                         {Array.from(options, (option, i) => {
                             return (
-                                <MenuItem key={i} value={option.value}>
+                                <Menu.Item key={i} value={option.value}>
                                     {option.display}
-                                </MenuItem>
+                                </Menu.Item>
                             );
                         })}
                     </Select>

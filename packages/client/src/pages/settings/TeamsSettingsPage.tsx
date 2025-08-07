@@ -14,7 +14,6 @@ import {
     Button,
     IconButton,
     Menu,
-    MenuItem,
 } from '@semoss/ui';
 import { debounced } from '@semoss/sdk/react'; 
 
@@ -238,22 +237,22 @@ export const TeamsSettingsPage = observer(() => {
                     open={Boolean(anchorEl)}
                     onClose={handleMenuClose}
                 >
-                    <MenuItem
+                    <Menu.Item
                         onClick={() => handleSort('asc')}
                         sx={{
                             backgroundColor: isAsc() ? '#EBF3F8' : 'inherit',
                         }}
                     >
                         A<ArrowForward fontSize="small" />Z
-                    </MenuItem>
-                    <MenuItem
+                    </Menu.Item>
+                    <Menu.Item
                         onClick={() => handleSort('desc')}
                         sx={{
                             backgroundColor: isDesc() ? '#EBF3F8' : 'inherit',
                         }}
                     >
                         Z<ArrowBack fontSize="small" />A
-                    </MenuItem>
+                    </Menu.Item>
                 </Menu>
                 {/* <Grid container spacing={3}>  */}
                 <StyledGrid>

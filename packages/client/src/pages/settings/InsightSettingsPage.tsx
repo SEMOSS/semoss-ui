@@ -7,7 +7,7 @@ import {
     Grid,
     Search,
     Select,
-    MenuItem,
+    Menu,
     ToggleButton,
     ToggleButtonGroup,
     Typography,
@@ -150,7 +150,7 @@ export const InsightSettingsPage = () => {
                     value={sort}
                     onChange={(e) => setSort(e.target.value)}
                 >
-                    <MenuItem value="name">Name</MenuItem>
+                    <Menu.Item value="name">Name</Menu.Item>
                 </StyledSort>
 
                 <ToggleButtonGroup size={'small'} value={view}>

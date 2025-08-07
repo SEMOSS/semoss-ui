@@ -13,7 +13,6 @@ import {
     IconButton,
     List,
     Menu,
-    MenuItem,
     Stack,
     styled,
     Typography,
@@ -364,13 +363,13 @@ export const Sidebar = observer(() => {
                                 setSettingsMenuAnchorEle(null);
                             }}
                         >
-                            <MenuItem
+                            <Menu.Item
                                 onClick={() => {
                                     logout();
                                 }}
                             >
                                 Log Out
-                            </MenuItem>
+                            </Menu.Item>
                         </Menu>
                     </Stack>
                 </StyledSidebarContent>

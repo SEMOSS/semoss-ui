@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { BlurLinear } from '@mui/icons-material';
 
-import { Select, MenuItem } from '@semoss/ui';
+import { Select, Menu } from '@semoss/ui';
 
 import { useBlockSettings } from '@/hooks';
 import { buildListener, buildShowField } from '../block-defaults.shared';
@@ -52,9 +52,9 @@ export const config: BlockSettingsConfig = {
                             >
                                 {Array.from(options, (option, i) => {
                                     return (
-                                        <MenuItem key={i} value={option.value}>
+                                        <Menu.Item key={i} value={option.value}>
                                             {option.display}
-                                        </MenuItem>
+                                        </Menu.Item>
                                     );
                                 })}
                             </Select>

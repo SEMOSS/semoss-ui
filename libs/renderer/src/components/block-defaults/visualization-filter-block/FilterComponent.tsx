@@ -12,14 +12,13 @@ import {
     IconButton,
     InputAdornment,
     List,
-    ListItemIcon,
     TextField,
     Typography,
     Chip,
 } from "@semoss/ui";
 import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Close";
-import { Checkbox, ListItem, ListItemText, Slider } from "@mui/material";
+import { Checkbox, Slider } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CloseIcon from "@mui/icons-material/Close";
 import { ClickAwayListener } from "@mui/material";
@@ -182,8 +181,8 @@ const FilterListComponent = ({
     return (
         <List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
             {multi && (
-                <ListItem key="select-all" onClick={handleToggle("Select All")}>
-                    <ListItemIcon>
+                <List.Item key="select-all" onClick={handleToggle("Select All")}>
+                    <List.Icon>
                         <Checkbox
                             edge="start"
                             checked={allChecked}
@@ -191,23 +190,23 @@ const FilterListComponent = ({
                             tabIndex={-1}
                             disableRipple
                         />
-                    </ListItemIcon>
-                    <ListItemText primary="Select All" />
-                </ListItem>
+                    </List.Icon>
+                    <List.ItemText primary="Select All" />
+                </List.Item>
             )}
 
             {filteredOptions.map((option) => (
-                <ListItem key={option} onClick={handleToggle(option)}>
-                    <ListItemIcon>
+                <List.Item key={option} onClick={handleToggle(option)}>
+                    <List.Icon>
                         <Checkbox
                             edge="start"
                             checked={checked.includes(option)}
                             tabIndex={-1}
                             disableRipple
                         />
-                    </ListItemIcon>
-                    <ListItemText primary={option} />
-                </ListItem>
+                    </List.Icon>
+                    <List.ItemText primary={option} />
+                </List.Item>
             ))}
         </List>
     );

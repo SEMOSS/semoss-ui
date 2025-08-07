@@ -16,7 +16,7 @@ import {
     Collapse,
     useNotification,
     ToggleTabsGroup,
-    AlertTitle,
+    Alert,
 } from '@semoss/ui';
 import { useBlocks, INPUT_BLOCK_TYPES } from '@semoss/renderer';
 
@@ -83,7 +83,7 @@ const StyledMultiBlockMessage = styled('div')(({ theme }) => ({
     padding: '8px 0px',
     flex: '1 0 0',
 }));
-const StyledAlertTitle = styled(AlertTitle)(({ theme }) => ({
+const StyledAlertTitle = styled(Alert.Title)(({ theme }) => ({
     alignSelf: 'stretch',
     color: '#666',
     fontFamily: 'Inter',

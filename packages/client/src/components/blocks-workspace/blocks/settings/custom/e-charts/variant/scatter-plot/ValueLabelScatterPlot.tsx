@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useState } from 'react';
 
 import {
     Button,
-    MenuItem,
+    Menu,
     Select,
     Slider,
     styled,
@@ -293,23 +293,23 @@ export const ValueLabelScatterPlot = observer(
                                 onChange={handleValuePosition}
                                 size="small"
                             >
-                                <MenuItem value="top">Top</MenuItem>
-                                <MenuItem value="left">Left</MenuItem>
-                                <MenuItem value="right">Right</MenuItem>
-                                <MenuItem value="bottom">Bottom</MenuItem>
-                                <MenuItem value="inside">Inside</MenuItem>
-                                <MenuItem value="insideLeft">
+                                <Menu.Item value="top">Top</Menu.Item>
+                                <Menu.Item value="left">Left</Menu.Item>
+                                <Menu.Item value="right">Right</Menu.Item>
+                                <Menu.Item value="bottom">Bottom</Menu.Item>
+                                <Menu.Item value="inside">Inside</Menu.Item>
+                                <Menu.Item value="insideLeft">
                                     Inside Left
-                                </MenuItem>
-                                <MenuItem value="insideRight">
+                                </Menu.Item>
+                                <Menu.Item value="insideRight">
                                     Inside Right
-                                </MenuItem>
-                                <MenuItem value="insideBottom">
+                                </Menu.Item>
+                                <Menu.Item value="insideBottom">
                                     Inside Bottom
-                                </MenuItem>
-                                <MenuItem value="insideTop">
+                                </Menu.Item>
+                                <Menu.Item value="insideTop">
                                     Inside Top
-                                </MenuItem>
+                                </Menu.Item>
                             </Select>
                         </StyledAxisColDiv>
                         <StyledAxisColDiv
@@ -345,11 +345,11 @@ export const ValueLabelScatterPlot = observer(
                                 onChange={handlelabelFont}
                                 size="small"
                             >
-                                <MenuItem value="sans-serif">
+                                <Menu.Item value="sans-serif">
                                     sans-serif
-                                </MenuItem>
-                                <MenuItem value="serif">serif</MenuItem>
-                                <MenuItem value="monospace">monospace</MenuItem>
+                                </Menu.Item>
+                                <Menu.Item value="serif">serif</Menu.Item>
+                                <Menu.Item value="monospace">monospace</Menu.Item>
                             </Select>
                         </StyledAxisColDiv>
 

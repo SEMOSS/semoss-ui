@@ -6,10 +6,6 @@ import {
     Autocomplete,
     IconButton,
     Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
     Button,
     styled,
     Switch,
@@ -394,23 +390,23 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
             <div>
                 {rules.length > 0 && (
                     <Table size="small">
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Column</TableCell>
-                                <TableCell>Applied Rule</TableCell>
-                                <TableCell>Action</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
+                        <Table.Head>
+                            <Table.Row>
+                                <Table.Cell>Column</Table.Cell>
+                                <Table.Cell>Applied Rule</Table.Cell>
+                                <Table.Cell>Action</Table.Cell>
+                            </Table.Row>
+                        </Table.Head>
+                        <Table.Body>
                             {rules.map((rule) => (
-                                <TableRow key={rule.id}>
-                                    <TableCell>{rule.column}</TableCell>
-                                    <TableCell>
+                                <Table.Row key={rule.id}>
+                                    <Table.Cell>{rule.column}</Table.Cell>
+                                    <Table.Cell>
                                         {rule.column}
                                         {rule.comparator}
                                         {rule.value}
-                                    </TableCell>
-                                    <TableCell>
+                                    </Table.Cell>
+                                    <Table.Cell>
                                         <div>
                                             <IconButton
                                                 onClick={() =>
@@ -427,10 +423,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
                                                 <Delete />
                                             </IconButton>
                                         </div>
-                                    </TableCell>
-                                </TableRow>
+                                    </Table.Cell>
+                                </Table.Row>
                             ))}
-                        </TableBody>
+                        </Table.Body>
                     </Table>
                 )}
             </div>

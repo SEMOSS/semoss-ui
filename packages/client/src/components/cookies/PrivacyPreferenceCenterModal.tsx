@@ -5,7 +5,6 @@ import {
     Stack,
     styled,
     Tabs,
-    Tab,
     IconButton,
     Typography,
 } from '@semoss/ui';
@@ -111,7 +110,7 @@ export const PrivacyPreferenceCenterModal = (
                             orientation="vertical"
                         >
                             {cookiePolicyOrder.map((name, idx) => (
-                                <Tab
+                                <Tabs.Item
                                     value={idx}
                                     label={name}
                                     key={`tab-${name}-${idx}`}
