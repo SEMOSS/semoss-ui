@@ -218,7 +218,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
                     rowCount={frame.count}
                     paginationModel={paginationModel}
                     onPaginationModelChange={handlePaginationModalChange}
-                    pageSizeOptions={[10, 50, 100, 500]}
+                    pageSizeOptions={[10, 50, 100]}
                     columnHeaderHeight={50}
                     disableColumnMenu
                     disableRowSelectionOnClick

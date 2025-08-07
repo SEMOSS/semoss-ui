@@ -1,0 +1,21 @@
+{
+  "run": {
+    "command": "nx lint @semoss/ui",
+    "startTime": "2025-08-06T20:13:27.691Z",
+    "endTime": "2025-08-06T20:13:56.573Z",
+    "inner": false
+  },
+  "tasks": [
+    {
+      "taskId": "@semoss/ui:lint",
+      "target": "lint",
+      "projectName": "@semoss/ui",
+      "hash": "6997595493186548013",
+      "startTime": "2025-08-06T20:13:27.741Z",
+      "endTime": "2025-08-06T20:13:56.573Z",
+      "params": "",
+      "cacheStatus": "cache-miss",
+      "status": 0
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+
+> @semoss/ui@1.0.0-beta.3 lint C:\Users\relkhishen\eclipse-workspace\apache-tomcat-9.0.104\webapps\SemossWeb\libs\ui
+> eslint --quiet .
+

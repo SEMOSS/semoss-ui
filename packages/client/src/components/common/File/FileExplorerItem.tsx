@@ -1,10 +1,8 @@
 import { useCallback, useState } from 'react';
 import {
     DeleteOutline,
-    FolderOutlined,
-    InsertDriveFileOutlined,
-    CloudUploadOutlined,
-    CloudDownloadOutlined,
+    DescriptionOutlined,
+    TopicOutlined,
 } from '@mui/icons-material';
 import {
     CircularProgress,
@@ -154,9 +152,9 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                 >
                     <Icon color={'disabled'} fontSize="small">
                         {isDirectory ? (
-                            <FolderOutlined fontSize="inherit" />
+                            <TopicOutlined fontSize="inherit" />
                         ) : (
-                            <InsertDriveFileOutlined fontSize="inherit" />
+                            <DescriptionOutlined fontSize="inherit" />
                         )}
                     </Icon>
                     <StyledTypography variant="body2">{name}</StyledTypography>

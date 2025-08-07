@@ -8,7 +8,6 @@ import {
 import { Stack, Select } from '@semoss/ui';
 import { Dispatch, SetStateAction, useState } from 'react';
 import { AddAppFormStep } from './AddAppModal';
-import { valueArray } from 'vega-lite/build/src/channeldef';
 
 const FOLDER_TYPE_OPTIONS = [
     {

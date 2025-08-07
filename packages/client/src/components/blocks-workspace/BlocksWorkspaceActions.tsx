@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { ShareRounded, SaveOutlined, PlayArrow } from '@mui/icons-material';
+import { ShareRounded, PreviewRounded, SaveRounded } from '@mui/icons-material';
 
 import { IconButton, Stack, useNotification, Tooltip } from '@semoss/ui';
 import { useBlocks } from '@semoss/renderer';
@@ -249,7 +249,7 @@ export const BlocksWorkspaceActions = observer(() => {
                         previewApp();
                     }}
                 >
-                    <PlayArrow fontSize="inherit" />
+                    <PreviewRounded fontSize="inherit" />
                 </IconButton>
             </Tooltip>
             <Tooltip title={'Share App'}>
@@ -266,12 +266,12 @@ export const BlocksWorkspaceActions = observer(() => {
             <Tooltip title={'Save App (ctrl/command + s)'}>
                 <IconButton
                     size={'small'}
-                    color={'primary'}
+                    color="default"
                     onClick={() => {
                         saveApp();
                     }}
                 >
-                    <SaveOutlined fontSize="inherit" />
+                    <SaveRounded fontSize="inherit" />
                 </IconButton>
             </Tooltip>
         </Stack>

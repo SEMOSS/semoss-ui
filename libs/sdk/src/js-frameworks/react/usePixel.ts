@@ -14,7 +14,7 @@ export interface PixelConfig<D> {
     /** Initial Data */
     data: D;
 
-     /** Mangually process errors. Does not throw notifications */
+    /** Mangually process errors. Does not throw notifications */
     silent: boolean;
 }
 
@@ -130,7 +130,7 @@ export function usePixel<D>(
                     return;
                 }
 
-                 if (!options.silent) {
+                if (!options.silent) {
                     // notification.add({
                     //     color: "error",
                     //     message: error.message,
@@ -145,7 +145,7 @@ export function usePixel<D>(
                     data: options.data,
                     error: error,
                 });
-            })
+            });
 
         return () => {
             isCancelled = true;
