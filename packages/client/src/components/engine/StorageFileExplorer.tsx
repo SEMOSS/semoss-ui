@@ -80,6 +80,10 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
     const [selected, setSelected] = useState<string[]>([]);
     const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+    const { monolithStore, configStore } = useRootStore();
+    const notification = useNotification();
+    const [selected, setSelected] = useState<string[]>([]);
+    const [showDeleteDialog, setShowDeleteDialog] = useState(false);
     const getStorageFiles = usePixel<string[]>(
         `Storage(storage = "${id}") | ListStoragePath(storagePath='/');`,
     );
@@ -554,6 +558,36 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
                     <Modal.Content>
                         <Controller
                             name={'PROJECT_UPLOAD'}
+                            name="STORAGE_PATH"
+                            control={control}
+                            rules={{ required: 'Storage path is required' }}
+                            render={({ field, fieldState }) => (
+                                <div style={{ marginBottom: '16px' }}>
+                                    <Typography variant="body2" style={{ marginBottom: '8px' }}>
+                                        Storage Path (e.g., /documents, /images):
+                                    </Typography>
+                                    <input
+                                        {...field}
+                                        type="text"
+                                        placeholder="/"
+                                        style={{
+                                            width: '100%',
+                                            padding: '8px 12px',
+                                            border: '1px solid #ccc',
+                                            borderRadius: '4px',
+                                            fontSize: '14px'
+                                        }}
+                                    />
+                                    {fieldState.error && (
+                                        <Typography variant="caption" color="error">
+                                            {fieldState.error.message}
+                                        </Typography>
+                                    )}
+                                </div>
+                            )}
+                        />
+                        <Controller
+                            name="PROJECT_UPLOAD"
                             control={control}
                             rules={{}}
                             render={({ field }) => {

@@ -3,6 +3,10 @@ import {
     DeleteOutline,
     DescriptionOutlined,
     TopicOutlined,
+    FolderOutlined,
+    InsertDriveFileOutlined,
+    CloudUploadOutlined,
+    CloudDownloadOutlined,
 } from '@mui/icons-material';
 import {
     CircularProgress,
