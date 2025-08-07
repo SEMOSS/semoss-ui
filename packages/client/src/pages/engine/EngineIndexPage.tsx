@@ -14,12 +14,13 @@ import { debounced } from "@semoss/sdk/react";
 import { useNavigate } from "react-router-dom";
 
 import { ENGINE_TYPES } from "@/types";
-import { usePixel, useRootStore, useInfiniteScroll } from "@/hooks";
+import { usePixel, useRootStore, useInfiniteScroll, useInfinitePixel } from "@/hooks";
 import { EngineLandscapeCard } from "@/components/engine";
 import { Filterbox } from "@/components/ui";
 import { Help } from "@/components/help";
 import { ENGINE_ROUTES } from "./engine.constants";
 import { removeUnderscores } from "@/utility";
+import { getPageSizeBasedOnScreen } from "@/utility/getPageSize";
 
 const StyledContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -123,9 +124,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
     const [state, dispatch] = useReducer(reducer, initialState);
     const { favoritedDbs, databases } = state;
 
-    const limit = 5;
+    const limit = getPageSizeBasedOnScreen({isFullWidth: true, rowHeight: 88});
 
     const [search, setSearch] = useState("");
+    const [inputValue, setInputValue] = useState("");
 
     // which view we are on
     const [mode, setMode] = useState<MODE>("Mine");
@@ -151,11 +153,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
     `
     );
 
-    const { offset, checkHasReached, reset } = useInfiniteScroll({
-      limit,
-    });
-
-    const getDatabases = usePixel<
+    const getDatabases = useInfinitePixel<
       {
         app_cost: string;
         app_id: string;
@@ -176,14 +174,21 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
         upvotes: number;
       }[]
     >(
-      `${dbPixelPrefix}( metaKeys = ${JSON.stringify(
+      dbPixelPrefix,
+      `metaKeys = ${JSON.stringify(
         metaKeysDescription
       )} , metaFilters = [ ${JSON.stringify(
         metaFilters
       )} ] , filterWord=["${search}"], userT = [true], ${
         route ? `engineTypes=['${route.type}'], ` : ""
-      } offset=[${offset}], limit=[${limit}]) ;`
+      } limit=[${limit}]`
     );
+
+    const { reset } = useInfiniteScroll({
+    limit,
+    length: getDatabases.currLen,
+    collect: getDatabases.collect,
+  });
 
     const getCatalogFilters = usePixel<
       {
@@ -366,16 +371,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
         return;
       }
 
-      if (
-        getDatabases.status === "SUCCESS" &&
-        getDatabases.data instanceof Array
-      ) {
-        checkHasReached(getDatabases.data.length);
-      }
+      const mutateListWithVotes = []; //databases;
 
-      const mutateListWithVotes = databases;
-
-      getDatabases.data.forEach((db) => {
+      getDatabases.data.forEach((db:{upvotes?: number}) => {
         mutateListWithVotes.push({
           ...db,
           upvotes: db.upvotes ? db.upvotes : 0,

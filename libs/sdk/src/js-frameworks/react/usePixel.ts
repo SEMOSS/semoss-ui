@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { runPixel } from "../../api";
 
-interface PixelState<D> {
+export interface PixelState<D> {
     /** Status of the pixel call */
     status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
     /** Data returned from the pixel call */

@@ -1,143 +1,73 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { runPixel } from "../../api";
-// import { useNotification } from "@hooks";
+import { useEffect, useState } from "react";
+import { usePixel, PixelConfig, PixelState } from "./usePixel";
 
-interface PixelState<D> {
-    status: "INITIAL" | "LOADING" | "SUCCESS" | "ERROR";
-    data?: D | D[] | [];
-    error?: Error;
-    collect?: () => void;
-    currLen?: number;
-}
-
-export interface PixelConfig<D> {
-    data?: D | D[] | [];
-    silent?: boolean;
-}
-
-interface UseInfinitePixelResult<D> extends PixelState<D> {
+interface PixelResult<D> extends Pick<PixelState<D>, "status" | "error"> {
+    data: D;
+    update: (data: D[] | D | Partial<D>) => void;
     refresh: () => void;
-    update: (data: D) => void;
-    offset?: number;
+	offset?: number;
+	currLen?: number;
+	collect?: () => void;
 }
 
 export function useInfinitePixel<D>(
-    funcName: string,
-    argStr: string,
-    config?: Partial<PixelConfig<D>>,
-    insightId?: string,
-): UseInfinitePixelResult<D> {
-    // const notification = useNotification();
+	fun: string,
+	pixel: string,
+	config?: Partial<PixelConfig<D>>,
+	insightId?: string,
+): PixelResult<D> {
+	const [currLen, setCurrLen] = useState(0);
+	const [offset, setOffset] = useState(0);
+	const [state, setState] = useState<D[]>([]);
+	const offsetPixel = `${fun}(${pixel}, offset=[${offset || 0}]);`;
 
-    const options = useMemo<PixelConfig<D>>(
-        () => ({
-            data: [],
-            silent: false,
-            ...config,
-        }),
-        [config],
-    );
+	const pixelConfig: Partial<PixelConfig<D[]>> = config
+		? {
+				...config,
+				data: Array.isArray(config.data)
+					? config.data
+					: config.data !== undefined
+						? [config.data]
+						: [],
+			}
+		: {};
 
-    const [count, setCount] = useState(0);
-    const [currLen, setCurrLen] = useState(0);
-    const [state, setState] = useState<PixelState<D>>(() => {
-        const s: PixelState<D> = {
-            status: "INITIAL",
-        };
+	const { refresh, update, data, status, error } = usePixel(
+		offsetPixel,
+		pixelConfig,
+		insightId,
+	);
 
-        if (options.data !== undefined) {
-            s.data = options.data;
-        }
+	useEffect(() => {
+		if (status === "SUCCESS") {
+			const isArray = Array.isArray(data);
+			if (isArray) {
+				setCurrLen(data.length);
+				setState((prev) => {
+					return [...prev, ...data];
+				});
+			}
+		}
+	}, [data, status]);
 
-        return s;
-    });
+	const collect = (offset?: number) => {
+		if (!offset) {
+			setState([]);
+		}
+		setOffset(offset || 0);
+	};
 
-    const isCancelledRef = useRef(false);
+	useEffect(() => {
+		collect();
+	}, [pixel, insightId, fun]);
 
-    const refresh = useCallback(() => {
-        setCount((count) => count + 1);
-    }, []);
-
-    const update = useCallback((data: D) => {
-        setState((prev) => ({
-            ...prev,
-            data,
-        }));
-    }, []);
-
-    const collect = (offset?: number) => {
-        if (!argStr) {
-            setState({
-                status: "INITIAL",
-                data: [],
-            });
-            return;
-        }
-
-        isCancelledRef.current = false;
-        setState((prev) => ({
-            data: offset ? prev.data : [],
-            status: "LOADING",
-        }));
-
-        runPixel(`${funcName}(${argStr}, offset=[${offset || 0}]);`, insightId)
-            .then((response) => {
-                if (isCancelledRef.current) return;
-                const { output, operationType } = response.pixelReturn[0];
-                if (operationType.includes("ERROR")) {
-                    throw new Error(output as string);
-                }
-                setCurrLen(Array.isArray(output) ? output.length : 0);
-                if (isCancelledRef.current) return;
-                setState((prev) => ({
-                    status: "SUCCESS",
-                    data:
-                        offset && Array.isArray(prev.data)
-                            ? [
-                                  ...prev.data,
-                                  ...(Array.isArray(output) ? output : []),
-                              ]
-                            : (output as D),
-                }));
-            })
-            .catch((error) => {
-                setCurrLen(0);
-                if (isCancelledRef.current) return;
-                if (!options.silent) {
-                    // notification.add({
-                    //     color: "error",
-                    //     message: error.message,
-                    // });
-                    window.alert(error.message);
-                } else {
-                    console.log(error.message);
-                }
-                setState({
-                    status: "ERROR",
-                    error,
-                    data: [],
-                });
-            });
-    };
-
-    useEffect(() => {
-        if (count > 0) {
-            collect();
-        }
-    }, [count]);
-
-    useEffect(() => {
-        collect();
-        return () => {
-            isCancelledRef.current = true;
-        };
-    }, [argStr, insightId, funcName]);
-
-    return {
-        ...state,
-        currLen,
-        collect,
-        refresh,
-        update,
-    };
+	return {
+		data: state as D,
+		status,
+		error,
+		currLen,
+		collect,
+		refresh,
+		update,
+	};
 }

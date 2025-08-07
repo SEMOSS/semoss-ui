@@ -10,18 +10,12 @@ import {
   ToggleTabsGroup,
   Typography,
 } from "@semoss/ui";
-
-nents/app";
-
+import { AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import {
-  useInfinitePixel,
-  useInfiniteScroll,
-  usePixel,
-  useRootStore,
-} from "@/hooks";
+import { useInfinitePixel, useInfiniteScroll, usePixel, useRootStore } from "@/hooks";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
+import { getPageSizeBasedOnScreen } from "@/utility/getPageSize";
 
 const StyledContainer = styled("div")(({ theme }) => ({
   width: "100%",
@@ -70,26 +64,14 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 
 type MODE = "Mine" | "Discoverable" | "System";
-type MODE = "Mine" | "Discoverable" | "System";
 
 const initialState = {
-  favoritedApps: [],
-  apps: [],
   favoritedApps: [],
   apps: [],
 };
 const SKELETON_CARD_COUNT = 6;
 
 const reducer = (state, action) => {
-  switch (action.type) {
-    case "field": {
-      return {
-        ...state,
-        [action.field]: action.value,
-      };
-    }
-  }
-  return state;
   switch (action.type) {
     case "field": {
       return {
@@ -164,15 +146,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
   const { favoritedApps, apps } = state;
   const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
   const [mode, setMode] = useState<MODE>("Mine");
+  const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
-  const [inputValue, setInputValue] = useState('');
-
-  const [_sortOrder,_setSortOrderr] = useState("ASC");
-  //** amount of items to be loaded */
-  const limit = 5;
-  // const { offset, checkHasReached, reset } = useInfiniteScroll({
-  //     limit,
-  // });
+  const limit = getPageSizeBasedOnScreen({ rowHeight: 322, rowWidth: 325 });
 
   // get a list of the keys
   const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -192,15 +168,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
   // get metakeys to the ones we want
   const metaKeys = projectMetaKeys.map((k) => {
     return k.metakey;
-  });_metaKeys
-  // get metakeys to the ones we want
-  const metaKeys = projectMetaKeys.map((k) => {
-    return k.metakey;
   });
 
-  // const [offsetVal, setOffset] = useState(0);
-
-//   let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
+  //   let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
 // _pixel
 //   pixel += `(metaKeys = ${JSON.stringify([
 //   _pixelmetaKeys,
@@ -211,7 +181,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
   // const favoritePixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
 
-  const { data, status, error, currLen, collect } = useInfinitePixel(
+  const { data, status, currLen, collect } = useInfinitePixel(
     mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects",
     `metaKeys = ${JSON.stringify([
       ...metaKeys,
@@ -226,16 +196,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
     length: currLen,
     collect,
   });
-
-  // useEffect(() => {
-  //     // if (!offset) {
-  //     //     collect();
-  //     // }
-  //     setOffset(offset);
-  // }, [offset]);
-
-  // console.log("data --> ", data, "status", status, "error", error);
-  // console.log('pixel ', pixel);
 
   /**
    * @desc Get & Set Apps
@@ -268,18 +228,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
     "description",
   ])}, metaFilters=[${JSON.stringify(
     metaFilters
-  )}], filterWord=["${search}"], onlyFavorites=[true],limit=[${limit}], offset=[${0}]);`;
+  )}], filterWord=["${search}"], onlyFavorites=[true]);`;
   const getFavoritedApps = usePixel(mode === "Mine" && favoritePixel);
 
-  useEffect(() => {
-    if (getFavoritedApps.status !== "SUCCESS") {
-      dispatch({
-        type: "field",
-        field: "favoritedApps",
-        value: [],
-      });
-      return;
-    }
   useEffect(() => {
     if (getFavoritedApps.status !== "SUCCESS") {
       dispatch({
@@ -292,12 +243,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
     dispatch({
       type: "field",
-      field: "favoritedApps",
-      value: getFavoritedApps.data,
-    });
-  }, [getFavoritedApps.status, getFavoritedApps.data]);
-    dispatch({
-      
       field: "favoritedApps",
       value: getFavoritedApps.data,
     });
@@ -415,7 +360,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
                 <Filterbox
                   type={"APP"}
                   onChange={(filters: Record<string, unknown>) => {
-                    reset();
                     setMetaFilters(filters);
                   }}
                 />
@@ -509,19 +453,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
                     showSkeleton={false}
                   />
                 )}
-            {mode == "System" && (
-              <StyledSection>
-                {"bi".includes(search.toLowerCase()) && (
-                  <AppTileCard
-                    app={BUSINESS_INTELLIGENCE_APP}
-                    background="#BADEFF"
-                    href="../../../"
-                    systemApp={true}
-                    appType={"BI"}
-                    isLoading={false}
-                    showSkeleton={false}
-                  />
-                )}
 
                 {"terminal".includes(search.toLowerCase()) && (
                   <AppTileCard
@@ -537,7 +468,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
                 )}
               </StyledSection>
             )}
-            {mode != "System" && getApps.status !== "SUCCESS" ? (
+            {mode != "System" && status !== "SUCCESS" ? (
               <StyledSection>
                 {Array.from({
                   length: SKELETON_CARD_COUNT,
@@ -559,56 +490,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
               </StyledSectionLabel>
             ) : null}
 
-            {/* do not show favorited apps in all apps view */}
-            {mode != "System" && apps.length > 0 ? (
-              <StyledSection>
-                {apps
-                  .filter(
-                    (app) =>
-                      !favoritedApps.some(
-                        (filterApp) => filterApp.project_id === app.project_id
-                      )
-                  )
-                  .map((app, i) => {
-                    return (
-                      <AppTileCard
-                        key={i}
-                        app={app}
-                        systemApp={false}
-                        isDiscoverable={mode !== "Mine"}
-                        href={
-                          mode === "Discoverable"
-                            ? `#/app/${app.project_id}/detail`
-                            : `#/app/${app.project_id}/view`
-                        }
-                        onAction={() => {
-                          if (mode === "Discoverable") {
-                            navigate(`/app/${app.project_id}/detail`);
-                          } else {
-                            navigate(`/app/${app.project_id}/view`);
-                          }
-                        }}
-                        appType={app.project_type}
-                        isFavorite={isFavorited(app.project_id)}
-                        favorite={() => {
-                          favoriteApp(app);
-                        }}
-                        onDelete={() => {
-                          removeApp(app);
-                        }}
-                        isLoading={true}
-                        showSkeleton={false}
-                      />
-                    );
-                  })}
-              </StyledSection>
-            ) : null}
-          </StyledContentContainer>
-        </StyledContainer>
-        <Help />
-      </Stack>
-    </>
-  );
             {/* do not show favorited apps in all apps view */}
             {mode != "System" && apps.length > 0 ? (
               <StyledSection>
