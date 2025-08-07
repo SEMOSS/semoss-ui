@@ -1,7 +1,7 @@
-import React from "react";
+import type React from "react";
 import { usePixel } from "@semoss/sdk/react";
 import { CircularProgress, Stack, styled, Table, Typography } from "@semoss/ui";
-import { Engine } from "@/types";
+import type { Engine } from "@/types";
 
 const StyledTableHolder = styled(Stack)(({ theme }) => ({
 	height: "376px",

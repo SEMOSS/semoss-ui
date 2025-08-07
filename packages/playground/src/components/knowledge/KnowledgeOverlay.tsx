@@ -1,5 +1,6 @@
 import { AddRounded, Close } from "@mui/icons-material";
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -12,9 +13,9 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { Engine, Knowledge } from "@/types";
+import type { Engine, Knowledge } from "@/types";
 import { ExistingKnowledge } from "./ExistingKnowledge";
-import { NewKnowledge, NewKnowledgeData } from "./NewKnowledge";
+import { NewKnowledge, type NewKnowledgeData } from "./NewKnowledge";
 
 const EMBEDDING_MODEL = import.meta.env.VITE_EMBEDDING_MODEL || "";
 const ENABLE_NEW_KNOWLEDGE =

@@ -1,5 +1,6 @@
 import { Close } from "@mui/icons-material";
-import React, { useEffect, useMemo, useState } from "react";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -19,7 +20,7 @@ import {
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
 import { useDebounceValue } from "@/hooks";
-import { App, Engine, Tool } from "@/types";
+import type { App, Engine, Tool } from "@/types";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
 const MODULE = import.meta.env.MODULE;
@@ -203,7 +204,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	 */
 	const IsToolSelected = (t: AvailbleTools): boolean => {
 		const toolKey = getToolKey(t);
-		return Object.prototype.hasOwnProperty.call(updatedTools, toolKey);
+		return Object.hasOwn(updatedTools, toolKey);
 	};
 
 	/**

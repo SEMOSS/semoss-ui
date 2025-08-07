@@ -9,7 +9,8 @@ import {
 	VideoFileOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Badge,
 	CircularProgress,

@@ -6,9 +6,6 @@
     "version": "0.0.1",
     "license": "UNLICENSED",
     "private": true,
-    "engines": {
-        "vscode": "^1.90.0"
-    },
     "categories": [
         "Other"
     ],
@@ -98,8 +95,6 @@
         }
     },
     "scripts": {
-        "lint": "eslint .",
-        "pretest": "npm run lint",
         "test": "node ./test/runTest.js",
         "vscode:prepublish": "npm run esbuild-base -- --minify",
         "esbuild-base": "esbuild ./extension.js --bundle --outfile=out/main.js --external:vscode --external:util --external:fs --external:path --external:os --external:crypto --external:http --external:https --external:stream --external:zlib --external:buffer --format=cjs --platform=node --metafile=out/meta.json",
@@ -110,14 +105,12 @@
         "clean": "rimraf out"
     },
     "devDependencies": {
-        "@eslint/js": "^9.26.0",
         "@types/glob": "^8.1.0",
         "@types/mocha": "^10.0.1",
         "@types/node": "18.16.9",
         "@types/vscode": "^1.76.0",
         "@vscode/test-electron": "^2.2.3",
         "esbuild": "^0.25.4",
-        "eslint": "^8.57.1",
         "glob": "^8.1.0",
         "globals": "^16.0.0",
         "mocha": "^10.2.0",
@@ -130,5 +123,12 @@
         "form-data": "^4.0.0",
         "ncp": "^2.0.0",
         "node-stream-zip": "^1.15.0"
+    },
+    "packageManager": "pnpm@10.13.1",
+    "engines": {
+        "pnpm": "~10.13.0",
+        "node": ">=24.4.0 <25",
+        "vscode": "^1.90.0"
     }
+    
 }
