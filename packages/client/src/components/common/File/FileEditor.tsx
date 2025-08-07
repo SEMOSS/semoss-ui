@@ -360,277 +360,375 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
       onChange(value, isModified);
     };
 
+    const languageConfigs = {
+      java: {
+        monarchTokensProvider: {
+          defaultToken: "invalid",
+          keywords: [
+            "abstract",
+            "continue",
+            "for",
+            "new",
+            "switch",
+            "assert",
+            "default",
+            "goto",
+            "package",
+            "synchronized",
+            "boolean",
+            "do",
+            "if",
+            "private",
+            "this",
+            "break",
+            "double",
+            "implements",
+            "protected",
+            "throw",
+            "byte",
+            "else",
+            "import",
+            "public",
+            "throws",
+            "case",
+            "enum",
+            "instanceof",
+            "return",
+            "transient",
+            "catch",
+            "extends",
+            "int",
+            "short",
+            "try",
+            "char",
+            "final",
+            "interface",
+            "static",
+            "void",
+            "class",
+            "finally",
+            "long",
+            "strictfp",
+            "volatile",
+            "const",
+            "float",
+            "native",
+            "super",
+            "while",
+          ],
+          typeKeywords: [
+            "byte",
+            "short",
+            "int",
+            "long",
+            "char",
+            "float",
+            "double",
+            "boolean",
+            "void",
+          ],
+          operators: [
+            "=",
+            ">",
+            "<",
+            "!",
+            "~",
+            "?",
+            ":",
+            "==",
+            "<=",
+            ">=",
+            "!=",
+            "&&",
+            "||",
+            "++",
+            "--",
+            "+",
+            "-",
+            "*",
+            "/",
+            "&",
+            "|",
+            "^",
+            "%",
+            "<<",
+            ">>",
+            ">>>",
+            "+=",
+            "-=",
+            "*=",
+            "/=",
+            "&=",
+            "|=",
+            "^=",
+            "%=",
+            "<<=",
+            ">>=",
+            ">>>=",
+          ],
+          symbols: /[=><!~?:&|+\-*\/\^%]+/,
+          escapes: /\\(?:[btnfr"'\\]|u[0-9A-Fa-f]{4})/,
+          tokenizer: {
+            root: [
+              [/\b[a-zA-Z_][\w$]*(?=\s*\()/, "function"],
+              [
+                /[a-z_$][\w$]*/,
+                {
+                  cases: {
+                    "@keywords": "keyword",
+                    "@default": "identifier",
+                  },
+                },
+              ],
+              [/[A-Z][\w\$]*/, "type.identifier"],
+              { include: "@whitespace" },
+              [/[{}()\[\]]/, "@brackets"],
+              [
+                /(@symbols)/,
+                {
+                  cases: {
+                    "@operators": "operator",
+                    "@default": "",
+                  },
+                },
+              ],
+              [/\d+\.\d+([eE][\-+]?\d+)?[fFdD]?/, "number.float"],
+              [/0[xX][0-9a-fA-F]+[Ll]?/, "number.hex"],
+              [/\d+[lL]?/, "number"],
+              [/[;,.]/, "delimiter"],
+              [
+                /"/,
+                { token: "string.quote", bracket: "@open", next: "@string" },
+              ],
+            ],
+            comment: [
+              [/[^\/*]+/, "comment"],
+              [/\*\//, "comment", "@pop"],
+              [/[\/*]/, "comment"],
+            ],
+            string: [
+              [/[^\\"]+/, "string"],
+              [/@escapes/, "string.escape"],
+              [/\\./, "string.escape.invalid"],
+              [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
+            ],
+            whitespace: [
+              [/[ \t\r\n]+/, ""],
+              [/\/\*/, "comment", "@comment"],
+              [/\/\/.*$/, "comment"],
+            ],
+          },
+        },
+        completionItems: (monaco) => [
+          {
+            label: "System.out.println",
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: "System.out.println($1);",
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "Prints a message to the console.",
+          },
+          {
+            label: "public class",
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: [
+              "public class ${1:ClassName} {",
+              "    public static void main(String[] args) {",
+              "        $0",
+              "    }",
+              "}",
+            ].join("\n"),
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "Java class with main method.",
+          },
+        ],
+        theme: {
+          base: "vs",
+          inherit: true,
+          rules: [
+            { token: "keyword", foreground: "0000FF", fontStyle: "bold" },
+            { token: "type.identifier", foreground: "2B91AF" },
+            { token: "function", foreground: "B58B00" },
+            { token: "comment", foreground: "008000", fontStyle: "italic" },
+            { token: "string", foreground: "A31515" },
+            { token: "number", foreground: "098658" },
+            { token: "operator", foreground: "000000" },
+          ],
+          colors: {},
+        },
+      },
+
+      python: {
+        completionItems: (monaco) => [
+          {
+            label: "print",
+            kind: monaco.languages.CompletionItemKind.Function,
+            insertText: 'print(${1:"Hello, world!"})',
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "Print to the console.",
+          },
+          {
+            label: "for loop",
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: [
+              "for ${1:item} in ${2:iterable}:",
+              "    ${0:# do something}",
+            ].join("\n"),
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "For loop in Python.",
+          },
+          {
+            label: "if-else",
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: [
+              "if ${1:condition}:",
+              "    ${0:# do something}",
+              "else:",
+              "    # handle else",
+            ].join("\n"),
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "If-else block in Python.",
+          },
+          {
+            label: "def function",
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: [
+              "def ${1:function_name}(${2:args}):",
+              "    ${0:pass}",
+            ].join("\n"),
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "Define a Python function.",
+          },
+          {
+            label: "class",
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: [
+              "class ${1:ClassName}:",
+              "    def __init__(self, ${2:args}):",
+              "        ${0:pass}",
+            ].join("\n"),
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "Define a class with a constructor.",
+          },
+          {
+            label: "while loop",
+            kind: monaco.languages.CompletionItemKind.Snippet,
+            insertText: [
+              "while ${1:condition}:",
+              "    ${0:# do something}",
+            ].join("\n"),
+            insertTextRules:
+              monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+            documentation: "While loop in Python.",
+          },
+        ],
+        theme: {
+          base: "vs",
+          inherit: true,
+          rules: [
+            { token: "identifier", foreground: "B58B00" },
+            { token: "keyword", foreground: "0000FF", fontStyle: "bold" },
+            { token: "comment", foreground: "008000", fontStyle: "italic" },
+            { token: "string", foreground: "A31515" },
+            { token: "number", foreground: "098658" },
+            { token: "operator", foreground: "000000" },
+          ],
+          colors: {},
+        },
+      },
+
+      typescript: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      javascript: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      html: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      css: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      scss: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      markdown: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      mdx: {
+        completionItems: () => [],
+        theme: null,
+      },
+
+      txt: {
+        completionItems: () => [],
+        theme: null,
+      },
+    };
+
     let syntaxSetupDone = false;
 
-    const setupSyntax = (monaco) => {
+    const setupSyntax = (monaco, language: string) => {
       if (syntaxSetupDone) return;
       syntaxSetupDone = true;
 
-      // --- Language definition ---
-      monaco.languages.setMonarchTokensProvider("java", {
-        defaultToken: "invalid",
-        keywords: [
-          "abstract",
-          "continue",
-          "for",
-          "new",
-          "switch",
-          "assert",
-          "default",
-          "goto",
-          "package",
-          "synchronized",
-          "boolean",
-          "do",
-          "if",
-          "private",
-          "this",
-          "break",
-          "double",
-          "implements",
-          "protected",
-          "throw",
-          "byte",
-          "else",
-          "import",
-          "public",
-          "throws",
-          "case",
-          "enum",
-          "instanceof",
-          "return",
-          "transient",
-          "catch",
-          "extends",
-          "int",
-          "short",
-          "try",
-          "char",
-          "final",
-          "interface",
-          "static",
-          "void",
-          "class",
-          "finally",
-          "long",
-          "strictfp",
-          "volatile",
-          "const",
-          "float",
-          "native",
-          "super",
-          "while",
-        ],
-        typeKeywords: [
-          "byte",
-          "short",
-          "int",
-          "long",
-          "char",
-          "float",
-          "double",
-          "boolean",
-          "void",
-        ],
-        operators: [
-          "=",
-          ">",
-          "<",
-          "!",
-          "~",
-          "?",
-          ":",
-          "==",
-          "<=",
-          ">=",
-          "!=",
-          "&&",
-          "||",
-          "++",
-          "--",
-          "+",
-          "-",
-          "*",
-          "/",
-          "&",
-          "|",
-          "^",
-          "%",
-          "<<",
-          ">>",
-          ">>>",
-          "+=",
-          "-=",
-          "*=",
-          "/=",
-          "&=",
-          "|=",
-          "^=",
-          "%=",
-          "<<=",
-          ">>=",
-          ">>>=",
-        ],
-        symbols: /[=><!~?:&|+\-*\/\^%]+/,
-        escapes: /\\(?:[btnfr"'\\]|u[0-9A-Fa-f]{4})/,
-        tokenizer: {
-          root: [
-            [/\b[a-zA-Z_][\w$]*(?=\s*\()/, "function"], // highlight methods
-            [
-              /[a-z_$][\w$]*/,
-              {
-                cases: {
-                  "@keywords": "keyword",
-                  "@default": "identifier",
-                },
-              },
-            ],
-            [/[A-Z][\w\$]*/, "type.identifier"],
-            { include: "@whitespace" },
-            [/[{}()\[\]]/, "@brackets"],
-            [
-              /(@symbols)/,
-              {
-                cases: {
-                  "@operators": "operator",
-                  "@default": "",
-                },
-              },
-            ],
-            [/\d+\.\d+([eE][\-+]?\d+)?[fFdD]?/, "number.float"],
-            [/0[xX][0-9a-fA-F]+[Ll]?/, "number.hex"],
-            [/\d+[lL]?/, "number"],
-            [/[;,.]/, "delimiter"],
-            [/"/, { token: "string.quote", bracket: "@open", next: "@string" }],
-          ],
-          comment: [
-            [/[^\/*]+/, "comment"],
-            [/\*\//, "comment", "@pop"],
-            [/[\/*]/, "comment"],
-          ],
-          string: [
-            [/[^\\"]+/, "string"],
-            [/@escapes/, "string.escape"],
-            [/\\./, "string.escape.invalid"],
-            [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
-          ],
-          whitespace: [
-            [/[ \t\r\n]+/, ""],
-            [/\/\*/, "comment", "@comment"],
-            [/\/\/.*$/, "comment"],
-          ],
-        },
-      });
+      const config = languageConfigs[language];
+      if (!config) return;
 
-      // --- IntelliSense ---
-      monaco.languages.registerCompletionItemProvider("java", {
-        triggerCharacters: [".", "("],
-        provideCompletionItems: (model, position) => {
-          const word = model.getWordUntilPosition(position);
-          const range = {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn,
-          };
+      // Setup Monarch tokens
+      if (config.monarchTokensProvider) {
+        monaco.languages.setMonarchTokensProvider(
+          language,
+          config.monarchTokensProvider
+        );
+      }
 
-          const suggestions = [
-            {
-              label: "System.out.println",
-              kind: monaco.languages.CompletionItemKind.Function,
-              insertText: "System.out.println($1);",
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Prints a message to the console.",
-              range,
-            },
-            {
-              label: "Scanner init",
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: "Scanner sc = new Scanner(System.in);",
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Create a Scanner for input.",
-              range,
-            },
-            {
-              label: "public class",
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: [
-                "public class ${1:ClassName} {",
-                "    public static void main(String[] args) {",
-                "        $0",
-                "    }",
-                "}",
-              ].join("\n"),
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Java class with main method.",
-              range,
-            },
-            {
-              label: "if-else",
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: [
-                "if (${1:condition}) {",
-                "    $0",
-                "} else {",
-                "}",
-              ].join("\n"),
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "If-else block.",
-              range,
-            },
-            {
-              label: "for loop",
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: [
-                "for (int ${1:i} = 0; ${1:i} < ${2:10}; ${1:i}++) {",
-                "    $0",
-                "}",
-              ].join("\n"),
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "Basic for loop.",
-              range,
-            },
-            {
-              label: "while loop",
-              kind: monaco.languages.CompletionItemKind.Snippet,
-              insertText: ["while (${1:condition}) {", "    $0", "}"].join(
-                "\n"
-              ),
-              insertTextRules:
-                monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
-              documentation: "While loop.",
-              range,
-            },
-          ];
+      // IntelliSense
+      if (typeof config.completionItems === "function") {
+        monaco.languages.registerCompletionItemProvider(language, {
+          triggerCharacters: [".", "("],
+          provideCompletionItems: (model, position) => {
+            const word = model.getWordUntilPosition(position);
+            const range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endColumn: word.endColumn,
+            };
 
-          return {
-            suggestions: suggestions.filter((s) =>
-              s.label.toLowerCase().startsWith(word.word.toLowerCase())
-            ),
-          };
-        },
-      });
+            return {
+              suggestions: config.completionItems(monaco).map((s) => ({
+                ...s,
+                range,
+              })),
+            };
+          },
+        });
+      }
 
-      // --- Theme ---
-      monaco.editor.defineTheme("java-playground", {
-        base: "vs",
-        inherit: true,
-        rules: [
-          { token: "keyword", foreground: "0000FF", fontStyle: "bold" },
-          { token: "type.identifier", foreground: "2B91AF" },
-          { token: "function", foreground: "B58B00" },
-          { token: "comment", foreground: "008000", fontStyle: "italic" },
-          { token: "string", foreground: "A31515" },
-          { token: "number", foreground: "098658" },
-          { token: "operator", foreground: "000000" },
-        ],
-        colors: {},
-      });
+      // Custom Theme
+      if (config.theme) {
+        monaco.editor.defineTheme(`${language}-playground`, config.theme);
+        monaco.editor.setTheme(`${language}-playground`);
+      }
     };
 
     /**
@@ -638,11 +736,10 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
      */
     const onEditorMount: OnMount = (editor, monaco) => {
       editorRef.current = editor;
-      if (IS_PRODUCTION) {
-        return;
-      }
-      setupSyntax(monaco);
-      monaco.editor.setTheme("java-playground");
+      if (IS_PRODUCTION) return;
+
+      setupSyntax(monaco, fileLanguage);
+      monaco.editor.setTheme(`${fileLanguage}-playground` || "vs");
       // prevents redundant additions of new dropdown action
       if (LLMActionAdded === false) {
         setLLMActionAdded(true);
@@ -705,7 +802,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
       }
     };
     const beforeMount = (monaco) => {
-    setupSyntax(monaco);
+      setupSyntax(monaco, fileLanguage);
     };
     return (
       <StyledContainer>
