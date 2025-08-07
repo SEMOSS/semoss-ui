@@ -1,6 +1,7 @@
 import { ArrowCircleDown, Create } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Chip,
@@ -42,6 +43,9 @@ export const EngineMetadataPage = observer(() => {
 
 	const [customNodes, setCustomNodes] = useState(null);
 	const [customEdges, setCustomEdges] = useState(null);
+	const [relationships, setRelationships] = useState(null);
+	const [canSave, setCanSave] = useState(true);
+	const navigate = useNavigate();
 
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, "INT" | "DOUBLE" | "STRING">;
@@ -159,6 +163,7 @@ export const EngineMetadataPage = observer(() => {
 
 		monolithStore.runQuery(pixel).then((response) => {
 			const output = response.pixelReturn[0]?.output;
+
 			if (!output) return;
 
 			const newNodes = output.tables.map((table) => ({
@@ -187,9 +192,11 @@ export const EngineMetadataPage = observer(() => {
 				target: rel.toTable,
 			}));
 
+			setRelationships(output.relationships);
 			setCustomNodes(newNodes);
 			setCustomEdges(newEdges);
 			setShowSyncModal(false);
+			setCanSave(!true);
 		});
 	};
 
@@ -218,6 +225,98 @@ export const EngineMetadataPage = observer(() => {
 		});
 	};
 
+	/**
+	 *
+	 * @param data
+	 * @desc Needs to be done at top level since this is very similar to other RDBMS dbs
+	 */
+	const saveDatabase = async (data) => {
+		const tables = {};
+		const owlPositions = {};
+
+		data.nodes.forEach((node) => {
+			const tableInfo = node.data;
+			const cols = node.data.properties;
+			const firstCol = cols[0].name.replace(/ /g, "_");
+
+			if (!tables[tableInfo.name + "." + firstCol]) {
+				const columns = [];
+
+				cols.forEach((col) => {
+					columns.push(col.name.replace(/ /g, "_"));
+				});
+
+				tables[tableInfo.name + "." + firstCol] = columns;
+			}
+
+			if (!owlPositions[node.id]) {
+				owlPositions[node.id] = {
+					top: node.position.y,
+					left: node.position.x,
+				};
+			}
+		});
+
+		const pixel = `RdbmsExternalUpload(database=["${active.id}"], metamodel=[${JSON.stringify({ relationships: relationships, tables: tables })}], existing=[true]); META|SaveOwlPositions(database=["${active.id}"], positionMap=[${JSON.stringify(owlPositions)}]); META|SyncDatabaseWithLocalMaster(database=["${active.id}"])`;
+
+		const resp = await monolithStore.runQuery(pixel);
+		const output = resp.pixelReturn[0].output,
+			operationType = resp.pixelReturn[0].operationType;
+
+		if (operationType.indexOf("ERROR") > -1) {
+			console.warn("RDBMSExternalUpload Reactor bug");
+		} else {
+			navigate(`/engine/database/${output.database_id}/metamodel`);
+			return;
+		}
+	};
+
+	const onSubmit = () => {
+		const payloadObj = {
+			metamodel: {
+				relation: [
+					// { fromTable: 'id', toTable: 'Drug', relName: 'id_Drug' },
+				],
+				nodeProp: {
+					// tableName: [ // 'colname' EXCLUDING THE FIRST COLUMN
+					// ],
+				},
+			},
+			dataTypeMap: {
+				// colName: type,
+			},
+			newHeaders: {}, // oldColName: newColName
+			additionalDataTypes: {}, // colName: specificFormat
+			descriptionMap: {}, // colName: description
+			logicalNamesMap: {}, // colName/alias: logicalName
+			position: [{}],
+			nodes: customNodes,
+		};
+
+		// build metamodel relation for each table
+		for (const edge of customEdges) {
+			const relName = `${edge.source}_${edge.target}`;
+			payloadObj.metamodel.relation.push({
+				fromTable: edge.source,
+				toTable: edge.target,
+				relName: relName,
+			});
+		}
+
+		// build metamodel node prop
+
+		// build dataTypeMap for each table
+		for (const node of customNodes) {
+			for (const col of node.data.properties) {
+				payloadObj.dataTypeMap[col.name] = col.type;
+			}
+
+			payloadObj.metamodel.nodeProp[node.data.name] = [];
+		}
+
+		saveDatabase(payloadObj);
+	};
+
 	return (
 		<StyledPage>
 			<Section>
@@ -234,6 +333,13 @@ export const EngineMetadataPage = observer(() => {
 								data-testid={"engine-metadata-print-btn"}
 							>
 								Print Metadata
+							</Button>
+							<Button
+								disabled={canSave}
+								variant="outlined"
+								onClick={() => onSubmit()}
+							>
+								Save
 							</Button>
 						</Stack>
 					}
@@ -297,7 +403,7 @@ export const EngineMetadataPage = observer(() => {
 												?.logicalNames?.[property.id] ||
 											[];
 										return (
-											<Table.Row key={idx}>
+											<Table.Row key={`${property}--${idx}`}>
 												<Table.Cell>
 													<IconButton disabled>
 														<Create />
