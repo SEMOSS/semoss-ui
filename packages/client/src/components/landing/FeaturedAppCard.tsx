@@ -2,7 +2,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { observer } from "mobx-react-lite";
 import { Button, Chip, Link, styled, Typography } from "@semoss/ui";
 
-const StyledOuterContainer = styled("div")(({ theme }) => ({
+const StyledOuterContainer = styled("div")(() => ({
 	display: "flex",
 	borderRadius: "12px",
 	background: "#FFF",
@@ -18,7 +18,7 @@ const StyledInnerContainer = styled("div")(({ theme }) => ({
 	width: "100%",
 }));
 
-const StyledContainerTitleSection = styled("div")(({ theme }) => ({
+const StyledContainerTitleSection = styled("div")(() => ({
 	display: "flex",
 	width: "100%",
 	justifyContent: "space-between",
@@ -32,7 +32,7 @@ const StyledContainerContentSection = styled("div")(({ theme }) => ({
 }));
 
 const StyledContainerImageSection = styled("div")<{ backgroundImage: string }>(
-	({ theme, backgroundImage }) => ({
+	({ backgroundImage }) => ({
 		display: "flex",
 		backgroundImage: `${backgroundImage}`,
 		backgroundSize: "100% 100%",
@@ -42,13 +42,13 @@ const StyledContainerImageSection = styled("div")<{ backgroundImage: string }>(
 	}),
 );
 
-const StyledContainerButtonSection = styled("div")(({ theme }) => ({
+const StyledContainerButtonSection = styled("div")(() => ({
 	display: "flex",
 	justifyContent: "flex-start",
 	width: "100%",
 }));
 
-const StyledChip = styled(Chip)<{ chipColor?: string }>(({ theme }) => ({
+const StyledChip = styled(Chip)<{ chipColor?: string }>(() => ({
 	borderRadius: "4px",
 	background: "#FDF0E5",
 	"& .MuiChip-label": {
@@ -91,7 +91,7 @@ const StyledDisabledButton = styled(Button)(({ theme }) => ({
 	},
 }));
 
-const StyledLink = styled(Link)(({ theme }) => ({
+const StyledLink = styled(Link)(() => ({
 	textDecoration: "none",
 	color: "inherit",
 }));
