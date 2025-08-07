@@ -172,14 +172,13 @@ export const Select: React.FC<SelectProps> = ({
 
   return (
     <MuiTextField
-      variant={variant} 
-      select 
+      variant={variant}
+      select
       SelectProps={{
         ...SelectProps,
-        MenuProps: mergedMenuProps, 
+        MenuProps: mergedMenuProps,
       }}
-      {...otherProps} 
+      {...otherProps}
     />
   );
 };
-
