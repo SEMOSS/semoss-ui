@@ -1,4 +1,3 @@
-import { useCallback, useState } from 'react';
 import {
     DeleteOutline,
     DescriptionOutlined,
@@ -19,31 +18,31 @@ import {
 import { usePixel, useRootStore } from '@/hooks';
 
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
-    '.MuiCollapse-wrapperInner': {
-        height: 'auto',
-        overflow: 'none',
-    },
+	".MuiCollapse-wrapperInner": {
+		height: "auto",
+		overflow: "none",
+	},
 }));
 
-const StyledLabel = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'isDragging',
+const StyledLabel = styled("div", {
+	shouldForwardProp: (prop) => prop !== "isDragging",
 })<{
-    isDragging: boolean;
+	isDragging: boolean;
 }>(({ theme, isDragging }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    height: theme.spacing(3),
-    width: '100%',
-    gap: theme.spacing(1),
-    opacity: isDragging ? 0.5 : 1,
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	height: theme.spacing(3),
+	width: "100%",
+	gap: theme.spacing(1),
+	opacity: isDragging ? 0.5 : 1,
 }));
 
 const StyledTypography = styled(Typography)(() => ({
-    overflow: 'hidden',
-    whiteSpace: 'nowrap',
-    textOverflow: 'ellipsis',
-    flex: '1',
+	overflow: "hidden",
+	whiteSpace: "nowrap",
+	textOverflow: "ellipsis",
+	flex: "1",
 }));
 
 const StyledActionContainer = styled('div')(({ theme }) => ({
@@ -53,36 +52,36 @@ const StyledActionContainer = styled('div')(({ theme }) => ({
 }));
 
 interface FileExplorerItemProps {
-    /** Type of file opened */
-    type: 'app' | 'insight';
+	/** Type of file opened */
+	type: "app" | "insight";
 
     /** Space where the file is located */
     space?: string;
 
-    /** file details */
-    name: string;
-    path: string;
-    isDirectory: boolean;
-    lastModified: string;
+	/** file details */
+	name: string;
+	path: string;
+	isDirectory: boolean;
+	lastModified: string;
 
-    /** node details */
-    expanded: string[];
-    selected: string[];
+	/** node details */
+	expanded: string[];
+	selected: string[];
 
-    /** Triggered when the Label starts dragging */
-    onDragStart?: (
-        event: React.DragEvent<HTMLDivElement>,
-        path: string,
-    ) => void;
+	/** Triggered when the Label starts dragging */
+	onDragStart?: (
+		event: React.DragEvent<HTMLDivElement>,
+		path: string,
+	) => void;
 
-    /** Triggered when the item ends dragging */
-    onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
+	/** Triggered when the item ends dragging */
+	onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
-    /** Triggered when the Track Icon is clicked */
-    onTrashClick?: (
-        event: React.MouseEvent<HTMLButtonElement>,
-        path: string,
-    ) => void;
+	/** Triggered when the Track Icon is clicked */
+	onTrashClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => void;
 }
 
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
@@ -102,7 +101,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
     const [isDragging, setIsDragging] = useState(false);
     const { monolithStore } = useRootStore();
 
-    const isOpen = expanded.indexOf(path) > -1;
+	const isOpen = expanded.indexOf(path) > -1;
 
     // Get child files based on type
     const getAssets = usePixel<
@@ -120,11 +119,11 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
             : '',
     );
 
-    const nodeRef = useCallback((ele) => {
-        ele?.addEventListener('focusin', (e) => {
-            e.stopImmediatePropagation();
-        });
-    }, []);
+	const nodeRef = useCallback((ele) => {
+		ele?.addEventListener("focusin", (e) => {
+			e.stopImmediatePropagation();
+		});
+	}, []);
 
     // Get child files
     const childFiles = getAssets.status === 'SUCCESS' ? getAssets.data : [];
@@ -144,11 +143,11 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                     onDragStart={(e) => {
                         setIsDragging(true);
 
-                        // trigger the callback
-                        onDragStart(e, path);
-                    }}
-                    onDragEnd={(e) => {
-                        setIsDragging(false);
+						// trigger the callback
+						onDragStart(e, path);
+					}}
+					onDragEnd={(e) => {
+						setIsDragging(false);
 
                         // trigger the callback
                         onDragEnd(e, path);

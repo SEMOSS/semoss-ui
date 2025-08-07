@@ -8,55 +8,55 @@ import { LoadingScreen } from '@/components/ui';
 import { FileExplorerItem } from './FileExplorerItem';
 
 const StyledTreeView = styled(TreeView)(({ theme }) => ({
-    width: '100%',
-    maxHeight: '100%',
-    gap: theme.spacing(3),
-    '.MuiTreeItem-content': {
-        padding: theme.spacing(0.5),
-    },
-    overflow: 'auto',
+	width: "100%",
+	maxHeight: "100%",
+	gap: theme.spacing(3),
+	".MuiTreeItem-content": {
+		padding: theme.spacing(0.5),
+	},
+	overflow: "auto",
 }));
 
 interface FileExplorerProps {
-    expandedPaths: string[];
-    onToggleExpand: (path: string) => void;
-    /** Type of file opened */
-    type: 'app' | 'insight';
+	expandedPaths: string[];
+	onToggleExpand: (path: string) => void;
+	/** Type of file opened */
+	type: "app" | "insight";
 
     /** Space where the file is located */
     space?: string;
 
-    /** insight id */
-    insightId?: string | null;
+	/** insight id */
+	insightId?: string | null;
 
-    /** Trigger a callback when an file is selected */
-    onSelect?: (path: string) => void;
+	/** Trigger a callback when an file is selected */
+	onSelect?: (path: string) => void;
 
     /** Triggered when the Label starts dragging */
     onDragStart?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
-    /** Triggered when the item ends dragging */
-    onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
+	/** Triggered when the item ends dragging */
+	onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
-    /** Triggered when the Track Icon is clicked */
-    onTrashClick?: (
-        event: React.MouseEvent<HTMLButtonElement>,
-        path: string,
-    ) => void;
+	/** Triggered when the Track Icon is clicked */
+	onTrashClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => void;
 }
 
 export const FileExplorer = (props: FileExplorerProps) => {
-    const {
-        type,
-        space,
-        insightId = null,
-        onSelect = () => null,
-        onDragStart = () => null,
-        onDragEnd = () => null,
-        onTrashClick = () => null,
-        expandedPaths,
-        onToggleExpand,
-    } = props;
+	const {
+		type,
+		space,
+		insightId = null,
+		onSelect = () => null,
+		onDragStart = () => null,
+		onDragEnd = () => null,
+		onTrashClick = () => null,
+		expandedPaths,
+		onToggleExpand,
+	} = props;
 
     const { monolithStore } = useRootStore();
 
@@ -76,20 +76,20 @@ export const FileExplorer = (props: FileExplorerProps) => {
         insightId,
     );
 
-    const initLoadComplete = getAssets.status === 'SUCCESS';
-    const [selected, setSelected] = React.useState<string[]>([]);
+	const initLoadComplete = getAssets.status === "SUCCESS";
+	const [selected, setSelected] = React.useState<string[]>([]);
 
-    /**
-     * Triggered when a node is selected
-     * @param selected - newly selected values
-     */
-    const handleOnNodeSelect = (selected: string[]) => {
-        // trigger the callback on the first one
-        onSelect(selected[0] || '');
+	/**
+	 * Triggered when a node is selected
+	 * @param selected - newly selected values
+	 */
+	const handleOnNodeSelect = (selected: string[]) => {
+		// trigger the callback on the first one
+		onSelect(selected[0] || "");
 
-        // set the selected values
-        setSelected(selected);
-    };
+		// set the selected values
+		setSelected(selected);
+	};
 
 
 

@@ -1,4 +1,4 @@
-import { Chip, ChipProps } from "./Chip";
+import { Chip, type ChipProps } from "./Chip";
 
 export type { ChipProps };
 

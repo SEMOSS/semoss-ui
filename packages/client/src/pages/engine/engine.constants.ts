@@ -1,53 +1,51 @@
 import {
-    Inventory2Outlined,
-    SwitchAccessShortcutOutlined,
-    TokenOutlined,
-} from '@mui/icons-material';
-
-import { ENGINE_TYPES, Role } from '@/types';
-import { ModelBrain } from '@/assets/img/ModelBrain';
-import { Database } from '@/assets/img/Database';
-
-import { EngineOverviewPage } from './EngineOverviewPage';
-import { EngineMetadataPage } from './EngineMetadataPage';
-import { EngineSettingsPage } from './EngineSettingsPage';
-import { EngineFilePage } from './EngineFilePage';
-import { EngineQAPage } from './EngineQAPage';
+	Inventory2Outlined,
+	SwitchAccessShortcutOutlined,
+	TokenOutlined,
+} from "@mui/icons-material";
+import { Database } from "@/assets/img/Database";
+import { ModelBrain } from "@/assets/img/ModelBrain";
+import type { ENGINE_TYPES, Role } from "@/types";
+import { EngineFilePage } from "./EngineFilePage";
+import { EngineMetadataPage } from "./EngineMetadataPage";
+import { EngineOverviewPage } from "./EngineOverviewPage";
+import { EngineQAPage } from "./EngineQAPage";
+import { EngineSettingsPage } from "./EngineSettingsPage";
+import { EngineSmssPage } from "./EngineSmssPage";
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
-import { EngineUsagePage } from './EngineUsagePage';
-import { EngineSmssPage } from './EngineSmssPage';
+import { EngineUsagePage } from "./EngineUsagePage";
 
 export const ENGINE_ROUTES: {
-    /** Name of the route */
-    name: string;
+	/** Name of the route */
+	name: string;
 
-    /** Path of the page */
-    path: string;
+	/** Path of the page */
+	path: string;
 
-    /** Icon to render in the page */
-    icon: React.FunctionComponent;
+	/** Icon to render in the page */
+	icon: React.FunctionComponent;
 
-    /** Type of the engine */
-    type: ENGINE_TYPES;
+	/** Type of the engine */
+	type: ENGINE_TYPES;
 
-    /** Description of the engine*/
-    description: string;
+	/** Description of the engine*/
+	description: string;
 
-    /** Child paths associated with a specific engine */
-    specific: {
-        /** Name of the specific page */
-        name: string;
+	/** Child paths associated with a specific engine */
+	specific: {
+		/** Name of the specific page */
+		name: string;
 
-        /** Path of the specific page */
-        path: string;
+		/** Path of the specific page */
+		path: string;
 
-        /** Restrict to certain roles (set to false to allow all) */
-        restrict: Role[] | false;
+		/** Restrict to certain roles (set to false to allow all) */
+		restrict: Role[] | false;
 
-        /** Component to render */
-        component: React.FunctionComponent;
-    }[];
+		/** Component to render */
+		component: React.FunctionComponent;
+	}[];
 }[] = [
     {
         name: 'Function',

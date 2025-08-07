@@ -21,7 +21,7 @@ import {
 	TOKEN_TYPE_INPUT,
 } from "../prompt.constants";
 import { setBlocksAndOpenUIBuilder } from "../prompt.helpers";
-import {
+import type {
 	Builder,
 	BuilderStepItem,
 	ConstraintSettings,

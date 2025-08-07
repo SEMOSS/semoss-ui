@@ -7,7 +7,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { RightMenu } from "@/components";
-import { ChatRoom } from "@/stores";
+import type { ChatRoom } from "@/stores";
 
 interface RoomAppProps {
 	/** Room to render */
