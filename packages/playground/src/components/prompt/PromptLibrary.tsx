@@ -15,7 +15,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { useDebounceValue } from "@/hooks";
-import { Prompt } from "@/types";
+import type { Prompt } from "@/types";
 
 const StyledHolder = styled("div")(({ theme }) => ({
 	display: "flex",

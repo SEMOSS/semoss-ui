@@ -1,5 +1,4 @@
 import { useContext } from "react";
-
 import { NotificationContext } from "./NotificationContext";
 
 /**
@@ -7,10 +6,10 @@ import { NotificationContext } from "./NotificationContext";
  * @returns a hook that accesses the container
  */
 export function useNotification() {
-    const c = useContext(NotificationContext);
-    if (c === undefined) {
-        throw new Error("useNotification must be used within a Notification");
-    }
+	const c = useContext(NotificationContext);
+	if (c === undefined) {
+		throw new Error("useNotification must be used within a Notification");
+	}
 
-    return c;
+	return c;
 }

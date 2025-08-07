@@ -164,7 +164,6 @@ export const EngineMetadataPage = observer(() => {
 		monolithStore.runQuery(pixel).then((response) => {
 			const output = response.pixelReturn[0]?.output;
 
-			console.log("THIS IS OUTPUT", output);
 			if (!output) return;
 
 			const newNodes = output.tables.map((table) => ({
@@ -308,7 +307,6 @@ export const EngineMetadataPage = observer(() => {
 
 		// build dataTypeMap for each table
 		for (const node of customNodes) {
-			console.log("node: ", node);
 			for (const col of node.data.properties) {
 				payloadObj.dataTypeMap[col.name] = col.type;
 			}
@@ -316,7 +314,6 @@ export const EngineMetadataPage = observer(() => {
 			payloadObj.metamodel.nodeProp[node.data.name] = [];
 		}
 
-		console.log("PAYLOAD OBJ", payloadObj);
 		saveDatabase(payloadObj);
 	};
 
@@ -406,7 +403,7 @@ export const EngineMetadataPage = observer(() => {
 												?.logicalNames?.[property.id] ||
 											[];
 										return (
-											<Table.Row key={idx}>
+											<Table.Row key={`${property}--${idx}`}>
 												<Table.Cell>
 													<IconButton disabled>
 														<Create />
