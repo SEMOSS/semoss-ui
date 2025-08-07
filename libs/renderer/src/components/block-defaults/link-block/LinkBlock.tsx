@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
-import { CSSProperties, useEffect } from "react";
+import { type CSSProperties, useEffect } from "react";
 import { useBlock } from "../../../hooks";
-import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 export interface LinkBlockDef extends BlockDef<"link"> {
 	widget: "link";
