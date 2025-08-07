@@ -5,17 +5,17 @@ import {
 	getValueByPath,
 	syncronousPromise,
 } from "../../utility";
-import { CellStateConfig } from "./cell.state";
+import type { CellStateConfig } from "./cell.state";
 import { STATE_VERSION } from "./migration/MigrationManager";
-import { QueryState, QueryStateConfig } from "./query.state";
+import { QueryState, type QueryStateConfig } from "./query.state";
 import {
 	ActionMessages,
-	Actions,
-	AddBlockAction,
-	MoveBlockAction,
-	RemoveBlockAction,
+	type Actions,
+	type AddBlockAction,
+	type MoveBlockAction,
+	type RemoveBlockAction,
 } from "./state.actions";
-import {
+import type {
 	Block,
 	BlockJSON,
 	CellRegistry,

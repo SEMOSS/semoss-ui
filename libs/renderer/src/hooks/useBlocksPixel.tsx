@@ -1,20 +1,19 @@
 import { useContext } from "react";
-
-import { BlocksContext } from "../contexts";
 import { usePixel } from "@semoss/sdk/react";
+import { BlocksContext } from "../contexts";
 
 /**
  * Run pixel within blocks context
  * @returns Pixel response
  */
 export function useBlocksPixel<D>(
-    pixel: string,
-    config?,
+	pixel: string,
+	config?,
 ): ReturnType<typeof usePixel<D>> {
-    const context = useContext(BlocksContext);
-    if (context === undefined) {
-        throw new Error("useBlocksPixel must be used within Blocks");
-    }
+	const context = useContext(BlocksContext);
+	if (context === undefined) {
+		throw new Error("useBlocksPixel must be used within Blocks");
+	}
 
-    return usePixel<D>(pixel, config, context.state.insightId);
+	return usePixel<D>(pixel, config, context.state.insightId);
 }

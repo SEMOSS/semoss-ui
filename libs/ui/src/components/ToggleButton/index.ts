@@ -1,4 +1,4 @@
-import { ToggleButton, ToggleButtonProps } from "./ToggleButton";
+import { ToggleButton, type ToggleButtonProps } from "./ToggleButton";
 
 export type { ToggleButtonProps };
 export { ToggleButton };
