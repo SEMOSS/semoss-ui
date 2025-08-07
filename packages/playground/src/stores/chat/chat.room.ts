@@ -373,6 +373,9 @@ export class ChatRoom {
 				this.setOptions(options);
 			}
 
+			// get the parentMessageId (the current tail)
+			const parentMessageId = this.tail.id;
+
 			// create the input message
 			const inputMessage = this.createChatMessage({
 				messageId: TEMP_MESSAGE_ID,
@@ -394,7 +397,10 @@ export class ChatRoom {
 			this.tail.addChild(inputMessage);
 
 			// upload the files
-			const uploaded = await this.upload(files, "");
+			let uploaded = [];
+			if (files.length > 0) {
+				uploaded = await this.upload(files, "");
+			}
 
 			// build the context if it is there
 			let context = "";
@@ -424,7 +430,7 @@ command=["<encode>${prompt}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${files.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
 ${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
-${this.tail.id !== ROOT_MESSAGE_ID ? `parentMessageId=["${this.tail.id}"],` : ""}
+${parentMessageId !== ROOT_MESSAGE_ID ? `parentMessageId=["${parentMessageId}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
@@ -452,51 +458,36 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Process a App response
+	 * Run a tool response
+	 * @param id - id of the tool
+	 * @param func - func of the tool to run
+	 * @param parameters - parameters to pass in
 	 */
-	processAppResponse = async () => {
-		//         // TODO: Or do we want to pass these outputs to the model for verification
-		//         // TODO: Do you want me to just fill in the tool params And call AddToolResponse?
-		//         messageResponse.content = JSON.stringify(appOutputs);
-		//     };
-		//     /**
-		//      * Process a tool response
-		//      * @param question - user message
-		//      */
-		//     processToolResponse = async (
-		//         messageResponse: MessageAppResponse | MessageFunctionResponse,
-		//         updatedParameters: MessageParameters,
-		//     ): Promise<void> => {
-		//         try {
-		//             // turn on the loading screen
-		//             this.setIsLoading(true);
-		//             // update the parameters
-		//             const parameters: Record<string, unknown> =
-		//                 updatedParameters.reduce((acc, val) => {
-		//                     acc[val.name] = val.value;
-		//                     return acc;
-		//                 }, {});
-		//             // wait for the pixel to run
-		//             const response = await this.runPixel<[{ response: string }]>(
-		//                 `AddToolResponse(
-		// engine=["${this._store.modelId}"],
-		// tool_name=["${messageResponse.tool_name}"],
-		// tool_id=["${messageResponse.id}"],
-		// tool_call_id=["${messageResponse.tool_id}"],
-		// tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
-		// );`,
-		//             );
-		//             const { output, operationType } = response.pixelReturn[0];
-		//             // throw errors
-		//             if (operationType.indexOf('ERROR') > -1) {
-		//                 throw new Error(output as unknown as string);
-		//             }
-		//             // update the content>
-		//             messageResponse.content = output.response;
-		//         } finally {
-		//             // turn off the loading screen
-		//             this.setIsLoading(false);
-		//         }
+	runTool = async (
+		id: string,
+		func: string,
+		parameters: Record<string, unknown>,
+	): Promise<void> => {
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// wait for the pixel to run
+			const response = await this.runPixel<[{ response: string }]>(
+				`RunMCPTool(project = [ "${id}" ], function=[ "${func}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+			);
+
+			const { output, operationType } = response.pixelReturn[0];
+			// throw errors
+			if (operationType.indexOf("ERROR") > -1) {
+				throw new Error(output as unknown as string);
+			}
+
+			console.log(output);
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
 	};
 
 	/**
