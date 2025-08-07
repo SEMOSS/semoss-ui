@@ -12,6 +12,7 @@ import {
 } from "@mui/icons-material";
 import type React from "react";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -353,21 +354,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 	const copyId = (id: string) => {
 		try {
 			navigator.clipboard.writeText(id);
-	const copyId = (id: string) => {
-		try {
-			navigator.clipboard.writeText(id);
-
-			notification.add({
-				color: "success",
-				message: "Succesfully copied to clipboard",
-			});
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		}
-	};
 			notification.add({
 				color: "success",
 				message: "Succesfully copied to clipboard",

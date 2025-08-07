@@ -1,5 +1,4 @@
 import { RestartAlt } from "@mui/icons-material";
-import { Layout as FlexLayout } from "flexlayout-react"; // TODO: Why cant i export from shared
 import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
