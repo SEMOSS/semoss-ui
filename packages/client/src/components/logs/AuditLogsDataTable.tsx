@@ -710,9 +710,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										checked={allEngineNamesSelected}
 										checkboxProps={{
 											indeterminate:
-												tempFilters.engineType.length >
+												tempFilters.engineName.length >
 													0 &&
-												tempFilters.engineType
+												tempFilters.engineName
 													.length !==
 													filterOptions.engineNames
 														.length,
