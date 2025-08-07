@@ -1,6 +1,6 @@
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { Button, Chip, Link, styled, Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
+import { Button, Chip, Link, styled, Typography } from "@semoss/ui";
 
 const StyledOuterContainer = styled("div")(({ theme }) => ({
 	display: "flex",
