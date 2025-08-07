@@ -12,7 +12,7 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
-import { EventData, TimeDateFormatter } from "../EngineDashboard";
+import { EventData } from "@/types";
 
 // Type definitions
 interface ProcessedEventData {
@@ -148,11 +148,19 @@ const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
 	}),
 );
 
-interface EventHistoryProps {
+interface AuditLogsTimelineProps {
 	logs: EventData[];
 }
 
-const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
+const TimeDateFormatter = (timeStamp: string) => {
+	const date = timeStamp.split("T")[0];
+	const time = timeStamp.split("T")[1];
+	return { date, time };
+};
+
+export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
+	logs,
+}) => {
 	const chartRef = useRef<HTMLDivElement>(null);
 	const [chartInstance, setChartInstance] = useState<echarts.ECharts | null>(
 		null,
@@ -244,7 +252,7 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
 	};
 
 	useEffect(() => {
-		if (chartRef.current) {
+		if (chartRef.current && logs.length > 0) {
 			const chart = echarts.init(chartRef.current);
 			setChartInstance(chart);
 
@@ -638,8 +646,22 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
 				chart.dispose();
 			};
 		}
-	}, [chartRef, logs]);
+	}, [logs]);
 
+	if (logs.length === 0) {
+		return (
+			<Container elevation={1}>
+				<Header>
+					<StyledTitle variant="h6">Event History</StyledTitle>
+				</Header>
+				<Box sx={{ padding: 2, textAlign: "center" }}>
+					<Typography variant="body2" color="textSecondary">
+						No logs available.
+					</Typography>
+				</Box>
+			</Container>
+		);
+	}
 	return (
 		<Container elevation={1}>
 			<Header>
@@ -669,5 +691,3 @@ const EventHistory: React.FC<EventHistoryProps> = ({ logs }) => {
 		</Container>
 	);
 };
-
-export default EventHistory;
