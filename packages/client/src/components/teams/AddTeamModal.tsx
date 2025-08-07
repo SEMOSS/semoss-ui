@@ -18,7 +18,7 @@ import {
 } from '@semoss/ui';
 
 import { useRootStore } from '@/hooks';
-import { addTeam } from "@/api/teams";
+import { addTeam, editTeam } from "@/api/teams";
 
 import AMAZON_S3 from '@/assets/loginProviders/Amazon_S3.png';
 import newGoogle from '@/assets/loginProviders/google.png';
@@ -194,14 +194,14 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         if (isEdit) {
             // Logic for editing the team
             try {
-                const response = await monolithStore.editTeam(
+                const response = await editTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
                     data.TEAM_TYPE,
                     previousTeamName,
                     previousType,
                 );
-                if (response.status === 200 && response.data) {
+                if (response.data) {
                     onClose({
                         id: data.TEAM_NAME,
                         type: data.TEAM_TYPE,
@@ -226,12 +226,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
         } else {
             // Logic for creating a new team
             try {
-                const response = await monolithStore.addTeam(
+                const response = await addTeam(
                     data.TEAM_NAME,
                     data.TEAM_DESCRIPTION,
+                    false,
                     data.TEAM_TYPE,
                 );
-                if (response.status === 200 && !response.data) {
+                if (!response.data) {
                     onClose({
                         id: data.TEAM_NAME,
                         type: data.TEAM_TYPE,

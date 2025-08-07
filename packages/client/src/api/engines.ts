@@ -158,7 +158,7 @@ export const removeEngineUserPermissions = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {});
+  }>(url, processPostData(postData), {});
   return response;
 };
 

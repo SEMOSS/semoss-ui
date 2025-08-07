@@ -26,7 +26,7 @@ import {
   Typography,
   useNotification,
 } from "@semoss/ui";
-import { getUserProjectPermission } from "@/api";
+import { getUserProjectPermission, uploadImage } from "@/api";
 import {
   AppDetailsFormTypes,
   AppDetailsFormValues,
@@ -486,7 +486,7 @@ export const AppDetailPage = () => {
 
         // upload the image
         if (imageMeta && appId) {
-          await monolithStore.uploadImage(imageMeta, appId);
+          await uploadImage(imageMeta, appId, configStore.store.insightID);
         }
 
         // close it, refresh and succesfully message

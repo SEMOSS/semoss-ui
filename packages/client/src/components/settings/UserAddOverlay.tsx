@@ -254,7 +254,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
                 }
 
                 if (isNewUser) {
-                    response = await monolithStore.createUser(adminMode, data);
+                    response = await createUser(adminMode, data);
                 } else {
                     if (
                         data.exporter === undefined ||

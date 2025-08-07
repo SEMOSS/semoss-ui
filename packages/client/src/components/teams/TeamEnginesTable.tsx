@@ -369,17 +369,18 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 * @desc - sets engines in react hook form
 	 */
 	useEffect(() => {
-		getTeamEngines(
+		const getTeamEnginesData = async () => {
+			const response = await getTeamEngines(
 				groupId,
 				groupType,
 				limit,
 				enginesPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data: any[]) => {
-				setEngines(data);
-				setHasEngines(true);
-			});
+			searchFilter,
+		);
+		setEngines((response as any).data as any[]);
+		setHasEngines(true);
+	};
+	getTeamEnginesData();
 	}, [
 		groupId,
 		groupType,
@@ -634,25 +635,27 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	engines?.length > 19 && paginationOptions.enginesPageCounts.push(20);
 
 	const filterEngines = useCallback(() => {
-		getTeamEngines(
+		const response = getTeamEngines(
 				groupId,
 				groupType,
 				limit,
 				enginesPage * limit - limit, // offset
 				searchFilter,
-			)
-			.then((data: any[]) => {
-				setEngines(data);
-				setHasEngines(true);
-			});
-		getTeamEngines(
+			);
+
+		setEngines((response as any).data as any[]);
+		setHasEngines(true);
+
+		const responseData = getTeamEngines(
 				groupId,
 				groupType,
 				100,
 				0, // offset
 				searchFilter,
-			)
-			.then((data: any[]) => setEngineCount(data.length));
+			);
+
+		setEngineCount(((responseData as any).data as any[]).length);
+
 	}, [
 		enginesPage,
 		searchFilter,

@@ -13,7 +13,7 @@ import {
     Autocomplete,
 } from '@semoss/ui';
 import { SerializedState } from '@semoss/renderer';
-
+import { config, uploadImage } from '@/api';
 import { useRootStore } from '@/hooks';
 import { AppMetadata } from './app.types';
 
@@ -45,7 +45,7 @@ interface NewAppModalProps {
 export const NewAppModal = (props: NewAppModalProps) => {
     const { open, options, onClose = () => null } = props;
 
-    const { monolithStore } = useRootStore();
+    const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
 
     const [isLoading, setIsLoading] = useState(false);
@@ -99,7 +99,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 // upload the image
                 if (data.APP_IMG && appId) {
-                    await monolithStore.uploadImage(data.APP_IMG, appId);
+                    await uploadImage(data.APP_IMG, appId, configStore.store.insightID);
                 }
                 // after the project is created check for metadata. If true, run SetProjectMeta
                 if (data['APP_TAGS'].length || data['APP_DESCRIPTION']) {
@@ -145,7 +145,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
                 // upload the image
                 if (data.APP_IMG && appId) {
-                    await monolithStore.uploadImage(data.APP_IMG, appId);
+                    await uploadImage(data.APP_IMG, appId, configStore.store.insightID);
                 }
 
                 // after the project is created run a pixel to create a new portals/index.html file

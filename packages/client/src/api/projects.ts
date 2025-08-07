@@ -95,7 +95,7 @@ export const deleteProjectPermission = async (
   }
   const response = await post<{
     success: boolean;
-  }>(url, postData, {});
+  }>(url, processPostData(postData), {});
   return response;
 };
 
@@ -233,7 +233,7 @@ export const approveProjectUserAccessRequest = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {});
+  }>(url, processPostData(postData), {});
   return response;
   // figure out whether we want to do .catch here
 };
@@ -256,7 +256,7 @@ export const denyProjectUserAccessRequest = async (
 
   const response = await post<{
     success: boolean;
-  }>(url, postData, {});
+  }>(url, processPostData(postData), {});
   return response;
   // figure out whether we want to do .catch here
 };
@@ -388,6 +388,43 @@ export const setProjectPortal = async (
   }>(url, processPostData(postData), {});
   return response;
 };
+
+ export const uploadImage = async(
+    files: File[],
+    projectId: string | null,
+    insightId?: string | null
+  ) => {
+    const url = `${Env.MODULE}/api/images/projectImage/upload`,
+      fd: FormData = new FormData();
+
+    if (Array.isArray(files)) {
+      for (let i = 0; i < files.length; i++) {
+        fd.append("file", files[i]);
+      }
+    } else {
+      // pasted data
+      fd.append("file", files);
+    }
+
+    if (insightId) {
+      fd.append("insightId", insightId);
+    }
+
+    if (projectId) {
+      fd.append("projectId", projectId);
+    }
+
+    const response = await post<
+      {
+        app_id: string;
+        app_name: string;
+        message: string;
+      }[]
+    >(url, fd, {});
+
+    return response.data;
+  }
+
 
 
 const processPostData = (data: any) => {

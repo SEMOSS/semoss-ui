@@ -706,11 +706,7 @@ export const deleteMember = async (
     }
     url += 'user/deleteUser';
 
-    const response = await post<boolean>(url, postData, {
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-        },
-    });
+    const response = await post<boolean>(url, postData, {});
     return response;
 };
 
@@ -723,11 +719,7 @@ export const editMemberInfo = async (admin: boolean, user: any) => {
         url += 'admin/';
     }
     url += 'user/editUser';
-    const response = await post<boolean>(url, postData, {
-            headers: {
-                'content-type': 'application/x-www-form-urlencoded',
-            },
-        })
+    const response = await post<boolean>(url, processPostData(postData), {})
         .catch((e) => {
             throw Error(e);
         });
@@ -791,11 +783,7 @@ export const createUser = async (admin: boolean, user: any) => {
     if (user.model_max_response_time) {
         newUserInfo['modelMaxResponseTime'] = user.model_max_response_time;
     }
-    const response = await post<boolean>(url, newUserInfo, {
-        headers: {
-            'content-type': 'application/x-www-form-urlencoded',
-        },
-    });
+    const response = await post<boolean>(url, processPostData(newUserInfo), {});
     return response;
 };
 
@@ -858,4 +846,12 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
             throw Error(error);
         });
     return response.data;
+};
+
+const processPostData = (data: any) => {
+  let postRecordData: Record<string, unknown> = {};
+  Object.keys(data).forEach((item) => {
+    postRecordData[item] = data[item];
+  });
+  return postRecordData;
 };
