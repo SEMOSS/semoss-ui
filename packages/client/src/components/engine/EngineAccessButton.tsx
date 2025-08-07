@@ -1,288 +1,287 @@
-import { useEffect, useState } from 'react';
+import { Add, EditRounded, RemoveRedEyeRounded } from "@mui/icons-material";
+import { useEffect, useState } from "react";
 import {
-    styled,
-    useNotification,
-    Avatar,
-    Box,
-    Button,
-    Card,
-    Icon,
-    Modal,
-    RadioGroup,
-    Stack,
-    TextArea,
-} from '@semoss/ui';
-import { EditRounded, RemoveRedEyeRounded, Add } from '@mui/icons-material';
-
-import { Role } from '@/types';
-import { useRootStore, useEngine } from '@/hooks';
-import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
+	Avatar,
+	Box,
+	Button,
+	Card,
+	Icon,
+	Modal,
+	RadioGroup,
+	Stack,
+	styled,
+	TextArea,
+	useNotification,
+} from "@semoss/ui";
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { useEngine, useRootStore } from "@/hooks";
+import type { Role } from "@/types";
 
 const StyledCard = styled(Card)({
-    borderRadius: '12px',
+	borderRadius: "12px",
 });
 
 export const EngineAccessButton = () => {
-    const { type, active } = useEngine();
+	const { type, active } = useEngine();
 
-    const { monolithStore } = useRootStore();
-    const notification = useNotification();
+	const { monolithStore } = useRootStore();
+	const notification = useNotification();
 
-    // track if open
-    const [open, setOpen] = useState(false);
-    const [requestedRole, setRequestedRole] = useState<Role>(active.role);
+	// track if open
+	const [open, setOpen] = useState(false);
+	const [requestedRole, setRequestedRole] = useState<Role>(active.role);
 
-    const [comment, setComment] = useState<string>('');
+	const [comment, setComment] = useState<string>("");
 
-    // close when the id changes
-    useEffect(() => {
-        setOpen(false);
-    }, [active.id]);
+	// close when the id changes
+	useEffect(() => {
+		setOpen(false);
+	}, [active.id]);
 
-    // update the requested whenever the role changes
-    useEffect(() => {
-        setRequestedRole(active.role);
-    }, [active.role]);
+	// update the requested whenever the role changes
+	useEffect(() => {
+		setRequestedRole(active.role);
+	}, [active.role]);
 
-    /**
-     * Request the new access
-     */
-    const requestAccess = async () => {
-        try {
-            const response = await monolithStore.runQuery(
-                `META | RequestEngine(engine=['${
-                    active.id
-                }'], permission=['${requestedRole}']${
-                    comment && `, comment=['${comment}']`
-                })`,
-            );
+	/**
+	 * Request the new access
+	 */
+	const requestAccess = async () => {
+		try {
+			const response = await monolithStore.runQuery(
+				`META | RequestEngine(engine=['${
+					active.id
+				}'], permission=['${requestedRole}']${
+					comment && `, comment=['${comment}']`
+				})`,
+			);
 
-            const { operationType, output } = response.pixelReturn[0];
+			const { operationType, output } = response.pixelReturn[0];
 
-            if (operationType.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
+			if (operationType.indexOf("ERROR") > -1) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
 
-                return;
-            }
+				return;
+			}
 
-            notification.add({
-                color: 'success',
-                message: output,
-            });
+			notification.add({
+				color: "success",
+				message: output,
+			});
 
-            // close is
-            setOpen(false);
-        } catch (e) {
-            // noop
-        }
-    };
+			// close is
+			setOpen(false);
+		} catch (e) {
+			// noop
+		}
+	};
 
-    // cannot request access if the owner
-    if (active.role === 'OWNER') {
-        return null;
-    }
+	// cannot request access if the owner
+	if (active.role === "OWNER") {
+		return null;
+	}
 
-    return (
-        <>
-            <Button
-                startIcon={<Add />}
-                variant="outlined"
-                onClick={() => setOpen(true)}
-            >
-                {active.role === 'DISCOVERABLE' ? (
-                    <>Request Access</>
-                ) : (
-                    <>Change Access</>
-                )}
-            </Button>
-            <Modal
-                open={open}
-                maxWidth={'md'}
-                onClose={() => {
-                    // close is
-                    setOpen(false);
-                }}
-            >
-                <Modal.Title>
-                    {active.role === 'DISCOVERABLE'
-                        ? 'Request Access'
-                        : 'Change Access'}
-                </Modal.Title>
-                <Modal.Content>
-                    <RadioGroup
-                        label={''}
-                        defaultValue={active.role}
-                        onChange={(e) => {
-                            setRequestedRole(e.target.value as Role);
-                        }}
-                    >
-                        <Stack spacing={1}>
-                            <StyledCard>
-                                <Card.Header
-                                    title={
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                fontSize: '16px',
-                                            }}
-                                        >
-                                            <Avatar
-                                                sx={{
-                                                    width: '20px',
-                                                    height: '20px',
-                                                    mt: '2px',
-                                                    marginRight: '12px',
-                                                    fontSize: '12px',
-                                                    fontWeight: 'bold',
-                                                    backgroundColor:
-                                                        'rgba(0, 0, 0, .5)',
-                                                }}
-                                            >
-                                                A
-                                            </Avatar>
-                                            Author
-                                        </Box>
-                                    }
-                                    sx={{ color: '#000' }}
-                                    subheader={
-                                        <Box sx={{ marginLeft: '30px' }}>
-                                            {
-                                                PERMISSION_DESCRIPTION_MAP[type]
-                                                    .author
-                                            }
-                                        </Box>
-                                    }
-                                    action={
-                                        <RadioGroup.Item
-                                            value="OWNER"
-                                            label=""
-                                        />
-                                    }
-                                />
-                            </StyledCard>
-                            <StyledCard>
-                                <Card.Header
-                                    title={
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                fontSize: '16px',
-                                            }}
-                                        >
-                                            <Icon
-                                                sx={{
-                                                    width: '20px',
-                                                    height: '20px',
-                                                    mt: '2px',
-                                                    marginRight: '12px',
-                                                    fontSize: '12px',
-                                                    fontWeight: 'bold',
-                                                    color: 'rgba(0, 0, 0, .5)',
-                                                    maxWidth: '20px',
-                                                }}
-                                            >
-                                                <EditRounded />
-                                            </Icon>
-                                            Editor
-                                        </Box>
-                                    }
-                                    sx={{ color: '#000' }}
-                                    subheader={
-                                        <Box sx={{ marginLeft: '30px' }}>
-                                            {
-                                                PERMISSION_DESCRIPTION_MAP[type]
-                                                    .editor
-                                            }
-                                        </Box>
-                                    }
-                                    action={
-                                        <RadioGroup.Item
-                                            value="EDIT"
-                                            label=""
-                                        />
-                                    }
-                                />
-                            </StyledCard>
-                            <StyledCard>
-                                <Card.Header
-                                    title={
-                                        <Box
-                                            sx={{
-                                                display: 'flex',
-                                                fontSize: '16px',
-                                            }}
-                                        >
-                                            <Icon
-                                                sx={{
-                                                    width: '20px',
-                                                    height: '20px',
-                                                    mt: '2px',
-                                                    marginRight: '12px',
-                                                    fontSize: '12px',
-                                                    fontWeight: 'bold',
-                                                    color: 'rgba(0, 0, 0, .5)',
-                                                    maxWidth: '20px',
-                                                }}
-                                            >
-                                                <RemoveRedEyeRounded />
-                                            </Icon>
-                                            Read-Only
-                                        </Box>
-                                    }
-                                    sx={{ color: '#000' }}
-                                    subheader={
-                                        <Box sx={{ marginLeft: '30px' }}>
-                                            {
-                                                PERMISSION_DESCRIPTION_MAP[type]
-                                                    .readonly
-                                            }
-                                        </Box>
-                                    }
-                                    action={
-                                        <RadioGroup.Item
-                                            value="READ_ONLY"
-                                            label=""
-                                        />
-                                    }
-                                />
-                            </StyledCard>
+	return (
+		<>
+			<Button
+				startIcon={<Add />}
+				variant="outlined"
+				onClick={() => setOpen(true)}
+			>
+				{active.role === "DISCOVERABLE" ? (
+					<>Request Access</>
+				) : (
+					<>Change Access</>
+				)}
+			</Button>
+			<Modal
+				open={open}
+				maxWidth={"md"}
+				onClose={() => {
+					// close is
+					setOpen(false);
+				}}
+			>
+				<Modal.Title>
+					{active.role === "DISCOVERABLE"
+						? "Request Access"
+						: "Change Access"}
+				</Modal.Title>
+				<Modal.Content>
+					<RadioGroup
+						label={""}
+						defaultValue={active.role}
+						onChange={(e) => {
+							setRequestedRole(e.target.value as Role);
+						}}
+					>
+						<Stack spacing={1}>
+							<StyledCard>
+								<Card.Header
+									title={
+										<Box
+											sx={{
+												display: "flex",
+												fontSize: "16px",
+											}}
+										>
+											<Avatar
+												sx={{
+													width: "20px",
+													height: "20px",
+													mt: "2px",
+													marginRight: "12px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													backgroundColor:
+														"rgba(0, 0, 0, .5)",
+												}}
+											>
+												A
+											</Avatar>
+											Author
+										</Box>
+									}
+									sx={{ color: "#000" }}
+									subheader={
+										<Box sx={{ marginLeft: "30px" }}>
+											{
+												PERMISSION_DESCRIPTION_MAP[type]
+													.author
+											}
+										</Box>
+									}
+									action={
+										<RadioGroup.Item
+											value="OWNER"
+											label=""
+										/>
+									}
+								/>
+							</StyledCard>
+							<StyledCard>
+								<Card.Header
+									title={
+										<Box
+											sx={{
+												display: "flex",
+												fontSize: "16px",
+											}}
+										>
+											<Icon
+												sx={{
+													width: "20px",
+													height: "20px",
+													mt: "2px",
+													marginRight: "12px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													color: "rgba(0, 0, 0, .5)",
+													maxWidth: "20px",
+												}}
+											>
+												<EditRounded />
+											</Icon>
+											Editor
+										</Box>
+									}
+									sx={{ color: "#000" }}
+									subheader={
+										<Box sx={{ marginLeft: "30px" }}>
+											{
+												PERMISSION_DESCRIPTION_MAP[type]
+													.editor
+											}
+										</Box>
+									}
+									action={
+										<RadioGroup.Item
+											value="EDIT"
+											label=""
+										/>
+									}
+								/>
+							</StyledCard>
+							<StyledCard>
+								<Card.Header
+									title={
+										<Box
+											sx={{
+												display: "flex",
+												fontSize: "16px",
+											}}
+										>
+											<Icon
+												sx={{
+													width: "20px",
+													height: "20px",
+													mt: "2px",
+													marginRight: "12px",
+													fontSize: "12px",
+													fontWeight: "bold",
+													color: "rgba(0, 0, 0, .5)",
+													maxWidth: "20px",
+												}}
+											>
+												<RemoveRedEyeRounded />
+											</Icon>
+											Read-Only
+										</Box>
+									}
+									sx={{ color: "#000" }}
+									subheader={
+										<Box sx={{ marginLeft: "30px" }}>
+											{
+												PERMISSION_DESCRIPTION_MAP[type]
+													.readonly
+											}
+										</Box>
+									}
+									action={
+										<RadioGroup.Item
+											value="READ_ONLY"
+											label=""
+										/>
+									}
+								/>
+							</StyledCard>
 
-                            {/* tom---> comment textarea if we want this here, can be removed */}
-                            <Card.Header title={<Box>Comment:</Box>} />
-                            <TextArea
-                                required={false}
-                                value={comment}
-                                onChange={(e) => setComment(e.target.value)}
-                                rows={3}
-                            ></TextArea>
-                        </Stack>
-                    </RadioGroup>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button
-                        variant={'outlined'}
-                        onClick={() => {
-                            setOpen(false);
-                        }}
-                    >
-                        Cancel
-                    </Button>
-                    <Button
-                        variant={'contained'}
-                        disabled={
-                            !requestedRole || requestedRole === active.role
-                        }
-                        onClick={() => {
-                            requestAccess();
-                        }}
-                    >
-                        Request
-                    </Button>
-                </Modal.Actions>
-            </Modal>
-        </>
-    );
+							{/* tom---> comment textarea if we want this here, can be removed */}
+							<Card.Header title={<Box>Comment:</Box>} />
+							<TextArea
+								required={false}
+								value={comment}
+								onChange={(e) => setComment(e.target.value)}
+								rows={3}
+							></TextArea>
+						</Stack>
+					</RadioGroup>
+				</Modal.Content>
+				<Modal.Actions>
+					<Button
+						variant={"outlined"}
+						onClick={() => {
+							setOpen(false);
+						}}
+					>
+						Cancel
+					</Button>
+					<Button
+						variant={"contained"}
+						disabled={
+							!requestedRole || requestedRole === active.role
+						}
+						onClick={() => {
+							requestAccess();
+						}}
+					>
+						Request
+					</Button>
+				</Modal.Actions>
+			</Modal>
+		</>
+	);
 };
