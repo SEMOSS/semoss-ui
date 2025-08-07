@@ -302,6 +302,7 @@ const ContentText = styled(Typography)({
 
 interface FilterState {
 	engineType: string[];
+	engineName: string[];
 	status: string[];
 	latencyRange: string[];
 	tokenRange: string[];
@@ -331,6 +332,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	const [searchQuery, setSearchQuery] = useState("");
 	const [appliedFilters, setAppliedFilters] = useState<FilterState>({
 		engineType: [],
+		engineName: [],
 		status: [],
 		latencyRange: [],
 		tokenRange: [],
@@ -338,6 +340,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 	const [tempFilters, setTempFilters] = useState<FilterState>({
 		engineType: [],
+		engineName: [],
 		status: [],
 		latencyRange: [],
 		tokenRange: [],
@@ -351,6 +354,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	const filterOptions = useMemo(() => {
 		const engineTypes = [
 			...new Set(logs.map((log) => log.engineType)),
+		].filter(Boolean);
+		const engineNames = [
+			...new Set(logs.map((log) => log.engineName)),
 		].filter(Boolean);
 		const statuses = [...new Set(logs.map((log) => log.status))].filter(
 			Boolean,
@@ -455,6 +461,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 		return {
 			engineTypes,
+			engineNames,
 			statuses,
 			latencyRanges: generateDynamicLatencyRanges(),
 			tokenRanges: generateDynamicTokenRanges(),
@@ -537,6 +544,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	const handleClearAllFilters = () => {
 		const clearedFilters = {
 			engineType: [],
+			engineName: [],
 			status: [],
 			latencyRange: [],
 			tokenRange: [],
@@ -573,12 +581,14 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		setSearchQuery("");
 		setAppliedFilters({
 			engineType: [],
+			engineName: [],
 			status: [],
 			latencyRange: [],
 			tokenRange: [],
 		});
 		setTempFilters({
 			engineType: [],
+			engineName: [],
 			status: [],
 			latencyRange: [],
 			tokenRange: [],
@@ -680,7 +690,74 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							))}
 						</FilterOptionsList>
 					);
+				case "engineName":
+					const allEngineNamesSelected =
+						tempFilters.engineName.length ===
+						filterOptions.engineNames.length;
 
+					return (
+						<FilterOptionsList>
+							<FilterListItem>
+								<SelectAllListItemButton
+									onClick={() =>
+										handleSelectAll(
+											"engineName",
+											filterOptions.engineNames,
+										)
+									}
+								>
+									<StyledCheckbox
+										checked={allEngineNamesSelected}
+										checkboxProps={{
+											indeterminate:
+												tempFilters.engineType.length >
+													0 &&
+												tempFilters.engineType
+													.length !==
+													filterOptions.engineNames
+														.length,
+										}}
+									/>
+									<ListItemText
+										primary="Select All"
+										primaryTypographyProps={{
+											fontSize: "14px",
+										}}
+									/>
+								</SelectAllListItemButton>
+							</FilterListItem>
+							{filterOptions.engineNames.map((name) => (
+								<FilterListItem key={name}>
+									<StyledListItemButton
+										onClick={() =>
+											handleMultiSelectFilter(
+												"engineName",
+												name,
+											)
+										}
+									>
+										<StyledCheckbox
+											checked={tempFilters.engineName.includes(
+												name,
+											)}
+										/>
+										<ListItemText
+											primary={name}
+											primaryTypographyProps={{
+												fontSize: "14px",
+												fontWeight:
+													tempFilters.engineName.includes(
+														name,
+													)
+														? 500
+														: 400,
+											}}
+										/>
+									</StyledListItemButton>
+								</FilterListItem>
+							))}
+						</FilterOptionsList>
+					);
 				case "status":
 					const allStatusesSelected =
 						tempFilters.status.length ===
