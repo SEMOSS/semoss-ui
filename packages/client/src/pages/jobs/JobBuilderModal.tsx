@@ -73,7 +73,7 @@ export const JobBuilderModal = (props: {
 		} else {
 			setBuilder(emptyBuilder);
 		}
-	}, [, initialBuilder]);
+	}, [initialBuilder]);
 
 	const cronValidation = useMemo(() => {
 		const result = cronValidator.validate(builder.cronExpression);
@@ -117,7 +117,7 @@ export const JobBuilderModal = (props: {
 	]);
 
 	const hasChanges: boolean = useMemo(() => {
-		if (builder.id == null) {
+		if (builder.id == null || !initialBuilder) {
 			return true;
 		}
 
@@ -156,25 +156,10 @@ export const JobBuilderModal = (props: {
 		builder.message,
 		builder.username,
 		builder.password,
-		initialBuilder.bcc,
 		builder.cc,
-		initialBuilder.cc,
-		initialBuilder.from,
-		initialBuilder.cronExpression,
-		initialBuilder.jobType,
-		initialBuilder.message,
-		initialBuilder.name,
-		initialBuilder.password,
-		initialBuilder.pixel,
-		initialBuilder.subject,
-		initialBuilder.smtpHost,
-		initialBuilder.tags,
-		initialBuilder.to,
-		initialBuilder.username,
-		initialBuilder.smtpPort,
-		initialBuilder.cronTz,
-		builder.id,
 		builder.bcc,
+		builder.id,
+		initialBuilder,
 	]);
 
 	// Don't close modal before error notification
@@ -337,6 +322,32 @@ export const JobBuilderModal = (props: {
 							setBuilderField={setBuilderField}
 						/>
 					)}
+					{!isCronExpressionValid &&
+						cronValidation.errors.length > 0 && (
+							<Stack spacing={0.5} paddingX={1}>
+								<div
+									style={{
+										color: "#d32f2f",
+										fontSize: "0.875rem",
+										fontWeight: 500,
+									}}
+								>
+									Cron Expression Validation Errors:
+								</div>
+								{cronValidation.errors.map((error, idx) => (
+									<div
+										key={idx}
+										style={{
+											color: "#d32f2f",
+											fontSize: "0.75rem",
+											paddingLeft: "8px",
+										}}
+									>
+										• {error}
+									</div>
+								))}
+							</Stack>
+						)}
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>

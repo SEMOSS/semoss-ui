@@ -31,11 +31,6 @@ export const JobCustomFrequencyBuilder = (props: {
 		setCronFields(fields.slice(0, 7));
 	}, [builder.cronExpression]);
 
-	// When any cron field changes, update the builder's cronExpression
-	useEffect(() => {
-		setBuilderField("cronExpression", cronFields.join(" "));
-	}, [cronFields, setBuilderField]);
-
 	// Use cronValidator to validate the entire expression
 	const cronValidation = useMemo(() => {
 		const expression = cronFields.join(" ");
@@ -54,6 +49,8 @@ export const JobCustomFrequencyBuilder = (props: {
 		const newFields = [...cronFields];
 		newFields[idx] = value;
 		setCronFields(newFields);
+		// Update the builder immediately when user changes a field
+		setBuilderField("cronExpression", newFields.join(" "));
 	};
 
 	return (
@@ -64,11 +61,7 @@ export const JobCustomFrequencyBuilder = (props: {
 					label={label}
 					value={cronFields[idx]}
 					error={!isValidExpression}
-					helperText={
-						!isValidExpression && idx === 0
-							? cronValidation.errors[0]
-							: undefined
-					}
+					size="small"
 					onChange={(e) => handleFieldChange(idx, e.target.value)}
 				/>
 			))}

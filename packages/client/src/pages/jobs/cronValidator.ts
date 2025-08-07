@@ -59,9 +59,21 @@ class CronExpressionValidator implements CronValidator {
 		for (let i = 0; i < 7; i++) {
 			if (!this.CRON_PATTERNS[i].test(cronFields[i])) {
 				errors.push(
-					`Invalid ${this.FIELD_NAMES[i]} field: "${cronFields[i]}"`,
+					`Invalid ${this.FIELD_NAMES[i]} field: ${cronFields[i] ? cronFields[i] : `missing`}`,
 				);
 			}
+		}
+
+		// Logical validation: Day of Month and Day of Week mutual exclusivity
+		const dayOfMonth = cronFields[3]; // index 3
+		const dayOfWeek = cronFields[5]; // index 5
+
+		// Both fields cannot have specific values at the same time
+		// One must be ?, *, or the other must be ? or *
+		if (dayOfMonth !== "?" && dayOfWeek !== "?") {
+			errors.push(
+				"Cannot specify both Day of Month and Day of Week. Use '?' in one of them when the other is specified.",
+			);
 		}
 
 		return {
