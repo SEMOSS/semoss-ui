@@ -170,17 +170,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
     return k.metakey;
   });
 
-  //   let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
-// _pixel
-//   pixel += `(metaKeys = ${JSON.stringify([
-//   _pixelmetaKeys,
-//     "description",
-//   ])}, metaFilters=[${JSON.stringify(
-//     metaFilters
-//   )}], filterWord=["${search}"], onlyPortals=[true],limit=[${limit}],offset=[${0}]);`;
-
-  // const favoritePixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
-
   const { data, status, currLen, collect } = useInfinitePixel(
     mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects",
     `metaKeys = ${JSON.stringify([
@@ -205,11 +194,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
   useEffect(() => {
     if (status !== "SUCCESS") {
       return;
-      // dispatch({
-      //     type: 'field',
-      //     field: 'apps',
-      //     value: [],
-      // });
     }
 
     dispatch({
