@@ -1,4 +1,4 @@
-import { Layout as FlexLayout, ILayoutProps } from "flexlayout-react";
+import { Layout as FlexLayout, type ILayoutProps } from "flexlayout-react";
 import { forwardRef } from "react";
 
 import "flexlayout-react/style/light.css";

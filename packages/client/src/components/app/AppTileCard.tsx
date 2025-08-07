@@ -14,7 +14,7 @@ import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Card,
-	CardProps,
+	type CardProps,
 	Chip,
 	IconButton,
 	Link,
@@ -30,7 +30,7 @@ import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/AddAppCloneModal";
 import { removeUnderscores } from "@/utility";
 import { APP_IMAGES } from "./app.images";
-import { AppMetadata } from "./app.types";
+import type { AppMetadata } from "./app.types";
 
 const StyledName = styled(Typography)(() => ({
 	fontWeight: 400,
@@ -470,7 +470,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 					const img = new Image();
 					img.src = generateProjectImageURL(app.project_id);
 					img.crossOrigin = "Anonymous"; // Set crossOrigin to allow CORS
-					img.onload = function () {
+					img.onload = () => {
 						const canvas = document.createElement("canvas");
 						const ctx = canvas.getContext("2d");
 						canvas.width = img.width;
@@ -481,7 +481,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 						setLoading(false);
 						setHasDownloaded(true); // Set hasDownloaded to true after loading
 					};
-					img.onerror = function () {
+					img.onerror = () => {
 						console.error("Error loading image");
 						setLoading(false);
 						setHasDownloaded(true); // Mark as downloaded even on error to prevent retries

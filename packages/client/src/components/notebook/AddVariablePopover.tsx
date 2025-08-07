@@ -8,12 +8,12 @@ import {
 	BLOCK_TYPE_INPUT,
 	DefaultBlocks,
 	Renderer,
-	SerializedState,
+	type SerializedState,
 	STATE_VERSION,
 	useBlocks,
 	VARIABLE_TYPES,
-	VariableType,
-	VariableWithId,
+	type VariableType,
+	type VariableWithId,
 } from "@semoss/renderer";
 import {
 	Alert,

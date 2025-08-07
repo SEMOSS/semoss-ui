@@ -22,6 +22,23 @@ import { PageLayout } from "./PageLayout";
 import { PromptRouter } from "./prompt";
 import { SharePage } from "./SharePage";
 import { SettingsRouter } from "./settings";
+	AppCatalogPage,
+	AppDetailPage,
+	AppMarketplacePage,
+	CreateAppPage,
+	EditAppPage,
+	NewPromptBuilderAppPage,
+	ViewAppPage,
+} from "./app";
+import { EngineRouter } from "./engine";
+import { LandingPage } from "./LandingPage";
+import { LoginPage } from "./LoginPage";
+import { CookieNotice } from "./legal/CookieNotice";
+import { PrivacyNotice } from "./legal/PrivacyNotice";
+import { PageLayout } from "./PageLayout";
+import { PromptRouter } from "./prompt";
+import { SharePage } from "./SharePage";
+import { SettingsRouter } from "./settings";
 
 export const Router = observer(() => {
 	const { configStore } = useRootStore();

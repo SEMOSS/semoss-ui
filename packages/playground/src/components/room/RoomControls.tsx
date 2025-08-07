@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { OptionsMenu } from "@/components";
-import { ChatRoom } from "@/stores";
+import type { ChatRoom } from "@/stores";
 
 interface RoomControlsProps {
 	/** Room to render */

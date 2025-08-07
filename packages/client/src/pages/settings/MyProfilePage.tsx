@@ -112,6 +112,17 @@ const CustomGridItem = styled(GridItem)(({ theme }) => ({
 	zIndex: 8,
 }));
 
+const StyledCodeBlock = styled("pre")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	gap: theme.spacing(5),
+	background: theme.palette.background.default,
+	borderRadius: theme.shape.borderRadius,
+	padding: theme.spacing(2),
+	overflowX: "scroll",
+	margin: "0px",
+}));
+
 const StyledCodeContent = styled("code", {
 	shouldForwardProp: (prop) => prop !== "maxWidth",
 })<{
@@ -156,7 +167,7 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const notification = useNotification();
 	const { configStore, monolithStore } = useRootStore();
-	const { email, id, name, admin } = configStore.store.user;
+	const { email, id, name, admin, loggedIn } = configStore.store.user;
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
@@ -183,7 +194,9 @@ export const MyProfilePage = () => {
 	const {
 		control: userInfoControl,
 		reset: userInfoReset,
+		setValue: userInfoSetValue,
 		handleSubmit: userInfoHandleSubmit,
+		watch: userInfoWatch,
 	} = useForm<EditUserInfoForm>({
 		defaultValues: {
 			NAME: name,
@@ -337,7 +350,6 @@ export const MyProfilePage = () => {
 				message: "Successfully copied code",
 			});
 		} catch (e) {
-			console.error("Failed to copy text: ", e);
 			notification.add({
 				color: "error",
 				message: "Unable to copy code",
@@ -737,6 +749,7 @@ export const MyProfilePage = () => {
 						</MessageDiv>
 					)}
 			</StyledAccessTokensPaper>
+
 			<Modal open={addModal} onClose={() => closeModel()} maxWidth="lg">
 				<Modal.Title>Generate Key</Modal.Title>
 				<Modal.Content>

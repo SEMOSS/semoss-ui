@@ -2,7 +2,7 @@
   "name": "@semoss/shared",
   "version": "1.0.0-beta.1",
   "exports": {
-    ".": "./index.ts"
+    ".": "./src/index.ts"
   },
   "license": "MIT",
   "dependencies": {
