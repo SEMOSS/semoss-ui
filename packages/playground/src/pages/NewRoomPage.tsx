@@ -36,8 +36,8 @@ import {
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
-import { ChatRoom } from "@/stores";
-import { Prompt } from "@/types";
+import type { ChatRoom } from "@/stores";
+import type { Prompt } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION

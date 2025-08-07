@@ -1,6 +1,6 @@
 import { MenuRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import React from "react";
+import type React from "react";
 import { Link } from "react-router-dom";
 import { IconButton, Stack, styled, Typography } from "@semoss/ui";
 import { usePage, useRootStore } from "@/hooks";

@@ -1,13 +1,12 @@
-import { useEffect, useState, useMemo } from "react";
 import { observer } from "mobx-react-lite";
+import { useMemo, useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-
 import {
-    useBlock,
-    Paths,
-    Block,
-    BlockDef,
-    PDFViewerBlockDef
+    type Block,
+	type BlockDef,
+	type Paths,
+	type PDFViewerBlockDef,
+	useBlock,
 } from "@semoss/renderer";
 import { upload, runPixel } from "@semoss/sdk/react";
 import { Stack, Box, TextField, Tabs, styled, FileDropzone, Accordion, Typography, List, useNotification, Tooltip, Autocomplete } from "@semoss/ui";
@@ -80,15 +79,15 @@ type engineIdType = {
 }
 
 interface PDFViewerSettings<D extends BlockDef = BlockDef> {
-    /**
-     * Id of the block that is being worked with
-     */
-    id: string;
+	/**
+	 * Id of the block that is being worked with
+	 */
+	id: string;
 
-    /**
-     * Path to update
-     */
-    path: Paths<Block<D>["data"], 4>;
+	/**
+	 * Path to update
+	 */
+	path: Paths<Block<D>["data"], 4>;
 }
 
 export const PDFViewerSettings = observer(

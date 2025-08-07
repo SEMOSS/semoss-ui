@@ -1,88 +1,121 @@
-import { Registry } from "../../store";
+import type { Registry } from "../../store";
 import {
 	config as AccordionBlockConfig,
-	AccordionBlockDef,
+	type AccordionBlockDef,
 } from "./accordion-block";
-import { config as AudioBlockConfig, AudioBlockDef } from "./audio-block";
+import { config as AudioBlockConfig, type AudioBlockDef } from "./audio-block";
 import {
 	config as AudioInputBlockConfig,
-	AudioInputBlockDef,
+	type AudioInputBlockDef,
 } from "./audio-input-block";
-import { config as ButtonBlockConfig, ButtonBlockDef } from "./button-block";
+import {
+	config as ButtonBlockConfig,
+	type ButtonBlockDef,
+} from "./button-block";
 import {
 	config as CheckboxBlockConfig,
-	CheckboxBlockDef,
+	type CheckboxBlockDef,
 } from "./checkbox-block";
-import { config as ChipBlockConfig, ChipBlockDef } from "./chip-block";
+import { config as ChipBlockConfig, type ChipBlockDef } from "./chip-block";
 import {
 	config as ContainerBlockConfig,
-	ContainerBlockDef,
+	type ContainerBlockDef,
 } from "./container-block";
-import { config as DividerBlockConfig, DividerBlockDef } from "./divider-block";
+import {
+	config as DividerBlockConfig,
+	type DividerBlockDef,
+} from "./divider-block";
 import {
 	config as EchartVisualizationBlockConfig,
-	EchartVisualizationBlockDef,
+	type EchartVisualizationBlockDef,
 } from "./echart-visualization-block";
 import {
 	config as FlipCardBlockConfig,
-	FlipCardBlockDef,
+	type FlipCardBlockDef,
 } from "./flip-card-block";
-import { config as GridBlockConfig, GridBlockDef } from "./grid-block";
+import { config as GridBlockConfig, type GridBlockDef } from "./grid-block";
 import {
 	config as GridDynamicFrameBlockConfig,
-	GridDynamicFrameBlockDef,
+	type GridDynamicFrameBlockDef,
 } from "./grid-dynamic-frame-block";
-import { config as HTMLBlockConfig, HTMLBlockDef } from "./html-block";
-import { config as IconBlockConfig, IconBlockDef } from "./icon-block";
-import { config as IframeBlockConfig, IframeBlockDef } from "./iframe-block";
-import { config as ImageBlockConfig, ImageBlockDef } from "./image-block";
-import { config as InputBlockConfig, InputBlockDef } from "./input-block";
+import { config as HTMLBlockConfig, type HTMLBlockDef } from "./html-block";
+import { config as IconBlockConfig, type IconBlockDef } from "./icon-block";
+import {
+	config as IframeBlockConfig,
+	type IframeBlockDef,
+} from "./iframe-block";
+import { config as ImageBlockConfig, type ImageBlockDef } from "./image-block";
+import { config as InputBlockConfig, type InputBlockDef } from "./input-block";
 import {
 	config as IterationBlockConfig,
-	IterationBlockDef,
+	type IterationBlockDef,
 } from "./iteration-block";
-import { config as LinkBlockConfig, LinkBlockDef } from "./link-block";
-import { config as LogsBlockConfig, LogsBlockDef } from "./logs-block";
+import { config as LinkBlockConfig, type LinkBlockDef } from "./link-block";
+import { config as LogsBlockConfig, type LogsBlockDef } from "./logs-block";
 import {
 	config as MarkdownBlockConfig,
-	MarkdownBlockDef,
+	type MarkdownBlockDef,
 } from "./markdown-block";
-import { config as MermaidBlockConfig, MermaidBlockDef } from "./mermaid-block";
-import { config as ModalBlockConfig, ModalBlockDef } from "./modal-block";
-import { config as PageBlockConfig, PageBlockDef } from "./page-block";
+import {
+	config as MermaidBlockConfig,
+	type MermaidBlockDef,
+} from "./mermaid-block";
+import { config as ModalBlockConfig, type ModalBlockDef } from "./modal-block";
+import { config as PageBlockConfig, type PageBlockDef } from "./page-block";
 import {
 	config as PDFViewerBlockConfig,
-	PDFViewerBlockDef,
+	type PDFViewerBlockDef,
 } from "./pdfViewer-block";
-import { config as PopoverBlockConfig, PopoverBlockDef } from "./popover-block";
+import {
+	config as PopoverBlockConfig,
+	type PopoverBlockDef,
+} from "./popover-block";
 import {
 	config as ProgressBlockConfig,
-	ProgressBlockDef,
+	type ProgressBlockDef,
 } from "./progress-block";
-import { config as RadioBlockConfig, RadioBlockDef } from "./radio-block";
-import { config as RatingsBlockConfig, RatingsBlockDef } from "./ratings-block";
-import { config as SelectBlockConfig, SelectBlockDef } from "./select-block";
-import { config as SidebarBlockConfig, SidebarBlockDef } from "./sidebar-block";
-import { config as SliderBlockConfig, SliderBlockDef } from "./slider-block";
-import { config as SwitchBlockConfig, SwitchBlockDef } from "./switch-block";
-import { config as TextBlockConfig, TextBlockDef } from "./text-block";
-import { config as ThemeBlockConfig, ThemeBlockDef } from "./theme-block";
+import { config as RadioBlockConfig, type RadioBlockDef } from "./radio-block";
+import {
+	config as RatingsBlockConfig,
+	type RatingsBlockDef,
+} from "./ratings-block";
+import {
+	config as SelectBlockConfig,
+	type SelectBlockDef,
+} from "./select-block";
+import {
+	config as SidebarBlockConfig,
+	type SidebarBlockDef,
+} from "./sidebar-block";
+import {
+	config as SliderBlockConfig,
+	type SliderBlockDef,
+} from "./slider-block";
+import {
+	config as SwitchBlockConfig,
+	type SwitchBlockDef,
+} from "./switch-block";
+import { config as TextBlockConfig, type TextBlockDef } from "./text-block";
+import { config as ThemeBlockConfig, type ThemeBlockDef } from "./theme-block";
 import {
 	config as TimePickerBlockConfig,
-	TimePickerBlockDef,
+	type TimePickerBlockDef,
 } from "./time-picker-block";
 import {
 	config as ToggleButtonBlockConfig,
-	ToggleButtonBlockDef,
+	type ToggleButtonBlockDef,
 } from "./toggle-button-block";
-import { config as UploadBlockConfig, UploadBlockDef } from "./upload-block";
+import {
+	config as UploadBlockConfig,
+	type UploadBlockDef,
+} from "./upload-block";
 import {
 	config as VegaVisualizationBlockConfig,
-	VegaVisualizationBlockDef,
+	type VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
 import {
 	config as VisualizationFilterBlockConfig,
-	VisualizationFilterBlockDef,
+	type VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
 
 export type DefaultBlockDefinitions =

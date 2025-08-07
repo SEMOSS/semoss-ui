@@ -1,6 +1,6 @@
-import { CellStateConfig } from "./cell.state";
-import { QueryStateConfig } from "./query.state";
-import {
+import type { CellStateConfig } from "./cell.state";
+import type { QueryStateConfig } from "./query.state";
+import type {
 	BlockJSON,
 	ListenerActions,
 	SerializedState,

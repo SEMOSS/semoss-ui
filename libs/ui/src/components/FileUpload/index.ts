@@ -1,4 +1,4 @@
-import { Input, InputProps } from "./FileUpload";
+import { Input, type InputProps } from "./FileUpload";
 
 export type { InputProps };
 

@@ -8,7 +8,7 @@ import { SelectInputValueSettings } from "../../settings/custom/SelectInputValue
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
-import { BlockSettingsConfig } from "../settings.types";
+import type { BlockSettingsConfig } from "../settings.types";
 
 // export the config for the block
 export const config: BlockSettingsConfig = {

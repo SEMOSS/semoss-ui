@@ -1,5 +1,5 @@
 import { Button, Stack, styled, Typography } from "@semoss/ui";
-import { AppMetadata, AppTileCard } from "../app";
+import { type AppMetadata, AppTileCard } from "../app";
 
 const BUSINESS_INTELLIGENCE_APP: AppMetadata = {
 	project_id: "",

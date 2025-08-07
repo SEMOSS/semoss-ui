@@ -4,14 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
 	Button,
-	InputAdornment,
 	Stack,
 	styled,
 	TextField,
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
-import { AppMetadata, AppTileCard } from "@/components/app";
+import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
@@ -149,8 +148,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
-
-	const testVar = "hello";
 
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(

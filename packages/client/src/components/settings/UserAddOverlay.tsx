@@ -4,7 +4,7 @@ import {
 	Flag,
 	LocalPoliceRounded,
 } from "@mui/icons-material";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -165,7 +165,7 @@ interface UserAddOverlayProps {
 }
 
 export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
-	const { open = false, user: user = null, onClose = () => null } = props;
+	const { open = false, user = null, onClose = () => null } = props;
 
 	const { configStore, monolithStore } = useRootStore();
 	const { adminMode } = useSettings();
@@ -310,12 +310,12 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 			const errorMessages = [];
 			for (const error in e) {
 				if (
-					e[error].hasOwnProperty("message") &&
+					Object.hasOwn(e[error], "message") &&
 					e[error]["message"] !== ""
 				) {
 					errorMessages.push(e[error]["message"] + ".");
 				} else if (
-					e[error].hasOwnProperty("type") &&
+					Object.hasOwn(e[error], "type") &&
 					e[error]["type"] === "required"
 				) {
 					errorMessages.push(error + " is a required field.");

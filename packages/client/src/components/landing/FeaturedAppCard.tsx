@@ -1,19 +1,16 @@
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import { observer } from "mobx-react-lite";
-import { ReactNode } from "react";
 import { Button, Chip, Link, styled, Typography } from "@semoss/ui";
 
-const StyledOuterContainer = styled("div")(({ theme }) => ({
+const StyledOuterContainer = styled("div")(() => ({
 	display: "flex",
-	// flex: '1 1.5 50%',
 	borderRadius: "12px",
 	background: "#FFF",
 	boxShadow: "0px 5px 8px 0px rgba(0, 0, 0, 0.08)",
-	minHeight: "204px",
 }));
+
 const StyledInnerContainer = styled("div")(({ theme }) => ({
 	display: "flex",
-	// flex: '0.55 1 75%',
 	alignItems: "center",
 	padding: theme.spacing(2),
 	justifyContent: "space-between",
@@ -21,7 +18,7 @@ const StyledInnerContainer = styled("div")(({ theme }) => ({
 	width: "100%",
 }));
 
-const StyledContainerTitleSection = styled("div")(({ theme }) => ({
+const StyledContainerTitleSection = styled("div")(() => ({
 	display: "flex",
 	width: "100%",
 	justifyContent: "space-between",
@@ -35,7 +32,7 @@ const StyledContainerContentSection = styled("div")(({ theme }) => ({
 }));
 
 const StyledContainerImageSection = styled("div")<{ backgroundImage: string }>(
-	({ theme, backgroundImage }) => ({
+	({ backgroundImage }) => ({
 		display: "flex",
 		backgroundImage: `${backgroundImage}`,
 		backgroundSize: "100% 100%",
@@ -45,49 +42,58 @@ const StyledContainerImageSection = styled("div")<{ backgroundImage: string }>(
 	}),
 );
 
-const StyledContainerButtonSection = styled("div")(({ theme }) => ({
+const StyledContainerButtonSection = styled("div")(() => ({
 	display: "flex",
 	justifyContent: "flex-start",
 	width: "100%",
 }));
 
-const StyledChip = styled(Chip)(({ theme }) => ({
+const StyledChip = styled(Chip)<{ chipColor?: string }>(() => ({
 	borderRadius: "4px",
-	background: "var(--Primary-Selected, #FDF0E5)",
-	"&.MuiChip-root > .MuiChip-label": {
+	background: "#FDF0E5",
+	"& .MuiChip-label": {
 		color: "var(--Primary-Main, #5F2B01)",
 		fontFeatureSettings: "'liga' off, 'clig' off",
-		/* Components/Chip */
 		fontFamily: "Inter",
 		fontSize: "13px",
 		fontStyle: "normal",
 		fontWeight: "400",
-		lineHeight: "18px" /* 138.462% */,
+		lineHeight: "18px",
 		letterSpacing: "0.16px",
 	},
 }));
 
 const StyledTagline = styled(Typography)(({ theme }) => ({
-	color: "#212121",
+	color: theme.palette.text.primary,
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontFamily: "Inter",
 	fontSize: "16px",
 	fontStyle: "normal",
 	fontWeight: "500",
-	lineHeight: "150%" /* 24px */,
+	lineHeight: "150%",
 	letterSpacing: "0.15px",
 }));
 
 const StyledDescription = styled(Typography)(({ theme }) => ({
-	color: "#212121",
+	color: theme.palette.text.primary,
 	fontFeatureSettings: "'liga' off, 'clig' off",
 }));
 
-const StyledArrowForwardIcon = styled(ArrowForwardIcon)<{
-	theme?: any;
-	colorValue?: string;
-}>(({ theme, colorValue }) => ({
-	color: colorValue ?? theme.palette.primary.main,
+const StyledButton = styled(Button)(({ theme }) => ({
+	"& .MuiButton-endIcon": {
+		color: theme.palette.primary.main,
+	},
+}));
+
+const StyledDisabledButton = styled(Button)(({ theme }) => ({
+	"& .MuiButton-endIcon": {
+		color: theme.palette.text.disabled,
+	},
+}));
+
+const StyledLink = styled(Link)(() => ({
+	textDecoration: "none",
+	color: "inherit",
 }));
 
 interface FeaturedAppCardProps {
@@ -98,7 +104,7 @@ interface FeaturedAppCardProps {
 	/**
 	 * Tagline
 	 */
-	tagline: ReactNode;
+	tagline: string;
 
 	/**
 	 * the chip to display
@@ -129,10 +135,6 @@ export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
 					<StyledChip
 						variant="filled"
 						size="small"
-						sx={{
-							borderRadius: "4px",
-							background: chip.color,
-						}}
 						label={chip.label}
 					/>
 				</StyledContainerTitleSection>
@@ -143,33 +145,27 @@ export const FeaturedAppCard = observer((props: FeaturedAppCardProps) => {
 				</StyledContainerContentSection>
 				<StyledContainerButtonSection>
 					{!href ? (
-						<Button
+						<StyledDisabledButton
 							variant="text"
 							disabled={true}
-							endIcon={
-								<StyledArrowForwardIcon colorValue="rgba(0, 0, 0, 0.26)" />
-							}
+							endIcon={<ArrowForwardIcon />}
 						>
-							{" "}
-							Try it out{" "}
-						</Button>
+							Try it out
+						</StyledDisabledButton>
 					) : (
-						<Link
+						<StyledLink
 							href={href}
+							target="_blank"
 							rel="noopener noreferrer"
-							color="inherit"
 							underline="none"
 						>
-							<Button
+							<StyledButton
 								variant="text"
-								endIcon={
-									<StyledArrowForwardIcon colorValue="#0471F0" />
-								}
+								endIcon={<ArrowForwardIcon />}
 							>
-								{" "}
-								Try it out{" "}
-							</Button>
-						</Link>
+								Try it out
+							</StyledButton>
+						</StyledLink>
 					)}
 				</StyledContainerButtonSection>
 			</StyledInnerContainer>

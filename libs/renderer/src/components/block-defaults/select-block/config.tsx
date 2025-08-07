@@ -1,6 +1,6 @@
-import { BlockConfig } from "../../../store";
+import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
-import { SelectBlock, SelectBlockDef } from "./SelectBlock";
+import { SelectBlock, type SelectBlockDef } from "./SelectBlock";
 
 // export the config for the block
 export const config: BlockConfig<SelectBlockDef> = {

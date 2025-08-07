@@ -13,7 +13,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { KnowledgeOverlay, RightMenu, ToolsOverlay } from "@/components";
-import { ChatRoom } from "@/stores";
+import type { ChatRoom } from "@/stores";
 
 const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
