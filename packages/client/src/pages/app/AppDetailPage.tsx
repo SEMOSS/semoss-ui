@@ -22,11 +22,6 @@ import {
     Grid,
 } from '@semoss/ui';
 import { Env } from '@semoss/sdk/react';
-
-import { useRootStore } from '@/hooks';
-import { formatPermission, toTitleCase } from '@/utility';
-import { ShareOverlay } from '@/components/ui';
-import { SettingsContext } from '@/contexts';
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -51,8 +46,17 @@ import {
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
-import { formatPermission, toTitleCase } from "@/utility";
+import { toTitleCase } from "@/utility";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
+import { useForm } from 'react-hook-form';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Role } from '@/types';
+import { useNavigate, useParams } from 'react-router-dom';
+import React from 'react';
+import { Dependencies } from './AppDetailTabs/Dependencies';
+import { Overview } from './AppDetailTabs/Overview';
+import { AccessControl } from './AppDetailTabs/AccessControl';
+import { SettingsTab } from './AppDetailTabs/Settings';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     height: '100%',
