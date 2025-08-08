@@ -37,9 +37,6 @@ import {
 	determineUserPermission,
 	EditDependenciesModal,
 	EditDetailsModal,
-	fetchAppInfo,
-	fetchDependencies,
-	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
 import {
@@ -50,6 +47,11 @@ import {
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
+import {
+	fetchAppInfo,
+	fetchMainUses,
+	fetchProjectDependencies,
+} from "@/pixel/projects";
 import { formatPermission, toTitleCase } from "@/utility";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
@@ -235,7 +237,7 @@ export const AppDetailPage = () => {
 			fetchMainUses(monolithStore, id),
 		];
 		if (permission !== "discoverable") {
-			promises.push(fetchDependencies(monolithStore, id));
+			promises.push(fetchProjectDependencies(monolithStore, id));
 		}
 		const results = await Promise.allSettled(promises);
 		results.forEach((res, idx) => {

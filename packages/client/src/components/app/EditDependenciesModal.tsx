@@ -14,11 +14,8 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import {
-	type engine,
-	type modelledDependency,
-	SetProjectDependencies,
-} from "./app-details.utility";
+import { setProjectDependencies } from "@/pixel/projects";
+import type { engine, modelledDependency } from "./app-details.utility";
 
 const StyledModalHeading = styled(Modal.Title)({
 	display: "flex",
@@ -102,7 +99,7 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 
 	const handleUpdateDependencies = async () => {
 		const appId = getValues("appId");
-		const res = await SetProjectDependencies(
+		const res = await setProjectDependencies(
 			monolithStore,
 			appId,
 			selectedDeps.map((dep: modelledDependency) => dep.id),

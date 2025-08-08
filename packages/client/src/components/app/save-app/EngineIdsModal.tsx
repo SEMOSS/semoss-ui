@@ -82,7 +82,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
         // Format map as required
         const mapStr = JSON.stringify([validReplacements]);
         const response = await monolithStore.runQuery(
-            `ReplaceInaccessibleEngines(filePath=["${myfilePath}"], space=["${appId}"], map=${mapStr});`
+            `ReplaceInaccessibleEngines(project=["${appId}"], map=${mapStr});`
         );
         const pixel = response?.pixelReturn?.[0];
         const output = pixel?.output;
