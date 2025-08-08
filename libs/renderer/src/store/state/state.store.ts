@@ -5,17 +5,17 @@ import {
 	getValueByPath,
 	syncronousPromise,
 } from "../../utility";
-import { CellStateConfig } from "./cell.state";
+import type { CellStateConfig } from "./cell.state";
 import { STATE_VERSION } from "./migration/MigrationManager";
-import { QueryState, QueryStateConfig } from "./query.state";
+import { QueryState, type QueryStateConfig } from "./query.state";
 import {
 	ActionMessages,
-	Actions,
-	AddBlockAction,
-	MoveBlockAction,
-	RemoveBlockAction,
+	type Actions,
+	type AddBlockAction,
+	type MoveBlockAction,
+	type RemoveBlockAction,
 } from "./state.actions";
-import {
+import type {
 	Block,
 	BlockJSON,
 	CellRegistry,
@@ -391,9 +391,9 @@ export class StateStore {
 
 				this.setState(state);
 			} else if (ActionMessages.ADD_BLOCK === action.message) {
-				const { json, position } = action.payload;
+				const { json, position, isCommunity } = action.payload;
 
-				return this.addBlock(json, position);
+				return this.addBlock(json, position, isCommunity);
 			} else if (ActionMessages.MOVE_BLOCK === action.message) {
 				const { id, position } = action.payload;
 
@@ -415,9 +415,9 @@ export class StateStore {
 
 				this.setListener(id, listener, actions, type);
 			} else if (ActionMessages.NEW_QUERY === action.message) {
-				const { queryId, config } = action.payload;
+				const { queryId, config, isCommunity } = action.payload;
 
-				this.newQuery(queryId, config);
+				this.newQuery(queryId, config, isCommunity);
 			} else if (ActionMessages.DELETE_QUERY === action.message) {
 				const { queryId } = action.payload;
 
@@ -601,7 +601,9 @@ export class StateStore {
 						iteratorBlock,
 						id,
 					);
+
 					const iteratorList = iteratorBlock.data.source as string;
+
 					let list = this.parseVariable(iteratorList);
 
 					if (typeof list === "string") {
@@ -620,7 +622,7 @@ export class StateStore {
 						variable = expression.match(/^\$(\w+)/)?.[1];
 					}
 
-					const stripped = iteratorList.slice(2, -2);
+					const stripped = iteratorList.trim().slice(2, -2);
 
 					// TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
 					// Do we just call this recursively
@@ -825,24 +827,34 @@ export class StateStore {
 	/**
 	 * Generates a unique ID for non-page widgets
 	 */
-	private generateNonPageId(widget: string): string {
+	private generateNonPageId(
+		widget: string,
+		isCommunityBlock: boolean,
+	): string {
 		// Try sequential numbers starting from 1
 		let blockNum = 1;
-		while (this._store.blocks[`${widget}--${blockNum}`]) {
+		while (
+			this._store.blocks[
+				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
+			]
+		) {
 			blockNum++;
 		}
-		return `${widget}--${blockNum}`;
+		return `${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`;
 	}
 
 	/**
 	 * @description creates a new block id
 	 * @returns block id - string
 	 */
-	private generateBlockId = (json: BlockJSON): string => {
+	private generateBlockId = (
+		json: BlockJSON,
+		isCommunityBlock: boolean,
+	): string => {
 		if (json.widget === "page") {
 			return this.generatePageId();
 		}
-		return this.generateNonPageId(json.widget);
+		return this.generateNonPageId(json.widget, isCommunityBlock);
 	};
 
 	/**
@@ -850,10 +862,14 @@ export class StateStore {
 	 * @param json - json of the block that we are generating
 	 * @returns block
 	 */
-	private generateBlock = (json: BlockJSON, parent?: Block["parent"]) => {
+	private generateBlock = (
+		json: BlockJSON,
+		isCommunityBlock: boolean,
+		communityIdMap: Record<string, string>,
+		parent?: Block["parent"],
+	) => {
 		// generate a new id
-		const id = this.generateBlockId(json);
-
+		const id = this.generateBlockId(json, isCommunityBlock);
 		// create the block
 		const block = {
 			id: id,
@@ -862,6 +878,7 @@ export class StateStore {
 			data: {},
 			listeners: {},
 			slots: {},
+			communityBlockMapping: {},
 		} as Block;
 
 		// add the data
@@ -870,6 +887,12 @@ export class StateStore {
 		if (json.widget === "page") {
 			// Defaulting the route to the block id
 			block.data.route = id;
+		}
+
+		// only for community blocks, need to save the source id for future references
+		if (json.id && isCommunityBlock) {
+			communityIdMap[json.id] = id;
+			block.communityBlockMapping = communityIdMap;
 		}
 
 		// add the listeners
@@ -892,7 +915,12 @@ export class StateStore {
 						const parent = { id: id, slot: slot };
 
 						// build the children, but only store the ids
-						const b = this.generateBlock(child, parent);
+						const b = this.generateBlock(
+							child,
+							isCommunityBlock,
+							communityIdMap,
+							parent,
+						);
 
 						return b.id;
 					}),
@@ -923,6 +951,7 @@ export class StateStore {
 			}
 		}
 
+		console.warn(`${blockId} is not a descendent of iterator`);
 		return false;
 	};
 
@@ -946,6 +975,7 @@ export class StateStore {
 			}
 		}
 
+		console.warn(`${blockId} is not a descendent of ${containerId}`);
 		return false;
 	};
 
@@ -963,6 +993,7 @@ export class StateStore {
 			}
 		}
 
+		console.warn(`Unable find iterator child`);
 		return -1; // Return -1 if not found
 	};
 
@@ -1243,9 +1274,18 @@ export class StateStore {
 	private addBlock = (
 		json: BlockJSON,
 		position?: AddBlockAction["payload"]["position"],
+		isCommunity?: boolean,
 	): string => {
+		// if it is a community block, we need to set up the dependencies
+		let variableContainer = [];
+		if (isCommunity) {
+			const { newJson, variablesList } =
+				this.buildCommunityBlockPreDeps(json);
+			json = newJson;
+			variableContainer = variablesList;
+		}
 		// generate the block
-		const block = this.generateBlock(json);
+		const block = this.generateBlock(json, isCommunity, {});
 
 		// try to place it if position
 		if (!position) {
@@ -1280,6 +1320,10 @@ export class StateStore {
 				parentBlock.slots[slot].children.length,
 				block.id,
 			);
+		}
+		// if it is a community block, we need to set up the dependencies
+		if (isCommunity) {
+			this.updateCommunityBlockPostDeps(block.id, variableContainer);
 		}
 		return block.id;
 	};
@@ -1495,6 +1539,7 @@ export class StateStore {
 	private newQuery = (
 		queryId: string,
 		config: Omit<QueryStateConfig, "id">,
+		isCommunity?: boolean,
 	): string => {
 		this._store.queries[queryId] = new QueryState(
 			{
@@ -1517,19 +1562,21 @@ export class StateStore {
 			},
 		});
 
-		Object.entries(this._store.queries[queryId].cells).forEach((c) => {
-			// Automate variable creation for notebook and new cell
-			const cId = c[0];
-			this.dispatch({
-				message: ActionMessages.ADD_VARIABLE,
-				payload: {
-					id: `${queryId}--${cId}`,
-					type: "cell",
-					to: queryId,
-					cellId: cId,
-				},
+		if (!isCommunity) {
+			Object.entries(this._store.queries[queryId].cells).forEach((c) => {
+				// Automate variable creation for notebook and new cell
+				const cId = c[0];
+				this.dispatch({
+					message: ActionMessages.ADD_VARIABLE,
+					payload: {
+						id: `${queryId}--${cId}`,
+						type: "cell",
+						to: queryId,
+						cellId: cId,
+					},
+				});
 			});
-		});
+		}
 
 		this._store.executionOrder.push(queryId);
 
@@ -1969,5 +2016,279 @@ export class StateStore {
 	private setExecutionOrder = (orderedList: string[]) => {
 		this._store.executionOrder = orderedList;
 		return;
+	};
+
+	/**
+	 * This function is used to build the community block pre-dependencies.
+	 * It takes in the community block JSON and returns a new version of the community block JSON
+	 * with the queryId and variableId replaced with the newId.
+	 * It also returns the list of variables that were created
+	 * during the dispatchDependencyQueriesAndVars function.
+	 * @param json - the community block JSON
+	 * @returns an object with the updated community block JSON and the list of variables
+	 */
+	private buildCommunityBlockPreDeps = (json) => {
+		let newJson = json;
+		let variablesList = [];
+		if (json["queries"] || json["variables"]) {
+			const { placeholderJson, variableStack } =
+				this.dispatchDependencyQueriesAndVars(
+					json,
+					json["queries"],
+					json["variables"],
+				);
+			newJson = placeholderJson;
+			variablesList = variableStack;
+		}
+		return {
+			newJson,
+			variablesList,
+		};
+	};
+
+	/**
+	 * This function is used to dispatch the community block queries and variables
+	 * to the store when the community block is added to the user's notebook.
+	 * It takes in the community block JSON, queries and variables as arguments.
+	 * It creates a new version of the community block JSON with the queryId and
+	 * variableId replaced with the newId.
+	 * It also dispatches the new query and variable to the store.
+	 * @param placeholderJson - the community block JSON
+	 * @param queries - the queries of the community block
+	 * @param variables - the variables of the community block
+	 * @returns an object with the updated community block JSON and the variableStack
+	 */
+	private dispatchDependencyQueriesAndVars = (
+		placeholderJson: BlockJSON,
+		queries: Record<string, QueryStateConfig>,
+		variables: Record<string, Variable | VariableWithId>,
+	): { placeholderJson: BlockJSON; variableStack: Variable[] } => {
+		const queryVariableMap: Record<string, string> = {};
+		const queryStack = [];
+		const variableStack = [];
+
+		if (Object.keys(queries).length) {
+			Object.entries(queries).forEach(([key, value]) => {
+				/**
+				 * Create a new query object with the queryId replaced with the newId
+				 * if the queryId already exists in the store
+				 */
+				const newQueryId = `com_${key}_${Math.floor(Math.random() * 1000)}`;
+				const newQuery = {
+					queryId: newQueryId,
+					config: value as QueryStateConfig,
+				};
+
+				/**
+				 * Add the new query to the queryStack
+				 */
+				queryStack.push(newQuery);
+
+				/**
+				 * Add the new queryId to the queryVariableMap
+				 */
+				queryVariableMap[key] = newQuery.queryId;
+			});
+		}
+
+		if (Object.keys(variables).length) {
+			Object.entries(variables).forEach(([key, value]) => {
+				if (value.type !== "query") {
+					/**
+					 * Create a new variable object with the to property replaced with the newId
+					 * if the to property already exists in the store
+					 */
+					const newVariableId = `com_${key}_${Math.floor(Math.random() * 1000)}`;
+					const newVariable = {
+						...value,
+						id: newVariableId,
+						to: queryVariableMap[value.to] || value.to,
+					};
+
+					/**
+					 * Add the new variable to the variableStack
+					 */
+					variableStack.push(newVariable);
+
+					/**
+					 * Add the new variableId to the queryVariableMap
+					 */
+					queryVariableMap[key] = newVariable.id;
+				}
+			});
+		}
+
+		/**
+		 * Recursively walk the input object and replace any exact string matches with the mapped value
+		 * and replace any Mustache variables ({{key}}) with the mapped value
+		 * and skip any subtree if the key is present in skipKeys set.
+		 * This function is used to update the queryId and variableId in the community block JSON
+		 * after the community block is added to the user's notebook.
+		 * @param input - any value to be processed
+		 * @param replacementMap - map of oldId to newId
+		 * @param skipKeys - set of keys to skip entire subtree
+		 * @returns the processed value
+		 */
+		placeholderJson = this.updateQueryAndVarsInBlocks(
+			placeholderJson,
+			queryVariableMap,
+			new Set(["queries", "variables"]),
+		);
+
+		queryStack.forEach((newQuery) => {
+			newQuery = this.updateQueryAndVarsInBlocks(
+				newQuery,
+				queryVariableMap,
+			);
+			this.dispatch({
+				message: ActionMessages.NEW_QUERY,
+				payload: { ...newQuery, isCommunity: true },
+			});
+		});
+
+		variableStack.forEach((newVariable) => {
+			this.dispatch({
+				message: ActionMessages.ADD_VARIABLE,
+				payload: newVariable,
+			});
+		});
+
+		return { placeholderJson, variableStack };
+	};
+
+	/**
+	 * Recursively walks the input object and:
+	 * 1. Replaces any exact string matches with the mapped value.
+	 * 2. Replaces any Mustache variables ({{key}}) with the mapped value.
+	 * 3. Skips any subtree if the key is present in skipKeys set.
+	 * This function is used to update the queryId and variableId in the community block JSON
+	 * after the community block is added to the user's notebook.
+	 * @param input - any value to be processed
+	 * @param replacementMap - map of oldId to newId
+	 * @param skipKeys - set of keys to skip entire subtree
+	 * @returns the processed value
+	 */
+	private updateQueryAndVarsInBlocks<T>(
+		input: T,
+		replacementMap: Record<string, string>,
+		skipKeys: Set<string> = new Set(["variables", "queries"]),
+	): T {
+		// Create a global regex to match all keys in the map within Mustache
+		const mustacheRE = new RegExp(
+			`{{\\s*(${Object.keys(replacementMap).join(
+				"|",
+			)})(\\.[^{}\\s]*)?\\s*}}`,
+			"g",
+		);
+
+		function cloneAndReplace(node) {
+			if (node == null) return node;
+
+			/* -------- strings -------- */
+			if (typeof node === "string") {
+				// Exact match replacement
+				if (replacementMap[node]) return replacementMap[node];
+
+				// Mustache replacement
+				return node.replace(mustacheRE, (_, key: string, rest = "") => {
+					return `{{${replacementMap[key]}${rest}}}`;
+				});
+			}
+
+			/* -------- arrays -------- */
+			if (Array.isArray(node)) {
+				return node.map(cloneAndReplace);
+			}
+
+			/* -------- objects -------- */
+			if (typeof node === "object") {
+				const result = {};
+				for (const [key, value] of Object.entries(node)) {
+					// Skip entire subtree
+					if (skipKeys.has(key)) {
+						result[key] = value;
+						continue;
+					}
+
+					// Replace queryId or any other field with mapped value
+					if (typeof value === "string" && replacementMap[value]) {
+						result[key] = replacementMap[value];
+					} else {
+						result[key] = cloneAndReplace(value);
+					}
+				}
+				return result;
+			}
+
+			// Primitives
+			return node;
+		}
+
+		return cloneAndReplace(input);
+	}
+
+	/**
+	 * Sets up dependencies for community block variables of type 'block'.
+	 * Filters the provided variables to find those of type 'block' and updates their dependencies.
+	 * @param blockId - The ID of the community block whose variables are being setup.
+	 * @param variableContainer - An array containing all variables associated with the block.
+	 */
+	private updateCommunityBlockPostDeps = (
+		blockId: string,
+		variableContainer: VariableWithId[],
+	) => {
+		// Filter variables to include only those with type 'block'
+		const blockVariables = variableContainer.filter(
+			(v) => v.type === "block",
+		);
+
+		// If there are block variables, update their dependencies
+		if (blockVariables.length) {
+			this.updateBlockDependencyVariables(blockVariables, blockId);
+		}
+	};
+
+	/**
+	 * Updates the blockId of variables that have type 'block'.
+	 * This is used after a community block has been added to the canvas
+	 * to update the blockId of variables that point to the community block.
+	 * @param blockVariables - The block variables to update.
+	 * @param communityBlockId - The id of the parent community block that the variables point to.
+	 */
+	private updateBlockDependencyVariables = (
+		blockVariables: VariableWithId[],
+		communityBlockId: string,
+	) => {
+		const communityBlock = this.getBlock(communityBlockId);
+		const blockIdMapper = communityBlock?.communityBlockMapping || {};
+
+		blockVariables.forEach((variable) => {
+			// Get the new blockId from the community block mapping
+			// If the variable's id is not in the mapping, use the variable's to property
+			const newTo =
+				blockIdMapper[variable.id] ||
+				blockIdMapper[variable.to] ||
+				variable.to;
+
+			// Create a new variable with the updated blockId
+			const newVar = {
+				...variable,
+				to: newTo,
+			};
+
+			try {
+				// Dispatch the updated variable
+				this.dispatch({
+					message: ActionMessages.EDIT_VARIABLE,
+					payload: {
+						id: variable.id,
+						from: variable,
+						to: newVar,
+					},
+				});
+			} catch (error) {
+				console.error("Error dispatching dependency variables", error);
+			}
+		});
 	};
 }

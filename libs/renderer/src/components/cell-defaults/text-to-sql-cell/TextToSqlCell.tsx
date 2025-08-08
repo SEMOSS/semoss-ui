@@ -285,7 +285,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                 dbDisplay?.[cell.parameters.databaseId] || dbDisplay[dbIds[0]],
         });
         getMyModels();
-    }, [myDbs.status, myDbs.data]);
+    }, [myDbs.status, myDbs.data, cell.parameters.frameVariableName]);
     /**
      * Retrieves a list of models from the user's engine list
      * and populates the model detail state with the first model's id

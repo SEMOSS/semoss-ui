@@ -1,10 +1,7 @@
-/* eslint-disable prettier/prettier */
-
-import { Insight } from "@semoss/sdk/react";
 import { makeAutoObservable, runInAction } from "mobx";
-
+import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import { Engine } from "@/types";
+import type { Engine } from "@/types";
 import { ChatRoom } from "./chat.room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -472,5 +469,5 @@ export class ChatStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
-	}
+	};
 }

@@ -1,29 +1,29 @@
-import { styled } from '@semoss/ui';
-import { SettingsContext } from '@/contexts';
-import { UpdateSMSS } from '@/components/settings';
-import { useEngine } from '@/hooks';
+import { styled } from "@semoss/ui";
+import { UpdateSMSS } from "@/components/settings";
+import { SettingsContext } from "@/contexts";
+import { useEngine } from "@/hooks";
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    display: 'flex',
-    alignSelf: 'stretch',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: theme.spacing(3),
+const StyledContainer = styled("div")(({ theme }) => ({
+	width: "100%",
+	display: "flex",
+	alignSelf: "stretch",
+	flexDirection: "column",
+	alignItems: "flex-start",
+	gap: theme.spacing(3),
 }));
 
 export const EngineSmssPage = () => {
-    const { type, active } = useEngine();
+	const { type, active } = useEngine();
 
-    return (
-        <SettingsContext.Provider
-            value={{
-                adminMode: false,
-            }}
-        >
-            <StyledContainer>
-                <UpdateSMSS type={type} id={active.id} />
-            </StyledContainer>
-        </SettingsContext.Provider>
-    );
+	return (
+		<SettingsContext.Provider
+			value={{
+				adminMode: false,
+			}}
+		>
+			<StyledContainer>
+				<UpdateSMSS type={type} id={active.id} />
+			</StyledContainer>
+		</SettingsContext.Provider>
+	);
 };

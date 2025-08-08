@@ -1,6 +1,7 @@
 import { Edit, Visibility } from "@mui/icons-material";
-import React, { Dispatch, SetStateAction, useState } from "react";
-import { Control } from "react-hook-form";
+import type React from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
+import type { Control } from "react-hook-form";
 import { useNotification } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import { AppAccessStep } from "./AppAccessStep";
@@ -82,8 +83,8 @@ export const AddAppCloneModal = (props: AddAppProps) => {
 			const cloneProjectResponse = await monolithStore.runQuery(
 				`CreateAppFromTemplate(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], projectTemplate=["${appId}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"]);`,
 			);
-			let output = undefined;
-			let type = undefined;
+			let output;
+			let type;
 
 			output = cloneProjectResponse.pixelReturn[0].output;
 			type = cloneProjectResponse.pixelReturn[0].operationType[0];

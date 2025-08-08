@@ -1,39 +1,38 @@
-import { useEffect, useState, createElement, useMemo, useRef } from 'react';
-import { observer } from 'mobx-react-lite';
 import {
-    ContentCopy,
-    Delete,
-    PlayCircle,
-    CheckCircle,
-    Error,
-    Pending,
-    KeyboardArrowRight,
-    MoreVert,
-    ArrowUpward,
-    ArrowDownward,
-    PlayArrowRounded,
-    LowPriority,
-    LibraryAdd,
-} from '@mui/icons-material';
-
-import { ActionMessages, useBlocks } from '@semoss/renderer';
+	ArrowDownward,
+	ArrowUpward,
+	CheckCircle,
+	ContentCopy,
+	Delete,
+	Error,
+	KeyboardArrowRight,
+	LibraryAdd,
+	LowPriority,
+	MoreVert,
+	Pending,
+	PlayArrowRounded,
+	PlayCircle,
+} from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { createElement, useEffect, useMemo, useRef, useState } from "react";
+import { ActionMessages, useBlocks } from "@semoss/renderer";
 import {
-    styled,
-    Stack,
-    Typography,
-    ButtonGroup,
-    CircularProgress,
-    Card,
-    Chip,
-    Collapse,
-    useNotification,
-    IconButton,
-    Divider,
-    CustomShapeOptions,
-    Menu,
-    MenuProps,
-} from '@semoss/ui';
-
+	ButtonGroup,
+	Card,
+	Chip,
+	CircularProgress,
+	Collapse,
+	type CustomShapeOptions,
+	Divider,
+	IconButton,
+	Menu,
+	type MenuProps,
+	Stack,
+	styled,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
+import { useWorkspace } from "@/hooks";
 import { NotebookAddCell } from './NotebookAddCell';
 import { NotebookCellConsole } from './NotebookCellConsole';
 import { Operation } from './operations';
@@ -41,464 +40,465 @@ import { AddVariableModal } from './AddVariableModal';
 import { CellLoader } from '../../assets/CellLoader';
 
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
-import { copyTextToClipboard } from '@/utility';
-import { useWorkspace } from '@/hooks';
-import DuplicateIcon from '../../assets/img/Duplicate.svg';
+import { copyTextToClipboard } from "@/utility";
+import DuplicateIcon from "../../assets/img/Duplicate.svg";
+
 const StyledStack = styled(Stack)(({ theme }) => ({
-    paddingBottom: theme.spacing(2),
+	paddingBottom: theme.spacing(2),
 }));
 
 const StyledRow = styled(Stack)(() => ({
-    position: 'relative',
+	position: "relative",
 }));
 
 const StyledStackTwo = styled(Stack)(({ theme }) => ({
-    position: 'absolute',
-    top: theme.spacing(-1.5),
-    left: theme.spacing(10.5),
-    paddingLeft: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-    zIndex: 1,
-    color: theme.palette.text.disabled,
-    borderRadius: theme.shape.borderRadius,
-    background: theme.palette.background.paper,
-    overflow: 'hidden',
-    '&:hover': {
-        backgroundColor: theme.palette.primaryContrast['50'],
-        color: theme.palette.text.disabled,
-        cursor: 'pointer !important',
-    },
+	position: "absolute",
+	top: theme.spacing(-1.5),
+	left: theme.spacing(10.5),
+	paddingLeft: theme.spacing(1.5),
+	paddingRight: theme.spacing(1.5),
+	zIndex: 1,
+	color: theme.palette.text.disabled,
+	borderRadius: theme.shape.borderRadius,
+	background: theme.palette.background.paper,
+	overflow: "hidden",
+	"&:hover": {
+		backgroundColor: theme.palette.primaryContrast["50"],
+		color: theme.palette.text.disabled,
+		cursor: "pointer !important",
+	},
 }));
 
 const StyledName = styled(Typography)(({ theme }) => ({}));
 
 const StyledCellActions = styled(Collapse)(({ theme }) => ({
-    position: 'absolute',
-    top: theme.spacing(-2),
-    right: theme.spacing(2),
-    zIndex: 1,
-    borderRadius: theme.shape.borderRadius,
-    background: theme.palette.background.paper,
+	position: "absolute",
+	top: theme.spacing(-2),
+	right: theme.spacing(2),
+	zIndex: 1,
+	borderRadius: theme.shape.borderRadius,
+	background: theme.palette.background.paper,
 }));
 
-const StyledStatusIconContainer = styled('div')(({ theme }) => ({
-    height: '100%',
-    width: '1.5em',
-    display: 'flex',
-    paddingTop: theme.spacing(2),
+const StyledStatusIconContainer = styled("div")(({ theme }) => ({
+	height: "100%",
+	width: "1.5em",
+	display: "flex",
+	paddingTop: theme.spacing(2),
 }));
 
-const StyledCollapseStack = styled('div')(({ theme }) => ({
-    paddingTop: theme.spacing(2),
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'start',
+const StyledCollapseStack = styled("div")(({ theme }) => ({
+	paddingTop: theme.spacing(2),
+	display: "flex",
+	flexDirection: "row",
+	alignItems: "start",
 }));
 
 const StyledActionsCollapseStack = styled(StyledCollapseStack)(({ theme }) => ({
-    marginTop: '0px !important',
+	marginTop: "0px !important",
 }));
 
 const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
-    padding: 0,
-    width: '35px',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'start',
-    // removes gray hover background made visible by width added to accomodate brackets
-    '&:hover': {
-        backgroundColor: '#00000000',
-    },
+	padding: 0,
+	width: "35px",
+	display: "flex",
+	justifyContent: "center",
+	alignItems: "start",
+	// removes gray hover background made visible by width added to accomodate brackets
+	"&:hover": {
+		backgroundColor: "#00000000",
+	},
 }));
 
 const StyledCard = styled(Card, {
-    shouldForwardProp: (prop) => prop !== 'isCardCellSelected',
+	shouldForwardProp: (prop) => prop !== "isCardCellSelected",
 })<{ isCardCellSelected: boolean }>(({ theme, isCardCellSelected }) => {
-    const shape = theme.shape as CustomShapeOptions;
+	const shape = theme.shape as CustomShapeOptions;
 
-    return {
-        overflow: 'hidden',
-        flexGrow: 1,
-        cursor: isCardCellSelected ? 'inherit' : 'pointer',
-        border: isCardCellSelected
-            ? `1px solid ${theme.palette.secondary.main}`
-            : 'unset',
-        borderRadius: shape.borderRadiusSm,
-        boxShadow: 'none',
-        '&:hover': {
-            boxShadow: 'none',
-        },
-    };
+	return {
+		overflow: "hidden",
+		flexGrow: 1,
+		cursor: isCardCellSelected ? "inherit" : "pointer",
+		border: isCardCellSelected
+			? `1px solid ${theme.palette.secondary.main}`
+			: "unset",
+		borderRadius: shape.borderRadiusSm,
+		boxShadow: "none",
+		"&:hover": {
+			boxShadow: "none",
+		},
+	};
 });
 
 const StyledCardContent = styled(Card.Content)(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'start',
-    gap: theme.spacing(2),
-    margin: '0',
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.default,
+	display: "flex",
+	flexDirection: "row",
+	alignItems: "start",
+	gap: theme.spacing(2),
+	margin: "0",
+	padding: theme.spacing(2),
+	backgroundColor: theme.palette.background.default,
 }));
 
-const StyledCardInput = styled('div')(() => ({
-    width: '98%',
+const StyledCardInput = styled("div")(() => ({
+	width: "98%",
 }));
 
 const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
-    padding: theme.spacing(2),
-    margin: '0',
-    backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(2),
+	margin: "0",
+	backgroundColor: theme.palette.background.paper,
 }));
 
-const StyledButtonLabel = styled('div')(() => ({
-    display: 'flex',
-    alignItems: 'center',
+const StyledButtonLabel = styled("div")(() => ({
+	display: "flex",
+	alignItems: "center",
 }));
 
 const StyledButtonGroupButton = styled(ButtonGroup.Item)(({ theme }) => ({
-    color: theme.palette.text.secondary,
+	color: theme.palette.text.secondary,
 }));
 
 const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
-    border: `1px solid ${theme.palette.text.secondary}`,
+	border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
 const StyledIdChip = styled(Chip)(({ theme }) => ({
-    height: theme.spacing(3.5),
+	height: theme.spacing(3.5),
 }));
 
-const StyledSidebar = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    cursor: 'pointer',
-    gap: theme.spacing(1),
+const StyledSidebar = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "row",
+	cursor: "pointer",
+	gap: theme.spacing(1),
 }));
-const StyledExpandContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '1.5em',
+const StyledExpandContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	height: "1.5em",
 }));
 
 const StyledExpandArrow = styled(KeyboardArrowRight, {
-    shouldForwardProp: (prop) => prop !== 'rotated',
+	shouldForwardProp: (prop) => prop !== "rotated",
 })<{ rotated: boolean }>(({ theme, rotated }) => ({
-    color: theme.palette.grey[600],
-    transform: rotated ? 'rotate(90deg)' : '',
+	color: theme.palette.grey[600],
+	transform: rotated ? "rotate(90deg)" : "",
 }));
 
 const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
-    marginLeft: `${theme.spacing(9)} !important`,
-    height: theme.spacing(5),
+	marginLeft: `${theme.spacing(9)} !important`,
+	height: theme.spacing(5),
 }));
 
 const StyledMenu = styled((props: MenuProps) => (
-    <Menu
-        anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left',
-        }}
-        transformOrigin={{
-            vertical: 'top',
-            horizontal: 'left',
-        }}
-        {...props}
-    />
+	<Menu
+		anchorOrigin={{
+			vertical: "bottom",
+			horizontal: "left",
+		}}
+		transformOrigin={{
+			vertical: "top",
+			horizontal: "left",
+		}}
+		{...props}
+	/>
 ))(({ theme }) => ({
-    '& .MuiPaper-root': {
-        marginTop: theme.spacing(1),
-    },
-    '.MuiList-root': {
-        padding: 0,
-    },
+	"& .MuiPaper-root": {
+		marginTop: theme.spacing(1),
+	},
+	".MuiList-root": {
+		padding: 0,
+	},
 }));
 
 const StyledMenuItem = styled(Menu.Item)(() => ({
-    textTransform: 'capitalize',
+	textTransform: "capitalize",
 }));
 
-const StyledPlayWrapper = styled('span')(() => ({
-    fontSize: '17px',
-    display: 'inline-block',
+const StyledPlayWrapper = styled("span")(() => ({
+	fontSize: "17px",
+	display: "inline-block",
 }));
 
-const StyledPlaySpacer = styled('span')(() => ({
-    display: 'inline-block',
-    width: '17px',
+const StyledPlaySpacer = styled("span")(() => ({
+	display: "inline-block",
+	width: "17px",
 }));
 
-const StyledDuplicateIcon = styled('img')({
-    width: '1.03rem',
-    height: '1.0625rem',
-    display: 'inline-block',
-    verticalAlign: 'middle',
-    objectFit: 'contain',
+const StyledDuplicateIcon = styled("img")({
+	width: "1.03rem",
+	height: "1.0625rem",
+	display: "inline-block",
+	verticalAlign: "middle",
+	objectFit: "contain",
 });
 
 interface NotebookCellProps {
-    /** Id of the  the query */
-    queryId: string;
+	/** Id of the  the query */
+	queryId: string;
 
-    /** Id of the cell of the query */
-    cellId: string;
+	/** Id of the cell of the query */
+	cellId: string;
 
-    /** Id of the cell of the query */
-    cellPlayCounter: number;
+	/** Id of the cell of the query */
+	cellPlayCounter: number;
 
-    /** Id of the cell of the query */
-    setCellPlayCounter: (count: number) => void;
+	/** Id of the cell of the query */
+	setCellPlayCounter: (count: number) => void;
 }
 
 /**
  * Render the content of a cell in the notebook
  */
 export const NotebookCell = observer(
-    (props: NotebookCellProps): JSX.Element => {
-        const { queryId, cellId, cellPlayCounter, setCellPlayCounter } = props;
+	(props: NotebookCellProps): JSX.Element => {
+		const { queryId, cellId, cellPlayCounter, setCellPlayCounter } = props;
 
-        const { state, notebook } = useBlocks();
-        const { workspace } = useWorkspace();
-        const notification = useNotification();
+		const { state, notebook } = useBlocks();
+		const { workspace } = useWorkspace();
+		const notification = useNotification();
 
-        const [contentExpanded, setContentExpanded] = useState(true);
-        const [outputExpanded, setOutputExpanded] = useState(true);
-        const [hoveredAddCellActions, setHoveredAddCellActions] =
-            useState(false);
-        const [showCellActions, setShowCellActions] = useState(false);
+		const [contentExpanded, setContentExpanded] = useState(true);
+		const [outputExpanded, setOutputExpanded] = useState(true);
+		const [hoveredAddCellActions, setHoveredAddCellActions] =
+			useState(false);
+		const [showCellActions, setShowCellActions] = useState(false);
 
-        const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-        const open = Boolean(anchorEl);
+		const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+		const open = Boolean(anchorEl);
 
-        const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
+		const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
-        const [variableModal, setVariableModal] = useState(false);
+		const [variableModal, setVariableModal] = useState(false);
 
-        const cardContentRef = useRef(null);
-        const cardActionsRef = useRef(null);
-        const targetContentCollapseRef = useRef(null);
-        const targetActionsCollapseRef = useRef(null);
+		const cardContentRef = useRef(null);
+		const cardActionsRef = useRef(null);
+		const targetContentCollapseRef = useRef(null);
+		const targetActionsCollapseRef = useRef(null);
 
-        // get the cell
-        const query = state.getQuery(queryId);
-        const cell = query.getCell(cellId);
+		// get the cell
+		const query = state.getQuery(queryId);
+		const cell = query.getCell(cellId);
 
-        const variableName = state.getAlias(queryId, cellId);
-        useEffect(() => {
-            if (cardContentRef.current) {
-                const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
-                if (targetContentCollapseRef.current) {
-                    targetContentCollapseRef.current.style.height = `${cardContentHeight}px`;
-                }
-            }
+		const variableName = state.getAlias(queryId, cellId);
 
-            if (cardActionsRef.current) {
-                const cardActionsHeight = cardActionsRef.current.offsetHeight; // Consider offsetHeight for borders
-                if (targetActionsCollapseRef.current) {
-                    targetActionsCollapseRef.current.style.height = `${cardActionsHeight}px`;
-                }
-            }
-        }, [
-            cardContentRef.current,
-            contentExpanded,
-            cardActionsRef.current,
-            outputExpanded,
-        ]);
+		useEffect(() => {
+			if (cardContentRef.current) {
+				const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
+				if (targetContentCollapseRef.current) {
+					targetContentCollapseRef.current.style.height = `${cardContentHeight}px`;
+				}
+			}
 
-        useEffect(() => {
-            if (cell.isExecuted == false) {
-                setLocalCellPlayNumber(null);
-            } else {
-                const newPlayCount = cellPlayCounter + 1;
-                setCellPlayCounter(newPlayCount);
-                setLocalCellPlayNumber(newPlayCount);
-            }
-        }, [cell.isExecuted]);
+			if (cardActionsRef.current) {
+				const cardActionsHeight = cardActionsRef.current.offsetHeight; // Consider offsetHeight for borders
+				if (targetActionsCollapseRef.current) {
+					targetActionsCollapseRef.current.style.height = `${cardActionsHeight}px`;
+				}
+			}
+		}, [
+			cardContentRef.current,
+			contentExpanded,
+			cardActionsRef.current,
+			outputExpanded,
+		]);
 
-        useEffect(() => {
-            if (cellPlayCounter == null) {
-                setLocalCellPlayNumber(null);
-                setCellPlayCounter(null);
-            }
-        }, [cellPlayCounter]);
+		useEffect(() => {
+			if (cell.isExecuted == false) {
+				setLocalCellPlayNumber(null);
+			} else {
+				const newPlayCount = cellPlayCounter + 1;
+				setCellPlayCounter(newPlayCount);
+				setLocalCellPlayNumber(newPlayCount);
+			}
+		}, [cell.isExecuted]);
 
-        const cellOrderNumber = useMemo(() => {
-            const nbCellList = state.queries[cell.query.id].cellList;
+		useEffect(() => {
+			if (cellPlayCounter == null) {
+				setLocalCellPlayNumber(null);
+				setCellPlayCounter(null);
+			}
+		}, [cellPlayCounter]);
 
-            let matchIndex = 0;
-            nbCellList.forEach((c, i) => {
-                if (c.id === cell.id) matchIndex = i;
-            });
+		const cellOrderNumber = useMemo(() => {
+			const nbCellList = state.queries[cell.query.id].cellList;
 
-            return matchIndex + 1;
-        }, [
-            cell.id,
-            cell.query.list.indexOf(cell.id),
-            cell.query.cellList.length,
-        ]);
+			let matchIndex = 0;
+			nbCellList.forEach((c, i) => {
+				if (c.id === cell.id) matchIndex = i;
+			});
 
-        /**
-         * Create a duplicate cell
-         */
-        const duplicateCell = () => {
-            try {
-                // copy and add the step to the end
-                const newCellId = state.dispatch({
-                    message: ActionMessages.NEW_CELL,
-                    payload: {
-                        queryId: queryId,
-                        previousCellId: cellId,
-                        config: {
-                            widget: cell.widget,
-                            parameters: {
-                                ...cell.parameters,
-                            },
-                        },
-                    },
-                }) as string;
+			return matchIndex + 1;
+		}, [
+			cell.id,
+			cell.query.list.indexOf(cell.id),
+			cell.query.cellList.length,
+		]);
 
-                state.dispatch({
-                    message: ActionMessages.ADD_VARIABLE,
-                    payload: {
-                        id: `${queryId}--${newCellId}`,
-                        type: 'cell',
-                        to: queryId,
-                        cellId: newCellId,
-                    },
-                });
+		/**
+		 * Create a duplicate cell
+		 */
+		const duplicateCell = () => {
+			try {
+				// copy and add the step to the end
+				const newCellId = state.dispatch({
+					message: ActionMessages.NEW_CELL,
+					payload: {
+						queryId: queryId,
+						previousCellId: cellId,
+						config: {
+							widget: cell.widget,
+							parameters: {
+								...cell.parameters,
+							},
+						},
+					},
+				}) as string;
 
-                notebook.selectCell(queryId, newCellId);
-            } catch (e) {
-                console.error(e);
-            }
-        };
+				state.dispatch({
+					message: ActionMessages.ADD_VARIABLE,
+					payload: {
+						id: `${queryId}--${newCellId}`,
+						type: "cell",
+						to: queryId,
+						cellId: newCellId,
+					},
+				});
 
-        const deleteCell = () => {
-            try {
-                const currentCellIndex = query.list.indexOf(cell.id);
+				notebook.selectCell(queryId, newCellId);
+			} catch (e) {
+				console.error(e);
+			}
+		};
 
-                state.dispatch({
-                    message: ActionMessages.DELETE_CELL,
-                    payload: {
-                        queryId: cell.query.id,
-                        cellId: cell.id,
-                    },
-                });
+		const deleteCell = () => {
+			try {
+				const currentCellIndex = query.list.indexOf(cell.id);
 
-                notebook.selectCell(
-                    queryId,
-                    query.list[Math.max(currentCellIndex - 1, 0)],
-                );
-            } catch (e) {
-                console.error(e);
-            }
-        };
+				state.dispatch({
+					message: ActionMessages.DELETE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+					},
+				});
 
-        // render the view
-        const rendered = useMemo(() => {
-            if (!cell.component) {
-                return;
-            }
+				notebook.selectCell(
+					queryId,
+					query.list[Math.max(currentCellIndex - 1, 0)],
+				);
+			} catch (e) {
+				console.error(e);
+			}
+		};
 
-            return createElement(cell.component, {
-                cell: cell,
-                isExpanded: contentExpanded,
-                agentModelEngine: workspace.agentModelEngine,
-            });
-        }, [
-            cell.component ? cell.component : null,
-            contentExpanded,
-            workspace.agentModelEngine,
-        ]);
+		// render the view
+		const rendered = useMemo(() => {
+			if (!cell.component) {
+				return;
+			}
 
-        const getExecutionTimeString = (
-            timeMilliseconds: number | undefined,
-        ) => {
-            if (timeMilliseconds) {
-                const milliseconds = Math.floor(
-                    (timeMilliseconds % 1000) / 100,
-                );
-                const seconds = Math.floor((timeMilliseconds / 1000) % 60);
-                const minutes = Math.floor(
-                    (timeMilliseconds / (1000 * 60)) % 60,
-                );
-                return `${minutes} min ${seconds} sec ${milliseconds} ms`;
-            } else {
-                return '';
-            }
-        };
+			return createElement(cell.component, {
+				cell: cell,
+				isExpanded: contentExpanded,
+				agentModelEngine: workspace.agentModelEngine,
+			});
+		}, [
+			cell.component ? cell.component : null,
+			contentExpanded,
+			workspace.agentModelEngine,
+		]);
 
-        const getExecutionLabel = () => {
-            let str = '';
-            if (cell.isLoading) {
-                str = '';
-            } else if (cell.query.isLoading) {
-                str = '';
-            } else if (cell.isSuccessful || cell.isError) {
-                str = getExecutionTimeString(
-                    cell.executionDurationMilliseconds,
-                );
-            } else {
-                str = 'Pending Execution';
-            }
+		const getExecutionTimeString = (
+			timeMilliseconds: number | undefined,
+		) => {
+			if (timeMilliseconds) {
+				const milliseconds = Math.floor(
+					(timeMilliseconds % 1000) / 100,
+				);
+				const seconds = Math.floor((timeMilliseconds / 1000) % 60);
+				const minutes = Math.floor(
+					(timeMilliseconds / (1000 * 60)) % 60,
+				);
+				return `${minutes} min ${seconds} sec ${milliseconds} ms`;
+			} else {
+				return "";
+			}
+		};
 
-            return <Typography variant="caption">{str}</Typography>;
-        };
+		const getExecutionLabel = () => {
+			let str = "";
+			if (cell.isLoading) {
+				str = "";
+			} else if (cell.query.isLoading) {
+				str = "";
+			} else if (cell.isSuccessful || cell.isError) {
+				str = getExecutionTimeString(
+					cell.executionDurationMilliseconds,
+				);
+			} else {
+				str = "Pending Execution";
+			}
 
-        const getCellStatusIcon = () => {
-            if (cell.isLoading) {
-                return <CircularProgress size="1em" />;
-            } else if (cell.isSuccessful) {
-                return <CheckCircle color="success" />;
-            } else if (cell.isError) {
-                return <Error color="error" />;
-            } else {
-                return <Pending color="disabled" />;
-            }
-        };
+			return <Typography variant="caption">{str}</Typography>;
+		};
 
-        const runCellAndBelowHandler = () => {
-            try {
-                const currentCellIndex = query.list.indexOf(cell.id);
-                const allCells = query.list;
+		const getCellStatusIcon = () => {
+			if (cell.isLoading) {
+				return <CircularProgress size="1em" />;
+			} else if (cell.isSuccessful) {
+				return <CheckCircle color="success" />;
+			} else if (cell.isError) {
+				return <Error color="error" />;
+			} else {
+				return <Pending color="disabled" />;
+			}
+		};
 
-                allCells.slice(currentCellIndex).forEach((currCellId, idx) => {
-                    state.dispatch({
-                        message: ActionMessages.RUN_CELL,
-                        payload: {
-                            queryId: cell.query.id,
-                            cellId: currCellId,
-                        },
-                    });
-                });
-            } catch (e) {
-                console.error(e);
-            }
-        };
+		const runCellAndBelowHandler = () => {
+			try {
+				const currentCellIndex = query.list.indexOf(cell.id);
+				const allCells = query.list;
 
-        const runCellsAboveHandler = () => {
-            try {
-                const currentCellIndex = query.list.indexOf(cell.id);
-                const allCells = query.list;
-                allCells
-                    .slice(0, currentCellIndex)
-                    .forEach((currCellId, idx) => {
-                        state.dispatch({
-                            message: ActionMessages.RUN_CELL,
-                            payload: {
-                                queryId: cell.query.id,
-                                cellId: currCellId,
-                            },
-                        });
-                    });
-            } catch (e) {
-                console.error(e);
-            }
-        };
+				allCells.slice(currentCellIndex).forEach((currCellId, idx) => {
+					state.dispatch({
+						message: ActionMessages.RUN_CELL,
+						payload: {
+							queryId: cell.query.id,
+							cellId: currCellId,
+						},
+					});
+				});
+			} catch (e) {
+				console.error(e);
+			}
+		};
 
-        const generateWithAIHandler = () => {
-            console.log('generateWithAIHandler');
-        };
+		const runCellsAboveHandler = () => {
+			try {
+				const currentCellIndex = query.list.indexOf(cell.id);
+				const allCells = query.list;
+				allCells
+					.slice(0, currentCellIndex)
+					.forEach((currCellId, idx) => {
+						state.dispatch({
+							message: ActionMessages.RUN_CELL,
+							payload: {
+								queryId: cell.query.id,
+								cellId: currCellId,
+							},
+						});
+					});
+			} catch (e) {
+				console.error(e);
+			}
+		};
+
+		const generateWithAIHandler = () => {
+			console.log("generateWithAIHandler");
+		};
 
         /**
          * Retrieves the output data for a cell based on the specified operation.
@@ -516,217 +516,217 @@ export const NotebookCell = observer(
             return cell.output;
         };
 
-        return (
-            <StyledStack
-                direction={'column'}
-                gap={1}
-                onMouseEnter={() => {
-                    setShowCellActions(true);
-                }}
-                onMouseLeave={() => {
-                    setShowCellActions(false);
-                }}
-                onFocus={() => {
-                    console.log('onFocus');
-                    // Keyboard Navigation
-                    setShowCellActions(true);
-                }}
-                onBlur={() => {
-                    console.log('onBlur');
-                    // Keyboard Navigation
-                    setShowCellActions(false);
-                }}
-            >
-                <StyledRow direction="row" width="100%" spacing={1}>
-                    {/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
+		return (
+			<StyledStack
+				direction={"column"}
+				gap={1}
+				onMouseEnter={() => {
+					setShowCellActions(true);
+				}}
+				onMouseLeave={() => {
+					setShowCellActions(false);
+				}}
+				onFocus={() => {
+					console.log("onFocus");
+					// Keyboard Navigation
+					setShowCellActions(true);
+				}}
+				onBlur={() => {
+					console.log("onBlur");
+					// Keyboard Navigation
+					setShowCellActions(false);
+				}}
+			>
+				<StyledRow direction="row" width="100%" spacing={1}>
+					{/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
 
-                    <StyledStackTwo
-                        onClick={() => {
-                            copyTextToClipboard(
-                                `{{${variableName}}}`,
-                                notification,
-                            );
-                        }}
-                    >
-                        <StyledName variant="subtitle2" title={'Copy variable'}>
-                            {variableName}
-                        </StyledName>
-                    </StyledStackTwo>
+					<StyledStackTwo
+						onClick={() => {
+							copyTextToClipboard(
+								`{{${variableName}}}`,
+								notification,
+							);
+						}}
+					>
+						<StyledName variant="subtitle2" title={"Copy variable"}>
+							{variableName}
+						</StyledName>
+					</StyledStackTwo>
 
-                    <StyledCellActions in={showCellActions}>
-                        <Stack gap={1} direction={'row'} alignItems={'center'}>
-                            <StyledButtonGroup variant="outlined">
-                                <StyledButtonGroupButton
-                                    title="Run this cell and below"
-                                    size="small"
-                                    disabled={cell.isLoading}
-                                    onClick={(e) => {
-                                        // stop propogation to card parent so newly created cell will be selected
-                                        e.stopPropagation();
-                                        runCellAndBelowHandler();
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <PlayArrowRounded
-                                            fontSize="medium"
-                                            sx={{
-                                                padding: '2px',
-                                            }}
-                                        />
-                                        <ArrowDownward
-                                            fontSize="small"
-                                            // styles only applying correctly with sx could not use styled
-                                            sx={{
-                                                marginTop: '10px',
-                                                marginLeft: '15px',
-                                                position: 'absolute',
-                                                width: '10px',
-                                            }}
-                                        />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                <StyledButtonGroupButton
-                                    title="Run the cells above"
-                                    size="small"
-                                    disabled={cell.isLoading}
-                                    onClick={(e) => {
-                                        // stop propogation to card parent so newly created cell will be selected
-                                        e.stopPropagation();
-                                        runCellsAboveHandler();
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <PlayArrowRounded
-                                            fontSize="medium"
-                                            sx={{
-                                                padding: '2px',
-                                            }}
-                                        />
-                                        <ArrowUpward
-                                            fontSize="small"
-                                            // styles only applying correctly with sx
-                                            sx={{
-                                                marginTop: '10px',
-                                                marginLeft: '15px',
-                                                position: 'absolute',
-                                                width: '10px',
-                                            }}
-                                        />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                <StyledButtonGroupButton
-                                    title="Duplicate cell"
-                                    size="small"
-                                    disabled={cell.isLoading}
-                                    onClick={(e) => {
-                                        // stop propogation to card parent so newly created cell will be selected
-                                        e.stopPropagation();
-                                        duplicateCell();
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <StyledDuplicateIcon
-                                            src={DuplicateIcon}
-                                            alt="Duplicate Icon"
-                                        />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                {variableName ? (
-                                    <StyledButtonGroupButton
-                                        title={`Copy (${variableName})`}
-                                        size="small"
-                                        disabled={cell.isLoading}
-                                        onClick={(e) => {
-                                            // stop propogation to card parent so newly created cell will be selected
-                                            e.stopPropagation();
-                                            copyTextToClipboard(
-                                                `{{${variableName}}}`,
-                                                notification,
-                                            );
-                                        }}
-                                    >
-                                        <StyledButtonLabel>
-                                            <ContentCopy
-                                                fontSize="small"
-                                                sx={{
-                                                    padding: '2px',
-                                                }}
-                                            />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                ) : (
-                                    <StyledButtonGroupButton
-                                        title="Use as variable"
-                                        size="small"
-                                        disabled={cell.isLoading}
-                                        onClick={(e) => {
-                                            // stop propogation to card parent so newly created cell will be selected
-                                            e.stopPropagation();
-                                            setVariableModal(true);
-                                        }}
-                                    >
-                                        <StyledButtonLabel>
-                                            <LibraryAdd
-                                                fontSize="medium"
-                                                sx={{
-                                                    padding: '2px',
-                                                }}
-                                            />
-                                        </StyledButtonLabel>
-                                    </StyledButtonGroupButton>
-                                )}
-                                <StyledButtonGroupButton
-                                    title="Delete cell"
-                                    disabled={cell.isLoading}
-                                    size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        deleteCell();
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <Delete fontSize="small" />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                                <StyledButtonGroupButton
-                                    title="Delete cell"
-                                    disabled={cell.isLoading}
-                                    size="small"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setAnchorEl(e.currentTarget);
-                                    }}
-                                >
-                                    <StyledButtonLabel>
-                                        <MoreVert fontSize="small" />
-                                    </StyledButtonLabel>
-                                </StyledButtonGroupButton>
-                            </StyledButtonGroup>
+					<StyledCellActions in={showCellActions}>
+						<Stack gap={1} direction={"row"} alignItems={"center"}>
+							<StyledButtonGroup variant="outlined">
+								<StyledButtonGroupButton
+									title="Run this cell and below"
+									size="small"
+									disabled={cell.isLoading}
+									onClick={(e) => {
+										// stop propogation to card parent so newly created cell will be selected
+										e.stopPropagation();
+										runCellAndBelowHandler();
+									}}
+								>
+									<StyledButtonLabel>
+										<PlayArrowRounded
+											fontSize="medium"
+											sx={{
+												padding: "2px",
+											}}
+										/>
+										<ArrowDownward
+											fontSize="small"
+											// styles only applying correctly with sx could not use styled
+											sx={{
+												marginTop: "10px",
+												marginLeft: "15px",
+												position: "absolute",
+												width: "10px",
+											}}
+										/>
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+								<StyledButtonGroupButton
+									title="Run the cells above"
+									size="small"
+									disabled={cell.isLoading}
+									onClick={(e) => {
+										// stop propogation to card parent so newly created cell will be selected
+										e.stopPropagation();
+										runCellsAboveHandler();
+									}}
+								>
+									<StyledButtonLabel>
+										<PlayArrowRounded
+											fontSize="medium"
+											sx={{
+												padding: "2px",
+											}}
+										/>
+										<ArrowUpward
+											fontSize="small"
+											// styles only applying correctly with sx
+											sx={{
+												marginTop: "10px",
+												marginLeft: "15px",
+												position: "absolute",
+												width: "10px",
+											}}
+										/>
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+								<StyledButtonGroupButton
+									title="Duplicate cell"
+									size="small"
+									disabled={cell.isLoading}
+									onClick={(e) => {
+										// stop propogation to card parent so newly created cell will be selected
+										e.stopPropagation();
+										duplicateCell();
+									}}
+								>
+									<StyledButtonLabel>
+										<StyledDuplicateIcon
+											src={DuplicateIcon}
+											alt="Duplicate Icon"
+										/>
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+								{variableName ? (
+									<StyledButtonGroupButton
+										title={`Copy (${variableName})`}
+										size="small"
+										disabled={cell.isLoading}
+										onClick={(e) => {
+											// stop propogation to card parent so newly created cell will be selected
+											e.stopPropagation();
+											copyTextToClipboard(
+												`{{${variableName}}}`,
+												notification,
+											);
+										}}
+									>
+										<StyledButtonLabel>
+											<ContentCopy
+												fontSize="small"
+												sx={{
+													padding: "2px",
+												}}
+											/>
+										</StyledButtonLabel>
+									</StyledButtonGroupButton>
+								) : (
+									<StyledButtonGroupButton
+										title="Use as variable"
+										size="small"
+										disabled={cell.isLoading}
+										onClick={(e) => {
+											// stop propogation to card parent so newly created cell will be selected
+											e.stopPropagation();
+											setVariableModal(true);
+										}}
+									>
+										<StyledButtonLabel>
+											<LibraryAdd
+												fontSize="medium"
+												sx={{
+													padding: "2px",
+												}}
+											/>
+										</StyledButtonLabel>
+									</StyledButtonGroupButton>
+								)}
+								<StyledButtonGroupButton
+									title="Delete cell"
+									disabled={cell.isLoading}
+									size="small"
+									onClick={(e) => {
+										e.stopPropagation();
+										deleteCell();
+									}}
+								>
+									<StyledButtonLabel>
+										<Delete fontSize="small" />
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+								<StyledButtonGroupButton
+									title="Delete cell"
+									disabled={cell.isLoading}
+									size="small"
+									onClick={(e) => {
+										e.stopPropagation();
+										setAnchorEl(e.currentTarget);
+									}}
+								>
+									<StyledButtonLabel>
+										<MoreVert fontSize="small" />
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+							</StyledButtonGroup>
 
-                            {/**
-                             * more options menu
-                             * only showing one option currently with no attached function
-                             **/}
-                            <StyledMenu
-                                anchorEl={anchorEl}
-                                open={open}
-                                onClose={() => {
-                                    setAnchorEl(null);
-                                }}
-                            >
-                                <StyledMenuItem
-                                    disabled={true}
-                                    value={'generate-with-ai'}
-                                    onClick={() => {
-                                        setAnchorEl(null);
-                                        generateWithAIHandler();
-                                    }}
-                                >
-                                    Generate with AI
-                                </StyledMenuItem>
-                            </StyledMenu>
-                        </Stack>
-                    </StyledCellActions>
+							{/**
+							 * more options menu
+							 * only showing one option currently with no attached function
+							 **/}
+							<StyledMenu
+								anchorEl={anchorEl}
+								open={open}
+								onClose={() => {
+									setAnchorEl(null);
+								}}
+							>
+								<StyledMenuItem
+									disabled={true}
+									value={"generate-with-ai"}
+									onClick={() => {
+										setAnchorEl(null);
+										generateWithAIHandler();
+									}}
+								>
+									Generate with AI
+								</StyledMenuItem>
+							</StyledMenu>
+						</Stack>
+					</StyledCellActions>
 
                     <StyledSidebar>
                         <StyledStatusIconContainer>
@@ -964,28 +964,28 @@ export const NotebookCell = observer(
                                                                         cell.messages
                                                                     }
                                                                 />
-                                                                {cell.isExecuted ? (
-                                                                    cell.operation.map(
-                                                                        (
-                                                                            o,
-                                                                            oIdx,
-                                                                        ) => {
-                                                                            return (
-                                                                                <Operation
-                                                                                    key={
-                                                                                        oIdx
-                                                                                    }
-                                                                                    operation={
-                                                                                        o
-                                                                                    }
-                                                                                    output={getCellOutput(
+                                                                {cell.isExecuted
+                                                                    ? (cell.operation.map(
+                                                                          (
+                                                                              o,
+                                                                              oIdx,
+                                                                          ) => {
+                                                                              return (
+                                                                                  <Operation
+                                                                                      key={
+                                                                                          oIdx
+                                                                                      }
+                                                                                      operation={
+                                                                                          o
+                                                                                      }
+                                                                                      output={getCellOutput(
                                                                                         o,
                                                                                     )}
-                                                                                />
-                                                                            );
-                                                                        },
-                                                                    )
-                                                                ) : cell.isLoading ? (
+                                                                                  />
+                                                                              );
+                                                                          },
+																		)
+                                                                      ) : cell.isLoading ? (
                                                                     <CellLoader />
                                                                 ) : null}
                                                             </>
@@ -1029,16 +1029,16 @@ export const NotebookCell = observer(
                     </Collapse>
                 </StyledAddCellContainer>
 
-                <AddVariableModal
-                    open={variableModal}
-                    type={'cell'}
-                    to={queryId}
-                    cellId={cellId}
-                    onClose={() => {
-                        setVariableModal(false);
-                    }}
-                />
-            </StyledStack>
-        );
-    },
+				<AddVariableModal
+					open={variableModal}
+					type={"cell"}
+					to={queryId}
+					cellId={cellId}
+					onClose={() => {
+						setVariableModal(false);
+					}}
+				/>
+			</StyledStack>
+		);
+	},
 );

@@ -1,98 +1,97 @@
-import { observer } from 'mobx-react-lite';
-
-import { useBlocksPixel } from '@semoss/renderer';
-import { LinearProgress, Table, Typography, styled } from '@semoss/ui';
+import { observer } from "mobx-react-lite";
+import { useBlocksPixel } from "@semoss/renderer";
+import { LinearProgress, styled, Table, Typography } from "@semoss/ui";
 
 const StyledTableContainer = styled(Table.Container)(() => ({
-    height: '200px',
+	height: "200px",
 }));
 
 const StyledLoadingTableCell = styled(Table.Cell)(() => ({
-    padding: '0!important',
+	padding: "0!important",
 }));
 
 export interface FrameOperationProps {
-    /** Output returned that can render a preview of the frame */
-    output: {
-        /** Name of the frame  */
-        name: string;
+	/** Output returned that can render a preview of the frame */
+	output: {
+		/** Name of the frame  */
+		name: string;
 
-        /** Type of the frame */
-        type: 'NATIVE' | 'PY' | 'GRID' | 'R';
-    };
+		/** Type of the frame */
+		type: "NATIVE" | "PY" | "GRID" | "R";
+	};
     fetchAllResults?: boolean; // Optional prop to fetch all results
     queryToRun?: string; // Optional prop to run a custom query
 }
 
 export const FrameOperation = observer((props: FrameOperationProps) => {
-    const { output, fetchAllResults = false, queryToRun } = props;
+	const { output, fetchAllResults = false, queryToRun } = props;
 
-    // get the data from the frame
-    const getData = useBlocksPixel<{
-        data: {
-            values: (string | number | boolean)[][];
-            headers: string[];
-        };
-    }>(
+	// get the data from the frame
+	const getData = useBlocksPixel<{
+		data: {
+			values: (string | number | boolean)[][];
+			headers: string[];
+		};
+	}>(
         `Frame(frame=[${output.name}] )|${
             queryToRun ? queryToRun + '|' : 'QueryAll()|'
         }${fetchAllResults ? '' : 'Limit(20) | '}CollectAll();`,
     );
 
-    // get the count of data in the frame
-    const getCount = useBlocksPixel<number>(
-        `Frame(frame=[${output.name}] )|${
+	// get the count of data in the frame
+	const getCount = useBlocksPixel<number>(
+		`Frame(frame=[${output.name}] )|${
             queryToRun ? queryToRun + '|' : 'QueryAll()|'
         }QueryRowCount();`,
-    );
+	);
 
-    // get the statuses
-    const isLoading =
-        getData.status === 'LOADING' || getCount.status === 'LOADING';
-    const isError = getData.status === 'ERROR' || getCount.status === 'ERROR';
-    const isSuccess =
-        getData.status === 'SUCCESS' && getCount.status === 'SUCCESS';
+	// get the statuses
+	const isLoading =
+		getData.status === "LOADING" || getCount.status === "LOADING";
+	const isError = getData.status === "ERROR" || getCount.status === "ERROR";
+	const isSuccess =
+		getData.status === "SUCCESS" && getCount.status === "SUCCESS";
 
-    return (
-        <>
-            <StyledTableContainer>
-                <Table stickyHeader size="small">
-                    <Table.Head>
-                        <Table.Row>
-                            {getData.status === 'SUCCESS' &&
-                                getData.data.data.headers.map((h, hIdx) => (
-                                    <Table.Cell key={hIdx}>{h}</Table.Cell>
-                                ))}
-                        </Table.Row>
-                    </Table.Head>
-                    <Table.Body>
-                        {isLoading && (
-                            <StyledLoadingTableCell>
-                                <LinearProgress variant="indeterminate" />
-                            </StyledLoadingTableCell>
-                        )}
-                        {isError && (
-                            <Table.Cell>
-                                There was an issue generating a preview.
-                            </Table.Cell>
-                        )}
-                        {getData.status === 'SUCCESS' &&
-                            getData.data.data.values.map((r, rIdx) => (
-                                <Table.Row key={rIdx}>
-                                    {r.map((v, vIdx) => (
-                                        <Table.Cell key={`${rIdx}-${vIdx}`}>
-                                            {v}
-                                        </Table.Cell>
-                                    ))}
-                                </Table.Row>
-                            ))}
-                    </Table.Body>
-                </Table>
-            </StyledTableContainer>
-            <Typography variant="caption">
-                {isSuccess &&
-                    `Showing ${getData.data.data.values.length} of ${getCount.data}. This is a preview of ingested data`}
-            </Typography>
-        </>
-    );
+	return (
+		<>
+			<StyledTableContainer>
+				<Table stickyHeader size="small">
+					<Table.Head>
+						<Table.Row>
+							{getData.status === "SUCCESS" &&
+								getData.data.data.headers.map((h, hIdx) => (
+									<Table.Cell key={hIdx}>{h}</Table.Cell>
+								))}
+						</Table.Row>
+					</Table.Head>
+					<Table.Body>
+						{isLoading && (
+							<StyledLoadingTableCell>
+								<LinearProgress variant="indeterminate" />
+							</StyledLoadingTableCell>
+						)}
+						{isError && (
+							<Table.Cell>
+								There was an issue generating a preview.
+							</Table.Cell>
+						)}
+						{getData.status === "SUCCESS" &&
+							getData.data.data.values.map((r, rIdx) => (
+								<Table.Row key={rIdx}>
+									{r.map((v, vIdx) => (
+										<Table.Cell key={`${rIdx}-${vIdx}`}>
+											{v}
+										</Table.Cell>
+									))}
+								</Table.Row>
+							))}
+					</Table.Body>
+				</Table>
+			</StyledTableContainer>
+			<Typography variant="caption">
+				{isSuccess &&
+					`Showing ${getData.data.data.values.length} of ${getCount.data}. This is a preview of ingested data`}
+			</Typography>
+		</>
+	);
 });
