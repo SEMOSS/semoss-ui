@@ -153,7 +153,7 @@ export const removeEngineUserPermissions = async (
   url += "engine/removeEngineUserPermissions";
   const postData = {
     engineId: appId,
-    userpermissions: users,
+    ids: users,
   };
 
   const response = await post<{
