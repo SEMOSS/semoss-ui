@@ -10,7 +10,7 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
-import { AppMetadata, AppTileCard } from "@/components/app";
+import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";

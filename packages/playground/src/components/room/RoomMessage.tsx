@@ -20,7 +20,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { ChatMessage, ChatRoom } from "@/stores";
+import type { ChatMessage, ChatRoom } from "@/stores";
 
 const StyledUserMessage = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(2),

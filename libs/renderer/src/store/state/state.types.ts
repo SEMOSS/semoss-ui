@@ -1,7 +1,7 @@
-import React from "react";
-import { CellState } from "./cell.state";
-import { QueryStateConfig } from "./query.state";
-import {
+import type React from "react";
+import type { CellState } from "./cell.state";
+import type { QueryStateConfig } from "./query.state";
+import type {
 	DispatchEventAction,
 	DispatchOpenEventAction,
 	DispatchOutputsEventAction,
