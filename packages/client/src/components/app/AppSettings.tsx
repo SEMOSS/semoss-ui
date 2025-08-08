@@ -9,20 +9,24 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-    Person,
-    ToggleOff,
-    Cached,
-    PublishedWithChanges,
-    InsertLink,
-    Publish,
-} from '@mui/icons-material';
-import { Controller, useForm } from 'react-hook-form';
-import { usePixel, useRootStore, useSettings } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
-
+    Avatar,
+	Button,
+	Divider,
+	FileDropzone,
+	Paper,
+	Stack,
+	Switch,
+	styled,
+	Table,
+	TextField,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import { Java } from '@/assets/img/Java';
-import EngineIdsModal from './save-app/EngineIdsModal';
+import { LoadingScreen } from '@/components/ui';
+import { usePixel, useRootStore, useSettings } from '@/hooks';
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
+import EngineIdsModal from './save-app/EngineIdsModal';
 
 const StyledAppSettings = styled('div')(({ theme }) => ({
     display: 'flex',

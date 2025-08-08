@@ -17,9 +17,7 @@ import {
     SettingsTiles,
     DependencyList,
 } from '@/components/settings';
-import { AppSettings } from '@/components/app';
 import { SettingsContext } from '@/contexts';
-import { GetAppRounded } from '@mui/icons-material';
 import { Panel } from './Panel';
 import { useRootStore, useWorkspace } from "@/hooks";
 
