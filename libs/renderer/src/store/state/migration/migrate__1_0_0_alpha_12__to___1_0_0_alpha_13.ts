@@ -1,5 +1,5 @@
-import { ListenerActions } from "../state.types";
-import { Migration, MigrationState } from "./migration.types";
+import type { ListenerActions } from "../state.types";
+import type { Migration, MigrationState } from "./migration.types";
 
 /**
  * Migration from version 1.0.0-alpha.12 to 1.0.0-alpha.13

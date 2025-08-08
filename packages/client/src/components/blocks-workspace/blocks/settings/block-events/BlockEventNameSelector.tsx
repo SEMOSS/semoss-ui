@@ -1,24 +1,24 @@
-import { Controller } from 'react-hook-form';
-import { TextField } from '@semoss/ui';
+import { Controller } from "react-hook-form";
+import { TextField } from "@semoss/ui";
 
 interface BlockEventNameSelectorProps {
-    control: any;
+	control: any;
 }
 
 export const BlockEventNameSelector = ({
-    control,
+	control,
 }: BlockEventNameSelectorProps) => {
-    return (
-        <Controller
-            name="payload.name"
-            control={control}
-            render={({ field }) => (
-                <TextField
-                    label="Name"
-                    value={field.value || ''}
-                    onChange={field.onChange}
-                />
-            )}
-        />
-    );
+	return (
+		<Controller
+			name="payload.name"
+			control={control}
+			render={({ field }) => (
+				<TextField
+					label="Name"
+					value={field.value || ""}
+					onChange={field.onChange}
+				/>
+			)}
+		/>
+	);
 };

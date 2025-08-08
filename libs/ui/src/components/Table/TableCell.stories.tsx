@@ -1,13 +1,13 @@
-import React from "react";
 import type { Meta, StoryObj } from "@storybook/react-webpack5";
+import React from "react";
 import { Table } from "./index";
 
 const meta: Meta<typeof Table> = {
-    title: "Components/Table/Table.Cell",
-    component: Table,
-    subcomponents: {
-        Cell: Table.Cell,
-    },
+	title: "Components/Table/Table.Cell",
+	component: Table,
+	subcomponents: {
+		Cell: Table.Cell,
+	},
 };
 
 export default meta;
@@ -15,5 +15,5 @@ export default meta;
 type Story = StoryObj<typeof Table>;
 
 export const Default: Story = {
-    render: () => <Table.Cell>Table Cell Content</Table.Cell>,
+	render: () => <Table.Cell>Table Cell Content</Table.Cell>,
 };

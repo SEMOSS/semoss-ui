@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { Box } from "./index";
 
 const meta: Meta<typeof Box> = {
-    title: "Components/Box",
-    component: Box,
+	title: "Components/Box",
+	component: Box,
 };
 
 export default meta;
@@ -11,5 +11,5 @@ export default meta;
 type Story = StoryObj<typeof Box>;
 
 export const Default: Story = {
-    render: () => <Box sx={{ border: 1 }}>Box with border</Box>,
+	render: () => <Box sx={{ border: 1 }}>Box with border</Box>,
 };

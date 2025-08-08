@@ -1,5 +1,6 @@
 import { AccountCircle, Logout } from "@mui/icons-material";
-import React, { useState } from "react";
+import type React from "react";
+import { useState } from "react";
 import {
 	Avatar,
 	Button,
