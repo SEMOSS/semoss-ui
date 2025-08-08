@@ -5,7 +5,7 @@
 // We do this so we only have one reference to a pixel
 // ------------------------------------------------------------------------------------------
 
-import { MonolithStore } from "@/stores";
+import type { MonolithStore } from "@/stores";
 
 /**
  * Gets All Dependencies for a project
@@ -140,7 +140,10 @@ export const fetchAppInfo = async (
  * @param appId
  * @returns
  */
-export const fetchMainUses = async (monolithStore: MonolithStore, appId: string) => {
+export const fetchMainUses = async (
+	monolithStore: MonolithStore,
+	appId: string,
+) => {
 	const res = await monolithStore.runQuery(
 		`GetProjectMarkdown(project="${appId}")`,
 	);
