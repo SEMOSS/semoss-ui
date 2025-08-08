@@ -1,4 +1,4 @@
-import { Link, LinkProps } from "./Link";
+import { Link, type LinkProps } from "./Link";
 
 export type { LinkProps };
 

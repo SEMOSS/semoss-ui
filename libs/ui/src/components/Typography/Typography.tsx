@@ -1,89 +1,89 @@
 import {
-    Typography as MuiTypography,
-    TypographyProps as MuiTypographyProps,
-    SxProps,
+	Typography as MuiTypography,
+	type TypographyProps as MuiTypographyProps,
+	type SxProps,
 } from "@mui/material";
 
 export interface TypographyProps {
-    /** custom style object */
+	/** custom style object */
 
-    /**
-     * Set the text-align on the component.
-     * @default 'inherit'
-     */
-    align?: "inherit" | "left" | "center" | "right" | "justify";
-    /**
-     * The content of the component.
-     */
-    children?: React.ReactNode;
-    /**
-     * If `true`, the element will be a paragraph element.
-     * @default false
-     */
-    paragraph?: boolean;
-    variant:
-        | "h1"
-        | "h2"
-        | "h3"
-        | "h4"
-        | "h5"
-        | "h6"
-        | "subtitle1"
-        | "subtitle2"
-        | "body1"
-        | "body2"
-        | "body3"
-        | "body4"
-        | "caption"
-        | "button"
-        | "overline";
-    sx?: SxProps;
+	/**
+	 * Set the text-align on the component.
+	 * @default 'inherit'
+	 */
+	align?: "inherit" | "left" | "center" | "right" | "justify";
+	/**
+	 * The content of the component.
+	 */
+	children?: React.ReactNode;
+	/**
+	 * If `true`, the element will be a paragraph element.
+	 * @default false
+	 */
+	paragraph?: boolean;
+	variant:
+		| "h1"
+		| "h2"
+		| "h3"
+		| "h4"
+		| "h5"
+		| "h6"
+		| "subtitle1"
+		| "subtitle2"
+		| "body1"
+		| "body2"
+		| "body3"
+		| "body4"
+		| "caption"
+		| "button"
+		| "overline";
+	sx?: SxProps;
 
-    fontSize?: number;
-    //TODO:  WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM INTEGERS Ex: BOXSHADOWSETTINGS.tsx
-    fontWeight?: "light" | "regular" | "medium" | "500" | "bold" | number;
-    // TODO: WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM COLORS Ex: BOXSHADOWSETTINGS.tsx
-    color?:
-        | "inherit"
-        | "primary"
-        | "secondary"
-        | "success"
-        | "error"
-        | "info"
-        | "warning"
-        | "disabled"
-        | "textPrimary"
-        | string;
+	fontSize?: number;
+	//TODO:  WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM INTEGERS Ex: BOXSHADOWSETTINGS.tsx
+	fontWeight?: "light" | "regular" | "medium" | "500" | "bold" | number;
+	// TODO: WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM COLORS Ex: BOXSHADOWSETTINGS.tsx
+	color?:
+		| "inherit"
+		| "primary"
+		| "secondary"
+		| "success"
+		| "error"
+		| "info"
+		| "warning"
+		| "disabled"
+		| "textPrimary"
+		| string;
 
-    noWrap?: MuiTypographyProps["noWrap"];
-    title?: MuiTypographyProps["title"];
-    id?: string;
-    component?: React.ElementType;
-    gutterBottom?: MuiTypographyProps["gutterBottom"];
+	noWrap?: MuiTypographyProps["noWrap"];
+	title?: MuiTypographyProps["title"];
+	id?: string;
+	component?: React.ElementType;
+	gutterBottom?: MuiTypographyProps["gutterBottom"];
 }
 
 export const Typography = (props: TypographyProps) => {
-    const { sx, color, ...otherProps } = props;
+	const { sx, color, ...otherProps } = props;
 
-    return (
-        <MuiTypography
-            sx={sx}
-            color={
-                color === "success"
-                    ? "success.text"
-                    : color === "warning"
-                    ? "warning.text"
-                    : color === "error"
-                    ? "error.text"
-                    : color === "primary"
-                    ? "primary.main"
-                    : color === "secondary"
-                    ? "text.secondary"
-                    : color === "disabled"
-                    ? "text.disabled"
-                    : color
-            }
-            {...otherProps}
-        />
-    );
+	return (
+		<MuiTypography
+			sx={sx}
+			color={
+				color === "success"
+					? "success.text"
+					: color === "warning"
+						? "warning.text"
+						: color === "error"
+							? "error.text"
+							: color === "primary"
+								? "primary.main"
+								: color === "secondary"
+									? "text.secondary"
+									: color === "disabled"
+										? "text.disabled"
+										: color
+			}
+			{...otherProps}
+		/>
+	);
 };

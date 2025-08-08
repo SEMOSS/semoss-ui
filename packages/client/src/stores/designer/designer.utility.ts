@@ -9,29 +9,29 @@
  * @returns the relative size of the element
  */
 export const getRelativeSize = (
-    element: Element,
-    parent: Element,
+	element: Element,
+	parent: Element,
 ): {
-    top: number;
-    left: number;
-    height: number;
-    width: number;
+	top: number;
+	left: number;
+	height: number;
+	width: number;
 } => {
-    const elementBoundingClientRect = element.getBoundingClientRect();
-    const parentBloundingClientRect = parent.getBoundingClientRect();
+	const elementBoundingClientRect = element.getBoundingClientRect();
+	const parentBloundingClientRect = parent.getBoundingClientRect();
 
-    return {
-        top:
-            elementBoundingClientRect.top -
-            parentBloundingClientRect.top +
-            parent.scrollTop,
-        left:
-            elementBoundingClientRect.left -
-            parentBloundingClientRect.left +
-            parent.scrollLeft,
-        height: elementBoundingClientRect.height,
-        width: elementBoundingClientRect.width,
-    };
+	return {
+		top:
+			elementBoundingClientRect.top -
+			parentBloundingClientRect.top +
+			parent.scrollTop,
+		left:
+			elementBoundingClientRect.left -
+			parentBloundingClientRect.left +
+			parent.scrollLeft,
+		height: elementBoundingClientRect.height,
+		width: elementBoundingClientRect.width,
+	};
 };
 
 /** Widget **/
@@ -43,8 +43,8 @@ export const getRelativeSize = (
  * @returns the element of the block if found
  */
 export const getBlockElement = (id: string): Element | null => {
-    // get the block
-    return document.querySelector(`[data-block="${id}"]`);
+	// get the block
+	return document.querySelector(`[data-block="${id}"]`);
 };
 
 /**
@@ -55,12 +55,12 @@ export const getBlockElement = (id: string): Element | null => {
  * @returns id of the nearest block if found
  */
 export const getNearestBlock = (element: Element | null): string => {
-    const blockElement = getNearestBlockElement(element);
-    if (!blockElement) {
-        return '';
-    }
+	const blockElement = getNearestBlockElement(element);
+	if (!blockElement) {
+		return "";
+	}
 
-    return blockElement.getAttribute('data-block') as string;
+	return blockElement.getAttribute("data-block") as string;
 };
 
 /**
@@ -71,27 +71,27 @@ export const getNearestBlock = (element: Element | null): string => {
  * @returns element of the nearest block if found
  */
 export const getNearestBlockElement = (
-    element: Element | null,
+	element: Element | null,
 ): Element | null => {
-    // there is no element or we have reached the top
-    if (!element) {
-        return null;
-    }
+	// there is no element or we have reached the top
+	if (!element) {
+		return null;
+	}
 
-    // get the block's id
-    const id = element.getAttribute('data-block');
+	// get the block's id
+	const id = element.getAttribute("data-block");
 
-    // we have reached the root can't go up more
-    if (id === 'root') {
-        return null;
-    }
+	// we have reached the root can't go up more
+	if (id === "root") {
+		return null;
+	}
 
-    // found the id
-    if (id) {
-        return element;
-    }
+	// found the id
+	if (id) {
+		return element;
+	}
 
-    return getNearestBlockElement(element.parentElement);
+	return getNearestBlockElement(element.parentElement);
 };
 
 /** Slot **/
@@ -104,36 +104,36 @@ export const getNearestBlockElement = (
  * @returns the element of the slot if found
  */
 export const getSlotElement = (id: string, slot: string): Element | null => {
-    const blockElement = getBlockElement(id);
+	const blockElement = getBlockElement(id);
 
-    const queue = [blockElement];
-    while (queue.length) {
-        const currentElement = queue.shift();
+	const queue = [blockElement];
+	while (queue.length) {
+		const currentElement = queue.shift();
 
-        if (!currentElement) {
-            continue;
-        }
+		if (!currentElement) {
+			continue;
+		}
 
-        const currentSlot = currentElement.getAttribute('data-slot');
-        if (currentSlot === slot) {
-            return null;
-        }
+		const currentSlot = currentElement.getAttribute("data-slot");
+		if (currentSlot === slot) {
+			return null;
+		}
 
-        // look at the children that are not blocks to find the slot
-        let childElement = currentElement.firstElementChild;
-        while (childElement) {
-            // get the block's id
-            const id = childElement.getAttribute('data-block');
+		// look at the children that are not blocks to find the slot
+		let childElement = currentElement.firstElementChild;
+		while (childElement) {
+			// get the block's id
+			const id = childElement.getAttribute("data-block");
 
-            if (!id) {
-                queue.push(childElement);
-            }
+			if (!id) {
+				queue.push(childElement);
+			}
 
-            childElement = childElement.nextElementSibling;
-        }
-    }
+			childElement = childElement.nextElementSibling;
+		}
+	}
 
-    return null;
+	return null;
 };
 
 /**
@@ -144,12 +144,12 @@ export const getSlotElement = (id: string, slot: string): Element | null => {
  * @returns element of the nearest slot if found
  */
 export const getNearestSlot = (element: Element | null): string | null => {
-    const slotElement = getNearestSlotElement(element);
-    if (!slotElement) {
-        return null;
-    }
+	const slotElement = getNearestSlotElement(element);
+	if (!slotElement) {
+		return null;
+	}
 
-    return slotElement.getAttribute('data-slot') as string;
+	return slotElement.getAttribute("data-slot") as string;
 };
 
 /**
@@ -160,24 +160,24 @@ export const getNearestSlot = (element: Element | null): string | null => {
  * @returns element of the nearest slot if found
  */
 export const getNearestSlotElement = (
-    element: Element | null,
+	element: Element | null,
 ): Element | null => {
-    // there is no element or we have reached the top
-    if (!element) {
-        return null;
-    }
+	// there is no element or we have reached the top
+	if (!element) {
+		return null;
+	}
 
-    // get the block's id
-    const id = element.getAttribute('data-block');
-    if (id) {
-        return null;
-    }
+	// get the block's id
+	const id = element.getAttribute("data-block");
+	if (id) {
+		return null;
+	}
 
-    // get slot if possible
-    const slot = element.getAttribute('data-slot');
-    if (slot) {
-        return element;
-    }
+	// get slot if possible
+	const slot = element.getAttribute("data-slot");
+	if (slot) {
+		return element;
+	}
 
-    return getNearestSlotElement(element.parentElement);
+	return getNearestSlotElement(element.parentElement);
 };

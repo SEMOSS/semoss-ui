@@ -1,19 +1,13 @@
-import { useEffect, useState } from 'react';
 import {
-    styled,
-    useNotification,
-    Avatar,
-    Button,
-    Paper,
-    Switch,
-    Table,
-    Typography,
-    Divider,
-    TextField,
-    Stack,
-    FileDropzone,
-} from '@semoss/ui';
-
+	Cached,
+	InsertLink,
+	Person,
+	Publish,
+	PublishedWithChanges,
+	ToggleOff,
+} from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
     Person,
     ToggleOff,
@@ -36,198 +30,199 @@ const StyledAppSettings = styled('div')(({ theme }) => ({
     width: '100%',
     gap: '1rem',
     marginBottom: theme.spacing(10),
+
 }));
 
-const StyledCardContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    gap: theme.spacing(2),
-    display: 'flex',
-    background: '#FFF',
-    alignSelf: 'stretch',
-    borderRadius: theme.shape.borderRadius,
-    alignItems: 'flex-start',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
+const StyledCardContainer = styled("div")(({ theme }) => ({
+	width: "100%",
+	gap: theme.spacing(2),
+	display: "flex",
+	background: "#FFF",
+	alignSelf: "stretch",
+	borderRadius: theme.shape.borderRadius,
+	alignItems: "flex-start",
+	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 }));
 
-const StyledTopCardContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    gap: theme.spacing(2),
-    display: 'flex',
-    background: '#FFF',
-    alignSelf: 'stretch',
-    borderRadius: theme.shape.borderRadius,
-    alignItems: 'flex-start',
-    boxShadow: '0px 5px 22px 0px rgba(0, 0, 0, 0.06)',
-    marginBottom: theme.spacing(1),
+const StyledTopCardContainer = styled("div")(({ theme }) => ({
+	width: "100%",
+	gap: theme.spacing(2),
+	display: "flex",
+	background: "#FFF",
+	alignSelf: "stretch",
+	borderRadius: theme.shape.borderRadius,
+	alignItems: "flex-start",
+	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
+	marginBottom: theme.spacing(1),
 }));
 
 const StyledRightSwitch = styled(Switch)(({ theme }) => ({
-    marginLeft: 'auto',
-    paddingRight: theme.spacing(1),
+	marginLeft: "auto",
+	paddingRight: theme.spacing(1),
 }));
 
 const StyledRightButton = styled(Button)(({ theme }) => ({
-    marginLeft: 'auto',
-    paddingRight: theme.spacing(1),
+	marginLeft: "auto",
+	paddingRight: theme.spacing(1),
 }));
 
-const StyledCardDiv = styled('div')(({ theme }) => ({
-    gap: theme.spacing(2),
-    flex: '1 0 0',
-    display: 'flex',
-    padding: theme.spacing(2),
-    alignItems: 'flex-start',
+const StyledCardDiv = styled("div")(({ theme }) => ({
+	gap: theme.spacing(2),
+	flex: "1 0 0",
+	display: "flex",
+	padding: theme.spacing(2),
+	alignItems: "flex-start",
 }));
 
-const StyledCardLeft = styled('div')(({ theme }) => ({
-    display: 'flex',
-    height: theme.spacing(33),
-    width: '50%',
-    gap: '1rem',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+const StyledCardLeft = styled("div")(({ theme }) => ({
+	display: "flex",
+	height: theme.spacing(33),
+	width: "50%",
+	gap: "1rem",
+	flexDirection: "column",
+	alignItems: "flex-start",
 }));
 
-const StyledCondensedPublishContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    width: '100%',
-    gap: '1rem',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+const StyledCondensedPublishContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	width: "100%",
+	gap: "1rem",
+	flexDirection: "column",
+	alignItems: "flex-start",
 }));
 
-const StyledListItemHeader = styled('div')(({ theme }) => ({
-    display: 'flex',
-    width: theme.spacing(79),
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+const StyledListItemHeader = styled("div")(({ theme }) => ({
+	display: "flex",
+	width: theme.spacing(79),
+	flexDirection: "column",
+	alignItems: "flex-start",
 }));
 
-const StyledSubColumn = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
+const StyledSubColumn = styled("div")({
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "flex-start",
 });
 
-const StyledSubRow = styled('div')({
-    display: 'flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignContent: 'center',
-    width: '100%',
-    margin: '4px 0 8px 0',
-    '.MuiTypography-body2': {
-        marginLeft: '32px',
-    },
-    '.MuiFormControl-root': {
-        marginLeft: '32px',
-    },
+const StyledSubRow = styled("div")({
+	display: "flex",
+	flexDirection: "row",
+	alignItems: "center",
+	alignContent: "center",
+	width: "100%",
+	margin: "4px 0 8px 0",
+	".MuiTypography-body2": {
+		marginLeft: "32px",
+	},
+	".MuiFormControl-root": {
+		marginLeft: "32px",
+	},
 });
 
-const StyledSubHeaderContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
+const StyledSubHeaderContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "row",
+	justifyContent: "space-between",
+	width: "100%",
 }));
 
-const StyledLeftActionContainer = styled('div')({
-    display: 'flex',
-    gap: '4px',
-    flex: '1 0 0',
-    alignItems: 'flex-end',
-    justifyContent: 'center',
+const StyledLeftActionContainer = styled("div")({
+	display: "flex",
+	gap: "4px",
+	flex: "1 0 0",
+	alignItems: "flex-end",
+	justifyContent: "center",
 });
 
-const StyledLeftActionDiv = styled('div')({
-    gap: '4px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
+const StyledLeftActionDiv = styled("div")({
+	gap: "4px",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
 });
 
 const StyledTypography = styled(Typography)({
-    fontWeight: '500',
+	fontWeight: "500",
 });
 
-const StyledActionDivLeft = styled('div')(({ theme }) => ({
-    display: 'flex',
-    paddingRight: theme.spacing(3),
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: '10px',
+const StyledActionDivLeft = styled("div")(({ theme }) => ({
+	display: "flex",
+	paddingRight: theme.spacing(3),
+	justifyContent: "center",
+	alignItems: "center",
+	gap: "10px",
 }));
 
 const StyledPersonIcon = styled(Person)(() => ({
-    display: 'flex',
-    alignItems: 'flex-start',
+	display: "flex",
+	alignItems: "flex-start",
 }));
 
 const StyledPublishedIcon = styled(PublishedWithChanges)(() => ({
-    marginRight: '5px',
+	marginRight: "5px",
 }));
 
 const StyledSwitchIcon = styled(ToggleOff)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    marginRight: theme.spacing(1),
+	display: "flex",
+	alignItems: "flex-start",
+	marginRight: theme.spacing(1),
 }));
 const StyledPublishIcon = styled(Publish)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    marginRight: theme.spacing(1),
-    color: 'rgba(0, 0, 0, .5)',
+	display: "flex",
+	alignItems: "flex-start",
+	marginRight: theme.spacing(1),
+	color: "rgba(0, 0, 0, .5)",
 }));
 
 const StyledRefreshIcon = styled(Cached)(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'flex-start',
-    marginRight: theme.spacing(1),
-    color: 'rgba(0, 0, 0, .5)',
+	display: "flex",
+	alignItems: "flex-start",
+	marginRight: theme.spacing(1),
+	color: "rgba(0, 0, 0, .5)",
 }));
 
-const StyledCardRight = styled('div')(() => ({
-    width: '50%',
+const StyledCardRight = styled("div")(() => ({
+	width: "50%",
 }));
 
 const StyledTable = styled(Table)(({ theme }) => ({
-    borderRadius: theme.spacing(1),
-    borderColor: '#BDBDBD',
-    borderStyle: 'solid',
-    borderCollapse: 'initial',
-    borderWidth: 'thin',
+	borderRadius: theme.spacing(1),
+	borderColor: "#BDBDBD",
+	borderStyle: "solid",
+	borderCollapse: "initial",
+	borderWidth: "thin",
 }));
 
-const StyledCenteredFallback = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: '100%',
-    minHeight: 120,
-    width: '100%',
+const StyledCenteredFallback = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	height: "100%",
+	minHeight: 120,
+	width: "100%",
 }));
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-    padding: theme.spacing(2),
+	backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(2),
 }));
 
 // User Table
 interface User {
-    id: string;
-    name: string;
-    date: string;
-    time: string;
+	id: string;
+	name: string;
+	date: string;
+	time: string;
 }
 
 interface AppSettingsProps {
-    id: string;
+	id: string;
 
-    condensed?: boolean;
+	condensed?: boolean;
 }
 
 type EditAppForm = {
-    PROJECT_UPLOAD: File;
+	PROJECT_UPLOAD: File;
 };
 
 export const AppSettings = (props: AppSettingsProps) => {

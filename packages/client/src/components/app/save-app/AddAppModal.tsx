@@ -1,12 +1,19 @@
-import React, { Dispatch, SetStateAction, useState } from 'react';
-import { Control } from 'react-hook-form';
-import { useRootStore } from '@/hooks';
 import {
-    OpenInBrowser,
-    Edit,
-    LocalOffer,
-    Visibility,
-} from '@mui/icons-material';
+	Edit,
+	LocalOffer,
+	OpenInBrowser,
+	Visibility,
+} from "@mui/icons-material";
+import type React from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
+import type { Control } from "react-hook-form";
+import { useNotification } from "@semoss/ui";
+import { useRootStore } from "@/hooks";
+import { AppAccessStep } from "./AppAccessStep";
+import { AppDetailsStep } from "./AppDetailsStep";
+import { AppTagsStep } from "./AppTagsStep";
+import { AppUploadStep } from "./AppUploadStep";
+import { SaveAppModal } from "./SaveAppModal";
 import {
     ADD_APP_FORM_FIELD_APP_TYPE,
     ADD_APP_FORM_FIELD_DESCRIPTION,
@@ -24,39 +31,41 @@ import { useNotification } from '@semoss/ui';
 import { AppTagsStep } from './AppTagsStep';
 import EngineIdsModal from './EngineIdsModal';
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
+
 type AddAppForm = {
-    [ADD_APP_FORM_FIELD_NAME]: string;
-    [ADD_APP_FORM_FIELD_APP_TYPE]: string;
-    [ADD_APP_FORM_FIELD_DESCRIPTION]: string;
-    [ADD_APP_FORM_FIELD_TAGS]: string[];
-    [ADD_APP_FORM_FIELD_UPLOAD]: File;
-    [ADD_APP_FORM_FIELD_IS_GLOBAL]: boolean;
-    [ADD_APP_FORM_FIELD_TYPE]: string;
+	[ADD_APP_FORM_FIELD_NAME]: string;
+	[ADD_APP_FORM_FIELD_APP_TYPE]: string;
+	[ADD_APP_FORM_FIELD_DESCRIPTION]: string;
+	[ADD_APP_FORM_FIELD_TAGS]: string[];
+	[ADD_APP_FORM_FIELD_UPLOAD]: File;
+	[ADD_APP_FORM_FIELD_IS_GLOBAL]: boolean;
+	[ADD_APP_FORM_FIELD_TYPE]: string;
 };
 
 export type AddAppFormStep = {
-    name: string;
-    icon: React.ReactElement;
-    title: string;
-    component: React.FunctionComponent<{
-        control: Control<any, any>;
-        disabled: boolean;
-        setAddAppFormSteps?: Dispatch<SetStateAction<AddAppFormStep[]>>;
-        appZipFormSteps?: AddAppFormStep[];
-        projectZipFormSteps?: AddAppFormStep[];
-    }>;
-    requiredFields: string[];
+	name: string;
+	icon: React.ReactElement;
+	title: string;
+	component: React.FunctionComponent<{
+		control: Control<unknown, unknown>;
+		disabled: boolean;
+		setAddAppFormSteps?: Dispatch<SetStateAction<AddAppFormStep[]>>;
+		appZipFormSteps?: AddAppFormStep[];
+		projectZipFormSteps?: AddAppFormStep[];
+	}>;
+	requiredFields: string[];
 };
 
 interface AddAppProps {
-    /** Track if the model is open */
-    open: boolean;
+	/** Track if the model is open */
+	open: boolean;
 
-    /** Callback that is triggered on close */
-    handleClose: (appId?: string) => void;
+	/** Callback that is triggered on close */
+	handleClose: (appId?: string) => void;
 }
 
 export const AddAppModal = (props: AddAppProps) => {
+  
     const addAppUploadStep = (props: { control: Control<any, any> }) => (
         <AppUploadStep
             control={props.control}
@@ -299,3 +308,4 @@ export const AddAppModal = (props: AddAppProps) => {
         </>
     );
 };
+

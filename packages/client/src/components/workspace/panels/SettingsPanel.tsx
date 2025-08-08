@@ -1,16 +1,16 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { GetAppRounded } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    styled,
-    ToggleTabsGroup,
-    Container,
-    Stack,
-    IconButton,
-    useNotification,
-    Tooltip,
-} from '@semoss/ui';
-
-import { useRootStore, useWorkspace } from '@/hooks';
+	Container,
+	IconButton,
+	Stack,
+	styled,
+	ToggleTabsGroup,
+	Tooltip,
+	useNotification,
+} from "@semoss/ui";
+import { AppSettings } from "@/components/app";
 import {
     PendingMembersTable,
     MembersTable,
@@ -21,73 +21,75 @@ import { AppSettings } from '@/components/app';
 import { SettingsContext } from '@/contexts';
 import { GetAppRounded } from '@mui/icons-material';
 import { Panel } from './Panel';
+import { useRootStore, useWorkspace } from "@/hooks";
 
-const StyledContainer = styled('div')(({ theme }) => ({
-    width: '100%',
-    display: 'flex',
-    alignSelf: 'stretch',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: theme.spacing(2),
-    paddingTop: theme.spacing(5),
+const StyledContainer = styled("div")(({ theme }) => ({
+	width: "100%",
+	display: "flex",
+	alignSelf: "stretch",
+	flexDirection: "column",
+	alignItems: "flex-start",
+	gap: theme.spacing(2),
+	paddingTop: theme.spacing(5),
 }));
 
-const StyledContent = styled('div')(({ theme }) => ({
-    display: 'flex',
-    width: '100%',
-    flexDirection: 'column',
-    alignItems: 'flex-start',
-    gap: theme.spacing(2),
-    flexShrink: '0',
+const StyledContent = styled("div")(({ theme }) => ({
+	display: "flex",
+	width: "100%",
+	flexDirection: "column",
+	alignItems: "flex-start",
+	gap: theme.spacing(2),
+	flexShrink: "0",
 }));
 
 type VIEW = 'CURRENT' | 'PENDING' | 'APP' | 'DEPENDENCY';
 
+
 export const SettingsPanel = () => {
-    const { configStore, monolithStore } = useRootStore();
-    const notification = useNotification();
-    const { workspace } = useWorkspace();
-    const navigate = useNavigate();
+	const { configStore, monolithStore } = useRootStore();
+	const notification = useNotification();
+	const { workspace } = useWorkspace();
+	const navigate = useNavigate();
 
-    const [view, setView] = useState<VIEW>('CURRENT');
+	const [view, setView] = useState<VIEW>("CURRENT");
 
-    /**
-     * Method that is called to export the app
-     */
-    const exportApp = async () => {
-        // turn on loading
-        workspace.setLoading(true);
+	/**
+	 * Method that is called to export the app
+	 */
+	const exportApp = async () => {
+		// turn on loading
+		workspace.setLoading(true);
 
-        try {
-            // export  the app
-            const response = await monolithStore.runQuery<[string]>(
-                `ExportProjectApp(project=["${workspace.appId}"]);`,
-            );
+		try {
+			// export  the app
+			const response = await monolithStore.runQuery<[string]>(
+				`ExportProjectApp(project=["${workspace.appId}"]);`,
+			);
 
-            // throw an error if there is no key
-            const key = response.pixelReturn[0].output;
-            if (!key) {
-                throw new Error('Error exporting app');
-            }
+			// throw an error if there is no key
+			const key = response.pixelReturn[0].output;
+			if (!key) {
+				throw new Error("Error exporting app");
+			}
 
-            await monolithStore.download(configStore.store.insightID, key);
+			await monolithStore.download(configStore.store.insightID, key);
 
-            notification.add({
-                color: 'success',
-                message: 'Success',
-            });
-        } catch (e) {
-            console.error(e);
+			notification.add({
+				color: "success",
+				message: "Success",
+			});
+		} catch (e) {
+			console.error(e);
 
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            workspace.setLoading(false);
-        }
-    };
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			// turn of loading
+			workspace.setLoading(false);
+		}
+	};
 
     return (
         <Panel>

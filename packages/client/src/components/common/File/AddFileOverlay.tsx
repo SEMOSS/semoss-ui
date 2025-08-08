@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 import {
     Button,
     Modal,
@@ -13,23 +13,23 @@ import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
 
 interface AddFileOverlayProps {
-    /** Type of file opened */
-    type: 'app' | 'insight';
+	/** Type of file opened */
+	type: "app" | "insight";
 
-    /** Space where the file is located */
-    space: string;
+	/** Space where the file is located */
+	space: string;
 
-    /** Path where the file is being uploaded */
-    uploadPath: string;
+	/** Path where the file is being uploaded */
+	uploadPath: string;
 
-    /** Callback that is triggered onClose */
-    onClose: (success: boolean, uploadPath: string) => void;
+	/** Callback that is triggered onClose */
+	onClose: (success: boolean, uploadPath: string) => void;
 }
 
 export const AddFileOverlay = (props: AddFileOverlayProps) => {
-    const { type, space, uploadPath, onClose: onClose = () => null } = props;
+	const { type, space, uploadPath, onClose = () => null } = props;
 
-    const { monolithStore, configStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 
     const [isLoading, setIsLoading] = useState(false);
     const [uploadFile, setUploadFiles] = useState<File>(null);
@@ -46,30 +46,30 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
         }
     };
 
-    /**
-     * Add the file to the app
-     */
-    const addFile = async () => {
-        try {
-            setIsLoading(true);
+	/**
+	 * Add the file to the app
+	 */
+	const addFile = async () => {
+		try {
+			setIsLoading(true);
 
-            let upload = null;
-            if (type === 'app') {
-                upload = await monolithStore.uploadFile(
-                    [uploadFile],
-                    configStore.store.insightID,
-                    space,
-                    uploadPath,
-                );
-            } else {
-                throw new Error('TODO');
-            }
+			let upload = null;
+			if (type === "app") {
+				upload = await monolithStore.uploadFile(
+					[uploadFile],
+					configStore.store.insightID,
+					space,
+					uploadPath,
+				);
+			} else {
+				throw new Error("TODO");
+			}
 
-            if (!upload) {
-                throw new Error('Error missing uploading app');
-            }
+			if (!upload) {
+				throw new Error("Error missing uploading app");
+			}
 
-            const path = `${uploadPath}${upload[0].fileName}`;
+			const path = `${uploadPath}${upload[0].fileName}`;
 
             if (unzipFile) {
                 if (type === 'app') {
@@ -91,17 +91,17 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                 }
             }
 
-            onClose(true, path);
-        } catch (e) {
-            console.error(e);
-        } finally {
-            setIsLoading(false);
+			onClose(true, path);
+		} catch (e) {
+			console.error(e);
+		} finally {
+			setIsLoading(false);
 
-            // reset state
-            setUploadFiles(null);
-            setUnzipFile(false);
-        }
-    };
+			// reset state
+			setUploadFiles(null);
+			setUnzipFile(false);
+		}
+	};
 
     return (
         <>
