@@ -1,6 +1,6 @@
-import { IJsonModel } from 'flexlayout-react';
+import type { IJsonModel } from "flexlayout-react";
 
 export interface WorkspaceOptions {
-    version: string;
-    layout: IJsonModel;
+	version: string;
+	layout: IJsonModel;
 }
