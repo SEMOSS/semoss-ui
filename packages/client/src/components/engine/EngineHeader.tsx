@@ -210,7 +210,7 @@ export const EngineHeader: React.FC = () => {
 								if (i < 2)
 									return (
 										<Chip
-											key={i}
+											key={tag}
 											label={tag}
 											color="default"
 											size="small"
@@ -222,31 +222,35 @@ export const EngineHeader: React.FC = () => {
 				</StyledInfoLeft>
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
-						{active.metadata?.DATEADDED &&
-						active.metadata?.PERMISSIONGRANTEDBY ? (
+						{active.metadata?.database_date_updated ||
+						active.metadata?.database_created_by ? (
 							<>
 								<Typography
-									variant={"caption"}
+									variant="body2"
 									color="disabled"
 								>
-									{`Updated by ${active.metadata.PERMISSIONGRANTEDBY}`}
+									{`Published by ${active.metadata.database_created_by}`}
 								</Typography>
 								<Typography
-									variant={"caption"}
+									variant="body2"
 									color="disabled"
-								>
-									{`at ${active.metadata.DATEADDED}`}
+								>	
+								{`Updated at ${
+									active.metadata.database_date_updated
+										? active.metadata.database_date_updated
+										: "N/A"
+								}`}									
 								</Typography>
 							</>
 						) : (
-							<>
+							
 								<Typography
 									variant={"caption"}
 									color="disabled"
 								>
 									No updates since creation
 								</Typography>
-							</>
+							
 						)}
 					</Stack>
 				</StyledInfoRight>
