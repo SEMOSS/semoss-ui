@@ -22,7 +22,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useDesigner, useRootStore } from "@/hooks";
-import {
+import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
 } from "../blocks-workspace/menus/menu-types";
