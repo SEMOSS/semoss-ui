@@ -1,82 +1,98 @@
+import {
+	DeleteOutline,
+	ExpandMore,
+	InfoOutlined as InfoIcon,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
-    type Block,
+	type Block,
 	type BlockDef,
 	type Paths,
 	type PDFViewerBlockDef,
 	useBlock,
 } from "@semoss/renderer";
-import { upload, runPixel } from "@semoss/sdk/react";
-import { Stack, Box, TextField, Tabs, styled, FileDropzone, Accordion, Typography, List, useNotification, Tooltip, Autocomplete } from "@semoss/ui";
-
-import { ExpandMore, InfoOutlined as InfoIcon, DeleteOutline } from "@mui/icons-material";
-import { lightTheme } from "../../../../../../../../libs/ui/src/theme";
+import { runPixel, upload } from "@semoss/sdk/react";
+import {
+	Accordion,
+	Autocomplete,
+	Box,
+	FileDropzone,
+	List,
+	lightTheme,
+	Stack,
+	styled,
+	Tabs,
+	TextField,
+	Tooltip,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 
 //styled section for the selected tab
 const StyledSubSection = styled("div")(() => ({
-    padding: "0.5rem",
-    width: "100%",
-    marginTop: "10px",
+	padding: "0.5rem",
+	width: "100%",
+	marginTop: "10px",
 }));
 
 //styled span of the selected tab
-const StyledSpanFrame = styled("span")(({theme}) => ({
-    fontSize: "1rem",
-    color: theme.palette.secondary.dark,
-    paddingLeft: "9px",
-    position: "relative",
+const StyledSpanFrame = styled("span")(({ theme }) => ({
+	fontSize: "1rem",
+	color: theme.palette.secondary.dark,
+	paddingLeft: "9px",
+	position: "relative",
 }));
 
 const StyledMenuSection = styled(Accordion)(({ theme }) => ({
-    boxShadow: "none",
-    borderRadius: "0 !important",
-    border: "0px",
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    "&:before": { display: "none" },
-    "&.Mui-expanded": { margin: "0" },
+	boxShadow: "none",
+	borderRadius: "0 !important",
+	border: "0px",
+	borderBottom: `1px solid ${theme.palette.divider}`,
+	"&:before": { display: "none" },
+	"&.Mui-expanded": { margin: "0" },
 }));
 
 const StyledMenuSectionTitle = styled(Accordion.Trigger)(({ theme }) => ({
-    minHeight: "auto !important",
-    height: theme.spacing(6),
+	minHeight: "auto !important",
+	height: theme.spacing(6),
 }));
 
 const StyledDeleteIcon = styled(DeleteOutline)(({ theme }) => ({
-    color: theme.palette.error.main,
-    cursor: "pointer",
+	color: theme.palette.error.main,
+	cursor: "pointer",
 }));
 
-const StyledTypographyEror = styled(Typography)(({ theme }) => ({ 
-    color: theme.palette.error.main,
-    paddingLeft: "32px",
+const StyledTypographyEror = styled(Typography)(({ theme }) => ({
+	color: theme.palette.error.main,
+	paddingLeft: "32px",
 }));
 
-const StyledAutocomplete = styled(Autocomplete)(({ theme }) => ({
+const StyledAutocomplete = styled(Autocomplete)({
     paddingLeft: "9px",
     marginTop: "12px",
-}));
+});
 
 const StyledEngineContent = styled(Accordion.Content)(({ theme }) => ({
-    borderBottom: `1px solid ${theme.palette.divider}`,
-    marginTop: "5px",
+	borderBottom: `1px solid ${theme.palette.divider}`,
+	marginTop: "5px",
 }));
 
 interface Option {
-    id: string;
-    path: string;
-    display: string;
-    group: string;
-    engineId?: string;
-    app_name?: string;
+	id: string;
+	path: string;
+	display: string;
+	group: string;
+	engineId?: string;
+	app_name?: string;
 }
 
 type engineIdType = {
-    app_id: string;
-    app_type: string;
-    app_name: string;
-}
+	app_id: string;
+	app_type: string;
+	app_name: string;
+};
 
 interface PDFViewerSettings<D extends BlockDef = BlockDef> {
 	/**
@@ -91,524 +107,697 @@ interface PDFViewerSettings<D extends BlockDef = BlockDef> {
 }
 
 export const PDFViewerSettings = observer(
-    <D extends BlockDef = BlockDef>({ id, path }: PDFViewerSettings<D>) => {
-        const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
-        const notification = useNotification();
-        const { appId } = useParams();
-        const [appOptions, setAppOptions] = useState<any>([]);
-        const [engineOptions, setEngineOptions] = useState<{ file_name: string; file_type: string; app_type: string; file_path: string; engineId: string; app_name: string; }[]>([]);
-        const tabs = ["Insight", "Engine", "App"];
-        const [selectedPdfPath, setSelectedPdfPath] = useState(data?.selectedPdf || "");
-        const [selectedTab, setSelectedTab] = useState(tabs[1]);
-        const [uploadFiles, setUploadFiles] = useState<File>(null);
-        const [isLoading, setIsLoading] = useState(false);
-        const [engineAutocompleteOpen, setEngineAutocompleteOpen] = useState(false);
-        const allEngineTypes = ["MODEL", "DATABASE", "VECTOR", "FUNCTION", "STORAGE"];
+	<D extends BlockDef = BlockDef>({ id, path }: PDFViewerSettings<D>) => {
+		const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
+		const notification = useNotification();
+		const { appId } = useParams();
+		const [appOptions, setAppOptions] = useState([]);
+		const [engineOptions, setEngineOptions] = useState<
+			{
+				file_name: string;
+				file_type: string;
+				app_type: string;
+				file_path: string;
+				engineId: string;
+				app_name: string;
+			}[]
+		>([]);
+		const tabs = ["Insight", "Engine", "App"];
+		const [selectedPdfPath, setSelectedPdfPath] = useState(
+			data?.selectedPdf || "",
+		);
+		const [selectedTab, setSelectedTab] = useState(tabs[1]);
+		const [uploadFiles, setUploadFiles] = useState<File>(null);
+		const [isLoading, setIsLoading] = useState(false);
+		const [engineAutocompleteOpen, setEngineAutocompleteOpen] =
+			useState(false);
+		const allEngineTypes = [
+			"MODEL",
+			"DATABASE",
+			"VECTOR",
+			"FUNCTION",
+			"STORAGE",
+		];
 
-        const groupAliasMapper = (type: string, category: "insight" | "engine") => {
-            if (category === "insight") {
-                switch (type) {
-                    case "upload":
-                        return "Upload Blocks";
-                    case "notebook":
-                        return "Notebooks";
-                    case "cell":
-                        return "Cells";
-                    default:
-                        return "Others";
-                }
-            } else if (category === "engine") {
-                switch (type) {
-                    case "MODEL":
-                        return "Models";
-                    case "DATABASE":
-                        return "Databases";
-                    case "VECTOR":
-                        return "Vectors";
-                    case "FUNCTION":
-                        return "Functions";
-                    case "STORAGE":
-                        return "Storage";
-                    default:
-                        return "Others";
-                }
-            }
-            return "Others";
-        };
+		const groupAliasMapper = (
+			type: string,
+			category: "insight" | "engine",
+		) => {
+			if (category === "insight") {
+				switch (type) {
+					case "upload":
+						return "Upload Blocks";
+					case "notebook":
+						return "Notebooks";
+					case "cell":
+						return "Cells";
+					default:
+						return "Others";
+				}
+			} else if (category === "engine") {
+				switch (type) {
+					case "MODEL":
+						return "Models";
+					case "DATABASE":
+						return "Databases";
+					case "VECTOR":
+						return "Vectors";
+					case "FUNCTION":
+						return "Functions";
+					case "STORAGE":
+						return "Storage";
+					default:
+						return "Others";
+				}
+			}
+			return "Others";
+		};
 
-        // Example options with group (replace with your real data)
-        const options: Option[] = [
-            { id: "upload1", path: "upload1", display: "Upload Block 1", group: groupAliasMapper("upload", "insight") },
-            { id: "notebook1", path: "notebook1", display: "Notebook 1", group: groupAliasMapper("notebook", "insight") },
-            { id: "cell1", path: "cell1", display: "Cell 1", group: groupAliasMapper("cell", "insight") },
-        ];
+		// Example options with group (replace with your real data)
+		const options: Option[] = [
+			{
+				id: "upload1",
+				path: "upload1",
+				display: "Upload Block 1",
+				group: groupAliasMapper("upload", "insight"),
+			},
+			{
+				id: "notebook1",
+				path: "notebook1",
+				display: "Notebook 1",
+				group: groupAliasMapper("notebook", "insight"),
+			},
+			{
+				id: "cell1",
+				path: "cell1",
+				display: "Cell 1",
+				group: groupAliasMapper("cell", "insight"),
+			},
+		];
 
-        const getAssetsApp = useMemo(() =>
-            runPixel<any>(
-                `BrowseAppAssets(project=["${appId}"], filePath=["/"]);`
-            ),
-            [appId]
-        );
+		const getAssetsApp = useMemo(
+			() =>
+				runPixel(
+					`BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
+				),
+			[appId],
+		);
 
-        useEffect(() => {
-            // Fetch Engine Ids
-            const getengineId =
-            `MyEngines(engineTypes=[${allEngineTypes.map(type => `"${type}"`).join(",")}]);`;
+		useEffect(() => {
+			// Fetch Engine Ids
+			const getengineId = `MyEngines(engineTypes=[${allEngineTypes.map((type) => `"${type}"`).join(",")}]);`;
 
-            //Fetch Engine Details
-            const engineIdResponse = runPixel(getengineId);
+			//Fetch Engine Details
+			const engineIdResponse = runPixel(getengineId);
 
-            // Fetch App Assets
-            const fetchAssetsAndEngines = async () => {
-                try {
-                    const result = await getAssetsApp;
-                    const outputArray = result?.pixelReturn?.[0]?.output;
-                    const outputNames = Array.isArray(outputArray)
-                        ? outputArray
-                            .filter((item: any) => typeof item.name === "string" && item.name.toLowerCase().endsWith(".pdf"))
-                            .map((item: any) => ({
-                                name: item.name,
-                                path: item.path,
-                            }))
-                        : [];
-                    setAppOptions(outputNames);
-                } catch (error) {
-                    console.error("Error fetching assets:", error);
-                }
-        
-                // Fetch Engine IDs
-                try {
-                    const output = (await engineIdResponse).pixelReturn?.[0]?.output;
-                    const engineIds = Array.isArray(output)
-                        ? Array.from(
-                            new Map(
-                                output
-                                    .map((item: any) => [item.app_id, { app_id: item.app_id, app_type: item.app_type, app_name: item.app_name }])
-                            ).values()
-                        )
-                        : [];
-                    fetchEngineOptions(engineIds);
-                } catch (error) {
-                    console.error("Error fetching engines:", error);
-                }
-            };
-        
-            fetchAssetsAndEngines();
-        }, []);
+			// Fetch App Assets
+			const fetchAssetsAndEngines = async () => {
+				try {
+					const result = await getAssetsApp;
+					const outputArray = result?.pixelReturn?.[0]?.output;
+					const outputNames = Array.isArray(outputArray)
+						? outputArray
+								.filter(
+									(item) =>
+										typeof item.name === "string" &&
+										item.name
+											.toLowerCase()
+											.endsWith(".pdf"),
+								)
+								.map((item) => ({
+									name: item.name,
+									path: item.path,
+								}))
+						: [];
+					setAppOptions(outputNames);
+				} catch (error) {
+					console.error("Error fetching assets:", error);
+				}
 
-        const fetchEngineOptions = async (engineIdsList: engineIdType[]) => {
-            let pdfFiles: { file_name: string; app_type: string; file_type: string; file_path: string; engineId: string; app_name: string; }[] = [];
-            const getFiles = engineIdsList.map((id) => ({
-                promise: runPixel<any>(
-                    `BrowseEngineAssets(engine=["${id.app_id}"], filePath=["/"]);`
-                ),
-                app_type: id.app_type,
-                app_id: id.app_id,
-                app_name: id.app_name,
-            }));
+				// Fetch Engine IDs
+				try {
+					const output = (await engineIdResponse).pixelReturn?.[0]
+						?.output;
+					const engineIds = Array.isArray(output)
+						? Array.from(
+								new Map(
+									output.map((item) => [
+										item.app_id,
+										{
+											app_id: item.app_id,
+											app_type: item.app_type,
+											app_name: item.app_name,
+										},
+									]),
+								).values(),
+							)
+						: [];
+					fetchEngineOptions(engineIds);
+				} catch (error) {
+					console.error("Error fetching engines:", error);
+				}
+			};
 
-            for (const obj of getFiles) {
-                try {
-                    const resolvedResult = await obj.promise;
-                    const output = resolvedResult.pixelReturn?.[0]?.output || [];
-                    const files = output
-                        .map((item: any) => ({
-                            file_name: item.type === "pdf" ? item.name : "",
-                            file_path: item.type === "pdf" ? item.path : "",
-                            file_type: item.type === "pdf" ? item.type : "",
-                            app_type: obj.app_type || "",
-                            engineId: obj.app_id || "",
-                            app_name: obj.app_name || "",
-                        }))
-                    pdfFiles = [...pdfFiles, ...files];
-                } catch (e) {
-                    console.error("Error fetching engine assets:", e);
-                }
-            }
-            setEngineOptions([...pdfFiles]);
-        };
+			fetchAssetsAndEngines();
+		}, []);
 
-        const engineOptionList: Option[] = useMemo(() => {
-            // Build group info and files by type in one pass
-            const filesByType: Record<string, Option[]> = {};
-            const allEngineGroups = allEngineTypes.map(type => ({
-                type,
-                group: groupAliasMapper(type, "engine")
-            }));
+		const fetchEngineOptions = async (engineIdsList: engineIdType[]) => {
+			let pdfFiles: {
+				file_name: string;
+				app_type: string;
+				file_type: string;
+				file_path: string;
+				engineId: string;
+				app_name: string;
+			}[] = [];
+			const getFiles = engineIdsList.map((id) => ({
+				promise: runPixel<any>(
+					`BrowseEngineAssets(engine=["${id.app_id}"], filePath=["/"]);`,
+				),
+				app_type: id.app_type,
+				app_id: id.app_id,
+				app_name: id.app_name,
+			}));
 
-            allEngineTypes.forEach(type => {
-                filesByType[type] = [];
-            });
+			for (const obj of getFiles) {
+				try {
+					const resolvedResult = await obj.promise;
+					const output =
+						resolvedResult.pixelReturn?.[0]?.output || [];
+					const files = output.map((item: any) => ({
+						file_name: item.type === "pdf" ? item.name : "",
+						file_path: item.type === "pdf" ? item.path : "",
+						file_type: item.type === "pdf" ? item.type : "",
+						app_type: obj.app_type || "",
+						engineId: obj.app_id || "",
+						app_name: obj.app_name || "",
+					}));
+					pdfFiles = [...pdfFiles, ...files];
+				} catch (e) {
+					console.error("Error fetching engine assets:", e);
+				}
+			}
+			setEngineOptions([...pdfFiles]);
+		};
 
-            engineOptions.forEach((item, idx) => {
-                if (!filesByType[item.app_type]) filesByType[item.app_type] = [];
-                filesByType[item.app_type].push({
-                    id: `${item.app_type}-${item.file_name}-${idx}`,
-                    path: item.file_path,
-                    display: item.file_name,
-                    group: groupAliasMapper(item.app_type, "engine"),
-                    engineId: item.engineId,
-                    app_name: item.app_name,
-                });
-            });
+		const engineOptionList: Option[] = useMemo(() => {
+			// Build group info and files by type in one pass
+			const filesByType: Record<string, Option[]> = {};
+			const allEngineGroups = allEngineTypes.map((type) => ({
+				type,
+				group: groupAliasMapper(type, "engine"),
+			}));
 
-            return allEngineGroups.flatMap(({ type, group }) =>
-                filesByType[type].length > 0
-                    ? filesByType[type]
-                    : [{
-                        id: `${type}-empty`,
-                        path: "",
-                        display: "",
-                        group,
-                    }]
-            );
-        }, [engineOptions]);
+			allEngineTypes.forEach((type) => {
+				filesByType[type] = [];
+			});
 
-        const nestedEngineOptions = engineOptionList.reduce((acc, option) => {
-            if (!option.group || !option.app_name) return acc;
-            if (!acc[option.group]) acc[option.group] = {};
-            if (!acc[option.group][option.app_name]) acc[option.group][option.app_name] = [];
-            acc[option.group][option.app_name].push(option);
-            return acc;
-        }, {} as Record<string, Record<string, Option[]>>);
+			engineOptions.forEach((item, idx) => {
+				if (!filesByType[item.app_type])
+					filesByType[item.app_type] = [];
+				filesByType[item.app_type].push({
+					id: `${item.app_type}-${item.file_name}-${idx}`,
+					path: item.file_path,
+					display: item.file_name,
+					group: groupAliasMapper(item.app_type, "engine"),
+					engineId: item.engineId,
+					app_name: item.app_name,
+				});
+			});
 
-        const addFile = async (file: File) => {
-            try {
-                setIsLoading(true);
-                let uploadTemp = null;
+			return allEngineGroups.flatMap(({ type, group }) =>
+				filesByType[type].length > 0
+					? filesByType[type]
+					: [
+							{
+								id: `${type}-empty`,
+								path: "",
+								display: "",
+								group,
+							},
+						],
+			);
+		}, [engineOptions]);
 
-                uploadTemp = await upload(file, insightId, appId, "version/assets/");
+		const nestedEngineOptions = engineOptionList.reduce(
+			(acc, option) => {
+				if (!option.group || !option.app_name) return acc;
+				if (!acc[option.group]) acc[option.group] = {};
+				if (!acc[option.group][option.app_name])
+					acc[option.group][option.app_name] = [];
+				acc[option.group][option.app_name].push(option);
+				return acc;
+			},
+			{} as Record<string, Record<string, Option[]>>,
+		);
 
-                setData("selectedPdf", uploadTemp[0].fileLocation, true);
-                setData("engineId", "", true);
-                setSelectedPdfPath(uploadTemp[0].fileLocation || "");
+		const addFile = async (file: File) => {
+			try {
+				setIsLoading(true);
+				let uploadTemp = null;
 
-                notification.add({
-                    color: "success",
-                    message: `Upload successful! File saved in the ${uploadTemp[0].fileLocation}`,
-                });
-                if (!uploadTemp) {
-                    throw new Error("Error missing uploading app");
-                }
-            }
-            catch (e) {
-                notification.add({
-                    color: "error",
-                    message: "Error uploading PDF",
-                });
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+				uploadTemp = await upload(
+					file,
+					insightId,
+					appId,
+					"version/assets/",
+				);
 
-        return (
-            <Stack>
-                <Tabs
-                    value={selectedTab}
-                    onChange={(_, value: string) => {
-                        setSelectedTab(value);
-                    }}
-                    color="primary"
-                    sx={{
-                        "& .MuiTabs-flexContainer": {
-                            justifyContent: "space-between",
-                            width: "100%",
-                        },
-                    }}
-                >
-                    {tabs.map((key, idx: number) => (
-                        <Tabs.Item
-                            key={`${key}-${idx}`}
-                            label={
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "14px",
-                                    }}
-                                >
-                                    <span>
-                                        {key}
-                                    </span>
-                                    <Tooltip
-                                        title={
-                                            key === "Insight"
-                                                ? "Insight is in process"
-                                                : key === "Engine"
-                                                    ? "Pre-Stored files in engine storage"
-                                                    : key === "App"
-                                                        ? "Files stored in app asset"
-                                                        : `Info about ${key}`
-                                        }
+				setData("selectedPdf", uploadTemp[0].fileLocation, true);
+				setData("engineId", "", true);
+				setSelectedPdfPath(uploadTemp[0].fileLocation || "");
 
-                                        disableInteractive={false}
-                                    >
-                                        <InfoIcon
-                                            sx={{
-                                                cursor: "pointer",
-                                                pointerEvents: "auto",
-                                            }}
-                                        />
-                                    </Tooltip>
-                                </Box>
-                            }
-                            value={key}
-                            disabled={key === "Insight"}
-                        />
-                    ))}
-                </Tabs>
-                <StyledSubSection>
-                    <StyledSpanFrame>
-                        {selectedTab === "App" && uploadFiles ? (
-                            "File Selected"
-                        ) : (
-                            selectedTab
-                        )}
-                    </StyledSpanFrame>
-                    {selectedTab === "Insight" && (
-                        <InsightTab options={options} />
-                    )}
-                    {selectedTab === "Engine" && (
-                        <EngineTab
-                            engineOptionList={engineOptionList}
-                            nestedEngineOptions={nestedEngineOptions}
-                            selectedPdfPath={selectedPdfPath}
-                            engineAutocompleteOpen={engineAutocompleteOpen}
-                            setEngineAutocompleteOpen={setEngineAutocompleteOpen}
-                            setData={setData}
-                            setSelectedPdfPath={setSelectedPdfPath}
-                        />
-                    )}
-                    {selectedTab === "App" && (
-                        <AppTab
-                            appOptions={appOptions}
-                            selectedPdfPath={selectedPdfPath}
-                            setData={setData}
-                            setSelectedPdfPath={setSelectedPdfPath}
-                            uploadFiles={uploadFiles}
-                            setUploadFiles={setUploadFiles}
-                            isLoading={isLoading}
-                            addFile={addFile}
-                        />
-                    )}
-                </StyledSubSection>
-            </Stack>
-        );
-    },
+				notification.add({
+					color: "success",
+					message: `Upload successful! File saved in the ${uploadTemp[0].fileLocation}`,
+				});
+				if (!uploadTemp) {
+					throw new Error("Error missing uploading app");
+				}
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: "Error uploading PDF",
+				});
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+
+		return (
+			<Stack>
+				<Tabs
+					value={selectedTab}
+					onChange={(_, value: string) => {
+						setSelectedTab(value);
+					}}
+					color="primary"
+					sx={{
+						"& .MuiTabs-flexContainer": {
+							justifyContent: "space-between",
+							width: "100%",
+						},
+					}}
+				>
+					{tabs.map((key, idx: number) => (
+						<Tabs.Item
+							key={`${key}-${idx}`}
+							label={
+								<Box
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										gap: "14px",
+									}}
+								>
+									<span>{key}</span>
+									<Tooltip
+										title={
+											key === "Insight"
+												? "Insight is in process"
+												: key === "Engine"
+													? "Pre-Stored files in engine storage"
+													: key === "App"
+														? "Files stored in app asset"
+														: `Info about ${key}`
+										}
+										disableInteractive={false}
+									>
+										<InfoIcon
+											sx={{
+												cursor: "pointer",
+												pointerEvents: "auto",
+											}}
+										/>
+									</Tooltip>
+								</Box>
+							}
+							value={key}
+							disabled={key === "Insight"}
+						/>
+					))}
+				</Tabs>
+				<StyledSubSection>
+					<StyledSpanFrame>
+						{selectedTab === "App" && uploadFiles
+							? "File Selected"
+							: selectedTab}
+					</StyledSpanFrame>
+					{selectedTab === "Insight" && (
+						<InsightTab options={options} />
+					)}
+					{selectedTab === "Engine" && (
+						<EngineTab
+							engineOptionList={engineOptionList}
+							nestedEngineOptions={nestedEngineOptions}
+							selectedPdfPath={selectedPdfPath}
+							engineAutocompleteOpen={engineAutocompleteOpen}
+							setEngineAutocompleteOpen={
+								setEngineAutocompleteOpen
+							}
+							setData={setData}
+							setSelectedPdfPath={setSelectedPdfPath}
+						/>
+					)}
+					{selectedTab === "App" && (
+						<AppTab
+							appOptions={appOptions}
+							selectedPdfPath={selectedPdfPath}
+							setData={setData}
+							setSelectedPdfPath={setSelectedPdfPath}
+							uploadFiles={uploadFiles}
+							setUploadFiles={setUploadFiles}
+							isLoading={isLoading}
+							addFile={addFile}
+						/>
+					)}
+				</StyledSubSection>
+			</Stack>
+		);
+	},
 );
 
 const InsightTab: React.FC<{ options: Option[] }> = ({ options }) => (
-    <StyledAutocomplete
-        fullWidth
-        id="PDFViewer-Insight"
-        multiple={false}
-        options={options}
-        groupBy={(option) => (typeof option === "object" && "group" in option ? String(option.group) : "")}
-        getOptionLabel={(option) => typeof option === "object" && "display" in option ? String(option.display) : ""}
-        renderOption={(props, option) => (
-            <li {...props} key={typeof option === "object" && "id" in option ? String(option.id) : undefined}>
-                <Typography variant="body2">
-                    {typeof option === "object" && "display" in option ? String(option.display) : ""}
-                </Typography>
-            </li>
-        )}
-        groupRenderer={(params) => (
-            <li key={params.key}>
-                <StyledMenuSection>
-                    <StyledMenuSectionTitle expandIcon={<ExpandMore />}>
-                        <Typography variant="body2">{params.group}</Typography>
-                    </StyledMenuSectionTitle>
-                    <Accordion.Content>
-                        <List disablePadding>{params.children}</List>
-                    </Accordion.Content>
-                </StyledMenuSection>
-            </li>
-        )}
-        renderInput={(params) => (
-            <TextField {...params} placeholder="Select File" size="small" variant="outlined" />
-        )}
-    />
+	<StyledAutocomplete
+		fullWidth
+		id="PDFViewer-Insight"
+		multiple={false}
+		options={options}
+		groupBy={(option) =>
+			typeof option === "object" && "group" in option
+				? String(option.group)
+				: ""
+		}
+		getOptionLabel={(option) =>
+			typeof option === "object" && "display" in option
+				? String(option.display)
+				: ""
+		}
+		renderOption={(props, option) => (
+			<li
+				{...props}
+				key={
+					typeof option === "object" && "id" in option
+						? String(option.id)
+						: undefined
+				}
+			>
+				<Typography variant="body2">
+					{typeof option === "object" && "display" in option
+						? String(option.display)
+						: ""}
+				</Typography>
+			</li>
+		)}
+		renderGroup={(params) => (
+			<li key={params.key}>
+				<StyledMenuSection>
+					<StyledMenuSectionTitle expandIcon={<ExpandMore />}>
+						<Typography variant="body2">{params.group}</Typography>
+					</StyledMenuSectionTitle>
+					<Accordion.Content>
+						<List disablePadding>{params.children}</List>
+					</Accordion.Content>
+				</StyledMenuSection>
+			</li>
+		)}
+		renderInput={(params) => (
+			<TextField
+				{...params}
+				placeholder="Select File"
+				size="small"
+				variant="outlined"
+			/>
+		)}
+	/>
 );
 
 const EngineTab: React.FC<{
-    engineOptionList: Option[];
-    nestedEngineOptions: Record<string, Record<string, Option[]>>;
-    selectedPdfPath: string;
-    engineAutocompleteOpen: boolean;
-    setEngineAutocompleteOpen: (open: boolean) => void;
-    setData: any;
-    setSelectedPdfPath: (path: string) => void;
+	engineOptionList: Option[];
+	nestedEngineOptions: Record<string, Record<string, Option[]>>;
+	selectedPdfPath: string;
+	engineAutocompleteOpen: boolean;
+	setEngineAutocompleteOpen: (open: boolean) => void;
+	setData: any;
+	setSelectedPdfPath: (path: string) => void;
 }> = ({
-    engineOptionList,
-    nestedEngineOptions,
-    selectedPdfPath,
-    engineAutocompleteOpen,
-    setEngineAutocompleteOpen,
-    setData,
-    setSelectedPdfPath
+	engineOptionList,
+	nestedEngineOptions,
+	selectedPdfPath,
+	engineAutocompleteOpen,
+	setEngineAutocompleteOpen,
+	setData,
+	setSelectedPdfPath,
 }) => (
-    <StyledAutocomplete
-        fullWidth
-        id="PDFViewer-Engine"
-        multiple={false}
-        options={engineOptionList}
-        groupBy={(option) => typeof option === "object" && "group" in option ? String(option.group) : ""}
-        getOptionLabel={(option) => typeof option === "object" && "display" in option ? String(option.display) : ""}
-        value={engineOptionList.find(opt => opt.path === selectedPdfPath) || null}
-        open={engineAutocompleteOpen}
-        onOpen={() => setEngineAutocompleteOpen(true)}
-        onClose={() => setEngineAutocompleteOpen(false)}
-        renderOption={(props, option) => (
-            <li {...props} key={typeof option === "object" && "id" in option ? String(option.id) : undefined}>
-                <Typography variant="body2">{typeof option === "object" && "display" in option ? String(option.display) : String(option)}</Typography>
-            </li>
-        )}
-        groupRenderer={(params) => {
-            const appNames = Object.keys(nestedEngineOptions[params.group] || {});
-            return (
-                <li key={params.key}>
-                    <StyledMenuSection>
-                        <StyledMenuSectionTitle expandIcon={<ExpandMore />}>
-                            <Typography variant="body2" fontWeight="bold">{params.group}</Typography>
-                        </StyledMenuSectionTitle>
-                        <Accordion.Content>
-                            <List disablePadding>
-                                {appNames.map(appName => {
-                                    const optionsForApp = nestedEngineOptions[params.group][appName] || [];
-                                    const allEmpty = optionsForApp.every(option => !option.display || !option.display.trim());
-                                    return (
-                                        <StyledMenuSection key={appName}>
-                                            <StyledMenuSectionTitle expandIcon={<ExpandMore />}>
-                                                <Typography variant="body2" sx={{ pl: 2 }} fontWeight="bold">{appName}</Typography>
-                                            </StyledMenuSectionTitle>
-                                            <StyledEngineContent>
-                                                <List disablePadding>
-                                                    {allEmpty ? (
-                                                        <StyledTypographyEror variant="body2">
-                                                            No Files found
-                                                        </StyledTypographyEror>
-                                                    ) : (
-                                                        optionsForApp.map(option =>
-                                                            option.display && option.display.trim() ? (
-                                                                <li
-                                                                    key={option.id}
-                                                                    style={{ paddingLeft: "32px", cursor: "pointer" }}
-                                                                    onClick={() => {
-                                                                        setData("engineId", option.engineId, true);
-                                                                        setData("selectedPdf", option.path, true);
-                                                                        setSelectedPdfPath(option.path);
-                                                                        setEngineAutocompleteOpen(false);
-                                                                    }}
-                                                                >
-                                                                    <Typography variant="body2">
-                                                                        {option.display}
-                                                                    </Typography>
-                                                                </li>
-                                                            ) : null
-                                                        )
-                                                    )}
-                                                </List>
-                                            </StyledEngineContent>
-                                        </StyledMenuSection>
-                                    );
-                                })}
-                            </List>
-                        </Accordion.Content>
-                    </StyledMenuSection>
-                </li>
-            );
-        }}
-        renderInput={(params) => (
-            <TextField
-                {...params}
-                placeholder="Select File"
-                size="small"
-                variant="outlined"
-            />
-        )}
-    />
+	<StyledAutocomplete
+		fullWidth
+		id="PDFViewer-Engine"
+		multiple={false}
+		options={engineOptionList}
+		groupBy={(option) =>
+			typeof option === "object" && "group" in option
+				? String(option.group)
+				: ""
+		}
+		getOptionLabel={(option) =>
+			typeof option === "object" && "display" in option
+				? String(option.display)
+				: ""
+		}
+		value={
+			engineOptionList.find((opt) => opt.path === selectedPdfPath) || null
+		}
+		open={engineAutocompleteOpen}
+		onOpen={() => setEngineAutocompleteOpen(true)}
+		onClose={() => setEngineAutocompleteOpen(false)}
+		renderOption={(props, option) => (
+			<li
+				{...props}
+				key={
+					typeof option === "object" && "id" in option
+						? String(option.id)
+						: undefined
+				}
+			>
+				<Typography variant="body2">
+					{typeof option === "object" && "display" in option
+						? String(option.display)
+						: String(option)}
+				</Typography>
+			</li>
+		)}
+		renderGroup={(params) => {
+			const appNames = Object.keys(
+				nestedEngineOptions[params.group] || {},
+			);
+			return (
+				<li key={params.key}>
+					<StyledMenuSection>
+						<StyledMenuSectionTitle expandIcon={<ExpandMore />}>
+							<Typography variant="body2" fontWeight="bold">
+								{params.group}
+							</Typography>
+						</StyledMenuSectionTitle>
+						<Accordion.Content>
+							<List disablePadding>
+								{appNames.map((appName) => {
+									const optionsForApp =
+										nestedEngineOptions[params.group][
+											appName
+										] || [];
+									const allEmpty = optionsForApp.every(
+										(option) =>
+											!option.display ||
+											!option.display.trim(),
+									);
+									return (
+										<StyledMenuSection key={appName}>
+											<StyledMenuSectionTitle
+												expandIcon={<ExpandMore />}
+											>
+												<Typography
+													variant="body2"
+													sx={{ pl: 2 }}
+													fontWeight="bold"
+												>
+													{appName}
+												</Typography>
+											</StyledMenuSectionTitle>
+											<StyledEngineContent>
+												<List disablePadding>
+													{allEmpty ? (
+														<StyledTypographyEror variant="body2">
+															No Files found
+														</StyledTypographyEror>
+													) : (
+														optionsForApp.map(
+															(option) =>
+																option.display?.trim() ? (
+																	<li
+																		key={
+																			option.id
+																		}
+																		style={{
+																			paddingLeft:
+																				"32px",
+																			cursor: "pointer",
+																		}}
+																		onClick={() => {
+																			setData(
+																				"engineId",
+																				option.engineId,
+																				true,
+																			);
+																			setData(
+																				"selectedPdf",
+																				option.path,
+																				true,
+																			);
+																			setSelectedPdfPath(
+																				option.path,
+																			);
+																			setEngineAutocompleteOpen(
+																				false,
+																			);
+																		}}
+																	>
+																		<Typography variant="body2">
+																			{
+																				option.display
+																			}
+																		</Typography>
+																	</li>
+																) : null,
+														)
+													)}
+												</List>
+											</StyledEngineContent>
+										</StyledMenuSection>
+									);
+								})}
+							</List>
+						</Accordion.Content>
+					</StyledMenuSection>
+				</li>
+			);
+		}}
+		renderInput={(params) => (
+			<TextField
+				{...params}
+				placeholder="Select File"
+				size="small"
+				variant="outlined"
+			/>
+		)}
+	/>
 );
 
 const AppTab: React.FC<{
-    appOptions: any[];
-    selectedPdfPath: string;
-    setData: any;
-    setSelectedPdfPath: (path: string) => void;
-    uploadFiles: File | null;
-    setUploadFiles: (file: File | null) => void;
-    isLoading: boolean;
-    addFile: (file: File) => void;
+	appOptions: any[];
+	selectedPdfPath: string;
+	setData: any;
+	setSelectedPdfPath: (path: string) => void;
+	uploadFiles: File | null;
+	setUploadFiles: (file: File | null) => void;
+	isLoading: boolean;
+	addFile: (file: File) => void;
 }> = ({
-    appOptions,
-    selectedPdfPath,
-    setData,
-    setSelectedPdfPath,
-    uploadFiles,
-    setUploadFiles,
-    isLoading,
-    addFile
+	appOptions,
+	selectedPdfPath,
+	setData,
+	setSelectedPdfPath,
+	uploadFiles,
+	setUploadFiles,
+	isLoading,
+	addFile,
 }) => (
-    <Stack sx={{ paddingLeft: "9px", marginTop: "12px" }}>
-        {uploadFiles ? (
-            <Stack>
-                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", }}>
-                    <Typography variant="body1">
-                        {uploadFiles.name}
-                    </Typography>
-                    <StyledDeleteIcon
-                        onClick={() => {
-                            setUploadFiles(null);
-                        }}
-                    />
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", paddingTop: "8px",}}>
-                    <InfoIcon
-                        sx={{
-                            cursor: "pointer",
-                            color: lightTheme.palette.secondary.dark,
-                        }}
-                    />
-                    <StyledSpanFrame>
-                        Delete current file to upload a new one
-                    </StyledSpanFrame>
-                </Box>
-            </Stack>
-        ) : (
-            <Stack>
-                <Autocomplete
-                    fullWidth
-                    id="PDFViewer-App"
-                    multiple={false}
-                    value={appOptions.find(opt => opt.path === selectedPdfPath) || null}
-                    options={appOptions}
-                    getOptionLabel={(option) => {
-                        const typedOption = option as { name?: string };
-                        return typedOption.name || "";
-                    }}
-                    onChange={(_, value) => {
-                        setData("selectedPdf", value?.path || "", true);
-                        setData("engineId", "", true);
-                        setSelectedPdfPath(value?.path || "");
-                    }}
-                    freeSolo={false}
-                    renderInput={(params) => (
-                        <TextField {...params} placeholder="Select File" size="small" variant="outlined" />
-                    )}
-                />
-                <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", marginBottom: "8px"}}>
-                    <StyledSpanFrame>Or</StyledSpanFrame>
-                </Box>
-                <FileDropzone
-                    multiple={false}
-                    value={uploadFiles}
-                    disabled={isLoading}
-                    onChange={(newValue: File) => {
-                        setUploadFiles(newValue);
-                        addFile(newValue);
-                    }}
-                />
-            </Stack>
-        )}
-    </Stack>
+	<Stack sx={{ paddingLeft: "9px", marginTop: "12px" }}>
+		{uploadFiles ? (
+			<Stack>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
+					<Typography variant="body1">{uploadFiles.name}</Typography>
+					<StyledDeleteIcon
+						onClick={() => {
+							setUploadFiles(null);
+						}}
+					/>
+				</Box>
+				<Box
+					sx={{
+						display: "flex",
+						alignItems: "center",
+						paddingTop: "8px",
+					}}
+				>
+					<InfoIcon
+						sx={{
+							cursor: "pointer",
+							color: lightTheme.palette.secondary.dark,
+						}}
+					/>
+					<StyledSpanFrame>
+						Delete current file to upload a new one
+					</StyledSpanFrame>
+				</Box>
+			</Stack>
+		) : (
+			<Stack>
+				<Autocomplete
+					fullWidth
+					id="PDFViewer-App"
+					multiple={false}
+					value={
+						appOptions.find(
+							(opt) => opt.path === selectedPdfPath,
+						) || null
+					}
+					options={appOptions}
+					getOptionLabel={(option) => {
+						const typedOption = option as { name?: string };
+						return typedOption.name || "";
+					}}
+					onChange={(_, value) => {
+						setData("selectedPdf", value?.path || "", true);
+						setData("engineId", "", true);
+						setSelectedPdfPath(value?.path || "");
+					}}
+					freeSolo={false}
+					renderInput={(params) => (
+						<TextField
+							{...params}
+							placeholder="Select File"
+							size="small"
+							variant="outlined"
+						/>
+					)}
+				/>
+				<Box
+					sx={{
+						display: "flex",
+						justifyContent: "center",
+						alignItems: "center",
+						marginBottom: "8px",
+					}}
+				>
+					<StyledSpanFrame>Or</StyledSpanFrame>
+				</Box>
+				<FileDropzone
+					multiple={false}
+					value={uploadFiles}
+					disabled={isLoading}
+					onChange={(newValue: File) => {
+						setUploadFiles(newValue);
+						addFile(newValue);
+					}}
+				/>
+			</Stack>
+		)}
+	</Stack>
 );
