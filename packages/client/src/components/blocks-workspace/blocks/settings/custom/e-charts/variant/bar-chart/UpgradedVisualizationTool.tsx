@@ -362,7 +362,6 @@ const GanttToolsList = ({ id }) => {
 					</ListItemIcon>
 					<ListItemText
 						primary="Fiscal Axis"
-						style={{ flex: "0.5 1 auto" }}
 					/>
 					<InfoOutlined />
 				</ListItemButtonTwo>
@@ -391,7 +390,6 @@ const GanttToolsList = ({ id }) => {
 					</ListItemIcon>
 					<ListItemText
 						primary="Target Date"
-						style={{ flex: "0.5 1 auto" }}
 					/>
 					<InfoOutlined />
 				</ListItemButtonTwo>
@@ -422,7 +420,6 @@ const GanttToolsList = ({ id }) => {
 					</ListItemIcon>
 					<ListItemText
 						primary="Customize Symbol"
-						style={{ flex: "0.5 1 auto" }}
 					/>
 					<InfoOutlined />
 				</ListItemButtonTwo>
@@ -453,7 +450,6 @@ const GanttToolsList = ({ id }) => {
 					</ListItemIcon>
 					<ListItemText
 						primary="Legend"
-						style={{ flex: "0.5 1 auto" }}
 					/>
 					<InfoOutlined />
 				</ListItemButtonTwo>
@@ -484,7 +480,6 @@ const GanttToolsList = ({ id }) => {
 					</ListItemIcon>
 					<ListItemText
 						primary="Group View"
-						style={{ flex: "0.5 1 auto" }}
 					/>
 					<InfoOutlined />
 				</ListItemButtonTwo>
@@ -518,7 +513,6 @@ const GanttToolsList = ({ id }) => {
 					</ListItemIcon>
 					<ListItemText
 						primary="Display Value Labels"
-						style={{ flex: "0.5 1 auto" }}
 					/>
 					<InfoOutlined />
 				</ListItemButtonTwo>
