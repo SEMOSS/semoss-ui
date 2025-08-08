@@ -20,6 +20,8 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useRootStore, useStepper } from "@/hooks";
+import { PythonConfiguration } from '../engine/PythonConfiguration';
+import { PythonConfigValues } from '../engine/engine.types';
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -89,6 +91,16 @@ export const ImportForm = (props) => {
 		useState(false);
 
 	const watchedFieldRef = useRef({});
+
+	const [pythonValues, setPythonValues] = useState<PythonConfigValues>({
+        FUNCTION_TYPE: 'LOCAL_PYTHON',
+        NAME: '',
+        FUNCTION_PARAMETERS: '',
+        FUNCTION_REQUIRED_PARAMETERS: '',
+        FUNCTION_DESCRIPTION: '',
+        PYTHON_FILE_NAME: '',
+        CONTENT: '',
+    });
 
 	//** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
 	const {
@@ -538,13 +550,20 @@ export const ImportForm = (props) => {
 					connectionDetails[f.fieldName] = fieldValue;
 				}
 			});
+			
+			const isLocalPython = fields.some((f) => f.fieldName === 'PYTHON');
 
 			const formVals = {
 				// 'MODEL' | "VECTOR" | "FUNCTION" | "STORAGE" | "DATABASE"
 				type: steps[0].data,
 				// Name of engine
-				name: data.NAME,
-				fields: connectionDetails,
+				name: isLocalPython ? pythonValues.NAME : data.NAME,
+                fields: isLocalPython
+                    ? {
+                          ...connectionDetails,
+                          ...pythonValues,
+                      }
+                    : connectionDetails,
 				secondaryFields: secondaryFields,
 			};
 
@@ -931,6 +950,16 @@ export const ImportForm = (props) => {
 													/>
 												</StyledDropzoneField>
 											);
+										} else if (
+                                            val.options.component ===
+                                            'python-configuration'
+                                        ) {
+                                            return (
+                                                <PythonConfiguration
+                                                    value={pythonValues}
+                                                    onChange={setPythonValues}
+                                                ></PythonConfiguration>
+                                            );
 										}
 									}}
 								/>

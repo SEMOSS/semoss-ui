@@ -2579,9 +2579,10 @@ export class MonolithStore {
 		insightId: string | null,
 		projectId?: string | null,
 		path?: string | null,
+		engineId?: string | null,
 	) {
 		let param = "";
-		if (insightId || projectId || path) {
+		if (insightId || projectId || path || engineId) {
 			if (insightId) {
 				if (param.length > 0) {
 					param += "&";
@@ -2595,6 +2596,13 @@ export class MonolithStore {
 				}
 				param += `projectId=${projectId}`;
 			}
+
+			if (engineId) {
+                if (param.length > 0) {
+                    param += '&';
+                }
+                param += `engineId=${engineId}`;
+            }
 
 			if (path) {
 				if (param.length > 0) {
