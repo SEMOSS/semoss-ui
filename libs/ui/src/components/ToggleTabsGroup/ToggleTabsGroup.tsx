@@ -22,7 +22,6 @@ const StyledBox = styled(Box, {
 })<{
 	color: COLORS;
 }>(({ theme, color }) => {
-    // TODO: CAN WE GRAB FROM THEME
 	return {
 		backgroundColor:
 			theme.palette.mode === "dark"
