@@ -105,7 +105,7 @@ const SortableLeaf: React.FC<{
         opacity: isDragging ? 0.5 : 1,
     };
 
-    const WidgetIcon = BlockSettingsRegistry[block.widget]?.icon;
+    const WidgetIcon = BlockSettingsRegistry[block?.widget]?.icon;
 
     return (
         <StyledLabelTitle
@@ -127,7 +127,7 @@ const SortableLeaf: React.FC<{
                         fontWeight={400}
                         sx={{ fontSize: '14px' }}
                     >
-                        {block.widget}
+                        {block?.widget}
                     </Typography>
                     <Typography
                         variant="body1"
@@ -135,7 +135,7 @@ const SortableLeaf: React.FC<{
                         sx={{ fontSize: '14px' }}
                         color="text.secondary"
                     >
-                        {block.widget + '11'}
+                        {block?.widget + '11'}
                     </Typography>
                 </StyledChildContent>
             </StyledContent>
@@ -154,13 +154,13 @@ const RecursiveRenderer: React.FC<{
     hasParent?: boolean;
 }> = ({ block, path, onUpdate, hasParent = false }) => {
     const isParent =
-        block.slots &&
-        Object.values(block.slots).some((slot) => slot.children?.length);
+        block?.slots &&
+        Object.values(block?.slots).some((slot) => slot.children?.length);
 
     const [expanded, setExpanded] = useState(false); // collapsed by default
     const toggleExpand = () => setExpanded((prev) => !prev);
 
-    const WidgetIcon = BlockSettingsRegistry[block.widget]?.icon;
+    const WidgetIcon = BlockSettingsRegistry[block?.widget]?.icon;
 
     // handle reorder inside each slot
     const handleReorder = (
@@ -196,7 +196,7 @@ const RecursiveRenderer: React.FC<{
                             fontWeight={400}
                             sx={{ fontSize: '14px' }}
                         >
-                            {block.widget}
+                            {block?.widget}
                         </Typography>
                         <Typography
                             variant="body1"
@@ -204,7 +204,7 @@ const RecursiveRenderer: React.FC<{
                             sx={{ fontSize: '14px' }}
                             color="text.secondary"
                         >
-                            {block.widget + '11'}
+                            {block?.widget + '11'}
                         </Typography>
                     </StyledChildContent>
                 </StyledContent>
@@ -212,7 +212,7 @@ const RecursiveRenderer: React.FC<{
 
             {isParent && (
                 <Collapse in={expanded}>
-                    {Object.entries(block.slots || {}).map(
+                    {Object.entries(block?.slots || {}).map(
                         ([slotKey, slotValue]) => {
                             const children = slotValue.children ?? [];
                             const ids = children.map(
