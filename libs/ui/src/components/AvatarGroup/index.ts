@@ -1,4 +1,4 @@
-import { AvatarGroup, AvatarGroupProps } from "./AvatarGroup";
+import { AvatarGroup, type AvatarGroupProps } from "./AvatarGroup";
 
 export type { AvatarGroupProps };
 

@@ -12,12 +12,19 @@ import {
 	ToggleButtonGroup,
 	useNotification,
 } from "@semoss/ui";
+<<<<<<< HEAD
 import { cronValidator } from "./cronValidator";
+=======
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
 import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
 import { JobTypesBuilder } from "./JobTypesBuilder";
 import { JobTypeCustomJob, JobTypeSendEmail, timezones } from "./job.constants";
+<<<<<<< HEAD
 import { JobBuilder } from "./job.types";
+=======
+import type { JobBuilder } from "./job.types";
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 import { getEncodeByJobType } from "./job.utils";
 
 const emptyBuilder: JobBuilder = {
@@ -25,7 +32,11 @@ const emptyBuilder: JobBuilder = {
 	name: "",
 	pixel: "",
 	tags: [],
+<<<<<<< HEAD
 	cronExpression: "0 0 12 ? * ?",
+=======
+	cronExpression: "0 0 12 * * ?",
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 	cronTz: "US/Eastern",
 	smtpHost: "",
 	smtpPort: "",
@@ -65,6 +76,7 @@ export const JobBuilderModal = (props: {
 		return !!builder.id;
 	}, [builder.id]);
 
+<<<<<<< HEAD
 	// Set builder on open/edit, use initialBuilder.cronExpression as-is
 	useEffect(() => {
 		if (initialBuilder) {
@@ -81,6 +93,102 @@ export const JobBuilderModal = (props: {
 	}, [builder.cronExpression]);
 
 	const isCronExpressionValid: boolean = cronValidation.isValid;
+=======
+	useEffect(() => {
+		const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
+		setBuilder(builderToSet);
+		const cronValues = builderToSet.cronExpression.split(" ");
+		if (cronValues.length < 6) {
+			// invalid cron syntax, send to standard builder
+			setFrequencyType("standard");
+			return;
+		} else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
+			// non-integer time values, must be custom
+			setFrequencyType("custom");
+			return;
+		}
+
+		if (
+			cronValues[3] == "*" &&
+			cronValues[4] == "*" &&
+			cronValues[5] == "*"
+		) {
+			setFrequencyType("standard");
+			return;
+		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+			setFrequencyType("standard");
+			return;
+		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+			setFrequencyType("standard");
+			return;
+		} else if (cronValues[5] == "*") {
+			setFrequencyType("standard");
+			return;
+		} else {
+			setFrequencyType("custom");
+			return;
+		}
+	}, [initialBuilder ? initialBuilder.id : null]);
+
+	const isCronExpressionValid: boolean = useMemo(() => {
+		const cronValues = builder.cronExpression.split(" ");
+		if (cronValues.length < 6) {
+			// make sure it's valid cron syntax
+			return false;
+		}
+		if (
+			cronValues[1] !== "*" &&
+			!(
+				!Number.isNaN(cronValues[1]) &&
+				parseInt(cronValues[1]) <= 59 &&
+				parseInt(cronValues[1]) >= 0
+			)
+		) {
+			return false;
+		}
+		if (
+			cronValues[2] !== "*" &&
+			!(
+				!Number.isNaN(cronValues[2]) &&
+				parseInt(cronValues[2]) <= 23 &&
+				parseInt(cronValues[2]) >= 0
+			)
+		) {
+			return false;
+		}
+		if (
+			cronValues[3] !== "*" &&
+			!(
+				!Number.isNaN(cronValues[3]) &&
+				parseInt(cronValues[3]) <= 31 &&
+				parseInt(cronValues[3]) >= 0
+			)
+		) {
+			return false;
+		}
+		if (
+			cronValues[4] !== "*" &&
+			!(
+				!Number.isNaN(cronValues[4]) &&
+				parseInt(cronValues[4]) <= 12 &&
+				parseInt(cronValues[4]) >= 1
+			)
+		) {
+			return false;
+		}
+		if (
+			cronValues[5] !== "?" &&
+			!(
+				!Number.isNaN(cronValues[5]) &&
+				parseInt(cronValues[5]) <= 6 &&
+				parseInt(cronValues[5]) >= 0
+			)
+		) {
+			return false;
+		}
+		return true;
+	}, [builder.cronExpression]);
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 
 	const isBaseFormValid: boolean = useMemo(() => {
 		switch (builder.jobType) {
@@ -117,7 +225,11 @@ export const JobBuilderModal = (props: {
 	]);
 
 	const hasChanges: boolean = useMemo(() => {
+<<<<<<< HEAD
 		if (builder.id == null || !initialBuilder) {
+=======
+		if (builder.id == null) {
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 			return true;
 		}
 
@@ -156,6 +268,7 @@ export const JobBuilderModal = (props: {
 		builder.message,
 		builder.username,
 		builder.password,
+<<<<<<< HEAD
 		builder.cc,
 		builder.bcc,
 		builder.id,
@@ -163,6 +276,10 @@ export const JobBuilderModal = (props: {
 	]);
 
 	// Don't close modal before error notification
+=======
+	]);
+
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 	const addJob = async () => {
 		setIsLoading(true);
 		try {
@@ -185,6 +302,7 @@ export const JobBuilderModal = (props: {
 				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
+<<<<<<< HEAD
 				await notification.add({
 					color: "error",
 					message: response.errors[0], // fixed typo: should be response.errors[0]
@@ -199,12 +317,25 @@ export const JobBuilderModal = (props: {
 			});
 			setIsLoading(false);
 			return; // Don't close modal
+=======
+				notification.add({
+					color: "error",
+					message: response.errors.length[0],
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: "Unable to add job",
+			});
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 		}
 		getJobs();
 		closeModal();
 		setIsLoading(false);
 	};
 
+<<<<<<< HEAD
 	// Similar fix for updateJob
 	const updateJob = async () => {
 		setIsLoading(true);
@@ -235,6 +366,30 @@ export const JobBuilderModal = (props: {
 			setIsLoading(false);
 			return;
 		}
+=======
+	const updateJob = async () => {
+		setIsLoading(true);
+		const encode = getEncodeByJobType(builder);
+		await runPixel(
+			`META|EditScheduledJob(jobId="${builder.id}",jobName="${
+				builder.name
+			}",${
+				builder.tags.length
+					? `jobTags=${JSON.stringify(builder.tags)},`
+					: ""
+			}jobGroup=["defaultGroup"],cronExpression="${
+				builder.cronExpression
+			} *",cronTz="${
+				builder.cronTz
+			}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
+				builder.jobType
+			}", "jobName":"${builder.name}", "cronExpression":"${
+				builder.cronExpression
+			}", "cronTimeZone":"${
+				builder.cronTz
+			}"}',triggerOnLoad=[false],triggerNow=[false]);`,
+		);
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 		getJobs();
 		closeModal();
 		setIsLoading(false);
@@ -322,6 +477,7 @@ export const JobBuilderModal = (props: {
 							setBuilderField={setBuilderField}
 						/>
 					)}
+<<<<<<< HEAD
 					{!isCronExpressionValid &&
 						cronValidation.errors.length > 0 && (
 							<Stack spacing={0.5} paddingX={1}>
@@ -348,6 +504,8 @@ export const JobBuilderModal = (props: {
 								))}
 							</Stack>
 						)}
+=======
+>>>>>>> 434cedd22081a509339fb7bf7b75106533a8b053
 				</Stack>
 			</Modal.Content>
 			<Modal.Actions>

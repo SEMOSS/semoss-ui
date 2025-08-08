@@ -1,9 +1,11 @@
-import { download, runPixel } from "@semoss/sdk/react";
 import { makeAutoObservable, runInAction } from "mobx";
-
+import { download, runPixel, upload } from "@semoss/sdk/react";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { Knowledge, PixelMessage, Tool } from "@/types";
+import type { Knowledge, PixelMessage, Tool } from "@/types";
 import { ChatMessage } from "./chat.message";
+
+const ROOT_MESSAGE_ID = "ROOT";
+const TEMP_MESSAGE_ID = "TEMP";
 
 interface ChatRoomInterface {
 	/**
@@ -42,9 +44,9 @@ interface ChatRoomInterface {
 	modelId: string;
 
 	/**
-	 *  Log of messages
+	 * Root message
 	 */
-	history: ChatMessage[];
+	root: ChatMessage;
 
 	/*
 	 * Options that is passed to the model
@@ -127,7 +129,7 @@ export class ChatRoom {
 			dateCreated: "",
 		},
 		modelId: "",
-		history: [],
+		root: new ChatMessage(ROOT_MESSAGE_ID),
 		options: {
 			instructions: "",
 			knowledge: null,
@@ -191,10 +193,34 @@ export class ChatRoom {
 	}
 
 	/**
-	 * Get the history of the room
+	 * Get the history of the room based on the active children
 	 */
 	get history() {
-		return this._store.history;
+		let current = this._store.root;
+
+		const history: ChatMessage[] = [];
+		while (current) {
+			if (current.activeChild) {
+				// save it
+				history.push(current.activeChild);
+			}
+
+			// move forward
+			current = current.activeChild;
+		}
+
+		return history;
+	}
+
+	/**
+	 * Last active message
+	 */
+	get tail() {
+		if (this.history[this.history.length - 1]) {
+			return this.history[this.history.length - 1];
+		}
+
+		return this._store.root;
 	}
 
 	/**
@@ -256,7 +282,7 @@ export class ChatRoom {
 			// turn on the loading screen
 			this.setIsLoading(true);
 
-			// wait for the pixel to run
+			// get all of the messages in historical order (sorted)
 			const response = await this.runPixel<[PixelMessage[]]>(
 				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
 			);
@@ -268,48 +294,40 @@ export class ChatRoom {
 				throw new Error(output as unknown as string);
 			}
 
-			const history: ChatMessage[] = [];
+			const root = new ChatMessage(ROOT_MESSAGE_ID);
 			const messages: Record<string, ChatMessage> = {};
 
 			// store the last model
-			let activeModelId = "";
+			let activeModelId = this._store.modelId;
 			let activeOptions: Pick<
 				ChatRoomInterface["options"],
 				"tokenLength" | "temperature"
 			> = {
-				tokenLength: TOKEN_LENGTH,
-				temperature: TEMPERATURE,
+				...this._store.options,
 			};
 
 			for (const pixelMessage of output) {
-				let isNew = false;
-
-				// check if the message exists and create a new one if it doesn't
-				let message = messages[pixelMessage.messageId];
-				if (!message) {
-					message = new ChatMessage();
-
-					// mark as new
-					isNew = true;
-				}
-
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
 					activeOptions = {
+						...activeOptions,
 						temperature: pixelMessage.paramMap.temperature,
 						tokenLength: pixelMessage.paramMap.max_new_tokens,
 					};
 				}
 
-				// process it
-				this.processPixelMessage(message, pixelMessage);
+				// create a message
+				const message = this.createChatMessage(pixelMessage);
 
 				// store it
-				messages[message.messageId] = message;
+				messages[message.id] = message;
 
-				// only add if it is visible and new
-				if (pixelMessage.visible && isNew) {
-					history.push(message);
+				// link to parent
+				const parentMessage = messages[pixelMessage.parentMessageId];
+				if (parentMessage) {
+					parentMessage.addChild(message);
+				} else {
+					root.addChild(message);
 				}
 			}
 
@@ -318,8 +336,8 @@ export class ChatRoom {
 				this.setModel(activeModelId);
 				this.setOptions(activeOptions);
 
-				// update the history
-				this._store.history = history;
+				// store it
+				this._store.root = root;
 
 				// mark as initialized
 				this._store.isInitialized = true;
@@ -336,6 +354,7 @@ export class ChatRoom {
 	 */
 	askModel = async (
 		prompt: string,
+		files: File[],
 		options?: Partial<ChatRoomInterface["options"]>,
 	): Promise<void> => {
 		try {
@@ -348,23 +367,40 @@ export class ChatRoom {
 			}
 			// turn on the loading screen
 			this.setIsLoading(true);
+
 			// options to use with the ask
 			if (options) {
 				this.setOptions(options);
 			}
 
-			// create a new message
-			const inputMessage = new ChatMessage();
+			// get the parentMessageId (the current tail)
+			const parentMessageId = this.tail.id;
 
-			// temp message
-			inputMessage.saveId(`TEMP`);
-			inputMessage.updateType("USER");
-			inputMessage.updateContent({
-				type: "TEXT",
-				text: prompt,
+			// create the input message
+			const inputMessage = this.createChatMessage({
+				messageId: TEMP_MESSAGE_ID,
+				type: "INPUT_TEXT",
+				visible: true,
+				inputUIPrompt: prompt,
+				modelId: this._store.modelId,
+				paramMap: {
+					max_new_tokens: this._store.options.tokenLength,
+					temperature: this._store.options.temperature,
+				},
+				dateCreated: "",
+				ornaments: {
+					chunks: [],
+				},
 			});
-			// add it to the log
-			this._store.history.push(inputMessage);
+
+			// connect to the tail
+			this.tail.addChild(inputMessage);
+
+			// upload the files
+			let uploaded = [];
+			if (files.length > 0) {
+				uploaded = await this.upload(files, "");
+			}
 
 			// build the context if it is there
 			let context = "";
@@ -372,25 +408,12 @@ export class ChatRoom {
 				context = this._store.options?.instructions;
 			}
 
-			const _engines: string[] = this._store.options.tools.reduce(
-				(acc, val) => {
-					if (val.type === "FUNCTION" || val.type === "DATABASE") {
-						acc.push(val.id);
-					}
-					return acc;
-				},
+			// get a list of tool ids
+			const tools: string[] = this._store.options.tools.map(
+				(t) => t.id,
 				[],
 			);
-			// get a list of app ids
-			const _apps: string[] = this._store.options.tools.reduce(
-				(acc, val) => {
-					if (val.type === "APP") {
-						acc.push(val.id);
-					}
-					return acc;
-				},
-				[],
-			);
+
 			// wait for the pixel to run
 			const response = await this.runPixel<
 				[
@@ -405,8 +428,9 @@ engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
 command=["<encode>${prompt}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-image=[],
-url=[],
+${files.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
+${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
+${parentMessageId !== ROOT_MESSAGE_ID ? `parentMessageId=["${parentMessageId}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
@@ -419,17 +443,14 @@ paramValues=[${JSON.stringify({
 				throw new Error(output as unknown as string);
 			}
 
-			// update the input
-			this.processPixelMessage(inputMessage, output.inputMessage);
+			// update the input's id
+			inputMessage.updateId(output.inputMessage.messageId);
 
-			// create the response, process it, and add to the history
-			const responseMessage = new ChatMessage();
-			this.processPixelMessage(responseMessage, output.responseMessage);
-
-			runInAction(() => {
-				// update the history
-				this._store.history.push(responseMessage);
-			});
+			// create the response and link to the input
+			const responseMessage = this.createChatMessage(
+				output.responseMessage,
+			);
+			inputMessage.addChild(responseMessage);
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -437,51 +458,36 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Process a App response
+	 * Run a tool response
+	 * @param id - id of the tool
+	 * @param func - func of the tool to run
+	 * @param parameters - parameters to pass in
 	 */
-	processAppResponse = async () => {
-		//         // TODO: Or do we want to pass these outputs to the model for verification
-		//         // TODO: Do you want me to just fill in the tool params And call AddToolResponse?
-		//         messageResponse.content = JSON.stringify(appOutputs);
-		//     };
-		//     /**
-		//      * Process a tool response
-		//      * @param question - user message
-		//      */
-		//     processToolResponse = async (
-		//         messageResponse: MessageAppResponse | MessageFunctionResponse,
-		//         updatedParameters: MessageParameters,
-		//     ): Promise<void> => {
-		//         try {
-		//             // turn on the loading screen
-		//             this.setIsLoading(true);
-		//             // update the parameters
-		//             const parameters: Record<string, unknown> =
-		//                 updatedParameters.reduce((acc, val) => {
-		//                     acc[val.name] = val.value;
-		//                     return acc;
-		//                 }, {});
-		//             // wait for the pixel to run
-		//             const response = await this.runPixel<[{ response: string }]>(
-		//                 `AddToolResponse(
-		// engine=["${this._store.modelId}"],
-		// tool_name=["${messageResponse.tool_name}"],
-		// tool_id=["${messageResponse.id}"],
-		// tool_call_id=["${messageResponse.tool_id}"],
-		// tool_execution_response=["<encode>${JSON.stringify(parameters)}</encode>"]
-		// );`,
-		//             );
-		//             const { output, operationType } = response.pixelReturn[0];
-		//             // throw errors
-		//             if (operationType.indexOf('ERROR') > -1) {
-		//                 throw new Error(output as unknown as string);
-		//             }
-		//             // update the content>
-		//             messageResponse.content = output.response;
-		//         } finally {
-		//             // turn off the loading screen
-		//             this.setIsLoading(false);
-		//         }
+	runTool = async (
+		id: string,
+		func: string,
+		parameters: Record<string, unknown>,
+	): Promise<void> => {
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// wait for the pixel to run
+			const response = await this.runPixel<[{ response: string }]>(
+				`RunMCPTool(project = [ "${id}" ], function=[ "${func}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+			);
+
+			const { output, operationType } = response.pixelReturn[0];
+			// throw errors
+			if (operationType.indexOf("ERROR") > -1) {
+				throw new Error(output as unknown as string);
+			}
+
+			console.log(output);
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
 	};
 
 	/**
@@ -498,7 +504,7 @@ paramValues=[${JSON.stringify({
 		try {
 			// wait for the pixel to run
 			const response = await this.runPixel<[boolean]>(
-				`SubmitLlmFeedback(messageId = ["${message.messageId}"], feedbackText=["${comment}"], rating=[${rating}]);`,
+				`SubmitLlmFeedback(messageId = ["${message.id}"], feedbackText=["${comment}"], rating=[${rating}]);`,
 			);
 
 			// throw errors
@@ -527,7 +533,7 @@ paramValues=[${JSON.stringify({
 			this.setIsLoading(true);
 
 			// convert the content to html
-			const html = this._store.history
+			const html = this.history
 				.map((message) => {
 					if (message.content.type === "TEXT") {
 						return `<div>${message.content.text}</div>`;
@@ -583,17 +589,14 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Update a ChatMessage from a pixelMessage
-	 * @param message - ChatMessage that will be updated
+	 * Create a ChatMessage from a pixelMessage
 	 * @param pixelMessage - message from backend that needs to be converted
 	 */
-	private processPixelMessage = async (
-		message: ChatMessage,
-		pixelMessage: PixelMessage,
-	) => {
-		// update the id
-		message.saveId(pixelMessage.messageId);
+	private createChatMessage = (pixelMessage: PixelMessage): ChatMessage => {
+		// create a message
+		const message = new ChatMessage(pixelMessage.messageId);
 
+		// set data based on type
 		if (pixelMessage.type === "INPUT_TEXT") {
 			message.updateType("USER");
 			message.updateContent({
@@ -602,12 +605,12 @@ paramValues=[${JSON.stringify({
 			});
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
 			message.updateType("AGENT");
-			message.updateContent({
-				type: "APP",
-				name: pixelMessage.toolResponse.name,
-				id: pixelMessage.toolResponse.arguments.id,
-				map: pixelMessage.toolResponse.arguments.map,
-			});
+			// message.updateContent({
+			// 	type: "APP",
+			// 	name: pixelMessage.toolResponse.name,
+			// 	id: pixelMessage.toolResponse.arguments.id,
+			// 	map: pixelMessage.toolResponse.arguments.map,
+			// });
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			message.updateType("AGENT");
 			message.updateContent({
@@ -628,6 +631,8 @@ paramValues=[${JSON.stringify({
 		if (pixelMessage.ornaments && pixelMessage.ornaments.chunks) {
 			message.updateSources(pixelMessage.ornaments.chunks as string[]);
 		}
+
+		return message;
 	};
 
 	/**
@@ -657,6 +662,15 @@ paramValues=[${JSON.stringify({
 	private download = async (fileKey: string) => {
 		// get the response
 		await download(this._insightID, fileKey);
+	};
+
+	/**
+	 * Upload a file
+	 * @param fileKey - key
+	 */
+	private upload = async (files: File[], path: string = "") => {
+		// get the response
+		return await upload(files, this._insightID, "", path);
 	};
 
 	// /**

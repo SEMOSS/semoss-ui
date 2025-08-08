@@ -84,6 +84,7 @@ export type PixelMessage =
 interface AbstractPixelMessage {
 	type: string;
 	messageId: string;
+	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
 	ornaments: {
@@ -95,7 +96,7 @@ interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	visible: true;
 	inputUIPrompt: string;
-    modelId: string;
+	modelId: string;
 	paramMap: {
 		max_new_tokens: number;
 		temperature: number;
@@ -109,19 +110,13 @@ interface InputToolExecPixelMessage extends AbstractPixelMessage {
 		/** tool execution id */
 		id: string;
 
-		/**  TBD? **/
+		/**  Name of function **/
 		name: string;
 
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS THE FINAL STATE OF A TOOL (what was actually ran) */
-		arguments: {
-			/** App ID */
-			id: string;
-
-			/** Parameters for app */
-			map: Record<string, unknown>;
-		};
-	};
+		arguments: Record<string, unknown>;
+	}[];
 }
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
@@ -137,17 +132,11 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** tool execution id */
 		id: string;
 
-		/**  TBD? **/
+		/**  Name of function **/
 		name: string;
 
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
-		arguments: {
-			/** App ID */
-			id: string;
-
-			/** Parameters for app */
-			map: Record<string, unknown>;
-		};
+		arguments: Record<string, unknown>;
 	};
 }
