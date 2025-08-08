@@ -313,6 +313,17 @@ export class InsightStore {
     };
 
     /**
+     * Turn a list of error responses into a string
+     */
+    private errorsToString = (errors: unknown[]): string => {
+        return errors
+            .map((error) =>
+                typeof error === "string" ? error : JSON.stringify(error),
+            )
+            .join("");
+    };
+
+    /**
      * Setup the insight after login
      */
     private setupInsight = async (): Promise<void> => {
@@ -353,7 +364,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
         // log errors if it exists
         if (errors.length) {
-            throw new Error(errors[0]);
+            throw new Error(this.errorsToString(errors));
         }
 
         // set the insight ID
@@ -378,7 +389,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
         // log errors if it exists
         if (errors.length) {
-            throw new Error(errors[0]);
+            throw new Error(this.errorsToString(errors));
         }
 
         // set the insight ID
@@ -587,7 +598,7 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
                 const { errors, pixelReturn } = await runPixel<O>(pixel, id);
 
                 if (errors.length) {
-                    throw new Error(errors.join(""));
+                    throw new Error(this.errorsToString(errors));
                 }
 
                 return { pixelReturn };

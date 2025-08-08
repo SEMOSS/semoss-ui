@@ -138,12 +138,12 @@ export const runPixel = async <O extends unknown[] | []>(
     }>(`${Env.MODULE}/api/engine/runPixel`, body, {});
 
     // collect the errors
-    const errors: string[] = [];
+    const errors: unknown[] = [];
     for (const p of response.data.pixelReturn) {
         const { output, operationType } = p;
 
         if (operationType.indexOf("ERROR") > -1) {
-            errors.push(output as string);
+            errors.push(output);
         }
     }
 
