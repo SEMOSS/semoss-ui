@@ -1,25 +1,24 @@
-import { useEffect, useState } from 'react';
+import { Add, EditRounded, RemoveRedEyeRounded } from "@mui/icons-material";
+import { useEffect, useState } from "react";
 import {
-    styled,
-    useNotification,
-    Avatar,
-    Box,
-    Button,
-    Card,
-    Icon,
-    Modal,
-    RadioGroup,
-    Stack,
-    TextArea,
-} from '@semoss/ui';
-import { EditRounded, RemoveRedEyeRounded, Add } from '@mui/icons-material';
-
-import { Role } from '@/types';
-import { useRootStore, useEngine } from '@/hooks';
-import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
+	Avatar,
+	Box,
+	Button,
+	Card,
+	Icon,
+	Modal,
+	RadioGroup,
+	Stack,
+	styled,
+	TextArea,
+	useNotification,
+} from "@semoss/ui";
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { useEngine, useRootStore } from "@/hooks";
+import type { Role } from "@/types";
 
 const StyledCard = styled(Card)({
-    borderRadius: '12px',
+	borderRadius: "12px",
 });
 
 type EngineAccessButtonProps = {
@@ -29,60 +28,60 @@ type EngineAccessButtonProps = {
 export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
     const { type, active } = useEngine();
 
-    const { monolithStore } = useRootStore();
-    const notification = useNotification();
+	const { monolithStore } = useRootStore();
+	const notification = useNotification();
 
-    // track if open
-    const [open, setOpen] = useState(false);
-    const [requestedRole, setRequestedRole] = useState<Role>(active?.role);
+	// track if open
+	const [open, setOpen] = useState(false);
+	const [requestedRole, setRequestedRole] = useState<Role>(active.role);
 
-    const [comment, setComment] = useState<string>('');
+	const [comment, setComment] = useState<string>("");
 
-    // close when the id changes
-    useEffect(() => {
-        setOpen(false);
-    }, [active?.id]);
+	// close when the id changes
+	useEffect(() => {
+		setOpen(false);
+	}, [active.id]);
 
-    // update the requested whenever the role changes
-    useEffect(() => {
-        setRequestedRole(active?.role);
-    }, [active?.role]);
+	// update the requested whenever the role changes
+	useEffect(() => {
+		setRequestedRole(active.role);
+	}, [active.role]);
 
-    /**
-     * Request the new access
-     */
-    const requestAccess = async () => {
-        try {
-            const response = await monolithStore.runQuery(
-                `META | RequestEngine(engine=['${
-                    active?.id
-                }'], permission=['${requestedRole}']${
-                    comment && `, comment=['${comment}']`
-                })`,
-            );
+	/**
+	 * Request the new access
+	 */
+	const requestAccess = async () => {
+		try {
+			const response = await monolithStore.runQuery(
+				`META | RequestEngine(engine=['${
+					active.id
+				}'], permission=['${requestedRole}']${
+					comment && `, comment=['${comment}']`
+				})`,
+			);
 
-            const { operationType, output } = response.pixelReturn[0];
+			const { operationType, output } = response.pixelReturn[0];
 
-            if (operationType.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
+			if (operationType.indexOf("ERROR") > -1) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
 
-                return;
-            }
+				return;
+			}
 
-            notification.add({
-                color: 'success',
-                message: output,
-            });
+			notification.add({
+				color: "success",
+				message: output,
+			});
 
-            // close is
-            setOpen(false);
-        } catch (e) {
-            // noop
-        }
-    };
+			// close is
+			setOpen(false);
+		} catch (e) {
+			// noop
+		}
+	};
 
     // cannot request access if the owner
     if (active?.role === 'OWNER' && !fromApp) {

@@ -1,106 +1,104 @@
-import { useEffect, useState } from 'react';
+import type { AxiosResponse } from "axios";
+import { useEffect, useState } from "react";
 import {
-    styled,
-    Alert,
-    Button,
-    Paper,
-    Grid,
-    Modal,
-    Switch,
-    useNotification,
-    Typography,
-    Tooltip,
-    Stack,
-    Box,
-} from '@semoss/ui';
-
-import { AxiosResponse } from 'axios';
-
-import { ALL_TYPES } from '@/types';
-import { useRootStore, usePixel, useSettings } from '@/hooks';
-import { LoadingScreen } from '@/components/ui';
+	Alert,
+	Button,
+	Grid,
+	Modal,
+	Paper,
+	Stack,
+	Switch,
+	styled,
+	Tooltip,
+	Typography,
+	useNotification,
+	Box,
+} from "@semoss/ui";
+import { LoadingScreen } from "@/components/ui";
+import { usePixel, useRootStore, useSettings } from "@/hooks";
+import type { ALL_TYPES } from "@/types";
 import LockIcon from '@mui/icons-material/Lock';
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import StorageIcon from '@mui/icons-material/Storage';
 import databaseIcon from '@/assets/img/databaseIcon.png';
 
 const StyledAlert = styled(Alert, {
-    shouldForwardProp: (prop) => prop !== 'setBounds',
+	shouldForwardProp: (prop) => prop !== "setBounds",
 })<{ setBounds?: boolean }>(({ theme, setBounds }) => ({
-    width: '100%',
-    height: 'fit-content',
-    display: 'flex',
-    padding: '16px',
-    alignItems: 'flex-start',
-    gap: '16px',
-    flex: '1 0 0',
-    alignSelf: 'stretch',
-    borderRadius: '12px',
-    color: theme.palette.text.primary,
-    background: theme.palette.background.paper,
-    border: '1px solid #C4C4C4',
-    '.MuiAlert-action': {
-        paddingRight: '8px',
-    },
+	width: "100%",
+	height: "100%",
+	display: "flex",
+	padding: "16px",
+	alignItems: "flex-start",
+	gap: "16px",
+	flex: "1 0 0",
+	alignSelf: "stretch",
+	borderRadius: "12px",
+	color: theme.palette.text.primary,
+	background: theme.palette.background.paper,
+	border: `1px solid ${theme.palette.secondary.border}`,
+	".MuiAlert-action": {
+		paddingRight: "8px",
+	},
 
-    ...(setBounds && {
-        height: theme.spacing(13),
-        width: '600px',
-    }),
+	...(setBounds && {
+		height: theme.spacing(13),
+		width: "600px",
+	}),
 }));
 
 const StyledGrid = styled(Grid)(() => ({
-    flex: '1',
+	flex: "1",
 }));
 
 const StyledTypography = styled(Typography, {
-    shouldForwardProp: (prop) => prop !== 'isDisabled',
+	shouldForwardProp: (prop) => prop !== "isDisabled",
 })<{
-    // Track if discoverable will be disabled or not
-    isDisabled: boolean;
+	// Track if discoverable will be disabled or not
+	isDisabled: boolean;
 }>(({ isDisabled, theme }) => ({
-    color: isDisabled ? theme.palette.text.disabled : 'inherit',
+	color: isDisabled ? theme.palette.text.disabled : "inherit",
 }));
 
 interface SettingsTilesProps {
-    /**
-     * Type of setting
-     */
-    type: ALL_TYPES;
+	/**
+	 * Type of setting
+	 */
+	type: ALL_TYPES;
 
-    /**
-     * Id of the setting
-     */
-    id: string;
+	/**
+	 * Id of the setting
+	 */
+	id: string;
 
-    /**
-     * Name of the setting
-     */
-    name: string;
+	/**
+	 * Name of the setting
+	 */
+	name: string;
 
-    /**
-     * Callback that is fired on delete
-     * @returns
-     */
-    onDelete?: () => void;
+	/**
+	 * Callback that is fired on delete
+	 * @returns
+	 */
+	onDelete?: () => void;
 
-    /**
-     * Condensed View
-     */
-    condensed?: boolean;
+	/**
+	 * Condensed View
+	 */
+	condensed?: boolean;
 
-    /**
-     * diection: stack tiles vertically or horizontally
-     */
-    direction?: 'column' | 'row';
+	/**
+	 * diection: stack tiles vertically or horizontally
+	 */
+	direction?: "column" | "row";
 }
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
-    const { id, type, name, condensed, onDelete, direction = 'column' } = props;
+	const { id, type, name, condensed, onDelete, direction = "column" } = props;
 
-    const { monolithStore, configStore } = useRootStore();
-    const notification = useNotification();
-    const { adminMode } = useSettings();
+	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
+	const { adminMode } = useSettings();
 
     const [deleteModal, setDeleteModal] = useState(false);
     const [closeEngineModal, setCloseEngineModal] = useState(false);
@@ -108,274 +106,274 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
     const [global, setGlobal] = useState(true);
     const [loading, setLoading] = useState(false);
 
-    const engineInfo = usePixel(
-        type === 'DATABASE' ||
-            type === 'STORAGE' ||
-            type === 'MODEL' ||
-            type === 'VECTOR' ||
-            type === 'FUNCTION'
-            ? adminMode
-                ? `AdminEngineInfo(engine='${id}');`
-                : `EngineInfo(engine='${id}');`
-            : type === 'APP'
-            ? adminMode
-                ? `AdminProjectInfo(project='${id}')`
-                : `ProjectInfo(project='${id}')`
-            : '',
-    );
+	const engineInfo = usePixel(
+		type === "DATABASE" ||
+			type === "STORAGE" ||
+			type === "MODEL" ||
+			type === "VECTOR" ||
+			type === "FUNCTION"
+			? adminMode
+				? `AdminEngineInfo(engine='${id}');`
+				: `EngineInfo(engine='${id}');`
+			: type === "APP"
+				? adminMode
+					? `AdminProjectInfo(project='${id}')`
+					: `ProjectInfo(project='${id}')`
+				: "",
+	);
 
-    useEffect(() => {
-        // pixel call to get pending members
-        if (engineInfo.status !== 'SUCCESS' || !engineInfo.data) {
-            return;
-        }
+	useEffect(() => {
+		// pixel call to get pending members
+		if (engineInfo.status !== "SUCCESS" || !engineInfo.data) {
+			return;
+		}
 
-        if (
-            type === 'DATABASE' ||
-            type === 'STORAGE' ||
-            type === 'MODEL' ||
-            type === 'VECTOR' ||
-            type === 'FUNCTION'
-        ) {
-            const data = engineInfo.data as {
-                database_global: boolean;
-                database_discoverable: boolean;
-            };
+		if (
+			type === "DATABASE" ||
+			type === "STORAGE" ||
+			type === "MODEL" ||
+			type === "VECTOR" ||
+			type === "FUNCTION"
+		) {
+			const data = engineInfo.data as {
+				database_global: boolean;
+				database_discoverable: boolean;
+			};
 
-            setDiscoverable(data.database_discoverable);
-            setGlobal(data.database_global);
-        } else if (type === 'APP') {
-            const data = engineInfo.data as {
-                project_global: boolean;
-                project_discoverable: boolean;
-            };
+			setDiscoverable(data.database_discoverable);
+			setGlobal(data.database_global);
+		} else if (type === "APP") {
+			const data = engineInfo.data as {
+				project_global: boolean;
+				project_discoverable: boolean;
+			};
 
-            setDiscoverable(data.project_discoverable);
-            setGlobal(data.project_global);
-        }
-    }, [engineInfo.status, engineInfo.data]);
+			setDiscoverable(data.project_discoverable);
+			setGlobal(data.project_global);
+		}
+	}, [engineInfo.status, engineInfo.data]);
 
-    /**
-     * Delete the item
-     */
-    const deleteWorkflow = async () => {
-        try {
-            // start the loading screen
-            setLoading(true);
+	/**
+	 * Delete the item
+	 */
+	const deleteWorkflow = async () => {
+		try {
+			// start the loading screen
+			setLoading(true);
 
-            // run the pixel
-            const response = await monolithStore.runQuery(
-                type === 'DATABASE' ||
-                    type === 'STORAGE' ||
-                    type === 'MODEL' ||
-                    type === 'VECTOR' ||
-                    type === 'FUNCTION'
-                    ? `DeleteEngine(engine=['${id}']);`
-                    : type === 'APP'
-                    ? `DeleteProject(project=['${id}']);`
-                    : '',
-            );
+			// run the pixel
+			const response = await monolithStore.runQuery(
+				type === "DATABASE" ||
+					type === "STORAGE" ||
+					type === "MODEL" ||
+					type === "VECTOR" ||
+					type === "FUNCTION"
+					? `DeleteEngine(engine=['${id}']);`
+					: type === "APP"
+						? `DeleteProject(project=['${id}']);`
+						: "",
+			);
 
-            const operationType = response.pixelReturn[0].operationType;
-            const output = response.pixelReturn[0].output;
+			const operationType = response.pixelReturn[0].operationType;
+			const output = response.pixelReturn[0].output;
 
-            if (operationType.indexOf('ERROR') === -1) {
-                notification.add({
-                    color: 'success',
-                    message: `Successfully deleted ${name}`,
-                });
+			if (operationType.indexOf("ERROR") === -1) {
+				notification.add({
+					color: "success",
+					message: `Successfully deleted ${name}`,
+				});
 
-                // go back to page before
-                onDelete();
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        } finally {
-            // stop the loading screen
-            setLoading(false);
-        }
-    };
+				// go back to page before
+				onDelete();
+			} else {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
+		} finally {
+			// stop the loading screen
+			setLoading(false);
+		}
+	};
 
-    /**
-     * Close the engine for item
-     */
-    const closeEngine = async () => {
-        try {
-            // start the loading screen
-            setLoading(true);
+	/**
+	 * Close the engine for item
+	 */
+	const closeEngine = async () => {
+		try {
+			// start the loading screen
+			setLoading(true);
 
-            // run the pixel
-            const response = await monolithStore.runQuery(
-                type === 'DATABASE' ||
-                    type === 'STORAGE' ||
-                    type === 'MODEL' ||
-                    type === 'VECTOR' ||
-                    type === 'FUNCTION'
-                    ? `CloseEngine(engine=['${id}']);`
-                    : '',
-            );
+			// run the pixel
+			const response = await monolithStore.runQuery(
+				type === "DATABASE" ||
+					type === "STORAGE" ||
+					type === "MODEL" ||
+					type === "VECTOR" ||
+					type === "FUNCTION"
+					? `CloseEngine(engine=['${id}']);`
+					: "",
+			);
 
-            const operationType = response.pixelReturn[0].operationType;
-            const output = response.pixelReturn[0].output;
+			const operationType = response.pixelReturn[0].operationType;
+			const output = response.pixelReturn[0].output;
 
-            if (operationType.indexOf('ERROR') === -1) {
-                notification.add({
-                    color: 'success',
-                    message: `Successfully closed engine for ${name}`,
-                });
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        } finally {
-            // stop the loading screen
-            setLoading(false);
-            setCloseEngineModal(false);
-        }
-    };
+			if (operationType.indexOf("ERROR") === -1) {
+				notification.add({
+					color: "success",
+					message: `Successfully closed engine for ${name}`,
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
+		} finally {
+			// stop the loading screen
+			setLoading(false);
+			setCloseEngineModal(false);
+		}
+	};
 
-    /**
-     * @name changeDiscoverable
-     */
-    const changeDiscoverable = async () => {
-        try {
-            // start the loading screen
-            setLoading(true);
+	/**
+	 * @name changeDiscoverable
+	 */
+	const changeDiscoverable = async () => {
+		try {
+			// start the loading screen
+			setLoading(true);
 
-            let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'DATABASE' ||
-                type === 'STORAGE' ||
-                type === 'MODEL' ||
-                type === 'VECTOR' ||
-                type === 'FUNCTION'
-            ) {
-                response = await monolithStore.setEngineVisiblity(
-                    adminMode,
-                    id,
-                    !discoverable,
-                );
-            } else if (type === 'APP') {
-                response = await monolithStore.setProjectVisiblity(
-                    adminMode,
-                    id,
-                    !discoverable,
-                );
-            }
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await monolithStore.setEngineVisiblity(
+					adminMode,
+					id,
+					!discoverable,
+				);
+			} else if (type === "APP") {
+				response = await monolithStore.setProjectVisiblity(
+					adminMode,
+					id,
+					!discoverable,
+				);
+			}
 
-            // ignore if there is no response
-            if (!response) {
-                return;
-            }
+			// ignore if there is no response
+			if (!response) {
+				return;
+			}
 
-            if (response.data.success || response.data) {
-                setDiscoverable(!discoverable);
-                notification.add({
-                    color: 'success',
-                    message: `Successfully made ${name} ${
-                        discoverable ? 'undiscoverable' : 'discoverable'
-                    }`,
-                });
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: `Error making ${name} ${
-                        discoverable ? 'undiscoverable' : 'discoverable'
-                    }`,
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        } finally {
-            // stop the loading screen
-            setLoading(false);
-        }
-    };
+			if (response.data.success || response.data) {
+				setDiscoverable(!discoverable);
+				notification.add({
+					color: "success",
+					message: `Successfully made ${name} ${
+						discoverable ? "undiscoverable" : "discoverable"
+					}`,
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: `Error making ${name} ${
+						discoverable ? "undiscoverable" : "discoverable"
+					}`,
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
+		} finally {
+			// stop the loading screen
+			setLoading(false);
+		}
+	};
 
-    /**
-     * @name changeGlobal
-     */
-    const changeGlobal = async () => {
-        try {
-            // start the loading screen
-            setLoading(true);
+	/**
+	 * @name changeGlobal
+	 */
+	const changeGlobal = async () => {
+		try {
+			// start the loading screen
+			setLoading(true);
 
-            let response: AxiosResponse<{ success: boolean }> | null = null;
-            if (
-                type === 'DATABASE' ||
-                type === 'STORAGE' ||
-                type === 'MODEL' ||
-                type === 'VECTOR' ||
-                type === 'FUNCTION'
-            ) {
-                response = await monolithStore.setEngineGlobal(
-                    adminMode,
-                    id,
-                    !global,
-                );
-            } else if (type === 'APP') {
-                response = await monolithStore.setProjectGlobal(
-                    adminMode,
-                    id,
-                    !global,
-                );
-            }
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await monolithStore.setEngineGlobal(
+					adminMode,
+					id,
+					!global,
+				);
+			} else if (type === "APP") {
+				response = await monolithStore.setProjectGlobal(
+					adminMode,
+					id,
+					!global,
+				);
+			}
 
-            // ignore if there is no response
-            if (!response) {
-                return;
-            }
+			// ignore if there is no response
+			if (!response) {
+				return;
+			}
 
-            if (response.data.success) {
-                setGlobal(!global);
+			if (response.data.success) {
+				setGlobal(!global);
 
-                notification.add({
-                    color: 'success',
-                    message: `Successfully made ${name} ${
-                        global ? 'non-global' : 'global'
-                    }`,
-                });
-            } else {
-                notification.add({
-                    color: 'error',
-                    message: `Error making ${name} ${
-                        global ? 'non-global' : 'global'
-                    }`,
-                });
-            }
-        } catch (e) {
-            notification.add({
-                color: 'error',
-                message: String(e),
-            });
-        } finally {
-            // stop the loading screen
-            setLoading(false);
-        }
-    };
+				notification.add({
+					color: "success",
+					message: `Successfully made ${name} ${
+						global ? "non-global" : "global"
+					}`,
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: `Error making ${name} ${
+						global ? "non-global" : "global"
+					}`,
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
+		} finally {
+			// stop the loading screen
+			setLoading(false);
+		}
+	};
 
-    /** LOADING */
-    if (loading) {
-        return <LoadingScreen.Trigger description="Deleting..." />;
-    }
+	/** LOADING */
+	if (loading) {
+		return <LoadingScreen.Trigger description="Deleting..." />;
+	}
 
     if (condensed) {
         return (
@@ -984,7 +982,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         </Modal.Actions>
                     </Modal>
                 </Grid> */}
-            </StyledGrid>
-        );
-    }
+			</StyledGrid>
+		);
+	}
 };

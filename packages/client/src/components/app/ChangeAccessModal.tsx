@@ -1,63 +1,61 @@
+import { Edit, HdrAuto, Visibility } from "@mui/icons-material";
+import { type Control, Controller } from "react-hook-form";
 import {
-    styled,
-    Modal,
-    Button,
-    Typography,
-    TextField,
-    Stack,
-    RadioGroup,
-    useNotification,
+	Button,
+	Modal,
+	RadioGroup,
+	Stack,
+	styled,
+	TextField,
+	Typography,
+	useNotification,
     Tab,
     Tabs,
     Box,
     Chip,
     Link,
-} from '@semoss/ui';
-import { Control, Controller } from 'react-hook-form';
-import { HdrAuto, Visibility } from '@mui/icons-material';
-import { AppDetailsFormTypes } from './app-details.utility';
-
-import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
-import { useRootStore } from '@/hooks';
+} from "@semoss/ui";
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { useRootStore } from "@/hooks";
+import type { AppDetailsFormTypes } from "./app-details.utility";
 import { useMemo, useState } from 'react';
 import { modelledDependency } from '@/components/app';
 import PersonIcon from '@mui/icons-material/Person';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BlockIcon from '@mui/icons-material/Block';
-import { Edit } from '@mui/icons-material';
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
 
 const StyledContentBox = styled(Stack)(({ theme }) => ({
-    backgroundColor: theme.palette.background.default,
-    padding: theme.spacing(1),
-    borderRadius: '4px',
+	backgroundColor: theme.palette.background.default,
+	padding: theme.spacing(1),
+	borderRadius: "4px",
 }));
 
 const StyledContentCard = styled(Stack)(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-    padding: theme.spacing(2),
-    borderRadius: '4px',
+	backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(2),
+	borderRadius: "4px",
 }));
 
-const StyledRoleInfo = styled('div')({
-    width: '100%',
+const StyledRoleInfo = styled("div")({
+	width: "100%",
 });
 
 const StyledHdrAutoIcon = styled(HdrAuto)(({ theme }) => ({
-    color: theme.palette.text.secondary,
+	color: theme.palette.text.secondary,
 }));
 
 const StyledEditIcon = styled(Edit)(({ theme }) => ({
-    color: theme.palette.text.secondary,
+	color: theme.palette.text.secondary,
 }));
 
 const StyledVisibilityIcon = styled(Visibility)(({ theme }) => ({
-    color: theme.palette.text.secondary,
+	color: theme.palette.text.secondary,
 }));
 
 const ModalSectionHeading = styled(Typography)({
-    fontWeight: 500,
-    margin: '1rem 0 0.5rem 0',
+	fontWeight: 500,
+	margin: "1rem 0 0.5rem 0",
 });
 
 const TabPanel = (props: {
@@ -138,11 +136,11 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
         }
     };
 
-    const handleChangeAccess = async () => {
-        const current = getValues('permission');
-        const requested = getValues('requestedPermission');
-        const comment = getValues('roleChangeComment');
-        const id = getValues('appId');
+	const handleChangeAccess = async () => {
+		const current = getValues("permission");
+		const requested = getValues("requestedPermission");
+		const comment = getValues("roleChangeComment");
+		const id = getValues("appId");
 
         if (requested === current || requested === '') {
             notification.add({
@@ -159,20 +157,21 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
             // return;
         }
 
-        try {
-            const res = await monolithStore.runQuery(
-                `RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
-            );
+		try {
+			const res = await monolithStore.runQuery(
+				`RequestProject(project=['${id}'], permission=['${requested}'], comment=['${comment}'])`,
+			);
 
-            const { operationType, output } = res.pixelReturn[0];
+			const { operationType, output } = res.pixelReturn[0];
 
-            if (operationType.indexOf('ERROR') > -1) {
-                notification.add({
-                    color: 'error',
-                    message: output,
-                });
-                return;
-            }
+			if (operationType.indexOf("ERROR") > -1) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+
+				return;
+			}
 
             notification.add({
                 color: 'success',
