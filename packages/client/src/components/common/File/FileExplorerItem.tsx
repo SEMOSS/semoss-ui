@@ -69,10 +69,10 @@ interface FileExplorerItemProps {
     onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
 
     /** Triggered when the Track Icon is clicked */
-    onTrashClick?: (
-        event: React.MouseEvent<HTMLButtonElement>,
-        path: string,
-    ) => void;
+    onTrashClick?: (event: React.MouseEvent<HTMLButtonElement>, path: string) => void;
+    searchText?: string;
+    fromSearch?: boolean;
+    children?: React.ReactNode;
 }
 
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
@@ -87,6 +87,8 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
         onDragStart = () => null,
         onDragEnd = () => null,
         onTrashClick = () => null,
+        searchText = '',
+        fromSearch = false,
     } = props;
     const [isHovered, setIsHovered] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
@@ -101,11 +103,13 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
             type: 'directory' | 'file';
         }[]
     >(
-        isDirectory && isOpen
+        !fromSearch && isDirectory && isOpen
             ? type === 'app'
-                ? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
+                ? searchText.length > 0
+                    ? `SearchAppAssets ( project = "${space}" , filePath=["${path}"],search="${searchText}",options=[])`
+                    : `BrowseAsset(filePath=["${path}"], space=["${space}"])`
                 : ''
-            : '',
+            : ''
     );
 
     const nodeRef = useCallback((ele) => {
@@ -166,39 +170,33 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
                 </StyledLabel>
             }
         >
-            {isDirectory ? (
+            {isDirectory && !fromSearch ? (
                 <>
-                    {getAssets.status === 'INITIAL' ||
-                    getAssets.status === 'LOADING' ? (
+                    {getAssets.status === 'INITIAL' || getAssets.status === 'LOADING' ? (
                         <Icon color="disabled">
                             <CircularProgress color="inherit" size={'small'} />
                         </Icon>
                     ) : null}
                     {getAssets.status === 'SUCCESS'
-                        ? getAssets.data.map((n) => {
-                              return (
-                                  <FileExplorerItem
-                                      key={n.path}
-                                      type={type}
-                                      space={space}
-                                      isDirectory={n.type === 'directory'}
-                                      name={n.name}
-                                      path={n.path}
-                                      lastModified={n.lastModified}
-                                      expanded={expanded}
-                                      selected={selected}
-                                      onTrashClick={(e, path) => {
-                                          onTrashClick(e, path);
-                                      }}
-                                      onDragStart={(e, path) => {
-                                          onDragStart(e, path);
-                                      }}
-                                  />
-                              );
-                          })
+                        ? getAssets.data.map((n) => (
+                              <FileExplorerItem
+                                  key={n.path}
+                                  type={type}
+                                  space={space}
+                                  isDirectory={n.type === 'directory'}
+                                  name={n.name}
+                                  path={n.path}
+                                  lastModified={n.lastModified}
+                                  expanded={expanded}
+                                  selected={selected}
+                                  onTrashClick={onTrashClick}
+                                  onDragStart={onDragStart}
+                                  searchText={searchText}
+                              />
+                          ))
                         : null}
                 </>
-            ) : null}
+            ) : props.children}
         </StyledNode>
     );
 };

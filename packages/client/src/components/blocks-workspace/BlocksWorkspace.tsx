@@ -267,6 +267,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
         layout,
     ) => {
         const component = node.getComponent();
+        console.log('component', component);
         const config = node.getConfig();
         if (component === 'designer') {
             return <DesignerPanel id={config.id} />;

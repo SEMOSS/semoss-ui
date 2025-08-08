@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon, TreeView, styled } from '@semoss/ui';
 import { ExpandMore, ChevronRight } from '@mui/icons-material';
 
-import { usePixel } from '@/hooks';
+import { usePixel, useWorkspace } from '@/hooks';
 import { LoadingScreen } from '@/components/ui';
 
 import { FileExplorerItem } from './FileExplorerItem';
@@ -20,29 +20,14 @@ const StyledTreeView = styled(TreeView)(({ theme }) => ({
 interface FileExplorerProps {
     expandedPaths: string[];
     onToggleExpand: (path: string) => void;
-    /** Type of file opened */
     type: 'app' | 'insight';
-
-    /** Space where the file is located */
     space: string;
-
-    /** insight id */
     insightId?: string | null;
-
-    /** Trigger a callback when an file is selected */
     onSelect?: (path: string) => void;
-
-    /** Triggered when the Label starts dragging */
     onDragStart: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
-
-    /** Triggered when the item ends dragging */
     onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
-
-    /** Triggered when the Track Icon is clicked */
-    onTrashClick?: (
-        event: React.MouseEvent<HTMLButtonElement>,
-        path: string,
-    ) => void;
+    onTrashClick?: (event: React.MouseEvent<HTMLButtonElement>, path: string) => void;
+    searchText?: string;
 }
 
 export const FileExplorer = (props: FileExplorerProps) => {
@@ -56,7 +41,17 @@ export const FileExplorer = (props: FileExplorerProps) => {
         onTrashClick = () => null,
         expandedPaths,
         onToggleExpand,
+        searchText = '',
     } = props;
+
+    const { workspace } = useWorkspace();
+
+    const query =
+        searchText.length > 0 && type === 'app'
+            ? `SearchAppAssets ( project = "${workspace.appId}" , filePath=["version/assets/"],search="${searchText}",options=[])`
+            : type === 'app'
+            ? `BrowseAsset(filePath=["version/assets"], space=["${space}"])`
+            : '';
 
     const getAssets = usePixel<
         {
@@ -65,33 +60,108 @@ export const FileExplorer = (props: FileExplorerProps) => {
             path: string;
             type: 'directory' | 'file';
         }[]
-    >(
-        type === 'app'
-            ? `BrowseAsset(filePath=["version/assets"], space=["${space}"]);`
-            : '',
-        {},
-        insightId,
-    );
+    >(query, {}, insightId);
 
     const initLoadComplete = getAssets.status === 'SUCCESS';
     const [selected, setSelected] = React.useState<string[]>([]);
+    const [localExpanded, setLocalExpanded] = React.useState<string[]>([]);
 
-    /**
-     * Triggered when a node is selected
-     * @param selected - newly selected values
-     */
     const handleOnNodeSelect = (selected: string[]) => {
-        // trigger the callback on the first one
         onSelect(selected[0] || '');
-
-        // set the selected values
         setSelected(selected);
     };
 
-    /**
-     * Triggered when a item is toggled
-     * @param expanded - newly expanded values
-     */
+    const buildFileTree = (files: typeof getAssets.data) => {
+        const root: any = {};
+
+        for (const file of files) {
+            const parts = file.path.split('/').filter(Boolean);
+            let current = root;
+
+            for (let i = 2; i < parts.length; i++) {
+                const part = parts[i];
+                const fullPath = '/' + parts.slice(0, i + 1).join('/');
+
+                if (!current[fullPath]) {
+                    current[fullPath] = {
+                        name: part,
+                        path: fullPath,
+                        type: i === parts.length - 1 ? file.type : 'directory',
+                        lastModified: file.lastModified,
+                        children: {},
+                    };
+                }
+
+                current = current[fullPath].children;
+            }
+        }
+
+        return root;
+    };
+
+    const extractAllDirectoryPaths = (tree: any): string[] => {
+        const result: string[] = [];
+        const recurse = (node: any) => {
+            for (const entry of Object.values(node)) {
+                const e = entry as {
+                    path: string;
+                    type: string;
+                    children: Record<string, unknown>;
+                };
+
+                if (e.type === 'directory') {
+                    result.push(e.path);
+                    recurse(e.children);
+                }
+            }
+        };
+        recurse(tree);
+        return result;
+    };
+
+    const tree = React.useMemo(() => {
+        if (searchText.length > 0) {
+            return buildFileTree(getAssets.data || []);
+        }
+        return null;
+    }, [searchText, getAssets.data]);
+
+    React.useEffect(() => {
+        if (searchText.length > 0 && tree) {
+            const autoExpanded = extractAllDirectoryPaths(tree);
+            setLocalExpanded(autoExpanded);
+        }
+    }, [searchText, tree]);
+
+    // ✅ Function to handle click event for search results
+    const handleSearchItemClick = (path: string) => {
+        console.log("Search item clicked:", path);
+        onSelect(path); // optional: trigger the select callback
+    };
+
+    const renderTree = (node: any) => {
+        return Object.entries(node).map(([path, entry]: any) => (
+            <div key={path} onClick={() => handleSearchItemClick(entry.path)}>
+                <FileExplorerItem
+                    type={type}
+                    space={space}
+                    name={entry.name}
+                    path={entry.path}
+                    isDirectory={entry.type === 'directory'}
+                    lastModified={entry.lastModified}
+                    expanded={searchText.length > 0 ? localExpanded : expandedPaths}
+                    selected={selected}
+                    onDragStart={onDragStart}
+                    onDragEnd={onDragEnd}
+                    onTrashClick={onTrashClick}
+                    searchText={searchText}
+                    fromSearch={true}
+                >
+                    {renderTree(entry.children)}
+                </FileExplorerItem>
+            </div>
+        ));
+    };
 
     if (!initLoadComplete) {
         return (
@@ -102,19 +172,28 @@ export const FileExplorer = (props: FileExplorerProps) => {
     return (
         <StyledTreeView
             multiSelect
-            expanded={expandedPaths}
+            expanded={searchText.length > 0 ? localExpanded : expandedPaths}
             selected={selected}
             onNodeToggle={(e, nodeIds) => {
                 const lastToggled =
-                    nodeIds.find((id) => !expandedPaths.includes(id)) ||
-                    expandedPaths.find((id) => !nodeIds.includes(id));
+                    nodeIds.find((id) =>
+                        searchText.length > 0
+                            ? !localExpanded.includes(id)
+                            : !expandedPaths.includes(id)
+                    ) ||
+                    (searchText.length > 0
+                        ? localExpanded.find((id) => !nodeIds.includes(id))
+                        : expandedPaths.find((id) => !nodeIds.includes(id)));
+
                 if (lastToggled) {
-                    onToggleExpand(lastToggled);
+                    if (searchText.length > 0) {
+                        setLocalExpanded(nodeIds);
+                    } else {
+                        onToggleExpand(lastToggled);
+                    }
                 }
             }}
-            onNodeSelect={(e, v) => {
-                handleOnNodeSelect(v);
-            }}
+            onNodeSelect={(e, v) => handleOnNodeSelect(v)}
             defaultCollapseIcon={
                 <Icon color={'disabled'}>
                     <ExpandMore />
@@ -127,35 +206,31 @@ export const FileExplorer = (props: FileExplorerProps) => {
             }
         >
             <LoadingScreen>
-                {getAssets.status === 'INITIAL' ||
-                getAssets.status === 'LOADING' ? (
-                    <LoadingScreen.Trigger />
-                ) : getAssets.status === 'SUCCESS' ? (
-                    getAssets.data.map((n) => {
-                        return (
-                            <FileExplorerItem
-                                key={n.path}
-                                type={type}
-                                space={space}
-                                name={n.name}
-                                path={n.path}
-                                isDirectory={n.type === 'directory'}
-                                lastModified={n.lastModified}
-                                expanded={expandedPaths}
-                                selected={selected}
-                                onDragStart={(e, path) => {
+                {searchText.length > 0
+                    ? renderTree(tree)
+                    : getAssets.data.map((n) => (
+                          <FileExplorerItem
+                              key={n.path}
+                              type={type}
+                              space={space}
+                              name={n.name}
+                              path={n.path}
+                              isDirectory={n.type === 'directory'}
+                              lastModified={n.lastModified}
+                              expanded={expandedPaths}
+                              selected={selected}
+                              onDragStart={(e, path) => {
                                     onDragStart(e, path);
                                 }}
-                                onDragEnd={(e, path) => {
+                              onDragEnd={(e, path) => {
                                     onDragEnd(e, path);
                                 }}
-                                onTrashClick={(e, path) => {
+                              onTrashClick={(e, path) => {
                                     onTrashClick(e, path);
                                 }}
-                            />
-                        );
-                    })
-                ) : null}
+                              searchText={searchText}
+                          />
+                      ))}
             </LoadingScreen>
         </StyledTreeView>
     );

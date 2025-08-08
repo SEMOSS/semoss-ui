@@ -327,6 +327,7 @@ export const ImportForm = (props) => {
 
                 let output = result.pixelReturn[0].output,
                     operationType = result.pixelReturn[0].operationType;
+                    console.log(output,"ouput")
 
                 if (operationType.indexOf('ERROR') > -1) {
                     notification.add({
@@ -338,6 +339,7 @@ export const ImportForm = (props) => {
                 if (finalFieldState.pixel && !finalFieldState.options.pixel) {
                     // Populating default value for field
                     defaultVals[finalFieldState.fieldName] = output;
+                    console.log("defaultVals1",defaultVals)
                 } else if (
                     !finalFieldState.pixel &&
                     finalFieldState.options.pixel
@@ -358,6 +360,7 @@ export const ImportForm = (props) => {
                         ...f.options,
                         options: opts,
                     };
+                    console.log("defaultVals2",opts)
                 } else {
                     // Populating default value and options for field
                     defaultVals[finalFieldState.fieldName] = output;
@@ -377,6 +380,7 @@ export const ImportForm = (props) => {
                         ...f.options,
                         options: opts,
                     };
+                    console.log("defaultVals3",opts)
                 }
             }
 
@@ -840,7 +844,7 @@ export const ImportForm = (props) => {
                                                     required={
                                                         val.rules.required
                                                     }
-                                                    label={val.label}
+                                                    label={"testing"}
                                                     disabled={val.disabled}
                                                     value={
                                                         field.value
@@ -1137,7 +1141,7 @@ export const ImportForm = (props) => {
                                                                         .required
                                                                 }
                                                                 label={
-                                                                    val.label
+                                                                    "testing123"
                                                                 }
                                                                 disabled={
                                                                     val.disabled

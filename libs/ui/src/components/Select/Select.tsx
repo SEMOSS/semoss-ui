@@ -133,6 +133,7 @@ export interface SelectProps {
     IconComponent?: MuiSelectProps["IconComponent"];
 
     InputProps?: unknown;
+    MenuProps?: unknown;
 }
 
 export const Select: React.FC<SelectProps> = ({
