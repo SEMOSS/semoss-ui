@@ -184,15 +184,16 @@ const StyledTagChip = styled(Chip, {
 }));
 
 const StyledCardActions = styled(Card.Actions)({
-	display: "flex",
-	padding: "0px 8px 0px 11px",
-	alignItems: "center",
-	justifyContent: "space-between",
-	alignSelf: "stretch",
-	"&.MuiCardActions-root": {
-		padding: 0,
-		position: "relative",
-	},
+  display: "flex",
+  padding: "0px 8px 0px 11px",
+  alignItems: "center",
+  justifyContent: "space-between",
+  alignSelf: "stretch",
+  "&.MuiCardActions-root": {
+    padding: 0,
+    position: "relative",
+    gap: 0,
+  },
 });
 
 const StyledIconButton = styled(IconButton)(({ theme }) => ({
@@ -279,7 +280,6 @@ const StyledContent = styled("div")(({ theme }) => ({
 const StyledFooter = styled("div")(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
-	gap: theme.spacing(1),
 }));
 
 const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
@@ -288,7 +288,7 @@ const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
 		alignItems: "center",
 		height: "30px",
 		width: "123px",
-		gap: theme.spacing(1),
+		//gap: theme.spacing(1),
 		justifyContent: "center",
 		flex: "1 0 0",
 		borderRadius: "12px",
@@ -404,7 +404,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 			return;
 		}
 
-		navigate(`/app/${appId}/edit`);
+		navigate(`/app/${appId}`);
 	};
 	const copyProjectId = (projectId: string) => {
 		try {
@@ -767,200 +767,180 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	}
 
 	return (
-		<StyledMainDiv ref={cardRef}>
-			<StyledTileCard disabled={!href} style={{ position: "relative" }}>
-				{!systemApp && !isDiscoverable && (
-					<StyledContainer>
-						<StyledOverlayContent>
-							<StyledIconButton
-								size={"small"}
-								title={
-									isFavorite
-										? `Unbookmark ${app.project_name ? app.project_name : ""}`
-										: `Bookmark ${app.project_name ? app.project_name : ""}`
-								}
-								onClick={(e) => {
-									e.stopPropagation();
-									favorite(isFavorite);
-								}}
-							>
-								{isFavorite ? (
-									<Bookmark color="primary" />
-								) : (
-									<BookmarkBorder />
-								)}
-							</StyledIconButton>
-						</StyledOverlayContent>
-					</StyledContainer>
-				)}
-				<Link
-					href={href}
-					rel="noopener noreferrer"
-					color="inherit"
-					underline="none"
-				>
-					{loading && isLoading ? (
-						// Show skeleton for image when loading
-						<StyledSkeletonImage>
-							<Skeleton
-								variant="rectangular"
-								width="100%"
-								height="77px"
-								sx={{
-									backgroundImage: `url(${ImageSkeleton})`,
-									backgroundRepeat: "no-repeat",
-									backgroundPosition: "center",
-									backgroundSize: "contain",
-									position: "relative",
-									top: "5px",
-									"&.MuiSkeleton-root": {
-										backgroundColor: "#E9EAEC",
-									},
-								}}
-							/>
-						</StyledSkeletonImage>
-					) : (
-						<StyledTileCardMedia
-							src="img"
-							image={
-								base64Image ? base64Image : image ? image : ""
-							}
-							sx={{ position: "relative" }}
-							onError={(e) => {
-								// Fallback to default image if base64 image fails to load
-								const target = e.target as HTMLImageElement;
-								if (base64Image && image) {
-									target.src = image;
-								}
-							}}
-						/>
-					)}
-					<StyledCardContentSection>&nbsp;</StyledCardContentSection>
-					<StyledContent>
-						<StyledCardHeader
-							title={
-								<StyledName variant={"body2"}>
-									{removeUnderscores(app.project_name)}
-								</StyledName>
-							}
-						/>
-						<StyledCardContent>
-							<StyledCardDescription variant={"caption"}>
-								{app.description
-									? app.description
-									: "No description available"}
-							</StyledCardDescription>
-							<Stack
-								direction="row"
-								alignItems="center"
-								spacing={0.5}
-								height={"24px"}
-							>
-								{app.tag !== undefined &&
-									(Array.isArray(app.tag) &&
-									app.tag.length > 0 ? (
-										<>
-											{app.tag.map((tag, i) => {
-												if (i <= 2) {
-													return (
-														<StyledTagChip
-															key={`${app.project_id}${i}`}
-															maxWidth={
-																app.tag
-																	.length ===
-																2
-																	? "100px"
-																	: app.tag
-																				.length ===
-																			1
-																		? "200px"
-																		: "75px"
-															}
-															label={tag}
-														/>
-													);
-												}
-											})}
-											{app.tag.length > 3 ? (
-												<Typography variant="caption">
-													+{app.tag.length - 3}
-												</Typography>
-											) : (
-												<></>
-											)}
-										</>
-									) : (
-										<></>
-									))}
-							</Stack>
-							{createdDate && (
-								<StyledPublishedByContainer>
-									<StyledAccessTimeIcon />
-									<StyledPublishedByLabel variant={"body2"}>
-										{createdDate}
-									</StyledPublishedByLabel>
-								</StyledPublishedByContainer>
-							)}
-							{lastEditedDate && (
-								<StyledPublishedByContainer>
-									<StyledAccessTimeIcon />
-									<StyledPublishedByLabel variant={"body2"}>
-										{lastEditedDate}
-									</StyledPublishedByLabel>
-								</StyledPublishedByContainer>
-							)}
-							{systemApp && !appDetails && <StyledPlaceholder />}
-						</StyledCardContent>
-						<StyledCardActions>
-							{!href ? (
-								<StyledFooter>
-									<StyledOpenButton
-										onClick={onAction}
-										size="small"
-									>
-										<StyledFooterDiv showBorder={true}>
-											<ButtonName>Open App</ButtonName>
-											<OpenInNewOutlined
-												fontSize="small"
-												sx={{
-													background: "#ffffff",
-													color: "#0471F0",
-												}}
-											/>
-										</StyledFooterDiv>
-									</StyledOpenButton>
-								</StyledFooter>
-							) : (
-								<StyledFooter>
-									<StyledOpenButton
-										onClick={(e) => {
-											e.preventDefault(); // Prevent <Link> navigation
-											e.stopPropagation(); // Prevent bubbling to <Link>
+    <StyledMainDiv ref={cardRef}>
+      <StyledTileCard disabled={!href} style={{ position: "relative" }}>
+        {!systemApp && !isDiscoverable && (
+          <StyledContainer>
+            <StyledOverlayContent>
+              <StyledIconButton
+                size={"small"}
+                title={
+                  isFavorite
+                    ? `Unbookmark ${app.project_name ? app.project_name : ""}`
+                    : `Bookmark ${app.project_name ? app.project_name : ""}`
+                }
+                onClick={(e) => {
+                  e.stopPropagation();
+                  favorite(isFavorite);
+                }}
+              >
+                {isFavorite ? <Bookmark color="primary" /> : <BookmarkBorder />}
+              </StyledIconButton>
+            </StyledOverlayContent>
+          </StyledContainer>
+        )}
+        <Link
+          href={href}
+          rel="noopener noreferrer"
+          color="inherit"
+          underline="none"
+        >
+          {loading && isLoading ? (
+            // Show skeleton for image when loading
+            <StyledSkeletonImage>
+              <Skeleton
+                variant="rectangular"
+                width="100%"
+                height="77px"
+                sx={{
+                  backgroundImage: `url(${ImageSkeleton})`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                  backgroundSize: "contain",
+                  position: "relative",
+                  top: "5px",
+                  "&.MuiSkeleton-root": {
+                    backgroundColor: "#E9EAEC",
+                  },
+                }}
+              />
+            </StyledSkeletonImage>
+          ) : (
+            <StyledTileCardMedia
+              src="img"
+              image={base64Image ? base64Image : image ? image : ""}
+              sx={{ position: "relative" }}
+              onError={(e) => {
+                // Fallback to default image if base64 image fails to load
+                const target = e.target as HTMLImageElement;
+                if (base64Image && image) {
+                  target.src = image;
+                }
+              }}
+            />
+          )}
+          <StyledCardContentSection>&nbsp;</StyledCardContentSection>
+          <StyledContent>
+            <StyledCardHeader
+              title={
+                <StyledName variant={"body2"}>
+                  {removeUnderscores(app.project_name)}
+                </StyledName>
+              }
+            />
+            <StyledCardContent>
+              <StyledCardDescription variant={"caption"}>
+                {app.description ? app.description : "No description available"}
+              </StyledCardDescription>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={0.5}
+                height={"24px"}
+              >
+                {app.tag !== undefined &&
+                  (Array.isArray(app.tag) && app.tag.length > 0 ? (
+                    <>
+                      {app.tag.map((tag, i) => {
+                        if (i <= 2) {
+                          return (
+                            <StyledTagChip
+                              key={`${app.project_id}${i}`}
+                              maxWidth={
+                                app.tag.length === 2
+                                  ? "100px"
+                                  : app.tag.length === 1
+                                  ? "200px"
+                                  : "75px"
+                              }
+                              label={tag}
+                            />
+                          );
+                        }
+                      })}
+                      {app.tag.length > 3 ? (
+                        <Typography variant="caption">
+                          +{app.tag.length - 3}
+                        </Typography>
+                      ) : (
+                        <></>
+                      )}
+                    </>
+                  ) : (
+                    <></>
+                  ))}
+              </Stack>
+              {createdDate && (
+                <StyledPublishedByContainer>
+                  <StyledAccessTimeIcon />
+                  <StyledPublishedByLabel variant={"body2"}>
+                    {createdDate}
+                  </StyledPublishedByLabel>
+                </StyledPublishedByContainer>
+              )}
+              {lastEditedDate && (
+                <StyledPublishedByContainer>
+                  <StyledAccessTimeIcon />
+                  <StyledPublishedByLabel variant={"body2"}>
+                    {lastEditedDate}
+                  </StyledPublishedByLabel>
+                </StyledPublishedByContainer>
+              )}
+              {systemApp && !appDetails && <StyledPlaceholder />}
+            </StyledCardContent>
+            <StyledCardActions>
+              {!href ? (
+                <StyledFooter>
+                  <StyledOpenButton onClick={onAction} size="small">
+                    <StyledFooterDiv showBorder={true}>
+                      <ButtonName>Open App</ButtonName>
+                      <OpenInNewOutlined
+                        fontSize="small"
+                        sx={{
+                          background: "#ffffff",
+                          color: "#0471F0",
+                        }}
+                      />
+                    </StyledFooterDiv>
+                  </StyledOpenButton>
+                </StyledFooter>
+              ) : (
+                <StyledFooter>
+                  <StyledOpenButton
+                    onClick={(e) => {
+                      e.preventDefault(); // Prevent <Link> navigation
+                      e.stopPropagation(); // Prevent bubbling to <Link>
 
-											if (href) {
-												window.open(
-													href,
-													"_blank",
-													"noopener,noreferrer",
-												);
-											}
-										}}
-										size="small"
-									>
-										<StyledFooterDiv showBorder={true}>
-											<ButtonName>Open App</ButtonName>
-											<OpenInNewOutlined
-												fontSize="small"
-												sx={{
-													background: "#ffffff",
-													color: "#0471F0",
-												}}
-											/>
-										</StyledFooterDiv>
-									</StyledOpenButton>
-								</StyledFooter>
-							)}
-							{/* {app.project_created_by !== "SYSTEM" ? (
+                      if (href) {
+                        window.open(href, "_blank", "noopener,noreferrer");
+                      }
+                    }}
+                    size="small"
+                  >
+                    <StyledFooterDiv showBorder={true}>
+                      <ButtonName>Open App</ButtonName>
+                      <OpenInNewOutlined
+                        fontSize="small"
+                        sx={{
+                          background: "#ffffff",
+                          color: "#0471F0",
+                        }}
+                      />
+                    </StyledFooterDiv>
+                  </StyledOpenButton>
+                </StyledFooter>
+              )}
+              {app.project_created_by !== "SYSTEM" ? (
                 <StyledOpenButton
                   onClick={(e) => {
                     e.preventDefault();
@@ -974,109 +954,109 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 </StyledOpenButton>
               ) : (
                 <></>
-              )} */}
-							{app.project_created_by !== "SYSTEM" ? (
-								<IconButton
-									onClick={(e) => {
-										e.preventDefault();
-										setAnchorEl(
-											e.currentTarget.closest(
-												".MuiCard-root",
-											) as HTMLElement | null,
-										); // Set the card as the anchor element
-									}}
-									size="small"
-								>
-									<MoreVert />
-								</IconButton>
-							) : (
-								<></>
-							)}
-						</StyledCardActions>
-					</StyledContent>
-				</Link>
-				<Menu
-					anchorEl={anchorEl}
-					open={open}
-					onClose={() => {
-						setAnchorEl(null);
-					}}
-					anchorOrigin={{
-						vertical: "bottom", // Anchor to the bottom of the card
-						horizontal: "right", // Anchor to the right of the card
-					}}
-					transformOrigin={{
-						vertical: "top", // Transform from the top of the menu
-						horizontal: "right", // Transform from the right of the menu
-					}}
-					sx={{
-						".MuiPopover-paper": {
-							display: "flex",
-							alignItems: "center",
-							borderRadius: "4px",
-							background: "#FFF",
-							boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-						},
-					}}
-				>
-					<Menu.Item
-						value="copy"
-						onClick={() => {
-							copyProjectId(app.project_id);
-							setAnchorEl(null);
-						}}
-					>
-						Copy App ID
-					</Menu.Item>
-					{app?.user_permission && app.user_permission < 2 && (
-						<Menu.Item
-							value="clone"
-							onClick={() => {
-								setIsUploadOpen(true);
-							}}
-						>
-							Clone This App
-						</Menu.Item>
-					)}
-					{app?.user_permission && app.user_permission < 2 && (
-						<Menu.Item
-							value="delete"
-							onClick={() => {
-								setIsAppDeleteModalOpen(true);
-							}}
-						>
-							Delete App
-						</Menu.Item>
-					)}
-				</Menu>
-				<AppDeleteModal
-					isOpen={isAppDeleteModalOpen}
-					onClose={() => {
-						setIsAppDeleteModalOpen(false);
-						setAnchorEl(null);
-					}}
-					appId={app.project_id}
-					onDelete={() => {
-						onDelete();
-					}}
-				/>
-				{isUploadOpen ? (
-					<AddAppCloneModal
-						open={isUploadOpen}
-						appId={app.project_id}
-						handleClose={(appId) => {
-							console.log("ok");
-							// if there is an appId navigate to it
-							if (appId) {
-								navigateApp(appId);
-							}
+              )}
+              {app.project_created_by !== "SYSTEM" ? (
+                <IconButton
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setAnchorEl(
+                      e.currentTarget.closest(
+                        ".MuiCard-root"
+                      ) as HTMLElement | null
+                    ); // Set the card as the anchor element
+                  }}
+                  size="small"
+                >
+                  <MoreVert />
+                </IconButton>
+              ) : (
+                <></>
+              )}
+            </StyledCardActions>
+          </StyledContent>
+        </Link>
+        <Menu
+          anchorEl={anchorEl}
+          open={open}
+          onClose={() => {
+            setAnchorEl(null);
+          }}
+          anchorOrigin={{
+            vertical: "bottom", // Anchor to the bottom of the card
+            horizontal: "right", // Anchor to the right of the card
+          }}
+          transformOrigin={{
+            vertical: "top", // Transform from the top of the menu
+            horizontal: "right", // Transform from the right of the menu
+          }}
+          sx={{
+            ".MuiPopover-paper": {
+              display: "flex",
+              alignItems: "center",
+              borderRadius: "4px",
+              background: "#FFF",
+              boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
+            },
+          }}
+        >
+          <Menu.Item
+            value="copy"
+            onClick={() => {
+              copyProjectId(app.project_id);
+              setAnchorEl(null);
+            }}
+          >
+            Copy App ID
+          </Menu.Item>
+          {app?.user_permission && app.user_permission < 2 && (
+            <Menu.Item
+              value="clone"
+              onClick={() => {
+                setIsUploadOpen(true);
+              }}
+            >
+              Clone This App
+            </Menu.Item>
+          )}
+          {app?.user_permission && app.user_permission < 2 && (
+            <Menu.Item
+              value="delete"
+              onClick={() => {
+                setIsAppDeleteModalOpen(true);
+              }}
+            >
+              Delete App
+            </Menu.Item>
+          )}
+        </Menu>
+        <AppDeleteModal
+          isOpen={isAppDeleteModalOpen}
+          onClose={() => {
+            setIsAppDeleteModalOpen(false);
+            setAnchorEl(null);
+          }}
+          appId={app.project_id}
+          onDelete={() => {
+            onDelete();
+          }}
+        />
+        {isUploadOpen ? (
+          <AddAppCloneModal
+            open={isUploadOpen}
+            appId={app.project_id}
+            handleClose={(appId) => {
+              console.log("ok");
+              // if there is an appId navigate to it
+              if (appId) {
+                navigateApp(appId);
+              }
 
-							// close it
-							setIsUploadOpen(false);
-						}}
-					/>
-				) : null}
-			</StyledTileCard>
-		</StyledMainDiv>
-	);
+              // close it
+              setIsUploadOpen(false);
+            }}
+          />
+        ) : null}
+      </StyledTileCard>
+    </StyledMainDiv>
+  );
 };

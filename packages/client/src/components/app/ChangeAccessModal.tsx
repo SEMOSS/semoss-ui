@@ -536,7 +536,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                 sx={{ borderRadius: 10, px: 2, py: 0.5 }}
                                 size="small"
                                 onClick={handleRequestAllAccess}
-                                disabled={isAllRequested || isRequestAllLoading}
+                                disabled={isAllRequested || isRequestAllLoading ||  dependencies.some(dep => dep.access_permission) }
                             >
                                 {isRequestAllLoading
                                     ? 'Requesting...'

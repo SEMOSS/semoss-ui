@@ -36,7 +36,7 @@ const StyledAlert = styled(Alert, {
 	borderRadius: "12px",
 	color: theme.palette.text.primary,
 	background: theme.palette.background.paper,
-	border: `1px solid ${theme.palette.secondary.border}`,
+	border: `1px solid #C4C4C4`,
 	".MuiAlert-action": {
 		paddingRight: "8px",
 	},
@@ -49,6 +49,12 @@ const StyledAlert = styled(Alert, {
 
 const StyledGrid = styled(Grid)(() => ({
 	flex: "1",
+}));
+
+const StyledBlock = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "flex-start",
+  gap: "8px",
 }));
 
 const StyledTypography = styled(Typography, {
@@ -404,13 +410,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         }
                     >
                         <Alert.Title>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1,
-                                }}
-                            >
+                            <StyledBlock>
                                 {/* Single Lock Icon on the left */}
                                 <LockIcon
                                     sx={{
@@ -433,7 +433,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                         group can access
                                     </Typography>
                                 </Box>
-                            </Box>
+                            </StyledBlock>
                         </Alert.Title>
                     </StyledAlert>
                     {global ? (
@@ -467,13 +467,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                             >
                                 <Alert.Title>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            gap: 1,
-                                        }}
-                                    >
+                                    <StyledBlock>
                                         {/* Single Lock Icon on the left */}
                                         <VisibilityOffIcon
                                             sx={{
@@ -496,7 +490,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                                 this database if private
                                             </Typography>
                                         </Box>
-                                    </Box>
+                                    </StyledBlock>
                                 </Alert.Title>
                             </StyledAlert>
                         </Tooltip>
@@ -527,13 +521,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             }
                         >
                             <Alert.Title>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: 1,
-                                    }}
-                                >
+                                <StyledBlock>
                                     {/* Single Lock Icon on the left */}
                                     <VisibilityOffIcon
                                         sx={{
@@ -556,7 +544,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                             database if private
                                         </Typography>
                                     </Box>
-                                </Box>
+                                </StyledBlock>
                             </Alert.Title>
                         </StyledAlert>
                     )}
@@ -581,13 +569,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         }
                     >
                         <Alert.Title>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1,
-                                }}
-                            >
+                            <StyledBlock>
                                 {/* Single Lock Icon on the left */}
                                 <img
                                     src={databaseIcon}
@@ -612,7 +594,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                         database if private
                                     </Typography>
                                 </Box>
-                            </Box>
+                            </StyledBlock>
                         </Alert.Title>
                     </StyledAlert>
                     <Modal open={deleteModal}>
@@ -704,13 +686,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         }
                     >
                         <Alert.Title>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'flex-start',
-                                    gap: 1,
-                                }}
-                            >
+                            <StyledBlock>
                                 {/* Single Lock Icon on the left */}
                                 <LockIcon
                                     sx={{
@@ -733,7 +709,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                         group can access
                                     </Typography>
                                 </Box>
-                            </Box>
+                            </StyledBlock>
                         </Alert.Title>
                     </StyledAlert>
                 </Grid>
@@ -768,13 +744,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 }
                             >
                                 <Alert.Title>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            gap: 1,
-                                        }}
-                                    >
+                                    <StyledBlock>
                                         {/* Single Lock Icon on the left */}
                                         <VisibilityOffIcon
                                             sx={{
@@ -797,7 +767,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                                 this database if private
                                             </Typography>
                                         </Box>
-                                    </Box>
+                                    </StyledBlock>
                                 </Alert.Title>
                             </StyledAlert>
                         </Grid>
@@ -829,13 +799,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             }
                         >
                             <Alert.Title>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: 1,
-                                    }}
-                                >
+                                <StyledBlock>
                                     {/* Single Lock Icon on the left */}
                                     <VisibilityOffIcon
                                         sx={{
@@ -858,7 +822,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                             database if private
                                         </Typography>
                                     </Box>
-                                </Box>
+                                </StyledBlock>
                             </Alert.Title>
                         </StyledAlert>
                     </Grid>
@@ -885,13 +849,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             }
                         >
                             <Alert.Title>
-                                <Box
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: 1,
-                                    }}
-                                >
+                                <StyledBlock>
                                     {/* Single Lock Icon on the left */}
                                     <img
                                         src={databaseIcon}
@@ -916,7 +874,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                             database if private
                                         </Typography>
                                     </Box>
-                                </Box>
+                                </StyledBlock>
                             </Alert.Title>
                         </StyledAlert>
                         <Modal open={deleteModal}>

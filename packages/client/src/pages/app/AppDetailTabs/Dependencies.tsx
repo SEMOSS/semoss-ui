@@ -18,10 +18,8 @@ import { modelledDependency } from '@/components/app';
 import PersonIcon from '@mui/icons-material/Person';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BlockIcon from '@mui/icons-material/Block';
-import { Edit, EditRounded, RemoveRedEyeRounded } from '@mui/icons-material';
+import { Edit } from '@mui/icons-material';
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
-import { useRootStore } from '@/hooks';
-import { PERMISSION_DESCRIPTION_MAP } from '@/constants';
 import { EngineAccessButton } from '@/components/engine';
 import { EngineContext } from '@/contexts/EngineContext';
 import { ENGINE_TYPES, Role } from '@/types';
@@ -55,6 +53,48 @@ const PERMISSION_ICONS = {
     ),
 };
 
+const StyledContainer = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  padding: "10px",
+  border: "1px solid #ddd",
+  borderRadius: "12px",
+  bgcolor: "background.paper",
+  width: "100%",
+}));
+
+const StyledOutline = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+  gap: "8px",
+  marginBottom: "16px",
+}));
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+   color: 'primary.main',
+   fontSize: 16,
+}));
+
+const StyledIcons = styled(Box)(({ theme }) => ({
+  display: "flex",
+  alignItems: "center",
+}));
+
+const StyledStatus = styled(Typography)(({ theme }) => ({
+  fontSize: 12,
+  marginLeft: "0.5px",
+  color: "text.secondary",
+}));
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+  marginLeft: "8px",
+  justifyContent: "space-between",
+  width: "100%",
+}));
+
+
+
 export const Dependencies = ({
     dependencies,
 }: {
@@ -71,28 +111,11 @@ export const Dependencies = ({
                 const permissionKey = dep.userPermission || 'NONE';
 
                 return (
-                    <Box
+                    <StyledContainer
                         key={idx}
-                        sx={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'flex-start',
-                            p: 2,
-                            border: '1px solid #ddd',
-                            borderRadius: 2,
-                            bgcolor: 'background.paper',
-                            width: '100%',
-                        }}
                     >
                         <Box sx={{ flex: 1 }}>
-                            <Box
-                                sx={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                    mb: 1,
-                                }}
-                            >
+                            <StyledOutline>
                                 <img
                                     src={OPEN_AI}
                                     alt={dep.name}
@@ -100,12 +123,8 @@ export const Dependencies = ({
                                     height={48}
                                 />
                                 <Box>
-                                    <Typography
+                                    <StyledTypography
                                         variant="subtitle1"
-                                        sx={{
-                                            color: 'primary.main',
-                                            fontSize: 16,
-                                        }}
                                     >
                                         <Link
                                             href={`./#/engine/${dep.type}/${dep.id}`}
@@ -117,36 +136,21 @@ export const Dependencies = ({
                                                 {dep.name}
                                             </Typography>
                                         </Link>
-                                    </Typography>
-                                    <Box
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                        }}
-                                    >
+                                    </StyledTypography>
+                                    <StyledIcons>
                                         {PERMISSION_ICONS[permissionKey]}
-                                        <Typography
+                                        <StyledStatus
                                             variant="subtitle1"
-                                            sx={{
-                                                fontSize: 12,
-                                                ml: '0.5px',
-                                                color: 'text.secondary',
-                                            }}
                                         >
                                             {toCapitalized(
                                                 dep.userPermission || 'NONE',
                                             )}
-                                        </Typography>
-                                    </Box>
+                                        </StyledStatus>
+                                    </StyledIcons>
                                 </Box>
-                                <Stack
+                                <StyledStack
                                     direction="row"
                                     spacing={1}
-                                    sx={{
-                                        ml: 'auto',
-                                        justifyContent: 'space-between',
-                                        width: '100%',
-                                    }}
                                 >
                                     <Stack direction="row" spacing={1}>
                                         {dep.isPublic && (
@@ -183,8 +187,8 @@ export const Dependencies = ({
                                     >
                                         <EngineAccessButton fromApp={true} />
                                     </EngineContext.Provider>
-                                </Stack>
-                            </Box>
+                                </StyledStack>
+                            </StyledOutline>
 
                             <Typography
                                 variant="body2"
@@ -196,7 +200,7 @@ export const Dependencies = ({
                                     : 'No Description Available'}
                             </Typography>
                         </Box>
-                    </Box>
+                    </StyledContainer>
                 );
             })}
         </Stack>
