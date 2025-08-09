@@ -1,71 +1,87 @@
-import { Menu as MuiMenu, SxProps, PopoverProps } from "@mui/material";
+import {
+	Menu as MuiMenu,
+	type MenuProps as MuiMenuProps,
+	type PopoverProps,
+} from "@mui/material";
 
 export interface MenuProps {
-    /**
-     * An HTML element, or a function that returns one.
-     * It's used to set the position of the menu.
-     */
-    anchorEl?: PopoverProps["anchorEl"];
+	/**
+	 * Id of the menu
+	 */
 
-    /**
-     * If `true` (Default) will focus the `[role="menu"]` if no focusable child is found. Disabled
-     * children are not focusable. If you set this prop to `false` focus will be placed
-     * on the parent modal container. This has severe accessibility implications
-     * and should only be considered if you manage focus otherwise.
-     * @default true
-     */
-    autoFocus?: boolean;
+	id?: string;
 
-    /**
-     * Menu contents, normally `MenuItem`s.
-     */
-    children?: React.ReactNode;
+	/**
+	 * An HTML element, or a function that returns one.
+	 * It's used to set the position of the menu.
+	 */
+	anchorEl?: PopoverProps["anchorEl"];
 
-    /**
-     * When opening the menu will not focus the active item but the `[role="menu"]`
-     * unless `autoFocus` is also set to `false`. Not using the default means not
-     * following WAI-ARIA authoring practices. Please be considerate about possible
-     * accessibility implications.
-     * @default false
-     */
-    disableAutoFocusItem?: boolean;
+	/**
+	 * If `true` (Default) will focus the `[role="menu"]` if no focusable child is found. Disabled
+	 * children are not focusable. If you set this prop to `false` focus will be placed
+	 * on the parent modal container. This has severe accessibility implications
+	 * and should only be considered if you manage focus otherwise.
+	 * @default true
+	 */
+	autoFocus?: boolean;
 
-    /**
-     * Callback fired when the component requests to be closed.
-     *
-     * @param {object} event The event source of the callback.
-     * @param {string} reason Can be: `"escapeKeyDown"`, `"backdropClick"`, `"tabKeyDown"`.
-     */
-    onClose?: PopoverProps["onClose"];
+	/**
+	 * Menu contents, normally `MenuItem`s.
+	 */
+	children?: React.ReactNode;
 
-    /**
-     * If `true`, the component is shown.
-     */
-    open: boolean;
+	/**
+	 * When opening the menu will not focus the active item but the `[role="menu"]`
+	 * unless `autoFocus` is also set to `false`. Not using the default means not
+	 * following WAI-ARIA authoring practices. Please be considerate about possible
+	 * accessibility implications.
+	 * @default false
+	 */
+	disableAutoFocusItem?: boolean;
 
-    /**
-     * The system prop that allows defining system overrides as well as additional CSS styles.
-     */
-    sx?: SxProps;
+	/**
+	 * Callback fired when the component requests to be closed.
+	 *
+	 * @param {object} event The event source of the callback.
+	 * @param {string} reason Can be: `"escapeKeyDown"`, `"backdropClick"`, `"tabKeyDown"`.
+	 */
+	onClose?: PopoverProps["onClose"];
 
-    /**
-     * The variant to use. Use `menu` to prevent selected items from impacting the initial focus.
-     * @default 'selectedMenu'
-     */
-    variant?: "menu" | "selectedMenu";
+	/**
+	 * If `true`, the component is shown.
+	 */
+	open: boolean;
 
-    anchorOrigin?: {
-        vertical: "top" | "center" | "bottom" | number;
-        horizontal: "left" | "center" | "right" | number;
-    };
+	/**
+	 * The system prop that allows defining system overrides as well as additional CSS styles.
+	 */
 
-    transformOrigin?: {
-        vertical: "top" | "center" | "bottom" | number;
-        horizontal: "left" | "center" | "right" | number;
-    };
+	sx?: MuiMenuProps["sx"];
+
+	/**
+	 * The variant to use. Use `menu` to prevent selected items from impacting the initial focus.
+	 * @default 'selectedMenu'
+	 */
+	variant?: "menu" | "selectedMenu";
+
+	/**
+	 *
+	 */
+	anchorOrigin?: {
+		vertical: "top" | "center" | "bottom" | number;
+		horizontal: "left" | "center" | "right" | number;
+	};
+
+	/**
+	 *
+	 */
+	transformOrigin?: {
+		vertical: "top" | "center" | "bottom" | number;
+		horizontal: "left" | "center" | "right" | number;
+	};
 }
 
-export const Menu = (props: MenuProps) => {
-    const { sx } = props;
-    return <MuiMenu sx={sx} {...props} />;
+export const Menu: React.FC<MenuProps> = ({ children, ...otherProps }) => {
+	return <MuiMenu {...otherProps}>{children}</MuiMenu>;
 };

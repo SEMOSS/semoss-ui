@@ -1,8 +1,11 @@
-import { ProgressBlock, ProgressBlockDef } from "@/components/block-defaults/progress-block/ProgressBlock";
-import { act, render, renderHook, screen, waitFor } from "../utils";
+import {
+	ProgressBlock,
+	type ProgressBlockDef,
+} from "@/components/block-defaults/progress-block/ProgressBlock";
+import { useBlock } from "@/hooks";
 // import { useBlock } from "../../hooks/useBlock";
 import { useBlocks } from "../../hooks/useBlocks";
-import { useBlock } from "@/hooks";
+import { act, render, renderHook, screen, waitFor } from "../utils";
 
 const blocks = {
 	"progress-id": {
@@ -39,7 +42,7 @@ describe("Progress Block", async () => {
 		console.log({ result });
 
 		expect(result.current).toBeDefined();
-		expect(result.current.data.type).toBe("linear")
+		expect(result.current.data.type).toBe("linear");
 		// screen.debug()
 
 		// await console.log({ result: result });

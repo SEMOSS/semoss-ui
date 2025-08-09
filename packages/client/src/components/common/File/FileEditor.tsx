@@ -1,472 +1,467 @@
+import type { OnMount } from "@monaco-editor/react";
+import prettier from "prettier";
+import parserBabel from "prettier/parser-babel";
+import parserHtml from "prettier/parser-html";
+import parserCss from "prettier/parser-postcss";
 import {
-    useMemo,
-    useEffect,
-    useState,
-    useRef,
-    lazy,
-    Suspense,
-    forwardRef,
-    useImperativeHandle,
-} from 'react';
-import type { OnMount } from '@monaco-editor/react';
-import parserBabel from 'prettier/parser-babel';
-import parserCss from 'prettier/parser-postcss';
-import parserHtml from 'prettier/parser-html';
-import prettier from 'prettier';
+	forwardRef,
+	lazy,
+	Suspense,
+	useEffect,
+	useImperativeHandle,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
+import { runPixel } from "@semoss/sdk/react";
+import { styled, useNotification } from "@semoss/ui";
+import { LoadingScreen } from "@/components/ui";
 
-import { styled, useNotification } from '@semoss/ui';
-import { LoadingScreen } from '@/components/ui';
-import { runPixel } from '@semoss/sdk/react';
+const Editor = lazy(() => import("@monaco-editor/react"));
 
-const Editor = lazy(() => import('@monaco-editor/react'));
+const IS_PRODUCTION = !import.meta.env.DEV;
 
-const IS_PRODUCTION = process.env.NODE_ENV == 'production';
-
-const StyledContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    height: '100%',
-    width: '100%',
-    background: theme.palette.background.paper,
-    overflow: 'hidden',
+const StyledContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "center",
+	height: "100%",
+	width: "100%",
+	background: theme.palette.background.paper,
+	overflow: "hidden",
 }));
 
 interface FileEditorProps {
-    /** Type of file opened */
-    type: 'app' | 'insight';
+	/** Type of file opened */
+	type: "app" | "insight";
 
-    /** Space where the file is located */
-    space: string;
+	/** Space where the file is located */
+	space: string;
 
-    /** Path to the file file */
-    path: string;
+	/** Path to the file file */
+	path: string;
 
-    /** insight id */
-    insightId?: string | null;
+	/** insight id */
+	insightId?: string | null;
 
-    /**
-     * Optional Model Engine to use
-     */
-    agentModelEngine?: string;
+	/**
+	 * Optional Model Engine to use
+	 */
+	agentModelEngine?: string;
 
-    /**
-     *
-     * @param isModified
-     * @returns
-     */
-    onChange: (content: string, isModified: boolean) => void;
+	/**
+	 *
+	 * @param isModified
+	 * @returns
+	 */
+	onChange: (content: string, isModified: boolean) => void;
 }
 
 export interface FileEditorRefDef {
-    /**
-     *
-     * @returns Save the file
-     */
-    saveFile: () => Promise<void>;
+	/**
+	 *
+	 * @returns Save the file
+	 */
+	saveFile: () => Promise<void>;
 
-    /**
-     *
-     * @returns Format the file
-     */
-    formatFile: () => Promise<void>;
+	/**
+	 *
+	 * @returns Format the file
+	 */
+	formatFile: () => Promise<void>;
 }
 
 export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
-    function FileEditor(props, ref) {
-        const {
-            type = 'app',
-            space = '',
-            path = '',
-            insightId = null,
-            agentModelEngine = '',
-            onChange = () => null,
-        } = props;
+	function FileEditor(props, ref) {
+		const {
+			type = "app",
+			space = "",
+			path = "",
+			insightId = null,
+			agentModelEngine = "",
+			onChange = () => null,
+		} = props;
 
-        const notification = useNotification();
-        const [content, setContent] = useState('');
-        const [initialContent, setInitialContent] = useState('');
-        const [isLoading, setIsLoading] = useState(false);
-        const [LLMActionAdded, setLLMActionAdded] = useState(false);
-        // tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
-        const wordWrapRef = useRef(false);
-        const editorRef = useRef(null);
-        const [isModified, setIsModified] = useState(false);
+		const notification = useNotification();
+		const [content, setContent] = useState("");
+		const [initialContent, setInitialContent] = useState("");
+		const [isLoading, setIsLoading] = useState(false);
+		const [LLMActionAdded, setLLMActionAdded] = useState(false);
+		// tracks filetype to address bug when prompting LLM - re-address if/when filetype added to LLM pixel
+		const wordWrapRef = useRef(false);
+		const editorRef = useRef(null);
+		const [isModified, setIsModified] = useState(false);
 
-        // update whenever the content changes
-        useImperativeHandle(
-            ref,
-            () => {
-                return {
-                    saveFile: saveFile,
-                    formatFile: formatFile,
-                };
-            },
-            [content],
-        );
+		// update whenever the content changes
+		useImperativeHandle(ref, () => {
+			return {
+				saveFile: saveFile,
+				formatFile: formatFile,
+			};
+		}, [content]);
 
-        /**
-         * Set the initial file
-         */
-        useEffect(() => {
-            // load when the type space or path change
-            loadFile();
-        }, [type, space, path]);
+		/**
+		 * Set the initial file
+		 */
+		useEffect(() => {
+			// load when the type space or path change
+			loadFile();
+		}, [type, space, path]);
 
-        /**
-         * Trigger the on change function
-         */
-        useEffect(() => {
-            onChange(content, isModified);
-        }, [isModified]);
+		/**
+		 * Trigger the on change function
+		 */
+		useEffect(() => {
+			onChange(content, isModified);
+		}, [isModified]);
 
-        const fileLanguage = useMemo<
-            | 'typescript'
-            | 'javascript'
-            | 'html'
-            | 'css'
-            | 'scss'
-            | 'python'
-            | 'java'
-            | 'mdx'
-            | 'markdown'
-            | 'txt'
-            | ''
-        >(() => {
-            const ext = path.split('.').pop();
+		const fileLanguage = useMemo<
+			| "typescript"
+			| "javascript"
+			| "html"
+			| "css"
+			| "scss"
+			| "python"
+			| "java"
+			| "mdx"
+			| "markdown"
+			| "txt"
+			| ""
+		>(() => {
+			const ext = path.split(".").pop();
 
-            if (ext === 'ts' || ext === 'tsx') {
-                return 'typescript';
-            }
-            if (ext === 'js' || ext === 'jsx') {
-                return 'javascript';
-            }
-            if (ext === 'html') {
-                return 'html';
-            }
-            if (ext === 'css') {
-                return 'css';
-            }
-            if (ext === 'scss') {
-                return 'scss';
-            }
-            if (ext === 'py' || ext === 'python') {
-                return 'python';
-            }
-            if (ext === 'java') {
-                return 'java';
-            }
-            if (ext === 'mdx') {
-                return 'mdx';
-            }
-            if (ext === 'md') {
-                return 'markdown';
-            }
-            if (ext === 'txt') {
-                return 'txt';
-            }
+			if (ext === "ts" || ext === "tsx") {
+				return "typescript";
+			}
+			if (ext === "js" || ext === "jsx") {
+				return "javascript";
+			}
+			if (ext === "html") {
+				return "html";
+			}
+			if (ext === "css") {
+				return "css";
+			}
+			if (ext === "scss") {
+				return "scss";
+			}
+			if (ext === "py" || ext === "python") {
+				return "python";
+			}
+			if (ext === "java") {
+				return "java";
+			}
+			if (ext === "mdx") {
+				return "mdx";
+			}
+			if (ext === "md") {
+				return "markdown";
+			}
+			if (ext === "txt") {
+				return "txt";
+			}
 
-            return '';
-        }, [path]);
+			return "";
+		}, [path]);
 
-        /**
-         * Load the File
-         * @param type - type of the file
-         * @param id - ID of the file
-         * @param path - path to the file
-         */
-        const loadFile = async () => {
-            try {
-                setIsLoading(true);
+		/**
+		 * Load the File
+		 * @param type - type of the file
+		 * @param id - ID of the file
+		 * @param path - path to the file
+		 */
+		const loadFile = async () => {
+			try {
+				setIsLoading(true);
 
-                let pixel = '';
-                if (type === 'app') {
-                    pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
-                } else if (type === 'insight') {
-                    throw Error('TODO');
-                    // TODO: add insight
-                    // pixel = `GetAsset(filePath=["${path}"], space=["${id}"]);`;
-                }
+				let pixel = "";
+				if (type === "app") {
+					pixel = `GetAsset(filePath=["${path}"], space=["${space}"]);`;
+				} else if (type === "insight") {
+					throw Error("TODO");
+					// TODO: add insight
+					// pixel = `GetAsset(filePath=["${path}"], space=["${id}"]);`;
+				}
 
-                if (!pixel) {
-                    throw new Error('Error missing pixel to get file');
-                }
+				if (!pixel) {
+					throw new Error("Error missing pixel to get file");
+				}
 
-                const response = await runPixel<[string]>(pixel, insightId);
+				const response = await runPixel<[string]>(pixel, insightId);
 
-                // set the content
-                const content = response.pixelReturn[0].output;
-                setContent(content);
-                setInitialContent(content);
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
+				// set the content
+				const content = response.pixelReturn[0].output;
+				setContent(content);
+				setInitialContent(content);
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-        /**
-         * @name formatFile
-         * Use custom parsers to format file
-         * TODO: Save custom configs?
-         */
-        const formatFile = async () => {
-            try {
-                let formatted = content;
+		/**
+		 * @name formatFile
+		 * Use custom parsers to format file
+		 * TODO: Save custom configs?
+		 */
+		const formatFile = async () => {
+			try {
+				let formatted = content;
 
-                if (fileLanguage === 'python') {
-                    //TODO:: Implement
-                } else {
-                    const prettierConfig = {};
+				if (fileLanguage === "python") {
+					//TODO:: Implement
+				} else {
+					const prettierConfig = {};
 
-                    // parsers for other languages are needed
-                    if (fileLanguage === 'html') {
-                        prettierConfig['parser'] = 'html';
-                        prettierConfig['plugins'] = [parserHtml];
-                    } else if (
-                        fileLanguage === 'javascript' ||
-                        fileLanguage === 'typescript'
-                    ) {
-                        prettierConfig['parser'] = 'babel';
-                        prettierConfig['plugins'] = [parserBabel];
-                    } else if (
-                        fileLanguage === 'css' ||
-                        fileLanguage === 'scss'
-                    ) {
-                        prettierConfig['parser'] = 'css';
-                        prettierConfig['plugins'] = [parserCss];
-                    }
+					// parsers for other languages are needed
+					if (fileLanguage === "html") {
+						prettierConfig["parser"] = "html";
+						prettierConfig["plugins"] = [parserHtml];
+					} else if (
+						fileLanguage === "javascript" ||
+						fileLanguage === "typescript"
+					) {
+						prettierConfig["parser"] = "babel";
+						prettierConfig["plugins"] = [parserBabel];
+					} else if (
+						fileLanguage === "css" ||
+						fileLanguage === "scss"
+					) {
+						prettierConfig["parser"] = "css";
+						prettierConfig["plugins"] = [parserCss];
+					}
 
-                    // If we have a configuration for the selected language
-                    if (Object.keys(prettierConfig).length) {
-                        formatted = prettier.format(content, prettierConfig);
-                    }
+					// If we have a configuration for the selected language
+					if (Object.keys(prettierConfig).length) {
+						formatted = prettier.format(content, prettierConfig);
+					}
 
-                    setContent(formatted);
-                }
+					setContent(formatted);
+				}
 
-                notification.add({
-                    color: 'success',
-                    message: 'Success formatting file',
-                });
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
+				notification.add({
+					color: "success",
+					message: "Success formatting file",
+				});
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-        /**
-         * Save the File
-         */
-        const saveFile = async () => {
-            const content = editorRef.current.getValue();
-            try {
-                // setIsLoading(true);
+		/**
+		 * Save the File
+		 */
+		const saveFile = async () => {
+			const content = editorRef.current.getValue();
+			try {
+				// setIsLoading(true);
 
-                let pixel = '';
-                if (type === 'app') {
-                    pixel = `
+				let pixel = "";
+				if (type === "app") {
+					pixel = `
                 SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"]); 
                 CommitAsset(filePath=["${path}"], comment=["Save from editor"], space=["${space}"])
             `;
-                } else if (type === 'insight') {
-                    throw Error('TODO');
-                    // TODO: add insight
-                    //     pixel = `
-                    //     SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${id}"]);
-                    //     CommitAsset(filePath=["${path}"], comment=["Hardcoded comment from the App Page editor"], space=["${id}"])
-                    // `;
-                }
+				} else if (type === "insight") {
+					throw Error("TODO");
+					// TODO: add insight
+					//     pixel = `
+					//     SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${id}"]);
+					//     CommitAsset(filePath=["${path}"], comment=["Hardcoded comment from the App Page editor"], space=["${id}"])
+					// `;
+				}
 
-                if (!pixel) {
-                    throw new Error('Error missing pixel to get file');
-                }
+				if (!pixel) {
+					throw new Error("Error missing pixel to get file");
+				}
 
-                const { errors } = await runPixel(pixel, insightId);
+				const { errors } = await runPixel(pixel, insightId);
 
-                // bubble up the errors
-                for (const e of errors) {
-                    throw new Error(e);
-                }
+				// bubble up the errors
+				for (const e of errors) {
+					throw new Error(e);
+				}
 
-                // reload the file
-                loadFile();
-                setIsModified(false);
-            } catch (e) {
-                notification.add({
-                    color: 'error',
-                    message: e.message,
-                });
+				// reload the file
+				loadFile();
+				setIsModified(false);
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-                console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
+				console.error(e);
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-        /**
-         * Runs LLM pixel and manages LLM loading
-         * @param string
-         * @returns LLM response string
-         */
-        const promptLLM = async (prompt: string) => {
-            // ideally add filetype to LLM pixel so it does not have to be in prompt string
-            // some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
+		/**
+		 * Runs LLM pixel and manages LLM loading
+		 * @param string
+		 * @returns LLM response string
+		 */
+		const promptLLM = async (prompt: string) => {
+			// ideally add filetype to LLM pixel so it does not have to be in prompt string
+			// some formatting issues in return pixel including triple quotes and infrequent cutoffs in response string
 
-            try {
-                setIsLoading(true);
+			try {
+				setIsLoading(true);
 
-                if (!agentModelEngine) {
-                    throw new Error('No Agent Model Engine');
-                }
+				if (!agentModelEngine) {
+					throw new Error("No Agent Model Engine");
+				}
 
-                const response = await runPixel(
-                    `LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
-                    insightId,
-                );
+				const response = await runPixel(
+					`LLM(engine = "${agentModelEngine}", command = "${prompt}", paramValues = [ {} ] );`,
+					insightId,
+				);
 
-                const LLMResponse = response.pixelReturn[0].output['response'];
-                let trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
+				const LLMResponse = response.pixelReturn[0].output["response"];
+				let trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
-                trimmedStarterCode = trimmedStarterCode.substring(
-                    trimmedStarterCode.indexOf('\n') + 1,
-                );
+				trimmedStarterCode = trimmedStarterCode.substring(
+					trimmedStarterCode.indexOf("\n") + 1,
+				);
 
-                return trimmedStarterCode;
-            } catch {
-                notification.add({
-                    color: 'error',
-                    message: 'Failed response from AI Code Generator',
-                });
-            } finally {
-                setIsLoading(false);
-            }
-        };
+				return trimmedStarterCode;
+			} catch {
+				notification.add({
+					color: "error",
+					message: "Failed response from AI Code Generator",
+				});
+			} finally {
+				setIsLoading(false);
+			}
+		};
 
-        /**
-         * Hanlder for setting content, isModified and onChange
-         */
-        const handleEditorOnChange = (value) => {
-            setContent(value);
-            setIsModified(value !== initialContent);
-            onChange(value, isModified);
-        };
+		/**
+		 * Hanlder for setting content, isModified and onChange
+		 */
+		const handleEditorOnChange = (value) => {
+			setContent(value);
+			setIsModified(value !== initialContent);
+			onChange(value, isModified);
+		};
 
-        /**
-         * Handler called when the editor is mounted
-         */
-        const onEditorMount: OnMount = (editor, monaco) => {
-            editorRef.current = editor;
-            if (IS_PRODUCTION) {
-                return;
-            }
+		/**
+		 * Handler called when the editor is mounted
+		 */
+		const onEditorMount: OnMount = (editor, monaco) => {
+			editorRef.current = editor;
+			if (IS_PRODUCTION) {
+				return;
+			}
 
-            // prevents redundant additions of new dropdown action
-            if (LLMActionAdded === false) {
-                setLLMActionAdded(true);
-                editor.addCommand(
-                    monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-                    () => {
-                        saveFile();
-                    },
-                ); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
-                editor.addAction({
-                    contextMenuGroupId: '1_modification',
-                    contextMenuOrder: 1,
-                    id: 'prompt-LLM',
-                    label: 'Generate Code',
-                    keybindings: [
-                        monaco.KeyMod.CtrlCmd |
-                            monaco.KeyMod.Shift |
-                            monaco.KeyCode.KeyG,
-                    ],
+			// prevents redundant additions of new dropdown action
+			if (LLMActionAdded === false) {
+				setLLMActionAdded(true);
+				editor.addCommand(
+					monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
+					() => {
+						saveFile();
+					},
+				); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
+				editor.addAction({
+					contextMenuGroupId: "1_modification",
+					contextMenuOrder: 1,
+					id: "prompt-LLM",
+					label: "Generate Code",
+					keybindings: [
+						monaco.KeyMod.CtrlCmd |
+							monaco.KeyMod.Shift |
+							monaco.KeyCode.KeyG,
+					],
 
-                    run: async (editor) => {
-                        const selection = editor.getSelection();
-                        const selectedText = editor
-                            .getModel()
-                            .getValueInRange(selection);
+					run: async (editor) => {
+						const selection = editor.getSelection();
+						const selectedText = editor
+							.getModel()
+							.getValueInRange(selection);
 
-                        const LLMReturnText = await promptLLM(
-                            `Create code for a ${fileLanguage} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-                        );
+						const LLMReturnText = await promptLLM(
+							`Create code for a ${fileLanguage} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
+						);
 
-                        editor.executeEdits('custom-action', [
-                            {
-                                range: new monaco.Range(
-                                    selection.endLineNumber + 2,
-                                    1,
-                                    selection.endLineNumber + 2,
-                                    1,
-                                ),
-                                text: `\n\n${LLMReturnText}\n`,
-                                forceMoveMarkers: true,
-                            },
-                        ]);
+						editor.executeEdits("custom-action", [
+							{
+								range: new monaco.Range(
+									selection.endLineNumber + 2,
+									1,
+									selection.endLineNumber + 2,
+									1,
+								),
+								text: `\n\n${LLMReturnText}\n`,
+								forceMoveMarkers: true,
+							},
+						]);
 
-                        editor.setSelection(
-                            new monaco.Range(
-                                selection.endLineNumber + 3,
-                                1,
-                                selection.endLineNumber +
-                                    2 +
-                                    LLMReturnText.split('\n').length,
-                                1,
-                            ),
-                        );
-                    },
-                });
-                editor.addAction({
-                    contextMenuGroupId: '1_modification',
-                    contextMenuOrder: 2,
-                    id: 'toggle-word-wrap',
-                    label: 'Toggle Word Wrap',
-                    keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-                    run: async (editor) => {
-                        wordWrapRef.current = !wordWrapRef.current;
-                        editor.updateOptions({
-                            wordWrap: wordWrapRef.current ? 'on' : 'off',
-                        });
-                    },
-                });
-            }
-        };
+						editor.setSelection(
+							new monaco.Range(
+								selection.endLineNumber + 3,
+								1,
+								selection.endLineNumber +
+									2 +
+									LLMReturnText.split("\n").length,
+								1,
+							),
+						);
+					},
+				});
+				editor.addAction({
+					contextMenuGroupId: "1_modification",
+					contextMenuOrder: 2,
+					id: "toggle-word-wrap",
+					label: "Toggle Word Wrap",
+					keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+					run: async (editor) => {
+						wordWrapRef.current = !wordWrapRef.current;
+						editor.updateOptions({
+							wordWrap: wordWrapRef.current ? "on" : "off",
+						});
+					},
+				});
+			}
+		};
 
-        return (
-            <StyledContainer>
-                <Suspense
-                    fallback={
-                        <LoadingScreen.Trigger description="Loading..." />
-                    }
-                >
-                    {isLoading ? (
-                        <LoadingScreen.Trigger description="Loading..." />
-                    ) : (
-                        <Editor
-                            width={'100%'}
-                            height={'100%'}
-                            value={content}
-                            language={fileLanguage}
-                            options={{
-                                readOnly: false,
-                            }}
-                            onChange={handleEditorOnChange}
-                            onMount={onEditorMount}
-                        />
-                    )}
-                </Suspense>
-            </StyledContainer>
-        );
-    },
+		return (
+			<StyledContainer>
+				<Suspense
+					fallback={
+						<LoadingScreen.Trigger description="Loading..." />
+					}
+				>
+					{isLoading ? (
+						<LoadingScreen.Trigger description="Loading..." />
+					) : (
+						<Editor
+							width={"100%"}
+							height={"100%"}
+							value={content}
+							language={fileLanguage}
+							options={{
+								readOnly: false,
+							}}
+							onChange={handleEditorOnChange}
+							onMount={onEditorMount}
+						/>
+					)}
+				</Suspense>
+			</StyledContainer>
+		);
+	},
 );
