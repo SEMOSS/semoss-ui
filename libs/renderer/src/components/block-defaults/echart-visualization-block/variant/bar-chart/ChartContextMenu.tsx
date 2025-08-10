@@ -1,23 +1,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef } from "react";
+
 import { observer } from "mobx-react-lite";
-import { PathValue } from "react-hook-form";
-
-import { MenuTwo, MenuItemTwo } from "@semoss/ui";
-
-import { useBlock, useFrame } from "../../../../../hooks";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
+import { useEffect, useRef } from "react";
+import type { PathValue } from "react-hook-form";
+import { MenuItemTwo, MenuTwo } from "@semoss/ui";
+import { useBlock, type useFrame } from "../../../../../hooks";
+import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 export interface ChartContextMenuProps {
-    id: string;
-    frame: ReturnType<typeof useFrame>;
-    contextMenu: {
-        mouseX: number;
-        mouseY: number;
-        value: any;
-    } | null;
-    chartInstance: any;
-    onClose: () => void;
+	id: string;
+	frame: ReturnType<typeof useFrame>;
+	contextMenu: {
+		mouseX: number;
+		mouseY: number;
+		value: any;
+	} | null;
+	chartInstance: any;
+	onClose: () => void;
 }
 //Open this contextmenu when right click event is triggered
 export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
@@ -148,63 +147,63 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
                                 currentOperation.current.unfilterActive = true;
                             } catch (e) {}
 
-                            onClose();
-                        }}
-                    >
-                        Unfilter
-                    </MenuItemTwo>
-                ) : null}
-                {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItemTwo
-                        dense={true}
-                        value={"filter"}
-                        onClick={() => {
-                            frame.filter(
-                                `SetFrameFilter(${
-                                    contextMenu.value.name
-                                }==${JSON.stringify(contextMenu.value.value)})`,
-                            );
-                            let optionUp = data.option;
-                            const reUpdate = data.option["series"];
-                            optionUp = {
-                                ...optionUp,
-                                ["series"]: null,
-                            };
-                            setData("option", optionUp as PathValue<any, any>);
-                            currentOperation.current.filterActive = true;
-                            onClose();
-                        }}
-                    >
-                        Filter {contextMenu.value.name} ==
-                        {typeof contextMenu.value === "string"
-                            ? contextMenu.value
-                            : JSON.stringify(contextMenu.value.value)}
-                    </MenuItemTwo>
-                ) : null}
-                {contextMenu && !data.contextMenu?.hideExclude ? (
-                    <MenuItemTwo
-                        dense={true}
-                        value={"exclude"}
-                        onClick={() => {
-                            frame.filter(
-                                `SetFrameFilter(${contextMenu.value.name}!="${contextMenu.value.value}")`,
-                            );
-                            let optionUp = data.option;
-                            const reUpdate = data.option["series"];
-                            optionUp = {
-                                ...optionUp,
-                                ["series"]: null,
-                            };
-                            setData("option", optionUp as PathValue<any, any>);
-                            currentOperation.current.excludeActive = true;
-                            onClose();
-                        }}
-                    >
-                        Exclude {contextMenu.value.name} !={" "}
-                        {contextMenu?.value?.value}
-                    </MenuItemTwo>
-                ) : null}
-            </MenuTwo>
-        );
-    },
+							onClose();
+						}}
+					>
+						Unfilter
+					</MenuItemTwo>
+				) : null}
+				{contextMenu && !data.contextMenu?.hideFilter ? (
+					<MenuItemTwo
+						dense={true}
+						value={"filter"}
+						onClick={() => {
+							frame.filter(
+								`SetFrameFilter(${
+									contextMenu.value.name
+								}==${JSON.stringify(contextMenu.value.value)})`,
+							);
+							let optionUp = data.option;
+							const reUpdate = data.option["series"];
+							optionUp = {
+								...optionUp,
+								["series"]: null,
+							};
+							setData("option", optionUp as PathValue<any, any>);
+							currentOperation.current.filterActive = true;
+							onClose();
+						}}
+					>
+						Filter {contextMenu.value.name} ==
+						{typeof contextMenu.value === "string"
+							? contextMenu.value
+							: JSON.stringify(contextMenu.value.value)}
+					</MenuItemTwo>
+				) : null}
+				{contextMenu && !data.contextMenu?.hideExclude ? (
+					<MenuItemTwo
+						dense={true}
+						value={"exclude"}
+						onClick={() => {
+							frame.filter(
+								`SetFrameFilter(${contextMenu.value.name}!="${contextMenu.value.value}")`,
+							);
+							let optionUp = data.option;
+							const reUpdate = data.option["series"];
+							optionUp = {
+								...optionUp,
+								["series"]: null,
+							};
+							setData("option", optionUp as PathValue<any, any>);
+							currentOperation.current.excludeActive = true;
+							onClose();
+						}}
+					>
+						Exclude {contextMenu.value.name} !={" "}
+						{contextMenu?.value?.value}
+					</MenuItemTwo>
+				) : null}
+			</MenuTwo>
+		);
+	},
 );

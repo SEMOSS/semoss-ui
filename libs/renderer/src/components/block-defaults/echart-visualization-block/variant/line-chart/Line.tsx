@@ -1,108 +1,106 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import ReactECharts, { type EChartsOption } from "echarts-for-react";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import ReactECharts, { EChartsOption } from "echarts-for-react";
-
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { styled } from "@semoss/ui";
 import { debounced } from "@semoss/sdk/react";
-
 import { useFrame, useBlock } from "../../../../../hooks";
 import { getValueByPath } from "../../../../../utility";
-import { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 import { CustomContextMenu } from "../../CustomContextMenu";
+import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
 const StyledChartContainer = styled("div")(() => ({
-    height: "100%",
+	height: "100%",
 }));
 const StyledNoDataContainer = styled("div", {
-    shouldForwardProp: (prop) => prop !== "error",
+	shouldForwardProp: (prop) => prop !== "error",
 })<{ error?: boolean }>(({ error = false, theme }) => ({
-    height: "30vh",
-    width: "80vh",
-    color: error ? theme.palette.error.main : "unset",
+	height: "30vh",
+	width: "80vh",
+	color: error ? theme.palette.error.main : "unset",
 }));
 interface LineProps {
-    id: string;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    updateJson: (data: any, path: any) => void;
+	id: string;
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	updateJson: (data: any, path: any) => void;
 }
 export const Line = observer(({ id, updateJson }: LineProps) => {
-    const { data } = useBlock<EchartVisualizationBlockDef>(id);
-    const [contextMenu, setContextMenu] = useState<{
-        mouseX: number;
-        mouseY: number;
-        value: unknown;
-    } | null>(null);
-    let resultData: unknown = {};
-    // get the frame
-    function getVisualizationBlockSelector(id: string) {
-        if (id) {
-            //get the options JSON of the selected block
-            const blockJSON = data.option;
-            //initialize the selector string
-            let selector = "Select(";
-            //if there are no fields, return null
-            if (!blockJSON["_state"]) return null;
-            //get the fields
-            const selectorFields = blockJSON["_state"]["fields"];
-            //  get the value and tooltip properties
-            const dynamicYAndTooltipSet = Array.from(
-                new Set([
-                    ...selectorFields["yAxis"],
-                    ...selectorFields["tooltip"],
-                ]),
-            );
-            // let dynamicYAndTooltipSet = [
-            //     ...new Set([
-            //         ...selectorFields["yAxis"],
-            //         ...selectorFields["tooltip"],
-            //     ]),
-            // ];
-            // start forming the selector string
-            selector += `${selectorFields["xAxis"][0]}`;
-            // add dynamic y axis and tooltip fields to the selector string
-            let averageCollection = "";
-            for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
-                averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
-                selector += `, Average(${dynamicYAndTooltipSet[i]})`;
-            }
-            selector += `).as([${selectorFields["xAxis"][0]}${averageCollection}])|Group(${selectorFields["xAxis"][0]})|Sort(${selectorFields["xAxis"][0]})`;
-            return selector;
-        }
-        return null;
-    }
+	const { data } = useBlock<EchartVisualizationBlockDef>(id);
+	const [contextMenu, setContextMenu] = useState<{
+		mouseX: number;
+		mouseY: number;
+		value: unknown;
+	} | null>(null);
+	let resultData: unknown = {};
+	// get the frame
+	function getVisualizationBlockSelector(id: string) {
+		if (id) {
+			//get the options JSON of the selected block
+			const blockJSON = data.option;
+			//initialize the selector string
+			let selector = "Select(";
+			//if there are no fields, return null
+			if (!blockJSON["_state"]) return null;
+			//get the fields
+			const selectorFields = blockJSON["_state"]["fields"];
+			//  get the value and tooltip properties
+			const dynamicYAndTooltipSet = Array.from(
+				new Set([
+					...selectorFields["yAxis"],
+					...selectorFields["tooltip"],
+				]),
+			);
+			// let dynamicYAndTooltipSet = [
+			//     ...new Set([
+			//         ...selectorFields["yAxis"],
+			//         ...selectorFields["tooltip"],
+			//     ]),
+			// ];
+			// start forming the selector string
+			selector += `${selectorFields["xAxis"][0]}`;
+			// add dynamic y axis and tooltip fields to the selector string
+			let averageCollection = "";
+			for (let i = 0; i < dynamicYAndTooltipSet.length; i++) {
+				averageCollection += `, Average(${dynamicYAndTooltipSet[i]})`;
+				selector += `, Average(${dynamicYAndTooltipSet[i]})`;
+			}
+			selector += `).as([${selectorFields["xAxis"][0]}${averageCollection}])|Group(${selectorFields["xAxis"][0]})|Sort(${selectorFields["xAxis"][0]})`;
+			return selector;
+		}
+		return null;
+	}
 
-    /**
-     * Builds a dynamic query string based on the provided input data.
-     * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
-     * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
-     */
-    const buildDynamicQuery = (inputData): string => {
-        const blockJSON = data.option;
-        if (!blockJSON["_state"]) return null;
-        const selectParts: string[] = [];
-        const aliasParts: string[] = [];
-        const groupByParts: string[] = [];
+	/**
+	 * Builds a dynamic query string based on the provided input data.
+	 * @param inputData - An array of tuples where each tuple contains a string and an object mapping field names to aggregation methods.
+	 * @returns A query string that selects and groups by the specified fields with appropriate aggregations.
+	 */
+	const buildDynamicQuery = (inputData): string => {
+		const blockJSON = data.option;
+		if (!blockJSON["_state"]) return null;
+		const selectParts: string[] = [];
+		const aliasParts: string[] = [];
+		const groupByParts: string[] = [];
 
-        inputData.forEach(([_, fields]) => {
-            for (const field in fields) {
-                const rawAgg = fields[field];
-                aliasParts.push(field);
+		inputData.forEach(([_, fields]) => {
+			for (const field in fields) {
+				const rawAgg = fields[field];
+				aliasParts.push(field);
 
-                if (rawAgg) {
-                    const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
-                    selectParts.push(`${cleanedAgg}(${field})`);
-                } else {
-                    selectParts.push(field);
-                    groupByParts.push(field); // Only unaggregated fields are grouped
-                }
-            }
-        });
+				if (rawAgg) {
+					const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
+					selectParts.push(`${cleanedAgg}(${field})`);
+				} else {
+					selectParts.push(field);
+					groupByParts.push(field); // Only unaggregated fields are grouped
+				}
+			}
+		});
 
-        return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
-            ", ",
-        )}]) | Group(${groupByParts.join(", ")})`;
-    };
+		return `Select(${selectParts.join(", ")}).as([${aliasParts.join(
+			", ",
+		)}]) | Group(${groupByParts.join(", ")})`;
+	};
 
     const frame = useFrame(data.frame.name, {
         selector: buildDynamicQuery(Object.entries(data?.aggregate ?? {})),
@@ -234,91 +232,91 @@ export const Line = observer(({ id, updateJson }: LineProps) => {
                 }
                 indices = xIndices.filter((i) => yIndices.includes(i));
 
-                const filteredLabels = indices.map((i) => xAxisData[i]);
-                const filteredValues = indices.map((i) => labelData[i]);
+				const filteredLabels = indices.map((i) => xAxisData[i]);
+				const filteredValues = indices.map((i) => labelData[i]);
 
-                if (filteredValues.length > 0) {
-                    frame.filter(
-                        `SetFrameFilter(((${currentOption.series[0]?.name}==[${filteredValues}]) AND (${currentOption.xAxis?.[0]?.name}==[${filteredLabels}])))`,
-                    );
-                }
-            }
-        });
-    }, 2000);
-    const onClickChart = {
-        contextmenu: (params) => {
-            if (params.data) {
-                const labelName = params.seriesName;
-                setContextMenu(
-                    contextMenu === null
-                        ? {
-                              mouseX: params.event.event.clientX,
-                              mouseY: params.event.event.clientY,
-                              value: {
-                                  label: labelName,
-                                  value: params.data,
-                              },
-                          }
-                        : // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
-                          // Other native context menus might behave different.
-                          // With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
-                          null,
-                );
-                params.event.event.preventDefault();
-            } else {
-                params.event.event.preventDefault();
-            }
-        },
-    };
-    if (typeof data.option === "string") {
-        // if it's a string, it's either invalid json or a query output that needs to be parsed
-        // try to parse, and show error otherwise
-        try {
-            const lineOptions = JSON.parse(data.option);
-            return (
-                <StyledChartContainer>
-                    <ReactECharts
-                        option={lineOptions as unknown as EChartsOption}
-                        onEvents={onClickChart}
-                        onChartReady={(chart) => {
-                            echartsLoaded(chart);
-                        }}
-                    />
-                </StyledChartContainer>
-            );
-        } catch (e) {
-            return (
-                <StyledNoDataContainer error>
-                    There was an issue parsing your JSON.
-                </StyledNoDataContainer>
-            );
-        }
-    } else {
-        resultData =
-            data?.frame?.name &&
-            frame.data.values.length > 0 &&
-            frame.isLoading === false
-                ? formatDataPoints(JSON.parse(computedValue))
-                : JSON.parse(computedValue);
-        return (
-            <StyledChartContainer>
-                <ReactECharts
-                    option={resultData as EChartsOption}
-                    onEvents={onClickChart}
-                    onChartReady={(chart) => {
-                        echartsLoaded(chart);
-                    }}
-                    style={{
-                        height: "inherit",
-                    }}
-                />
-                <CustomContextMenu
-                    id={id}
-                    frame={frame}
-                    contextMenu={contextMenu}
-                    onClose={() => setContextMenu(null)}
-                />
-            </StyledChartContainer>
-        );
-    }
+				if (filteredValues.length > 0) {
+					frame.filter(
+						`SetFrameFilter(((${currentOption.series[0]?.name}==[${filteredValues}]) AND (${currentOption.xAxis?.[0]?.name}==[${filteredLabels}])))`,
+					);
+				}
+			}
+		});
+	}, 2000);
+	const onClickChart = {
+		contextmenu: (params) => {
+			if (params.data) {
+				const labelName = params.seriesName;
+				setContextMenu(
+					contextMenu === null
+						? {
+								mouseX: params.event.event.clientX,
+								mouseY: params.event.event.clientY,
+								value: {
+									label: labelName,
+									value: params.data,
+								},
+							}
+						: // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
+							// Other native context menus might behave different.
+							// With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+							null,
+				);
+				params.event.event.preventDefault();
+			} else {
+				params.event.event.preventDefault();
+			}
+		},
+	};
+	if (typeof data.option === "string") {
+		// if it's a string, it's either invalid json or a query output that needs to be parsed
+		// try to parse, and show error otherwise
+		try {
+			const lineOptions = JSON.parse(data.option);
+			return (
+				<StyledChartContainer>
+					<ReactECharts
+						option={lineOptions as unknown as EChartsOption}
+						onEvents={onClickChart}
+						onChartReady={(chart) => {
+							echartsLoaded(chart);
+						}}
+					/>
+				</StyledChartContainer>
+			);
+		} catch (e) {
+			return (
+				<StyledNoDataContainer error>
+					There was an issue parsing your JSON.
+				</StyledNoDataContainer>
+			);
+		}
+	} else {
+		resultData =
+			data?.frame?.name &&
+			frame.data.values.length > 0 &&
+			frame.isLoading === false
+				? formatDataPoints(JSON.parse(computedValue))
+				: JSON.parse(computedValue);
+		return (
+			<StyledChartContainer>
+				<ReactECharts
+					option={resultData as EChartsOption}
+					onEvents={onClickChart}
+					onChartReady={(chart) => {
+						echartsLoaded(chart);
+					}}
+					style={{
+						height: "inherit",
+					}}
+				/>
+				<CustomContextMenu
+					id={id}
+					frame={frame}
+					contextMenu={contextMenu}
+					onClose={() => setContextMenu(null)}
+				/>
+			</StyledChartContainer>
+		);
+	}
 });

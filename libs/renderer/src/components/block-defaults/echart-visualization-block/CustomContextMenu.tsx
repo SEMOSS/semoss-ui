@@ -1,24 +1,22 @@
 import { observer } from "mobx-react-lite";
-
-import { MenuTwo, MenuItemTwo } from "@semoss/ui";
-
-import { useBlock, useFrame } from "../../../hooks";
-import { EchartVisualizationBlockDef } from "./VisualizationBlock";
+import { MenuItemTwo, MenuTwo } from "@semoss/ui";
+import { useBlock, type useFrame } from "../../../hooks";
+import type { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
 export interface VizBlockContextMenuProps {
-    /** ID of the block */
-    id: string;
-    /** Frame that the user is interacting with */
-    frame: ReturnType<typeof useFrame>;
-    /** Context MenuTwo */
-    contextMenu: {
-        mouseX: number;
-        mouseY: number;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        value: any;
-    } | null;
-    /** Close the context menu */
-    onClose: () => void;
+	/** ID of the block */
+	id: string;
+	/** Frame that the user is interacting with */
+	frame: ReturnType<typeof useFrame>;
+	/** Context MenuTwo */
+	contextMenu: {
+		mouseX: number;
+		mouseY: number;
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
+		value: any;
+	} | null;
+	/** Close the context menu */
+	onClose: () => void;
 }
 export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
     ({
