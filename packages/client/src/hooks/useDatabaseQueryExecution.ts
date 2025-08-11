@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useRootStore } from './useRootStore';
-const { Parser } = require('node-sql-parser');
+import { Parser, AST } from 'node-sql-parser';
+import { runPixel } from '@semoss/sdk/react';
 
 
 export interface QueryResult {
@@ -18,14 +18,15 @@ function detectQueryType(query: string): string {
   const parser = new Parser();
   const ast = parser.astify(query);
   console.log('AST:', ast);
-
-  if (!Array.isArray(ast) || ast.length === 0) {
-    if (ast.type) {
-      return ast.type.toUpperCase() as "SELECT" | "OTHER";
+  
+  if (Array.isArray(ast)) {
+    if (ast.length === 0) {
+      return "OTHER";
     }
+    return ast[0].type.toUpperCase();
   }
-  else
-    return ast[0].type.toUpperCase() as "SELECT" | "OTHER";
+  
+  return ast.type.toUpperCase();
 }
 
 function removeComments(query: string): string {
@@ -59,7 +60,6 @@ interface QueryExecutionOptions {
 }
 
 export function useQueryExecution(engineId: string, options: QueryExecutionOptions = {}) {
-  const { monolithStore } = useRootStore();
   const [query, setQuery] = useState('');
   const [previewData, setPreviewData] = useState<QueryResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -87,9 +87,9 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
 
       const cleanedQuery = removeComments(query).replaceAll('`','');
 
-      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${limit}], commit = [true]);`;
+      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${limit}], offset = [20],commit = [true]);`;
       
-      const response = await monolithStore.runQuery(pixel);
+      const response = await runPixel(pixel);
       console.log('Full response:', response);
       
       if (response && response.pixelReturn && response.pixelReturn.length > 0) {

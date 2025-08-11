@@ -64,7 +64,7 @@ const StyledRight = styled("div")(() => ({
 }));
 
 const StyledQueryResultsWrapper = styled("div")<{ isExpanded: boolean }>(
-	({ theme, isExpanded }) => ({
+	({isExpanded }) => ({
 		position: isExpanded ? "absolute" : "relative",
 		top: isExpanded ? 0 : "auto",
 		left: isExpanded ? 0 : "auto",
@@ -101,6 +101,11 @@ export const EngineQueryDataPage = observer(() => {
 		isLoading,
 		error,
 		refreshDatabaseStructure,
+		selectedColumns,
+		activeTable,
+		toggleColumnSelection,
+		clearColumnSelection,
+		generateSelectedColumnsQuery,
 	} = useDatabaseStructure(active.id || "");
 
 	const {
@@ -141,17 +146,24 @@ export const EngineQueryDataPage = observer(() => {
 	};
 
 	const generateTableQuery = (tableName: string) => {
-		const sql = `SELECT * FROM ${tableName} LIMIT ${limit}`;
-		const pixel = `SqlQuery(database=["${active.id}"], query=["<encode>${sql}</encode>"], limit=[${limit}]);`;
-		setQuery(pixel);
-		setValue(pixel);
+		const sql = `SELECT * FROM ${tableName}`;
+		setQuery(sql);
+		setValue(sql);
+		clearColumnSelection();
+	};
+	
+	const handleGenerateQuery = (generatedQuery: string) => {
+		setQuery(generatedQuery);
+		setValue(generatedQuery);
 	};
 
-	const generateColumnQuery = (tableName: string, columnName: string) => {
-		const sql = `SELECT ${columnName} FROM ${tableName} LIMIT ${limit}`;
-		const pixel = `SqlQuery(database=["${active.id}"], query=["<encode>${sql}</encode>"], limit=[${limit}]);`;
-		setQuery(pixel);
-		setValue(pixel);
+	const handleToggleColumnSelection = (tableName: string, columnName: string) => {
+		toggleColumnSelection(tableName, columnName);
+	};
+
+	const handleClearColumnSelection = () => {
+		clearColumnSelection();
+		clearQuery();
 	};
 
 	return (
@@ -172,7 +184,12 @@ export const EngineQueryDataPage = observer(() => {
 							refreshDatabaseStructure={handleRefresh}
 							refreshMessage={refreshMessage}
 							onTableClick={generateTableQuery}
-							onColumnClick={generateColumnQuery}
+							selectedColumns={selectedColumns}
+							activeTable={activeTable}
+							onToggleColumnSelection={handleToggleColumnSelection}
+							onClearColumnSelection={handleClearColumnSelection}
+							onGenerateQuery={handleGenerateQuery}
+							generateSelectedColumnsQuery={generateSelectedColumnsQuery}
 						/>
 					</StyledCard>
 				</StyledLeft>

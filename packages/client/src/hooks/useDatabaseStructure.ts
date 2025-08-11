@@ -42,8 +42,11 @@ export function useDatabaseStructure(engineId: string) {
   const [toggleState, setToggleState] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [selectedColumns, setSelectedColumns] = useState<Record<string, string[]>>({});
+  const [activeTable, setActiveTable] = useState<string | null>(null);
+  
   const { monolithStore } = useRootStore();
-
 
   const getTableNames = async () => {
     if (!engineId) return [];
@@ -64,6 +67,8 @@ export function useDatabaseStructure(engineId: string) {
       console.error('Error fetching table names:', err);
       setError('Failed to fetch table names');
       return [];
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -191,6 +196,46 @@ export function useDatabaseStructure(engineId: string) {
     setToggleState(false);
   };
 
+  const toggleColumnSelection = (tableName: string, columnName: string) => {
+    // if switching to a different table, reset column selection
+    if (activeTable && activeTable !== tableName) {
+      setSelectedColumns({ [tableName]: [columnName] });
+    } else {
+      setSelectedColumns(prev => {
+        const currentColumns = prev[tableName] || [];
+        const isSelected = currentColumns.includes(columnName);
+        
+        if (isSelected) {
+          const newColumns = currentColumns.filter(col => col !== columnName);
+          return { ...prev, [tableName]: newColumns };
+        } else {
+          return { ...prev, [tableName]: [...currentColumns, columnName] };
+        }
+      });
+    }
+    setActiveTable(tableName);
+  };
+
+  const clearColumnSelection = () => {
+    setSelectedColumns({});
+    setActiveTable(null);
+  };
+
+  const generateSelectedColumnsQuery = (): string => {
+    if (!activeTable || !selectedColumns[activeTable] || selectedColumns[activeTable].length === 0) {
+      return '';
+    }
+    
+    const columns = selectedColumns[activeTable];
+    
+    if (columns.length === 1) {
+      return `SELECT ${columns[0]} FROM ${activeTable}`;
+    }
+    
+    const columnList = columns.join(', ');
+    return `SELECT ${columnList} FROM ${activeTable}`;
+  };
+
   return {
     structure,
     searchTerm,
@@ -203,5 +248,10 @@ export function useDatabaseStructure(engineId: string) {
     isLoading,
     error,
     refreshDatabaseStructure,
+    selectedColumns,
+    activeTable,
+    toggleColumnSelection,
+    clearColumnSelection,
+    generateSelectedColumnsQuery,
   };
 }

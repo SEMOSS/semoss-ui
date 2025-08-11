@@ -1,112 +1,87 @@
-import {
-	ChevronRight,
-	Clear,
-	ExpandMore,
-	Refresh,
-	Search,
-	Storage,
-} from "@mui/icons-material";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
 	Box,
-	Button,
-	Card,
-	IconButton,
-	Stack,
-	styled,
-	TextField,
 	Typography,
+	TextField,
+	Stack,
+	IconButton,
+	Button,
+	styled,
 } from "@semoss/ui";
-import { DatabaseColumnIcon } from "./DatabaseColumnIcon";
+import {
+	Search,
+	Clear,
+	Refresh,
+	Storage,
+	ExpandMore,
+	ChevronRight,
+} from "@mui/icons-material";
+import { DatabaseColumnIcon } from "@/components/database";
 
-// Main card wrapper
-const StyledCard = styled(Card)(({ theme }) => ({
-	borderRadius: "16px",
+const StyledCard = styled("div")(({ theme }) => ({
+	borderRadius: "12px",
 	background: theme.palette.background.paper,
-	boxshadow: `0px 1px 2px 0px #00000014`,
+	boxShadow: `0px 4px 4px 0px rgba(0, 0, 0, 0.04)`,
 	height: "100%",
 	display: "flex",
 	flexDirection: "column",
 	overflow: "hidden",
-	border: `1px solid #C4C4C4`,
 }));
 
-// Header section
 const StyledCardHeader = styled("div")(({ theme }) => ({
-	backgroundColor: "#EBF4FE", // Pale baby blue
-	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+	padding: theme.spacing(2),
 	borderBottom: `1px solid ${theme.palette.divider}`,
 	display: "flex",
-	justifyContent: "space-between",
 	alignItems: "center",
-}));
-
-// Search section
-const StyledSearchSection = styled("div")(({ theme }) => ({
-	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+	justifyContent: "space-between",
 	flexShrink: 0,
 }));
 
-// Content area for tables list
+const StyledSearchSection = styled("div")(({ theme }) => ({
+	padding: theme.spacing(2),
+	borderBottom: `1px solid ${theme.palette.divider}`,
+	flexShrink: 0,
+}));
+
 const StyledTablesList = styled("div")(() => ({
 	flex: 1,
 	overflow: "auto",
-	minHeight: 0,
 }));
 
 const StyledTable = styled("table")(({ theme }) => ({
 	width: "100%",
 	borderCollapse: "collapse",
-	outline: "none",
-	padding: theme.spacing(1),
-	"& th": {
-		borderColor: theme.palette.grey[300],
-		borderBottom: "none",
-		backgroundColor: theme.palette.grey[100],
-	},
-	"& td": {
-		borderColor: theme.palette.grey[300],
-	},
-	"& th:not(:last-child), td:not(:last-child)": {
-		borderRight: "none",
-	},
-	"& tr:not(:last-child) > td": {
-		borderBottom: "none",
+	"&:not(:last-child)": {
+		marginBottom: theme.spacing(1),
 	},
 }));
 
 const StyledTableHeaderRow = styled("tr")(({ theme }) => ({
 	cursor: "pointer",
-	outline: "none",
 	"&:hover": {
-		backgroundColor: theme.palette.grey[100],
+		backgroundColor: theme.palette.grey[50],
 	},
 	"&.closed": {
-		"& th:first-of-type": {
-			borderBottomLeftRadius: theme.shape.borderRadius,
-		},
-		"& th:last-child": {
-			borderBottomRightRadius: theme.shape.borderRadius,
-		},
-	},
-	"& th": {
-		borderBottom: `1px solid ${theme.palette.grey[300]}`,
+		backgroundColor: "transparent",
 	},
 }));
 
-const StyledTableHeaderCell = styled("th")(({ theme }) => ({
+const StyledTableHeaderCell = styled("td")(({ theme }) => ({
 	padding: theme.spacing(1.5),
-	textAlign: "left",
-	fontWeight: 600,
+	borderBottom: `1px solid ${theme.palette.divider}`,
 	"&.col-4": {
 		width: "20%",
 	},
 }));
 
-const StyledColumnRow = styled("tr")(({ theme }) => ({
+const StyledColumnRow = styled("tr")<{ selected: boolean }>(({ theme, selected }) => ({
 	cursor: "pointer",
+	backgroundColor: selected ? theme.palette.primary.light : "transparent",
+	color: "inherit",
 	"&:hover": {
-		backgroundColor: theme.palette.grey[50],
+		backgroundColor: selected 
+			? theme.palette.primary.light 
+			: theme.palette.grey[50],
 	},
 }));
 
@@ -140,11 +115,12 @@ interface DatabaseStructureBrowserProps {
 	refreshDatabaseStructure: () => void;
 	refreshMessage: string | null;
 	onTableClick?: (tableName: string) => void;
-	onColumnClick?: (
-		tableName: string,
-		columnName: string,
-		columnType: string,
-	) => void;
+	selectedColumns?: Record<string, string[]>;
+	activeTable?: string | null;
+	onToggleColumnSelection?: (tableName: string, columnName: string) => void;
+	onClearColumnSelection?: () => void;
+	onGenerateQuery?: (query: string) => void;
+	generateSelectedColumnsQuery?: () => string;
 }
 
 export const DatabaseStructureBrowser: React.FC<
@@ -162,35 +138,64 @@ export const DatabaseStructureBrowser: React.FC<
 	refreshDatabaseStructure,
 	refreshMessage,
 	onTableClick,
-	onColumnClick,
+	selectedColumns = {},
+	activeTable,
+	onToggleColumnSelection,
+	onClearColumnSelection,
+	onGenerateQuery,
+	generateSelectedColumnsQuery,
 }) => {
 	const handleTableHeaderClick = (
 		tableName: string,
 		event: React.MouseEvent,
 	) => {
 		event.preventDefault();
-
-		// If shift key is held, visualize the table instead of toggling
-		if (event.shiftKey && onTableClick) {
+		if (onTableClick) {
 			onTableClick(tableName);
-		} else {
-			toggleTable(tableName);
 		}
+	};
+
+	const handleExpandClick = (
+		tableName: string,
+		event: React.MouseEvent,
+	) => {
+		event.preventDefault();
+		event.stopPropagation();
+		toggleTable(tableName);
 	};
 
 	const handleColumnClick = (
 		tableName: string,
 		columnName: string,
-		columnType: string,
 		event: React.MouseEvent,
 	) => {
 		event.preventDefault();
 		event.stopPropagation();
 
-		if (onColumnClick) {
-			onColumnClick(tableName, columnName, columnType);
+		if (onToggleColumnSelection) {
+			onToggleColumnSelection(tableName, columnName);
 		}
 	};
+
+	const getSelectedColumnsForTable = (tableName: string): string[] => {
+		return selectedColumns[tableName] || [];
+	};
+
+	const isColumnSelected = (tableName: string, columnName: string): boolean => {
+		const tableColumns = getSelectedColumnsForTable(tableName);
+		return tableColumns.includes(columnName);
+	};
+
+	useEffect(() => {
+		if (activeTable && selectedColumns[activeTable] && selectedColumns[activeTable].length > 0) {
+			if (generateSelectedColumnsQuery && onGenerateQuery) {
+				const query = generateSelectedColumnsQuery();
+				if (query) {
+					onGenerateQuery(query);
+				}
+			}
+		}
+	}, [selectedColumns, activeTable, generateSelectedColumnsQuery, onGenerateQuery]);
 
 	return (
 		<StyledCard>
@@ -199,14 +204,25 @@ export const DatabaseStructureBrowser: React.FC<
 				<Typography variant="h6" sx={{ fontWeight: 600 }}>
 					Data Columns
 				</Typography>
-				<IconButton
-					size="small"
-					onClick={refreshDatabaseStructure}
-					title="Refresh database structure"
-					disabled={isLoading}
-				>
-					<Refresh fontSize="small" />
-				</IconButton>
+				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+					{activeTable && getSelectedColumnsForTable(activeTable).length > 0 && (
+						<Button
+							size="small"
+							onClick={onClearColumnSelection}
+							sx={{ textTransform: 'none', minWidth: 'auto' }}
+						>
+							Clear
+						</Button>
+					)}
+					<IconButton
+						size="small"
+						onClick={refreshDatabaseStructure}
+						title="Refresh database structure"
+						disabled={isLoading}
+					>
+						<Refresh fontSize="small" />
+					</IconButton>
+				</Box>
 			</StyledCardHeader>
 
 			{/* Search section */}
@@ -254,24 +270,6 @@ export const DatabaseStructureBrowser: React.FC<
 						{toggleState ? "Collapse All" : "Expand All"}
 					</Button>
 				</Stack>
-
-				{/* Usage Instructions */}
-				<Box
-					sx={{
-						mt: 1,
-						p: 1,
-						backgroundColor: "info.lighter",
-						borderRadius: 1,
-					}}
-				>
-					<Typography
-						variant="caption"
-						sx={{ fontSize: "0.75rem", color: "info.main" }}
-					>
-						Click table names to expand/collapse. Shift+Click tables
-						or click columns to visualize as SELECT queries.
-					</Typography>
-				</Box>
 			</StyledSearchSection>
 
 			{/* Content area */}
@@ -314,7 +312,7 @@ export const DatabaseStructureBrowser: React.FC<
 									onClick={(e) =>
 										handleTableHeaderClick(table.table, e)
 									}
-									title={`${table.table} (Shift+Click to visualize)`}
+									title={`Click to select all columns`}
 									className={
 										!expandedTables[table.table]
 											? "closed"
@@ -345,11 +343,18 @@ export const DatabaseStructureBrowser: React.FC<
 										className="col-4"
 										style={{ textAlign: "center" }}
 									>
-										{expandedTables[table.table] ? (
-											<ExpandMore fontSize="small" />
-										) : (
-											<ChevronRight fontSize="small" />
-										)}
+										<IconButton
+											size="small"
+											onClick={(e) => handleExpandClick(table.table, e)}
+											title={expandedTables[table.table] ? "Collapse table" : "Expand table"}
+											sx={{ p: 0.5 }}
+										>
+											{expandedTables[table.table] ? (
+												<ExpandMore fontSize="small" />
+											) : (
+												<ChevronRight fontSize="small" />
+											)}
+										</IconButton>
 									</StyledTableHeaderCell>
 								</StyledTableHeaderRow>
 							</thead>
@@ -357,43 +362,48 @@ export const DatabaseStructureBrowser: React.FC<
 							{expandedTables[table.table] && (
 								<tbody>
 									{table.columns.map(
-										(column: Column, index: number) => (
-											<StyledColumnRow
-												key={index}
-												title={`Click to visualize ${column.column} (${column.type})`}
-												onClick={(e) =>
-													handleColumnClick(
-														table.table,
-														column.column,
-														column.type,
-														e,
-													)
-												}
-											>
-												<StyledTableCell
-													className="col-4"
-													style={{
-														textAlign: "center",
-													}}
+										(column: Column, index: number) => {
+											const isSelected = isColumnSelected(table.table, column.column);
+											return (
+												<StyledColumnRow
+													key={index}
+													selected={isSelected}
+													title={`Click to ${isSelected ? 'deselect' : 'select'} ${column.column} (${column.type})`}
+													onClick={(e) =>
+														handleColumnClick(
+															table.table,
+															column.column,
+															e
+														)
+													}
 												>
-													<DatabaseColumnIcon
-														type={column.type}
-													/>
-												</StyledTableCell>
-												<StyledTableCell>
-													<Typography
-														variant="body2"
-														sx={{
-															fontSize:
-																"0.875rem",
+													<StyledTableCell
+														className="col-4"
+														style={{
+															textAlign: "center",
 														}}
 													>
-														{column.column}
-													</Typography>
-												</StyledTableCell>
-												<StyledTableCell className="col-4"></StyledTableCell>
-											</StyledColumnRow>
-										),
+													</StyledTableCell>
+													<StyledTableCell>
+														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+															<DatabaseColumnIcon
+																type={column.type}
+															/>
+															<Typography
+																variant="body2"
+																sx={{
+																	fontSize: "0.875rem",
+																	fontWeight: isSelected ? 600 : 400,
+																}}
+															>
+																{column.column}
+															</Typography>
+														</Box>
+													</StyledTableCell>
+													<StyledTableCell className="col-4"></StyledTableCell>
+												</StyledColumnRow>
+											);
+										},
 									)}
 								</tbody>
 							)}
