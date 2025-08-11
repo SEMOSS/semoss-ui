@@ -1,543 +1,523 @@
 import {
-	ArrowDownward,
-	ArrowUpward,
-	FormatListBulletedOutlined,
-	SpaceDashboardOutlined,
+  ArrowDownward,
+  ArrowUpward,
+  FormatListBulletedOutlined,
+  SpaceDashboardOutlined,
 } from "@mui/icons-material";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-	Backdrop,
-	CircularProgress,
-	Grid,
-	MenuItem,
-	Search,
-	Select,
-	Stack,
-	styled,
-	ToggleButton,
-	ToggleButtonGroup,
-	Tooltip,
-	Typography,
+  Backdrop,
+  CircularProgress,
+  Grid,
+  MenuItem,
+  Search,
+  Select,
+  Stack,
+  styled,
+  ToggleButton,
+  ToggleButtonGroup,
+  Tooltip,
+  Typography,
 } from "@semoss/ui";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
-import { useAPI, usePixel, useRootStore, useSettings, useInfiniteScroll } from "@/hooks";
+import {
+  useAPI,
+  usePixel,
+  useRootStore,
+  useSettings,
+  useInfiniteScroll,
+} from "@/hooks";
 import type { ALL_TYPES } from "@/types";
-import { removeUnderscores } from "@/utility";
+import { removeUnderscores, getPageSizeBasedOnScreen } from "@/utility";
 
 export interface DBMember {
-	ID: string;
-	NAME: string;
-	PERMISSION: string;
-	EMAIL: string;
-	SELECTED: boolean;
+  ID: string;
+  NAME: string;
+  PERMISSION: string;
+  EMAIL: string;
+  SELECTED: boolean;
 }
 
 export interface Database {
-	app_cost: string;
-	app_favorite: number;
-	app_id: string;
-	app_name: string;
-	app_type: string;
-	database_cost: string;
-	database_id: string;
-	database_name: string;
-	database_type: string;
-	low_database_name: string;
-	database_global: true;
-	database_favorite?: number;
-	permission?: number;
-	user_permission?: number;
+  app_cost: string;
+  app_favorite: number;
+  app_id: string;
+  app_name: string;
+  app_type: string;
+  database_cost: string;
+  database_id: string;
+  database_name: string;
+  database_type: string;
+  low_database_name: string;
+  database_global: true;
+  database_favorite?: number;
+  permission?: number;
+  user_permission?: number;
 }
 
 const StyledContainer = styled("div")({
-	display: "flex",
-	width: "auto",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	gap: "24px",
+  display: "flex",
+  width: "auto",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  gap: "24px",
 });
 
 const StyledSearchbarContainer = styled("div")({
-	display: "flex",
-	width: "100%",
-	alignItems: "flex-start",
-	gap: "24px",
+  display: "flex",
+  width: "100%",
+  alignItems: "flex-start",
+  gap: "24px",
 });
 
 const StyledSearchbar = styled(Search)({
-	width: "80%",
+  width: "80%",
 });
 
 const StyledSort = styled(Select)({
-	width: "20%",
+  width: "20%",
 });
 
 const initialState = {
-	favoritedDbs: [],
-	databases: [],
+  favoritedDbs: [],
+  databases: [],
 };
 
 const reducer = (state, action) => {
-	switch (action.type) {
-		case "field": {
-			return {
-				...state,
-				[action.field]: action.value,
-			};
-		}
-	}
-	return state;
+  switch (action.type) {
+    case "field": {
+      return {
+        ...state,
+        [action.field]: action.value,
+      };
+    }
+  }
+  return state;
 };
 
 /**
  * Show detailed settings for an engine
  */
 interface EngineSettingsIndexPageProps {
-	/** Type of the page to render */
-	type: ALL_TYPES;
+  /** Type of the page to render */
+  type: ALL_TYPES;
 }
 
 export const EngineSettingsIndexPage = (
-	props: EngineSettingsIndexPageProps,
+  props: EngineSettingsIndexPageProps
 ) => {
-	const { type } = props;
+  const { type } = props;
 
-	const { adminMode } = useSettings();
-	const { configStore, monolithStore } = useRootStore();
-	const navigate = useNavigate();
+  const { adminMode } = useSettings();
+  const { configStore, monolithStore } = useRootStore();
+  const navigate = useNavigate();
 
-	const [state, dispatch] = useReducer(reducer, initialState);
-	const { favoritedDbs, databases } = state;
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { favoritedDbs, databases } = state;
 
-    const [view, setView] = useState('tile');
-    const [search, setSearch] = useState('');
-    const [sort, setSort] = useState('ENGINENAME');
-    const [sortOrder, setSortOrder] = useState('ASC');
+  const [view, setView] = useState("tile");
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("ENGINENAME");
+  const [sortOrder, setSortOrder] = useState("ASC");
 
-    //** amount of items to be loaded */
-    const limit = 8;
-    const { offset, checkHasReached, reset } = useInfiniteScroll({
-        limit,
-    });
-    // To focus when getting new results
-    const searchbarRef = useRef(null);
+  //** amount of items to be loaded */
+  const limit = getPageSizeBasedOnScreen({
+    rowHeight: 417,
+    rowWidth: 294,
+    isFullWidth: true,
+  });
+  // To focus when getting new results
+  const searchbarRef = useRef(null);
 
-	// get a list of the keys
-	const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
-		(k) => {
-			return (
-				k.display_options === "single-checklist" ||
-				k.display_options === "multi-checklist" ||
-				k.display_options === "single-select" ||
-				k.display_options === "multi-select" ||
-				k.display_options === "single-typeahead" ||
-				k.display_options === "multi-typeahead" ||
-				k.display_options === "textarea"
-			);
-		},
-	);
+  // get a list of the keys
+  const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+    (k) => {
+      return (
+        k.display_options === "single-checklist" ||
+        k.display_options === "multi-checklist" ||
+        k.display_options === "single-select" ||
+        k.display_options === "multi-select" ||
+        k.display_options === "single-typeahead" ||
+        k.display_options === "multi-typeahead" ||
+        k.display_options === "textarea"
+      );
+    }
+  );
 
-	// get metakeys to the ones we want
-	const metaKeys = databaseMetaKeys.map((k) => {
-		return k.metakey;
-	});
+  // get metakeys to the ones we want
+  const metaKeys = databaseMetaKeys.map((k) => {
+    return k.metakey;
+  });
 
-	// Favorites ----------------------------------
-	const getFavoritedDatabases = usePixel(`
+  // Favorites ----------------------------------
+  const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
-		metaKeys,
-	)}, filterWord=["${search}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
+      metaKeys
+    )}, filterWord=["${search}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
     `);
 
-	useEffect(() => {
-		if (getFavoritedDatabases.status !== "SUCCESS") {
-			return;
-		}
+  useEffect(() => {
+    if (getFavoritedDatabases.status !== "SUCCESS") {
+      return;
+    }
 
-		dispatch({
-			type: "field",
-			field: "favoritedDbs",
-			value: getFavoritedDatabases.data,
-		});
+    dispatch({
+      type: "field",
+      field: "favoritedDbs",
+      value: getFavoritedDatabases.data,
+    });
 
-		searchbarRef.current?.focus();
-	}, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+    searchbarRef.current?.focus();
+  }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
-	// All Engines -------------------------------------
-	const getEngines = useAPI([
-		"getEngines",
-		adminMode,
-		search,
-		type,
-		offset,
-		limit,
-	]);
+  const { offset, checkHasReached, reset } = useInfiniteScroll({
+    limit,
+  });
 
-	//** reset dataMode if adminMode is toggled */
-	useEffect(() => {
-		reset();
-		dispatch({
-			type: "field",
-			field: "databases",
-			value: [],
-		});
-	}, [adminMode, search, sort]);
+  // All Engines -------------------------------------
+  const getEngines = useAPI([
+    "getEngines",
+    adminMode,
+    search,
+    type,
+    offset,
+    limit,
+  ]);
 
-	//** append data through infinite scroll */
-	useEffect(() => {
-		if (getEngines.status !== "SUCCESS") {
-			return;
-		}
+  //** reset dataMode if adminMode is toggled */
+  useEffect(() => {
+    reset();
+    dispatch({
+      type: "field",
+      field: "databases",
+      value: [],
+    });
+  }, [adminMode, search, sort]);
 
-        if (
-            getEngines.status === 'SUCCESS' &&
-            getEngines.data instanceof Array
-        ) {
-            checkHasReached(getEngines.data.length);
+  //** append data through infinite scroll */
+  useEffect(() => {
+    if (getEngines.status !== "SUCCESS") {
+      return;
+    }
+
+    if (getEngines.data instanceof Array) {
+      checkHasReached(getEngines.data.length);
+
+      const mutateListWithVotes = [];
+
+      getEngines.data.forEach((db, i) => {
+        mutateListWithVotes.push({
+          ...db,
+          upvotes: db.upvotes ? db.upvotes : 0,
+          // hasUpvoted: false,
+          views: "N/A",
+          trending: "N/A",
+        });
+      });
+
+      dispatch({
+        type: "field",
+        field: "databases",
+        value:
+          offset === 0
+            ? mutateListWithVotes
+            : databases.concat(mutateListWithVotes),
+      });
+    }
+    searchbarRef.current?.focus();
+  }, [getEngines.status, getEngines.data]);
+
+  /**
+   * @name favoriteDb
+   * @param db
+   */
+  const favoriteDb = (db) => {
+    const favorite = !isFavorited(db.database_id);
+    monolithStore
+      .setEngineFavorite(db.database_id, favorite)
+      .then((response) => {
+        if (!favorite) {
+          const newFavorites = favoritedDbs;
+          for (let i = newFavorites.length - 1; i >= 0; i--) {
+            if (newFavorites[i].database_id === db.database_id) {
+              newFavorites.splice(i, 1);
+            }
+          }
+
+          dispatch({
+            type: "field",
+            field: "favoritedDbs",
+            value: newFavorites,
+          });
+        } else {
+          dispatch({
+            type: "field",
+            field: "favoritedDbs",
+            value: [...favoritedDbs, db],
+          });
         }
+      })
+      .catch((err) => {
+        // throw error if promise doesn't fulfill
+        throw Error(err);
+      });
+  };
 
-		const mutateListWithVotes = databases;
+  /**
+   * @name isFavorited
+   * @param id
+   */
+  const isFavorited = (id) => {
+    const favorites = favoritedDbs;
 
-		getEngines.data.forEach((db, i) => {
-			mutateListWithVotes.push({
-				...db,
-				upvotes: db.upvotes ? db.upvotes : 0,
-				// hasUpvoted: false,
-				views: "N/A",
-				trending: "N/A",
-			});
-		});
+    if (!favorites) return false;
+    return favorites.some((el) => el.database_id === id);
+  };
 
-		dispatch({
-			type: "field",
-			field: "databases",
-			value: mutateListWithVotes,
-		});
+  /**
+   * @name upvoteDb
+   * @param db
+   */
+  const upvoteDb = (db) => {
+    let pixelString = "";
 
-		searchbarRef.current?.focus();
-	}, [getEngines.status, getEngines.data]);
+    if (!db.hasUpvoted) {
+      pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
+    } else {
+      pixelString += `UnvoteEngine(engine="${db.database_id}")`;
+    }
 
-	/**
-	 * @name favoriteDb
-	 * @param db
-	 */
-	const favoriteDb = (db) => {
-		const favorite = !isFavorited(db.database_id);
-		monolithStore
-			.setEngineFavorite(db.database_id, favorite)
-			.then((response) => {
-				if (!favorite) {
-					const newFavorites = favoritedDbs;
-					for (let i = newFavorites.length - 1; i >= 0; i--) {
-						if (newFavorites[i].database_id === db.database_id) {
-							newFavorites.splice(i, 1);
-						}
-					}
+    monolithStore.runQuery(pixelString).then((response) => {
+      const type = response.pixelReturn[0].operationType;
+      const pixelResponse = response.pixelReturn[0].output;
 
-					dispatch({
-						type: "field",
-						field: "favoritedDbs",
-						value: newFavorites,
-					});
-				} else {
-					dispatch({
-						type: "field",
-						field: "favoritedDbs",
-						value: [...favoritedDbs, db],
-					});
-				}
-			})
-			.catch((err) => {
-				// throw error if promise doesn't fulfill
-				throw Error(err);
-			});
-	};
+      if (type.indexOf("ERROR") === -1) {
+        const newDatabases = [];
 
-	/**
-	 * @name isFavorited
-	 * @param id
-	 */
-	const isFavorited = (id) => {
-		const favorites = favoritedDbs;
+        databases.forEach((database) => {
+          if (database.database_id === db.database_id) {
+            const newCopy = database;
+            newCopy.upvotes = !db.hasUpvoted
+              ? newCopy.upvotes + 1
+              : newCopy.upvotes - 1;
+            newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
-		if (!favorites) return false;
-		return favorites.some((el) => el.database_id === id);
-	};
+            newDatabases.push(newCopy);
+          } else {
+            newDatabases.push(database);
+          }
+        });
 
-	/**
-	 * @name upvoteDb
-	 * @param db
-	 */
-	const upvoteDb = (db) => {
-		let pixelString = "";
+        dispatch({
+          type: "field",
+          field: "database",
+          value: newDatabases,
+        });
+      } else {
+        console.error("Error voting for DB");
+      }
+    });
+  };
 
-		if (!db.hasUpvoted) {
-			pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
-		} else {
-			pixelString += `UnvoteEngine(engine="${db.database_id}")`;
-		}
+  /**
+   * @name setDbGlobal
+   * @param db
+   */
+  const setDbGlobal = (db) => {
+    monolithStore
+      .setEngineGlobal(adminMode, db.database_id, !db.database_global)
+      .then((response) => {
+        if (response.data.success) {
+          const newDatabases = [];
+          databases.forEach((database) => {
+            if (database.database_id === db.database_id) {
+              const newCopy = database;
+              newCopy.database_global = !db.database_global;
 
-		monolithStore.runQuery(pixelString).then((response) => {
-			const type = response.pixelReturn[0].operationType;
-			const pixelResponse = response.pixelReturn[0].output;
+              newDatabases.push(newCopy);
+            } else {
+              newDatabases.push(database);
+            }
+          });
 
-			if (type.indexOf("ERROR") === -1) {
-				const newDatabases = [];
+          dispatch({
+            type: "field",
+            field: "database",
+            value: newDatabases,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error(error);
+      });
+  };
 
-				databases.forEach((database) => {
-					if (database.database_id === db.database_id) {
-						const newCopy = database;
-						newCopy.upvotes = !db.hasUpvoted
-							? newCopy.upvotes + 1
-							: newCopy.upvotes - 1;
-						newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
-
-						newDatabases.push(newCopy);
-					} else {
-						newDatabases.push(database);
-					}
-				});
-
-				dispatch({
-					type: "field",
-					field: "database",
-					value: newDatabases,
-				});
-			} else {
-				console.error("Error voting for DB");
-			}
-		});
-	};
-
-	/**
-	 * @name setDbGlobal
-	 * @param db
-	 */
-	const setDbGlobal = (db) => {
-		monolithStore
-			.setEngineGlobal(adminMode, db.database_id, !db.database_global)
-			.then((response) => {
-				if (response.data.success) {
-					const newDatabases = [];
-					databases.forEach((database) => {
-						if (database.database_id === db.database_id) {
-							const newCopy = database;
-							newCopy.database_global = !db.database_global;
-
-							newDatabases.push(newCopy);
-						} else {
-							newDatabases.push(database);
-						}
-					});
-
-                    dispatch({
-                        type: 'field',
-                        field: 'database',
-                        value: newDatabases,
-                    });
-                }
-            })
-            .catch((error) => {
-                console.error(error);
-            });
-    };
-
-	return (
-		<>
-			<Backdrop
-				open={getEngines.status !== "SUCCESS"}
-				sx={{
-					backgroundColor: "rgba(255, 255, 255, 0.5)",
-					zIndex: 1501,
-				}}
-			>
-				<Stack
-					direction={"column"}
-					alignItems={"center"}
-					justifyContent={"center"}
-					spacing={1}
-				>
-					<CircularProgress />
-					<Typography variant="body2">Loading</Typography>
-					<Typography variant="caption">Databases</Typography>
-				</Stack>
-			</Backdrop>
-			<StyledContainer>
-				<StyledSearchbarContainer>
-					<StyledSearchbar
-						value={search}
-						onChange={(e) => {
-                            reset();
-							setSearch(e.target.value);
-						}}
-						size="small"
-						onClear={() => setSearch("")}
-						ref={searchbarRef}
-					/>
-					<StyledSort
-						size={"small"}
-						value={sort}
-						onChange={(e) => {
-                            reset();
-                            setSort(e.target.value)
-                        }}
-						label={"Sort By"}
-					>
-						<MenuItem value="ENGINENAME">Name</MenuItem>
-						<MenuItem value="DATECREATED">Date Created</MenuItem>
-						{/* <MenuItem value="Views">Views</MenuItem>
+  return (
+    <>
+      <Backdrop
+        open={getEngines.status !== "SUCCESS"}
+        sx={{
+          backgroundColor: "rgba(255, 255, 255, 0.5)",
+          zIndex: 1501,
+        }}
+      >
+        <Stack
+          direction={"column"}
+          alignItems={"center"}
+          justifyContent={"center"}
+          spacing={1}
+        >
+          <CircularProgress />
+          <Typography variant="body2">Loading</Typography>
+          <Typography variant="caption">Databases</Typography>
+        </Stack>
+      </Backdrop>
+      <StyledContainer>
+        <StyledSearchbarContainer>
+          <StyledSearchbar
+            value={search}
+            onChange={(e) => {
+              reset();
+              setSearch(e.target.value);
+            }}
+            size="small"
+            onClear={() => setSearch("")}
+            ref={searchbarRef}
+          />
+          <StyledSort
+            size={"small"}
+            value={sort}
+            onChange={(e) => {
+              reset();
+              setSort(e.target.value);
+            }}
+            label={"Sort By"}
+          >
+            <MenuItem value="ENGINENAME">Name</MenuItem>
+            <MenuItem value="DATECREATED">Date Created</MenuItem>
+            {/* <MenuItem value="Views">Views</MenuItem>
                         <MenuItem value="Trending">Trending</MenuItem>
                         <MenuItem value="Upvotes">Upvotes</MenuItem> */}
-					</StyledSort>
+          </StyledSort>
 
-					<ToggleButtonGroup
-						size={"small"}
-						value={sortOrder}
-						color="primary"
-					>
-						<ToggleButton
-							onClick={(e, v) => setSortOrder(v)}
-							value={"DESC"}
-							aria-label={"Descending Order"}
-						>
-							<Tooltip title={"Descending Order"}>
-								<ArrowDownward />
-							</Tooltip>
-						</ToggleButton>
-						<ToggleButton
-							onClick={(e, v) => setSortOrder(v)}
-							value={"ASC"}
-							aria-label={"Ascending Order"}
-						>
-							<Tooltip title={"Ascending Order"}>
-								<ArrowUpward />
-							</Tooltip>
-						</ToggleButton>
-					</ToggleButtonGroup>
+          <ToggleButtonGroup size={"small"} value={sortOrder} color="primary">
+            <ToggleButton
+              onClick={(e, v) => setSortOrder(v)}
+              value={"DESC"}
+              aria-label={"Descending Order"}
+            >
+              <Tooltip title={"Descending Order"}>
+                <ArrowDownward />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton
+              onClick={(e, v) => setSortOrder(v)}
+              value={"ASC"}
+              aria-label={"Ascending Order"}
+            >
+              <Tooltip title={"Ascending Order"}>
+                <ArrowUpward />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
 
-					<ToggleButtonGroup
-						size={"small"}
-						value={view}
-						color="primary"
-					>
-						<ToggleButton
-							onClick={(e, v) => setView(v)}
-							value={"tile"}
-						>
-							<Tooltip title={"Tile View"}>
-								<SpaceDashboardOutlined />
-							</Tooltip>
-						</ToggleButton>
-						<ToggleButton
-							onClick={(e, v) => setView(v)}
-							value={"list"}
-						>
-							<Tooltip title={"List View"}>
-								<FormatListBulletedOutlined />
-							</Tooltip>
-						</ToggleButton>
-					</ToggleButtonGroup>
-				</StyledSearchbarContainer>
-				<Grid container spacing={3}>
-					{databases.length
-						? databases.map((db, i) => {
-								return (
-									<Grid
-										item
-										key={i}
-										sm={view === "list" ? 12 : 12}
-										md={view === "list" ? 12 : 6}
-										lg={view === "list" ? 12 : 4}
-										xl={view === "list" ? 12 : 3}
-									>
-										{view === "list" ? (
-											<EngineLandscapeCard
-												name={db.database_name}
-												id={db.database_id}
-												tag={db.tag}
-												owner={db.database_created_by}
-												description={db.description}
-												votes={db.upvotes}
-												views={db.views}
-												trending={db.trending}
-												isGlobal={db.database_global}
-												isUpvoted={db.hasUpvoted}
-												isFavorite={isFavorited(
-													db.database_id,
-												)}
-												favorite={(val) => {
-													favoriteDb(db);
-												}}
-												onClick={(id) => {
-													navigate(
-														`${db.database_id}`,
-														{
-															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
-																global: db.database_global,
-																permission:
-																	db.permission,
-															},
-														},
-													);
-												}}
-												upvote={(val) => {
-													upvoteDb(db);
-												}}
-												global={(val) => {
-													setDbGlobal(db);
-												}}
-											/>
-										) : (
-											<EngineTileCard
-												name={db.database_name}
-												id={db.database_id}
-												tag={db.tag}
-												owner={db.database_created_by}
-												description={db.description}
-												votes={db.upvotes}
-												views={db.views}
-												trending={db.trending}
-												isGlobal={db.database_global}
-												isFavorite={isFavorited(
-													db.database_id,
-												)}
-												isUpvoted={db.hasUpvoted}
-												favorite={() => {
-													favoriteDb(db);
-												}}
-												onClick={() => {
-													navigate(
-														`${db.database_id}`,
-														{
-															state: {
-																name: removeUnderscores(
-																	db.database_name,
-																),
-																global: db.database_global,
-																permission:
-																	db.permission,
-															},
-														},
-													);
-												}}
-												upvote={() => {
-													upvoteDb(db);
-												}}
-												global={() => {
-													setDbGlobal(db);
-												}}
-											/>
-										)}
-									</Grid>
-								);
-							})
-						: null}
-				</Grid>
-			</StyledContainer>
-		</>
-	);
+          <ToggleButtonGroup size={"small"} value={view} color="primary">
+            <ToggleButton onClick={(e, v) => setView(v)} value={"tile"}>
+              <Tooltip title={"Tile View"}>
+                <SpaceDashboardOutlined />
+              </Tooltip>
+            </ToggleButton>
+            <ToggleButton onClick={(e, v) => setView(v)} value={"list"}>
+              <Tooltip title={"List View"}>
+                <FormatListBulletedOutlined />
+              </Tooltip>
+            </ToggleButton>
+          </ToggleButtonGroup>
+        </StyledSearchbarContainer>
+        <Grid container spacing={3}>
+          {databases.length
+            ? databases.map((db, i) => {
+                return (
+                  <Grid
+                    item
+                    key={i}
+                    sm={view === "list" ? 12 : 12}
+                    md={view === "list" ? 12 : 6}
+                    lg={view === "list" ? 12 : 4}
+                    xl={view === "list" ? 12 : 3}
+                  >
+                    {view === "list" ? (
+                      <EngineLandscapeCard
+                        name={db.database_name}
+                        id={db.database_id}
+                        tag={db.tag}
+                        owner={db.database_created_by}
+                        description={db.description}
+                        votes={db.upvotes}
+                        views={db.views}
+                        trending={db.trending}
+                        isGlobal={db.database_global}
+                        isUpvoted={db.hasUpvoted}
+                        isFavorite={isFavorited(db.database_id)}
+                        favorite={(val) => {
+                          favoriteDb(db);
+                        }}
+                        onClick={(id) => {
+                          navigate(`${db.database_id}`, {
+                            state: {
+                              name: removeUnderscores(db.database_name),
+                              global: db.database_global,
+                              permission: db.permission,
+                            },
+                          });
+                        }}
+                        upvote={(val) => {
+                          upvoteDb(db);
+                        }}
+                        global={(val) => {
+                          setDbGlobal(db);
+                        }}
+                      />
+                    ) : (
+                      <EngineTileCard
+                        name={db.database_name}
+                        id={db.database_id}
+                        tag={db.tag}
+                        owner={db.database_created_by}
+                        description={db.description}
+                        votes={db.upvotes}
+                        views={db.views}
+                        trending={db.trending}
+                        isGlobal={db.database_global}
+                        isFavorite={isFavorited(db.database_id)}
+                        isUpvoted={db.hasUpvoted}
+                        favorite={() => {
+                          favoriteDb(db);
+                        }}
+                        onClick={() => {
+                          navigate(`${db.database_id}`, {
+                            state: {
+                              name: removeUnderscores(db.database_name),
+                              global: db.database_global,
+                              permission: db.permission,
+                            },
+                          });
+                        }}
+                        upvote={() => {
+                          upvoteDb(db);
+                        }}
+                        global={() => {
+                          setDbGlobal(db);
+                        }}
+                      />
+                    )}
+                  </Grid>
+                );
+              })
+            : null}
+        </Grid>
+      </StyledContainer>
+    </>
+  );
 };

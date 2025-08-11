@@ -228,3 +228,24 @@ export const permissionPriorityMapper = (permission: string | number) => {
 			return { permission: "", priority: 0 };
 	}
 };
+
+export const getPageSizeBasedOnScreen = ({
+	isFullWidth = false,
+	rowHeight = 180,
+	rowWidth = 300,
+}): number => {
+	// Get current viewport dimensions
+	const height = window.innerHeight / 2; // Use half height for calculations
+	const width = isFullWidth ? window.innerWidth : window.innerWidth / 1.5;
+	// const width = isFullWidth ? window.innerWidth : window.innerWidth / 1.5;
+
+	// Calculate how many items fit per row and per column
+	const columns = isFullWidth ? 1 : Math.max(1, Math.floor(width / rowWidth));
+	const rows = Math.max(1, Math.floor(height / rowHeight));
+
+	// Total items that fit in the viewport
+	const pageSize = columns * rows;
+
+	return Math.max(5, pageSize);
+}
+

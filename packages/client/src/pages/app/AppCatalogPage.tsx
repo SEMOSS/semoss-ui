@@ -15,7 +15,7 @@ import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { useInfinitePixel, useInfiniteScroll, usePixel, useRootStore } from "@/hooks";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
-import { getPageSizeBasedOnScreen } from "@/utility/getPageSize";
+import { getPageSizeBasedOnScreen } from "@/utility";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -238,7 +238,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	}, 300);
 
   const handleInputChange = (newInputValue) => {
-    reset();
     setInputValue(newInputValue);
     debouncedSet(newInputValue);
   };

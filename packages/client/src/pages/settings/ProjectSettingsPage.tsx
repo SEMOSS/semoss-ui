@@ -22,6 +22,7 @@ import {
 } from "@semoss/ui";
 import { ProjectTileCard } from "@/components/app";
 import { useAPI, useSettings, useInfiniteScroll } from "../../hooks";
+import { getPageSizeBasedOnScreen } from "@/utility";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -112,7 +113,7 @@ export const ProjectSettingsPage = () => {
     const [sortOrder, setSortOrder] = useState('ASC');
 
     //** amount of items to be loaded */
-    const limit = 30;
+    const limit = getPageSizeBasedOnScreen({ rowHeight: 270, rowWidth: 136, isFullWidth: true });
 
     const { offset, checkHasReached, reset } = useInfiniteScroll({
         limit,
@@ -161,7 +162,7 @@ export const ProjectSettingsPage = () => {
             checkHasReached(getProjects.data.length);
         }
 
-		const mutateListWithVotes = projects;
+		const mutateListWithVotes = [];
 
 		getProjects.data.forEach((proj) => {
 			mutateListWithVotes.push({
@@ -177,7 +178,7 @@ export const ProjectSettingsPage = () => {
 		dispatch({
 			type: "field",
 			field: "projects",
-			value: mutateListWithVotes,
+			value: offset ? [...projects, ...mutateListWithVotes] : mutateListWithVotes,
 		});
 
         searchbarRef.current?.focus();

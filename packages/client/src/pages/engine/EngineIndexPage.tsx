@@ -18,7 +18,7 @@ import { usePixel, useRootStore, useInfiniteScroll, useInfinitePixel } from "@/h
 import { ENGINE_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
-import { getPageSizeBasedOnScreen } from "@/utility/getPageSize";
+import { getPageSizeBasedOnScreen } from "@/utility";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -98,7 +98,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const { configStore, monolithStore } = useRootStore();
 		const navigate = useNavigate();
-
+    
 		// get a list of the keys
 		const databaseMetaKeys =
 			configStore.store.config.databaseMetaKeys.filter((k) => {

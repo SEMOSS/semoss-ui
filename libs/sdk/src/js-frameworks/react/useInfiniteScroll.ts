@@ -6,7 +6,7 @@ export function useInfiniteScroll({
 	collect = () => {
 		return;
 	},
-	length = 0,
+	length = undefined,
 }: {
 	limit?: number;
 	scrollElementId?: string;
@@ -21,12 +21,7 @@ export function useInfiniteScroll({
 	const previousScrollRef = useRef(0);
 	let currentScroll;
 
-	const offsetRef = useRef(0);
-	const canCollectRef = useRef(true);
-	canCollectRef.current = canCollect;
-
 	const reset = () => {
-		offsetRef.current = 0;
 		setOffset(0);
 	};
 
@@ -34,7 +29,7 @@ export function useInfiniteScroll({
 		if (len < limit) {
 			setCanCollect(false);
 		} else {
-			if (!canCollectRef.current) {
+			if (!canCollect) {
 				setCanCollect(true);
 			}
 		}
@@ -52,12 +47,11 @@ export function useInfiniteScroll({
 			}
 
 			scrollTimeoutRef.current = setTimeout(() => {
-				if (!canCollectRef.current) {
+				if (!canCollect) {
 					return;
 				}
-				const nextOffset = offsetRef.current + limit;
+				const nextOffset = offset + limit;
 				setOffset(nextOffset);
-				offsetRef.current = nextOffset;
 				collect(nextOffset);
 			}, 500);
 		}
@@ -85,7 +79,7 @@ export function useInfiniteScroll({
 	}, [scrollElementId]);
 
 	useEffect(() => {
-		if (length > 0) {
+		if (length !== undefined || length !== null) {
 			checkHasReached(length);
 		}
 	}, [length]);
