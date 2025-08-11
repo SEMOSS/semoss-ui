@@ -393,9 +393,17 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
         ]
         runStateDispatch(payloadProp);
     }
+    /**
+     * Dispatches state updates for multiple cell parameters.
+     *
+     * @param payloadProps - An array of objects, each containing:
+     *   @param queryId - (Optional) The ID of the query associated with the cell. Defaults to the cell's query ID.
+     *   @param cellId - (Optional) The ID of the cell to be updated. Defaults to the current cell ID.
+     *   @param path - The parameter path within the cell to update.
+     *   @param value - The new value to set for the specified parameter path.
+     */
     const runStateDispatch = (payloadProps: {queryId?: string; cellId?: string; path: string; value: any}[]) => {
         payloadProps.forEach(({ queryId = cell.query.id, cellId = cell.id, path, value }) => {
-            console.log(queryId, cellId, path, value, 'updatecell');
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
                 payload: {
