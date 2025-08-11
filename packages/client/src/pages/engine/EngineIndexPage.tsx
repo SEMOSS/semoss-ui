@@ -1,91 +1,90 @@
-import { useEffect, useState, useReducer, useRef, useMemo } from "react";
 import { observer } from "mobx-react-lite";
-import {
-  styled,
-  Stack,
-  Typography,
-  Button,
-  ToggleTabsGroup,
-  Grid,
-  TextField,
-} from "@semoss/ui";
-import { debounced } from "@semoss/sdk/react";
-
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-import { usePixel, useRootStore, useInfiniteScroll, useInfinitePixel } from "@/hooks";
+import { debounced } from "@semoss/sdk/react";
+import {
+	Button,
+	Grid,
+	Stack,
+	styled,
+	TextField,
+	ToggleTabsGroup,
+	Typography,
+} from "@semoss/ui";
 import { EngineLandscapeCard } from "@/components/engine";
-import { Filterbox } from "@/components/ui";
 import { Help } from "@/components/help";
-import { ENGINE_ROUTES } from "./engine.constants";
+import { Filterbox } from "@/components/ui";
+import { usePixel, useRootStore, useInfiniteScroll, useInfinitePixel } from "@/hooks";
+import { ENGINE_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
+import type { ENGINE_ROUTES } from "./engine.constants";
 import { getPageSizeBasedOnScreen } from "@/utility/getPageSize";
 
 const StyledContainer = styled("div")(({ theme }) => ({
-  display: "flex",
-  height: "100%",
-  gap: theme.spacing(3),
-  paddingTop: theme.spacing(1),
-  paddingBottom: theme.spacing(1),
+	display: "flex",
+	height: "100%",
+	gap: theme.spacing(3),
+	paddingTop: theme.spacing(1),
+	paddingBottom: theme.spacing(1),
 }));
 
 const StyledContent = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  height: "100%",
-  flex: "1",
-  width: "100%",
-  gap: theme.spacing(3),
+	display: "flex",
+	flexDirection: "column",
+	height: "100%",
+	flex: "1",
+	width: "100%",
+	gap: theme.spacing(3),
 }));
 
 const StyledSectionLabel = styled(Typography)(() => ({
-  size: "16px",
-  fontWeight: "500",
+	size: "16px",
+	fontWeight: "500",
 }));
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
-  border: "1px",
-  minHeight: "42px",
-  color: theme.palette.secondary.light,
-  borderRadius: theme.shape.borderRadius,
-  alignItems: "center",
-  padding: "0px 3px",
+	border: "1px",
+	minHeight: "42px",
+	color: theme.palette.secondary.light,
+	borderRadius: theme.shape.borderRadius,
+	alignItems: "center",
+	padding: "0px 3px",
 }));
 
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
-  height: "38px",
-  padding: "8px 11px",
-  "&.MuiTab-root": {
-    borderRadius: theme.shape.borderRadius,
-  },
-  "&.Mui-selected": {
-    boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
-  },
+	height: "38px",
+	padding: "8px 11px",
+	"&.MuiTab-root": {
+		borderRadius: theme.shape.borderRadius,
+	},
+	"&.Mui-selected": {
+		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
+	},
 }));
 
 const initialState = {
-  favoritedDbs: [],
-  databases: [],
-  filterSearch: "",
+	favoritedDbs: [],
+	databases: [],
+	filterSearch: "",
 };
 
 type MODE = "Mine" | "Discoverable";
 
 const reducer = (state, action) => {
-  switch (action.type) {
-    case "field": {
-      return {
-        ...state,
-        [action.field]: action.value,
-      };
-    }
-  }
-  return state;
+	switch (action.type) {
+		case "field": {
+			return {
+				...state,
+				[action.field]: action.value,
+			};
+		}
+	}
+	return state;
 };
 
 interface EngineIndexPageProps {
-  /** Route to render */
-  route: (typeof ENGINE_ROUTES)[number];
+	/** Route to render */
+	route: (typeof ENGINE_ROUTES)[number];
 }
 
 /**
@@ -93,44 +92,45 @@ interface EngineIndexPageProps {
  * Landing page to view the available engines
  */
 export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
-  ({ route }): JSX.Element => {
-    // get the matching route
-    const routeTypeRef = useRef("");
+	({ route }): JSX.Element => {
+		// get the matching route
+		const routeTypeRef = useRef("");
 
-    const { configStore, monolithStore } = useRootStore();
-    const navigate = useNavigate();
+		const { configStore, monolithStore } = useRootStore();
+		const navigate = useNavigate();
 
-    // get a list of the keys
-    const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
-      (k) => {
-        return (
-          k.display_options === "single-checklist" ||
-          k.display_options === "multi-checklist" ||
-          k.display_options === "single-select" ||
-          k.display_options === "multi-select" ||
-          k.display_options === "single-typeahead" ||
-          k.display_options === "multi-typeahead" ||
-          k.display_options === "select-box"
-        );
-      }
-    );
+		// get a list of the keys
+		const databaseMetaKeys =
+			configStore.store.config.databaseMetaKeys.filter((k) => {
+				return (
+					k.display_options === "single-checklist" ||
+					k.display_options === "multi-checklist" ||
+					k.display_options === "single-select" ||
+					k.display_options === "multi-select" ||
+					k.display_options === "single-typeahead" ||
+					k.display_options === "multi-typeahead" ||
+					k.display_options === "select-box"
+				);
+			});
 
-    // get metakeys to the ones we want
-    const metaKeys = databaseMetaKeys.map((k) => {
-      return k.metakey;
-    });
+		// get metakeys to the ones we want
+		const metaKeys = databaseMetaKeys.map((k) => {
+			return k.metakey;
+		});
 
-    const [state, dispatch] = useReducer(reducer, initialState);
-    const { favoritedDbs, databases } = state;
+		const [state, dispatch] = useReducer(reducer, initialState);
+		const { favoritedDbs, databases } = state;
 
     const limit = getPageSizeBasedOnScreen({isFullWidth: true, rowHeight: 88});
 
     const [search, setSearch] = useState("");
     const [inputValue, setInputValue] = useState("");
 
-    // which view we are on
-    const [mode, setMode] = useState<MODE>("Mine");
-    const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+		// which view we are on
+		const [mode, setMode] = useState<MODE>("Mine");
+		const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>(
+			{},
+		);
 
     const dbPixelPrefix: string =
       mode === "Mine" ? `MyEngines` : "MyDiscoverableEngines";
@@ -203,144 +203,146 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
         : ""
     );
 
-    const debouncedSet = debounced((newInputValue) => {
-      setSearch(newInputValue);
-    }, 300);
+		const debouncedSet = debounced((newInputValue) => {
+			setSearch(newInputValue);
+		}, 300);
 
-    const handleInputChange = (newInputValue) => {
-      setInputValue(newInputValue);
-      debouncedSet(newInputValue);
-    };
+		const handleInputChange = (newInputValue) => {
+			setInputValue(newInputValue);
+			debouncedSet(newInputValue);
+		};
 
-    /**
-     * @name setGlobal
-     * @param db
-     */
-    const setGlobal = (db) => {
-      monolithStore
-        .setEngineGlobal(
-          configStore.store.user.admin,
-          db.database_id,
-          !db.database_global
-        )
-        .then((response) => {
-          if (response.data.success) {
-            const newDatabases = [];
-            databases.forEach((database) => {
-              if (database.database_id === db.database_id) {
-                const newCopy = database;
-                newCopy.database_global = !db.database_global;
+		/**
+		 * @name setGlobal
+		 * @param db
+		 */
+		const setGlobal = (db) => {
+			monolithStore
+				.setEngineGlobal(
+					configStore.store.user.admin,
+					db.database_id,
+					!db.database_global,
+				)
+				.then((response) => {
+					if (response.data.success) {
+						const newDatabases = [];
+						databases.forEach((database) => {
+							if (database.database_id === db.database_id) {
+								const newCopy = database;
+								newCopy.database_global = !db.database_global;
 
-                newDatabases.push(newCopy);
-              } else {
-                newDatabases.push(database);
-              }
-            });
+								newDatabases.push(newCopy);
+							} else {
+								newDatabases.push(database);
+							}
+						});
 
-            dispatch({
-              type: "field",
-              field: "database",
-              value: newDatabases,
-            });
-          }
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    };
+						dispatch({
+							type: "field",
+							field: "database",
+							value: newDatabases,
+						});
+					}
+				})
+				.catch((error) => {
+					console.error(error);
+				});
+		};
 
-    /**
-     * @name favoriteDb
-     * @param db
-     */
-    const favoriteDb = (db) => {
-      const favorite = !isFavorited(db.database_id);
-      monolithStore
-        .setEngineFavorite(db.database_id, favorite)
-        .then(() => {
-          if (!favorite) {
-            const newFavorites = favoritedDbs;
-            for (let i = newFavorites.length - 1; i >= 0; i--) {
-              if (newFavorites[i].database_id === db.database_id) {
-                newFavorites.splice(i, 1);
-              }
-            }
+		/**
+		 * @name favoriteDb
+		 * @param db
+		 */
+		const favoriteDb = (db) => {
+			const favorite = !isFavorited(db.database_id);
+			monolithStore
+				.setEngineFavorite(db.database_id, favorite)
+				.then(() => {
+					if (!favorite) {
+						const newFavorites = favoritedDbs;
+						for (let i = newFavorites.length - 1; i >= 0; i--) {
+							if (
+								newFavorites[i].database_id === db.database_id
+							) {
+								newFavorites.splice(i, 1);
+							}
+						}
 
-            dispatch({
-              type: "field",
-              field: "favoritedDbs",
-              value: newFavorites,
-            });
-          } else {
-            dispatch({
-              type: "field",
-              field: "favoritedDbs",
-              value: [...favoritedDbs, db],
-            });
-          }
-        })
-        .catch((err) => {
-          // throw error if promise doesn't fulfill
-          throw Error(err);
-        });
-    };
+						dispatch({
+							type: "field",
+							field: "favoritedDbs",
+							value: newFavorites,
+						});
+					} else {
+						dispatch({
+							type: "field",
+							field: "favoritedDbs",
+							value: [...favoritedDbs, db],
+						});
+					}
+				})
+				.catch((err) => {
+					// throw error if promise doesn't fulfill
+					throw Error(err);
+				});
+		};
 
-    /**
-     * @name isFavorited
-     * @param id
-     * @desc determines if card is favorited
-     */
-    const isFavorited = (id) => {
-      const favorites = favoritedDbs;
+		/**
+		 * @name isFavorited
+		 * @param id
+		 * @desc determines if card is favorited
+		 */
+		const isFavorited = (id) => {
+			const favorites = favoritedDbs;
 
-      if (!favorites) return false;
-      return favorites.some((el) => el.database_id === id);
-    };
+			if (!favorites) return false;
+			return favorites.some((el) => el.database_id === id);
+		};
 
-    /**
-     * @name upvoteDb
-     * @param db
-     */
-    const upvoteDb = (db) => {
-      let pixelString = "";
+		/**
+		 * @name upvoteDb
+		 * @param db
+		 */
+		const upvoteDb = (db) => {
+			let pixelString = "";
 
-      if (!db.hasUpvoted) {
-        pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
-      } else {
-        pixelString += `UnvoteEngine(engine="${db.database_id}")`;
-      }
+			if (!db.hasUpvoted) {
+				pixelString += `VoteEngine(engine="${db.database_id}", vote=1)`;
+			} else {
+				pixelString += `UnvoteEngine(engine="${db.database_id}")`;
+			}
 
-      monolithStore.runQuery(pixelString).then((response) => {
-        const type = response.pixelReturn[0].operationType;
-        const pixelResponse = response.pixelReturn[0].output;
+			monolithStore.runQuery(pixelString).then((response) => {
+				const type = response.pixelReturn[0].operationType;
+				const pixelResponse = response.pixelReturn[0].output;
 
-        if (type.indexOf("ERROR") === -1) {
-          const newDatabases = [];
+				if (type.indexOf("ERROR") === -1) {
+					const newDatabases = [];
 
-          databases.forEach((database) => {
-            if (database.database_id === db.database_id) {
-              const newCopy = database;
-              newCopy.upvotes = !db.hasUpvoted
-                ? newCopy.upvotes + 1
-                : newCopy.upvotes - 1;
-              newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
+					databases.forEach((database) => {
+						if (database.database_id === db.database_id) {
+							const newCopy = database;
+							newCopy.upvotes = !db.hasUpvoted
+								? newCopy.upvotes + 1
+								: newCopy.upvotes - 1;
+							newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
-              newDatabases.push(newCopy);
-            } else {
-              newDatabases.push(database);
-            }
-          });
+							newDatabases.push(newCopy);
+						} else {
+							newDatabases.push(database);
+						}
+					});
 
-          dispatch({
-            type: "field",
-            field: "database",
-            value: newDatabases,
-          });
-        } else {
-          console.error("Error voting for DB");
-        }
-      });
-    };
+					dispatch({
+						type: "field",
+						field: "database",
+						value: newDatabases,
+					});
+				} else {
+					console.error("Error voting for DB");
+				}
+			});
+		};
 
     /**
      * @desc anytime we change catalogType clean up engines

@@ -1,18 +1,17 @@
-import { observer } from 'mobx-react-lite';
-
-import { Designer } from '@/components/designer';
-import { Panel } from '@/components/workspace';
+import { observer } from "mobx-react-lite";
+import { Designer } from "@/components/designer";
+import { Panel } from "@/components/workspace";
 
 interface DesignerPanelProps {
-    /** Id of the rendered block */
-    id: string;
+	/** Id of the rendered block */
+	id: string;
 }
 
 export const DesignerPanel = observer((props: DesignerPanelProps) => {
-    const id = props.id;
-    return (
-        <Panel>
-            <Designer id={id} />
-        </Panel>
-    );
+	const id = props.id;
+	return (
+		<Panel>
+			<Designer id={id} />
+		</Panel>
+	);
 });

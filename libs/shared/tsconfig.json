@@ -11,12 +11,6 @@
 		"allowSyntheticDefaultImports": true,
 		"resolveJsonModule": true,
 
-		/* Emit */
-		"declaration": true,
-		"outDir": "./dist",
-		"declarationDir": "./dist/types",
-		"emitDeclarationOnly": true,
-
 		/* Skip */
 		"skipLibCheck": true,
 		"allowJs": true,
@@ -25,9 +19,9 @@
 
 		/* Lang and Env */
 		"paths": {
-			"@/*": ["./components/*"]
+			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["components"],
+	"include": ["src"],
 	"exclude": ["dist", "node_modules"]
 }

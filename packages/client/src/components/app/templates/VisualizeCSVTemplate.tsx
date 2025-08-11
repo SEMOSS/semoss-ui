@@ -1,6 +1,6 @@
 import { ActionMessages } from "@semoss/renderer";
 import QUERY from "@/assets/img/query.jpeg";
-import { Template } from "./templates.types";
+import type { Template } from "./templates.types";
 
 export const VisualizeCSVTemplate: Template = {
 	name: "Visualize CSV",
