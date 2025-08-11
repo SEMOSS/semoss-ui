@@ -31,9 +31,8 @@ const StyledContent = styled("div")(({}) => ({
  */
 const StyledDatabaseSelect = styled(Select)(({ theme }) => ({
     "& .MuiInputBase-root": {
-        padding: "0px 12px",
+        padding: theme.spacing(0,1.5),
         height: "40px",
-        // width: "240px",
     },
     "& .MuiSelect-select": {
         color: theme.palette.text.secondary,
@@ -49,14 +48,14 @@ const StyledDatabaseSelect = styled(Select)(({ theme }) => ({
     },
 }));
 
-const StyledModelSelect = styled(Select)(({ theme }) => ({
+const StyledModelSelect = styled(Select)<{ required?: boolean }>(({ theme, required }) => ({
     "&.MuiFormControl-root": {
-        margin: "0px",
+        margin: 0,
         minWidth: "200px",
         maxWidth: "300px",
     },
     "& .MuiInputBase-root": {
-        padding: "0px 12px",
+        padding: theme.spacing(0,1.5),
         height: "40px",
     },
     "& .MuiSelect-select": {
@@ -89,24 +88,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
         display: "flex",
         gap: theme.spacing(1),
         height: "40px",
-        padding: "0px 12px",
-    },
-}));
-/**
- * Styled text field component for the SQL query input
- */
-const StyledSQLTextField = styled(TextField)(({ theme }) => ({
-    "& .MuiInputBase-root": {
-        color: theme.palette.text.secondary,
-        display: "flex",
-        gap: theme.spacing(1),
-        padding: "0px 12px",
-        borderRadius: "8px",
-        border: "1px solid  #C4C4C4",
-    },
-    "& .MuiInputBase-root > textarea": {
-        padding: "8px 0px",
-        background: theme.palette.background.paper,
+        padding: theme.spacing(0, 1.5),
     },
 }));
 /**
@@ -118,11 +100,11 @@ const StyledUserTextField = styled(TextField)(({ theme }) => ({
         height: "auto",
         "> .MuiInputBase-root": {
             display: "flex",
-            padding: "0px 12px",
+            padding: theme.spacing(0, 1.5),
             alignItems: "flex-start",
             flex: "1 0 0",
             alignSelf: "stretch",
-            borderRadius: "8px",
+            borderRadius: theme.spacing(1),
             border: `1px solid  ${theme.palette.info.light}`,
             background: theme.palette.background.paper,
         },
@@ -131,7 +113,7 @@ const StyledUserTextField = styled(TextField)(({ theme }) => ({
             background: theme.palette.background.paper,
         },
         " > .MuiInputBase-root > textarea": {
-            padding: "8px 0px",
+            padding: theme.spacing(1, 0),
         },
     },
 }));
@@ -152,18 +134,18 @@ const StyledGenSQLTypography = styled(Typography)(({ theme }) => ({
 /**
  * Wrapper for typography field
  */
-const StyledTypographySection = styled("div")(({}) => ({
+const StyledTypographySection = styled("div")(({theme}) => ({
     display: "flex",
-    gap: "4px",
+    gap: theme.spacing(0.5),
     alignItems: "center",
     justifyContent: "flex-start",
 }));
 /**
  * Styled number section
  */
-const StyledNumberSection = styled("div")(({}) => ({
+const StyledNumberSection = styled("div")(({theme}) => ({
     display: "flex",
-    gap: "4px",
+    gap: theme.spacing(0.5),
     alignItems: "center",
     justifyContent: "flex-start",
 }));
@@ -173,30 +155,38 @@ const StyledNumberSection = styled("div")(({}) => ({
 const StackUserInputSection = styled(Stack)(({ theme }) => ({
     display: "flex",
     flexDirection: "row",
-    gap: "8px",
+    gap: theme.spacing(1),
     background: theme.palette.primary.selected,
 }));
 /**
  * Styled user input component
  */
-const StackUserInput = styled(Stack)(({}) => ({
+const StackUserInput = styled(Stack)(({theme}) => ({
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
+    gap: theme.spacing(1),
     width: "100%",
 }));
 /**
  * Styled stack component for frame and model section
  */
-const StackFrameModel = styled(Stack)(({}) => ({
+const StackFrameModel = styled(Stack)(({theme}) => ({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
-    gap: "16px",
-    padding: "0px 16px",
+    gap: theme.spacing(2),
+    padding: theme.spacing(0,2),
 }));
 
+const StyledIcon = styled(Icon)(({theme})=>({
+    width: "20px", 
+    height: "20px"
+}));
+
+const StyledExpandMore = styled(ExpandMore)(({theme})=>({
+    color: theme.palette.text.secondary,
+}))
 export interface TextToSqlCellDef extends CellDef<"text-to-sql"> {
     widget: "text-to-sql";
     parameters: {
@@ -243,7 +233,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
     /**
      * Fetches the list of databases from the user's engine list
      */
-    const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
+    const dbsList = usePixel<{ app_id: string; app_name: string }[]>(
         `MyEngines(engineTypes=['DATABASE']);`,
     );
     /**
@@ -252,14 +242,14 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
      * If no database is selected, it selects the first available database.
      */
     useEffect(() => {
-        if (myDbs.status !== "SUCCESS") {
+        if (dbsList.status !== "SUCCESS") {
             return;
         }
 
         // Prepare database IDs and display mapping
-        const dbIds = myDbs.data?.map((db) => db.app_id);
+        const dbIds = dbsList.data?.map((db) => db.app_id);
         const dbDisplay = Object.fromEntries(
-            myDbs.data?.map((db) => [db.app_id, db.app_name]),
+            dbsList.data?.map((db) => [db.app_id, db.app_name]),
         );
 
         setCfgLibraryDatabases({
@@ -268,15 +258,10 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
             display: dbDisplay,
         });
         if (!cell.parameters.databaseId && dbIds.length) {
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: "parameters.databaseId",
-                    value: dbIds[0],
-                },
-            });
+            runStateDispatch([{
+                path: "parameters.databaseId",
+                value: dbIds[0],
+            }]);
         }
         // Run the frame creation query with the first/selected database when the component mounts
         runFrameCreationQuery({
@@ -285,7 +270,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                 dbDisplay?.[cell.parameters.databaseId] || dbDisplay[dbIds[0]],
         });
         getMyModels();
-    }, [myDbs.status, myDbs.data, cell.parameters.frameVariableName]);
+    }, [dbsList.status, dbsList.data, cell.parameters.frameVariableName]);
     /**
      * Retrieves a list of models from the user's engine list
      * and populates the model detail state with the first model's id
@@ -329,29 +314,24 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
             ) {
                 columnNames = Object.keys(metaModelOutput.dataTypes);
             }
+            //final query to create a frame
+            const gridQuery =
+              columnNames.length > 0
+                ? sanitizeQuery(
+                    `Select (${columnNames.join(",")}) .as ([${columnAlias.join(
+                      ","
+                    )}])`
+                  )
+                : sanitizeQuery(
+                    `Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`
+                  );
+
+            const insightId = state.insightId;
+            const query = `Database(database=["${databaseDetails.dbId}"]) | ${gridQuery} | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${cell.parameters.frameVariableName}"])])`;
+            await runPixel(query, insightId);
         } catch (error) {
             // Optionally handle/log error
             console.error("Error in runFrameCreationQuery:", error);
-        }
-
-        const gridQuery =
-            columnNames.length > 0
-                ? sanitizeQuery(
-                      `Select (${columnNames.join(
-                          ",",
-                      )}) .as ([${columnAlias.join(",")}])`,
-                  )
-                : sanitizeQuery(
-                      `Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`,
-                  );
-
-        const insightId = state.insightId;
-        const query = `Database(database=["${databaseDetails.dbId}"]) | ${gridQuery} | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${cell.parameters.frameVariableName}"])])`;
-
-        try {
-            await runPixel(query, insightId);
-        } catch (error) {
-            console.error("Error running frame creation query:", error);
         }
     };
     /**
@@ -370,28 +350,18 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
 
         // Update dataFrameId if present
         if (output.frame) {
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: "parameters.dataFrameId",
-                    value: output.frame,
-                },
-            });
+            runStateDispatch([{
+                path: "parameters.dataFrameId",
+                value: output.frame,
+            }]);
         }
 
         // Update dataFrameQuery if present and valid
         if (typeof output.Query === "string") {
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: "parameters.dataFrameQuery",
-                    value: sanitizeQuery(output.Query),
-                },
-            });
+            runStateDispatch([{
+                path: "parameters.dataFrameQuery",
+                value: sanitizeQuery(output.Query),
+            }]);
         }
 
         // Trigger RUN_CELL only if both frame and Query are present
@@ -411,25 +381,33 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
      * @function
      */
     function removeDynamicFrameAndQuery() {
-        state.dispatch({
-            message: ActionMessages.UPDATE_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
+        const payloadProp = [
+            {
                 path: "parameters.dataFrameId",
                 value: "",
             },
-        });
-        state.dispatch({
-            message: ActionMessages.UPDATE_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
+            {
                 path: "parameters.dataFrameQuery",
                 value: "",
             },
+        ]
+        runStateDispatch(payloadProp);
+    }
+    const runStateDispatch = (payloadProps: {queryId?: string; cellId?: string; path: string; value: any}[]) => {
+        payloadProps.forEach(({ queryId = cell.query.id, cellId = cell.id, path, value }) => {
+            console.log(queryId, cellId, path, value, 'updatecell');
+            state.dispatch({
+                message: ActionMessages.UPDATE_CELL,
+                payload: {
+                    queryId: queryId,
+                    cellId: cellId,
+                    path: path,
+                    value: value,
+                },
+            });
         });
     }
+
     // Remove script tags and encode angle brackets
     function sanitizeQuery(query: string): string {
         return query
@@ -440,230 +418,200 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
     }
     //update dataFrameId and dataFrameQuery to "" when user tries to type something
     const updateUserInputChange = (e) => {
+        let paramsToBeUpdated = [];
         if (
-            cell.parameters.dataFrameId !== "" &&
-            cell.parameters.dataFrameQuery !== ""
+          cell.parameters.dataFrameId !== "" &&
+          cell.parameters.dataFrameQuery !== ""
         ) {
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: "parameters.dataFrameId",
-                    value: "",
-                },
-            });
-            state.dispatch({
-                message: ActionMessages.UPDATE_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                    path: "parameters.dataFrameQuery",
-                    value: "",
-                },
-            });
-        }
-        state.dispatch({
-            message: ActionMessages.UPDATE_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
-                path: "parameters.userQuery",
-                value: e.target.value,
+          paramsToBeUpdated = [
+            {
+              queryId: cell.query.id,
+              cellId: cell.id,
+              path: "parameters.dataFrameId",
+              value: "",
             },
+            {
+              queryId: cell.query.id,
+              cellId: cell.id,
+              path: "parameters.dataFrameQuery",
+              value: "",
+            },
+          ];
+        }
+        paramsToBeUpdated.push({
+          queryId: cell.query.id,
+          cellId: cell.id,
+          path: "parameters.userQuery",
+          value: e.target.value,
         });
+        runStateDispatch(paramsToBeUpdated);
     };
+            
     //update databaseId when user tries to change database id
     const updateDatabaseId = (e) => {
         const value = e.target.value;
-        state.dispatch({
-            message: ActionMessages.UPDATE_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
+        runStateDispatch([{
                 path: "parameters.databaseId",
                 value: value,
             },
-        });
+        ]);
     };
     //update frameVariableName when user tries to change
     const updateFrameVariableName = (e) => {
-        state.dispatch({
-            message: ActionMessages.UPDATE_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
+        runStateDispatch([{
                 path: "parameters.frameVariableName",
                 value: e.target.value,
             },
-        });
+        ]);
     };
     //update model when changes model select field
     const updateModel = (e) => {
         const value = e.target.value;
-        state.dispatch({
-            message: ActionMessages.UPDATE_CELL,
-            payload: {
-                queryId: cell.query.id,
-                cellId: cell.id,
+        runStateDispatch([{
                 path: "parameters.model",
                 value: value,
             },
-        });
+        ]);
     };
 
     return (
-        <StyledContent>
-            <Stack direction={"column"} spacing={1}>
-                <Stack direction={"column"}>
-                    <Stack direction={"row"} justifyContent={"space-between"}>
-                        <StyledDatabaseSelect
-                            size={"small"}
-                            variant={"standard"}
-                            disabled={cell.isLoading}
-                            title={"Select Database"}
-                            value={cell.parameters.databaseId}
-                            data-testid={"user-databaseid-" + cell.id}
-                            SelectProps={{
-                                IconComponent: KeyboardArrowDown,
-                            }}
-                            InputProps={{
-                                disableUnderline: true,
-                            }}
-                            onChange={updateDatabaseId}
-                        >
-                            {Array.from(
-                                cfgLibraryDatabases.ids,
-                                (databaseId, i) => (
-                                    <StyledSelectItem
-                                        key={`${i}-${cell.id}-${databaseId}`}
-                                        data-testid={`user-database-${cell.id}-${i}`}
-                                        value={databaseId}
-                                    >
-                                        {cfgLibraryDatabases.display[
-                                            databaseId
-                                        ] ?? ""}
-                                    </StyledSelectItem>
-                                ),
-                            )}
-                        </StyledDatabaseSelect>
-                    </Stack>
-                </Stack>
-                {
-                    /*
+      <StyledContent>
+        <Stack direction={"column"} spacing={1}>
+          <Stack direction={"column"}>
+            <Stack direction={"row"} justifyContent={"space-between"}>
+              <StyledDatabaseSelect
+                size={"small"}
+                variant={"standard"}
+                disabled={cell.isLoading}
+                title={"Select Database"}
+                value={cell.parameters.databaseId}
+                data-testid={"user-databaseid-" + cell.id}
+                SelectProps={{
+                  IconComponent: KeyboardArrowDown,
+                }}
+                InputProps={{
+                  disableUnderline: true,
+                }}
+                onChange={updateDatabaseId}
+              >
+                {Array.from(cfgLibraryDatabases.ids, (databaseId, i) => (
+                  <StyledSelectItem
+                    key={`${i}-${cell.id}-${databaseId}`}
+                    data-testid={`user-database-${cell.id}-${i}`}
+                    value={databaseId}
+                  >
+                    {cfgLibraryDatabases.display[databaseId] ?? ""}
+                  </StyledSelectItem>
+                ))}
+              </StyledDatabaseSelect>
+            </Stack>
+          </Stack>
+          {
+            /*
                 Show fields when the cell is expanded
                 */
-                    isExpanded && (
-                        <StackUserInputSection>
-                            <StyledNumberSection>1</StyledNumberSection>
-                            <StackUserInput>
-                                <StyledTypographySection>
-                                    <StyledTypography variant="body2">
-                                        Type your query in natural language
-                                    </StyledTypography>
-                                    <Icon
-                                        sx={{ width: "20px", height: "20px" }}
-                                    >
-                                        <TextFields />
-                                    </Icon>
-                                </StyledTypographySection>
-                                <StyledUserTextField
-                                    fullWidth
-                                    placeholder="Type your question or request for data"
-                                    value={cell.parameters.userQuery}
-                                    disabled={cell.isLoading}
-                                    data-testid={`user-query-${cell.id}`}
-                                    multiline
-                                    rows={4}
-                                    onChange={updateUserInputChange}
-                                />
-                            </StackUserInput>
-                        </StackUserInputSection>
-                    )
-                }
-                {
-                    /* show fields when the cell is expanded */
-                    isExpanded && (
-                        <StackFrameModel>
-                            <StyledTextField
-                                title="Set Frame Variable Name"
-                                size="medium"
-                                value={cell.parameters.frameVariableName}
-                                disabled={cell.isLoading}
-                                data-testid={`frame-variable-${cell.id}`}
-                                InputProps={{
-                                    startAdornment: (
-                                        <DriveFileRenameOutlineRounded />
-                                    ),
-                                }}
-                                onChange={updateFrameVariableName}
-                            />
-                            <StyledModelSelect
-                                size={"medium"}
-                                disabled={cell.isLoading}
-                                title={"Select Model"}
-                                value={cell.parameters.model}
-                                data-testid={`model-user-${cell.id}`}
-                                SelectProps={{
-                                    IconComponent: KeyboardArrowDown,
-                                    startAdornment: (
-                                        <InputAdornment position="start">
-                                            <CropFree />
-                                        </InputAdornment>
-                                    ),
-                                }}
-                                onChange={updateModel}
-                            >
-                                {modelDetail.modelData.length > 0 &&
-                                    modelDetail.modelData.map((model, key) => (
-                                        <StyledSelectItem
-                                            key={
-                                                model.database_id?.split("-")
-                                                    ?.length > 0
-                                                    ? model.database_id
-                                                          .split("-")
-                                                          .reverse()
-                                                          .slice(0, 2)
-                                                          .join("-") + key
-                                                    : key
-                                            }
-                                            data-testid={`model-user-item-${cell.id}-${key}`}
-                                            value={model.database_id}
-                                        >
-                                            {model.app_name}
-                                        </StyledSelectItem>
-                                    ))}
-                            </StyledModelSelect>
-                        </StackFrameModel>
-                    )
-                }
-                {
-                    /*
-                     * If the cell is not generated with query yet, then generated SQL text field will not be shown
-                     */
-                    isExpanded && cell.parameters.dataFrameQuery && (
-                        <Stack>
-                            <Accordion>
-                                <Accordion.Trigger
-                                    expandIcon={
-                                        <ExpandMore
-                                            sx={{ color: "text.secondary" }}
-                                        />
-                                    }
-                                >
-                                    <StyledGenSQLTypography variant="body1">
-                                        Generated SQL
-                                    </StyledGenSQLTypography>
-                                </Accordion.Trigger>
-                                <Accordion.Content>
-                                    {cell.parameters.dataFrameQuery}
-                                </Accordion.Content>
-                            </Accordion>
-                        </Stack>
-                    )
-                }
-            </Stack>
-        </StyledContent>
+            isExpanded && (
+              <StackUserInputSection>
+                <StyledNumberSection>1</StyledNumberSection>
+                <StackUserInput>
+                  <StyledTypographySection>
+                    <StyledTypography variant="body2">
+                      Type your query in natural language
+                    </StyledTypography>
+                    <StyledIcon>
+                      <TextFields />
+                    </StyledIcon>
+                  </StyledTypographySection>
+                  <StyledUserTextField
+                    fullWidth
+                    placeholder="Type your question or request for data"
+                    value={cell.parameters.userQuery}
+                    disabled={cell.isLoading}
+                    data-testid={`user-query-${cell.id}`}
+                    multiline
+                    rows={4}
+                    onChange={updateUserInputChange}
+                  />
+                </StackUserInput>
+              </StackUserInputSection>
+            )
+          }
+          {
+            /* show fields when the cell is expanded */
+            isExpanded && (
+              <StackFrameModel>
+                <StyledTextField
+                  title="Set Frame Variable Name"
+                  size="medium"
+                  value={cell.parameters.frameVariableName}
+                  disabled={cell.isLoading}
+                  data-testid={`frame-variable-${cell.id}`}
+                  InputProps={{
+                    startAdornment: <DriveFileRenameOutlineRounded />,
+                  }}
+                  onChange={updateFrameVariableName}
+                />
+                <StyledModelSelect
+                  size={"medium"}
+                  disabled={cell.isLoading}
+                  title={"Select Model"}
+                  value={cell.parameters.model}
+                  data-testid={`model-user-${cell.id}`}
+                  SelectProps={{
+                    IconComponent: KeyboardArrowDown,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <CropFree />
+                      </InputAdornment>
+                    ),
+                  }}
+                  required={cell.parameters.userQuery !== "" && !cell.parameters.model}
+                  error={cell.parameters.userQuery !== "" && !cell.parameters.model}
+                  onChange={updateModel}
+                >
+                  {modelDetail.modelData.length > 0 &&
+                    modelDetail.modelData.map((model, key) => (
+                      <StyledSelectItem
+                        key={
+                          model.database_id?.split("-")?.length > 0
+                            ? model.database_id
+                                .split("-")
+                                .reverse()
+                                .slice(0, 2)
+                                .join("-") + key
+                            : key
+                        }
+                        data-testid={`model-user-item-${cell.id}-${key}`}
+                        value={model.database_id}
+                      >
+                        {model.app_name}
+                      </StyledSelectItem>
+                    ))}
+                </StyledModelSelect>
+              </StackFrameModel>
+            )
+          }
+          {
+            /*
+             * If the cell is not generated with query yet, then generated SQL text field will not be shown
+             */
+            isExpanded && cell.parameters.dataFrameQuery && (
+              <Stack>
+                <Accordion>
+                  <Accordion.Trigger expandIcon={<StyledExpandMore />} data-testid={`generated-sql-${cell.id}`}>
+                    <StyledGenSQLTypography variant="body1">
+                      Generated SQL
+                    </StyledGenSQLTypography>
+                  </Accordion.Trigger>
+                  <Accordion.Content>
+                    {cell.parameters.dataFrameQuery}
+                  </Accordion.Content>
+                </Accordion>
+              </Stack>
+            )
+          }
+        </Stack>
+      </StyledContent>
     );
 });
 
