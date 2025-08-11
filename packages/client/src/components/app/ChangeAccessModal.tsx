@@ -58,6 +58,118 @@ const ModalSectionHeading = styled(Typography)({
 	margin: "1rem 0 0.5rem 0",
 });
 
+const StyledDivider = styled(Box)(({ theme }) => ({
+  borderBottom: `1px solid ${theme.palette.secondary.main}`,
+  marginLeft: "40px",
+  marginRight: "40px",
+}));
+
+const ModelSubHeading = styled(Typography)({
+	fontSize: '14px', 
+    paddingBottom: "8px",
+});
+
+const StyledButtonBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-end",
+  paddingBottom: theme.spacing(2), // pb: 2
+}));
+
+const StyledButton = styled(Button)(({ theme }) => ({
+  borderRadius: "12px",
+  paddingLeft: theme.spacing(2),
+  paddingRight: theme.spacing(2),
+  paddingTop: theme.spacing(0.5),
+  paddingBottom: theme.spacing(0.5),
+}));
+
+const CardContentOuterBox = styled(Box)(({ theme }) => ({
+  maxHeight: "400px",
+  overflow: "auto",
+  backgroundColor: theme.palette.background.default,
+  padding: theme.spacing(1),
+}));
+
+const CardSubContentOuterBox = styled(Box)(({ theme }) => ({
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "flex-start",
+  padding: theme.spacing(2),
+  borderRadius: "12px",
+  backgroundColor: theme.palette.background.paper,
+  width: "100%",
+}));
+
+const CardContentInnerBox = styled(Box) ({
+  flex: 1,
+});
+
+const Container = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(1),
+}));
+
+const EngineImage = styled('img')({
+  width: 48,
+  height: 48,
+});
+
+const Title = styled(Typography)(({ theme }) => ({
+  color: theme.palette.primary.main,
+  fontWeight: 400,
+  fontSize: 16,
+}));
+
+const PermissionWrapper = styled(Box)({
+  display: 'flex',
+  alignItems: 'center',
+});
+
+const StyledBlockIcon = styled(BlockIcon)(({ theme }) => ({
+  color: theme.palette.secondary.main,
+  width: "0.75em",
+  height: "0.75em",
+}));
+
+const StyledEditorIcon = styled(Edit)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  width: "0.75em",
+  height:"0.75em",
+}));
+
+const StyledReadonlyIcon = styled(Visibility)(({ theme }) => ({
+  color: theme.palette.secondary.main,
+  width: "0.75em",
+  height: "0.75em",
+}));
+
+const StyledOwnerIcon = styled(PersonIcon)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+  width: "0.75em",
+  height: "0.75em",
+}));
+
+const PermissionText = styled(Typography)(({ theme }) => ({
+  fontSize: 12,
+  marginLeft: 1,
+  color: theme.palette.text.secondary,
+}));
+
+const ActionsWrapper = styled(Stack)({
+  justifyContent: 'space-between',
+  width: '100%',
+});
+
+const PublicChip = styled(Chip)({
+  height: 32,
+});
+
+const CardDescription = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+}));
+
 const TabPanel = (props: {
     children?: React.ReactNode;
     value: number;
@@ -335,14 +447,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                     )}
                 </Modal.Title>
                 {permission !== 'discoverable' ? (
-                    <Box
-                        sx={{
-                            borderBottom: 1,
-                            borderColor: 'divider',
-                            ml: '40px',
-                            mr: '40px',
-                        }}
-                    >
+                    <StyledDivider>
                         <Tabs
                             value={tabValue}
                             onChange={handleTabChange}
@@ -357,7 +462,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                 aria-controls="tab-panel-1"
                             />
                         </Tabs>
-                    </Box>
+                    </StyledDivider>
                 ) : (
                     <> </>
                 )}
@@ -515,25 +620,17 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                 </TabPanel>
                 <TabPanel value={tabValue} index={1}>
                     <Modal.Content>
-                        <Typography
+                        <ModelSubHeading
                             variant={'body2'}
-                            sx={{ fontSize: '14px', pb: 2 }}
                         >
                             The app will not work for you without having at
                             least read-only access to the following
                             dependencies. Click request access to be provisioned
                             as a read-only user.
-                        </Typography>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                justifyContent: 'flex-end',
-                                pb: 2,
-                            }}
-                        >
-                            <Button
+                        </ModelSubHeading>
+                        <StyledButtonBox>
+                            <StyledButton
                                 variant="outlined"
-                                sx={{ borderRadius: 10, px: 2, py: 0.5 }}
                                 size="small"
                                 onClick={handleRequestAllAccess}
                                 disabled={isAllRequested || isRequestAllLoading ||  dependencies.some(dep => dep.access_permission) }
@@ -541,48 +638,24 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                 {isRequestAllLoading
                                     ? 'Requesting...'
                                     : 'Request All Access'}
-                            </Button>
-                        </Box>
-                        <Box sx={{ maxHeight: 400, overflow: 'auto' }}>
-                            <Stack spacing={2} sx={{ width: '100%' }}>
+                            </StyledButton>
+                        </StyledButtonBox>
+                        <CardContentOuterBox>
+                            <Stack spacing={2}>
                                 {dependencies.map((dep, idx) => (
-                                    <Box
+                                    <CardSubContentOuterBox
                                         key={idx}
-                                        sx={{
-                                            display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'flex-start',
-                                            p: 2,
-                                            border: '1px solid #ddd',
-                                            borderRadius: 2,
-                                            bgcolor: 'background.paper',
-                                            width: '100%',
-                                        }}
                                     >
                                         {/* Left side: Icon, Name, Tags, Description */}
-                                        <Box sx={{ flex: 1 }}>
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1,
-                                                    mb: 1,
-                                                }}
-                                            >
-                                                <img
+                                        <CardContentInnerBox>
+                                            <Container>
+                                                <EngineImage
                                                     src={OPEN_AI}
                                                     alt={dep.name}
-                                                    width="48px"
-                                                    height="48px"
                                                 />
                                                 <Box>
-                                                    <Typography
+                                                    <Title
                                                         variant="subtitle1"
-                                                        sx={{
-                                                            color: 'primary.main',
-                                                            fontWeight: 400,
-                                                            fontSize: '16px',
-                                                        }}
                                                     >
                                                         <Link
                                                             href={`./#/engine/${dep.type}/${dep.id}`}
@@ -591,125 +664,73 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                                                 {dep.name}
                                                             </Typography>
                                                         </Link>
-                                                    </Typography>
-                                                    <Box
-                                                        sx={{
-                                                            display: 'flex',
-                                                            alignItems:
-                                                                'center',
-                                                        }}
-                                                    >
+                                                    </Title>
+                                                    <PermissionWrapper>
                                                         {dep.userPermission ===
                                                         'OWNER' ? (
-                                                            <PersonIcon
+                                                            <StyledOwnerIcon
                                                                 fontSize="small"
-                                                                sx={{
-                                                                    color: '#C4C4C4',
-                                                                    width: '16px',
-                                                                    height: '16px',
-                                                                }}
                                                             />
                                                         ) : dep.userPermission ===
                                                           'READ_ONLY' ? (
-                                                            <VisibilityIcon
+                                                            <StyledReadonlyIcon
                                                                 fontSize="small"
-                                                                sx={{
-                                                                    color: '#C4C4C4',
-                                                                    width: '16px',
-                                                                    height: '16px',
-                                                                }}
                                                             />
                                                         ) : dep.userPermission ===
                                                           'EDIT' ? (
-                                                            <Edit
+                                                            <StyledEditorIcon
                                                                 fontSize="small"
-                                                                sx={{
-                                                                    color: '#C4C4C4',
-                                                                    width: '16px',
-                                                                    height: '16px',
-                                                                }}
                                                             />
                                                         ) : (
-                                                            <BlockIcon
+                                                            <StyledBlockIcon
                                                                 fontSize="small"
-                                                                sx={{
-                                                                    color: '#C4C4C4',
-                                                                    width: '16px',
-                                                                    height: '16px',
-                                                                }}
                                                             />
                                                         )}
 
-                                                        <Typography
+                                                        <PermissionText 
                                                             variant="subtitle1"
-                                                            sx={{
-                                                                fontSize:
-                                                                    '12px',
-                                                                ml: '1px',
-                                                                color: 'text.secondary',
-                                                            }}
                                                         >
                                                             {toCapitalized(
                                                                 dep.userPermission ||
                                                                     'NONE',
                                                             )}
-                                                        </Typography>
-                                                    </Box>
+                                                        </PermissionText >
+                                                    </PermissionWrapper>
                                                 </Box>
-                                                <Stack
+                                                <ActionsWrapper 
                                                     direction="row"
                                                     spacing={1}
-                                                    sx={{
-                                                        justifyContent:
-                                                            'space-between',
-                                                        width: '100%',
-                                                    }}
                                                 >
                                                     <Stack
                                                         direction="row"
                                                         spacing={1}
                                                     >
                                                         {dep.isPublic ? (
-                                                            <Chip
+                                                            <PublicChip 
                                                                 label="Public"
-                                                                sx={{
-                                                                    height: '32px',
-                                                                }}
                                                             />
                                                         ) : dep.isDiscoverable ? (
-                                                            <Chip
+                                                            <PublicChip 
                                                                 label="Discoverable"
-                                                                sx={{
-                                                                    height: '32px',
-                                                                }}
                                                             />
                                                         ) : (
                                                             <>
-                                                                <Chip
+                                                                <PublicChip 
                                                                     label="Non-Discoverable"
-                                                                    sx={{
-                                                                        height: '32px',
-                                                                    }}
                                                                 />
-                                                                <Chip
+                                                                <PublicChip 
                                                                     label="Private"
-                                                                    sx={{
-                                                                        height: '32px',
-                                                                    }}
                                                                 />
                                                             </>
                                                         )}
-                                                        <Chip
+                                                        <PublicChip 
                                                             label={toCapitalized(
                                                                 dep.type,
                                                             )}
-                                                            sx={{
-                                                                height: '32px',
-                                                            }}
                                                         />
                                                     </Stack>
 
-                                                    <Box sx={{ ml: 2 }}>
+                                                    <Box>
                                                         {dep.access_permission ? (
                                                             <PendingButton />
                                                         ) : requestedDeps.has(
@@ -736,27 +757,24 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                                                             />
                                                         )}
                                                     </Box>
-                                                </Stack>
-                                            </Box>
+                                                </ActionsWrapper >
+                                            </Container>
 
-                                            <Typography
+                                            <CardDescription
                                                 variant="body2"
-                                                sx={{
-                                                    color: 'text.secondary',
-                                                }}
                                             >
                                                 {dep.description &&
                                                 dep.description.trim() !== ''
                                                     ? dep.description
                                                     : 'No Description Available'}
-                                            </Typography>
-                                        </Box>
+                                            </CardDescription>
+                                        </CardContentInnerBox>
 
                                         {/* Right side: Button */}
-                                    </Box>
+                                    </CardSubContentOuterBox>
                                 ))}
                             </Stack>
-                        </Box>
+                        </CardContentOuterBox>
                     </Modal.Content>
                     <Modal.Actions>
                         <Button

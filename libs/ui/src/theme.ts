@@ -168,6 +168,7 @@ export const lightTheme: CustomThemeOptions = {
 			main: "#D9D9D9",
 			dark: "#757575",
 			light: "#F2F2F2",
+			divider: "#E6E6E6"
 		},
 		text: {
 			primary: "#000000",

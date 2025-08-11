@@ -37,16 +37,16 @@ const StyledMemberLoading = styled("div")(({ theme }) => ({
 	height: "160px",
 }));
 
-const StyledMemberContent = styled('div')({
+const StyledMemberContent = styled('div')(({ theme }) => ({
     display: 'flex',
     width: '100%',
     flexDirection: 'column',
     alignItems: 'flex-start',
     gap: '25px',
     flexShrink: '0',
-    border: '1px solid #C4C4C4',
+    border: `1px solid ${theme.palette.secondary.main}`,
     borderRadius: '12px',
-});
+}));
 
 const StyledMemberInnerContent = styled("div")({
 	display: "flex",
@@ -160,6 +160,10 @@ const StyledNoPendingReqs = styled('div')(({ theme }) => ({
     gap: theme.spacing(1),
     justifyContent: 'center',
     alignItems: 'center',
+}));
+
+const IconWrapper = styled(Icon)(({ theme }) => ({
+color: theme.palette.secondary.light
 }));
 
 interface PendingMemberTableProps {
@@ -601,13 +605,9 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 													>
 														Request Date
 														<Divider></Divider>
-														<Icon
-															sx={{
-																color: "#E9E9E9",
-															}}
-														>
+														<IconWrapper>
 															<Add />
-														</Icon>
+														</IconWrapper>
 													</div>
 												</Table.Cell>
 												<Table.Cell size="small">

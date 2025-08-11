@@ -31,7 +31,7 @@ import { LoadingScreenContext } from "@/components/ui/LoadingScreen/LoadingScree
 
 const StyledTable = styled(Table)(({ theme }) => ({
   borderRadius: theme.spacing(1),
-  borderColor: "#BDBDBD",
+  borderColor: theme.palette.secondary.main,
   borderStyle: "solid",
   borderCollapse: "initial",
   borderWidth: "thin",
@@ -71,56 +71,131 @@ const StyledReactor = styled(Box)(({ theme }) => ({
   flexWrap: "wrap",
   gap: 2,
 }));
-
-const StyledPublishContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 2,
-  border: "1px solid #ddd",
-  borderRadius: 2,
-  p: 2,
-  height: "136px",
+// Root container
+const RootGrid = styled(Grid)(({ theme }) => ({
+  marginBottom: theme.spacing(4),
+  width: '100%',
 }));
 
-const StyledPublishInnerContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 2,
-  border: "1px solid #ddd",
-  borderRadius: 2,
-  p: 2,
-  height: "136px",
+// Column wrapper box
+const ColumnBox = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'space-between',
+  gap: theme.spacing(2),
+  border: `1px solid ${theme.palette.secondary.main}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  height: 136,
 }));
 
-const StyledPublishContent = styled(Typography)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  fontSize: "16px",
-  gap: 1,
-  mb: 0.5,
+// Left text block container
+const LeftTextContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'flex-start',
+  gap: theme.spacing(1),
 }));
 
-const StyledPublishPortalContainer = styled(Box)(({ theme }) => ({
-  gap: 2,
-  border: "1px solid #ddd",
-  borderRadius: 2,
-  p: 2,
-  height: "136px",
-  width: "610px",
+// Styled Lock icon
+const StyledLockIcon = styled(LockIcon)(({ theme }) => ({
+  color: theme.palette.text.disabled
 }));
 
-const StyledPublishPortalInnerContainer = styled(Box)(({ theme }) => ({
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: 2, // spacing between texts and button
-  flexWrap: "wrap", // optional, allows wrapping on smaller screens
-  pb: 2,
+// Publish title
+const PublishTitle = styled(Typography)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  fontSize: '16px',
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(0.5),
+}));
+
+// Publish description
+const Description = styled(Typography)(({ theme }) => ({
+  fontSize: '14px',
+}));
+
+const PublishPortalDescription = styled(Typography)(({ theme }) => ({
+  marginBottom: '0.5px',
+}));
+
+// Second column container
+const SecondColumnBox = styled(Box)(({ theme }) => ({
+  gap: theme.spacing(2),
+  border: `1px solid ${theme.palette.secondary.main}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  height: 136,
+  width: 610,
+}));
+
+// Header section inside second column
+const SecondColumnHeader = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: theme.spacing(2),
+  flexWrap: 'wrap',
+  paddingBottom: theme.spacing(2),
+}));
+
+// Custom text field
+const StyledTextField = styled(TextField)(({ theme }) => ({
+  '& .MuiOutlinedInput-root': {
+    borderRadius: "8px",
+  },
+}));
+
+const SectionDivider = styled('hr')(({ theme }) => ({
+  border: `1px solid ${ theme.palette.secondary.divider}`,
+  borderTop: theme.palette.secondary.divider,
+  marginTop: theme.spacing(3),
+  marginBottom: theme.spacing(3),
+}));
+
+const Title = styled(Typography)(({ theme }) => ({
+  fontSize: '20px',
+}));
+
+const ReactorActions = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  gap: theme.spacing(2),
+}));
+
+const ActionBtnOutlined = styled(Button)(({ theme }) => ({
+  fontSize: '14px',
+}));
+
+const LeftPane = styled(Box)(({ theme }) => ({
+  width: 619,
+}));
+
+const RightPane = styled(Box)(({ theme }) => ({
+  width: 518,
+}));
+
+const UpdateText = styled(Typography)(({ theme }) => ({
+  marginBottom: theme.spacing(2),
+  fontSize: '14px',
+}));
+
+const UploadIcon = styled(OpenInBrowser)(({ theme }) => ({
+  fontSize: 32,
+  color: theme.palette.primary.dark,
+  marginBottom: theme.spacing(1),
+}));
+
+const BrowseText = styled(Typography)(({ theme }) => ({
+  color: 'theme.palette.primary.dark',
+  fontWeight: 500,
+  cursor: 'pointer',
+}));
+
+const SecondaryText = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.secondary
 }));
 
 interface AppSettingsProps {
   id: string;
-
   condensed?: boolean;
 }
 
@@ -443,54 +518,27 @@ export const SettingsTab = (props: AppSettingsProps) => {
       <Typography variant="h6" gutterBottom>
         Access
       </Typography>
-      <Grid
+      <RootGrid
         container
         spacing={3}
-        sx={{
-          mb: 4,
-          width: "100%",
-        }}
       >
         {/* First Column - 20% */}
         <Grid item xs={12} md={5}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              gap: 2,
-              border: "1px solid #ddd",
-              borderRadius: 2,
-              p: 2,
-              height: "136px",
-            }}
-          >
+          <ColumnBox>
             {/* Left Text Block */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 1,
-              }}
-            >
-              <LockIcon fontSize="small" sx={{ color: "#C4C4C4" }} />
+            <LeftTextContainer>
+              <StyledLockIcon fontSize="small" />
               <Box>
-                <Typography
+                <PublishTitle
                   variant="subtitle2"
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    fontSize: "16px",
-                    gap: 1,
-                    mb: 0.5,
-                  }}
                 >
                   Publish
-                </Typography>
-                <Typography variant="body2" sx={{ fontSize: "14px" }}>
+                </PublishTitle>
+                <Description variant="body2">
                   Enable the publishing of the portal
-                </Typography>
+                </Description>
               </Box>
-            </Box>
+            </LeftTextContainer>
             {/* Right-aligned Switch */}
             <Switch
               defaultChecked
@@ -504,35 +552,17 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 !configStore.isEngineOperationAvailable("APP", "access")
               }
             />
-          </Box>
+          </ColumnBox>
         </Grid>
 
         {/* Second Column - 80% */}
         <Grid item xs={12} md={7}>
-          <Box
-            sx={{
-              gap: 2,
-              border: "1px solid #ddd",
-              borderRadius: 2,
-              p: 2,
-              height: "136px",
-              width: '610px'
-            }}
-          >
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 2, // spacing between texts and button
-                flexWrap: "wrap", // optional, allows wrapping on smaller screens
-                pb: 2,
-              }}
-            >
+          <SecondColumnBox>
+            <SecondColumnHeader>
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                <PublishPortalDescription variant="subtitle2">
                   Publish Portal
-                </Typography>
+                </PublishPortalDescription>
                 <Typography variant="body2">
                   Publish the portal to generate a shareable link
                 </Typography>
@@ -551,16 +581,11 @@ export const SettingsTab = (props: AppSettingsProps) => {
               >
                 Publish
               </Button>
-            </Box>
+            </SecondColumnHeader>
 
-            <TextField
+            <StyledTextField
               fullWidth
               size="small"
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "8px",
-                },
-              }}
               focused={false}
               label={"Link"}
               variant={"outlined"}
@@ -576,46 +601,44 @@ export const SettingsTab = (props: AppSettingsProps) => {
               {portalDetails.project_has_portal
                 ? portalDetails.project_portal_url
                 : ""}
-            </TextField>
-          </Box>
+            </StyledTextField>
+          </SecondColumnBox>
         </Grid>
-      </Grid>
-      <hr color="#E6E6E6" style={{ marginTop: "24px", marginBottom: "24px" }} />
+      </RootGrid>
+      <SectionDivider/>
       {/* Reactors Section */}
       <StyledReactor>
         <Box>
-          <Typography variant="h6" sx={{ fontSize: "20px" }}>
+          <Title variant="h6">
             Reactors
-          </Typography>
+          </Title>
 
           {portalReactors.reactors.length > 0 && (
-            <Typography variant="body2" sx={{ fontSize: "14px" }}>
+            <Description variant="body2">
               Custom reactors created for the portal
-            </Typography>
+            </Description>
           )}
         </Box>
 
         {portalReactors.reactors.length > 0 && (
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
+          <ReactorActions>
+            <ActionBtnOutlined
               variant="outlined"
-              sx={{ fontSize: "14px" }}
               onClick={() => {
                 recompileReactors({ release: true });
               }}
             >
               Deploy and Persist Changes
-            </Button>
-            <Button
+            </ActionBtnOutlined>
+            <ActionBtnOutlined
               variant="contained"
-              sx={{ fontSize: "14px" }}
               onClick={() => {
                 recompileReactors({ release: null });
               }}
             >
               Compile Changes On This Instance
-            </Button>
-          </Box>
+            </ActionBtnOutlined>
+          </ReactorActions>
         )}
       </StyledReactor>
 
@@ -636,23 +659,23 @@ export const SettingsTab = (props: AppSettingsProps) => {
         <StyledTypography variant="body2">No reactors found</StyledTypography>
       )}
 
-      <hr color="#E6E6E6" style={{ marginTop: "24px", marginBottom: "24px" }} />
+      <SectionDivider />
 
       {/* Update Project Section */}
       <StyledBox>
         {/* Left Content */}
-        <Box sx={{ width: "619px" }}>
+        <LeftPane>
           {isLoading && (
             <LoadingScreen>
               <LoadingScreen.Trigger description="Loading..." />
             </LoadingScreen>
           )}
-          <Typography variant="h6" sx={{ fontSize: "20px" }}>
+          <Title variant="h6">
             Update Project
-          </Typography>
-          <Typography variant="body2" sx={{ mb: 2, fontSize: "14px" }}>
+          </Title>
+          <UpdateText variant="body2">
             The maximum file size we can handle is 5MB per CSV
-          </Typography>
+          </UpdateText>
           <Button
             variant="contained"
             disabled={isLoading || !uploadFile}
@@ -660,10 +683,10 @@ export const SettingsTab = (props: AppSettingsProps) => {
           >
             Update
           </Button>
-        </Box>
+        </LeftPane>
 
         {/* Right Upload Box */}
-        <Box sx={{ width: "518px" }}>
+        <RightPane>
           <Controller
             name={"PROJECT_UPLOAD"}
             control={control}
@@ -682,24 +705,19 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 }
                 onChange={(newValues) => field.onChange(newValues)}
               >
-                <OpenInBrowser sx={{ fontSize: 32, color: "#1976d2", mb: 1 }} />
-                <Typography
+                <UploadIcon />
+                <BrowseText
                   variant="body2"
-                  sx={{
-                    color: "#1976d2",
-                    fontWeight: 500,
-                    cursor: "pointer",
-                  }}
                 >
                   Browse
-                </Typography>
-                <Typography variant="caption" sx={{ color: "#999" }}>
+                </BrowseText>
+                <SecondaryText variant="caption">
                   or drop file to upload
-                </Typography>
+                </SecondaryText>
               </FileDropzone>
             )}
           />
-        </Box>
+        </RightPane>
       </StyledBox>
     </StyledContainer>
   );

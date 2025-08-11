@@ -36,11 +36,10 @@ const StyledAlert = styled(Alert, {
 	borderRadius: "12px",
 	color: theme.palette.text.primary,
 	background: theme.palette.background.paper,
-	border: `1px solid #C4C4C4`,
+	border: `1px solid ${theme.palette.secondary.main}`,
 	".MuiAlert-action": {
 		paddingRight: "8px",
 	},
-
 	...(setBounds && {
 		height: theme.spacing(13),
 		width: "600px",
@@ -51,10 +50,25 @@ const StyledGrid = styled(Grid)(() => ({
 	flex: "1",
 }));
 
+const StyledWidth = (() => ({
+	width: "100%"
+}));
+
 const StyledBlock = styled(Box)(({ theme }) => ({
   display: "flex",
   alignItems: "flex-start",
   gap: "8px",
+}));
+
+const StyledIcon = styled('span')(({ theme }) => ({
+  color: theme.palette.secondary.dark,
+  width: "20px",
+  height: "20px",
+  '& svg': {
+    fontSize: theme.typography.pxToRem(16),
+    width: "20px",
+   height: "20px",
+  },
 }));
 
 const StyledTypography = styled(Typography, {
@@ -383,11 +397,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
     if (condensed) {
         return (
-            <Paper sx={{ width: '100%' }}>
+            <Paper sx={StyledWidth}>
                 <Stack direction={direction}>
                     <StyledAlert
                         setBounds={direction === 'column'}
-                        sx={{ width: '100%' }}
+                        sx={StyledWidth}
                         icon={false}
                         action={
                             <Switch
@@ -412,13 +426,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <Alert.Title>
                             <StyledBlock>
                                 {/* Single Lock Icon on the left */}
-                                <LockIcon
-                                    sx={{
-                                        color: 'grey.500',
-                                        fontSize: 18,
-                                        mt: '2px',
-                                    }}
-                                />
+                                <StyledIcon>
+                                <LockIcon/>
+                                </StyledIcon>
 
                                 {/* Text Stack on the right */}
                                 <Box>
@@ -443,7 +453,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         >
                             <StyledAlert
                                 setBounds={direction === 'column'}
-                                sx={{ width: '100%' }}
+                                sx={StyledWidth}
                                 icon={false}
                                 action={
                                     <Switch
@@ -469,14 +479,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 <Alert.Title>
                                     <StyledBlock>
                                         {/* Single Lock Icon on the left */}
-                                        <VisibilityOffIcon
-                                            sx={{
-                                                color: 'grey.500',
-                                                fontSize: 18,
-                                                mt: '2px',
-                                            }}
-                                        />
-
+                                        <StyledIcon>
+                                        <VisibilityOffIcon/>
+                                        </StyledIcon>
                                         {/* Text Stack on the right */}
                                         <Box>
                                             <Typography
@@ -497,7 +502,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     ) : (
                         <StyledAlert
                             setBounds={direction === 'column'}
-                            sx={{ width: '100%' }}
+                            sx={StyledWidth}
                             icon={false}
                             action={
                                 <Switch
@@ -523,13 +528,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             <Alert.Title>
                                 <StyledBlock>
                                     {/* Single Lock Icon on the left */}
-                                    <VisibilityOffIcon
-                                        sx={{
-                                            color: 'grey.500',
-                                            fontSize: 18,
-                                            mt: '2px',
-                                        }}
-                                    />
+                                    <StyledIcon>
+                                        <VisibilityOffIcon/>
+                                        </StyledIcon>
 
                                     {/* Text Stack on the right */}
                                     <Box>
@@ -550,7 +551,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     )}
                     <StyledAlert
                         setBounds={direction === 'column'}
-                        sx={{ width: '100%' }}
+                        sx={StyledWidth}
                         icon={false}
                         action={
                             <Button
@@ -575,8 +576,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                     src={databaseIcon}
                                     alt="Database Icon"
                                     style={{
-                                        width: 18,
-                                        height: 18,
+                                        width: "22px",
+                                        height: "22px",
                                         marginTop: '2px',
                                     }}
                                 />
@@ -688,13 +689,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         <Alert.Title>
                             <StyledBlock>
                                 {/* Single Lock Icon on the left */}
-                                <LockIcon
-                                    sx={{
-                                        color: 'grey.500',
-                                        fontSize: 18,
-                                        mt: '2px',
-                                    }}
-                                />
+                                <StyledIcon>
+                                <LockIcon/>
+                                </StyledIcon>
 
                                 {/* Text Stack on the right */}
                                 <Box>
@@ -746,13 +743,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                                 <Alert.Title>
                                     <StyledBlock>
                                         {/* Single Lock Icon on the left */}
-                                        <VisibilityOffIcon
-                                            sx={{
-                                                color: 'grey.500',
-                                                fontSize: 18,
-                                                mt: '2px',
-                                            }}
-                                        />
+                                      <StyledIcon>
+                                        <VisibilityOffIcon/>
+                                        </StyledIcon>
 
                                         {/* Text Stack on the right */}
                                         <Box>
@@ -801,13 +794,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             <Alert.Title>
                                 <StyledBlock>
                                     {/* Single Lock Icon on the left */}
-                                    <VisibilityOffIcon
-                                        sx={{
-                                            color: 'grey.500',
-                                            fontSize: 18,
-                                            mt: '2px',
-                                        }}
-                                    />
+                                  <StyledIcon>
+                                        <VisibilityOffIcon/>
+                                        </StyledIcon>
 
                                     {/* Text Stack on the right */}
                                     <Box>

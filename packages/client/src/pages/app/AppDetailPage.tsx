@@ -107,6 +107,15 @@ const TagsBodyWrapper = styled('div')({
     gap: '0.6rem',
 });
 
+const Title = styled(Typography)({
+  fontSize: '34px',
+  fontWeight: '400',
+});
+
+const TagsDescription = styled(Typography)(({ theme }) => ({
+ paddingBottom: theme.spacing(2)
+}));
+
 const StyledContentContainer = styled(Box)(({ theme }) => ({
     width: '100% !important',
     display: 'flex',
@@ -139,6 +148,13 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
         boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
     },
 }));
+
+const StyledTabs =  ({
+  width: "100%",
+  borderBottomLeftRadius: "0px",
+  borderBottomRightRadius: "0px",
+});
+
 const StyledTabsSection = styled('div')(({ theme }) => ({
     display: 'flex',
     flexDirection: 'row',
@@ -146,8 +162,40 @@ const StyledTabsSection = styled('div')(({ theme }) => ({
     flexWrap: 'wrap',
     gap: theme.spacing(3),
     padding: '2px',
-    backgroundColor: 'white',
+    backgroundColor: theme.palette.background.paper,
    // boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+}));
+
+const StyledUpdateIcon = styled(UpdateIcon)(({ theme }) => ({
+   color: theme.palette.text.disabled
+}));
+
+const StyledLockReset = styled(LockReset)(({ theme }) => ({
+   color: theme.palette.background.paper,
+}));
+
+const ContainerGrid = styled(Grid)(({ theme }) => ({
+  paddingBottom: theme.spacing(2),
+  alignItems: 'flex-start', // align both columns to top
+}));
+
+const DescriptionText = styled(Typography)(({ theme }) => ({
+  paddingBottom: theme.spacing(2), // 16px
+  color: theme.palette.text.disabled,
+}));
+
+const RightColumn = styled(Grid)(() => ({
+  display: 'flex',
+  justifyContent: 'flex-end', // push content to the right
+}));
+
+const PublisherInfo = styled(Typography)(({ theme }) => ({
+  fontSize: theme.typography.pxToRem(14),
+  color: 'gray',
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-end', // right-align the text itself
+  gap: theme.spacing(0.5), // 4px
 }));
 
 export const AppDetailPage = () => {
@@ -568,15 +616,11 @@ export const AppDetailPage = () => {
                                         alt="App Image"
                                     />
                                     <TitleSectionBodyWrapper>
-                                        <Typography
-                                            sx={{
-                                                fontSize: '34px',
-                                                fontWeight: '400',
-                                            }}
+                                        <Title
                                             variant="h6"
                                         >
                                             {appInfo?.project_name}
-                                        </Typography>
+                                        </Title>
                                     </TitleSectionBodyWrapper>
                                 </>
 
@@ -603,16 +647,10 @@ export const AppDetailPage = () => {
                                         <Button
                                             startIcon={
                                                 responseStatus ? (
-                                                    <UpdateIcon
-                                                        sx={{
-                                                            color: 'grey.500',
-                                                        }}
-                                                    />
+                                                   <StyledUpdateIcon />
                                                 ) : permission ===
                                                   'discoverable' ? (
-                                                    <LockReset
-                                                        sx={{ color: 'white' }}
-                                                    />
+                                                    <StyledLockReset/>
                                                 ) : null
                                             }
                                             disabled={
@@ -629,7 +667,6 @@ export const AppDetailPage = () => {
                                             onClick={() =>
                                                 setIsChangeAccessModalOpen(true)
                                             }
-                                            sx={{ fontWeight: 'bold' }}
                                             data-testid={
                                                 'app-detail-access-btn'
                                             }
@@ -661,43 +698,26 @@ export const AppDetailPage = () => {
                                         )}
                                 </ActionBar>
                             </TitleSection>
-                            <Grid
+                            <ContainerGrid
                                 container
                                 spacing={2}
-                                sx={{
-                                    paddingBottom: 2,
-                                    alignItems: 'flex-start', // align both columns to top
-                                }}
                             >
                                 <Grid item xs={12} md={8}>
-                                    <Typography
-                                        sx={{ paddingBottom: '16px' }}
+                                    <DescriptionText
                                         variant="body1"
                                     >
                                         {appInfo?.description ||
                                             'No description available'}
-                                    </Typography>
+                                    </DescriptionText>
                                 </Grid>
 
-                                <Grid
+                                <RightColumn
                                     item
                                     xs={12}
                                     md={4}
-                                    sx={{
-                                        display: 'flex',
-                                        justifyContent: 'flex-end', // push content to the right
-                                    }}
                                 >
-                                    <Typography
+                                    <PublisherInfo
                                         variant="body1"
-                                        sx={{
-                                            fontSize: '14px',
-                                            color: 'gray',
-                                            display: 'flex',
-                                            flexDirection: 'column',
-                                            alignItems: 'flex-end', // right-align the text itself
-                                            gap: '4px',
-                                        }}
                                     >
                                         <span>
                                             Published by:{' '}
@@ -717,12 +737,11 @@ export const AppDetailPage = () => {
                                                   hour12: true,
                                               })
                                             : 'N/A'}
-                                    </Typography>
-                                </Grid>
-                            </Grid>
+                                    </PublisherInfo>
+                                </RightColumn>
+                            </ContainerGrid>
 
-                            <Typography
-                                sx={{ paddingBottom: '16px' }}
+                            <TagsDescription
                                 variant="body1"
                             >
                                 {tags ? (
@@ -740,16 +759,12 @@ export const AppDetailPage = () => {
                                         No tags available
                                     </Typography>
                                 )}
-                            </Typography>
+                            </TagsDescription>
 
                             <StyledContentContainer>
                                 <StyledToggleTabsGroup
                                     value={selectedTab}
-                                    boxSx={{
-                                        width: '100%',
-                                        borderBottomLeftRadius: '0px',
-                                        borderBottomRightRadius: '0px',
-                                    }}
+                                    boxSx={StyledTabs}
                                     onChange={(e, val) =>
                                         setSelectedTab(String(val))
                                     }

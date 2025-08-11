@@ -9,6 +9,11 @@ import {
 } from '@/components/settings';
 
 // Styled components
+const StyledBox = styled(Box)(({ theme }) => ({
+    padding:theme.spacing(3),
+    width: '100%' 
+}));
+
 const StyledSection = styled('section')(({ theme }) => ({
     paddingBottom: theme.spacing(3),
     width: '100%',
@@ -39,7 +44,7 @@ export const AccessControl = ({
     const navigate = useNavigate();
 
     return (
-        <Box sx={{ px: 3, py: 4, width: '100%' }}>
+        <StyledBox>
             {permission === 'author' && (
                 <StyledSection>
                     <SectionHeading variant="h2">Access</SectionHeading>
@@ -70,6 +75,6 @@ export const AccessControl = ({
                     </Stack>
                 </SettingsContext.Provider>
             </StyledSection>
-        </Box>
+        </StyledBox>
     );
 };

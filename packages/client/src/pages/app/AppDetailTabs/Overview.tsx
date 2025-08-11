@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Grid, Typography, Card, Chip, Stack } from '@semoss/ui';
+import { Box, Grid, Typography, Card, Chip, Stack, styled } from '@semoss/ui';
 import View from '../../../assets/img/ViewIcon.png';
 import Download from '../../../assets/img/Downloads.png';
 import Apps from '../../../assets/img/Apps.png';
@@ -40,6 +40,56 @@ const similarApps = [
 
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
 
+const StyledBox = styled(Box)(({ theme }) => ({
+    padding:theme.spacing(3),
+    width: '100%' 
+}));
+
+// Text
+const StyledDescription = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.disabled,
+  fontSize: '16px',
+}));
+
+const SectionTitle = styled(Typography)(({ theme }) => ({
+  paddingTop: theme.spacing(1), // 8px
+}));
+
+// Stat card
+const StatCard = styled(Box)(({ theme }) => ({
+  border: `1px solid ${theme.palette.secondary.main}`,
+  borderRadius: theme.shape.borderRadius * 2,
+  padding: theme.spacing(2),
+  display: 'flex',
+  alignItems: 'center',
+  gap: theme.spacing(1.5),
+}));
+
+const StatIcon = styled('img')({
+  width: 60,
+  height: 60,
+  objectFit: 'contain',
+});
+
+// Similar apps
+const AppCard = styled(Card)(({ theme }) => ({
+  height: '100%',
+  display: 'flex',
+  flexDirection: 'column',
+  borderRadius: theme.shape.borderRadius * 2,
+  boxShadow: theme.shadows[1] as string,
+}));
+
+const AppImage = styled('img')({
+  width: '100%',
+  height: 300,
+  objectFit: 'contain',
+});
+
+const StyledTypography = styled(Typography)(({ theme }) => ({
+  padding: theme.spacing(1),
+}));
+
 interface OverviewProps {
     appInfo: {
         markdown?: string;
@@ -47,29 +97,20 @@ interface OverviewProps {
 }
 export const Overview = ({ appInfo }: OverviewProps) => {
     return (
-        <Box sx={{ px: 3, py: 4, width: '100%' }}>
+        <StyledBox>
             <Typography variant="h6" gutterBottom>
                 Details
             </Typography>
-            <Typography variant="body2">{appInfo?.markdown}</Typography>
+            <StyledDescription variant="body2">{appInfo?.markdown}</StyledDescription>
 
-            <Typography variant="h6" gutterBottom sx={{ paddingTop: '8px' }}>
+            <SectionTitle variant="h6" gutterBottom>
                 Statistics
-            </Typography>
+            </SectionTitle>
 
             <Grid container spacing={2} mb={4}>
                 {stats.map((stat, index) => (
                     <Grid item xs={12} sm={6} md={3} key={index}>
-                        <Box
-                            sx={{
-                                border: '1px solid #ddd',
-                                borderRadius: 2,
-                                p: 2,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 1.5,
-                            }}
-                        >
+                        <StatCard>
                             <img
                                 src={stat.icon}
                                 alt={stat.label}
@@ -88,54 +129,42 @@ export const Overview = ({ appInfo }: OverviewProps) => {
                                     {stat.value}
                                 </Typography>
                             </Box>
-                        </Box>
+                        </StatCard>
                     </Grid>
                 ))}
             </Grid>
 
-            <Typography sx={{ paddingTop: '8px' }} variant="h6" gutterBottom>
+            <StyledTypography variant="h6" gutterBottom>
                 Similar Apps
-            </Typography>
+            </StyledTypography>
 
             <Grid container spacing={2}>
                 {similarApps.map((app) => (
                     <Grid item xs={12} sm={6} md={3} key={app.project_id}>
-                        <Card
-                            sx={{
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                borderRadius: 2,
-                                boxShadow: 1,
-                            }}
-                        >
+                        <AppCard>
                             <Box>
-                                <img
+                                <AppImage
                                     src={BLOCKS_APP_2}
                                     alt="App Icon"
                                     style={{ objectFit: 'contain' }}
-                                    height={300}
-                                    width="100%"
                                 />
-                                <Typography
+                                <StyledTypography
                                     variant="subtitle1"
-                                    sx={{ padding: '8px' }}
                                     gutterBottom
                                 >
                                     {app.project_name}
-                                </Typography>
-                                <Typography
+                                </StyledTypography>
+                                <StyledTypography
                                     variant="body2"
-                                    sx={{ padding: '8px' }}
                                     gutterBottom
                                 >
                                     {app.project_description}
-                                </Typography>
+                                </StyledTypography>
                             </Box>
-                        </Card>
+                        </AppCard>
                     </Grid>
                 ))}
             </Grid>
-        </Box>
+        </StyledBox>
     );
 };

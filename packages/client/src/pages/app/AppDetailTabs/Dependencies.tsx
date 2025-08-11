@@ -26,31 +26,39 @@ import { ENGINE_TYPES, Role } from '@/types';
 
 const StyledCard = styled(Card)({ borderRadius: '12px' });
 
-const PERMISSION_ICONS = {
-    OWNER: (
-        <PersonIcon
-            fontSize="small"
-            sx={{ color: '#C4C4C4', width: 16, height: 16 }}
-        />
-    ),
-    READ_ONLY: (
-        <VisibilityIcon
-            fontSize="small"
-            sx={{ color: '#C4C4C4', width: 16, height: 16 }}
-        />
-    ),
-    EDIT: (
-        <Edit
-            fontSize="small"
-            sx={{ color: '#C4C4C4', width: 16, height: 16 }}
-        />
-    ),
-    NONE: (
-        <BlockIcon
-            fontSize="small"
-            sx={{ color: '#C4C4C4', width: 16, height: 16 }}
-        />
-    ),
+const StyledIcon = styled('span')(({ theme }) => ({
+  display: 'inline-flex',
+  color: theme.palette.secondary.main,
+  width: 16,
+  height: 16,
+  '& svg': {
+    fontSize: theme.typography.pxToRem(16),
+    width: '100%',
+    height: '100%',
+  },
+}));
+
+export const PERMISSION_ICONS = {
+  OWNER: (
+    <StyledIcon>
+      <PersonIcon fontSize="small" />
+    </StyledIcon>
+  ),
+  READ_ONLY: (
+    <StyledIcon>
+      <VisibilityIcon fontSize="small" />
+    </StyledIcon>
+  ),
+  EDIT: (
+    <StyledIcon>
+      <Edit fontSize="small" />
+    </StyledIcon>
+  ),
+  NONE: (
+    <StyledIcon>
+      <BlockIcon fontSize="small" />
+    </StyledIcon>
+  ),
 };
 
 const StyledContainer = styled(Box)(({ theme }) => ({
@@ -58,7 +66,7 @@ const StyledContainer = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "flex-start",
   padding: "10px",
-  border: "1px solid #ddd",
+  border: `1px solid ${theme.palette.secondary.main}`,
   borderRadius: "12px",
   bgcolor: "background.paper",
   width: "100%",
@@ -83,8 +91,8 @@ const StyledIcons = styled(Box)(({ theme }) => ({
 
 const StyledStatus = styled(Typography)(({ theme }) => ({
   fontSize: 12,
-  marginLeft: "0.5px",
-  color: "text.secondary",
+  marginLeft: "2px",
+  color: theme.palette.secondary.dark,
 }));
 
 const StyledStack = styled(Stack)(({ theme }) => ({
@@ -93,6 +101,28 @@ const StyledStack = styled(Stack)(({ theme }) => ({
   width: "100%",
 }));
 
+const RootStack = styled(Stack)(({ theme }) => ({
+  width: '100%',
+  padding: theme.spacing(2),
+}));
+
+const StyledBox = styled(Box)({
+  flex: 1,
+});
+
+const StyledText = styled(Typography)(({ theme }) => ({
+  marginLeft: theme.spacing(0.0625), // ~0.5px
+}));
+
+const StyledSecondaryText = styled(Typography)(({ theme }) => ({
+  color: theme.palette.text.secondary,
+}));
+
+const Logo = styled('img')({
+  width: 48,
+  height: 48,
+  display: 'block',
+})
 
 
 export const Dependencies = ({
@@ -106,7 +136,7 @@ export const Dependencies = ({
     };
 
     return (
-        <Stack spacing={2} sx={{ width: '100%', p: 2 }}>
+        <RootStack spacing={2}>
             {dependencies.map((dep, idx) => {
                 const permissionKey = dep.userPermission || 'NONE';
 
@@ -114,7 +144,7 @@ export const Dependencies = ({
                     <StyledContainer
                         key={idx}
                     >
-                        <Box sx={{ flex: 1 }}>
+                        <StyledBox>
                             <StyledOutline>
                                 <img
                                     src={OPEN_AI}
@@ -129,12 +159,11 @@ export const Dependencies = ({
                                         <Link
                                             href={`./#/engine/${dep.type}/${dep.id}`}
                                         >
-                                            <Typography
+                                            <StyledText
                                                 variant="body2"
-                                                sx={{ ml: '0.5px' }}
                                             >
                                                 {dep.name}
-                                            </Typography>
+                                            </StyledText>
                                         </Link>
                                     </StyledTypography>
                                     <StyledIcons>
@@ -190,19 +219,18 @@ export const Dependencies = ({
                                 </StyledStack>
                             </StyledOutline>
 
-                            <Typography
+                            <StyledSecondaryText
                                 variant="body2"
-                                sx={{ color: 'text.secondary' }}
                             >
                                 {dep.description &&
                                 dep.description.trim() !== ''
                                     ? dep.description
                                     : 'No Description Available'}
-                            </Typography>
-                        </Box>
+                            </StyledSecondaryText>
+                        </StyledBox>
                     </StyledContainer>
                 );
             })}
-        </Stack>
+        </RootStack>
     );
 };

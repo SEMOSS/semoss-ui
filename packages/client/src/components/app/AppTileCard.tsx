@@ -36,7 +36,6 @@ const StyledName = styled(Typography)(() => ({
 	fontWeight: 400,
 	overflow: "hidden",
 	textOverflow: "ellipsis",
-	color: "#212121",
 	fontFamily: "Inter",
 	fontsize: "14px",
 	fontStyle: "normal",
@@ -103,7 +102,7 @@ const StyledPublishedByLabel = styled(Typography)(({ theme }) => ({
 	alignItems: "flex-start",
 	flex: "1 0 0",
 	fontSize: "12px",
-	color: "#9E9E9E",
+	color: theme.palette.text.disabled,
 	fontFamily: "Roboto",
 	fontStyle: "normal",
 	fontWeight: "400",
@@ -112,7 +111,7 @@ const StyledPublishedByLabel = styled(Typography)(({ theme }) => ({
 
 const StyledAccessTimeIcon = styled(AccessTime)(({ theme }) => ({
 	"&.MuiSvgIcon-root": {
-		color: "#9E9E9E",
+		color: theme.palette.text.disabled,
 		height: "16px",
 		width: "16px",
 	},
@@ -159,7 +158,7 @@ const ButtonName = styled("p")(({ theme }) => ({
 
 const ViewDetailsButtonName = styled("p")(({ theme }) => ({
 	fontSize: "13px",
-	color: "#0471F0",
+	color: theme.palette.primary.main,
 	fontFamily: "Inter",
 	fontStyle: "normal",
 	fontWeight: "500",
@@ -288,12 +287,12 @@ const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
 		alignItems: "center",
 		height: "30px",
 		width: "123px",
-		//gap: theme.spacing(1),
+		gap: theme.spacing(1),
 		justifyContent: "center",
 		flex: "1 0 0",
 		borderRadius: "12px",
 		background: theme.palette.background.paper,
-		border: showBorder ? "1px solid #0471F0" : undefined,
+		border: showBorder ? `1px solid ${theme.palette.primary.main}` : undefined,
 	}),
 );
 
@@ -307,6 +306,59 @@ const StyledCardContentSection = styled("div")(({ theme }) => ({
 	top: "70px",
 	border: "1px solid transparent",
 }));
+
+const SkeletonMain = styled(Skeleton)(({ theme }) => ({
+  backgroundImage: `url(${ImageSkeleton})`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'center',
+  backgroundSize: 'contain',
+  position: 'relative',
+  top: theme.spacing(0.625), // 5px
+  '&.MuiSkeleton-root': {
+    backgroundColor: theme.palette.secondary.light,
+  },
+}));
+
+const SkeletonIcon = styled(Skeleton)(({ theme }) => ({
+  borderRadius: theme.shape.borderRadius, // 8px (assuming theme default is 8)
+  background:
+    'linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)',
+  position: 'absolute',
+  top: theme.spacing(1), // 8px
+  right: theme.spacing(2), // 16px
+}));
+
+const SkeletonDefault = styled(Skeleton)(({ theme }) => ({
+  borderRadius: "17.5px",
+  background:
+    "linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
+}));
+
+const SkeletonMoreVertIcon = styled(Skeleton)(({ theme }) => ({
+  borderRadius: "8px",
+  background:
+    "linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
+}));
+
+const OpenInNewOutlinedIcon = styled(OpenInNewOutlined)(({ theme }) => ({
+  background: theme.palette.background.paper,
+  color: theme.palette.primary.main,
+}));
+
+const StyledMenu = styled(Menu)(({ theme }) => ({
+  '.MuiPopover-paper': {
+    display: 'flex',
+    alignItems: 'center',
+    borderRadius: 4,
+    background: theme.palette.background.paper,
+    boxShadow: '0px 5px 24px 0px rgba(0, 0, 0, 0.32)',
+  },
+}));
+
+
+const StyledCardImage = ({
+  position: 'relative',
+});
 
 interface AppTileCardProps {
 	/**
@@ -587,183 +639,101 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	// Show skeleton when image is loading or when showSkeleton is true
 	if ((loading && isLoading) || showSkeleton) {
 		return (
-			<StyledMainDiv ref={cardRef}>
-				<StyledTileCard disabled>
-					{/* Skeleton for the favorite icon */}
-					<StyledContainer>
-						<StyledOverlayContent>
-							{/* <Skeleton variant="rectangular" width="28px" height="28px" sx={{ borderRadius: '8px', background:'linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)' }}/> */}
-						</StyledOverlayContent>
-					</StyledContainer>
+      <StyledMainDiv ref={cardRef}>
+        <StyledTileCard disabled>
+          {/* Skeleton for the favorite icon */}
+          <StyledContainer>
+            <StyledOverlayContent>
+              {/* <Skeleton variant="rectangular" width="28px" height="28px" sx={{ borderRadius: '8px', background:'linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)' }}/> */}
+            </StyledOverlayContent>
+          </StyledContainer>
 
-					{/* Skeleton for the image */}
-					<StyledSkeletonImage>
-						<Skeleton
-							variant="rectangular"
-							width="100%"
-							height="77px"
-							sx={{
-								backgroundImage: `url(${ImageSkeleton})`,
-								backgroundRepeat: "no-repeat",
-								backgroundPosition: "center",
-								backgroundSize: "contain",
-								position: "relative",
-								top: "5px",
-								"&.MuiSkeleton-root": {
-									backgroundColor: "#E9EAEC",
-								},
-							}}
-						/>
-						<Skeleton
-							variant="rectangular"
-							width="28px"
-							height="28px"
-							sx={{
-								borderRadius: "8px",
-								background:
-									"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								position: "absolute",
-								top: "8px",
-								right: "16px",
-							}}
-						/>
-					</StyledSkeletonImage>
+          {/* Skeleton for the image */}
+          <StyledSkeletonImage>
+            <SkeletonMain variant="rectangular" width="100%" height="77px" />
+            <SkeletonIcon variant="rectangular" width="28px" height="28px" />
+          </StyledSkeletonImage>
 
-					<StyledSkeletonContent>
-						{/* Skeleton for the header name */}
-						<Skeleton
-							variant="rectangular"
-							width="60%"
-							height="20px"
-							sx={{
-								borderRadius: "17.5px",
-								background:
-									"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-							}}
-						/>
+          <StyledSkeletonContent>
+            {/* Skeleton for the header name */}
+            <SkeletonDefault
+              variant="rectangular"
+              width="60%"
+              height="20px"
+            />
 
-						{/* Skeleton for the description */}
-						<Skeleton
-							variant="rectangular"
-							width="80%"
-							height="12px"
-							sx={{
-								borderRadius: "17.5px",
-								background:
-									"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-							}}
-						/>
-						<Skeleton
-							variant="rectangular"
-							width="40%"
-							height="12px"
-							sx={{
-								borderRadius: "17.5px",
-								background:
-									"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-							}}
-						/>
+            {/* Skeleton for the description */}
+            <SkeletonDefault
+              variant="rectangular"
+              width="80%"
+              height="12px"
+            />
+            <SkeletonDefault
+              variant="rectangular"
+              width="40%"
+              height="12px"
+            />
 
-						{/* Skeleton for the chips */}
-						<StyledSkeletonChip>
-							<Skeleton
-								variant="rectangular"
-								width="75px"
-								height="24px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-							<Skeleton
-								variant="rectangular"
-								width="75px"
-								height="24px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-							<Skeleton
-								variant="rectangular"
-								width="75px"
-								height="24px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-						</StyledSkeletonChip>
+            {/* Skeleton for the chips */}
+            <StyledSkeletonChip>
+              <SkeletonDefault
+                variant="rectangular"
+                width="75px"
+                height="24px"
+              />
+              <SkeletonDefault
+                variant="rectangular"
+                width="75px"
+                height="24px"
+              />
+              <SkeletonDefault
+                variant="rectangular"
+                width="75px"
+                height="24px"
+              />
+            </StyledSkeletonChip>
 
-						{/* Skeleton for the created date */}
-						<StyledSkeletonDate>
-							<Skeleton
-								variant="rectangular"
-								width="16px"
-								height="16px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-							<Skeleton
-								variant="rectangular"
-								width="120px"
-								height="16px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-						</StyledSkeletonDate>
+            {/* Skeleton for the created date */}
+            <StyledSkeletonDate>
+              <SkeletonDefault
+                variant="rectangular"
+                width="16px"
+                height="16px"
+              />
+              <SkeletonDefault
+                variant="rectangular"
+                width="120px"
+                height="16px"
+              />
+            </StyledSkeletonDate>
 
-						{/* Skeleton for the actions */}
-						<StyledSkeletonFooter>
-							{/* Skeleton for the Open App button */}
+            {/* Skeleton for the actions */}
+            <StyledSkeletonFooter>
+              {/* Skeleton for the Open App button */}
 
-							<Skeleton
-								variant="rectangular"
-								width="123px"
-								height="30px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-							<Skeleton
-								variant="rectangular"
-								width="123px"
-								height="30px"
-								sx={{
-									borderRadius: "17.5px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
+              <SkeletonDefault
+                variant="rectangular"
+                width="123px"
+                height="30px"
+              />
+              <SkeletonDefault
+                variant="rectangular"
+                width="123px"
+                height="30px"
+              />
 
-							{/* Skeleton for the MoreVert icon */}
+              {/* Skeleton for the MoreVert icon */}
 
-							<Skeleton
-								variant="rectangular"
-								width="28px"
-								height="28px"
-								sx={{
-									borderRadius: "8px",
-									background:
-										"linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
-								}}
-							/>
-						</StyledSkeletonFooter>
-					</StyledSkeletonContent>
-				</StyledTileCard>
-			</StyledMainDiv>
-		);
+              <SkeletonMoreVertIcon
+                variant="rectangular"
+                width="28px"
+                height="28px"
+              />
+            </StyledSkeletonFooter>
+          </StyledSkeletonContent>
+        </StyledTileCard>
+      </StyledMainDiv>
+    );
 	}
 
 	return (
@@ -798,28 +768,17 @@ export const AppTileCard = (props: AppTileCardProps) => {
           {loading && isLoading ? (
             // Show skeleton for image when loading
             <StyledSkeletonImage>
-              <Skeleton
+              <SkeletonMain
                 variant="rectangular"
                 width="100%"
                 height="77px"
-                sx={{
-                  backgroundImage: `url(${ImageSkeleton})`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "center",
-                  backgroundSize: "contain",
-                  position: "relative",
-                  top: "5px",
-                  "&.MuiSkeleton-root": {
-                    backgroundColor: "#E9EAEC",
-                  },
-                }}
               />
             </StyledSkeletonImage>
           ) : (
             <StyledTileCardMedia
               src="img"
               image={base64Image ? base64Image : image ? image : ""}
-              sx={{ position: "relative" }}
+              sx={StyledCardImage}
               onError={(e) => {
                 // Fallback to default image if base64 image fails to load
                 const target = e.target as HTMLImageElement;
@@ -904,12 +863,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
                   <StyledOpenButton onClick={onAction} size="small">
                     <StyledFooterDiv showBorder={true}>
                       <ButtonName>Open App</ButtonName>
-                      <OpenInNewOutlined
+                      <OpenInNewOutlinedIcon
                         fontSize="small"
-                        sx={{
-                          background: "#ffffff",
-                          color: "#0471F0",
-                        }}
                       />
                     </StyledFooterDiv>
                   </StyledOpenButton>
@@ -929,12 +884,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
                   >
                     <StyledFooterDiv showBorder={true}>
                       <ButtonName>Open App</ButtonName>
-                      <OpenInNewOutlined
+                      <OpenInNewOutlinedIcon
                         fontSize="small"
-                        sx={{
-                          background: "#ffffff",
-                          color: "#0471F0",
-                        }}
                       />
                     </StyledFooterDiv>
                   </StyledOpenButton>
@@ -975,7 +926,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
             </StyledCardActions>
           </StyledContent>
         </Link>
-        <Menu
+        <StyledMenu
           anchorEl={anchorEl}
           open={open}
           onClose={() => {
@@ -988,15 +939,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
           transformOrigin={{
             vertical: "top", // Transform from the top of the menu
             horizontal: "right", // Transform from the right of the menu
-          }}
-          sx={{
-            ".MuiPopover-paper": {
-              display: "flex",
-              alignItems: "center",
-              borderRadius: "4px",
-              background: "#FFF",
-              boxShadow: "0px 5px 24px 0px rgba(0, 0, 0, 0.32)",
-            },
           }}
         >
           <Menu.Item
@@ -1028,7 +970,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
               Delete App
             </Menu.Item>
           )}
-        </Menu>
+        </StyledMenu>
         <AppDeleteModal
           isOpen={isAppDeleteModalOpen}
           onClose={() => {

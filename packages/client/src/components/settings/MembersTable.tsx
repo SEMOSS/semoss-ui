@@ -166,12 +166,18 @@ const StyledCenteredBox = styled(Box)({
 	alignItems: "center",
 	gap: "8px",
 });
+
 const StyledNameStack = styled(Stack)({
 	alignItems: "center",
 	flex: 1,
 });
-const StyledSelectedTableRow = styled(Table.Row)({
-    backgroundColor: '#e3f0ff', // light blue, adjust as needed
+
+const StyledSelectedTableRow = styled(Table.Row)(({ theme }) => ({
+    backgroundColor: theme.palette.primary.selected // light blue, adjust as needed
+}));
+
+const StyledRadioGroup = styled(RadioGroup)({
+  flexWrap: "nowrap",
 });
 
 const formatValue = (input: string) => {
@@ -994,7 +1000,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                 </StyledCenteredBox>
                                                             </Table.Cell>
                                                             <Table.Cell size="medium">
-                                                                <RadioGroup
+                                                                <StyledRadioGroup
                                                                     row
                                                                     defaultValue={
                                                                         permissionPriorityMapper(
@@ -1002,10 +1008,6 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                         )
                                                                             ?.permission
                                                                     }
-                                                                    sx={{
-                                                                        flexWrap:
-                                                                            'nowrap',
-                                                                    }}
                                                                     onChange={(
                                                                         e,
                                                                     ) => {
@@ -1087,7 +1089,7 @@ export const MembersTable = (props: MembersTableProps) => {
                                                                                 !adminMode)
                                                                         }
                                                                     />
-                                                                </RadioGroup>
+                                                                </StyledRadioGroup>
                                                             </Table.Cell>
                                                             <Table.Cell>
                                                                 {user?.date_added ??
