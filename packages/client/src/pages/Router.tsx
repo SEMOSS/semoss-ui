@@ -26,9 +26,12 @@ export const Router = observer(() => {
 	const { configStore } = useRootStore();
 
 	// don't load anything if it is pending
-	if (configStore.store.status === "INITIALIZING") {
-		return <LoadingScreen.Trigger message={"Initializing"} />;
-	}
+	if (configStore.store.status === 'INITIALIZING') {
+        configStore.login('', '').catch((error) => {
+            console.error(error.message);            
+        });
+        return <LoadingScreen.Trigger message={'Initializing'} />;
+    }
 
 	const showCookieNotice = !!configStore.theme.cookiePolicyNoticePage;
 	const showPrivacyNotice = !!configStore.theme.privacyNoticePage;
