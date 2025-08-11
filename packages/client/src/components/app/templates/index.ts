@@ -1,12 +1,11 @@
-export * from './templates.types';
-
-export { AskLLMTemplate } from './AskLLMTemplate';
-export { AskCSVTemplate } from './AskCSVTemplate';
-export { BlocksGuideTemplate } from './BlocksGuideTemplate';
-export { CreateDiabetesRecordTemplate } from './CreateDiabetesRecordTemplate';
-export { DeleteDiabetesRecordTemplate } from './DeleteDiabetesRecordTemplate';
-export { LandingPageTemplate } from './LandingPageTemplate';
-export { UpdateDiabetesRecordTemplate } from './UpdateDiabetesRecordTemplate';
-export { ReadDiabetesRecordTemplate } from './ReadDiabetesRecordTemplate';
-export { MultiPageTemplate } from './MultiPageTemplate';
-export { VisualizeCSVTemplate } from './VisualizeCSVTemplate';
+export { AskCSVTemplate } from "./AskCSVTemplate";
+export { AskLLMTemplate } from "./AskLLMTemplate";
+export { BlocksGuideTemplate } from "./BlocksGuideTemplate";
+export { CreateDiabetesRecordTemplate } from "./CreateDiabetesRecordTemplate";
+export { DeleteDiabetesRecordTemplate } from "./DeleteDiabetesRecordTemplate";
+export { LandingPageTemplate } from "./LandingPageTemplate";
+export { MultiPageTemplate } from "./MultiPageTemplate";
+export { ReadDiabetesRecordTemplate } from "./ReadDiabetesRecordTemplate";
+export * from "./templates.types";
+export { UpdateDiabetesRecordTemplate } from "./UpdateDiabetesRecordTemplate";
+export { VisualizeCSVTemplate } from "./VisualizeCSVTemplate";

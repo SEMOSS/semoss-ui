@@ -18,35 +18,35 @@ import { EngineUsagePage } from './EngineUsagePage';
 import { EngineSmssPage } from './EngineSmssPage';
 
 export const ENGINE_ROUTES: {
-    /** Name of the route */
-    name: string;
+	/** Name of the route */
+	name: string;
 
-    /** Path of the page */
-    path: string;
+	/** Path of the page */
+	path: string;
 
-    /** Icon to render in the page */
-    icon: React.FunctionComponent;
+	/** Icon to render in the page */
+	icon: React.FunctionComponent;
 
-    /** Type of the engine */
-    type: ENGINE_TYPES;
+	/** Type of the engine */
+	type: ENGINE_TYPES;
 
-    /** Description of the engine*/
-    description: string;
+	/** Description of the engine*/
+	description: string;
 
-    /** Child paths associated with a specific engine */
-    specific: {
-        /** Name of the specific page */
-        name: string;
+	/** Child paths associated with a specific engine */
+	specific: {
+		/** Name of the specific page */
+		name: string;
 
-        /** Path of the specific page */
-        path: string;
+		/** Path of the specific page */
+		path: string;
 
-        /** Restrict to certain roles (set to false to allow all) */
-        restrict: Role[] | false;
+		/** Restrict to certain roles (set to false to allow all) */
+		restrict: Role[] | false;
 
-        /** Component to render */
-        component: React.FunctionComponent;
-    }[];
+		/** Component to render */
+		component: React.FunctionComponent;
+	}[];
 }[] = [
     {
         name: 'Function',

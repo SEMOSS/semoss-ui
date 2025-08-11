@@ -1,33 +1,33 @@
-import React from "react";
 import type { Meta, StoryObj } from "@storybook/react-webpack5";
+import React from "react";
 import { Pagination } from "./index";
 
 const meta: Meta<typeof Pagination> = {
-    title: "Components/Pagination",
-    component: Pagination,
-    args: {
-        color: "secondary",
-        variant: "text",
-        disabled: false,
-        showFirstButton: false,
-        showLastButton: false,
-        count: 10,
-        shape: "rounded",
-    },
-    argTypes: {
-        color: {
-            options: ["standard", "secondary", "primary"],
-            control: { type: "select" },
-        },
-        variant: {
-            options: ["outlined", "text"],
-            control: { type: "radio" },
-        },
-        shape: {
-            options: ["round", "rounded"],
-            control: { type: "radio" },
-        },
-    },
+	title: "Components/Pagination",
+	component: Pagination,
+	args: {
+		color: "secondary",
+		variant: "text",
+		disabled: false,
+		showFirstButton: false,
+		showLastButton: false,
+		count: 10,
+		shape: "rounded",
+	},
+	argTypes: {
+		color: {
+			options: ["standard", "secondary", "primary"],
+			control: { type: "select" },
+		},
+		variant: {
+			options: ["outlined", "text"],
+			control: { type: "radio" },
+		},
+		shape: {
+			options: ["round", "rounded"],
+			control: { type: "radio" },
+		},
+	},
 };
 
 export default meta;
@@ -35,5 +35,5 @@ export default meta;
 type Story = StoryObj<typeof Pagination>;
 
 export const Default: Story = {
-    render: (args) => <Pagination {...args} />,
+	render: (args) => <Pagination {...args} />,
 };
