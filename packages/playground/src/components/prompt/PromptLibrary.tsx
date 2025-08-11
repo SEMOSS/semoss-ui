@@ -1,6 +1,6 @@
 import { Close } from "@mui/icons-material";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	CircularProgress,
@@ -14,8 +14,7 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { useDebounceValue } from "@/hooks";
-import { Prompt } from "@/types";
+import type { Prompt } from "@/types";
 
 const StyledHolder = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -62,7 +61,7 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({ onClose }) => {
 	const [filter, setFilter] = useState<string>("");
 
 	// debounce the input
-	const debouncedSearch = useDebounceValue(search);
+	const debouncedSearch = useDebouncedValue(search);
 
 	const getAllTags = usePixel<
 		{

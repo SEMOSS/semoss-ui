@@ -11,7 +11,7 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
-import { AppFormStep } from "./save-app.types";
+import type { AppFormStep } from "./save-app.types";
 
 const StyledModalContent = styled(Modal.Content)(() => ({
 	height: "300px",

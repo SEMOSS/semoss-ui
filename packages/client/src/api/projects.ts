@@ -1,5 +1,5 @@
 import { Env, get, post } from "@semoss/sdk/react";
-import { Role } from "@/types";
+import type { Role } from "@/types";
 
 export const setProjectFavorite = async (
 	projectId: string,

@@ -7,29 +7,26 @@
  * @returns path to the attribute
  */
 export const getValueByPath = <T extends object>(target: T, path: string) => {
-    if (!(target instanceof Object)) {
-        return target;
-    }
+	if (!(target instanceof Object)) {
+		return target;
+	}
 
-    if (path.length === 0) {
-        return target;
-    }
+	if (path.length === 0) {
+		return target;
+	}
 
-    const pathArr = path.split('.');
-    for (const p of pathArr) {
-        // skip if it isn't an object or the property does not exist
-        if (
-            !(target instanceof Object) ||
-            !Object.prototype.hasOwnProperty.call(target, p)
-        ) {
-            return undefined;
-        }
+	const pathArr = path.split(".");
+	for (const p of pathArr) {
+		// skip if it isn't an object or the property does not exist
+		if (!(target instanceof Object) || !Object.hasOwn(target, p)) {
+			return undefined;
+		}
 
-        // move forward
-        target = target[p];
-    }
+		// move forward
+		target = target[p];
+	}
 
-    return target;
+	return target;
 };
 
 /**
@@ -40,38 +37,38 @@ export const getValueByPath = <T extends object>(target: T, path: string) => {
  * @param path - value to set
  */
 export const setValueByPath = <T extends object>(
-    target: T,
-    path: string,
-    value: unknown,
+	target: T,
+	path: string,
+	value: unknown,
 ) => {
-    // get the keys
-    const p = path.split('.');
+	// get the keys
+	const p = path.split(".");
 
-    // get the last key. If there is none, ignore it
-    const last = p.pop();
-    if (!last) {
-        return;
-    }
+	// get the last key. If there is none, ignore it
+	const last = p.pop();
+	if (!last) {
+		return;
+	}
 
-    // traverse to the correct element
-    let current = target;
-    while (p.length) {
-        const key = p.shift();
+	// traverse to the correct element
+	let current = target;
+	while (p.length) {
+		const key = p.shift();
 
-        if (!key) {
-            return;
-        }
+		if (!key) {
+			return;
+		}
 
-        // create the object if the key doesn't exist. This will allow partials
-        if (!current[key]) {
-            current[key] = {};
-        }
+		// create the object if the key doesn't exist. This will allow partials
+		if (!current[key]) {
+			current[key] = {};
+		}
 
-        current = current[key];
-    }
+		current = current[key];
+	}
 
-    // set the value
-    current[last] = value;
+	// set the value
+	current[last] = value;
 };
 
 /**
@@ -83,37 +80,37 @@ export const setValueByPath = <T extends object>(
  * @returns a copied object
  */
 export const copy = <T>(
-    instance: T,
-    intercept: (instance: unknown) => unknown = (instance) => instance,
+	instance: T,
+	intercept: (instance: unknown) => unknown = (instance) => instance,
 ): T => {
-    // intercept the instance and update it if relevant
-    instance = intercept(instance) as T;
+	// intercept the instance and update it if relevant
+	instance = intercept(instance) as T;
 
-    if (!instance) {
-        return instance;
-    }
+	if (!instance) {
+		return instance;
+	}
 
-    if (instance instanceof Date) {
-        return new Date(instance.getTime()) as unknown as T;
-    }
+	if (instance instanceof Date) {
+		return new Date(instance.getTime()) as unknown as T;
+	}
 
-    if (instance instanceof Array) {
-        return instance.map((c) => {
-            return copy(c, intercept);
-        }) as unknown as T;
-    }
+	if (instance instanceof Array) {
+		return instance.map((c) => {
+			return copy(c, intercept);
+		}) as unknown as T;
+	}
 
-    if (instance instanceof Object) {
-        const copied: { [key: string]: unknown } = {};
-        for (const k in instance) {
-            copied[k] = copy(
-                (instance as Record<string, unknown>)[k],
-                intercept,
-            );
-        }
+	if (instance instanceof Object) {
+		const copied: { [key: string]: unknown } = {};
+		for (const k in instance) {
+			copied[k] = copy(
+				(instance as Record<string, unknown>)[k],
+				intercept,
+			);
+		}
 
-        return copied as unknown as T;
-    }
+		return copied as unknown as T;
+	}
 
-    return instance;
+	return instance;
 };

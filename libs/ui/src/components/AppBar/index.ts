@@ -1,4 +1,4 @@
-import { AppBar, AppBarProps } from "./AppBar";
+import { AppBar, type AppBarProps } from "./AppBar";
 
 export type { AppBarProps };
 

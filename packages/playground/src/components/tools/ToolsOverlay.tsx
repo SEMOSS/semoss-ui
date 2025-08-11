@@ -1,6 +1,7 @@
 import { Close } from "@mui/icons-material";
-import React, { useEffect, useMemo, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import type React from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -18,8 +19,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
-import { useDebounceValue } from "@/hooks";
-import { App, Engine, Tool } from "@/types";
+import type { App, Engine, Tool } from "@/types";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
 const MODULE = import.meta.env.MODULE;
@@ -131,7 +131,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	const [filter, setFilter] = useState<"ALL" | Tool["type"]>("ALL");
 
 	// debounce the input
-	const debouncedSearch = useDebounceValue(search);
+	const debouncedSearch = useDebouncedValue(search);
 
 	//TODO: Move to backend and Infinite Load
 	let enginePixel = "";
@@ -203,7 +203,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	 */
 	const IsToolSelected = (t: AvailbleTools): boolean => {
 		const toolKey = getToolKey(t);
-		return Object.prototype.hasOwnProperty.call(updatedTools, toolKey);
+		return Object.hasOwn(updatedTools, toolKey);
 	};
 
 	/**
