@@ -1,7 +1,8 @@
-import { Table, styled, Typography } from '@semoss/ui';
-import { useEngine } from '@/hooks';
-import { FileTable } from '@/components/settings';
-import { StorageFileExplorer } from '@/components/engine/StorageFileExplorer';
+import { styled, Table, Typography } from "@semoss/ui";
+import { StorageFileExplorer } from "@/components/engine/StorageFileExplorer";
+import { FileTable } from "@/components/settings";
+import { useEngine } from "@/hooks";
+import type { ENGINE_TYPES } from "@/types";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -25,20 +26,34 @@ const StyledTopDiv = styled("div")(() => ({
 	justifyContent: "space-between",
 }));
 
-export const EngineFilePage = () => {
-	//Grabbing Engine Id for document creation
+type EngineFilePageProps = {
+	engineType: ENGINE_TYPES;
+};
+
+export const EngineFilePage: React.FC<EngineFilePageProps> = ({
+	engineType,
+}) => {
 	const { active } = useEngine();
+	console.log("engine data", active);
 
-    return (
-        <StyledContainer>
-            <StyledTopDiv>
-                {/* <Typography variant={'h6'}>File Explorer</Typography> */}
-            </StyledTopDiv>
+	return (
+		<StyledContainer>
+			{engineType === "VECTOR" && (
+				<>
+					<StyledTopDiv>
+						<Typography variant="h6">File Explorer</Typography>
+					</StyledTopDiv>
+					<StyledTableContainer>
+						<FileTable id={active.id} />
+					</StyledTableContainer>
+				</>
+			)}
 
-            <StyledTableContainer>
-                {/* <FileTable id={active.id} /> */}
-                <StorageFileExplorer id={active.id} />
-            </StyledTableContainer>
-        </StyledContainer>
-    );
+			<StyledTableContainer>
+				{engineType === "STORAGE" && (
+					<StorageFileExplorer id={active.id} />
+				)}
+			</StyledTableContainer>
+		</StyledContainer>
+	);
 };
