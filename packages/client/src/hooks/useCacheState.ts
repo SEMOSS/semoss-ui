@@ -1,43 +1,46 @@
-import { useEffect, useState } from 'react';
+import { useState } from "react";
+
+type CacheState<T> = {
+	state: T;
+};
 
 /**
  * Access state from the cache
  */
 export const useCacheState = <T>(initialState: T, name: string) => {
-    const key = `smss--${name}`;
+	const key = `smss--${name}`;
 
-    // set the data
-    const [state, setState] = useState<T>(initialState);
+	// set the data
+	const [state, setState] = useState<T>(() => {
+		try {
+			const item = localStorage.getItem(key);
+			if (item) {
+				// try to get the state
+				const data = JSON.parse(item) as CacheState<T>;
+				return data.state;
+			}
+		} catch (e) {
+			console.error(e);
+		}
 
-    // load from cache whenever the key changes
-    useEffect(() => {
-        try {
-            const item = localStorage.getItem(key);
-            if (item) {
-                // try to get the state
-                const data = JSON.parse(item);
-                setState(data.state);
-            }
-        } catch (e) {
-            console.error(e);
-        }
-    }, [key]);
+		// return the inital state if not set from local storage
+		return initialState;
+	});
 
-    /**
-     * Handle changing of the data
-     */
-    const onChange = (data: T) => {
-        // save cache
-        localStorage.setItem(
-            key,
-            JSON.stringify({
-                state: data,
-            }),
-        );
+	/**
+	 * Handle changing of the data
+	 */
+	const onChange = (data: T) => {
+		// save to cache
+		const item: CacheState<T> = {
+			state: data,
+		};
 
-        // update the state
-        setState(data);
-    };
+		localStorage.setItem(key, JSON.stringify(item));
 
-    return [state, onChange] as const;
+		// update the state
+		setState(data);
+	};
+
+	return [state, onChange] as const;
 };
