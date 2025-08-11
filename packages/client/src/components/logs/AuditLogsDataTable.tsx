@@ -25,7 +25,7 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { EventData } from "@/types";
+import type { EventData } from "@/types";
 
 const Container = styled(Paper)({
 	padding: 0,
@@ -352,20 +352,20 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	});
 
 	const filterOptions = useMemo(() => {
-		const engineTypes = [
+		const engineType = [
 			...new Set(logs.map((log) => log.engineType)),
 		].filter(Boolean);
-		const engineNames = [
+		const engineName = [
 			...new Set(logs.map((log) => log.engineName)),
 		].filter(Boolean);
-		const statuses = [...new Set(logs.map((log) => log.status))].filter(
+		const status = [...new Set(logs.map((log) => log.status))].filter(
 			Boolean,
 		);
 
 		const generateDynamicLatencyRanges = () => {
 			const latencies = logs
 				.map((log) => Number(log.latency))
-				.filter((latency) => !isNaN(latency) && latency > 0)
+				.filter((latency) => !Number.isNaN(latency) && latency > 0)
 				.sort((a, b) => a - b);
 
 			if (!latencies.length) {
@@ -401,7 +401,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					value: `${minLatency}-${bucket1End}`,
 				},
 				{
-					label: `Medium (${(bucket1End + 1) / 1000 < 1 ? Math.round(bucket1End + 1) + "ms" : ((bucket1End + 1) / 1000).toFixed(1) + "s"} - ${(bucket2End / 1000).toFixed(1)}s)`,
+					label: `Medium (${(bucket1End + 1) / 1000 < 1 ? `${Math.round(bucket1End + 1)}ms` : ((bucket1End + 1) / 1000).toFixed(1)}s - ${(bucket2End / 1000).toFixed(1)}s)`,
 					value: `${bucket1End + 1}-${bucket2End}`,
 				},
 				{
@@ -460,11 +460,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		};
 
 		return {
-			engineTypes,
-			engineNames,
-			statuses,
-			latencyRanges: generateDynamicLatencyRanges(),
-			tokenRanges: generateDynamicTokenRanges(),
+			engineType,
+			engineName,
+			status,
+			latencyRange: generateDynamicLatencyRanges(),
+			tokenRange: generateDynamicTokenRanges(),
 		};
 	}, [logs]);
 
@@ -511,6 +511,12 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					return logTokens >= min && logTokens <= max;
 				});
 			});
+		}
+
+		if (appliedFilters.engineName.length > 0) {
+			filtered = filtered.filter((log) =>
+				appliedFilters.engineName.includes(log.engineName),
+			);
 		}
 
 		return filtered;
@@ -625,342 +631,78 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		if (!column) return null;
 
 		const renderFilterContent = () => {
-			switch (column) {
-				case "engineType":
-					const allEngineTypesSelected =
-						tempFilters.engineType.length ===
-						filterOptions.engineTypes.length;
-					return (
-						<FilterOptionsList>
-							<FilterListItem>
-								<SelectAllListItemButton
-									onClick={() =>
-										handleSelectAll(
-											"engineType",
-											filterOptions.engineTypes,
-										)
-									}
-								>
-									<StyledCheckbox
-										checked={allEngineTypesSelected}
-										checkboxProps={{
-											indeterminate:
-												tempFilters.engineType.length >
-													0 &&
-												!allEngineTypesSelected,
-										}}
-									/>
-									<ListItemText
-										primary="Select All"
-										primaryTypographyProps={{
-											fontSize: "14px",
-										}}
-									/>
-								</SelectAllListItemButton>
-							</FilterListItem>
-							{filterOptions.engineTypes.map((type) => (
-								<FilterListItem key={type}>
-									<StyledListItemButton
-										onClick={() =>
-											handleMultiSelectFilter(
-												"engineType",
-												type,
-											)
-										}
-									>
-										<StyledCheckbox
-											checked={tempFilters.engineType.includes(
-												type,
-											)}
-										/>
-										<ListItemText
-											primary={type}
-											primaryTypographyProps={{
-												fontSize: "14px",
-												fontWeight:
-													tempFilters.engineType.includes(
-														type,
-													)
-														? 500
-														: 400,
-											}}
-										/>
-									</StyledListItemButton>
-								</FilterListItem>
-							))}
-						</FilterOptionsList>
-					);
-				case "engineName":
-					const allEngineNamesSelected =
-						tempFilters.engineName.length ===
-						filterOptions.engineNames.length;
+			const optionValues = filterOptions[column];
+			const allSelected =
+				tempFilters[column]?.length === optionValues?.length;
+			return (
+				<FilterOptionsList>
+					<FilterListItem>
+						<SelectAllListItemButton
+							onClick={() =>
+								handleSelectAll(
+									column as keyof FilterState,
+									optionValues.map((option) =>
+										typeof option === "object"
+											? option.value
+											: option,
+									),
+								)
+							}
+						>
+							<StyledCheckbox
+								checked={allSelected}
+								checkboxProps={{
+									indeterminate:
+										tempFilters[column]?.length > 0 &&
+										!allSelected,
+								}}
+							/>
+							<ListItemText
+								primary="Select All"
+								primaryTypographyProps={{
+									fontSize: "14px",
+								}}
+							/>
+						</SelectAllListItemButton>
+					</FilterListItem>
+					{optionValues.map((optionValue) => {
+						const option =
+							typeof optionValue === "object"
+								? optionValue
+								: { value: optionValue, label: optionValue };
 
-					return (
-						<FilterOptionsList>
-							<FilterListItem>
-								<SelectAllListItemButton
+						return (
+							<FilterListItem key={option.value}>
+								<StyledListItemButton
 									onClick={() =>
-										handleSelectAll(
-											"engineName",
-											filterOptions.engineNames,
+										handleMultiSelectFilter(
+											column as keyof FilterState,
+											option.value,
 										)
 									}
 								>
 									<StyledCheckbox
-										checked={allEngineNamesSelected}
-										checkboxProps={{
-											indeterminate:
-												tempFilters.engineName.length >
-													0 &&
-												tempFilters.engineName
-													.length !==
-													filterOptions.engineNames
-														.length,
-										}}
+										checked={tempFilters[column].includes(
+											option.value,
+										)}
 									/>
 									<ListItemText
-										primary="Select All"
+										primary={option.label}
 										primaryTypographyProps={{
 											fontSize: "14px",
+											fontWeight: tempFilters[
+												column
+											].includes(option.value)
+												? 500
+												: 400,
 										}}
 									/>
-								</SelectAllListItemButton>
+								</StyledListItemButton>
 							</FilterListItem>
-							{filterOptions.engineNames.map((name) => (
-								<FilterListItem key={name}>
-									<StyledListItemButton
-										onClick={() =>
-											handleMultiSelectFilter(
-												"engineName",
-												name,
-											)
-										}
-									>
-										<StyledCheckbox
-											checked={tempFilters.engineName.includes(
-												name,
-											)}
-										/>
-										<ListItemText
-											primary={name}
-											primaryTypographyProps={{
-												fontSize: "14px",
-												fontWeight:
-													tempFilters.engineName.includes(
-														name,
-													)
-														? 500
-														: 400,
-											}}
-										/>
-									</StyledListItemButton>
-								</FilterListItem>
-							))}
-						</FilterOptionsList>
-					);
-				case "status":
-					const allStatusesSelected =
-						tempFilters.status.length ===
-						filterOptions.statuses.length;
-					return (
-						<FilterOptionsList>
-							<FilterListItem>
-								<SelectAllListItemButton
-									onClick={() =>
-										handleSelectAll(
-											"status",
-											filterOptions.statuses,
-										)
-									}
-								>
-									<StyledCheckbox
-										checked={allStatusesSelected}
-										checkboxProps={{
-											indeterminate:
-												tempFilters.status.length > 0 &&
-												!allStatusesSelected,
-										}}
-									/>
-									<ListItemText
-										primary="Select All"
-										primaryTypographyProps={{
-											fontSize: "14px",
-										}}
-									/>
-								</SelectAllListItemButton>
-							</FilterListItem>
-							{filterOptions.statuses.map((status) => (
-								<FilterListItem key={status}>
-									<StyledListItemButton
-										onClick={() =>
-											handleMultiSelectFilter(
-												"status",
-												status,
-											)
-										}
-									>
-										<StyledCheckbox
-											checked={tempFilters.status.includes(
-												status,
-											)}
-										/>
-										<ListItemText
-											primary={status}
-											primaryTypographyProps={{
-												fontSize: "14px",
-												fontWeight:
-													tempFilters.status.includes(
-														status,
-													)
-														? 500
-														: 400,
-											}}
-										/>
-									</StyledListItemButton>
-								</FilterListItem>
-							))}
-						</FilterOptionsList>
-					);
-
-				case "latencyRange":
-					const allLatencyRangesSelected =
-						tempFilters.latencyRange.length ===
-						filterOptions.latencyRanges.length;
-					const latencyRangeValues = filterOptions.latencyRanges.map(
-						(r) => r.value,
-					);
-					return (
-						<FilterOptionsList>
-							<FilterListItem>
-								<SelectAllListItemButton
-									onClick={() =>
-										handleSelectAll(
-											"latencyRange",
-											latencyRangeValues,
-										)
-									}
-								>
-									<StyledCheckbox
-										checked={allLatencyRangesSelected}
-										checkboxProps={{
-											indeterminate:
-												tempFilters.latencyRange
-													.length > 0 &&
-												!allLatencyRangesSelected,
-										}}
-									/>
-									<ListItemText
-										primary="Select All"
-										primaryTypographyProps={{
-											fontSize: "14px",
-										}}
-									/>
-								</SelectAllListItemButton>
-							</FilterListItem>
-							{filterOptions.latencyRanges.map((range) => (
-								<FilterListItem key={range.value}>
-									<StyledListItemButton
-										onClick={() =>
-											handleMultiSelectFilter(
-												"latencyRange",
-												range.value,
-											)
-										}
-									>
-										<StyledCheckbox
-											checked={tempFilters.latencyRange.includes(
-												range.value,
-											)}
-										/>
-										<ListItemText
-											primary={range.label}
-											primaryTypographyProps={{
-												fontSize: "14px",
-												fontWeight:
-													tempFilters.latencyRange.includes(
-														range.value,
-													)
-														? 500
-														: 400,
-											}}
-										/>
-									</StyledListItemButton>
-								</FilterListItem>
-							))}
-						</FilterOptionsList>
-					);
-
-				case "tokenRange":
-					const allTokenRangesSelected =
-						tempFilters.tokenRange.length ===
-						filterOptions.tokenRanges.length;
-					const tokenRangeValues = filterOptions.tokenRanges.map(
-						(r) => r.value,
-					);
-					return (
-						<FilterOptionsList>
-							<FilterListItem>
-								<SelectAllListItemButton
-									onClick={() =>
-										handleSelectAll(
-											"tokenRange",
-											tokenRangeValues,
-										)
-									}
-								>
-									<StyledCheckbox
-										checked={allTokenRangesSelected}
-										checkboxProps={{
-											indeterminate:
-												tempFilters.tokenRange.length >
-													0 &&
-												!allTokenRangesSelected,
-										}}
-									/>
-									<ListItemText
-										primary="Select All"
-										primaryTypographyProps={{
-											fontSize: "14px",
-										}}
-									/>
-								</SelectAllListItemButton>
-							</FilterListItem>
-							{filterOptions.tokenRanges.map((range) => (
-								<FilterListItem key={range.value}>
-									<StyledListItemButton
-										onClick={() =>
-											handleMultiSelectFilter(
-												"tokenRange",
-												range.value,
-											)
-										}
-									>
-										<StyledCheckbox
-											checked={tempFilters.tokenRange.includes(
-												range.value,
-											)}
-										/>
-										<ListItemText
-											primary={range.label}
-											primaryTypographyProps={{
-												fontSize: "14px",
-												fontWeight:
-													tempFilters.tokenRange.includes(
-														range.value,
-													)
-														? 500
-														: 400,
-											}}
-										/>
-									</StyledListItemButton>
-								</FilterListItem>
-							))}
-						</FilterOptionsList>
-					);
-
-				default:
-					return null;
-			}
+						);
+					})}
+				</FilterOptionsList>
+			);
 		};
 
 		return (
@@ -989,7 +731,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		);
 	};
 
-	const handleRowClick = (event: EventData, index: number) => {
+	const handleRowClick = (event: EventData) => {
 		setSelectedEvent(event);
 		setDrawerOpen(true);
 	};
@@ -1059,83 +801,33 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 					{getActiveFiltersCount() > 0 && (
 						<FilterChipsContainer>
+							{Object.entries(appliedFilters).map(
+								([key, values]) => (
+									<React.Fragment key={key}>
+										{values.length > 0 && (
+											<Chip
+												label={`${key.slice(0, 1)?.toUpperCase() + key.slice(1)}: ${values.join(", ")}`}
+												size="small"
+												onDelete={() =>
+													setAppliedFilters(
+														(prev) => ({
+															...prev,
+															[key]: [],
+														}),
+													)
+												}
+												color="primary"
+												variant="outlined"
+											/>
+										)}
+									</React.Fragment>
+								),
+							)}
 							{searchQuery && (
 								<Chip
 									label={`Search: "${searchQuery}"`}
 									size="small"
 									onDelete={() => setSearchQuery("")}
-									color="primary"
-									variant="outlined"
-								/>
-							)}
-							{appliedFilters.engineType.length > 0 && (
-								<Chip
-									label={`Engine: ${appliedFilters.engineType.join(", ")}`}
-									size="small"
-									onDelete={() =>
-										setAppliedFilters((prev) => ({
-											...prev,
-											engineType: [],
-										}))
-									}
-									color="primary"
-									variant="outlined"
-								/>
-							)}
-							{appliedFilters.status.length > 0 && (
-								<Chip
-									label={`Status: ${appliedFilters.status.join(", ")}`}
-									size="small"
-									onDelete={() =>
-										setAppliedFilters((prev) => ({
-											...prev,
-											status: [],
-										}))
-									}
-									color="primary"
-									variant="outlined"
-								/>
-							)}
-							{appliedFilters.latencyRange.length > 0 && (
-								<Chip
-									label={`Latency: ${appliedFilters.latencyRange
-										.map(
-											(r) =>
-												filterOptions.latencyRanges.find(
-													(range) =>
-														range.value === r,
-												)?.label,
-										)
-										.join(", ")}`}
-									size="small"
-									onDelete={() =>
-										setAppliedFilters((prev) => ({
-											...prev,
-											latencyRange: [],
-										}))
-									}
-									color="primary"
-									variant="outlined"
-								/>
-							)}
-							{appliedFilters.tokenRange.length > 0 && (
-								<Chip
-									label={`Tokens: ${appliedFilters.tokenRange
-										.map(
-											(r) =>
-												filterOptions.tokenRanges.find(
-													(range) =>
-														range.value === r,
-												)?.label,
-										)
-										.join(", ")}`}
-									size="small"
-									onDelete={() =>
-										setAppliedFilters((prev) => ({
-											...prev,
-											tokenRange: [],
-										}))
-									}
 									color="primary"
 									variant="outlined"
 								/>
@@ -1338,8 +1030,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						<Table.Body>
 							{filteredLogs?.map((event, index) => (
 								<StyledTableRow
-									key={index}
-									onClick={() => handleRowClick(event, index)}
+									key={`Log-${event.endTime}`}
+									data-testid={`log-row-${index}`}
+									onClick={() => handleRowClick(event)}
 								>
 									<StyledTableCell>
 										<Typography
