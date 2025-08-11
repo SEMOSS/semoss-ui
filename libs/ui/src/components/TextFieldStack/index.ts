@@ -1,4 +1,4 @@
-import { TextFieldStack, TextFieldStackProps } from "./TextFieldStack";
+import { TextFieldStack, type TextFieldStackProps } from "./TextFieldStack";
 
 export type { TextFieldStackProps };
 export { TextFieldStack };

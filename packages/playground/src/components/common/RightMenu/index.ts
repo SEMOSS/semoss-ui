@@ -1,3 +1,3 @@
-import { RightMenu } from './RightMenu';
+import { RightMenu } from "./RightMenu";
 
 export { RightMenu };

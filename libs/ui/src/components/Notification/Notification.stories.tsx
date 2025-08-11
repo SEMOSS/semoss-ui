@@ -1,11 +1,11 @@
-import React from "react";
 import type { Meta, StoryObj } from "@storybook/react-webpack5";
-import { Notification, useNotification } from ".";
+import React from "react";
 import { Button } from "../Button/index";
+import { Notification, useNotification } from ".";
 
 const meta: Meta<typeof Notification> = {
-    title: "Components/Notification",
-    component: Notification,
+	title: "Components/Notification",
+	component: Notification,
 };
 
 export default meta;
@@ -13,34 +13,34 @@ export default meta;
 type Story = StoryObj<typeof Notification>;
 
 const Outer = (props) => {
-    const { children } = props;
-    return <Notification>{children}</Notification>;
+	const { children } = props;
+	return <Notification>{children}</Notification>;
 };
 
 const Inner = () => {
-    const notification = useNotification();
+	const notification = useNotification();
 
-    return (
-        <Notification>
-            <Button
-                variant="outlined"
-                onClick={() =>
-                    notification.add({
-                        color: "success",
-                        message: `Hello--${Math.floor(Math.random() * 1000)}`,
-                    })
-                }
-            >
-                Open Notification
-            </Button>
-        </Notification>
-    );
+	return (
+		<Notification>
+			<Button
+				variant="outlined"
+				onClick={() =>
+					notification.add({
+						color: "success",
+						message: `Hello--${Math.floor(Math.random() * 1000)}`,
+					})
+				}
+			>
+				Open Notification
+			</Button>
+		</Notification>
+	);
 };
 
 export const Default: Story = {
-    render: (args) => (
-        <Outer {...args}>
-            <Inner />
-        </Outer>
-    ),
+	render: (args) => (
+		<Outer {...args}>
+			<Inner />
+		</Outer>
+	),
 };

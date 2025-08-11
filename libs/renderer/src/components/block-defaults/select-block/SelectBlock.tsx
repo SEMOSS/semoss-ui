@@ -6,11 +6,11 @@ import {
 	Typography,
 } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { debounced } from "@semoss/sdk/react";
 import { CircularProgress, InputAdornment } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
-import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 const StyledLoading = styled(CircularProgress)(({ theme }) => ({
 	color: theme.palette.divider,

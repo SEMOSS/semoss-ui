@@ -1,8 +1,8 @@
-import { createContext } from 'react';
+import { createContext } from "react";
 
 export type SettingsContextType = {
-    /** True if the Settings is in admin mode */
-    adminMode: boolean;
+	/** True if the Settings is in admin mode */
+	adminMode: boolean;
 };
 
 /**

@@ -4,8 +4,9 @@ import {
 	OpenInBrowser,
 	Visibility,
 } from "@mui/icons-material";
-import React, { Dispatch, SetStateAction, useState } from "react";
-import { Control } from "react-hook-form";
+import type React from "react";
+import { type Dispatch, type SetStateAction, useState } from "react";
+import type { Control } from "react-hook-form";
 import { useNotification } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import { AppAccessStep } from "./AppAccessStep";
@@ -159,8 +160,8 @@ export const AddAppModal = (props: AddAppProps) => {
 				`UploadProjectApp(filePath=["${upload[0].fileLocation}"], global=[${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}]);`,
 			);
 
-			let output = undefined;
-			let type = undefined;
+			let output;
+			let type;
 
 			output = resp.pixelReturn[0].output;
 			type = resp.pixelReturn[0].operationType[0];
@@ -179,8 +180,8 @@ export const AddAppModal = (props: AddAppProps) => {
 				`CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["${data[ADD_APP_FORM_FIELD_APP_TYPE]}"], portal=["true"])`,
 			);
 
-			let createProjectOutput = undefined;
-			let type = undefined;
+			let createProjectOutput;
+			let type;
 
 			createProjectOutput = createProjectResponse.pixelReturn[0].output;
 			type = createProjectResponse.pixelReturn[0].operationType[0];
@@ -202,7 +203,7 @@ export const AddAppModal = (props: AddAppProps) => {
 				})}])`,
 			);
 
-			let output = undefined;
+			let output;
 			type = undefined;
 
 			output = setProjectMetadataResponse.pixelReturn[0].output;
