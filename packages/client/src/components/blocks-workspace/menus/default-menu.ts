@@ -540,6 +540,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					spreadRadius: "",
 					color: "",
 				},
+                loading: false,
+                loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -847,6 +849,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				markdown: "**Hello world**",
 				show: "true",
+                loading: false,
+                loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -891,6 +895,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h1",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -915,6 +921,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h2",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -939,6 +947,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h3",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -963,6 +973,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h4",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -987,6 +999,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h5",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1011,6 +1025,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h6",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1035,6 +1051,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "p",
 				show: "true",
+				loading: false,
+				loadSkeleton: "none",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -2636,6 +2654,8 @@ export const CLIENT_BLOCKS_MENU = [
 					gap: "px",
 					flexWrap: "wrap",
 				},
+                loading: false,
+                loadSkeleton: "none",
 			},
 			listeners: {},
 			slots: {
@@ -2650,6 +2670,8 @@ export const CLIENT_BLOCKS_MENU = [
 							},
 							text: "Contact Information",
 							variant: "p",
+                            loading: false,
+                            loadSkeleton: "none",
 						},
 						listeners: {},
 						slots: {},
@@ -2665,6 +2687,8 @@ export const CLIENT_BLOCKS_MENU = [
 								flexWrap: "wrap",
 								border: "2px dotted #4a4a4a",
 							},
+                            loading: false,
+                            loadSkeleton: "none",
 						},
 						listeners: {},
 						slots: {
@@ -2682,6 +2706,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+                                        loading: false,
+                                        loadSkeleton: "none",
 									},
 									listeners: {},
 									slots: {
@@ -2698,6 +2724,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -2745,6 +2773,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -2796,6 +2826,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+                                        loading: false,
+                                        loadSkeleton: "none",
 									},
 									listeners: {},
 									slots: {
@@ -2812,6 +2844,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -2859,6 +2893,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -2910,6 +2946,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+                                        loading: false,
+                                        loadSkeleton: "none",
 									},
 									listeners: {},
 									slots: {
@@ -2926,6 +2964,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -2974,6 +3014,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -3026,6 +3068,8 @@ export const CLIENT_BLOCKS_MENU = [
 											justifyContent: "left",
 											alignItems: "center",
 										},
+                                        loading: false,
+                                        loadSkeleton: "none",
 									},
 									listeners: {},
 									slots: {
@@ -3041,6 +3085,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "32%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -3087,6 +3133,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "32%",
 													},
+                                                    loading:false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -3134,6 +3182,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "33%",
 													},
+                                                    loading: false,
+                                                    loadSkeleton: "none",
 												},
 												listeners: {},
 												slots: {
@@ -3662,6 +3712,8 @@ export const CLIENT_BLOCKS_MENU = [
 					border: "4px solid ",
 				},
 				route: "container--6732",
+                loading: false,
+                loadSkeleton: "none",
 			},
 			listeners: {},
 			slots: {
@@ -3676,6 +3728,8 @@ export const CLIENT_BLOCKS_MENU = [
 							},
 							text: "Grouped Component",
 							variant: "h1",
+                            loading: false,
+                            loadSkeleton: "none",
 						},
 						listeners: {},
 						slots: {},
