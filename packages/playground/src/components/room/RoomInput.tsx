@@ -3,12 +3,14 @@ import {
 	AudioFileOutlined,
 	CloseRounded,
 	InsertDriveFile,
+	MicRounded,
 	SendRounded,
 	TextSnippetOutlined,
 	VideoFileOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import React, { useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Badge,
 	CircularProgress,
@@ -131,11 +133,88 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		const notification = useNotification();
 
 		const [input, setInput] = useState("");
+		const isEmpty = input.trim().length === 0;
 
-		const fileRef = useRef(null);
+		const fileRef = useRef<HTMLInputElement>(null);
+		const inputRef = useRef<HTMLInputElement>(null);
 
 		const [isDragging, setIsDragging] = useState(false);
 		const [files, setFiles] = useState<File[]>([]);
+
+		const [canListen, setCanListen] = useState(false);
+		const [isListening, setIsListening] = useState(false);
+
+		const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+		useEffect(() => {
+			// Check if Speech Recognition is supported
+			const SpeechRecognition =
+				window.SpeechRecognition || window.webkitSpeechRecognition;
+
+			if (SpeechRecognition) {
+				setCanListen(true);
+
+				const recognition = new SpeechRecognition();
+				recognition.continuous = true;
+				recognition.interimResults = true;
+				recognition.lang = "en-US";
+
+				recognition.onstart = () => {
+					setIsListening(true);
+				};
+
+				recognition.onresult = (event) => {
+					let transcript = "";
+
+					// get the final ones
+					for (
+						let i = event.resultIndex;
+						i < event.results.length;
+						i++
+					) {
+						if (event.results[i].isFinal) {
+							transcript += event.results[i][0].transcript;
+						}
+					}
+
+					// trim to manually handle spaces
+					transcript = transcript.trim();
+					if (transcript) {
+						setInput((prev) => {
+							if (!prev) {
+								return transcript;
+							}
+
+							return prev + " " + transcript;
+						});
+					}
+				};
+
+				recognition.onerror = (event) => {
+					console.error(event);
+
+					// turn off and focus on element
+					setIsListening(false);
+					inputRef.current?.focus();
+				};
+
+				recognition.onend = () => {
+					// turn off and focus on element
+					setIsListening(false);
+					inputRef.current?.focus();
+				};
+
+				recognitionRef.current = recognition;
+			} else {
+				setCanListen(false);
+			}
+
+			return () => {
+				if (recognitionRef.current) {
+					recognitionRef.current.stop();
+				}
+			};
+		}, []);
 
 		/**
 		 * Prompt the model
@@ -198,7 +277,23 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			return <InsertDriveFile fontSize={"large"} color="disabled" />;
 		};
 
-		const isEmpty = input.trim().length === 0;
+		/**
+		 * Start Listening
+		 */
+		const startListening = () => {
+			if (recognitionRef.current && !isListening) {
+				recognitionRef.current.start();
+			}
+		};
+
+		/**
+		 * Stop Listening
+		 */
+		const stopListening = () => {
+			if (recognitionRef.current && isListening) {
+				recognitionRef.current.stop();
+			}
+		};
 
 		return (
 			<>
@@ -215,6 +310,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						}}
 					/>
 					<StyledInput
+						inputRef={inputRef}
 						dragging={isDragging}
 						placeholder="Ask a question"
 						variant={"outlined"}
@@ -225,7 +321,9 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						minRows={minRows}
 						maxRows={maxRows}
 						disabled={isDisabled || isLoading}
-						onChange={(e) => setInput(e.target.value)}
+						onChange={(e) => {
+							setInput(e.target.value);
+						}}
 						onDrop={(e) => {
 							e.preventDefault();
 
@@ -253,7 +351,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								promptModel(input);
 							}
 						}}
-					></StyledInput>
+					/>
 					<StyledActions
 						direction={"row"}
 						alignItems={"center"}
@@ -286,6 +384,34 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								</IconButton>
 							</Tooltip>
 						)}
+						<Tooltip
+							title={isListening ? "Stop Recording" : "Record"}
+							placement="top"
+						>
+							<span>
+								<IconButton
+									size={"small"}
+									type="button"
+									color={isListening ? "error" : "default"}
+									aria-label="Record the Model"
+									disabled={
+										!canListen || isDisabled || isLoading
+									}
+									onClick={() => {
+										if (isListening) {
+											stopListening();
+										} else {
+											startListening();
+										}
+									}}
+								>
+									<MicRounded
+										color={"inherit"}
+										fontSize="medium"
+									/>
+								</IconButton>
+							</span>
+						</Tooltip>
 						<Tooltip
 							title={(() => {
 								if (isEmpty) {

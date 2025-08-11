@@ -1,4 +1,4 @@
-import { Grid, Grid2Props } from "./Grid";
+import { Grid, type Grid2Props } from "./Grid";
 
 export type { Grid2Props };
 

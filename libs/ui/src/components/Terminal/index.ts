@@ -1,6 +1,6 @@
 export * from "./utility";
 
-import { Terminal, TerminalProps } from "./Terminal";
+import { Terminal, type TerminalProps } from "./Terminal";
 
 export type { TerminalProps };
 

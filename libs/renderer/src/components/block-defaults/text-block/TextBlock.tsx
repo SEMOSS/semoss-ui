@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
-import React, { CSSProperties, useEffect } from "react";
+import React, { type CSSProperties, useEffect } from "react";
 import { useBlock, useBlocks, useTypeWriter } from "../../../hooks";
-import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
 import { LoadingScreen } from "@semoss/ui";
