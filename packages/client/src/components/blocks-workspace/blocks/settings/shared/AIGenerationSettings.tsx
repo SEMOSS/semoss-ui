@@ -51,6 +51,11 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	 * Append additional context to the end of the prompt
 	 */
 	appendPrompt?: string;
+
+	/**
+	 * Set the AI output JSON
+	 */
+	setAIOutputJSON?: (output: string) => void;
 }
 const StyledUploadSection = styled(Stack)(({ theme }) => ({
 	height: "250px",
@@ -63,6 +68,7 @@ export const AIGenerationSettings = observer(
 		path,
 		valueAsObject = false,
 		appendPrompt = "",
+		setAIOutputJSON,
 	}: AIGenerationSettingsProps<D>) => {
 		const notification = useNotification();
 		const { monolithStore, configStore } = useRootStore();
@@ -161,7 +167,14 @@ export const AIGenerationSettings = observer(
 				// const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") `
 				const response = await monolithStore.runQuery(pixel);
 				console.log("Response from runQuery:", response);
-
+				const { output } = response.pixelReturn[0];
+				if (output && setAIOutputJSON) {
+					console.log(
+						"Setting AI output JSON from generationsettings:",
+						output,
+					);
+					setAIOutputJSON(output);
+				}
 				//Below is another previous LLM prompting code - did not work
 				// setResponseLoading(true);
 
