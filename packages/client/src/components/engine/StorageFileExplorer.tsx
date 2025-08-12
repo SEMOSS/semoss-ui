@@ -22,7 +22,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { LoadingScreen } from "@/components/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { useEngine, usePixel, useRootStore } from "@/hooks";
 import { StorageExplorerItem } from "./StorageExplorerItem";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -77,6 +77,16 @@ type FileUploadForm = {
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 	const { id } = props;
 	const { monolithStore, configStore } = useRootStore();
+	const { active } = useEngine();
+
+	// get the properties
+	const { role } = active;
+	console.log("role: ", role);
+
+	// Define role-based permissions
+	const canUpload = role === "OWNER" || role === "EDITOR";
+	const canDelete = role === "OWNER" || role === "EDITOR";
+
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 	const [selectedFile, setSelectedFile] = useState<string>("");
 	const [openPopUp, setOpenPopUp] = useState<boolean>(false);
@@ -84,7 +94,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 	const [selected, setSelected] = useState<string[]>([]);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const notification = useNotification();
-
 	const getStorageFiles = usePixel<string[]>(
 		`Storage(storage = "${id}") | ListStoragePath(storagePath='/');`,
 	);
@@ -153,7 +162,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
 			const { output } = response.pixelReturn[0];
 			console.log("Failed files to uploaded", output);
-
+			console.log("output: ", output.size());
 			if (output.size() === -1) {
 				notification.add({
 					color: "success",
@@ -217,16 +226,38 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 				console.log("Delete response:", response);
 				console.log("File deleted:", pathsToDelete[0]);
 
-				setExpandedPaths((prev) =>
-					prev.filter((p) => !p.startsWith(pathsToDelete[0])),
-				);
+				const { output } = response.pixelReturn[0];
+				console.log("Failed files to delete", output);
 
-				if (selectedFile === pathsToDelete[0]) {
-					setSelectedFile("");
+				// Check if the response contains an error message
+				if (response.errors.length > 0) {
+					// Handle errors from the response.errors array
+					notification.add({
+						color: "error",
+						message: `Failed to delete file response: ${response.errors[0]}`,
+					});
+				} else {
+					// Successful deletion
+					notification.add({
+						color: "success",
+						message: `Successfully deleted document`,
+					});
+
+					setExpandedPaths((prev) =>
+						prev.filter((p) => !p.startsWith(pathsToDelete[0])),
+					);
+
+					if (selectedFile === pathsToDelete[0]) {
+						setSelectedFile("");
+					}
+					refreshFiles();
 				}
-				refreshFiles();
 			} catch (e) {
-				console.error("Delete error:", e);
+				console.log("error msg", e);
+				notification.add({
+					color: "error",
+					message: `Failed to deleteeeeee file(s): ${e}`,
+				});
 			}
 		} else {
 			const pathsString = pathsToDelete
@@ -238,6 +269,15 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 			try {
 				const response = await monolithStore.runQuery(deleteQuery);
 				console.log("Delete multiple response:", response);
+
+				// Check if the response contains errors
+				if (response.errors && response.errors.length > 0) {
+					notification.add({
+						color: "error",
+						message: `Failed to delete files: ${response.errors[0]}`,
+					});
+					return;
+				}
 
 				console.log("Multiple files deleted:", pathsToDelete);
 				pathsToDelete.forEach((path) => {
@@ -251,8 +291,18 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 				setSelected([]);
 				setShowDeleteDialog(false);
 				refreshFiles();
+
+				// Show success message only if we got here without errors
+				notification.add({
+					color: "success",
+					message: `Successfully deleted ${pathsToDelete.length} file(s)`,
+				});
 			} catch (e) {
 				console.error("Delete multiple error:", e);
+				notification.add({
+					color: "error",
+					message: `Failed to delete file(s): ${e.message || e}`,
+				});
 			}
 		}
 	};
@@ -456,14 +506,16 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					>
 						<Refresh fontSize="inherit" />
 					</IconButton>
-					<Button
-						variant="outlined"
-						startIcon={<CloudUploadOutlined />}
-						onClick={() => setOpenPopUp(true)}
-						size="small"
-					>
-						Upload Files
-					</Button>
+					{canUpload && (
+						<Button
+							variant="outlined"
+							startIcon={<CloudUploadOutlined />}
+							onClick={() => setOpenPopUp(true)}
+							size="small"
+						>
+							Upload Files
+						</Button>
+					)}
 				</div>
 			</StyledHeader>
 
@@ -485,15 +537,17 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 							>
 								Download Selected
 							</Button>
-							<Button
-								variant="outlined"
-								color="error"
-								startIcon={<DeleteOutline />}
-								size="small"
-								onClick={() => setShowDeleteDialog(true)}
-							>
-								Delete Selected
-							</Button>
+							{canDelete && (
+								<Button
+									variant="outlined"
+									color="error"
+									startIcon={<DeleteOutline />}
+									size="small"
+									onClick={() => setShowDeleteDialog(true)}
+								>
+									Delete Selected
+								</Button>
+							)}
 						</>
 					)}
 				</StyledTreeHeader>
@@ -571,32 +625,33 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					Selected: {selectedFile}
 				</Typography>
 			)}
+			{canDelete && (
+				<Modal
+					open={showDeleteDialog}
+					onClose={() => setShowDeleteDialog(false)}
+				>
+					<Modal.Title>Confirm Delete</Modal.Title>
+					<Modal.Content>
+						<Typography variant="body1">
+							Are you sure you want to delete {selected.length}{" "}
+							selected item(s)? This action cannot be undone.
+						</Typography>
+					</Modal.Content>
+					<Modal.Actions>
+						<Button onClick={() => setShowDeleteDialog(false)}>
+							Cancel
+						</Button>
 
-			<Modal
-				open={showDeleteDialog}
-				onClose={() => setShowDeleteDialog(false)}
-			>
-				<Modal.Title>Confirm Delete</Modal.Title>
-				<Modal.Content>
-					<Typography variant="body1">
-						Are you sure you want to delete {selected.length}{" "}
-						selected item(s)? This action cannot be undone.
-					</Typography>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button onClick={() => setShowDeleteDialog(false)}>
-						Cancel
-					</Button>
-					<Button
-						onClick={() => handleDelete()}
-						color="error"
-						variant="contained"
-					>
-						Delete
-					</Button>
-				</Modal.Actions>
-			</Modal>
-
+						<Button
+							onClick={() => handleDelete()}
+							color="error"
+							variant="contained"
+						>
+							Delete
+						</Button>
+					</Modal.Actions>
+				</Modal>
+			)}
 			<Modal
 				open={openPopUp}
 				onClose={() => setOpenPopUp(false)}
