@@ -145,24 +145,24 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 				}
 			});
 
-			console.log("location:", fileLocations);
+			console.log("Files to be uploaded:", fileLocations);
 
 			const response = await monolithStore.runQuery(`
             Storage(storage = "${id}") | PushToStorage(storagePath='/', filePath=[${fileLocations}]);
             `);
 
-			const { output, operationType } = response.pixelReturn[0];
-			console.log(output);
+			const { output } = response.pixelReturn[0];
+			console.log("Failed files to uploaded", output);
 
-			if (operationType.indexOf("ERROR") === -1) {
+			if (output.size() === -1) {
 				notification.add({
 					color: "success",
-					message: `Successfully added document`,
+					message: `Successfully added document(s)`,
 				});
 			} else {
 				notification.add({
 					color: "error",
-					message: output,
+					message: `Failed to upload: ${output.join(", ")}`,
 				});
 			}
 		} catch (e) {
@@ -501,7 +501,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					multiSelect
 					expanded={expandedPaths}
 					selected={selected}
-					onNodeToggle={(e, nodeIds) => {
+					onNodeToggle={(_e, nodeIds) => {
 						const lastToggled =
 							nodeIds.find((id) => !expandedPaths.includes(id)) ||
 							expandedPaths.find((id) => !nodeIds.includes(id));
@@ -509,7 +509,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 							handleToggleExpand(lastToggled);
 						}
 					}}
-					onNodeSelect={(e, v) => {
+					onNodeSelect={(_e, v) => {
 						handleOnNodeSelect(v);
 					}}
 					defaultCollapseIcon={
@@ -540,7 +540,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 									lastModified={n.lastModified}
 									expanded={expandedPaths}
 									selected={selected}
-									onTrashClick={(e, path) => {
+									onTrashClick={(_e, path) => {
 										handleDelete(path);
 									}}
 									onDownload={(path) => {
@@ -615,15 +615,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 										<FileDropzone
 											multiple={true}
 											value={field.value}
-											extensions={[
-												".pdf",
-												".csv",
-												".txt",
-												".doc",
-												".ppt",
-												".docx",
-												".pptx",
-											]}
 											disabled={isLoading}
 											onChange={(newValues) => {
 												field.onChange(newValues);
@@ -652,7 +643,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 								) : null
 							}
 						>
-							Embed
+							Upload
 						</Button>
 					</Modal.Actions>
 				</form>

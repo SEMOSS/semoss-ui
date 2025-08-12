@@ -34,7 +34,6 @@ export const EngineFilePage: React.FC<EngineFilePageProps> = ({
 	engineType,
 }) => {
 	const { active } = useEngine();
-	console.log("engine data", active);
 
 	return (
 		<StyledContainer>
