@@ -79,6 +79,8 @@ export const AIGenerationSettings = observer(
 		const [modelId, setModelId] = useState<string>("");
 
 		const [inputFile, setInputFile] = useState<File[] | null>(null);
+
+		const [selectedModel, setSelectedModel] = useState<string>("");
 		const [_models, setModels] = useState<
 			{ app_id: string; app_name: string }[]
 		>([]);
@@ -93,7 +95,13 @@ export const AIGenerationSettings = observer(
 				ids: [],
 				display: {},
 			});
-		const [selectedModel, setSelectedModel] = useState<string>("");
+		const _isGenerateButtonDisabled =
+			!cfgLibraryModels.ids.length ||
+			cfgLibraryModels.loading ||
+			!inputFile ||
+			!selectedModel;
+			// || !prompt
+
 		const myModels = usePixel<
 			{ app_id: string; app_name: string; tag: string }[]
 		>(`MyEngines(engineTypes=['MODEL']);`);
@@ -168,12 +176,21 @@ export const AIGenerationSettings = observer(
 				const response = await monolithStore.runQuery(pixel);
 				console.log("Response from runQuery:", response);
 				const { output } = response.pixelReturn[0];
+				// if (typeof output === "string") {
+				//     const stringedOutput =  output.replace(/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g, "");
+				//     console.log('stringedOutput:', stringedOutput);
+				// }
 				if (output && setAIOutputJSON) {
+					const stringedOutput = output.replace(
+						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
+						"",
+					);
+					console.log("stringedOutput:", stringedOutput);
 					console.log(
 						"Setting AI output JSON from generationsettings:",
 						output,
 					);
-					setAIOutputJSON(output);
+					setAIOutputJSON(stringedOutput);
 				}
 				//Below is another previous LLM prompting code - did not work
 				// setResponseLoading(true);
@@ -244,7 +261,12 @@ export const AIGenerationSettings = observer(
 		return (
 			<Stack spacing={1} width="100%">
 				<StyledUploadSection spacing={2}>
-					<Typography variant="body1">Upload CSV</Typography>
+					<Typography variant="body1">
+						Upload CSV{" "}
+						<Typography component="span" color="error">
+							*
+						</Typography>
+					</Typography>
 					<FileDropzone
 						extensions={[".csv"]}
 						onChange={(file: File) => {
@@ -271,6 +293,7 @@ export const AIGenerationSettings = observer(
 					InputLabelProps={{
 						shrink: true,
 					}}
+					required
 				/>
 				<AutocompleteTwo
 					disabled={!cfgLibraryModels.ids.length || responseLoading}
@@ -292,15 +315,13 @@ export const AIGenerationSettings = observer(
 					)}
 				/>
 				<Button
-					disabled={
-						!cfgLibraryModels.ids.length || cfgLibraryModels.loading
-					}
+					disabled={_isGenerateButtonDisabled}
 					loading={responseLoading}
 					variant="outlined"
 					endIcon={<AutoAwesome />}
 					onClick={generateAIResponse}
 				>
-					Generate
+					Generate with AI
 				</Button>
 			</Stack>
 		);

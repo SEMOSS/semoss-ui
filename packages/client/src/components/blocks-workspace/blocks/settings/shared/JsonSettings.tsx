@@ -109,7 +109,27 @@ export const JsonSettings = observer(
 				setValue(aiOutputJSON);
 			}
 		}, [aiOutputJSON]);
-
+		/**
+		 * Used to re-render the vega block after re-generating from AI output
+		 */
+		useEffect(() => {
+			if (aiOutputJSON && validJson) {
+				try {
+					const specJson = JSON.parse(aiOutputJSON);
+					setData(
+						path,
+						specJson as PathValue<D["data"], typeof path>,
+					);
+					callback && callback();
+				} catch (_e) {
+					setData(
+						path,
+						aiOutputJSON as PathValue<D["data"], typeof path>,
+					);
+					callback && callback();
+				}
+			}
+		}, [aiOutputJSON, validJson, setData, path, callback]);
 		/**
 		 * Sync the data on save
 		 */
