@@ -9,7 +9,6 @@ import {
 	CircularProgress,
 	List,
 	Menu,
-	MenuItem,
 	styled,
 	useNotification,
 } from "@semoss/ui";
@@ -120,7 +119,7 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 						setChatMenu(null);
 					}}
 				>
-					<MenuItem
+					<Menu.Item
 						disabled={!!room}
 						onClick={(e) => {
 							try {
@@ -140,8 +139,8 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 						}}
 					>
 						Download
-					</MenuItem>
-					<MenuItem
+					</Menu.Item>
+					<Menu.Item
 						onClick={(e) => {
 							try {
 								// stop the event propagation
@@ -164,7 +163,7 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 						}}
 					>
 						Delete
-					</MenuItem>
+					</Menu.Item>
 				</Menu>
 			</StyledListItemButton>
 		</StyledLink>
