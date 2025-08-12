@@ -55,7 +55,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
    * with a `LoadingScreen.Trigger`.
    */
 
-  const getLoadingChildren = useMemo(() => {
+  const loadComponent = useMemo(() => {
     if (data?.loadSkeleton && data?.loadSkeleton === "LoadingSkeleton") {
       return <LoadingSkeleton />;
     }
@@ -64,7 +64,7 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
   // If the block is loading, return the loading children
   // Otherwise, render the block with the text content
   if (isLoading)
-    return <LoadingScreen relative>{getLoadingChildren}</LoadingScreen>;
+    return <LoadingScreen relative>{loadComponent}</LoadingScreen>;
 
   // TODO: Why?
   return showBlock(block, state)

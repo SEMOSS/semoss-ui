@@ -44,7 +44,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
   
-  const loadTemplate = useMemo((): ReactElement => {
+  const loadComponent = useMemo((): ReactElement => {
     if (data.loadSkeleton === "LoadingSkeleton") {
       return <LoadingSkeleton />;
     }
@@ -60,7 +60,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
     >
       <LoadingScreen relative>
         {isLoading ? (
-          loadTemplate
+          loadComponent
         ) : (
           <Markdown>{displayTxt}</Markdown>
         )}
