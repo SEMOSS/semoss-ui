@@ -300,35 +300,34 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
         let columnNames: string[] = [],
             columnAlias: string[] = [];
         try {
-            const res = await runPixel(
-                `META|GetDatabaseTableStructure(database=["${databaseDetails.dbId}"]);
-             META|GetDatabaseMetamodel(database=["${databaseDetails.dbId}"], options=["dataTypes","positions"])`,
-            );
-            const output: any = res.pixelReturn[0]?.output || [];
-            columnAlias = output.map((item) => item[4]);
+          const res = await runPixel(
+            `META|GetDatabaseTableStructure(database=["${databaseDetails.dbId}"]);
+             META|GetDatabaseMetamodel(database=["${databaseDetails.dbId}"], options=["dataTypes","positions"])`
+          );
+          const output: any = res.pixelReturn[0]?.output || [];
+          columnAlias = output.map((item) => item[4]);
 
-            const metaModelOutput: any = res.pixelReturn[1]?.output || {};
-            if (
-                metaModelOutput.dataTypes &&
-                typeof metaModelOutput.dataTypes === "object"
-            ) {
-                columnNames = Object.keys(metaModelOutput.dataTypes);
-            }
-            //final query to create a frame
-            const gridQuery =
-              columnNames.length > 0
-                ? sanitizeQuery(
-                    `Select (${columnNames.join(",")}) .as ([${columnAlias.join(
-                      ","
-                    )}])`
-                  )
-                : sanitizeQuery(
-                    `Query("<encode>SELECT * FROM ${databaseDetails.dbName}</encode>")`
-                  );
-
-            const insightId = state.insightId;
-            const query = `Database(database=["${databaseDetails.dbId}"]) | ${gridQuery} | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${cell.parameters.frameVariableName}"])])`;
-            await runPixel(query, insightId);
+          const metaModelOutput: any = res.pixelReturn[1]?.output || {};
+          if (
+            metaModelOutput.dataTypes &&
+            typeof metaModelOutput.dataTypes === "object"
+          ) {
+            columnNames = Object.keys(metaModelOutput.dataTypes);
+          }
+          //final query to create a frame
+          const gridQuery =
+            columnNames.length > 0
+              ? sanitizeQuery(
+                  `Select (${columnNames.join(",")}) .as ([${columnAlias.join(
+                    ","
+                  )}])`
+                )
+              : sanitizeQuery(
+                  `Query('SELECT * FROM ${databaseDetails.dbName}')`
+                );
+          const insightId = state.insightId;
+          const query = `Database(database=["${databaseDetails.dbId}"]) | ${gridQuery} | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${cell.parameters.frameVariableName}"])])`;
+          await runPixel(query, insightId);
         } catch (error) {
             // Optionally handle/log error
             console.error("Error in runFrameCreationQuery:", error);
