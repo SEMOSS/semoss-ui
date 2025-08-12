@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { createElement, ReactElement } from "react";
+import { createElement } from "react";
 import { useBlocks } from "../../hooks";
-import { LoadingSkeleton } from "../../assets/skeleton/LoadingSkeleton";
 
 export interface RendererEngineProps {
 	/** Id of the block */

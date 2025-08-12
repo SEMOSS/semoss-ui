@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
-import React, { type CSSProperties, useEffect } from "react";
+import React, { type CSSProperties, useEffect, useMemo } from "react";
+import { LoadingScreen } from "@semoss/ui";
 import { useBlock, useBlocks, useTypeWriter } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
 import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
-import { LoadingScreen } from "@semoss/ui";
 
 export interface TextBlockDef extends BlockDef<"text"> {
   widget: "text";
@@ -55,16 +55,16 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
    * with a `LoadingScreen.Trigger`.
    */
 
-  const getLoadingChildren = () => {
+  const getLoadingChildren = useMemo(() => {
     if (data?.loadSkeleton && data?.loadSkeleton === "LoadingSkeleton") {
       return <LoadingSkeleton />;
     }
     return <LoadingScreen.Trigger />;
-  };
+  }, [data.loadSkeleton]);
   // If the block is loading, return the loading children
   // Otherwise, render the block with the text content
   if (isLoading)
-    return <LoadingScreen relative>{getLoadingChildren()}</LoadingScreen>;
+    return <LoadingScreen relative>{getLoadingChildren}</LoadingScreen>;
 
   // TODO: Why?
   return showBlock(block, state)

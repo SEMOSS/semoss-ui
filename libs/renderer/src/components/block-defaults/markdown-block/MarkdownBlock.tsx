@@ -1,9 +1,8 @@
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, ReactElement, useEffect } from "react";
-import { Markdown } from "@semoss/ui";
+import { type CSSProperties, ReactElement, useEffect, useMemo } from "react";
+import { Markdown, LoadingScreen } from "@semoss/ui";
 import { useBlock, useTypeWriter } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
-import { LoadingScreen } from "@semoss/ui";
 import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
 
 export interface MarkdownBlockDef extends BlockDef<"markdown"> {
@@ -44,20 +43,13 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
 			listeners.preProcess();
 		}
 	}, []);
-
-
-  /**
-   * Given a template string, loads the correct template to render in its place.
-   * If the template doesn't exist, returns default skeleton.
-   * @param {string} template The name of the template to load.
-   * @returns {ReactElement} The loaded template, or default skeleton if it doesn't exist.
-   */
-  const loadTemplate = (template: string): ReactElement => {
-    if (template === "LoadingSkeleton") {
+  
+  const loadTemplate = useMemo((): ReactElement => {
+    if (data.loadSkeleton === "LoadingSkeleton") {
       return <LoadingSkeleton />;
     }
     return <LoadingScreen.Trigger />;
-  };
+  }, [data.loadSkeleton]);
 
 	return (
     <div
@@ -68,7 +60,7 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
     >
       <LoadingScreen relative>
         {isLoading ? (
-          loadTemplate(data.loadSkeleton)
+          loadTemplate
         ) : (
           <Markdown>{displayTxt}</Markdown>
         )}

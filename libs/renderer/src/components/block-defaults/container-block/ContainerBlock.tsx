@@ -1,9 +1,9 @@
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useEffect, ReactElement } from "react";
+import { type CSSProperties, useEffect, ReactElement, useMemo } from "react";
+import { LoadingScreen } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
-import { LoadingScreen } from "@semoss/ui";
 import { LoadingSkeleton } from "../../../assets/skeleton/LoadingSkeleton";
 
 export type BoxShadowParts = {
@@ -82,12 +82,12 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
      * @param {string} template The name of the template to load.
      * @returns {ReactElement} The loaded template, or nothing if it doesn't exist.
      */
-    const getLoadingChildren = (template: string): ReactElement => {
-        if (template === "LoadingSkeleton") {
+    const getLoadingChildren = useMemo((): ReactElement => {
+        if (data.loadSkeleton === "LoadingSkeleton") {
             return <LoadingSkeleton />;
         }
         return <LoadingScreen.Trigger />;
-    };
+    }, [data.loadSkeleton]);
     // Check if the block is loading
     const isLoading =
         data.hasOwnProperty("loading") &&
@@ -106,7 +106,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
             <LoadingScreen relative>
                 {/* Render the loading skeleton if specified */}
                 {isLoading ? (
-                    getLoadingChildren(data.loadSkeleton)
+                    getLoadingChildren
                 ) : (
         			<Slot slot={slots.children}></Slot>
                 )}
