@@ -1,17 +1,19 @@
-import { 
-  InsertLink,OpenInBrowser, } from "@mui/icons-material";
+import { InsertLink, OpenInBrowser } from "@mui/icons-material";
 import LockIcon from "@mui/icons-material/Lock";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
   Box,
-  Button,FileDropzone, 
+  Button,
+  FileDropzone,
   Grid,
   LoadingScreen,
-  Switch,styled, Table, 
+  Switch,
+  styled,
+  Table,
   TextField,
   Typography,
-  useNotification
+  useNotification,
 } from "@semoss/ui";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
@@ -61,13 +63,13 @@ const StyledReactor = styled(Box)(({ theme }) => ({
 // Root container
 const RootGrid = styled(Grid)(({ theme }) => ({
   marginBottom: theme.spacing(4),
-  width: '100%',
+  width: "100%",
 }));
 
 // Column wrapper box
 const ColumnBox = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  justifyContent: 'space-between',
+  display: "flex",
+  justifyContent: "space-between",
   gap: theme.spacing(2),
   border: `1px solid ${theme.palette.secondary.main}`,
   borderRadius: theme.shape.borderRadius * 2,
@@ -77,32 +79,32 @@ const ColumnBox = styled(Box)(({ theme }) => ({
 
 // Left text block container
 const LeftTextContainer = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'flex-start',
+  display: "flex",
+  alignItems: "flex-start",
   gap: theme.spacing(1),
 }));
 
 // Styled Lock icon
 const StyledLockIcon = styled(LockIcon)(({ theme }) => ({
-  color: theme.palette.text.disabled
+  color: theme.palette.text.disabled,
 }));
 
 // Publish title
 const PublishTitle = styled(Typography)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  fontSize: '16px',
+  display: "flex",
+  alignItems: "center",
+  fontSize: "16px",
   gap: theme.spacing(1),
   marginBottom: theme.spacing(0.5),
 }));
 
 // Publish description
 const Description = styled(Typography)(({ theme }) => ({
-  fontSize: '14px',
+  fontSize: "14px",
 }));
 
 const PublishPortalDescription = styled(Typography)(({ theme }) => ({
-  marginBottom: '0.5px',
+  marginBottom: "0.5px",
 }));
 
 // Second column container
@@ -117,39 +119,39 @@ const SecondColumnBox = styled(Box)(({ theme }) => ({
 
 // Header section inside second column
 const SecondColumnHeader = styled(Box)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "space-between",
   gap: theme.spacing(2),
-  flexWrap: 'wrap',
+  flexWrap: "wrap",
   paddingBottom: theme.spacing(2),
 }));
 
 // Custom text field
 const StyledTextField = styled(TextField)(({ theme }) => ({
-  '& .MuiOutlinedInput-root': {
+  "& .MuiOutlinedInput-root": {
     borderRadius: "8px",
   },
 }));
 
-const SectionDivider = styled('hr')(({ theme }) => ({
-  border: `1px solid ${ theme.palette.secondary.divider}`,
+const SectionDivider = styled("hr")(({ theme }) => ({
+  border: `1px solid ${theme.palette.secondary.divider}`,
   borderTop: theme.palette.secondary.divider,
   marginTop: theme.spacing(3),
   marginBottom: theme.spacing(3),
 }));
 
 const Title = styled(Typography)(({ theme }) => ({
-  fontSize: '20px',
+  fontSize: "20px",
 }));
 
 const ReactorActions = styled(Box)(({ theme }) => ({
-  display: 'flex',
+  display: "flex",
   gap: theme.spacing(2),
 }));
 
 const ActionBtnOutlined = styled(Button)(({ theme }) => ({
-  fontSize: '14px',
+  fontSize: "14px",
 }));
 
 const LeftPane = styled(Box)(({ theme }) => ({
@@ -162,7 +164,7 @@ const RightPane = styled(Box)(({ theme }) => ({
 
 const UpdateText = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(2),
-  fontSize: '14px',
+  fontSize: "14px",
 }));
 
 const UploadIcon = styled(OpenInBrowser)(({ theme }) => ({
@@ -172,13 +174,13 @@ const UploadIcon = styled(OpenInBrowser)(({ theme }) => ({
 }));
 
 const BrowseText = styled(Typography)(({ theme }) => ({
-  color: 'theme.palette.primary.dark',
+  color: "theme.palette.primary.dark",
   fontWeight: 500,
-  cursor: 'pointer',
+  cursor: "pointer",
 }));
 
 const SecondaryText = styled(Typography)(({ theme }) => ({
-  color: theme.palette.text.secondary
+  color: theme.palette.text.secondary,
 }));
 
 interface AppSettingsProps {
@@ -191,7 +193,7 @@ type EditAppForm = {
 };
 
 export const SettingsTab = (props: AppSettingsProps) => {
-  const { id} = props;
+  const { id } = props;
   const { monolithStore, configStore } = useRootStore();
   const notification = useNotification();
   const { adminMode } = useSettings();
@@ -285,8 +287,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output ;
-        let type ;
+        let output;
+        let type;
 
         output = response.pixelReturn[0].output;
         type = response.pixelReturn[0].operationType[0];
@@ -317,7 +319,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
    * @name recompileReactors
    */
   const recompileReactors = ({ release }) => {
-    let pixelString;
+    let pixelString: string;
     if (release == null) {
       pixelString = `ReloadInsightClasses(project='${id}');`;
     } else {
@@ -327,8 +329,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output ;
-        let type ;
+        let output;
+        let type;
 
         output = response.pixelReturn[0].output;
         type = response.pixelReturn[0].operationType[0];
@@ -371,8 +373,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output ;
-        let type ;
+        let output;
+        let type;
 
         output = response.pixelReturn[0].output;
         type = response.pixelReturn[0].operationType[0];
@@ -505,10 +507,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
       <Typography variant="h6" gutterBottom>
         Access
       </Typography>
-      <RootGrid
-        container
-        spacing={3}
-      >
+      <RootGrid container spacing={3}>
         {/* First Column - 20% */}
         <Grid item xs={12} md={5}>
           <ColumnBox>
@@ -516,11 +515,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
             <LeftTextContainer>
               <StyledLockIcon fontSize="small" />
               <Box>
-                <PublishTitle
-                  variant="subtitle2"
-                >
-                  Publish
-                </PublishTitle>
+                <PublishTitle variant="subtitle2">Publish</PublishTitle>
                 <Description variant="body2">
                   Enable the publishing of the portal
                 </Description>
@@ -592,13 +587,11 @@ export const SettingsTab = (props: AppSettingsProps) => {
           </SecondColumnBox>
         </Grid>
       </RootGrid>
-      <SectionDivider/>
+      <SectionDivider />
       {/* Reactors Section */}
       <StyledReactor>
         <Box>
-          <Title variant="h6">
-            Reactors
-          </Title>
+          <Title variant="h6">Reactors</Title>
 
           {portalReactors.reactors.length > 0 && (
             <Description variant="body2">
@@ -657,9 +650,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
               <LoadingScreen.Trigger description="Loading..." />
             </LoadingScreen>
           )}
-          <Title variant="h6">
-            Update Project
-          </Title>
+          <Title variant="h6">Update Project</Title>
           <UpdateText variant="body2">
             The maximum file size we can handle is 5MB per CSV
           </UpdateText>
@@ -693,11 +684,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
                 onChange={(newValues) => field.onChange(newValues)}
               >
                 <UploadIcon />
-                <BrowseText
-                  variant="body2"
-                >
-                  Browse
-                </BrowseText>
+                <BrowseText variant="body2">Browse</BrowseText>
                 <SecondaryText variant="caption">
                   or drop file to upload
                 </SecondaryText>

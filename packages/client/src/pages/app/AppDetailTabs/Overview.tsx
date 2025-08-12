@@ -1,51 +1,51 @@
-import { Box, Grid, Typography, Card, styled } from '@semoss/ui';
-import BLOCKS_APP_2 from '@/assets/img/blocks_app_2.png';
-import Apps from '../../../assets/img/Apps.png';
-import Download from '../../../assets/img/Downloads.png';
-import Usability from '../../../assets/img/Usability.png';
-import View from '../../../assets/img/ViewIcon.png';
+import { Box, Card, Grid, styled, Typography } from "@semoss/ui";
+import BLOCKS_APP_2 from "@/assets/img/blocks_app_2.png";
+import Apps from "../../../assets/img/Apps.png";
+import Download from "../../../assets/img/Downloads.png";
+import Usability from "../../../assets/img/Usability.png";
+import View from "../../../assets/img/ViewIcon.png";
 
 // Statistics configuration
 const stats = [
-    { icon: View, label: 'Views', value: '100' },
-    { icon: Download, label: 'Downloads', value: '45' },
-    { icon: Apps, label: 'Apps', value: '10' },
-    { icon: Usability, label: 'Usability', value: '9.5/10' },
+  { icon: View, label: "Views", value: "100" },
+  { icon: Download, label: "Downloads", value: "45" },
+  { icon: Apps, label: "Apps", value: "10" },
+  { icon: Usability, label: "Usability", value: "9.5/10" },
 ];
 
 // Similar Apps Data Placeholder
 const similarApps = [
-    {
-        project_id: '1',
-        project_name: 'Task Manager',
-        project_description: 'Manage daily tasks efficiently',
-    },
-    {
-        project_id: '2',
-        project_name: 'Progress Tracker',
-        project_description: 'Track your progress',
-    },
-    {
-        project_id: '1',
-        project_name: 'Task Manager',
-        project_description: 'Manage daily tasks efficiently',
-    },
-    {
-        project_id: '2',
-        project_name: 'Progress Tracker',
-        project_description: 'Track your progress',
-    },
+  {
+    project_id: "1",
+    project_name: "Task Manager",
+    project_description: "Manage daily tasks efficiently",
+  },
+  {
+    project_id: "2",
+    project_name: "Progress Tracker",
+    project_description: "Track your progress",
+  },
+  {
+    project_id: "1",
+    project_name: "Task Manager",
+    project_description: "Manage daily tasks efficiently",
+  },
+  {
+    project_id: "2",
+    project_name: "Progress Tracker",
+    project_description: "Track your progress",
+  },
 ];
 
 const StyledBox = styled(Box)(({ theme }) => ({
-    padding:theme.spacing(3),
-    width: '100%' 
+  padding: theme.spacing(3),
+  width: "100%",
 }));
 
 // Text
 const StyledDescription = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.disabled,
-  fontSize: '16px',
+  fontSize: "16px",
 }));
 
 const SectionTitle = styled(Typography)(({ theme }) => ({
@@ -57,24 +57,24 @@ const StatCard = styled(Box)(({ theme }) => ({
   border: `1px solid ${theme.palette.secondary.main}`,
   borderRadius: theme.shape.borderRadius * 2,
   padding: theme.spacing(2),
-  display: 'flex',
-  alignItems: 'center',
+  display: "flex",
+  alignItems: "center",
   gap: theme.spacing(1.5),
 }));
 
 // Similar apps
 const AppCard = styled(Card)(({ theme }) => ({
-  height: '100%',
-  display: 'flex',
-  flexDirection: 'column',
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
   borderRadius: theme.shape.borderRadius * 2,
   boxShadow: theme.shadows[1] as string,
 }));
 
-const AppImage = styled('img')({
-  width: '100%',
+const AppImage = styled("img")({
+  width: "100%",
   height: 300,
-  objectFit: 'contain',
+  objectFit: "contain",
 });
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
@@ -82,80 +82,69 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 interface OverviewProps {
-    appInfo: {
-        markdown?: string;
-    };
+  appInfo: {
+    markdown?: string;
+  };
 }
 export const Overview = ({ appInfo }: OverviewProps) => {
-    return (
-        <StyledBox>
-            <Typography variant="h6" gutterBottom>
-                Details
-            </Typography>
-            <StyledDescription variant="body2">{appInfo?.markdown}</StyledDescription>
+  return (
+    <StyledBox>
+      <Typography variant="h6" gutterBottom>
+        Details
+      </Typography>
+      <StyledDescription variant="body2">{appInfo?.markdown}</StyledDescription>
 
-            <SectionTitle variant="h6" gutterBottom>
-                Statistics
-            </SectionTitle>
+      <SectionTitle variant="h6" gutterBottom>
+        Statistics
+      </SectionTitle>
 
-            <Grid container spacing={2} mb={4}>
-                {stats.map((stat, index) => (
-                    <Grid item xs={12} sm={6} md={3} key={index}>
-                        <StatCard>
-                            <img
-                                src={stat.icon}
-                                alt={stat.label}
-                                width={60}
-                                height={60}
-                                style={{ objectFit: 'contain' }}
-                            />
-                            <Box>
-                                <Typography variant="body2">
-                                    {stat.label}
-                                </Typography>
-                                <Typography
-                                    variant="subtitle1"
-                                    fontWeight="bold"
-                                >
-                                    {stat.value}
-                                </Typography>
-                            </Box>
-                        </StatCard>
-                    </Grid>
-                ))}
-            </Grid>
+      <Grid container spacing={2} mb={4}>
+        {stats.map((stat, index) => (
+          <Grid item xs={12} sm={6} md={3} key={index}>
+            <StatCard>
+              <img
+                src={stat.icon}
+                alt={stat.label}
+                width={60}
+                height={60}
+                style={{ objectFit: "contain" }}
+              />
+              <Box>
+                <Typography variant="body2">{stat.label}</Typography>
+                <Typography variant="subtitle1" fontWeight="bold">
+                  {stat.value}
+                </Typography>
+              </Box>
+            </StatCard>
+          </Grid>
+        ))}
+      </Grid>
 
-            <StyledTypography variant="h6" gutterBottom>
-                Similar Apps
-            </StyledTypography>
+      <StyledTypography variant="h6" gutterBottom>
+        Similar Apps
+      </StyledTypography>
 
-            <Grid container spacing={2}>
-                {similarApps.map((app) => (
-                    <Grid item xs={12} sm={6} md={3} key={app.project_id}>
-                        <AppCard>
-                            <Box>
-                                <AppImage
-                                    src={BLOCKS_APP_2}
-                                    alt="App Icon"
-                                    style={{ objectFit: 'contain' }}
-                                />
-                                <StyledTypography
-                                    variant="subtitle1"
-                                    gutterBottom
-                                >
-                                    {app.project_name}
-                                </StyledTypography>
-                                <StyledTypography
-                                    variant="body2"
-                                    gutterBottom
-                                >
-                                    {app.project_description}
-                                </StyledTypography>
-                            </Box>
-                        </AppCard>
-                    </Grid>
-                ))}
-            </Grid>
-        </StyledBox>
-    );
+      <Grid container spacing={2}>
+        {similarApps.map((app) => (
+          <Grid item xs={12} sm={6} md={3} key={app.project_id}>
+            <AppCard>
+              <Box>
+                <AppImage
+                  src={BLOCKS_APP_2}
+                  alt="App Icon"
+                  style={{ objectFit: "contain" }}
+                />
+                <StyledTypography variant="subtitle1" gutterBottom>
+                  {app.project_name}
+                </StyledTypography>
+                <StyledTypography variant="body2" gutterBottom>
+                  {app.project_description}
+                </StyledTypography>
+              </Box>
+            </AppCard>
+          </Grid>
+        ))}
+      </Grid>
+    </StyledBox>
+  );
 };
