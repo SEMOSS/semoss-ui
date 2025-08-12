@@ -2,6 +2,7 @@ import { AutoAwesome } from "@mui/icons-material";
 import { Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import { Block, BlockDef, Paths } from "@semoss/renderer";
 import { usePixel } from "@semoss/sdk/react";
 import {
@@ -72,15 +73,17 @@ export const AIGenerationSettings = observer(
 	}: AIGenerationSettingsProps<D>) => {
 		const notification = useNotification();
 		const { monolithStore, configStore } = useRootStore();
-		const [prompt, setPrompt] = useState("");
+		// const [prompt, setPrompt] = useState("");
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
 
 		const modelIdRef = useRef("");
 		const [modelId, setModelId] = useState<string>("");
 
-		const [inputFile, setInputFile] = useState<File[] | null>(null);
+		const [_fileForFrameData, _setFileForFrameData] = useState<
+			File[] | null
+		>(null);
 
-		const [selectedModel, setSelectedModel] = useState<string>("");
+		// const [selectedModel, setSelectedModel] = useState<string>("");
 		const [_models, setModels] = useState<
 			{ app_id: string; app_name: string }[]
 		>([]);
@@ -95,12 +98,23 @@ export const AIGenerationSettings = observer(
 				ids: [],
 				display: {},
 			});
+		const { control, handleSubmit, watch, setValue } = useForm({
+			defaultValues: {
+				inputFile: null,
+				prompt: "",
+				selectedModel: "",
+			},
+		});
+
+		const inputFile = watch("inputFile");
+		const _prompt = watch("prompt");
+		const selectedModel = watch("selectedModel");
+
 		const _isGenerateButtonDisabled =
 			!cfgLibraryModels.ids.length ||
 			cfgLibraryModels.loading ||
 			!inputFile ||
 			!selectedModel;
-			// || !prompt
 
 		const myModels = usePixel<
 			{ app_id: string; app_name: string; tag: string }[]
@@ -125,9 +139,9 @@ export const AIGenerationSettings = observer(
 				display: modelDisplay,
 			});
 			if (modelIds.length) {
-				setSelectedModel(modelIds[0]);
+				setValue("selectedModel", modelIds[0]);
 			}
-		}, [myModels.status, myModels.data]);
+		}, [myModels.status, myModels.data, setValue]);
 
 		useEffect(() => {
 			if (myModels.status !== "SUCCESS") {
@@ -259,71 +273,93 @@ export const AIGenerationSettings = observer(
 			}
 		};
 		return (
-			<Stack spacing={1} width="100%">
-				<StyledUploadSection spacing={2}>
-					<Typography variant="body1">
-						Upload CSV{" "}
-						<Typography component="span" color="error">
-							*
+			<form onSubmit={handleSubmit(generateAIResponse)}>
+				<Stack spacing={1} width="100%">
+					<StyledUploadSection spacing={2}>
+						<Typography variant="body1">
+							Upload CSV{" "}
+							<Typography component="span" color="error">
+								*
+							</Typography>
 						</Typography>
-					</Typography>
-					<FileDropzone
-						extensions={[".csv"]}
-						onChange={(file: File) => {
-							setInputFile([file]);
-						}}
-						disabled={responseLoading}
+						<Controller
+							name="inputFile"
+							control={control}
+							render={({ field }) => (
+								<FileDropzone
+									extensions={[".csv"]}
+									onChange={(file: File) =>
+										field.onChange([file])
+									}
+									disabled={responseLoading}
+								/>
+							)}
+						/>
+					</StyledUploadSection>
+					<Controller
+						name="prompt"
+						control={control}
+						render={({ field }) => (
+							<TextField
+								disabled={
+									!cfgLibraryModels.ids.length ||
+									responseLoading
+								}
+								fullWidth
+								multiline
+								rows={5}
+								{...field}
+								size="small"
+								variant="outlined"
+								autoComplete="off"
+								placeholder={placeholder}
+								label="AI Generator"
+								InputLabelProps={{
+									shrink: true,
+								}}
+								// required
+							/>
+						)}
 					/>
-				</StyledUploadSection>
-				<TextField
-					disabled={!cfgLibraryModels.ids.length || responseLoading}
-					fullWidth
-					multiline
-					rows={5}
-					value={prompt}
-					onChange={(e) => {
-						// sync the data on change
-						setPrompt(e.target.value);
-					}}
-					size="small"
-					variant="outlined"
-					autoComplete="off"
-					placeholder={placeholder}
-					label="AI Generator"
-					InputLabelProps={{
-						shrink: true,
-					}}
-					required
-				/>
-				<AutocompleteTwo
-					disabled={!cfgLibraryModels.ids.length || responseLoading}
-					disableClearable
-					fullWidth
-					id="model-autocomplete"
-					loading={cfgLibraryModels.loading}
-					options={cfgLibraryModels.ids}
-					value={selectedModel}
-					size="small"
-					getOptionLabel={(modelId: string) =>
-						cfgLibraryModels.display[modelId] ?? ""
-					}
-					onChange={(_, newModelId) => {
-						setSelectedModel(newModelId);
-					}}
-					renderInput={(params) => (
-						<TextField {...params} variant="outlined" />
-					)}
-				/>
-				<Button
-					disabled={_isGenerateButtonDisabled}
-					loading={responseLoading}
-					variant="outlined"
-					endIcon={<AutoAwesome />}
-					onClick={generateAIResponse}
-				>
-					Generate with AI
-				</Button>
-			</Stack>
+					<Controller
+						name="selectedModel"
+						control={control}
+						render={({ field }) => (
+							<AutocompleteTwo
+								disabled={
+									!cfgLibraryModels.ids.length ||
+									responseLoading
+								}
+								disableClearable
+								fullWidth
+								id="model-autocomplete"
+								loading={cfgLibraryModels.loading}
+								options={cfgLibraryModels.ids}
+								value={field.value}
+								size="small"
+								getOptionLabel={(modelId: string) =>
+									cfgLibraryModels.display[modelId] ?? ""
+								}
+								onChange={(_, newModelId) =>
+									field.onChange(newModelId)
+								}
+								renderInput={(params) => (
+									<TextField {...params} variant="outlined" />
+								)}
+							/>
+						)}
+					/>
+					<Button
+						disabled={_isGenerateButtonDisabled}
+						loading={responseLoading}
+						variant="outlined"
+						endIcon={<AutoAwesome />}
+						type="submit"
+					>
+						Generate with AI
+					</Button>
+				</Stack>
+			</form>
 		);
 	},
 );
