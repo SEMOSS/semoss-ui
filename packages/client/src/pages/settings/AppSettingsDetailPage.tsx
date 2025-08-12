@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { styled, ToggleTabsGroup } from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
+	DependencyList,
 	MembersTable,
 	PendingMembersTable,
 	SettingsTiles,
@@ -28,7 +29,7 @@ const StyledContent = styled("div")(({ theme }) => ({
 	flexShrink: "0",
 }));
 
-type VIEW = "CURRENT" | "PENDING" | "APP";
+type VIEW = "CURRENT" | "PENDING" | "APP" | "DEPENDENCIES";
 
 export const AppSettingsUserDetailPage = () => {
 	const { id } = useParams();
@@ -81,7 +82,7 @@ export const AppSettingsUserDetailPage = () => {
 			<StyledContent>
 				<ToggleTabsGroup
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onChange={(_e, v) => setView(v as VIEW)}
 				>
 					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
 					<ToggleTabsGroup.Item
@@ -93,6 +94,11 @@ export const AppSettingsUserDetailPage = () => {
 						label="Data Apps"
 						disabled={permission === "READ_ONLY"}
 						value={"APP"}
+					/>
+					<ToggleTabsGroup.Item
+						label="Dependencies"
+						disabled={permission === "READ_ONLY"}
+						value={"DEPENDENCIES"}
 					/>
 				</ToggleTabsGroup>
 				{view === "CURRENT" && (
@@ -106,6 +112,7 @@ export const AppSettingsUserDetailPage = () => {
 					<PendingMembersTable id={id} type={"APP"} />
 				)}
 				{view === "APP" && <AppSettings id={id} />}
+				{view === "DEPENDENCIES" && <DependencyList id={id} />}
 			</StyledContent>
 		</StyledContainer>
 	);
@@ -131,7 +138,7 @@ export const AppSettingsAdminDetailPage = () => {
 			<StyledContent>
 				<ToggleTabsGroup
 					value={view}
-					onChange={(e, v) => setView(v as VIEW)}
+					onChange={(_e, v) => setView(v as VIEW)}
 				>
 					<ToggleTabsGroup.Item label="Member" value={"CURRENT"} />
 					<ToggleTabsGroup.Item
@@ -139,12 +146,14 @@ export const AppSettingsAdminDetailPage = () => {
 						value={"PENDING"}
 					/>
 					<ToggleTabsGroup.Item label="Data Apps" value={"APP"} />
+					<ToggleTabsGroup.Item label="Dependencies" value={"DEPENDENCIES"} />
 				</ToggleTabsGroup>
 				{view === "CURRENT" && <MembersTable id={id} type={"APP"} />}
 				{view === "PENDING" && (
 					<PendingMembersTable id={id} type={"APP"} />
 				)}
 				{view === "APP" && <AppSettings id={id} />}
+				{view === "DEPENDENCIES" && <DependencyList id={id} />}
 			</StyledContent>
 		</StyledContainer>
 	);
