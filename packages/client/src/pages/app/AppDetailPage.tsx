@@ -193,8 +193,8 @@ const PublisherInfo = styled(Typography)(({ theme }) => ({
   color: "gray",
   display: "flex",
   flexDirection: "column",
-  alignItems: "flex-end", // right-align the text itself
-  gap: theme.spacing(0.5), // 4px
+  alignItems: "flex-end",
+  gap: theme.spacing(0.5), 
 }));
 
 const HeaderRow = styled("div")({

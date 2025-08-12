@@ -652,7 +652,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
           )}
           <Title variant="h6">Update Project</Title>
           <UpdateText variant="body2">
-            The maximum file size we can handle is 5MB per CSV
+            The maximum file size we can handle is 5MB per Zip
           </UpdateText>
           <Button
             variant="contained"
