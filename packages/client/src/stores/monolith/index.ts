@@ -1,1 +1,1 @@
-export { MonolithStore } from './monolith.store';
+export { MonolithStore } from "./monolith.store";

@@ -1,1 +1,1 @@
-export * from './DynamicGridMenu';
+export * from "./DynamicGridMenu";
