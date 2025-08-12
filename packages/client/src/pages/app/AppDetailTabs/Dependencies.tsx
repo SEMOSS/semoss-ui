@@ -1,30 +1,21 @@
-import React, { useState } from 'react';
-import {
-    Box,
-    Typography,
-    Button,
-    Chip,
-    Stack,
-    Link,
-    Modal,
-    RadioGroup,
-    TextArea,
-    styled,
-    Card,
-    Avatar,
-    Icon,
-} from '@semoss/ui';
-import { modelledDependency } from '@/components/app';
+import { Edit } from '@mui/icons-material';
+import BlockIcon from '@mui/icons-material/Block';
 import PersonIcon from '@mui/icons-material/Person';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import BlockIcon from '@mui/icons-material/Block';
-import { Edit } from '@mui/icons-material';
+import {
+    Box,
+    Chip,
+    Link,
+    Stack,
+    styled,
+    Typography,
+} from '@semoss/ui';
 import OPEN_AI from '@/assets/img/OPEN_AI.png';
+import type { modelledDependency } from '@/components/app';
 import { EngineAccessButton } from '@/components/engine';
 import { EngineContext } from '@/contexts/EngineContext';
-import { ENGINE_TYPES, Role } from '@/types';
+import type { ENGINE_TYPES, Role } from '@/types';
 
-const StyledCard = styled(Card)({ borderRadius: '12px' });
 
 const StyledIcon = styled('span')(({ theme }) => ({
   display: 'inline-flex',
@@ -117,13 +108,6 @@ const StyledText = styled(Typography)(({ theme }) => ({
 const StyledSecondaryText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
-
-const Logo = styled('img')({
-  width: 48,
-  height: 48,
-  display: 'block',
-})
-
 
 export const Dependencies = ({
     dependencies,

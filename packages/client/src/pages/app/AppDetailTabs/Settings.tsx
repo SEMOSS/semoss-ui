@@ -1,33 +1,20 @@
+import { 
+  InsertLink,OpenInBrowser, } from "@mui/icons-material";
+import LockIcon from "@mui/icons-material/Lock";
+import { useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
 import {
   Box,
-  Typography,
-  Switch,
-  TextField,
-  Button,
-  Chip,
+  Button,FileDropzone, 
   Grid,
-  Icon,
   LoadingScreen,
-  useNotification,
+  Switch,styled, Table, 
+  TextField,
+  Typography,
+  useNotification
 } from "@semoss/ui";
-import LockIcon from "@mui/icons-material/Lock";
-import JavaIcon from "@mui/icons-material/Coffee"; // Substitute for Java reactor icon
-import { OpenInBrowser } from "@mui/icons-material";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
-import { useEffect, useState } from "react";
-import { styled, Table, FileDropzone } from "@semoss/ui";
-
-import {
-  Person,
-  ToggleOff,
-  Cached,
-  PublishedWithChanges,
-  InsertLink,
-  Publish,
-} from "@mui/icons-material";
-import { Controller, useForm } from "react-hook-form";
 import { Java } from "@/assets/img/Java";
-import { LoadingScreenContext } from "@/components/ui/LoadingScreen/LoadingScreenContext";
+import { usePixel, useRootStore, useSettings } from "@/hooks";
 
 const StyledTable = styled(Table)(({ theme }) => ({
   borderRadius: theme.spacing(1),
@@ -204,11 +191,11 @@ type EditAppForm = {
 };
 
 export const SettingsTab = (props: AppSettingsProps) => {
-  const { id, condensed = false } = props;
+  const { id} = props;
   const { monolithStore, configStore } = useRootStore();
   const notification = useNotification();
   const { adminMode } = useSettings();
-  const [isLoading, setIsLoading] = useState<any>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
     defaultValues: {
@@ -298,8 +285,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output = undefined;
-        let type = undefined;
+        let output ;
+        let type ;
 
         output = response.pixelReturn[0].output;
         type = response.pixelReturn[0].operationType[0];
@@ -340,8 +327,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output = undefined;
-        let type = undefined;
+        let output ;
+        let type ;
 
         output = response.pixelReturn[0].output;
         type = response.pixelReturn[0].operationType[0];
@@ -384,8 +371,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output = undefined;
-        let type = undefined;
+        let output ;
+        let type ;
 
         output = response.pixelReturn[0].output;
         type = response.pixelReturn[0].operationType[0];

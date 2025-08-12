@@ -1,5 +1,4 @@
 import { Add, Delete, Edit } from "@mui/icons-material";
-import FilteredIcon from '@/assets/img/FilteredIcon.png';
 import SearchIcon from "@mui/icons-material/Search";
 import type { AxiosResponse } from "axios";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -20,7 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import FilteredIcon from '@/assets/img/FilteredIcon.png';
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
@@ -239,7 +238,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 	const [search, setSearch] = useState<string>("");
 	const [isSearch, setIsSearch] = useState<boolean>(false);
-	const [permissionFilter, setPermissionFilter] = useState<string>("");
+	const [permissionFilter, _setPermissionFilter] = useState<string>("");
 	const [selectedMembers, setSelectedMembers] = useState<
 		SETTINGS_PROVISIONED_USER[]
 	>([]);
@@ -348,7 +347,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			allAuthorsResponse.status === "SUCCESS" &&
 			allAuthorsResponse.data
 		) {
-			setAllAuthors(allAuthorsResponse.data["members"]);
+			setAllAuthors(allAuthorsResponse.data.members);
 		} else {
 			setAllAuthors([]);
 		}
@@ -440,10 +439,10 @@ export const MembersTable = (props: MembersTableProps) => {
 					m.max_tokens
 				) {
 					// TODO: WE NEED CONSISTENCY, VERSUS HOW WE RECIEVE FROM BACKEND AND HOW WE SEND
-					json["maxResponseTime"] = m.max_response_time;
-					json["usageRestriction"] = m.usage_restriction;
-					json["usageFrequency"] = m.usage_frequency;
-					json["maxTokens"] = m.max_tokens;
+					json.maxResponseTime = m.max_response_time;
+					json.usageRestriction = m.usage_restriction;
+					json.usageFrequency = m.usage_frequency;
+					json.maxTokens = m.max_tokens;
 				}
 				return json;
 			});
@@ -561,11 +560,11 @@ export const MembersTable = (props: MembersTableProps) => {
 	const isLoading =
 		getMembers.status === "INITIAL" || getMembers.status === "LOADING";
 	const renderedMembers =
-		getMembers.status === "SUCCESS" ? getMembers.data["members"] : [];
+		getMembers.status === "SUCCESS" ? getMembers.data.members : [];
 	const totalMembers =
-		getMembers.status === "SUCCESS" ? getMembers.data["totalMembers"] : 0;
+		getMembers.status === "SUCCESS" ? getMembers.data.totalMembers : 0;
 	const hasMembers =
-		getMembers.status === "SUCCESS" && getMembers.data["totalMembers"] > 0;
+		getMembers.status === "SUCCESS" && getMembers.data.totalMembers > 0;
 
 	/**
 	 * Sort Members
@@ -814,7 +813,7 @@ export const MembersTable = (props: MembersTableProps) => {
 							</StyledMemberTable>
 						</StyledMemberLoading>
 					) : (
-						<>
+						<Box>
 							{hasMembers ? (
 								<>
 									<StyledMemberTable>
@@ -897,7 +896,7 @@ export const MembersTable = (props: MembersTableProps) => {
 											</Table.Row>
 										</Table.Head>
 										<Table.Body>
-											{sortedMembers.map((x, i) => {
+											{sortedMembers.map((_x, i) => {
 												const user = sortedMembers[i];
 
 												let isSelected = false;
@@ -1180,7 +1179,7 @@ export const MembersTable = (props: MembersTableProps) => {
 											<Table.Row>
 												<Table.Pagination
 													disabled={isLoading}
-													onPageChange={(e, v) => {
+													onPageChange={(_e, v) => {
 														setPage(v);
 														setSelectedMembers([]);
 													}}
@@ -1246,7 +1245,7 @@ export const MembersTable = (props: MembersTableProps) => {
 									)}
 								</StyledNoMembersDiv>
 							)}
-						</>
+						</Box>
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>

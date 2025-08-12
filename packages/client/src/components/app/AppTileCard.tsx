@@ -135,16 +135,16 @@ const StyledCardDescription = styled(Typography)(({ theme }) => ({
 	height: "40px",
 }));
 
-const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
-	"&.MuiCardHeader-root": {
-		padding: 0,
-		margin: 0,
-	},
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
-	alignSelf: "stretch",
-}));
+const StyledCardHeader = styled(Card.Header)({
+  "&.MuiCardHeader-root": {
+    padding: 0,
+    margin: 0,
+  },
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "flex-start",
+  alignSelf: "stretch",
+});
 
 const ButtonName = styled("p")(({ theme }) => ({
 	fontSize: "13px",
@@ -166,13 +166,13 @@ const ViewDetailsButtonName = styled("p")(({ theme }) => ({
 	letterSpacing: "0.46px",
 }));
 
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+const StyledCardContent = styled(Card.Content) ({
 	"&.MuiCardContent-root": {
 		padding: 0,
 		margin: 0,
 		// gap: '0px',//default spacing is 8px
 	},
-}));
+});
 
 const StyledTagChip = styled(Chip, {
 	shouldForwardProp: (prop) => prop !== "maxWidth",
@@ -221,14 +221,14 @@ const StyledOpenButton = styled(IconButton)(({ theme }) => ({
 	},
 }));
 
-const StyledPlaceholder = styled("div")(({ theme }) => ({
+const StyledPlaceholder = styled("div")({
 	height: "20px",
-}));
+});
 
-const StyledMainDiv = styled("div")(({ theme }) => ({
+const StyledMainDiv = styled("div")({
 	width: "322px",
 	minHeight: "307px",
-}));
+});
 
 const StyledSkeletonImage = styled("div")(({ theme }) => ({
 	borderRadius: "4px",
@@ -246,10 +246,10 @@ const StyledSkeletonContent = styled("div")(({ theme }) => ({
 	alignItems: "flex-start",
 }));
 
-const StyledSkeletonChip = styled("div")(({ theme }) => ({
+const StyledSkeletonChip = styled("div") ({
 	display: "flex",
 	flexDirection: "row",
-}));
+});
 
 const StyledSkeletonDate = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -258,12 +258,12 @@ const StyledSkeletonDate = styled("div")(({ theme }) => ({
 	flexDirection: "row",
 }));
 
-const StyledSkeletonFooter = styled("div")(({ theme }) => ({
+const StyledSkeletonFooter = styled("div")({
 	display: "flex",
 	justifyContent: "space-between",
 	alignItems: "center",
 	width: "100%",
-}));
+});
 
 const StyledContent = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -276,12 +276,12 @@ const StyledContent = styled("div")(({ theme }) => ({
 	position: "relative",
 }));
 
-const StyledFooter = styled("div")(({ theme }) => ({
+const StyledFooter = styled("div")({
 	display: "flex",
 	alignItems: "center",
-}));
+});
 
-const StyledFooterDiv = styled("div")<{ theme?: any; showBorder?: boolean }>(
+const StyledFooterDiv = styled("div")<{ theme; showBorder }>(
 	({ theme, showBorder = false }) => ({
 		display: "flex",
 		alignItems: "center",
@@ -475,7 +475,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 	// Function to generate the API URL
 	const generateProjectImageURL = (appId: string): string => {
-		return Env.MODULE + "/api/project-" + appId + "/projectImage/download";
+		return `${Env.MODULE}/api/project-${appId}/projectImage/download`;
 	};
 
 	useEffect(() => {
@@ -514,7 +514,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 	// Fetch the image when the component mounts or when the app changes
 	useEffect(() => {
-		if (app && app.project_id && isInView && isLoading && !hasDownloaded) {
+		if (app?.project_id && isInView && isLoading && !hasDownloaded) {
 			const fetchImage = async () => {
 				try {
 					setLoading(true);
@@ -572,14 +572,14 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	 */
 	const findAppImage = (appType: string) => {
 		let randomInt = Math.floor(Math.random() * 5);
-		if (appType == "BI" || appType == "TERMINAL" || appType == "") {
+		if (appType === "BI" || appType === "TERMINAL" || appType === "") {
 			randomInt = 0;
 		}
 
 		const image = APP_IMAGES[appType];
 
 		if (!image) {
-			return APP_IMAGES["INSIGHTS"][0];
+			return APP_IMAGES.INSIGHTS[0];
 		}
 		// eliminating random and making it static for now
 		randomInt = 0;
@@ -592,7 +592,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 	 * @returns set app type description
 	 */
 	const findAppDetails = (appType: string) => {
-		if (appType == "BLOCKS") {
+		if (appType === "BLOCKS") {
 			return (
 				<StyledPublishedByContainer>
 					<DashboardRounded />
@@ -601,7 +601,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 					</StyledPublishedByLabel>
 				</StyledPublishedByContainer>
 			);
-		} else if (appType == "CODE") {
+		} else if (appType === "CODE") {
 			return (
 				<StyledPublishedByContainer>
 					<CodeRounded />
@@ -610,7 +610,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 					</StyledPublishedByLabel>
 				</StyledPublishedByContainer>
 			);
-		} else if (appType == "INSIGHTS") {
+		} else if (appType === "INSIGHTS") {
 			return (
 				<StyledPublishedByContainer>
 					<BarChartRounded />
@@ -830,11 +830,11 @@ export const AppTileCard = (props: AppTileCardProps) => {
                           +{app.tag.length - 3}
                         </Typography>
                       ) : (
-                        <></>
+                        null
                       )}
                     </>
                   ) : (
-                    <></>
+                    null
                   ))}
               </Stack>
               {createdDate && (
@@ -902,7 +902,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                   </StyledFooterDiv>
                 </StyledOpenButton>
               ) : (
-                <></>
+                null
               )}
               {app.project_created_by !== "SYSTEM" ? (
                 <IconButton
@@ -919,7 +919,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
                   <MoreVert />
                 </IconButton>
               ) : (
-                <></>
+                null
               )}
             </StyledCardActions>
           </StyledContent>

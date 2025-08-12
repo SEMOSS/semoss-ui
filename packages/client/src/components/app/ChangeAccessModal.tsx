@@ -1,29 +1,28 @@
 import { Edit, HdrAuto, Visibility } from "@mui/icons-material";
+import BlockIcon from '@mui/icons-material/Block';
+import PersonIcon from '@mui/icons-material/Person';
+import { useMemo, useState } from 'react';
 import { type Control, Controller } from "react-hook-form";
 import {
+    Box,
 	Button,
+    Chip,
+    Link,
 	Modal,
 	RadioGroup,
 	Stack,
 	styled,
+    Tab,
+    Tabs,
 	TextField,
 	Typography,
 	useNotification,
-    Tab,
-    Tabs,
-    Box,
-    Chip,
-    Link,
 } from "@semoss/ui";
+import OPEN_AI from '@/assets/img/OPEN_AI.png';
+import type { modelledDependency } from '@/components/app';
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useRootStore } from "@/hooks";
 import type { AppDetailsFormTypes } from "./app-details.utility";
-import { useMemo, useState } from 'react';
-import { modelledDependency } from '@/components/app';
-import PersonIcon from '@mui/icons-material/Person';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import BlockIcon from '@mui/icons-material/Block';
-import OPEN_AI from '@/assets/img/OPEN_AI.png';
 
 const StyledContentBox = styled(Stack)(({ theme }) => ({
 	backgroundColor: theme.palette.background.default,
@@ -208,7 +207,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
         onSuccess,
         permission,
     } = props;
-    const permissionDescriptions = PERMISSION_DESCRIPTION_MAP['APP'];
+    const permissionDescriptions = PERMISSION_DESCRIPTION_MAP.APP;
     const { monolithStore } = useRootStore();
     const notification = useNotification();
     const [tabValue, setTabValue] = useState(0);
@@ -244,7 +243,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                 return { depId, success: true, message: output };
             }
         } catch (error) {
-            return { depId, success: false, message: 'Request failed.' };
+            return { depId, success: false, message: error.message };
         }
     };
 
@@ -293,7 +292,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
             onSuccess();
             onClose(true); // Close modal after successful RequestProject call
         } catch (e) {
-            notification.add({
+            notif_ecation.add({
                 color: 'error',
                 message: 'Request failed.',
             });
@@ -341,38 +340,28 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
             );
 
             const results = await Promise.allSettled(promises);
-
-            let successCount = 0;
-            let errorCount = 0;
             results.forEach((result) => {
                 if (result.status === 'fulfilled') {
                     const { depId, success, message } = result.value;
                     if (success) {
                         setRequestedDeps((prev) => new Set(prev).add(depId));
-                        successCount++;
                         notification.add({
                             color: 'success',
                             message: `Dependency ${depId}: ${message}`,
                         });
                     } else {
-                        errorCount++;
                         notification.add({
                             color: 'error',
                             message: `Dependency ${depId}: ${message}`,
                         });
                     }
                 } else {
-                    errorCount++;
                     notification.add({
                         color: 'error',
                         message: 'Request failed for a dependency.',
                     });
                 }
             });
-
-            // if (successCount > 0) {
-            //     onSuccess();
-            // }
         } finally {
             setIsRequestAllLoading(false);
         }
@@ -437,13 +426,13 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
     );
 
     return (
-        <>
+        <Box>
             <Modal open={open} maxWidth={'md'} onClose={onClose}>
                 <Modal.Title>
                     {getValues('requestedPermission') === 'discoverable' ? (
-                        <>Request Access</>
+                        <Typography variant={"button"}>Request Access</Typography>
                     ) : (
-                        <>Change Access</>
+                        <Typography variant={"button"}>Change Access</Typography>
                     )}
                 </Modal.Title>
                 {permission !== 'discoverable' ? (
@@ -464,7 +453,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                         </Tabs>
                     </StyledDivider>
                 ) : (
-                    <> </>
+                    null
                 )}
                 <TabPanel value={tabValue} index={0}>
                     <Modal.Content>
@@ -797,6 +786,6 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
                     </Modal.Actions>
                 </TabPanel>
             </Modal>
-        </>
+        </Box>
     );
 };

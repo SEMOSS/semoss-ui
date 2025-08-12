@@ -6,9 +6,11 @@ import {
 	ExpandLess,
 	ExpandMore,
 } from "@mui/icons-material";
+import SearchIcon from '@mui/icons-material/Search';
 import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import {
+	Box,
 	Button,
 	Checkbox,
 	Collapse,
@@ -22,12 +24,11 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import FilteredIcon from '@/assets/img/FilteredIcon.png';
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
-import SearchIcon from '@mui/icons-material/Search';
-import FilteredIcon from '@/assets/img/FilteredIcon.png';
 
 const StyledMemberLoading = styled("div")(({ theme }) => ({
 	position: "relative",
@@ -241,7 +242,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 	const approvePendingMembers = async (members: SETTINGS_PENDING_USER[]) => {
 		try {
 			// construct requests for post data
-			const requests = members.map((mem, i) => {
+			const requests = members.map((mem, _i) => {
 				return {
 					requestid: mem.ID,
 					userid: mem.REQUEST_USERID,
@@ -455,7 +456,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 										direction={"row"}
 									>
 										<Typography variant={"body1"}>
-											{renderedMembers.length == 1
+											{renderedMembers.length === 1
 												? `${renderedMembers.length} pending request`
 												: `${renderedMembers.length} pending requests`}
 										</Typography>
@@ -521,7 +522,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 						<StyledFilterButtonContainer>
 							<IconButton
 								onClick={() => setOpenTable(!openTable)}
-								disabled={renderedMembers.length == 0}
+								disabled={renderedMembers.length === 0}
 							>
 								{openTable ? <ExpandLess /> : <ExpandMore />}
 							</IconButton>
@@ -535,7 +536,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 								</LoadingScreen>
 							</StyledMemberLoading>
 						) : (
-							<>
+							<Box>
 								{renderedMembers.length ? (
 									<StyledMemberTable>
 										<Table.Head>
@@ -761,7 +762,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 										</Typography>
 									</StyledNoPendingReqs>
 								)}
-							</>
+							</Box>
 						)}
 					</Collapse>
 				</StyledTableContainer>

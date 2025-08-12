@@ -1,7 +1,10 @@
+import LockIcon from '@mui/icons-material/Lock';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import {
 	Alert,
+	Box,
 	Button,
 	Grid,
 	Modal,
@@ -12,15 +15,11 @@ import {
 	Tooltip,
 	Typography,
 	useNotification,
-	Box,
 } from "@semoss/ui";
+import databaseIcon from '@/assets/img/databaseIcon.png';
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
-import LockIcon from '@mui/icons-material/Lock';
-import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
-import StorageIcon from '@mui/icons-material/Storage';
-import databaseIcon from '@/assets/img/databaseIcon.png';
 
 const StyledAlert = styled(Alert, {
 	shouldForwardProp: (prop) => prop !== "setBounds",
@@ -71,14 +70,6 @@ const StyledIcon = styled('span')(({ theme }) => ({
   },
 }));
 
-const StyledTypography = styled(Typography, {
-	shouldForwardProp: (prop) => prop !== "isDisabled",
-})<{
-	// Track if discoverable will be disabled or not
-	isDisabled: boolean;
-}>(({ isDisabled, theme }) => ({
-	color: isDisabled ? theme.palette.text.disabled : "inherit",
-}));
 
 interface SettingsTilesProps {
 	/**
@@ -121,7 +112,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { adminMode } = useSettings();
 
     const [deleteModal, setDeleteModal] = useState(false);
-    const [closeEngineModal, setCloseEngineModal] = useState(false);
     const [discoverable, setDiscoverable] = useState(true);
     const [global, setGlobal] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -219,51 +209,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		} finally {
 			// stop the loading screen
 			setLoading(false);
-		}
-	};
-
-	/**
-	 * Close the engine for item
-	 */
-	const closeEngine = async () => {
-		try {
-			// start the loading screen
-			setLoading(true);
-
-			// run the pixel
-			const response = await monolithStore.runQuery(
-				type === "DATABASE" ||
-					type === "STORAGE" ||
-					type === "MODEL" ||
-					type === "VECTOR" ||
-					type === "FUNCTION"
-					? `CloseEngine(engine=['${id}']);`
-					: "",
-			);
-
-			const operationType = response.pixelReturn[0].operationType;
-			const output = response.pixelReturn[0].output;
-
-			if (operationType.indexOf("ERROR") === -1) {
-				notification.add({
-					color: "success",
-					message: `Successfully closed engine for ${name}`,
-				});
-			} else {
-				notification.add({
-					color: "error",
-					message: output,
-				});
-			}
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
-		} finally {
-			// stop the loading screen
-			setLoading(false);
-			setCloseEngineModal(false);
 		}
 	};
 

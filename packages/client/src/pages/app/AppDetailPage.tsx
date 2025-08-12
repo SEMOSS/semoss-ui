@@ -1,53 +1,48 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 import {
-    SimCardDownload,
     EditOutlined,
-    Settings,
     LockReset,
+    SimCardDownload,
 } from '@mui/icons-material';
 import UpdateIcon from '@mui/icons-material/Update';
+import { useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { Link, useParams } from 'react-router-dom';
+import { Env } from '@semoss/sdk/react';
 import {
+    Box,
     Breadcrumbs,
     Button,
+    Chip,
+    CircularProgress,
+    Grid,
+    Modal,
     styled,
+    ToggleTabsGroup,
     Typography,
     useNotification,
-    Chip,
-    Modal,
-    CircularProgress,
-    Box,
-    ToggleTabsGroup,
-    Grid,
 } from '@semoss/ui';
-import { Env } from '@semoss/sdk/react';
-
-import { useRootStore } from '@/hooks';
-import { toTitleCase } from '@/utility';
+import {
+    type AppDetailsFormTypes,
+    AppDetailsFormValues,
+    type appDependency,
+    ChangeAccessModal,
+    type DetailsForm,
+    determineUserPermission,
+    EditDetailsModal,
+    fetchAppInfo,
+    fetchDependencies,
+    fetchMainUses,
+    type modelledDependency,
+} from '@/components/app';
 import { ShareOverlay } from '@/components/ui';
 import { SettingsContext } from '@/contexts';
-import {
-    AppDetailsFormTypes,
-    AppDetailsFormValues,
-    ChangeAccessModal,
-    EditDetailsModal,
-    appDependency,
-    modelledDependency,
-    fetchAppInfo,
-    fetchMainUses,
-    fetchDependencies,
-    determineUserPermission,
-    DetailsForm,
-    AppDetailsRef,
-} from '@/components/app';
-import { Overview } from './AppDetailTabs/Overview';
+import { useRootStore } from '@/hooks';
+import type { Role } from '@/types';
+import { NavbarHeader, NavbarLeft } from '../../components/shared';
 import { AccessControl } from './AppDetailTabs/AccessControl';
-import { SettingsTab } from './AppDetailTabs/Settings';
 import { Dependencies } from './AppDetailTabs/Dependencies';
-import { Role } from '@/types';
-import { NavbarLeft, NavbarHeader } from '../../components/shared';
+import { Overview } from './AppDetailTabs/Overview';
+import { SettingsTab } from './AppDetailTabs/Settings';
 
 const OuterContainer = styled('div')(({ theme }) => ({
     height: '100%',
@@ -202,14 +197,10 @@ export const AppDetailPage = () => {
     const { control, setValue, getValues, watch, handleSubmit } =
         useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
-    const markdown = watch('markdown');
     const tags = watch('tag');
     const appInfo = watch('appInfo');
-    const userRole = watch('userRole');
     const permission = watch('permission');
     const dependencies = watch('dependencies');
-    const detailsForm = watch('detailsForm');
-    const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
     const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
     const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
         useState(false);
@@ -219,27 +210,6 @@ export const AppDetailPage = () => {
         AppDetailsFormValues.detailsForm,
     );
     const [pendingRequest, setPendingRequest] = useState(false);
-
-    const markdownRef = useRef<HTMLElement>(null);
-    const tagsRef = useRef<HTMLElement>(null);
-    const dependenciesRef = useRef<HTMLElement>(null);
-    const appAccessRef = useRef<HTMLElement>(null);
-    const memberAccessRef = useRef<HTMLElement>(null);
-    const similarAppsRef = useRef<HTMLElement>(null);
-
-    const refs = useMemo<
-        { ref: React.MutableRefObject<HTMLElement>; display: string }[]
-    >(() => {
-        return [
-            { ref: markdownRef, display: 'Main Uses' },
-            { ref: tagsRef, display: 'Tags' },
-            { ref: dependenciesRef, display: 'Dependencies' },
-            { ref: appAccessRef, display: 'App Access' },
-            { ref: memberAccessRef, display: 'Member Access' },
-            { ref: similarAppsRef, display: 'Similar Apps' },
-        ];
-    }, []);
-
     const { monolithStore, configStore } = useRootStore();
     const notification = useNotification();
     const { appId } = useParams();
@@ -274,7 +244,7 @@ export const AppDetailPage = () => {
                         setPendingRequest(false);
                     }
                 })
-                .catch((error) => {
+                .catch((_error) => {
                     setPendingRequest(false); // fallback in case of error
                 });
         }
@@ -457,38 +427,6 @@ export const AppDetailPage = () => {
         setExportLoading(false);
     };
 
-    // filter metakeys to the variable ones
-    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
-        (k) => {
-            return (
-                k.metakey !== 'description' &&
-                k.metakey !== 'markdown' &&
-                k.metakey !== 'tag'
-            );
-        },
-    );
-
-    // Create refs for dynamic fields
-    const createRefs = useMemo<AppDetailsRef[]>(() => {
-        const refs = [];
-        projectMetaKeys.forEach((meta) => {
-            if (detailsForm?.[meta.metakey]) {
-                refs.push({
-                    ref: React.createRef<HTMLElement>(),
-                    display: toTitleCase(meta.metakey),
-                    ...meta,
-                });
-            }
-        });
-        return refs as AppDetailsRef[];
-    }, [projectMetaKeys, detailsForm]);
-
-    // Merge default/dynamic refs for side bar navigiation
-    const detailRefs = [
-        ...refs,
-        ...createRefs.map((a) => ({ ref: a.ref, display: a.display })),
-    ];
-
     /**
      * @name onSubmit
      * @desc update app details
@@ -586,7 +524,6 @@ export const AppDetailPage = () => {
                 <InnerContainer>
                     <Breadcrumbs separator="/">
                         <Breadcrumbs.Item
-                            //@ts-expect-error: TODO FIX Type
                             as={Link}
                             to={`../../..`}
                             underline="none"
@@ -596,7 +533,6 @@ export const AppDetailPage = () => {
                             App Catalog
                         </Breadcrumbs.Item>
                         <Breadcrumbs.Item
-                            //@ts-expect-error: TODO FIX Type
                             as={Link}
                             to={`.`}
                             underline="none"
@@ -610,7 +546,7 @@ export const AppDetailPage = () => {
                     <div>
                         <PageBody>
                             <TitleSection>
-                                <>
+                                <Box>
                                     <TitleSectionImg
                                         src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
                                         alt="App Image"
@@ -622,7 +558,7 @@ export const AppDetailPage = () => {
                                             {appInfo?.project_name}
                                         </Title>
                                     </TitleSectionBodyWrapper>
-                                </>
+                                </Box>
 
                                 <ActionBar>
                                     {permission === 'author' ? (
@@ -689,7 +625,6 @@ export const AppDetailPage = () => {
                                                     setIsEditDetailsModalOpen(
                                                         true,
                                                     );
-                                                    setMoreVertAnchorEl(null);
                                                 }}
                                                 data-testid="app-detail-open-btn"
                                             >
@@ -765,7 +700,7 @@ export const AppDetailPage = () => {
                                 <StyledToggleTabsGroup
                                     value={selectedTab}
                                     boxSx={StyledTabs}
-                                    onChange={(e, val) =>
+                                    onChange={(_e, val) =>
                                         setSelectedTab(String(val))
                                     }
                                 >

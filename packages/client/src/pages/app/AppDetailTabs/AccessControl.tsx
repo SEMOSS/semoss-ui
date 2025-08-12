@@ -1,12 +1,11 @@
-import React from 'react';
-import { Box, Stack, styled, Typography } from '@semoss/ui';
-import { SettingsContext } from '@/contexts';
 import { useNavigate } from 'react-router-dom';
+import { Box, Stack, styled, Typography } from '@semoss/ui';
 import {
     MembersTable,
     PendingMembersTable,
     SettingsTiles,
 } from '@/components/settings';
+import { SettingsContext } from '@/contexts';
 
 // Styled components
 const StyledBox = styled(Box)(({ theme }) => ({

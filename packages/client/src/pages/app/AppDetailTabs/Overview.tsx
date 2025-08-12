@@ -1,10 +1,9 @@
-import React from 'react';
-import { Box, Grid, Typography, Card, Chip, Stack, styled } from '@semoss/ui';
-import View from '../../../assets/img/ViewIcon.png';
-import Download from '../../../assets/img/Downloads.png';
-import Apps from '../../../assets/img/Apps.png';
-import Usability from '../../../assets/img/Usability.png';
+import { Box, Grid, Typography, Card, styled } from '@semoss/ui';
 import BLOCKS_APP_2 from '@/assets/img/blocks_app_2.png';
+import Apps from '../../../assets/img/Apps.png';
+import Download from '../../../assets/img/Downloads.png';
+import Usability from '../../../assets/img/Usability.png';
+import View from '../../../assets/img/ViewIcon.png';
 
 // Statistics configuration
 const stats = [
@@ -38,8 +37,6 @@ const similarApps = [
     },
 ];
 
-const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
-
 const StyledBox = styled(Box)(({ theme }) => ({
     padding:theme.spacing(3),
     width: '100%' 
@@ -64,12 +61,6 @@ const StatCard = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   gap: theme.spacing(1.5),
 }));
-
-const StatIcon = styled('img')({
-  width: 60,
-  height: 60,
-  objectFit: 'contain',
-});
 
 // Similar apps
 const AppCard = styled(Card)(({ theme }) => ({

@@ -5,7 +5,6 @@ import {
 	Box,
 	Button,
 	Card,
-	Icon,
 	Modal,
 	RadioGroup,
 	Stack,
@@ -124,7 +123,7 @@ export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 			// close is
 			setOpen(false);
 		} catch (e) {
-			// noop
+      console.log(e)
 		}
 	};
 
