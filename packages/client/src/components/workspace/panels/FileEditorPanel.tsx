@@ -73,9 +73,13 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 
 					const id = node.getId();
 					if (isModified) {
-						model.doAction(FlexLayout.Actions.renameTab(id, `${name}*`));
+						model.doAction(
+							FlexLayout.Actions.renameTab(id, `${name}*`),
+						);
 					} else {
-						model.doAction(FlexLayout.Actions.renameTab(id, `${name}`));
+						model.doAction(
+							FlexLayout.Actions.renameTab(id, `${name}`),
+						);
 					}
 				}
 			});

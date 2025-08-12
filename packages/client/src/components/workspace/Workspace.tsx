@@ -21,7 +21,6 @@ import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
 
-
 const StyledMain = styled("div")(() => ({
 	position: "relative",
 	height: "100%",
@@ -108,7 +107,10 @@ type WorkspaceProps = {
 	options: WorkspaceOptions;
 
 	/** Factor method */
-	factory: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => React.ReactNode;
+	factory: (
+		node: FlexLayout.TabNode,
+		layout: FlexLayout.Layout,
+	) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
@@ -239,9 +241,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
 				if (node.getType() === "tabset") {
 					const newWeight =
 						(isSettingsTab && node.getId() === "settings-tabset") ||
-							(!isSettingsTab &&
-								mainTabsetWeight === 0 &&
-								node.getId() !== "settings-tabset")
+						(!isSettingsTab &&
+							mainTabsetWeight === 0 &&
+							node.getId() !== "settings-tabset")
 							? 100
 							: 0;
 					model.doAction(

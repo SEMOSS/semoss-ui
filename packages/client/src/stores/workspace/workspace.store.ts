@@ -1,4 +1,4 @@
-import { makeAutoObservable, } from "mobx";
+import { makeAutoObservable } from "mobx";
 import { runPixel } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import type { AppMetadata } from "@/components/app";

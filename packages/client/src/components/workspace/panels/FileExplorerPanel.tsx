@@ -515,18 +515,17 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	return (
 		<Panel
 			actions={
-				
-					<Stack
-						direction={"column"}
-						spacing={0}
-						className="notebook-variables-menu"
-						width={"100%"}
-					>
-						<StyledTitle>
-							<StyledTitleSpan>{title}</StyledTitleSpan>
-						</StyledTitle>
-						{/* TODO: Implement Search functionality and remove the comments */}
-						{/* <StyledTextField
+				<Stack
+					direction={"column"}
+					spacing={0}
+					className="notebook-variables-menu"
+					width={"100%"}
+				>
+					<StyledTitle>
+						<StyledTitleSpan>{title}</StyledTitleSpan>
+					</StyledTitle>
+					{/* TODO: Implement Search functionality and remove the comments */}
+					{/* <StyledTextField
                             placeholder="Search"
                             size="small"
                             fullWidth
@@ -558,87 +557,86 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
                                 // ),
                             }}
                         /> */}
-						<Stack
-							direction={"row"}
-							alignItems={"center"}
-							justifyContent={"space-between"}
-							paddingLeft={"16px"}
-							paddingRight={"16px"}
-							paddingTop={"16px"}
-						>
-							<StyledFileSpan>Files</StyledFileSpan>
-							<Stack direction={"row"} spacing={0.5}>
-								<Tooltip title={`Publish files`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											publishApp();
-										}}
-									>
-										<PublishedWithChangesOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip title={`Recompile reactors`}>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											recompileApp();
-										}}
-									>
-										<CoffeeOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
-									title={`Upload file(s) to ${fileUploadPath}`}
+					<Stack
+						direction={"row"}
+						alignItems={"center"}
+						justifyContent={"space-between"}
+						paddingLeft={"16px"}
+						paddingRight={"16px"}
+						paddingTop={"16px"}
+					>
+						<StyledFileSpan>Files</StyledFileSpan>
+						<Stack direction={"row"} spacing={0.5}>
+							<Tooltip title={`Publish files`}>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										publishApp();
+									}}
 								>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenAddFile();
-										}}
-									>
-										<FileUpload fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
+									<PublishedWithChangesOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip title={`Recompile reactors`}>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										recompileApp();
+									}}
+								>
+									<CoffeeOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={`Upload file(s) to ${fileUploadPath}`}
+							>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenAddFile();
+									}}
+								>
+									<FileUpload fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={`Create new file at ${fileUploadPath}`}
+							>
+								<IconButton
 									title={`Create new file at ${fileUploadPath}`}
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenCreateFile("file");
+									}}
 								>
-									<IconButton
-										title={`Create new file at ${fileUploadPath}`}
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenCreateFile("file");
-										}}
-									>
-										<NoteAddOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-								<Tooltip
-									title={`Create new folder at ${fileUploadPath}`}
+									<NoteAddOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
+							<Tooltip
+								title={`Create new folder at ${fileUploadPath}`}
+							>
+								<IconButton
+									size={"small"}
+									color={"default"}
+									onClick={(e) => {
+										e.stopPropagation();
+										handleOpenCreateFile("directory");
+									}}
 								>
-									<IconButton
-										size={"small"}
-										color={"default"}
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOpenCreateFile("directory");
-										}}
-									>
-										<CreateNewFolderOutlined fontSize="inherit" />
-									</IconButton>
-								</Tooltip>
-							</Stack>
+									<CreateNewFolderOutlined fontSize="inherit" />
+								</IconButton>
+							</Tooltip>
 						</Stack>
 					</Stack>
-			
+				</Stack>
 			}
 		>
 			<FileExplorer

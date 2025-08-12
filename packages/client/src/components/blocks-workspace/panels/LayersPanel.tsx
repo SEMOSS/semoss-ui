@@ -530,8 +530,7 @@ export const LayersPanel = observer(
 			const overBlock = state.getBlock(over?.id as string);
 
 			const isContainer =
-				overBlock?.slots &&
-				Object.keys(overBlock.slots).length > 0;
+				overBlock?.slots && Object.keys(overBlock.slots).length > 0;
 			const [dropPosition, setDropPosition] = useState<
 				"top" | "bottom" | "inside"
 			>("inside");
@@ -903,73 +902,68 @@ export const LayersPanel = observer(
 			}
 
 			return (
-				
-					<DroppableTreeItem
-						node={block}
-						key={block.id}
-						onDropPositionChange={setGlobalDropPositions}
-					>
-						<DraggableTreeItem key={block.id} node={block}>
-							<TreeView.Item
-								key={block.id}
-								nodeId={block.id}
-								ref={(node) => {
-									accordionRefs.current[block.id] =
-										node instanceof HTMLElement
-											? node
-											: null
-									}
-								}
-								expandIcon={
-									<StyledTreeItemIcon>
-										<ChevronRight
-											name="expand"
-											data-expand-id={block.id}
-											onClick={handleAccordionToggle}
-										/>
-									</StyledTreeItemIcon>
-								}
-								collapseIcon={
-									<StyledTreeItemIcon>
-										<ExpandMore
-											name="collapse"
-											data-expand-id={block.id}
-											onClick={handleAccordionToggle}
-										/>
-									</StyledTreeItemIcon>
-								}
-								label={
-									<TreeViewComponent
-										block={block}
-										variableName={variableName}
-										WidgetIcon={WidgetIcon}
-										canVariabilize={canVariabilize}
+				<DroppableTreeItem
+					node={block}
+					key={block.id}
+					onDropPositionChange={setGlobalDropPositions}
+				>
+					<DraggableTreeItem key={block.id} node={block}>
+						<TreeView.Item
+							key={block.id}
+							nodeId={block.id}
+							ref={(node) => {
+								accordionRefs.current[block.id] =
+									node instanceof HTMLElement ? node : null;
+							}}
+							expandIcon={
+								<StyledTreeItemIcon>
+									<ChevronRight
+										name="expand"
+										data-expand-id={block.id}
+										onClick={handleAccordionToggle}
 									/>
-								}
-								onClick={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									designer.setSelected(block.id);
-									handleOnSelect(block);
-								}}
-								onMouseOver={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									designer.setHovered(block.id);
-								}}
-								onMouseLeave={(e: React.SyntheticEvent) => {
-									e.stopPropagation();
-									designer.setHovered("");
-								}}
-								sx={{
-									minWidth: 0,
-								}}
-							>
-								{children.map((c) => {
-									return renderBlock(c);
-								})}
-							</TreeView.Item>
-						</DraggableTreeItem>
-					</DroppableTreeItem>
-				
+								</StyledTreeItemIcon>
+							}
+							collapseIcon={
+								<StyledTreeItemIcon>
+									<ExpandMore
+										name="collapse"
+										data-expand-id={block.id}
+										onClick={handleAccordionToggle}
+									/>
+								</StyledTreeItemIcon>
+							}
+							label={
+								<TreeViewComponent
+									block={block}
+									variableName={variableName}
+									WidgetIcon={WidgetIcon}
+									canVariabilize={canVariabilize}
+								/>
+							}
+							onClick={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								designer.setSelected(block.id);
+								handleOnSelect(block);
+							}}
+							onMouseOver={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								designer.setHovered(block.id);
+							}}
+							onMouseLeave={(e: React.SyntheticEvent) => {
+								e.stopPropagation();
+								designer.setHovered("");
+							}}
+							sx={{
+								minWidth: 0,
+							}}
+						>
+							{children.map((c) => {
+								return renderBlock(c);
+							})}
+						</TreeView.Item>
+					</DraggableTreeItem>
+				</DroppableTreeItem>
 			);
 		};
 
