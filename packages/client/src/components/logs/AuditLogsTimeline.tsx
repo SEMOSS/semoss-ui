@@ -3,7 +3,8 @@ import {
 	ZoomOut as ZoomOutIcon,
 } from "@mui/icons-material";
 import * as echarts from "echarts";
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Box,
 	ButtonGroup,
@@ -12,7 +13,7 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
-import { EventData } from "@/types";
+import type { EventData } from "@/types";
 
 // Type definitions
 interface ProcessedEventData {
@@ -106,7 +107,7 @@ const Header = styled(Box)({
 const ChartWrapper = styled("div")(({ theme }) => ({
 	width: "100%",
 	height: "295px",
-	backgroundColor: "#ffffff",
+	backgroundColor: theme.palette.background.paper,
 	margin: 0,
 	paddingBottom: "10px",
 }));
@@ -188,7 +189,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 		const eventData: ProcessedEventData[] = [];
 
-		logs.forEach((event, index) => {
+		logs.forEach((event) => {
 			const startPos = timeToPosition.get(
 				TimeDateFormatter(event.startTime).time,
 			)!;
@@ -209,6 +210,52 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			eventData,
 			timeToPosition,
 		};
+	};
+
+	const calculateXAxisLabelConfig = (
+		timeCategories: string[],
+		chartWidth: number = 800,
+	) => {
+		const totalLabels = timeCategories.length;
+		const availableWidth = chartWidth - 80; // Account for margins
+		const averageLabelWidth = 60; // Estimated width per label in pixels
+		const maxLabelsWithoutOverlap = Math.floor(
+			availableWidth / averageLabelWidth,
+		);
+
+		// If we have too many labels, use smart interval calculation
+		if (totalLabels > maxLabelsWithoutOverlap) {
+			const interval =
+				Math.ceil(totalLabels / maxLabelsWithoutOverlap) - 1;
+
+			// For very congested scenarios, tilt the labels
+			if (totalLabels > maxLabelsWithoutOverlap * 1.5) {
+				return {
+					interval: interval,
+					rotate: 45,
+					margin: 12,
+				};
+			} else {
+				return {
+					interval: interval,
+					rotate: 0,
+					margin: 8,
+				};
+			}
+		} else if (totalLabels > maxLabelsWithoutOverlap * 0.7) {
+			// Moderate congestion - just tilt
+			return {
+				interval: 0,
+				rotate: 30,
+				margin: 10,
+			};
+		} else {
+			return {
+				interval: 0,
+				rotate: 0,
+				margin: 8,
+			};
+		}
 	};
 
 	const handleZoomIn = () => {
@@ -258,6 +305,13 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 			const { timeCategories, eventData } = processApiData();
 
+			// Calculate optimal x-axis configuration based on data density
+			const chartWidth = chartRef.current.clientWidth || 800;
+			const xAxisConfig = calculateXAxisLabelConfig(
+				timeCategories,
+				chartWidth,
+			);
+
 			const option = {
 				backgroundColor: "#ffffff",
 				animation: false,
@@ -274,7 +328,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							'-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
 					},
 					boxShadow: "0 8px 24px rgba(0,0,0,0.12)",
-					formatter: function (params: TooltipParams): string {
+					formatter: (params: TooltipParams): string => {
 						if (!params || !params.data || !params.data.eventData) {
 							return "No data available";
 						}
@@ -286,7 +340,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 							maxLength: number = 50,
 						): string => {
 							return text?.length > maxLength
-								? text.substring(0, maxLength) + "..."
+								? `${text.substring(0, maxLength)}...`
 								: text;
 						};
 
@@ -405,7 +459,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					left: "50px",
 					right: "30px",
 					top: "30px",
-					bottom: "70px",
+					bottom: xAxisConfig.rotate > 0 ? "90px" : "70px",
 					containLabel: true,
 				},
 				xAxis: {
@@ -413,7 +467,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					data: timeCategories,
 					name: "Timestamp",
 					nameLocation: "middle",
-					nameGap: 40,
+					nameGap: xAxisConfig.rotate > 0 ? 60 : 40,
 					nameTextStyle: {
 						color: "#666",
 						fontSize: 12,
@@ -435,12 +489,20 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					axisLabel: {
 						color: "#666",
 						fontSize: 11,
-						margin: 8,
-						rotate: 0,
-						interval: 0,
-						formatter: function (value: string): string {
+						margin: xAxisConfig.margin,
+						rotate: xAxisConfig.rotate,
+						interval: xAxisConfig.interval,
+						formatter: (value: string): string => {
+							// Shorten the format when rotated to save space
+							if (xAxisConfig.rotate > 0) {
+								return value.replace(/:\d{2}\s(AM|PM)$/, "$1");
+							}
 							return value.replace(/:\d{2}\s(AM|PM)$/, " $1");
 						},
+						...(xAxisConfig.rotate > 0 && {
+							align: "right",
+							verticalAlign: "middle",
+						}),
 					},
 					splitLine: {
 						show: true,
@@ -617,7 +679,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 
 			chart.setOption(option);
 
-			chart.on("dataZoom", function (params: DataZoomParams) {
+			chart.on("dataZoom", (params: DataZoomParams) => {
 				try {
 					if (params.batch && params.batch[0]) {
 						const zoomInfo = params.batch[0];
@@ -662,6 +724,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 			</Container>
 		);
 	}
+
 	return (
 		<Container elevation={1}>
 			<Header>

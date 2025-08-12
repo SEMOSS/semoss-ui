@@ -2,12 +2,12 @@ import {
 	Cancel,
 	CheckCircle as CheckCircleIcon,
 	Clear as ClearIcon,
-	Close as CloseIcon,
 	FilterList as FilterListIcon,
 	Search as SearchIcon,
 } from "@mui/icons-material";
 import React, { useMemo, useState } from "react";
 import {
+	Badge,
 	Box,
 	Button,
 	Checkbox,
@@ -26,6 +26,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import type { EventData } from "@/types";
+import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 
 const Container = styled(Paper)({
 	padding: 0,
@@ -216,88 +217,6 @@ const FilterActionButton = styled(Button)({
 	fontSize: "14px",
 	fontWeight: 400,
 	textTransform: "none",
-});
-
-const DrawerContainer = styled(Box)({
-	width: 500,
-	height: "100%",
-	backgroundColor: "#fff",
-	display: "flex",
-	flexDirection: "column",
-});
-
-const DrawerHeader = styled(Box)({
-	display: "flex",
-	justifyContent: "space-between",
-	alignItems: "center",
-	padding: "8px 12px",
-	borderBottom: "1px solid #e6e6e6",
-	backgroundColor: "#ebf4fe",
-});
-
-const DrawerContent = styled(Box)({
-	flex: 1,
-	padding: "0",
-	overflowY: "auto",
-	backgroundColor: "#fff",
-});
-
-const SummarySection = styled(Box)({
-	padding: "20px",
-	borderBottom: "1px solid #e9ecef",
-});
-
-const SummaryTitle = styled(Typography)({
-	fontWeight: 600,
-	color: "#495057",
-	marginBottom: "12px",
-});
-
-const SummaryGrid = styled(Box)({
-	display: "grid",
-	gridTemplateColumns: "1fr 1fr",
-	gap: "12px",
-	padding: "20px",
-});
-
-const SummaryItem = styled(Box)({
-	display: "flex",
-	flexDirection: "column",
-	gap: "4px",
-});
-
-const SummaryLabel = styled(Typography)({
-	color: "#6c757d",
-	fontWeight: 500,
-});
-
-const SummaryValue = styled(Typography)({
-	color: "#212529",
-	fontWeight: 600,
-});
-
-const ContentTitle = styled(Typography)({
-	fontWeight: 600,
-	color: "#495057",
-	marginBottom: "8px",
-	display: "flex",
-	alignItems: "center",
-	gap: "8px",
-});
-
-const ContentBox = styled(Box)({
-	backgroundColor: "#f8f9fa",
-	border: "1px solid #e9ecef",
-	borderRadius: "6px",
-	padding: "16px",
-	marginBottom: "16px",
-});
-
-const ContentText = styled(Typography)({
-	lineHeight: 1.6,
-	color: "#495057",
-	wordBreak: "break-word",
-	whiteSpace: "pre-wrap",
 });
 
 interface FilterState {
@@ -601,29 +520,18 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		});
 	};
 
-	const getActiveFiltersCount = () => {
+	const getActiveFiltersCount = (column?: string) => {
+		if (column) {
+			return appliedFilters[column].length;
+		}
 		return (
 			appliedFilters.engineType.length +
-			appliedFilters.status.length +
+			appliedFilters.engineName.length +
 			appliedFilters.latencyRange.length +
 			appliedFilters.tokenRange.length +
+			appliedFilters.status.length +
 			(searchQuery ? 1 : 0)
 		);
-	};
-
-	const isColumnFiltered = (column: string): boolean => {
-		switch (column) {
-			case "engineType":
-				return appliedFilters.engineType.length > 0;
-			case "status":
-				return appliedFilters.status.length > 0;
-			case "latencyRange":
-				return appliedFilters.latencyRange.length > 0;
-			case "tokenRange":
-				return appliedFilters.tokenRange.length > 0;
-			default:
-				return false;
-		}
 	};
 
 	const renderFilterPopover = () => {
@@ -741,10 +649,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 		setSelectedEvent(null);
 	};
 
-	const formatTimestamp = (startTime: string, endTime: string) => {
-		return `${TimeDateFormatter(startTime).time} - ${TimeDateFormatter(endTime).time}`;
-	};
-
 	const ellipsed = (text: string | null) => {
 		return text?.length > 50 ? `${text.substring(0, 47)}...` : text;
 	};
@@ -798,7 +702,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							),
 						}}
 					/>
-
 					{getActiveFiltersCount() > 0 && (
 						<FilterChipsContainer>
 							{Object.entries(appliedFilters).map(
@@ -806,7 +709,12 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									<React.Fragment key={key}>
 										{values.length > 0 && (
 											<Chip
-												label={`${key.slice(0, 1)?.toUpperCase() + key.slice(1)}: ${values.join(", ")}`}
+												label={`${
+													key
+														.slice(0, 1)
+														?.toUpperCase() +
+													key.slice(1)
+												}: ${values.join(", ")}`}
 												size="small"
 												onDelete={() =>
 													setAppliedFilters(
@@ -872,24 +780,22 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Engine Type
 											</Typography>
-											<FilterListIcon
-												fontSize="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"engineType",
-													)
-												}
-												sx={{
-													color: isColumnFiltered(
-														"engineType",
-													)
-														? "#1976d2"
-														: "primary",
-													cursor: "pointer",
-													"&:hover": { opacity: 0.7 },
-												}}
-											/>
+											<Badge
+												color="primary"
+												badgeContent={getActiveFiltersCount(
+													"engineType",
+												)}
+											>
+												<FilterListIcon
+													fontSize="small"
+													onClick={(e) =>
+														handleFilterClick(
+															e,
+															"engineType",
+														)
+													}
+												/>
+											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -903,24 +809,22 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Engine Name
 											</Typography>
-											<FilterListIcon
-												fontSize="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"engineName",
-													)
-												}
-												sx={{
-													color: isColumnFiltered(
-														"latencyRange",
-													)
-														? "#1976d2"
-														: "primary",
-													cursor: "pointer",
-													"&:hover": { opacity: 0.7 },
-												}}
-											/>
+											<Badge
+												color="primary"
+												badgeContent={getActiveFiltersCount(
+													"engineName",
+												)}
+											>
+												<FilterListIcon
+													fontSize="small"
+													onClick={(e) =>
+														handleFilterClick(
+															e,
+															"engineName",
+														)
+													}
+												/>
+											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -934,24 +838,22 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Latency
 											</Typography>
-											<FilterListIcon
-												fontSize="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"latencyRange",
-													)
-												}
-												sx={{
-													color: isColumnFiltered(
-														"latencyRange",
-													)
-														? "#1976d2"
-														: "primary",
-													cursor: "pointer",
-													"&:hover": { opacity: 0.7 },
-												}}
-											/>
+											<Badge
+												color="primary"
+												badgeContent={getActiveFiltersCount(
+													"latencyRange",
+												)}
+											>
+												<FilterListIcon
+													fontSize="small"
+													onClick={(e) =>
+														handleFilterClick(
+															e,
+															"latencyRange",
+														)
+													}
+												/>
+											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -965,24 +867,22 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Tokens
 											</Typography>
-											<FilterListIcon
-												fontSize="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"tokenRange",
-													)
-												}
-												sx={{
-													color: isColumnFiltered(
-														"tokenRange",
-													)
-														? "#1976d2"
-														: "primary",
-													cursor: "pointer",
-													"&:hover": { opacity: 0.7 },
-												}}
-											/>
+											<Badge
+												color="primary"
+												badgeContent={getActiveFiltersCount(
+													"tokenRange",
+												)}
+											>
+												<FilterListIcon
+													fontSize="small"
+													onClick={(e) =>
+														handleFilterClick(
+															e,
+															"tokenRange",
+														)
+													}
+												/>
+											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -1003,24 +903,22 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Status
 											</Typography>
-											<FilterListIcon
-												fontSize="small"
-												onClick={(e) =>
-													handleFilterClick(
-														e,
-														"status",
-													)
-												}
-												sx={{
-													color: isColumnFiltered(
-														"status",
-													)
-														? "#1976d2"
-														: "primary",
-													cursor: "pointer",
-													"&:hover": { opacity: 0.7 },
-												}}
-											/>
+											<Badge
+												color="primary"
+												badgeContent={getActiveFiltersCount(
+													"status",
+												)}
+											>
+												<FilterListIcon
+													fontSize="small"
+													onClick={(e) =>
+														handleFilterClick(
+															e,
+															"status",
+														)
+													}
+												/>
+											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -1071,36 +969,18 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell>
-										<Typography
-											variant="caption"
-											sx={{
-												fontFamily:
-													'Monaco, "Courier New", monospace',
-											}}
-										>
-											{formatTimestamp(
-												event.startTime,
-												event.endTime,
-											)}
+										<Typography variant="caption">
+											{`${TimeDateFormatter(event.startTime).time} - ${
+												TimeDateFormatter(event.endTime)
+													.time
+											}`}
 										</Typography>
 									</StyledTableCell>
-									<StyledTableCell>
+									<StyledTableCell align="center">
 										{event.status === "Success" ? (
-											<CheckCircleIcon
-												sx={{
-													color: "#28a745",
-													fontSize: "24px",
-													marginLeft: "4px",
-												}}
-											/>
+											<CheckCircleIcon color="success" />
 										) : (
-											<Cancel
-												sx={{
-													color: "#dc3545",
-													fontSize: "24px",
-													marginLeft: "4px",
-												}}
-											/>
+											<Cancel color="error" />
 										)}
 									</StyledTableCell>
 								</StyledTableRow>
@@ -1151,96 +1031,15 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						borderRadius: "8px",
 					},
 				}}
+				transitionDuration={{
+					enter: 300,
+					exit: 150,
+				}}
 			>
-				<DrawerContainer>
-					<DrawerHeader>
-						<Typography variant="body1" color="primary">
-							Audit Details
-						</Typography>
-						<IconButton onClick={handleDrawerClose} size="small">
-							<CloseIcon />
-						</IconButton>
-					</DrawerHeader>
-
-					{selectedEvent && (
-						<DrawerContent>
-							<SummarySection>
-								<SummaryTitle variant="subtitle2">
-									Event Summary
-								</SummaryTitle>
-								<ContentTitle variant="subtitle2">
-									Prompt
-								</ContentTitle>
-								<ContentBox>
-									<ContentText variant="body2">
-										{selectedEvent.payload}
-									</ContentText>
-								</ContentBox>
-
-								<ContentTitle variant="subtitle2">
-									Response
-								</ContentTitle>
-								<ContentBox>
-									<ContentText variant="body2">
-										{selectedEvent.response}
-									</ContentText>
-								</ContentBox>
-							</SummarySection>
-
-							<SummaryGrid>
-								<SummaryItem>
-									<SummaryLabel variant="caption">
-										Latency
-									</SummaryLabel>
-									<SummaryValue variant="body2">
-										{selectedEvent.latency}ms
-									</SummaryValue>
-								</SummaryItem>
-								<SummaryItem>
-									<SummaryLabel variant="caption">
-										Tokens
-									</SummaryLabel>
-									<SummaryValue variant="body2">
-										{selectedEvent.tokens}
-									</SummaryValue>
-								</SummaryItem>
-								<SummaryItem>
-									<SummaryLabel variant="caption">
-										Timestamp
-									</SummaryLabel>
-									<SummaryValue variant="body2">
-										{formatTimestamp(
-											selectedEvent.startTime,
-											selectedEvent.endTime,
-										)}
-									</SummaryValue>
-								</SummaryItem>
-								<SummaryItem>
-									<SummaryLabel variant="caption">
-										Request Status
-									</SummaryLabel>
-									<SummaryValue variant="body2">
-										<Box
-											sx={{
-												display: "flex",
-												alignItems: "center",
-												gap: 1,
-											}}
-										>
-											<CheckCircleIcon
-												color="success"
-												fontSize="small"
-											/>
-											<Typography variant="body2">
-												Successful
-											</Typography>
-										</Box>
-									</SummaryValue>
-								</SummaryItem>
-							</SummaryGrid>
-						</DrawerContent>
-					)}
-				</DrawerContainer>
+				<AuditLogsDetailDrawer
+					logDetails={selectedEvent}
+					handleDrawerClose={handleDrawerClose}
+				/>
 			</Drawer>
 		</>
 	);
