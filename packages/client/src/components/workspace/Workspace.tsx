@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
+import { FlexLayout, Layout } from "@semoss/shared";
 import {
 	Breadcrumbs,
 	IconButton,
@@ -21,7 +21,6 @@ import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
 
-type LayoutType = React.ElementRef<typeof Layout>;
 
 const StyledMain = styled("div")(() => ({
 	position: "relative",
@@ -109,12 +108,12 @@ type WorkspaceProps = {
 	options: WorkspaceOptions;
 
 	/** Factor method */
-	factory: (node: TabNode, layout: LayoutType) => React.ReactNode;
+	factory: (node: FlexLayout.TabNode, layout: FlexLayout.Layout) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
-	const layoutRef = useRef<LayoutType | null>(null);
+	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const model = workspace.model;
 
 	// build the model from the layout
@@ -129,12 +128,12 @@ export const Workspace = observer((props: WorkspaceProps) => {
 					throw new Error("Missing model");
 				}
 
-				let selectedNode: TabNode | null = null;
+				let selectedNode: FlexLayout.TabNode | null = null;
 
 				// visit the notes, and see if it exists
 				model.visitNodes((node) => {
 					// check if it is a tabNode
-					if (node instanceof TabNode) {
+					if (node instanceof FlexLayout.TabNode) {
 						// it needs to be a notebook-viewer
 						const component = node.getComponent();
 						if (component !== "designer") {
@@ -164,7 +163,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
 					// create and select the panel
 					model.doAction(
-						Actions.addNode(
+						FlexLayout.Actions.addNode(
 							{
 								type: "tab",
 								name: name,
@@ -175,7 +174,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 								enableClose: true,
 							},
 							addId,
-							DockLocation.CENTER,
+							FlexLayout.DockLocation.CENTER,
 							-1,
 							true,
 						),
@@ -183,7 +182,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 				}
 
 				const selectedNodeId = selectedNode.getId();
-				model.doAction(Actions.selectTab(selectedNodeId));
+				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 			}
 		};
 		window.addEventListener("OPEN_EVENT", handler as EventListener);
@@ -240,13 +239,13 @@ export const Workspace = observer((props: WorkspaceProps) => {
 				if (node.getType() === "tabset") {
 					const newWeight =
 						(isSettingsTab && node.getId() === "settings-tabset") ||
-						(!isSettingsTab &&
-							mainTabsetWeight === 0 &&
-							node.getId() !== "settings-tabset")
+							(!isSettingsTab &&
+								mainTabsetWeight === 0 &&
+								node.getId() !== "settings-tabset")
 							? 100
 							: 0;
 					model.doAction(
-						Actions.updateNodeAttributes(node.getId(), {
+						FlexLayout.Actions.updateNodeAttributes(node.getId(), {
 							weight: newWeight,
 						}),
 					);
@@ -329,7 +328,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												tabNode.getName(),
 										);
 										const isSelected = tabNode.isSelected();
-										if (item && item.icon) {
+										if (item?.icon) {
 											const iconSrc = isSelected
 												? item.icon.active
 												: item.icon.default;

@@ -4,17 +4,13 @@ import {
 	FileUpload,
 	NoteAddOutlined,
 	PublishedWithChangesOutlined,
-	Refresh,
-	Search,
 } from "@mui/icons-material";
-import { Actions, DockLocation, type Layout, TabNode } from "flexlayout-react";
 import { useEffect, useState } from "react";
+import { FlexLayout } from "@semoss/shared";
 import {
 	IconButton,
-	InputAdornment,
 	Stack,
 	styled,
-	TextField,
 	Tooltip,
 	useNotification,
 } from "@semoss/ui";
@@ -32,7 +28,7 @@ const EXPLORER_TYPE = "app";
 interface FileExplorerPanelProps {
 	title: string;
 	/** Current layoutobject */
-	layout: Layout;
+	layout: FlexLayout.Layout;
 }
 
 const StyledTitle = styled("div")(({ theme }) => ({
@@ -70,14 +66,6 @@ const StyledTitleSpan = styled("span")(({ theme }) => ({
 	lineHeight: "18px",
 	marginBottom: "8px",
 	marginTop: "8px",
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-	paddingRight: "16px",
-	paddingLeft: "16px",
-	marginTop: "8px",
-	width: "100%",
-	borderRadius: "8px",
 }));
 
 export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
@@ -383,7 +371,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
 			// create and select the panel
 			model.doAction(
-				Actions.addNode(
+				FlexLayout.Actions.addNode(
 					{
 						type: "tab",
 						name: name,
@@ -394,7 +382,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 						enableClose: true,
 					},
 					addId,
-					DockLocation.CENTER,
+					FlexLayout.DockLocation.CENTER,
 					-1,
 					true,
 				),
@@ -427,7 +415,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				return false;
 			}
 
-			let selectedNode: TabNode | null = null;
+			let selectedNode: FlexLayout.TabNode | null = null;
 
 			// get the model
 			const model = workspace.model;
@@ -438,7 +426,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// visit the notes, and see if it exists
 			model.visitNodes((node) => {
 				// check if it is a tabNode
-				if (node instanceof TabNode) {
+				if (node instanceof FlexLayout.TabNode) {
 					// it needs to be a file-editor
 					const component = node.getComponent();
 					if (component !== "file-editor") {
@@ -461,7 +449,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			}
 
 			const selectedNodeId = selectedNode.getId();
-			model.doAction(Actions.selectTab(selectedNodeId));
+			model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 		} catch (e) {
 			notification.add({
 				color: "error",
@@ -483,7 +471,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				return;
 			}
 
-			const nodesToBeRemoved: TabNode[] = [];
+			const nodesToBeRemoved: FlexLayout.TabNode[] = [];
 
 			// get the model
 			const model = workspace.model;
@@ -494,7 +482,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// visit the notes, and see if it exists
 			model.visitNodes((node) => {
 				// check if it is a tabNode
-				if (node instanceof TabNode) {
+				if (node instanceof FlexLayout.TabNode) {
 					// it needs to be a file-editor
 					const component = node.getComponent();
 					if (component !== "file-editor") {
@@ -514,7 +502,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// delete the tabs
 			for (const n of nodesToBeRemoved) {
 				const id = n.getId();
-				model.doAction(Actions.deleteTab(id));
+				model.doAction(FlexLayout.Actions.deleteTab(id));
 			}
 		} catch (e) {
 			notification.add({
@@ -527,7 +515,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	return (
 		<Panel
 			actions={
-				<>
+				
 					<Stack
 						direction={"column"}
 						spacing={0}
@@ -650,7 +638,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 							</Stack>
 						</Stack>
 					</Stack>
-				</>
+			
 			}
 		>
 			<FileExplorer
@@ -661,7 +649,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				onSelect={(path) => {
 					handleOnSelect(path);
 				}}
-				onTrashClick={(e, path) => {
+				onTrashClick={(_e, path) => {
 					handleOnTrashClick(path);
 				}}
 				onDragStart={(e, path) => {
