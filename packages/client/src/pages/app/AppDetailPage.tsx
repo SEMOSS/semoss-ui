@@ -207,7 +207,6 @@ const StyledIconButton = styled(IconButton)({
   marginRight: "16px",
 });
 
-
 const StyledTypography = styled(Typography)({
   padding: "16px",
 });
