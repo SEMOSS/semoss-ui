@@ -1,5 +1,5 @@
 import { useContext } from "react";
-import { InsightContext } from "./InsightProvider";
+import { InsightContext } from "../contexts";
 
 /**
  * Access the current insight
