@@ -322,9 +322,9 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                     ","
                   )}])`
                 )
-              : `Query('${sanitizeQuery(
+              : `Query("${sanitizeQuery(
                   `SELECT * FROM ${databaseDetails.dbName}`
-                )}')`;
+                )}")`;
 
           const insightId = state.insightId;
           const query = `Database(database=["${databaseDetails.dbId}"]) | ${gridQuery} | Import(frame=[CreateFrame(frameType=[GRID], override=[true]).as(["${cell.parameters.frameVariableName}"])])`;
