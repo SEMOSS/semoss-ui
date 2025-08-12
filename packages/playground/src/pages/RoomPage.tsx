@@ -19,11 +19,12 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
+	InputMessage,
 	OptionsPicker,
+	ResponseMessage,
 	RoomApp,
 	RoomControls,
 	RoomInput,
-	RoomMessage,
 } from "@/components";
 import { useChat } from "@/hooks";
 
@@ -105,7 +106,7 @@ export const RoomPage = observer(() => {
 				alignItems={"center"}
 				justifyContent={"center"}
 			>
-				<CircularProgress color={"primary"} />;
+				<CircularProgress color={"primary"} />
 			</StyledPage>
 		);
 	}
@@ -195,14 +196,24 @@ export const RoomPage = observer(() => {
 					<StyledScroll>
 						<Container maxWidth="md">
 							<Stack direction={"column"} spacing={3}>
-								{room.history.map((m, mIdx) => {
-									return (
-										<RoomMessage
-											room={room}
-											message={m}
-											key={mIdx}
-										/>
-									);
+								{room.history.map((m) => {
+									if (m.type === "INPUT") {
+										return (
+											<InputMessage
+												key={m.id}
+												room={room}
+												message={m}
+											/>
+										);
+									} else if (m.type === "RESPONSE") {
+										return (
+											<ResponseMessage
+												key={m.id}
+												room={room}
+												message={m}
+											/>
+										);
+									}
 								})}
 							</Stack>
 						</Container>

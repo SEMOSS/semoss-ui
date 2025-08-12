@@ -36,7 +36,7 @@ import {
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
-import type { ChatRoom } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { Prompt } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
@@ -47,18 +47,18 @@ const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
 
-const StyledPage = styled(Stack)(({ theme }) => ({
+const StyledPage = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
 }));
 
-const StyledContent = styled(Stack)(({ theme }) => ({
+const StyledContent = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
 	overflow: "auto",
 }));
 
-const StyledHolder = styled("div")(({ theme }) => ({
+const StyledHolder = styled("div")(() => ({
 	height: "98px",
 }));
 
@@ -128,7 +128,7 @@ export const NewRoomPage = observer(() => {
 			: "";
 
 	const [isLoading, setIsLoading] = useState(false);
-	const [options, setOptions] = useState<ChatRoom["options"]>({
+	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
 		knowledge: null,
 		tools: [],
@@ -271,7 +271,7 @@ export const NewRoomPage = observer(() => {
 									<Typography variant="h3" fontWeight="bold">
 										Welcome
 										{userName
-											? ", " + userName?.split(" ")[0]
+											? `, ${userName?.split(" ")[0]}`
 											: ""}
 									</Typography>
 								</Stack>

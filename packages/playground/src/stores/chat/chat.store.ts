@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
 import type { Engine } from "@/types";
-import { ChatRoom } from "./chat.room";
+import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
@@ -21,7 +21,7 @@ interface ChatStoreInterface {
 	/**
 	 * Map of id to channel
 	 */
-	rooms: Record<string, ChatRoom>;
+	rooms: Record<string, RoomStore>;
 
 	/**
 	 * Order of the rooms
@@ -51,7 +51,7 @@ interface ChatStoreInterface {
 }
 
 /**
- * Internal state management of the builder object
+ * Manage the chat
  */
 export class ChatStore {
 	private _actions: Insight["actions"];
@@ -112,7 +112,7 @@ export class ChatStore {
 	 *
 	 * @param roomId - message to get
 	 */
-	getRoom(roomId: string): ChatRoom | null {
+	getRoom(roomId: string): RoomStore | null {
 		return this._store.rooms[roomId];
 	}
 
@@ -167,9 +167,9 @@ export class ChatStore {
 	/**
 	 * Create a new room instance
 	 */
-	newRoom = (roomId: string): ChatRoom => {
+	newRoom = (roomId: string): RoomStore => {
 		// create a new room
-		const room = new ChatRoom(roomId);
+		const room = new RoomStore(roomId);
 
 		// store the room
 		this._store.rooms[roomId] = room;
@@ -183,7 +183,7 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	createRoom = async (modelId: string, name: string): Promise<ChatRoom> => {
+	createRoom = async (modelId: string, name: string): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);

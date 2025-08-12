@@ -7,11 +7,11 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { RightMenu } from "@/components";
-import type { ChatRoom } from "@/stores";
+import type { RoomStore } from "@/stores";
 
 interface RoomAppProps {
 	/** Room to render */
-	room: ChatRoom;
+	room: RoomStore;
 }
 
 export const RoomApp: React.FC<RoomAppProps> = observer((props) => {
@@ -29,10 +29,11 @@ export const RoomApp: React.FC<RoomAppProps> = observer((props) => {
 
 	useEffect(() => {
 		const handleMessage = async (
-			event: MessageEvent<{ data: Record<string, unknown> }>,
+			_event: MessageEvent<{ data: Record<string, unknown> }>,
 		) => {
 			try {
-				await room.processAppResponse();
+				// await room.processAppResponse();
+				console.log("TODO");
 			} catch (e) {
 				notification.add({
 					message: e.message,
@@ -65,7 +66,7 @@ export const RoomApp: React.FC<RoomAppProps> = observer((props) => {
 		return () => {
 			window.removeEventListener("message", handleMessage);
 		};
-	}, [options, room.processAppResponse, room.closeSidebar, notification.add]);
+	}, [options, room.closeSidebar, notification.add]);
 
 	if (!options) {
 		return;
@@ -99,6 +100,7 @@ export const RoomApp: React.FC<RoomAppProps> = observer((props) => {
 				</Stack>
 			)}
 			<iframe
+				title="app"
 				src={url}
 				frameBorder="0"
 				style={{

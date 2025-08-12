@@ -1,10 +1,10 @@
 import { observer } from "mobx-react-lite";
 import { OptionsMenu } from "@/components";
-import type { ChatRoom } from "@/stores";
+import type { RoomStore } from "@/stores";
 
 interface RoomControlsProps {
 	/** Room to render */
-	room: ChatRoom;
+	room: RoomStore;
 }
 
 export const RoomControls: React.FC<RoomControlsProps> = observer((props) => {

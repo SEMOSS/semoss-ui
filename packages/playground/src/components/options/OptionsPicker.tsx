@@ -11,9 +11,9 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import type { ChatRoom } from "@/stores";
+import type { RoomStore } from "@/stores";
 
-const StyledPopover = styled(Popover)(({ theme }) => ({
+const StyledPopover = styled(Popover)(() => ({
 	"& .MuiPaper-root": {
 		borderRadius: "4px",
 	},
@@ -33,12 +33,12 @@ interface OptionsPickerProps {
 	/**
 	 * Options to Pick from
 	 */
-	options: ChatRoom["options"];
+	options: RoomStore["options"];
 
 	/**
 	 * Callback triggered when a model is asked
 	 */
-	setOptions: (options: ChatRoom["options"]) => void;
+	setOptions: (options: RoomStore["options"]) => void;
 
 	/**
 	 * Set popover anchorOrigin prop
@@ -153,7 +153,7 @@ export const OptionsPicker: React.FC<OptionsPickerProps> = observer((props) => {
 					<Slider
 						aria-label="Temperature"
 						value={options.temperature}
-						onChange={(e, val) =>
+						onChange={(_e, val) =>
 							setOptions({
 								...options,
 								temperature: val as number,
