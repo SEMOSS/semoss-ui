@@ -5,8 +5,10 @@
 // We do this so we only have one reference to a pixel
 // ------------------------------------------------------------------------------------------
 
+import { runPixel } from "@semoss/sdk/react";
+import { usePixel } from "@/hooks";
 import type { MonolithStore } from "@/stores";
-
+import type { ProjectDependencyEngine } from "@/types";
 /**
  * Gets All Dependencies for a project
  * @param monolithStore
@@ -162,4 +164,57 @@ export const fetchMainUses = async (
 			output,
 		};
 	}
+};
+
+export const useGetProjectDependencies = (projectId: string) => {
+	return usePixel<ProjectDependencyEngine[]>(
+		`GetProjectDependencies(project="${projectId}", details=[true]);`,
+	);
+};
+
+/**
+ * Upload a project app
+ * @param filePath
+ * @param isGlobal
+ * @returns
+ */
+export const uploadProjectApp = async (filePath: string, isGlobal: boolean) => {
+	const res = await runPixel(
+		`UploadProjectApp(filePath=["${filePath}"], global=[${isGlobal}]);`,
+	);
+
+	const type = res.pixelReturn[0].operationType;
+	const output = res.pixelReturn[0].output;
+
+	return {
+		type: type.indexOf("ERROR") === -1 ? "success" : "error",
+		output,
+	};
+};
+
+/**
+ * Create a new project
+ * @param name
+ * @param isGlobal
+ * @param projectType
+ * @param hasPortal
+ * @returns
+ */
+export const createProject = async (
+	name: string,
+	isGlobal: boolean,
+	projectType: string,
+	hasPortal: boolean = true,
+) => {
+	const res = await runPixel(
+		`CreateProject(project=["${name}"], global=["${isGlobal}"], projectType=["${projectType}"], portal=["${hasPortal}"]);`,
+	);
+
+	const type = res.pixelReturn[0].operationType;
+	const output = res.pixelReturn[0].output;
+
+	return {
+		type: type.indexOf("ERROR") === -1 ? "success" : "error",
+		output,
+	};
 };

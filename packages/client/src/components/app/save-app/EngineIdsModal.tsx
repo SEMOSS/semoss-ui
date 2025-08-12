@@ -1,3 +1,25 @@
+/**
+ * EngineIdsModal Component
+ * 
+ * A modal component for displaying engine ID discovery results when saving an app.
+ * Allows users to:
+ * - View successfully discovered engines
+ * - Handle failed engine discoveries with replacement options
+ * - Manage engine replacements for inaccessible engines
+ * - Select engines for batch operations
+ * 
+ * @component
+ * @param {boolean} open - Controls modal visibility
+ * @param {string[]} successIds - Array of successfully discovered engine IDs
+ * @param {string[]} failedIds - Array of failed engine IDs
+ * @param {Function} onClose - Callback for closing the modal
+ * @param {Function} onEngineReplacement - Optional callback for handling engine replacements
+ * @param {string} appId - The application ID
+ * @param {boolean} isUploadProjectApp - Whether this is an upload project app
+ * @param {Record} engineInfo - Detailed information about engines including files and instances
+ * @param {Record} discoveryResults - Results from engine discovery process
+ */
+
 import Close from "@mui/icons-material/Close";
 import type React from "react";
 import { useEffect, useState } from "react";
@@ -9,6 +31,7 @@ import {
 	Modal,
 	Select,
 	Stack,
+	styled,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
@@ -29,6 +52,265 @@ interface EngineIdsModalProps {
 	>;
 }
 
+const StyledModal = styled(Modal)({
+	"& .MuiDialog-paper": {
+		width: "95vw",
+		maxWidth: 1000,
+		minWidth: 320,
+		minHeight: "70vh",
+	},
+});
+
+const StyledTitleStack = styled(Stack)(({ theme }) => ({
+	padding: theme.spacing(1),
+}));
+
+const StyledCenterTitle = styled(Typography)({
+	flex: 1,
+	fontWeight: 600,
+});
+
+const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+	padding: theme.spacing(3),
+}));
+
+const StyledMainStack = styled(Stack)({
+	width: "100%",
+});
+
+const StyledSubTitle = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+	marginTop: theme.spacing(-1),
+}));
+
+const StyledSectionStack = styled(Stack)({
+	width: "100%",
+});
+
+const StyledSectionTitle = styled(Typography)(({ theme }) => ({
+	color: theme.palette.success.main,
+	fontWeight: 600,
+}));
+
+const StyledSectionCount = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+	fontWeight: 500,
+}));
+
+const StyledEngineListStack = styled(Stack)(({ theme }) => ({
+	paddingLeft: theme.spacing(1),
+	width: "100%",
+}));
+
+const StyledEngineItem = styled(Stack)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(1.5),
+	borderRadius: theme.spacing(1),
+	border: `1px solid ${theme.palette.divider}`,
+}));
+
+const StyledEngineNumber = styled(Typography)(({ theme }) => ({
+	backgroundColor: theme.palette.grey[100],
+	color: theme.palette.text.secondary,
+	paddingLeft: theme.spacing(1.5),
+	paddingRight: theme.spacing(1.5),
+	paddingTop: theme.spacing(0.5),
+	paddingBottom: theme.spacing(0.5),
+	borderRadius: theme.spacing(1),
+	minWidth: 24,
+	textAlign: "center",
+	fontWeight: 500,
+	fontSize: "0.875rem",
+}));
+
+const StyledEngineId = styled(Typography)({
+	wordBreak: "break-all",
+	fontFamily: "monospace",
+	color: "inherit",
+});
+
+const StyledEngineName = styled("span")(({ theme }) => ({
+	color: theme.palette.primary.main,
+	fontWeight: 500,
+	marginLeft: 12,
+}));
+
+const StyledFileStack = styled(Stack)(({ theme }) => ({
+	marginTop: theme.spacing(0.5),
+}));
+
+const StyledFileTag = styled(Typography)(({ theme }) => ({
+	backgroundColor: theme.palette.grey[100],
+	color: theme.palette.text.secondary,
+	paddingLeft: theme.spacing(1),
+	paddingRight: theme.spacing(1),
+	paddingTop: theme.spacing(0.5),
+	paddingBottom: theme.spacing(0.5),
+	borderRadius: theme.spacing(1),
+	fontSize: "0.8rem",
+	fontWeight: 500,
+}));
+
+const StyledInstanceTag = styled(Typography)(({ theme }) => ({
+	backgroundColor: theme.palette.grey[200],
+	color: theme.palette.primary.main,
+	paddingLeft: theme.spacing(1),
+	paddingRight: theme.spacing(1),
+	paddingTop: theme.spacing(0.5),
+	paddingBottom: theme.spacing(0.5),
+	borderRadius: theme.spacing(1),
+	fontSize: "0.8rem",
+	fontWeight: 500,
+}));
+
+const StyledEmptyMessage = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+	fontStyle: "italic",
+	textAlign: "center",
+	paddingTop: theme.spacing(2),
+	paddingBottom: theme.spacing(2),
+}));
+
+const StyledFailedSectionTitle = styled(Typography)(({ theme }) => ({
+	color: theme.palette.error.main,
+	fontWeight: 600,
+}));
+
+const StyledSelectStack = styled(Stack)(({ theme }) => ({
+	paddingLeft: theme.spacing(1),
+	width: "100%",
+}));
+
+const StyledEngineSelectItem = styled(Stack)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(1.5),
+	borderRadius: theme.spacing(1),
+	border: `1px solid ${theme.palette.divider}`,
+}));
+
+const StyledSelectFormControl = styled(FormControl)({
+	minWidth: 200,
+});
+
+
+const StyledEngineInfoStack = styled(Stack)({
+	flex: "1 1 auto",
+	minWidth: 0,
+});
+
+const StyledEngineIdText = styled(Typography)({
+	wordBreak: "break-all",
+	fontFamily: "monospace",
+	paddingLeft: 12,
+	paddingRight: 12,
+	paddingTop: 4,
+	paddingBottom: 4,
+	borderRadius: 4,
+	fontSize: "0.8rem",
+	overflow: "hidden",
+	textOverflow: "ellipsis",
+});
+
+const StyledSelectContainer = styled(Stack)({
+	flex: "0 0 400px",
+});
+
+const StyledLoadingContainer = styled(Stack)(({ theme }) => ({
+	padding: theme.spacing(2),
+	backgroundColor: theme.palette.background.paper,
+	borderRadius: theme.spacing(2),
+	border: `1px solid ${theme.palette.divider}`,
+}));
+
+const StyledLoadingText = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+}));
+
+const StyledErrorContainer = styled(Stack)(({ theme }) => ({
+	padding: theme.spacing(2),
+	backgroundColor: theme.palette.warning.light,
+	borderRadius: theme.spacing(2),
+	border: `1px solid ${theme.palette.warning.main}`,
+}));
+
+
+const StyledErrorTitle = styled(Typography)(({ theme }) => ({
+	color: theme.palette.warning.dark,
+	fontWeight: 500,
+}));
+
+const StyledErrorCaption = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+}));
+
+const StyledActionsStack = styled(Stack)(({ theme }) => ({
+	width: "100%",
+	padding: theme.spacing(2),
+}));
+
+const StyledSaveButton = styled(Button)({
+	minWidth: 150,
+	paddingTop: 12,
+	paddingBottom: 12,
+});
+
+const StyledCancelButton = styled(Button)({
+	minWidth: 100,
+	paddingTop: 12,
+	paddingBottom: 12,
+});
+
+const StyledConfirmationModal = styled(Modal)({
+	"& .MuiDialog-paper": {
+		width: "80vw",
+		maxWidth: 1000,
+		minWidth: 320,
+	},
+});
+
+const StyledConfirmationContent = styled(Modal.Content)(({ theme }) => ({
+	padding: theme.spacing(3),
+}));
+
+const StyledConfirmationText = styled(Typography)(({ theme }) => ({
+	marginBottom: theme.spacing(2),
+	color: "#555",
+}));
+
+const StyledReplacementStack = styled(Stack)(({ theme }) => ({
+	paddingLeft: theme.spacing(1),
+	width: "100%",
+}));
+
+const StyledReplacementItem = styled(Stack)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(1.5),
+	borderRadius: theme.spacing(1),
+	border: `1px solid ${theme.palette.divider}`,
+}));
+
+const StyledFromText = styled(Typography)({
+	wordBreak: "break-all",
+	fontFamily: "monospace",
+	fontWeight: 500,
+});
+
+const StyledToText = styled(Typography)(({ theme }) => ({
+	wordBreak: "break-all",
+	fontFamily: "monospace",
+	color: theme.palette.success.main,
+	fontWeight: 500,
+}));
+
+const StyledArrowText = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
+	fontWeight: "bold",
+}));
+
+/**
+ * Modal component for displaying and managing engine ID discovery results
+ * Allows users to view accessible engines and replace inaccessible ones
+ */
 const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 	open,
 	successIds,
@@ -36,9 +318,11 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 	onClose,
 	onEngineReplacement,
 	appId,
-	isUploadProjectApp,
+	isUploadProjectApp: _isUploadProjectApp,
 	engineInfo,
 }) => {
+
+	// STATE MANAGEMENT
 	const [engineReplacements, setEngineReplacements] = useState<
 		Record<string, string>
 	>({});
@@ -48,9 +332,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		Record<string, string>
 	>({});
 	const { monolithStore } = useRootStore();
-	const myfilePath = isUploadProjectApp
-		? "version/assets"
-		: "version/assets/assets";
 	const [showDiscovery, setShowDiscovery] = useState(open);
 	const [replacementDetails, setReplacementDetails] = useState<
 		Record<
@@ -61,8 +342,9 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 
 	// Fetch available engines that user has access to
 	const availableEngines = usePixel<engine[]>("MyEngines();");
+
+	//	Initialize replacement state when modal opens
 	useEffect(() => {
-		// Initialize replacement state when modal opens
 		if (open && failedIds.length > 0) {
 			const initialReplacements: Record<string, string> = {};
 			failedIds.forEach((id) => {
@@ -71,9 +353,13 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			setEngineReplacements(initialReplacements);
 		}
 	}, [open, failedIds]);
+
+	//	Sync modal visibility state
 	useEffect(() => {
 		setShowDiscovery(open);
 	}, [open]);
+
+	//	Handle engine replacement selection
 
 	const handleEngineReplacementChange = (
 		failedEngineId: string,
@@ -84,6 +370,8 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			[failedEngineId]: replacementEngineId,
 		}));
 	};
+
+	//	Save engine replacements and show confirmation
 	const handleSaveReplacements = async () => {
 		// Only include replacements that have been selected
 		const validReplacements = Object.entries(engineReplacements)
@@ -101,6 +389,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		const response = await monolithStore.runQuery(
 			`ReplaceInaccessibleEngines(project=["${appId}"], map=${mapStr});`,
 		);
+
 		const pixel = response?.pixelReturn?.[0];
 		const output = pixel?.output;
 		const operationType = pixel?.operationType || [];
@@ -167,6 +456,9 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			onClose();
 		}
 	};
+
+	//	Handle confirmation modal close
+
 	const handleConfirmationClose = () => {
 		setShowConfirmation(false);
 		if (onEngineReplacement) {
@@ -176,192 +468,94 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		onClose();
 	};
 
+//	Check if there are valid replacements selected
+
 	const hasValidReplacements =
 		failedIds.length > 0 &&
 		failedIds.some(
 			(id) => engineReplacements[id] && engineReplacements[id] !== "",
 		);
 
+
 	return (
 		<>
-			<Modal
-				open={showDiscovery}
-				maxWidth={false}
-				sx={{
-					"& .MuiDialog-paper": {
-						width: "95vw",
-						maxWidth: 1000,
-						minWidth: 320,
-						minHeight: "70vh",
-					},
-				}}
-			>
+			<StyledModal open={showDiscovery} maxWidth={false}>
 				<Modal.Title>
-					<Stack
+					<StyledTitleStack
 						direction="row"
 						justifyContent="space-between"
 						alignItems="center"
-						sx={{ p: 1 }}
 					>
-						<Typography
-							variant="h6"
-							align="center"
-							sx={{
-								flex: 1,
-								fontWeight: 600,
-							}}
-						>
+						<StyledCenterTitle variant="h6" align="center">
 							Engine IDs Discovery
-						</Typography>
+						</StyledCenterTitle>
 						<IconButton aria-label="close" onClick={onClose}>
 							<Close />
 						</IconButton>
-					</Stack>
+					</StyledTitleStack>
 				</Modal.Title>
-				<Modal.Content sx={{ p: 3 }}>
-					<Stack spacing={3} sx={{ width: "100%" }}>
-						<Typography
-							variant="h6"
-							align="center"
-							sx={{
-								color: "text.secondary",
-								mt: -1,
-							}}
-						>
+				<StyledModalContent>
+					<StyledMainStack spacing={3}>
+						<StyledSubTitle variant="h6" align="center">
 							The following engine IDs were detected in your
 							application:
-						</Typography>
-
-						{/* Success Section */}
-						<Stack spacing={1.5} sx={{ width: "100%" }}>
+						</StyledSubTitle>
+						<StyledSectionStack spacing={1.5}>
 							<Stack
 								direction="row"
 								alignItems="center"
 								spacing={1}
 							>
-								<Typography
-									variant="h6"
-									sx={{
-										color: "success.main",
-										fontWeight: 600,
-									}}
-								>
+								<StyledSectionTitle variant="h6">
 									Accessible Engines
-								</Typography>
-								<Typography
-									variant="body2"
-									sx={{
-										color: "text.secondary",
-										fontWeight: 500,
-									}}
-								>
+								</StyledSectionTitle>
+								<StyledSectionCount variant="body2">
 									({successIds.length})
-								</Typography>
+								</StyledSectionCount>
 							</Stack>
-							<Stack spacing={1} sx={{ pl: 1, width: "100%" }}>
+							<StyledEngineListStack spacing={1}>
 								{successIds.length > 0 ? (
 									successIds.map((id, index) => (
-										<Stack
+										<StyledEngineItem
 											key={id}
 											direction="row"
 											alignItems="center"
 											spacing={2}
-											sx={{
-												backgroundColor:
-													"background.paper",
-												p: 1.5,
-												borderRadius: 1,
-												border: 1,
-												borderColor: "divider",
-											}}
 										>
-											<Typography
-												variant="body2"
-												sx={{
-													backgroundColor: "grey.100",
-													color: "text.secondary",
-													px: 1.5,
-													py: 0.5,
-													borderRadius: 1,
-													minWidth: 24,
-													textAlign: "center",
-													fontWeight: 500,
-													fontSize: "0.875rem",
-												}}
-											>
+											<StyledEngineNumber variant="body2">
 												{index + 1}
-											</Typography>
-											<Typography
-												variant="body2"
-												sx={{
-													wordBreak: "break-all",
-													fontFamily: "monospace",
-													color: "text.primary",
-												}}
-											>
+											</StyledEngineNumber>
+											<StyledEngineId variant="body2">
 												{id}
 												{engineInfo?.[id] && (
-													<span
-														style={{
-															color: "#1976d2",
-															fontWeight: 500,
-															marginLeft: 12,
-														}}
-													>
+													<StyledEngineName>
 														({engineInfo[id].name})
-													</span>
+													</StyledEngineName>
 												)}
-											</Typography>
+											</StyledEngineId>
 											{engineInfo?.[id]?.files?.length >
 												0 && (
-												<Stack
+												<StyledFileStack
 													direction="row"
 													spacing={2}
-													sx={{ mt: 0.5 }}
 												>
 													{engineInfo[id].files.map(
 														(file, idx) => (
 															<Stack
-																key={file + idx}
+																key={`success-${id}-${file}`}
 																direction="row"
 																spacing={1}
 																alignItems="center"
 															>
-																<Typography
-																	variant="caption"
-																	sx={{
-																		backgroundColor:
-																			"grey.100",
-																		color: "text.secondary",
-																		px: 1,
-																		py: 0.5,
-																		borderRadius: 1,
-																		fontSize:
-																			"0.8rem",
-																		fontWeight: 500,
-																	}}
-																>
+																<StyledFileTag variant="caption">
 																	{file}
-																</Typography>
+																</StyledFileTag>
 																{engineInfo[id]
 																	.instances?.[
 																	idx
 																] !==
 																	undefined && (
-																	<Typography
-																		variant="caption"
-																		sx={{
-																			backgroundColor:
-																				"grey.200",
-																			color: "primary.main",
-																			px: 1,
-																			py: 0.5,
-																			borderRadius: 1,
-																			fontSize:
-																				"0.8rem",
-																			fontWeight: 500,
-																		}}
-																	>
+																	<StyledInstanceTag variant="caption">
 																		{
 																			engineInfo[
 																				id
@@ -370,154 +564,78 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 																				idx
 																			]
 																		}
-																	</Typography>
+																	</StyledInstanceTag>
 																)}
 															</Stack>
 														),
 													)}
-												</Stack>
+												</StyledFileStack>
 											)}
-										</Stack>
+										</StyledEngineItem>
 									))
 								) : (
-									<Typography
-										variant="body2"
-										sx={{
-											color: "text.secondary",
-											fontStyle: "italic",
-											textAlign: "center",
-											py: 2,
-										}}
-									>
+									<StyledEmptyMessage variant="body2">
 										No accessible engine IDs found.
-									</Typography>
+									</StyledEmptyMessage>
 								)}
-							</Stack>
-						</Stack>
+							</StyledEngineListStack>
+						</StyledSectionStack>
 
-						{/* Failed Section with Engine Selection */}
-						<Stack spacing={1.5} sx={{ width: "100%" }}>
+						{/* Inaccessible Engines Section */}
+						<StyledSectionStack spacing={1.5}>
 							<Stack
 								direction="row"
 								alignItems="center"
 								spacing={1}
 							>
-								<Typography
-									variant="h6"
-									sx={{
-										color: "error.main",
-										fontWeight: 600,
-									}}
-								>
+								<StyledFailedSectionTitle variant="h6">
 									Inaccessible Engines
-								</Typography>
-								<Typography
-									variant="body2"
-									sx={{
-										color: "text.secondary",
-										fontWeight: 500,
-									}}
-								>
+								</StyledFailedSectionTitle>
+								<StyledSectionCount variant="body2">
 									({failedIds.length})
-								</Typography>
+								</StyledSectionCount>
 							</Stack>
-							<Stack spacing={1.5} sx={{ pl: 1, width: "100%" }}>
+
+							{/* Engine Selection List */}
+							<StyledSelectStack spacing={1.5}>
 								{failedIds.length > 0 ? (
 									failedIds.map((id, index) => (
-										<Stack
+										<StyledEngineSelectItem
 											key={id}
 											direction="row"
 											alignItems="center"
 											spacing={3}
-											sx={{
-												width: "100%",
-												backgroundColor:
-													"background.paper",
-												p: 2,
-												borderRadius: 1,
-												border: 1,
-												borderColor: "divider",
-											}}
 										>
-											<Stack
+											<StyledEngineInfoStack
 												direction="row"
 												alignItems="center"
 												spacing={1.5}
-												sx={{
-													flex: "1 1 auto",
-													minWidth: 0,
-												}}
 											>
-												<Typography
-													variant="body2"
-													sx={{
-														backgroundColor:
-															"grey.100",
-														color: "text.secondary",
-														px: 1.5,
-														py: 0.5,
-														borderRadius: 1,
-														minWidth: 24,
-														textAlign: "center",
-														fontWeight: 500,
-														fontSize: "0.875rem",
-													}}
-												>
+												<StyledEngineNumber variant="body2">
 													{index + 1}
-												</Typography>
-												<Typography
-													variant="body2"
-													sx={{
-														wordBreak: "break-all",
-														fontFamily: "monospace",
-														color: "text.primary",
-														px: 1.5,
-														py: 0.5,
-														borderRadius: 1,
-														fontSize: "0.8rem",
-														overflow: "hidden",
-														textOverflow:
-															"ellipsis",
-													}}
-												>
+												</StyledEngineNumber>
+												<StyledEngineIdText variant="body2">
 													{id}
-												</Typography>
+												</StyledEngineIdText>
 												{engineInfo?.[id]?.files
 													?.length > 0 && (
-													<Stack
+													<StyledFileStack
 														direction="row"
 														spacing={2}
-														sx={{ mt: 0.5 }}
 													>
 														{engineInfo[
 															id
 														].files.map(
 															(file, idx) => (
 																<Stack
-																	key={
-																		file +
-																		idx
-																	}
+																	key={`failed-${id}-${file}`}
 																	direction="row"
 																	spacing={1}
 																	alignItems="center"
 																>
-																	<Typography
-																		variant="caption"
-																		sx={{
-																			backgroundColor:
-																				"grey.100",
-																			color: "text.secondary",
-																			px: 1,
-																			py: 0.5,
-																			borderRadius: 1,
-																			fontSize:
-																				"0.8rem",
-																			fontWeight: 500,
-																		}}
-																	>
+																	<StyledFileTag variant="caption">
 																		{file}
-																	</Typography>
+																	</StyledFileTag>
 																	{engineInfo[
 																		id
 																	]
@@ -525,20 +643,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 																		idx
 																	] !==
 																		undefined && (
-																		<Typography
-																			variant="caption"
-																			sx={{
-																				backgroundColor:
-																					"grey.200",
-																				color: "primary.main",
-																				px: 1,
-																				py: 0.5,
-																				borderRadius: 1,
-																				fontSize:
-																					"0.8rem",
-																				fontWeight: 500,
-																			}}
-																		>
+																		<StyledInstanceTag variant="caption">
 																			{
 																				engineInfo[
 																					id
@@ -547,16 +652,16 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 																					idx
 																				]
 																			}
-																		</Typography>
+																		</StyledInstanceTag>
 																	)}
 																</Stack>
 															),
 														)}
-													</Stack>
+													</StyledFileStack>
 												)}
-											</Stack>
-											<Stack sx={{ flex: "0 0 400px" }}>
-												<FormControl
+											</StyledEngineInfoStack>
+											<StyledSelectContainer>
+												<StyledSelectFormControl
 													fullWidth
 													size="small"
 												>
@@ -638,293 +743,154 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 															engine
 														</span>
 													)}
-												</FormControl>
-											</Stack>
-										</Stack>
+												</StyledSelectFormControl>
+											</StyledSelectContainer>
+										</StyledEngineSelectItem>
 									))
 								) : (
-									<Typography
-										variant="body2"
-										sx={{
-											color: "text.secondary",
-											fontStyle: "italic",
-											textAlign: "center",
-											py: 2,
-										}}
-									>
+									<StyledEmptyMessage variant="body2">
 										No inaccessible engine IDs found.
-									</Typography>
+									</StyledEmptyMessage>
 								)}
-							</Stack>
-						</Stack>
+							</StyledSelectStack>
+						</StyledSectionStack>
 
 						{/* Loading state for engines */}
 						{availableEngines.status === "LOADING" && (
-							<Stack
+							<StyledLoadingContainer
 								spacing={1}
 								alignItems="center"
-								sx={{
-									p: 2,
-									backgroundColor: "background.paper",
-									borderRadius: 2,
-									border: 1,
-									borderColor: "divider",
-								}}
 							>
-								<Typography
-									variant="body2"
-									sx={{
-										color: "text.secondary",
-									}}
-								>
+								<StyledLoadingText variant="body2">
 									Loading available engines...
-								</Typography>
-							</Stack>
+								</StyledLoadingText>
+							</StyledLoadingContainer>
 						)}
 
 						{/* Error state for engines */}
 						{availableEngines.status === "ERROR" && (
-							<Stack
-								spacing={1}
-								sx={{
-									p: 2,
-									backgroundColor: "warning.light",
-									borderRadius: 2,
-									border: 1,
-									borderColor: "warning.main",
-								}}
-							>
-								<Typography
-									variant="body2"
-									sx={{
-										color: "warning.dark",
-										fontWeight: 500,
-									}}
-								>
+							<StyledErrorContainer spacing={1}>
+								<StyledErrorTitle variant="body2">
 									Error loading available engines
-								</Typography>
-								<Typography
-									variant="caption"
-									sx={{ color: "text.secondary" }}
-								>
+								</StyledErrorTitle>
+								<StyledErrorCaption variant="caption">
 									You may not have access to any engines or
 									there was a connection issue.
-								</Typography>
-							</Stack>
+								</StyledErrorCaption>
+							</StyledErrorContainer>
 						)}
-					</Stack>
-				</Modal.Content>
+					</StyledMainStack>
+				</StyledModalContent>
 				<Modal.Actions>
-					<Stack
+					<StyledActionsStack
 						direction="row"
 						justifyContent="center"
 						spacing={2}
-						sx={{
-							width: "100%",
-							p: 2,
-						}}
 					>
 						{failedIds.length > 0 && (
-							<Button
+							<StyledSaveButton
 								variant="contained"
 								color="primary"
 								onClick={handleSaveReplacements}
 								disabled={!hasValidReplacements}
-								sx={{
-									minWidth: 150,
-									py: 1.5,
-								}}
 							>
 								Save Replacements
-							</Button>
+							</StyledSaveButton>
 						)}
-						<Button
+						<StyledCancelButton
 							variant="outlined"
 							onClick={onClose}
-							sx={{
-								minWidth: 100,
-								py: 1.5,
-							}}
 						>
 							{failedIds.length > 0 ? "Cancel" : "OK"}
-						</Button>
-					</Stack>
+						</StyledCancelButton>
+					</StyledActionsStack>
 				</Modal.Actions>
-			</Modal>
-			<Modal
+			</StyledModal>
+			<StyledConfirmationModal
 				open={showConfirmation}
 				fullWidth
 				maxWidth={false}
-				sx={{
-					"& .MuiDialog-paper": {
-						width: "80vw",
-						maxWidth: 1000,
-						minWidth: 320,
-					},
-				}}
 			>
 				<Modal.Title>
-					<Typography
+					<StyledCenterTitle
 						variant="h6"
 						align="center"
-						sx={{ flex: 1, fontWeight: 600 }}
 					>
 						Engine Replacement Confirmation
-					</Typography>
+					</StyledCenterTitle>
 				</Modal.Title>
-				<Modal.Content sx={{ p: 3 }}>
-					<Typography variant="body1" sx={{ mb: 2 }}>
-						<span style={{ color: "#555" }}>
-							The following engine IDs have been replaced:
-						</span>
-					</Typography>
-					<Stack spacing={1.5} sx={{ pl: 1, width: "100%" }}>
+				<StyledConfirmationContent>
+					<StyledConfirmationText variant="body1">
+						The following engine IDs have been replaced:
+					</StyledConfirmationText>
+					<StyledReplacementStack spacing={1.5}>
 						{Object.entries(replacementDetails).map(
 							([failed, detail], index) => (
-								<Stack
+								<StyledReplacementItem
 									key={failed}
 									direction="row"
 									alignItems="center"
 									spacing={3}
-									sx={{
-										width: "100%",
-										backgroundColor: "background.paper",
-										p: 2,
-										borderRadius: 1,
-										border: 1,
-										borderColor: "divider",
-									}}
 								>
-									<Stack
+									<StyledEngineInfoStack
 										direction="row"
 										alignItems="center"
 										spacing={1.5}
-										sx={{
-											flex: "1 1 auto",
-											minWidth: 0,
-										}}
 									>
-										<Typography
-											variant="body2"
-											sx={{
-												backgroundColor: "grey.100",
-												color: "text.secondary",
-												px: 1.5,
-												py: 0.5,
-												borderRadius: 1,
-												minWidth: 24,
-												textAlign: "center",
-												fontWeight: 500,
-												fontSize: "0.875rem",
-											}}
-										>
+										<StyledEngineNumber variant="body2">
 											{index + 1}
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												wordBreak: "break-all",
-												fontFamily: "monospace",
-												color: "text.primary",
-												px: 1.5,
-												py: 0.5,
-												borderRadius: 1,
-												fontSize: "0.8rem",
-												overflow: "hidden",
-												textOverflow: "ellipsis",
-											}}
-										>
+										</StyledEngineNumber>
+										<StyledFromText variant="body2">
 											{failed}
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												mx: 1,
-												color: "text.disabled",
-											}}
-										>
+										</StyledFromText>
+										<StyledArrowText variant="body2">
 											&rarr;
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												fontWeight: 700,
-												color: "success.main",
-												fontFamily: "monospace",
-												px: 1.5,
-												py: 0.5,
-												borderRadius: 1,
-												fontSize: "0.8rem",
-												overflow: "hidden",
-												textOverflow: "ellipsis",
-											}}
-										>
+										</StyledArrowText>
+										<StyledToText variant="body2">
 											{detail.replacement}
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												ml: 2,
-												color: "primary.main",
-												fontWeight: 500,
-												fontSize: "0.85rem",
-											}}
-										>
+										</StyledToText>
+										<StyledEngineName>
 											( {detail.engineName} )
-										</Typography>
+										</StyledEngineName>
 										{detail.files &&
 											detail.files.length > 0 && (
-												<Stack
+												<StyledFileStack
 													direction="row"
 													spacing={1}
-													sx={{ ml: 2 }}
 												>
 													{detail.files.map(
 														(file) => (
-															<Typography
+															<StyledFileTag
 																key={file}
 																variant="caption"
-																sx={{
-																	backgroundColor:
-																		"grey.100",
-																	color: "text.secondary",
-																	px: 1,
-																	py: 0.5,
-																	borderRadius: 1,
-																	fontSize:
-																		"0.8rem",
-																	fontWeight: 500,
-																}}
 															>
 																{file}
-															</Typography>
+															</StyledFileTag>
 														),
 													)}
-												</Stack>
+												</StyledFileStack>
 											)}
-									</Stack>
-								</Stack>
+									</StyledEngineInfoStack>
+								</StyledReplacementItem>
 							),
 						)}
-					</Stack>
-				</Modal.Content>
+					</StyledReplacementStack>
+				</StyledConfirmationContent>
 				<Modal.Actions>
-					<Stack
+					<StyledActionsStack
 						direction="row"
 						justifyContent="center"
-						sx={{ p: 2 }}
 					>
-						<Button
+						<StyledSaveButton
 							variant="contained"
 							color="primary"
 							onClick={handleConfirmationClose}
-							sx={{ minWidth: 120, py: 1.5 }}
 						>
 							OK
-						</Button>
-					</Stack>
+						</StyledSaveButton>
+					</StyledActionsStack>
 				</Modal.Actions>
-			</Modal>
+			</StyledConfirmationModal>
 		</>
 	);
 };

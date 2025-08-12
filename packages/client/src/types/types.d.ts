@@ -1,29 +1,56 @@
 // Engine dependencies types (moved from utility/types.ts)
 export interface EngineFile {
-    filename: string;
-    instances: string | number;
+	filename: string;
+	instances: string | number;
 }
 
 export interface EngineData {
-    engineName?: string;
-    files?: EngineFile[];
+	engineName?: string;
+	files?: EngineFile[];
+}
+
+// Project Dependencies Engine Data (from GetProjectDependencies pixel)
+export interface ProjectDependencyEngine {
+	engine_id: string;
+	engine_name: string;
+	engine_type: string;
+	engine_subtype: string;
+	engine_date_created: string;
+	engine_discoverable: boolean;
+	engine_global: boolean;
+}
+
+// User interface for settings and member management
+export interface User {
+	id: string;
+	type: string;
+	name: string;
+	email: string;
+	permission_granted_by_type: string;
+	permission_granted_by: string;
+	permission: string;
+	date_added: string;
+	usage_restriction?: string;
+	usage_frequency?: string;
+	max_tokens?: number;
+	max_response_time?: number;
 }
 
 export interface EngineDependenciesResponse {
-    success?: Record<string, EngineData>;
-    failed?: Record<string, EngineData>;
+	success?: Record<string, EngineData>;
+	failed?: Record<string, EngineData>;
 }
 
 export interface EngineInfo {
-    name: string;
-    files: string[];
-    instances: (string | number)[];
+	name: string;
+	files: string[];
+	instances: (string | number)[];
 }
 
 export interface EngineDependenciesState {
-    successfulEngineIds: string[];
-    failedEngineIds: string[];
-    engineDetails: Record<string, EngineInfo>;
+	successfulEngineIds: string[];
+	failedEngineIds: string[];
+	engineDetails: Record<string, EngineInfo>;
 }
 export type Role =
 	| "OWNER"

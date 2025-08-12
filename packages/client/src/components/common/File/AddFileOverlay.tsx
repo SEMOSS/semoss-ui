@@ -8,8 +8,8 @@ import {
     Stack,
     Checkbox,
 } from '@semoss/ui';
-import { useRootStore } from '@/hooks';
 import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
+import { useRootStore } from '@/hooks';
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
 
 interface AddFileOverlayProps {
@@ -77,7 +77,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
                         `UnzipFile(filePath=["${path}"], space=["${space}"])`,
                     );
                     const extractResult = await monolithStore.runQuery(
-                        `ExtractAndSetDependencies(filePath=["version/assets"], space=["${space}"]);`
+                        `ExtractAndSetDependencies(filePath=["version/assets"], project=["${space}"]);`
                     );
 
                     const extractOutput = extractResult.pixelReturn[0].output;
