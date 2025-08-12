@@ -9,7 +9,7 @@ import {
 	type PathValue,
 } from "@semoss/renderer";
 import {
-	MenuItem,
+	Menu,
 	Select,
 	Switch,
 	styled,

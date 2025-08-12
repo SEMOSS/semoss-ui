@@ -10,7 +10,7 @@ import {
 	Grid,
 	IconButton,
 	Link,
-	MenuItem,
+	Menu,
 	Modal,
 	Search,
 	Stack,
@@ -313,10 +313,10 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 								)
 							}
 						>
-							<MenuItem value={"ALL"}>All</MenuItem>
-							<MenuItem value={"APP"}>App</MenuItem>
-							<MenuItem value={"FUNCTION"}>Function</MenuItem>
-							<MenuItem value={"DATABASE"}>Database</MenuItem>
+							<Menu.Item value={"ALL"}>All</Menu.Item>
+							<Menu.Item value={"APP"}>App</Menu.Item>
+							<Menu.Item value={"FUNCTION"}>Function</Menu.Item>
+							<Menu.Item value={"DATABASE"}>Database</Menu.Item>
 						</TextField>
 					</Stack>
 					<Typography variant="body1" fontWeight={"medium"}>

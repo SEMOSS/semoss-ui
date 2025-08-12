@@ -6,7 +6,7 @@ import {
 	Button,
 	CircularProgress,
 	IconButton,
-	MenuItem,
+	Menu,
 	Modal,
 	Stack,
 	TextField,
@@ -307,7 +307,7 @@ export const KnowledgeOverlay: React.FC<KnowledgeOverlayProps> = (props) => {
 							fullWidth
 						>
 							{ENABLE_NEW_KNOWLEDGE ? (
-								<MenuItem value={`new`}>
+								<Menu.Item value={`new`}>
 									<Stack
 										direction={"row"}
 										spacing={1}
@@ -318,11 +318,11 @@ export const KnowledgeOverlay: React.FC<KnowledgeOverlayProps> = (props) => {
 											New Knowledge Repository
 										</Typography>
 									</Stack>
-								</MenuItem>
+								</Menu.Item>
 							) : null}
 
 							{getEngines.data?.map((e) => (
-								<MenuItem
+								<Menu.Item
 									key={e.app_id}
 									value={`engine--${e.app_id}`}
 								>
@@ -334,7 +334,7 @@ export const KnowledgeOverlay: React.FC<KnowledgeOverlayProps> = (props) => {
 											{e.app_name}
 										</Typography>
 									</Stack>
-								</MenuItem>
+								</Menu.Item>
 							))}
 						</TextField>
 					</Stack>

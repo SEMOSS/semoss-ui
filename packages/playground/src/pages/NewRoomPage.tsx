@@ -19,7 +19,7 @@ import {
 	Grid,
 	IconButton,
 	Link,
-	MenuItem,
+	Menu,
 	Select,
 	Stack,
 	styled,
@@ -320,12 +320,12 @@ export const NewRoomPage = observer(() => {
 											// }
 										>
 											{chat.models.options.map((m) => (
-												<MenuItem
+												<Menu.Item
 													key={m.app_id}
 													value={m.app_id}
 												>
 													{m.app_name}
-												</MenuItem>
+												</Menu.Item>
 											))}
 										</StyledSelect>
 									) : null}
