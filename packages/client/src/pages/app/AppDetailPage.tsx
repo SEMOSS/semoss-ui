@@ -5,6 +5,7 @@ import {
   SimCardDownload,
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
+import { IconButton } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { Link, useParams } from "react-router-dom";
@@ -16,7 +17,6 @@ import {
   Chip,
   CircularProgress,
   Grid,
-  IconButton,
   Modal,
   Stack,
   styled,
@@ -203,8 +203,13 @@ const HeaderRow = styled("div")({
   justifyContent: "space-between",
 });
 
+const StyledIconButton = styled(IconButton)({
+  marginRight: "16px",
+});
+
+
 const StyledTypography = styled(Typography)({
-  paddingLeft: "8px",
+  padding: "16px",
 });
 
 const StyledStack = styled(Stack)({
@@ -757,12 +762,12 @@ export const AppDetailPage = () => {
 
                       {appInfo.project_type === "CODE" &&
                         permission === "author" && (
-                          <IconButton
+                          <StyledIconButton
                             onClick={() => setIsEditDependenciesModalOpen(true)}
                             data-testid="app-detail-edit-btn"
                           >
                             <Edit />
-                          </IconButton>
+                          </StyledIconButton>
                         )}
                     </HeaderRow>
 

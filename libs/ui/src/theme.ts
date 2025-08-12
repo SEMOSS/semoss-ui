@@ -243,7 +243,7 @@ export const lightTheme: CustomThemeOptions = {
 			"900": "#005946",
 		},
 		darkBlue: {
-			"50": "#E9EAEC",
+			"50": "#EAE4F2",
 			"100": "#C9BCE0",
 			"200": "#A690CC",
 			"300": "#8364B8",
