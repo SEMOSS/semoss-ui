@@ -232,7 +232,7 @@ const StyledMainDiv = styled("div")(({ theme }) => ({
 
 const StyledSkeletonImage = styled("div")(({ theme }) => ({
 	borderRadius: "4px",
-	backgroundColor: "#E9EAEC",
+	backgroundColor: theme.palette.grey[500],
 	position: "relative",
 	overflow: "hidden",
 	display: "flex",
@@ -322,7 +322,7 @@ const SkeletonMain = styled(Skeleton)(({ theme }) => ({
 const SkeletonIcon = styled(Skeleton)(({ theme }) => ({
   borderRadius: theme.shape.borderRadius, // 8px (assuming theme default is 8)
   background:
-    'linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)',
+    `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
   position: 'absolute',
   top: theme.spacing(1), // 8px
   right: theme.spacing(2), // 16px
@@ -331,13 +331,13 @@ const SkeletonIcon = styled(Skeleton)(({ theme }) => ({
 const SkeletonDefault = styled(Skeleton)(({ theme }) => ({
   borderRadius: "17.5px",
   background:
-    "linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
+    `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
 }));
 
 const SkeletonMoreVertIcon = styled(Skeleton)(({ theme }) => ({
   borderRadius: "8px",
   background:
-    "linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)",
+    `linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, ${theme.palette.grey[600]} 50%)`,
 }));
 
 const OpenInNewOutlinedIcon = styled(OpenInNewOutlined)(({ theme }) => ({
@@ -425,7 +425,6 @@ interface AppTileCardProps {
 export const AppTileCard = (props: AppTileCardProps) => {
 	const {
 		app,
-		background = "#DAC9F5",
 		onAction = () => null,
 		href = null,
 		isFavorite,
@@ -644,7 +643,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
           {/* Skeleton for the favorite icon */}
           <StyledContainer>
             <StyledOverlayContent>
-              {/* <Skeleton variant="rectangular" width="28px" height="28px" sx={{ borderRadius: '8px', background:'linear-gradient(270deg, rgba(219, 219, 219, 0.30) 0%, #DBDBDB 50%)' }}/> */}
             </StyledOverlayContent>
           </StyledContainer>
 

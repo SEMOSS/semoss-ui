@@ -61,9 +61,9 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledTableRow = styled(Table.Row)({
-	backgroundColor: "#FFF",
-});
+const StyledTableRow = styled(Table.Row)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+}));
 
 const StyledMemberTable = styled(Table)({});
 
@@ -135,9 +135,9 @@ const StyledAddMemberContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledCircleNotification = styled(CircleNotifications)({
-	color: "#FF5F15",
-});
+const StyledCircleNotification = styled(CircleNotifications)(({ theme }) => ({
+	color: theme.palette.orange[500],
+}));
 
 // maps for permissions,
 const permissionMapper = {
