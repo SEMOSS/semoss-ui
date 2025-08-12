@@ -319,7 +319,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 										workspace.saveToCache();
 									}}
 									onAction={(action) => {
-                                        if(action.data.tabsetNode !=="settings-tabset") {
+                                        if(action?.data?.tabsetNode !=="settings-tabset") {
 										updateModel(action);
                                         }
 										return action;
