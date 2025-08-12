@@ -12,9 +12,9 @@ import type {
 	PathValue,
 } from "@semoss/renderer";
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	Button,
-	CheckboxTwo,
+	Checkbox,
 	styled,
 	TextField,
 	Typography,
@@ -179,10 +179,7 @@ export const CellStyling = observer(
 		) => {
 			return (
 				<li {...props}>
-					<CheckboxTwo
-						icon={icon}
-						checkedIcon={checkedIcon}
-						style={{ marginRight: 8 }}
+					<Checkbox
 						checked={selected}
 					/>
 					{option.name}
@@ -198,7 +195,7 @@ export const CellStyling = observer(
 							Select Column
 						</Typography>{" "}
 					</label>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						multiple
 						disableCloseOnSelect
@@ -208,7 +205,11 @@ export const CellStyling = observer(
 						)}
 						onChange={handleColumnChange}
 						options={data.columns || []}
-						getOptionLabel={(option) => option.name}
+						getOptionLabel={(option) =>
+                            typeof option === 'object' && 'name' in option
+                                ? option.name
+                                : option
+                        }
 						renderOption={renderOption}
 						renderInput={(params) => (
 							<TextField

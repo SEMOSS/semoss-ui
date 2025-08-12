@@ -11,7 +11,7 @@ import type {
 	Paths,
 	PathValue,
 } from "@semoss/renderer";
-import { Button, CheckboxTwo, styled, TextField, Typography } from "@semoss/ui";
+import { Button, Checkbox, styled, TextField, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { ColorPickerSettingsNew } from "../../../../settings/shared/ColorPickerSettingsNew";
 
@@ -152,10 +152,7 @@ export const ChartTitle = observer(
 		) => {
 			return (
 				<li {...props}>
-					<CheckboxTwo
-						icon={icon}
-						checkedIcon={checkedIcon}
-						style={{ marginRight: 8 }}
+					<Checkbox
 						checked={selected}
 					/>
 					{option.name}
