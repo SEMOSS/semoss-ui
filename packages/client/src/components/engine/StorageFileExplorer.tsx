@@ -107,7 +107,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
 	const handleFileSelect = (path: string) => {
 		setSelectedFile(path);
-		console.log("Selected file:", path);
 	};
 
 	const handleOnNodeSelect = (selected: string[]) => {
@@ -126,15 +125,12 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 	const handleUpload = handleSubmit(async (data: FileUploadForm) => {
 		setIsLoading(true);
 		let fileLocations = "";
-		console.log("data: ", data);
 
 		try {
 			const upload = await monolithStore.uploadFile(
 				data.PROJECT_UPLOAD,
 				configStore.store.insightID,
 			);
-
-			console.log(configStore.store.insightID);
 
 			upload.map(async (file, index) => {
 				const fileLocation = file.fileLocation.replace(/\\/g, "/");
@@ -145,14 +141,11 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 				}
 			});
 
-			console.log("Files to be uploaded:", fileLocations);
-
 			const response = await monolithStore.runQuery(`
             Storage(storage = "${id}") | PushToStorage(storagePath='/', filePath=[${fileLocations}]);
             `);
 
 			const { output } = response.pixelReturn[0];
-			console.log("Failed files to uploaded", output);
 
 			if (output.size() === -1) {
 				notification.add({
@@ -214,19 +207,34 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
 			try {
 				const response = await monolithStore.runQuery(deleteQuery);
-				console.log("Delete response:", response);
-				console.log("File deleted:", pathsToDelete[0]);
 
-				setExpandedPaths((prev) =>
-					prev.filter((p) => !p.startsWith(pathsToDelete[0])),
-				);
+				// Check if the response contains an error message
+				if (response.errors.length > 0) {
+					notification.add({
+						color: "error",
+						message: `Failed to delete file response: ${response.errors[0]}`,
+					});
+				} else {
+					// Successful deletion
+					notification.add({
+						color: "success",
+						message: `Successfully deleted document`,
+					});
 
-				if (selectedFile === pathsToDelete[0]) {
-					setSelectedFile("");
+					setExpandedPaths((prev) =>
+						prev.filter((p) => !p.startsWith(pathsToDelete[0])),
+					);
+
+					if (selectedFile === pathsToDelete[0]) {
+						setSelectedFile("");
+					}
+					refreshFiles();
 				}
-				refreshFiles();
 			} catch (e) {
-				console.error("Delete error:", e);
+				notification.add({
+					color: "error",
+					message: `Failed to deleteeeeee file(s): ${e}`,
+				});
 			}
 		} else {
 			const pathsString = pathsToDelete
@@ -237,7 +245,14 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
 			try {
 				const response = await monolithStore.runQuery(deleteQuery);
-				console.log("Delete multiple response:", response);
+
+				if (response.errors && response.errors.length > 0) {
+					notification.add({
+						color: "error",
+						message: `Failed to delete files: ${response.errors[0]}`,
+					});
+					return;
+				}
 
 				console.log("Multiple files deleted:", pathsToDelete);
 				pathsToDelete.forEach((path) => {
@@ -251,8 +266,18 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 				setSelected([]);
 				setShowDeleteDialog(false);
 				refreshFiles();
+
+				// Show success message only if we got here without errors
+				notification.add({
+					color: "success",
+					message: `Successfully deleted ${pathsToDelete.length} file(s)`,
+				});
 			} catch (e) {
 				console.error("Delete multiple error:", e);
+				notification.add({
+					color: "error",
+					message: `Failed to delete file(s): ${e.message || e}`,
+				});
 			}
 		}
 	};
@@ -282,9 +307,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 
 				const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${pathsToDownload[0]}", filePath="${filename}") | DownloadAsset(filePath=["${filename}"], space=["insight"]);`;
 
-				console.log("Download query:", downloadQuery);
 				const response = await monolithStore.runQuery(downloadQuery);
-				console.log("Download response:", response);
 
 				const fileKey = response.pixelReturn[0]?.output;
 
@@ -303,8 +326,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					color: "success",
 					message: `Successfully downloaded: ${filename}`,
 				});
-
-				console.log("Download initiated for path:", pathsToDownload[0]);
 			} catch (e) {
 				console.error("Download error:", e);
 
@@ -348,7 +369,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					const filename = extractFilename(path);
 					const downloadQuery = `Storage("${id}") | PullFromStorage(storagePath="${path}", filePath="${filename}");`;
 
-					console.log("Downloading file:", path);
 					await monolithStore.runQuery(downloadQuery);
 					downloadedFiles.push(filename);
 				}
@@ -365,16 +385,14 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 						.replace(/[:]/g, "-")
 						.replace(/\..+/, "")
 						.replace("T", "_");
-					console.log("DATEEEEEE", formattedDate);
+
 					const filePathsString = downloadedFiles
 						.map((file) => `"${file}"`)
 						.join(", ");
 					const zipQuery = `ZipFiles(filePaths=[${filePathsString}], filePath="${storageName}_${userName}_${formattedDate}.zip") 
                                     | DownloadAsset(filePath=["${storageName}_${userName}_${formattedDate}.zip"], space=["insight"]);`;
 
-					console.log("Creating zip file with downloaded files");
 					const response = await monolithStore.runQuery(zipQuery);
-					console.log("Zip response:", response);
 
 					const fileKey = response.pixelReturn[0]?.output;
 
@@ -389,7 +407,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 						fileKey,
 					);
 
-					console.log("Multiple files downloaded:", pathsToDownload);
 					setSelected([]);
 				}
 			} catch (e) {
