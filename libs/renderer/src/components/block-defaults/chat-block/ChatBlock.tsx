@@ -16,11 +16,9 @@ import {
     ThumbDownOffAlt,
 } from "@mui/icons-material";
 
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { Markdown } from "@semoss/ui";
 
 import { Divider, Tooltip } from "@semoss/ui";
-import { MARKDOWN_COMPONENTS } from "./chat.constants";
 import { useBlock } from "../../../hooks";
 import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
 import { unescapeMarkdown } from "../../../utility";
@@ -282,18 +280,9 @@ export const ChatBlock: BlockComponent = observer(({ id }) => {
                                                             ] = el)
                                                         }
                                                     >
-                                                        <ReactMarkdown
-                                                            components={
-                                                                MARKDOWN_COMPONENTS
-                                                            }
-                                                            remarkPlugins={[
-                                                                remarkGfm,
-                                                            ]}
-                                                        >
-                                                            {unescapeMarkdown(
-                                                                m.agent,
-                                                            )}
-                                                        </ReactMarkdown>
+                                                        <Markdown>
+                                                            {unescapeMarkdown(m.agent)}
+                                                        </Markdown>
                                                         <Divider
                                                             style={{
                                                                 borderColor:
