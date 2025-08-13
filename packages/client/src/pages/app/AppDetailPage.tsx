@@ -1,7 +1,7 @@
 import {
   Edit,
   EditOutlined,
-  InfoRounded,
+  //InfoRounded,
   LockReset,
   SimCardDownload,
 } from "@mui/icons-material";
@@ -22,7 +22,6 @@ import {
   Stack,
   styled,
   ToggleTabsGroup,
-  Tooltip,
   Typography,
   useNotification,
 } from "@semoss/ui";
@@ -207,12 +206,12 @@ const HeaderRow = styled("div")({
   paddingRight: "16px",
 });
 
-const StyledInfoOutlined = styled(InfoRounded)(({ theme }) => ({
-  cursor: "pointer",
-  width: "15px",
-  height: "15px",
-  color: theme.palette.secondary.dark,
-}));
+// const StyledInfoOutlined = styled(InfoRounded)(({ theme }) => ({
+//   cursor: "pointer",
+//   width: "15px",
+//   height: "15px",
+//   color: theme.palette.secondary.dark,
+// }));
 
 const StyledTypography = styled(Typography)({
   display: "flex",
@@ -763,7 +762,7 @@ export const AppDetailPage = () => {
                     <HeaderRow>
                       <StyledTypography variant="h6">
                         Dependencies
-                        <Tooltip
+                        {/* <Tooltip
                           title={
                             appInfo.project_type === "CODE"
                               ? "Add/Remove dependencies using the Edit Icon"
@@ -771,7 +770,7 @@ export const AppDetailPage = () => {
                           }
                         >
                           <StyledInfoOutlined fontSize="small" />
-                        </Tooltip>
+                        </Tooltip> */}
                       </StyledTypography>
 
                       {appInfo.project_type === "CODE" &&
