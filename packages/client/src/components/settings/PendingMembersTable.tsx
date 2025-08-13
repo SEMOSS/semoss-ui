@@ -296,7 +296,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
 				notification.add({
 					color: "success",
-					message: "Succesfully approved user permissions",
+					message: "Successfully approved user permissions",
 				});
 			} else {
 				notification.add({
@@ -380,7 +380,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
 				notification.add({
 					color: "success",
-					message: "Succesfully denied user permissions",
+					message: "Successfully denied user permissions",
 				});
 			} else {
 				notification.add({
