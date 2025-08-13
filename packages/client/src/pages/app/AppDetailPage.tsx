@@ -1,6 +1,7 @@
 import {
   Edit,
   EditOutlined,
+  InfoRounded,
   LockReset,
   SimCardDownload,
 } from "@mui/icons-material";
@@ -21,6 +22,7 @@ import {
   Stack,
   styled,
   ToggleTabsGroup,
+  Tooltip,
   Typography,
   useNotification,
 } from "@semoss/ui";
@@ -48,12 +50,12 @@ import { Dependencies } from "./AppDetailTabs/Dependencies";
 import { Overview } from "./AppDetailTabs/Overview";
 import { SettingsTab } from "./AppDetailTabs/Settings";
 
-const OuterContainer = styled("div")(({ theme }) => ({
+const OuterContainer = styled("div")({
   height: "100%",
   justifyContent: "center",
   overflow: "scroll",
   width: "100%",
-}));
+});
 
 const InnerContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -71,11 +73,11 @@ const ActionBar = styled("div")(({ theme }) => ({
   marginLeft: "auto",
 }));
 
-const PageBody = styled("div")(({ theme }) => ({
+const PageBody = styled("div")({
   //marginLeft: '200px',
   display: "flex",
   flexDirection: "column",
-}));
+});
 
 const TitleSection = styled("section")(({ theme }) => ({
   display: "flex",
@@ -194,21 +196,28 @@ const PublisherInfo = styled(Typography)(({ theme }) => ({
   display: "flex",
   flexDirection: "column",
   alignItems: "flex-end",
-  gap: theme.spacing(0.5), 
+  gap: theme.spacing(0.5),
 }));
 
 const HeaderRow = styled("div")({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
+  paddingLeft: "16px",
+  paddingRight: "16px",
 });
 
-const StyledIconButton = styled(IconButton)({
-  marginRight: "16px",
-});
+const StyledInfoOutlined = styled(InfoRounded)(({ theme }) => ({
+  cursor: "pointer",
+  width: "15px",
+  height: "15px",
+  color: theme.palette.secondary.dark,
+}));
 
 const StyledTypography = styled(Typography)({
-  padding: "16px",
+  display: "flex",
+  alignItems: "center",
+  gap: "6px",
 });
 
 const StyledStack = styled(Stack)({
@@ -754,16 +763,25 @@ export const AppDetailPage = () => {
                     <HeaderRow>
                       <StyledTypography variant="h6">
                         Dependencies
+                        <Tooltip
+                          title={
+                            appInfo.project_type === "CODE"
+                              ? "Add/Remove dependencies using the Edit Icon"
+                              : "Add/Remove dependencies using the Variables Tab"
+                          }
+                        >
+                          <StyledInfoOutlined fontSize="small" />
+                        </Tooltip>
                       </StyledTypography>
 
                       {appInfo.project_type === "CODE" &&
                         permission === "author" && (
-                          <StyledIconButton
+                          <IconButton
                             onClick={() => setIsEditDependenciesModalOpen(true)}
                             data-testid="app-detail-edit-btn"
                           >
                             <Edit />
-                          </StyledIconButton>
+                          </IconButton>
                         )}
                     </HeaderRow>
 

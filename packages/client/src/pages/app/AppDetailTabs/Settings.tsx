@@ -37,7 +37,7 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
-const StyledBox = styled(Box)(({ theme }) => ({
+const StyledBox = styled(Box)({
   display: "flex",
   justifyContent: "space-between",
   alignItems: "flex-start",
@@ -45,21 +45,21 @@ const StyledBox = styled(Box)(({ theme }) => ({
   mb: 2,
   gap: 4,
   flexWrap: "nowrap",
-}));
+});
 
 const StyledContainer = styled(Box)(({ theme }) => ({
   padding: theme.spacing(2),
   width: "100%",
 }));
 
-const StyledReactor = styled(Box)(({ theme }) => ({
+const StyledReactor = styled(Box)({
   display: "flex",
   alignItems: "center",
   justifyContent: "space-between",
   mb: 2,
   flexWrap: "wrap",
   gap: 2,
-}));
+});
 // Root container
 const RootGrid = styled(Grid)(({ theme }) => ({
   marginBottom: theme.spacing(4),
@@ -99,13 +99,13 @@ const PublishTitle = styled(Typography)(({ theme }) => ({
 }));
 
 // Publish description
-const Description = styled(Typography)(({ theme }) => ({
+const Description = styled(Typography)({
   fontSize: "14px",
-}));
+});
 
-const PublishPortalDescription = styled(Typography)(({ theme }) => ({
+const PublishPortalDescription = styled(Typography)({
   marginBottom: "0.5px",
-}));
+});
 
 // Second column container
 const SecondColumnBox = styled(Box)(({ theme }) => ({
@@ -128,11 +128,11 @@ const SecondColumnHeader = styled(Box)(({ theme }) => ({
 }));
 
 // Custom text field
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)({
   "& .MuiOutlinedInput-root": {
     borderRadius: "8px",
   },
-}));
+});
 
 const SectionDivider = styled("hr")(({ theme }) => ({
   border: `1px solid ${theme.palette.secondary.divider}`,
@@ -141,26 +141,26 @@ const SectionDivider = styled("hr")(({ theme }) => ({
   marginBottom: theme.spacing(3),
 }));
 
-const Title = styled(Typography)(({ theme }) => ({
+const Title = styled(Typography)({
   fontSize: "20px",
-}));
+});
 
 const ReactorActions = styled(Box)(({ theme }) => ({
   display: "flex",
   gap: theme.spacing(2),
 }));
 
-const ActionBtnOutlined = styled(Button)(({ theme }) => ({
+const ActionBtnOutlined = styled(Button)({
   fontSize: "14px",
-}));
+});
 
-const LeftPane = styled(Box)(({ theme }) => ({
+const LeftPane = styled(Box)({
   width: 619,
-}));
+});
 
-const RightPane = styled(Box)(({ theme }) => ({
+const RightPane = styled(Box)({
   width: 518,
-}));
+});
 
 const UpdateText = styled(Typography)(({ theme }) => ({
   marginBottom: theme.spacing(2),
@@ -173,11 +173,11 @@ const UploadIcon = styled(OpenInBrowser)(({ theme }) => ({
   marginBottom: theme.spacing(1),
 }));
 
-const BrowseText = styled(Typography)(({ theme }) => ({
+const BrowseText = styled(Typography)({
   color: "theme.palette.primary.dark",
   fontWeight: 500,
   cursor: "pointer",
-}));
+});
 
 const SecondaryText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
@@ -287,7 +287,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        console.log(response,"response");
+        console.log(response, "response");
         const output: string[] = response.pixelReturn[0].output;
         const type: string = response.pixelReturn[0].operationType[0];
 
@@ -327,8 +327,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-       const output: string[] = response.pixelReturn[0].output;
-       const type: string = response.pixelReturn[0].operationType[0];
+        const output: string[] = response.pixelReturn[0].output;
+        const type: string = response.pixelReturn[0].operationType[0];
 
         if (type.indexOf("ERROR") > -1) {
           notification.add({
@@ -368,7 +368,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
       .runQuery(pixelString)
       .then((response) => {
         const output: string = response.pixelReturn[0].output;
-        const type: string = response.pixelReturn[0].operationType[0];    
+        const type: string = response.pixelReturn[0].operationType[0];
         if (type.indexOf("ERROR") > -1) {
           notification.add({
             color: "error",
@@ -492,7 +492,6 @@ export const SettingsTab = (props: AppSettingsProps) => {
     }
   });
 
-  console.log(portalReactors.reactors, test);
   return (
     <StyledContainer>
       {/* Access Section */}

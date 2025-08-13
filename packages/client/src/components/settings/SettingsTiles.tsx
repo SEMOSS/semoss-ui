@@ -53,11 +53,11 @@ const StyledWidth = () => ({
   width: "100%",
 });
 
-const StyledBlock = styled(Box)(({ theme }) => ({
+const StyledBlock = styled(Box)({
   display: "flex",
   alignItems: "flex-start",
   gap: "8px",
-}));
+});
 
 const StyledIcon = styled("span")(({ theme }) => ({
   color: theme.palette.secondary.dark,

@@ -58,12 +58,12 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
   border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledMemberLoading = styled("div")(({ theme }) => ({
+const StyledMemberLoading = styled("div")({
   position: "relative",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-}));
+});
 
 const StyledMemberTable = styled(Table)({
   backgroundColor: "white",
@@ -356,8 +356,8 @@ export const MembersTable = (props: MembersTableProps) => {
 
   useEffect(() => {
     if (allAuthorsResponse.status === "SUCCESS" && allAuthorsResponse.data) {
-        const data = allAuthorsResponse.data as AllAuthorsResponseData;
-        setAllAuthors(data.members);
+      const data = allAuthorsResponse.data as AllAuthorsResponseData;
+      setAllAuthors(data.members);
     } else {
       setAllAuthors([]);
     }
@@ -433,7 +433,7 @@ export const MembersTable = (props: MembersTableProps) => {
     try {
       // construct requests for post data
       const requests = members.map((m) => {
-        const json: JsonType  = {
+        const json: JsonType = {
           userid: m.id,
           permission: quickUpdate ? quickUpdate : "OWNER",
         };
@@ -447,9 +447,9 @@ export const MembersTable = (props: MembersTableProps) => {
         ) {
           // TODO: WE NEED CONSISTENCY, VERSUS HOW WE RECIEVE FROM BACKEND AND HOW WE SEND
           json.maxResponseTime = m.max_response_time;
-					json.usageRestriction = m.usage_restriction;
-					json.usageFrequency = m.usage_frequency;
-					json.maxTokens = m.max_tokens;
+          json.usageRestriction = m.usage_restriction;
+          json.usageFrequency = m.usage_frequency;
+          json.maxTokens = m.max_tokens;
         }
         return json;
       });
@@ -563,11 +563,16 @@ export const MembersTable = (props: MembersTableProps) => {
   const isLoading =
     getMembers.status === "INITIAL" || getMembers.status === "LOADING";
   const renderedMembers =
-    getMembers.status === "SUCCESS" ? (getMembers.data as GetMembersData).members : [];
+    getMembers.status === "SUCCESS"
+      ? (getMembers.data as GetMembersData).members
+      : [];
   const totalMembers =
-    getMembers.status === "SUCCESS" ? (getMembers.data as GetMembersData).totalMembers : 0;
+    getMembers.status === "SUCCESS"
+      ? (getMembers.data as GetMembersData).totalMembers
+      : 0;
   const hasMembers =
-    getMembers.status === "SUCCESS" && (getMembers.data as GetMembersData).totalMembers > 0;
+    getMembers.status === "SUCCESS" &&
+    (getMembers.data as GetMembersData).totalMembers > 0;
 
   /**
    * Sort Members
@@ -969,19 +974,30 @@ export const MembersTable = (props: MembersTableProps) => {
                               {type === "MODEL" && (
                                 <>
                                   <Table.Cell>
-                                    {(user as User)?.usage_restriction !== undefined
-                                      ? formatValue((user as User)?.usage_restriction)
+                                    {(user as User)?.usage_restriction !==
+                                    undefined
+                                      ? formatValue(
+                                          (user as User)?.usage_restriction
+                                        )
                                       : formatValue("null")}
                                   </Table.Cell>
                                   <Table.Cell>
-                                    {(user as User)?.usage_restriction === "compute" &&
-                                      `${(user as User)?.max_response_time?.toLocaleString()} ms`}
+                                    {(user as User)?.usage_restriction ===
+                                      "compute" &&
+                                      `${(
+                                        user as User
+                                      )?.max_response_time?.toLocaleString()} ms`}
 
-                                    {(user as User)?.usage_restriction === "token" &&
-                                      `${(user as User)?.max_tokens?.toLocaleString()}`}
+                                    {(user as User)?.usage_restriction ===
+                                      "token" &&
+                                      `${(
+                                        user as User
+                                      )?.max_tokens?.toLocaleString()}`}
                                   </Table.Cell>
                                   <Table.Cell>
-                                    {formatValue((user as User)?.usage_frequency)}
+                                    {formatValue(
+                                      (user as User)?.usage_frequency
+                                    )}
                                   </Table.Cell>
                                 </>
                               )}

@@ -49,28 +49,30 @@ const StyledContainer = styled(Box)(({ theme }) => ({
   justifyContent: "space-between",
   alignItems: "flex-start",
   padding: "10px",
+  margin: "24px",
   border: `1px solid ${theme.palette.secondary.main}`,
   borderRadius: "12px",
   bgcolor: "background.paper",
   width: "100%",
+  gap: "16px",
 }));
 
-const StyledOutline = styled(Box)(({ theme }) => ({
+const StyledOutline = styled(Box)({
   display: "flex",
   alignItems: "center",
   gap: "8px",
   marginBottom: "16px",
-}));
+});
 
-const StyledTypography = styled(Typography)(({ theme }) => ({
+const StyledTypography = styled(Typography)({
   color: "primary.main",
   fontSize: 16,
-}));
+});
 
-const StyledIcons = styled(Box)(({ theme }) => ({
+const StyledIcons = styled(Box)({
   display: "flex",
   alignItems: "center",
-}));
+});
 
 const StyledStatus = styled(Typography)(({ theme }) => ({
   fontSize: 12,
@@ -78,11 +80,11 @@ const StyledStatus = styled(Typography)(({ theme }) => ({
   color: theme.palette.secondary.dark,
 }));
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)({
   marginLeft: "8px",
   justifyContent: "space-between",
   width: "100%",
-}));
+});
 
 const RootStack = styled(Stack)(({ theme }) => ({
   width: "100%",
@@ -101,6 +103,12 @@ const StyledSecondaryText = styled(Typography)(({ theme }) => ({
   color: theme.palette.text.secondary,
 }));
 
+const StyledTypographyPrimary = styled(Typography)({
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+});
+
 export const Dependencies = ({
   dependencies,
 }: {
@@ -110,73 +118,77 @@ export const Dependencies = ({
     if (!word) return "";
     return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
   };
-
+  console.log(dependencies, "test");
   return (
     <RootStack spacing={2}>
-      {dependencies.map((dep) => {
-        const permissionKey = dep.userPermission || "NONE";
-        return (
-          <StyledContainer key={dep.id}>
-            <StyledBox>
-              <StyledOutline>
-                <img src={OPEN_AI} alt={dep.name} width={48} height={48} />
-                <Box>
-                  <StyledTypography variant="subtitle1">
-                    <Link href={`./#/engine/${dep.type}/${dep.id}`}>
-                      <StyledText variant="body2">{dep.name}</StyledText>
-                    </Link>
-                  </StyledTypography>
-                  <StyledIcons>
-                    {PERMISSION_ICONS[permissionKey]}
-                    <StyledStatus variant="subtitle1">
-                      {toCapitalized(dep.userPermission || "NONE")}
-                    </StyledStatus>
-                  </StyledIcons>
-                </Box>
-                <StyledStack direction="row" spacing={1}>
-                  <Stack direction="row" spacing={1}>
-                    {dep.isPublic && <Chip label="Public" />}
-                    {!dep.isPublic && dep.isDiscoverable && (
-                      <Chip label="Discoverable" />
-                    )}
-                    {!dep.isPublic && !dep.isDiscoverable && (
-                      <>
-                        <Chip label="Non-Discoverable" />
-                        <Chip label="Private" />
-                      </>
-                    )}
-                    <Chip label={toCapitalized(dep.type)} />
-                  </Stack>
-                  <EngineContext.Provider
-                    value={{
-                      type: dep.type as ENGINE_TYPES,
-                      name: dep.name,
-                      path: "", // Provide the correct path if available
-                      active: {
-                        id: dep.id,
-                        role: dep.userPermission as Role,
+      {dependencies.length === 0 ? (
+        <StyledTypographyPrimary variant="body1" color="text.secondary">
+          No Dependencies Found
+        </StyledTypographyPrimary>
+      ) : (
+        dependencies.map((dep) => {
+          const permissionKey = dep.userPermission || "NONE";
+          return (
+            <StyledContainer key={dep.id}>
+              <StyledBox>
+                <StyledOutline>
+                  <img src={OPEN_AI} alt={dep.name} width={48} height={48} />
+                  <Box>
+                    <StyledTypography variant="subtitle1">
+                      <Link href={`./#/engine/${dep.type}/${dep.id}`}>
+                        <StyledText variant="body2">{dep.name}</StyledText>
+                      </Link>
+                    </StyledTypography>
+                    <StyledIcons>
+                      {PERMISSION_ICONS[permissionKey]}
+                      <StyledStatus variant="subtitle1">
+                        {toCapitalized(dep.userPermission || "NONE")}
+                      </StyledStatus>
+                    </StyledIcons>
+                  </Box>
+                  <StyledStack direction="row" spacing={1}>
+                    <Stack direction="row" spacing={1}>
+                      {dep.isPublic && <Chip label="Public" />}
+                      {!dep.isPublic && dep.isDiscoverable && (
+                        <Chip label="Discoverable" />
+                      )}
+                      {!dep.isPublic && !dep.isDiscoverable && (
+                        <>
+                          <Chip label="Non-Discoverable" />
+                          <Chip label="Private" />
+                        </>
+                      )}
+                      <Chip label={toCapitalized(dep.type)} />
+                    </Stack>
+                    <EngineContext.Provider
+                      value={{
+                        type: dep.type as ENGINE_TYPES,
                         name: dep.name,
-                        metadata: {},
-                        refresh: () => {
-                          // no-op
+                        path: "",
+                        active: {
+                          id: dep.id,
+                          role: dep.userPermission as Role,
+                          name: dep.name,
+                          metadata: {},
+                          refresh: () => {},
                         },
-                      },
-                    }}
-                  >
-                    <EngineAccessButton fromApp={true} />
-                  </EngineContext.Provider>
-                </StyledStack>
-              </StyledOutline>
+                      }}
+                    >
+                      <EngineAccessButton fromApp={true} />
+                    </EngineContext.Provider>
+                  </StyledStack>
+                </StyledOutline>
 
-              <StyledSecondaryText variant="body2">
-                {dep.description && dep.description.trim() !== ""
-                  ? dep.description
-                  : "No Description Available"}
-              </StyledSecondaryText>
-            </StyledBox>
-          </StyledContainer>
-        );
-      })}
+                <StyledSecondaryText variant="body2">
+                  {dep.description && dep.description.trim() !== ""
+                    ? dep.description
+                    : "No Description Available"}
+                </StyledSecondaryText>
+              </StyledBox>
+            </StyledContainer>
+          );
+        })
+      )}
     </RootStack>
   );
 };

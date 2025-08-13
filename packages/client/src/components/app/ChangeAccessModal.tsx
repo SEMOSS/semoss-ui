@@ -133,7 +133,7 @@ const StyledBlockIcon = styled(BlockIcon)(({ theme }) => ({
 }));
 
 const StyledEditorIcon = styled(Edit)(({ theme }) => ({
-  color: theme.palette.text.secondary,
+  color: theme.palette.secondary.main,
   width: "0.75em",
   height: "0.75em",
 }));
@@ -145,7 +145,7 @@ const StyledReadonlyIcon = styled(Visibility)(({ theme }) => ({
 }));
 
 const StyledOwnerIcon = styled(PersonIcon)(({ theme }) => ({
-  color: theme.palette.text.secondary,
+  color: theme.palette.secondary.main,
   width: "0.75em",
   height: "0.75em",
 }));

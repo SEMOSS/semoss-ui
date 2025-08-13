@@ -30,13 +30,13 @@ import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
-const StyledMemberLoading = styled("div")(({ theme }) => ({
+const StyledMemberLoading = styled("div")({
   position: "relative",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   height: "160px",
-}));
+});
 
 const StyledMemberContent = styled("div")(({ theme }) => ({
   display: "flex",
@@ -68,12 +68,12 @@ const StyledTableRow = styled(Table.Row)(({ theme }) => ({
 
 const StyledMemberTable = styled(Table)({});
 
-const StyledTableTitleContainer = styled("div")(({ theme }) => ({
+const StyledTableTitleContainer = styled("div")({
   display: "flex",
   alignItems: "center",
   alignSelf: "stretch",
   backgroundColor: "white",
-}));
+});
 
 const StyledTableTitleDiv = styled("div")({
   display: "flex",
