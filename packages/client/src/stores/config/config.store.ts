@@ -3,8 +3,12 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { Env, runPixel } from "@semoss/sdk/react";
 import { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
-import { RootStore, WorkspaceConfigInterface, WorkspaceStore } from "@/stores";
-import { ALL_TYPES } from "@/types";
+import {
+	type RootStore,
+	type WorkspaceConfigInterface,
+	WorkspaceStore,
+} from "@/stores";
+import type { ALL_TYPES } from "@/types";
 
 interface ConfigStoreInterface {
 	/** Status of the application */

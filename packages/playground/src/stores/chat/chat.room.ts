@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { download, runPixel, upload } from "@semoss/sdk/react";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { Knowledge, PixelMessage, Tool } from "@/types";
+import type { Knowledge, PixelMessage, Tool } from "@/types";
 import { ChatMessage } from "./chat.message";
 
 const ROOT_MESSAGE_ID = "ROOT";

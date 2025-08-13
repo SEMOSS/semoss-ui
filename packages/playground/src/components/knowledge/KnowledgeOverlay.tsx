@@ -1,20 +1,21 @@
 import { AddRounded, Close } from "@mui/icons-material";
-import React, { useEffect, useRef, useState } from "react";
+import type React from "react";
+import { useEffect, useRef, useState } from "react";
 import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	CircularProgress,
 	IconButton,
-	MenuItem,
+	Menu,
 	Modal,
 	Stack,
 	TextField,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { Engine, Knowledge } from "@/types";
+import type { Engine, Knowledge } from "@/types";
 import { ExistingKnowledge } from "./ExistingKnowledge";
-import { NewKnowledge, NewKnowledgeData } from "./NewKnowledge";
+import { NewKnowledge, type NewKnowledgeData } from "./NewKnowledge";
 
 const EMBEDDING_MODEL = import.meta.env.VITE_EMBEDDING_MODEL || "";
 const ENABLE_NEW_KNOWLEDGE =
@@ -306,7 +307,7 @@ export const KnowledgeOverlay: React.FC<KnowledgeOverlayProps> = (props) => {
 							fullWidth
 						>
 							{ENABLE_NEW_KNOWLEDGE ? (
-								<MenuItem value={`new`}>
+								<Menu.Item value={`new`}>
 									<Stack
 										direction={"row"}
 										spacing={1}
@@ -317,11 +318,11 @@ export const KnowledgeOverlay: React.FC<KnowledgeOverlayProps> = (props) => {
 											New Knowledge Repository
 										</Typography>
 									</Stack>
-								</MenuItem>
+								</Menu.Item>
 							) : null}
 
 							{getEngines.data?.map((e) => (
-								<MenuItem
+								<Menu.Item
 									key={e.app_id}
 									value={`engine--${e.app_id}`}
 								>
@@ -333,7 +334,7 @@ export const KnowledgeOverlay: React.FC<KnowledgeOverlayProps> = (props) => {
 											{e.app_name}
 										</Typography>
 									</Stack>
-								</MenuItem>
+								</Menu.Item>
 							))}
 						</TextField>
 					</Stack>

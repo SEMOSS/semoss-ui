@@ -1,11 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/react-webpack5";
-
-import { Card } from "./index";
 import { Chip } from "../Chip/index";
+import { Card } from "./index";
 
 const meta: Meta<typeof Card> = {
-    title: "Components/Card/Card.Content",
-    component: Card.Content,
+	title: "Components/Card/Card.Content",
+	component: Card.Content,
 };
 
 export default meta;
@@ -13,15 +12,15 @@ export default meta;
 type Story = StoryObj<typeof Card>;
 
 export const Primary: Story = {
-    render: () => (
-        <Card.Content sx={{ marginTop: -2 }}>
-            <div>Card Content</div>
-            <Chip
-                label="Chip"
-                sx={{ marginTop: 1 }}
-                size="small"
-                clickable={true}
-            />
-        </Card.Content>
-    ),
+	render: () => (
+		<Card.Content sx={{ marginTop: -2 }}>
+			<div>Card Content</div>
+			<Chip
+				label="Chip"
+				sx={{ marginTop: 1 }}
+				size="small"
+				clickable={true}
+			/>
+		</Card.Content>
+	),
 };

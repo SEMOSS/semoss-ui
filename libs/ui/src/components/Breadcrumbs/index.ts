@@ -1,10 +1,10 @@
-import { Breadcrumbs, BreadcrumbsProps } from "./Breadcrumbs";
-import { Link, LinkProps } from "../Link";
+import { Link, type LinkProps } from "../Link";
+import { Breadcrumbs, type BreadcrumbsProps } from "./Breadcrumbs";
 
 export type { BreadcrumbsProps, LinkProps };
 
 const BreadCrumbsNameSpace = Object.assign(Breadcrumbs, {
-    Item: Link,
+	Item: Link,
 });
 
 export { BreadCrumbsNameSpace as Breadcrumbs };

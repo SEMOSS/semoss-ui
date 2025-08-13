@@ -65,6 +65,32 @@ interceptors.request = async (options) => {
 		}
 	}
 
+
+	// 		if (!CSRF.token) {
+	// 			const { response } = await get(
+	// 				`${Env.MODULE}/api/config/fetchCsrf`,
+	// 				{
+	// 					headers: {
+	// 						"X-CSRF-Token": "fetch",
+	// 					},
+	// 				},
+	// 			);
+
+	// 			CSRF.token =
+	// 				response.headers.get("X-CSRF-Token") ||
+	// 				response.headers.get("x-csrf-token") ||
+	// 				"";
+	// 		}
+
+	// 		if (options.headers) {
+	// 			options.headers = {
+	// 				...options.headers,
+	// 				"X-CSRF-Token": CSRF.token,
+	// 			};
+	// 		}
+	// 	}
+	// }
+
 	return options;
 };
 

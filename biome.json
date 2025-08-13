@@ -34,14 +34,18 @@
 	"linter": {
 		"enabled": true,
 		"rules": {
-			"recommended": false,
+			"recommended": true,
 			"complexity": {
 				"noUselessFragments": "error"
 			},
 			"correctness": {
 				"noUnusedVariables": "error",
 				"noUnusedImports": "error",
-				"useExhaustiveDependencies": "warn"
+				"useExhaustiveDependencies": {
+					"fix": "none",
+					"level": "warn",
+					"options": {}
+				}
 			},
 			"style": {
 				"useConst": "error"
