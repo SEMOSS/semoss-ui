@@ -22,7 +22,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { LoadingScreen } from "@/components/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { useEngine, usePixel, useRootStore } from "@/hooks";
 import { StorageExplorerItem } from "./StorageExplorerItem";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -77,6 +77,15 @@ type FileUploadForm = {
 export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 	const { id } = props;
 	const { monolithStore, configStore } = useRootStore();
+	const { active } = useEngine();
+
+	// get the properties
+	const { role } = active;
+
+	// Define role-based permissions
+	const canUpload = role === "OWNER" || role === "EDITOR";
+	const canDelete = role === "OWNER" || role === "EDITOR";
+
 	const [expandedPaths, setExpandedPaths] = useState<string[]>([]);
 	const [selectedFile, setSelectedFile] = useState<string>("");
 	const [openPopUp, setOpenPopUp] = useState<boolean>(false);
@@ -84,7 +93,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 	const [selected, setSelected] = useState<string[]>([]);
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const notification = useNotification();
-
 	const getStorageFiles = usePixel<string[]>(
 		`Storage(storage = "${id}") | ListStoragePath(storagePath='/');`,
 	);
@@ -146,7 +154,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
             `);
 
 			const { output } = response.pixelReturn[0];
-
 			if (output.size() === -1) {
 				notification.add({
 					color: "success",
@@ -254,7 +261,15 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					return;
 				}
 
-				console.log("Multiple files deleted:", pathsToDelete);
+				// Check if the response contains errors
+				if (response.errors && response.errors.length > 0) {
+					notification.add({
+						color: "error",
+						message: `Failed to delete files: ${response.errors[0]}`,
+					});
+					return;
+				}
+
 				pathsToDelete.forEach((path) => {
 					setExpandedPaths((prev) =>
 						prev.filter((p) => !p.startsWith(path)),
@@ -473,14 +488,16 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					>
 						<Refresh fontSize="inherit" />
 					</IconButton>
-					<Button
-						variant="outlined"
-						startIcon={<CloudUploadOutlined />}
-						onClick={() => setOpenPopUp(true)}
-						size="small"
-					>
-						Upload Files
-					</Button>
+					{canUpload && (
+						<Button
+							variant="outlined"
+							startIcon={<CloudUploadOutlined />}
+							onClick={() => setOpenPopUp(true)}
+							size="small"
+						>
+							Upload Files
+						</Button>
+					)}
 				</div>
 			</StyledHeader>
 
@@ -502,15 +519,17 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 							>
 								Download Selected
 							</Button>
-							<Button
-								variant="outlined"
-								color="error"
-								startIcon={<DeleteOutline />}
-								size="small"
-								onClick={() => setShowDeleteDialog(true)}
-							>
-								Delete Selected
-							</Button>
+							{canDelete && (
+								<Button
+									variant="outlined"
+									color="error"
+									startIcon={<DeleteOutline />}
+									size="small"
+									onClick={() => setShowDeleteDialog(true)}
+								>
+									Delete Selected
+								</Button>
+							)}
 						</>
 					)}
 				</StyledTreeHeader>
@@ -588,32 +607,33 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					Selected: {selectedFile}
 				</Typography>
 			)}
+			{canDelete && (
+				<Modal
+					open={showDeleteDialog}
+					onClose={() => setShowDeleteDialog(false)}
+				>
+					<Modal.Title>Confirm Delete</Modal.Title>
+					<Modal.Content>
+						<Typography variant="body1">
+							Are you sure you want to delete {selected.length}{" "}
+							selected item(s)? This action cannot be undone.
+						</Typography>
+					</Modal.Content>
+					<Modal.Actions>
+						<Button onClick={() => setShowDeleteDialog(false)}>
+							Cancel
+						</Button>
 
-			<Modal
-				open={showDeleteDialog}
-				onClose={() => setShowDeleteDialog(false)}
-			>
-				<Modal.Title>Confirm Delete</Modal.Title>
-				<Modal.Content>
-					<Typography variant="body1">
-						Are you sure you want to delete {selected.length}{" "}
-						selected item(s)? This action cannot be undone.
-					</Typography>
-				</Modal.Content>
-				<Modal.Actions>
-					<Button onClick={() => setShowDeleteDialog(false)}>
-						Cancel
-					</Button>
-					<Button
-						onClick={() => handleDelete()}
-						color="error"
-						variant="contained"
-					>
-						Delete
-					</Button>
-				</Modal.Actions>
-			</Modal>
-
+						<Button
+							onClick={() => handleDelete()}
+							color="error"
+							variant="contained"
+						>
+							Delete
+						</Button>
+					</Modal.Actions>
+				</Modal>
+			)}
 			<Modal
 				open={openPopUp}
 				onClose={() => setOpenPopUp(false)}
@@ -621,8 +641,8 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 			>
 				<Modal.Title>Upload Files</Modal.Title>
 				<form onSubmit={handleUpload}>
-					<Modal.Content>
-						<div style={{ maxHeight: 500, overflowY: "auto" }}>
+					<div style={{ maxHeight: 400, overflowY: "auto" }}>
+						<Modal.Content>
 							<Controller
 								name={"PROJECT_UPLOAD"}
 								control={control}
@@ -640,29 +660,29 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 									);
 								}}
 							/>
-						</div>
-					</Modal.Content>
-					<Modal.Actions>
-						<Button
-							variant={"outlined"}
-							disabled={isLoading}
-							onClick={() => setOpenPopUp(false)}
-						>
-							Close
-						</Button>
-						<Button
-							type="submit"
-							variant={"contained"}
-							disabled={isLoading}
-							startIcon={
-								isLoading ? (
-									<CircularProgress size="1em" />
-								) : null
-							}
-						>
-							Upload
-						</Button>
-					</Modal.Actions>
+						</Modal.Content>
+						<Modal.Actions>
+							<Button
+								variant={"outlined"}
+								disabled={isLoading}
+								onClick={() => setOpenPopUp(false)}
+							>
+								Close
+							</Button>
+							<Button
+								type="submit"
+								variant={"contained"}
+								disabled={isLoading}
+								startIcon={
+									isLoading ? (
+										<CircularProgress size="1em" />
+									) : null
+								}
+							>
+								Upload
+							</Button>
+						</Modal.Actions>
+					</div>
 				</form>
 				{isLoading && <LinearProgress />}
 			</Modal>
