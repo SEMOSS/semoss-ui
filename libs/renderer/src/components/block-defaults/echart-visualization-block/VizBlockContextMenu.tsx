@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { MenuItemTwo, MenuTwo } from "@semoss/ui";
+import { Menu} from "@semoss/ui";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
@@ -26,7 +26,7 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
 	({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
 		const { data } = useBlock<EchartVisualizationBlockDef>(id);
 		return (
-			<MenuTwo
+			<Menu
 				open={contextMenu !== null}
 				onClose={() => onClose()}
 				anchorReference="anchorPosition"
@@ -40,7 +40,7 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
 				}
 			>
 				{contextMenu && !data.contextMenu?.hideUnfilter ? (
-					<MenuItemTwo
+					<Menu.Item
 						dense={true}
 						value={"unfilter"}
 						onClick={() => {
@@ -49,10 +49,10 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
 						}}
 					>
 						Unfilter
-					</MenuItemTwo>
+					</Menu.Item>
 				) : null}
 				{contextMenu && !data.contextMenu?.hideFilter ? (
-					<MenuItemTwo
+					<Menu.Item
 						dense={true}
 						value={"filter"}
 						onClick={() => {
@@ -68,10 +68,10 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
 						{typeof contextMenu.value.value === "string"
 							? contextMenu.value.value
 							: JSON.stringify(contextMenu.value.value)}
-					</MenuItemTwo>
+					</Menu.Item>
 				) : null}
 				{contextMenu && !data.contextMenu?.hideExclude ? (
-					<MenuItemTwo
+					<Menu.Item
 						dense={true}
 						value={"filter"}
 						onClick={() => {
@@ -87,9 +87,9 @@ export const VizBlockContextMenu: React.FC<VizBlockContextMenuProps> = observer(
 						{typeof contextMenu.value.value === "string"
 							? contextMenu.value.value
 							: JSON.stringify(contextMenu.value.value)}
-					</MenuItemTwo>
+					</Menu.Item>
 				) : null}
-			</MenuTwo>
+			</Menu>
 		);
 	},
 );

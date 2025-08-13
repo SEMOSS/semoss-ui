@@ -41,7 +41,6 @@ import {
 	IconButton,
 	InputAdornment,
 	Menu,
-	MenuItem,
 	Stack,
 	styled,
 	TextField,
@@ -862,7 +861,7 @@ export const LayersPanel = observer(
 							},
 						}}
 					>
-						<MenuItem
+						<Menu.Item
 							value="duplicate"
 							sx={{ display: "flex" }}
 							onClick={(e: React.MouseEvent<HTMLElement>) =>
@@ -875,8 +874,8 @@ export const LayersPanel = observer(
 								style={{ marginRight: "8px" }}
 							/>{" "}
 							Duplicate
-						</MenuItem>
-						<MenuItem
+						</Menu.Item>
+						<Menu.Item
 							value="delete"
 							sx={{ display: "flex" }}
 							onClick={() => handleDelete(block.id)}
@@ -885,7 +884,7 @@ export const LayersPanel = observer(
 								style={{ color: "#757575", marginRight: "6px" }}
 							/>{" "}
 							Delete
-						</MenuItem>
+						</Menu.Item>
 					</Menu>
 				</>
 			);

@@ -188,8 +188,8 @@ const FilterListComponent = ({
 	return (
 		<List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
 			{multi && (
-				<ListItem key="select-all" onClick={handleToggle("Select All")}>
-					<ListItemIcon>
+				<List.Item key="select-all" onClick={handleToggle("Select All")}>
+					<List.Icon>
 						<Checkbox
 							edge="start"
 							checked={allChecked}
@@ -197,23 +197,23 @@ const FilterListComponent = ({
 							tabIndex={-1}
 							disableRipple
 						/>
-					</ListItemIcon>
-					<ListItemText primary="Select All" />
-				</ListItem>
+					</List.Icon>
+					<List.ItemText primary="Select All" />
+				</List.Item>
 			)}
 
 			{filteredOptions.map((option) => (
-				<ListItem key={option} onClick={handleToggle(option)}>
-					<ListItemIcon>
+				<List.Item key={option} onClick={handleToggle(option)}>
+					<List.Icon>
 						<Checkbox
 							edge="start"
 							checked={checked.includes(option)}
 							tabIndex={-1}
 							disableRipple
 						/>
-					</ListItemIcon>
-					<ListItemText primary={option} />
-				</ListItem>
+					</List.Icon>
+					<List.ItemText primary={option} />
+				</List.Item>
 			))}
 		</List>
 	);

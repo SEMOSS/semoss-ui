@@ -97,8 +97,8 @@ export interface SelectProps {
 	required?: boolean;
 
 	/**
-	 * If `true`, the label is displayed as required and the `input` element is required.
-	 * @default false
+	 * Props applied to the Select element within the TextField.
+	 * Useful for customizing dropdown behavior, appearance, etc.
 	 */
 	SelectProps?: MuiTextFieldProps["SelectProps"];
 
@@ -137,7 +137,48 @@ export interface SelectProps {
 
 export const Select: React.FC<SelectProps> = ({
 	variant = "outlined",
+	SelectProps,
 	...otherProps
 }) => {
-	return <MuiTextField variant={variant} select {...otherProps} />;
+	// Define default styles for the dropdown menu (MenuProps)
+	const defaultMenuProps = {
+		PaperProps: {
+			sx: {
+				// Apply maxHeight and make dropdown scrollable if it overflows
+				"& .MuiList-root": {
+					maxHeight: "240px",
+					overflowY: "auto",
+				},
+			},
+		},
+	};
+
+	// Merge default MenuProps with those passed when the Select component is used
+	// Deep merge PaperProps.sx to retain default scroll behavior along with custom styles
+	const mergedMenuProps = {
+		...defaultMenuProps,
+		...(SelectProps?.MenuProps || {}),
+		PaperProps: {
+			// Shallow merge other PaperProps
+			...defaultMenuProps.PaperProps,
+			...(SelectProps?.MenuProps?.PaperProps || {}),
+			// Deep merge for sx to preserve scroll styling
+			sx: {
+				...(defaultMenuProps.PaperProps.sx || {}),
+				...(SelectProps?.MenuProps?.PaperProps?.sx || {}),
+			},
+		},
+	};
+
+	return (
+		<MuiTextField
+			variant={variant}
+			select
+			SelectProps={{
+				...SelectProps,
+				MenuProps: mergedMenuProps,
+			}}
+			{...otherProps}
+		/>
+	);
 };

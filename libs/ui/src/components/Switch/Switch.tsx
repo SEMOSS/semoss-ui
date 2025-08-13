@@ -108,6 +108,10 @@ export interface SwitchProps {
 	 * @default 'medium'
 	 */
 	size?: "medium" | "small";
+    /**
+     * Props applied to the input element.
+     */
+    inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
 	/**
 	 * The value of the component. The DOM API casts this to a string.
 	 * The browser uses "on" as the default value.
@@ -118,6 +122,6 @@ export interface SwitchProps {
 }
 
 export const Switch = (props: SwitchProps) => {
-	const { sx, size = "medium" } = props;
-	return <StyledSwitch sx={sx} size={size} {...props} />;
+	const { sx, size = "medium", inputProps } = props;
+	return <StyledSwitch sx={sx} size={size} inputProps={inputProps} {...props} />;
 };
