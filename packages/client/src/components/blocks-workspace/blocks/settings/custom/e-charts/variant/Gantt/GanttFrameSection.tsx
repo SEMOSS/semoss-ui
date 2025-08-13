@@ -8,7 +8,7 @@ import {
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import { AutocompleteTwo, Button, Select, styled, TextField } from "@semoss/ui";
+import { Autocomplete, Button, Select, styled, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
 interface GanttFrameSectionProps {
@@ -241,7 +241,7 @@ export const GanttFrameSection = observer(
 		return (
 			<StyledMainContainer>
 				<StyledFrameSection>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						id="Echart-Frame"
 						multiple={false}

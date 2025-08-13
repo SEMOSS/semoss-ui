@@ -8,7 +8,7 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { MenuItem, Select, Stack, Typography } from "@semoss/ui";
+import { Menu, Select, Stack, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../../BaseSettingSection";
 import {
@@ -150,7 +150,7 @@ export const GridSettings = observer(
 					onChange={handleChange}
 				>
 					{gridLayouts.map((layout) => (
-						<MenuItem key={layout.value} value={layout.value}>
+						<Menu.Item key={layout.value} value={layout.value}>
 							<Stack
 								direction="row"
 								alignItems="center"
@@ -161,7 +161,7 @@ export const GridSettings = observer(
 									{`${layout.config.rows}x${layout.config.cols}`}
 								</Typography>
 							</Stack>
-						</MenuItem>
+						</Menu.Item>
 					))}
 				</Select>
 			</BaseSettingSection>

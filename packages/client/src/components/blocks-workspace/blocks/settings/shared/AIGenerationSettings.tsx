@@ -10,7 +10,7 @@ import {
 } from "@semoss/renderer";
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	Button,
 	Stack,
 	TextField,
@@ -238,10 +238,11 @@ export const AIGenerationSettings = observer(
 						shrink: true,
 					}}
 				/>
-				<AutocompleteTwo
+				<Autocomplete
 					disabled={!cfgLibraryModels.ids.length || responseLoading}
 					disableClearable
 					fullWidth
+                    multiple={false}
 					id="model-autocomplete"
 					loading={cfgLibraryModels.loading}
 					options={cfgLibraryModels.ids}

@@ -6,9 +6,7 @@ import {
 	Divider,
 	IconButton,
 	List,
-	ListItemIcon,
-	ListItemText,
-	MenuItem,
+	Menu,
 	Popover,
 	Stack,
 	styled,
@@ -77,7 +75,7 @@ export const BlocksMenuPanelFilterMenu = ({
 				<Divider orientation="horizontal" />
 				<List>
 					{Object.values(localCategoryMap).map((category) => (
-						<MenuItem
+						<Menu.Item
 							key={category.id}
 							value={category.id}
 							onClick={() =>
@@ -92,11 +90,11 @@ export const BlocksMenuPanelFilterMenu = ({
 								})
 							}
 						>
-							<ListItemIcon>
+							<List.Icon>
 								<Checkbox checked={category.enabled} />
-							</ListItemIcon>
-							<ListItemText primary={category.id} />
-						</MenuItem>
+							</List.Icon>
+							<List.ItemText primary={category.id} />
+						</Menu.Item>
 					))}
 				</List>
 				<Divider orientation="horizontal" />
