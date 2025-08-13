@@ -9,7 +9,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { AutocompleteTwo, TextField } from "@semoss/ui";
+import { Autocomplete, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { QuerySelectionSettings } from "../custom";
@@ -238,8 +238,9 @@ export const SelectOptionsSettings = observer(
 								key={`${d.label}-${i}`}
 								label={""}
 							>
-								<AutocompleteTwo
+								<Autocomplete
 									fullWidth
+                                    multiple={false}
 									value={parsedData[d.path]}
 									options={keys}
 									onChange={(_, newValue) => {

@@ -1,5 +1,5 @@
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	createFilterOptions,
 	Stack,
 	TextField,
@@ -14,15 +14,15 @@ export const JobTypesSendEmailBuilder = (props: {
 	const filter = createFilterOptions<string>();
 	return (
 		<Stack spacing={2} width="100%">
-			<AutocompleteTwo
+			<Autocomplete
 				value={(builder.tags as string[]) ?? []}
 				fullWidth
 				multiple
 				size="small"
 				onChange={(_, newValue) => {
-					setBuilderField("tags", newValue);
+					setBuilderField("tags", newValue.flat());
 				}}
-				filterOptions={(options, params) => {
+				filterOptions={(options: string[], params) => {
 					const filtered = filter(options, params);
 
 					const { inputValue } = params;
@@ -58,15 +58,15 @@ export const JobTypesSendEmailBuilder = (props: {
 				value={builder.subject}
 				onChange={(e) => setBuilderField("subject", e.target.value)}
 			/>
-			<AutocompleteTwo
+			<Autocomplete
 				value={(builder.to as string[]) ?? []}
 				fullWidth
 				multiple
 				size="small"
 				onChange={(_, newValue) => {
-					setBuilderField("to", newValue);
+					setBuilderField("to", newValue.flat());
 				}}
-				filterOptions={(options, params) => {
+				filterOptions={(options: string[], params) => {
 					const filtered = filter(options, params);
 
 					const { inputValue } = params;
@@ -84,15 +84,15 @@ export const JobTypesSendEmailBuilder = (props: {
 				freeSolo
 				renderInput={(params) => <TextField {...params} label="To" />}
 			/>
-			<AutocompleteTwo
+			<Autocomplete
 				value={(builder.cc as string[]) ?? []}
 				fullWidth
 				multiple
 				size="small"
 				onChange={(_, newValue) => {
-					setBuilderField("cc", newValue);
+					setBuilderField("cc", newValue.flat());
 				}}
-				filterOptions={(options, params) => {
+				filterOptions={(options: string[], params) => {
 					const filtered = filter(options, params);
 
 					const { inputValue } = params;
@@ -110,15 +110,15 @@ export const JobTypesSendEmailBuilder = (props: {
 				freeSolo
 				renderInput={(params) => <TextField {...params} label="CC" />}
 			/>
-			<AutocompleteTwo
+			<Autocomplete
 				value={(builder.bcc as string[]) ?? []}
 				fullWidth
 				multiple
 				size="small"
 				onChange={(_, newValue) => {
-					setBuilderField("bcc", newValue);
+					setBuilderField("bcc", newValue.flat());
 				}}
-				filterOptions={(options, params) => {
+				filterOptions={(options: string[], params) => {
 					const filtered = filter(options, params);
 
 					const { inputValue } = params;
