@@ -169,7 +169,7 @@ export const fetchMainUses = async (monolithStore: any, appId: string) => {
 
 export const fetchDependencies = async (monolithStore: any, appId: string) => {
 	const res = await monolithStore.runQuery(
-		`GetProjectDependencies(project="${appId}", details=[true])`,
+		`GetProjectDependencies(project="${appId}")`,
 	);
 
 	const type = res.pixelReturn[0].operationType;
