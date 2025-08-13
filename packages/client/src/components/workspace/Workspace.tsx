@@ -224,6 +224,8 @@ export const Workspace = observer((props: WorkspaceProps) => {
 		if (!model) return;
 
 		const isSettingsTab = action.data.tabNode === "settings";
+		const settingsTabWeight = model.getNodeById("settings-tabset").getAttr("weight");
+		const isSettingsSelected = settingsTabWeight !== 0;
 		const mainTabsetWeight = model
 			?.getNodeById("main-tabset")
 			?.getAttr("weight");
@@ -232,17 +234,18 @@ export const Workspace = observer((props: WorkspaceProps) => {
 			.getBorderSet()
 			.getBorders()
 			.forEach((border) => {
-				border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				border.setSelected(isSettingsTab && !isSettingsSelected ? -1 : border.getSelected());
 			});
 
 		if (isSettingsTab || mainTabsetWeight === 0) {
 			model.visitNodes((node) => {
 				if (node.getType() === "tabset") {
+					const settingsTabSet = node.getId() === "settings-tabset";
 					const newWeight =
-						(isSettingsTab && node.getId() === "settings-tabset") ||
+						(isSettingsTab && settingsTabSet && settingsTabWeight === 0) ||
 						(!isSettingsTab &&
 							mainTabsetWeight === 0 &&
-							node.getId() !== "settings-tabset")
+							!settingsTabSet) || (isSettingsTab && !settingsTabSet && isSettingsSelected)
 							? 100
 							: 0;
 					model.doAction(
