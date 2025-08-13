@@ -140,3 +140,30 @@ export type PathValue<
 		? PathValue<Idx<T, Key>, Rest>
 		: never
 	: Idx<T, P>;
+
+// Upload Project App types
+export interface UploadProjectAppOutput {
+	project_id: string;
+	engineIds: {
+		success: Record<
+			string,
+			{
+				engineType: string;
+				engineName: string;
+				files: Array<{
+					filename: string;
+					instances: number;
+				}>;
+			}
+		>;
+		failed: Record<
+			string,
+			{
+				files: Array<{
+					filename: string;
+					instances: number;
+				}>;
+			}
+		>;
+	};
+}

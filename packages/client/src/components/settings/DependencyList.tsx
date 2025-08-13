@@ -86,7 +86,7 @@ export const DependencyList = ({ id }: DependencyListProps) => {
 		}
 		try {
 			const engineTypeRoute = engineType.toLowerCase();
-			const enginePath = `/#/engine/${engineTypeRoute}/${encodeURIComponent(engineId)}`;
+			const enginePath = `#/engine/${engineTypeRoute}/${encodeURIComponent(engineId)}`;
 			window.open(enginePath, "_blank", "noopener,noreferrer");
 		} catch (_error) {
 			notification.add({
