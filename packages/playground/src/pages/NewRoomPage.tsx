@@ -1,8 +1,8 @@
 import {
 	ArrowForward,
 	ConstructionRounded,
+	MoreVertRounded,
 	SchoolRounded,
-	TuneRounded,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
@@ -135,8 +135,6 @@ export const NewRoomPage = observer(() => {
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 		autoExecute: false,
-		showUi: false,
-		chainOfThought: false,
 	});
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
@@ -209,7 +207,7 @@ export const NewRoomPage = observer(() => {
 							setIsMenuOpen(!isMenuOpen);
 						}}
 					>
-						<TuneRounded fontSize="small" />
+						<MoreVertRounded fontSize="small" />
 					</IconButton>
 				</Stack>
 			</Stack>

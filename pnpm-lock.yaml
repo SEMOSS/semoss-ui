@@ -556,6 +556,9 @@ importers:
       '@semoss/sdk':
         specifier: workspace:*
         version: link:../../libs/sdk
+      '@semoss/shared':
+        specifier: workspace:*
+        version: link:../../libs/shared
       '@semoss/ui':
         specifier: workspace:*
         version: link:../../libs/ui

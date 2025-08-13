@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { FlexLayout, Layout } from "@semoss/shared";
+import { FlexLayout } from "@semoss/shared";
 import {
 	Breadcrumbs,
 	IconButton,
@@ -306,7 +306,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 					<StyledSpacer>
 						{workspace.model ? (
 							<>
-								<Layout
+								<FlexLayout.Layout
 									ref={layoutRef}
 									model={workspace.model}
 									factory={(node) => {

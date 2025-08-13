@@ -41,22 +41,7 @@ export const OptionsMenu: React.FC<OptionsMenuProps> = observer((props) => {
 	const [isToolsOpen, setIsToolsOpen] = useState(false);
 
 	return (
-		<RightMenu
-			mode={"fixed"}
-			header={
-				<Typography
-					variant={"body1"}
-					fontWeight={"bold"}
-					noWrap={true}
-					sx={{
-						flex: 1,
-					}}
-				>
-					Chat Controls
-				</Typography>
-			}
-			onClose={() => onClose()}
-		>
+		<RightMenu header={"Chat Controls"} onClose={() => onClose()}>
 			<Stack direction={"column"} width={"100%"} spacing={1}>
 				<Typography variant="body1">Instructions</Typography>
 				<StyledTextField

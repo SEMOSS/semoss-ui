@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { download, runPixel, upload } from "@semoss/sdk/react";
+import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import type { Knowledge, PixelMessage, Tool } from "@/types";
 import {
@@ -84,16 +85,6 @@ interface RoomStoreInterface {
 		 * Whether to auto execute functions or not
 		 */
 		autoExecute: boolean;
-
-		/*
-		 * Whether to show UI artifacts or not
-		 */
-		showUi: boolean;
-
-		/*
-		 * Whether to tell LLM to show thought process in steps
-		 */
-		chainOfThought: boolean;
 	};
 
 	/**
@@ -103,18 +94,18 @@ interface RoomStoreInterface {
 		/** Track if the sidebar is open */
 		isOpen: boolean;
 
-		/** Options to pass into the sidbear */
-		options:
-			| {
-					type: "CONTROLS";
-			  }
-			| {
-					type: "APP";
-					messageId: string;
-					toolName: string;
-					toolId: string;
-					toolParameters: Record<string, unknown>;
-			  };
+		/** type of sidebar to open */
+		type: "OPTIONS" | "ARTIFACTS";
+	};
+
+	/**
+	 * Artifact information
+	 **/
+	artifact: {
+		/**
+		 * FlexLayout model
+		 */
+		model: FlexLayout.Model | null;
 	};
 }
 
@@ -140,12 +131,21 @@ export class RoomStore {
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 			autoExecute: false,
-			showUi: false,
-			chainOfThought: false,
 		},
 		sidebar: {
 			isOpen: false,
-			options: { type: "CONTROLS" },
+			type: "OPTIONS",
+		},
+		artifact: {
+			model: FlexLayout.Model.fromJson({
+				global: {},
+				borders: [],
+				layout: {
+					type: "row",
+					weight: 0,
+					children: [],
+				},
+			}),
 		},
 	};
 
@@ -221,10 +221,17 @@ export class RoomStore {
 	}
 
 	/**
-	 * Get the sidbar information
+	 * Get the sidebar information
 	 */
 	get sidebar() {
 		return this._store.sidebar;
+	}
+
+	/**
+	 * Get the artifact information
+	 */
+	get artifact() {
+		return this._store.artifact;
 	}
 
 	/** Setters */
@@ -724,10 +731,10 @@ paramValues=[${JSON.stringify({
 	 * @param options - options to pass in
 	 */
 	openSidebar = async (
-		options: RoomStoreInterface["sidebar"]["options"],
+		type: RoomStoreInterface["sidebar"]["type"],
 	): Promise<void> => {
 		this._store.sidebar.isOpen = true;
-		this._store.sidebar.options = options;
+		this._store.sidebar.type = type;
 	};
 
 	/**

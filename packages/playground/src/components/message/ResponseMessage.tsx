@@ -1,5 +1,4 @@
 import {
-	AppsRounded,
 	ChevronLeftOutlined,
 	ChevronRightOutlined,
 	CopyAllOutlined,
@@ -20,25 +19,11 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
+import { ResponseMessageTool } from "./ResponseMessageTool";
 
 const StyledAgentResponse = styled(Stack)(({ theme }) => ({
 	paddingLeft: theme.spacing(2),
 	paddingRight: theme.spacing(2),
-}));
-
-const StyledSidebarOpen = styled(Stack, {
-	shouldForwardProp: (prop) => prop !== "isSelected",
-})<{
-	isSelected: boolean;
-}>(({ theme, isSelected }) => ({
-	padding: theme.spacing(1),
-	borderRadius: theme.shape.borderRadiusLg,
-	borderWidth: "1px",
-	borderStyle: "solid",
-	borderColor: isSelected
-		? theme.palette.primary.main
-		: theme.palette.secondary.border,
-	cursor: "pointer",
 }));
 
 const StyledHover = styled("div")(() => ({
@@ -141,50 +126,12 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
 
 				{message.tools.map((t) => (
-					<StyledSidebarOpen
+					<ResponseMessageTool
 						key={t.id}
-						isSelected={
-							room.sidebar.isOpen &&
-							room.sidebar.options.type === "APP" &&
-							room.sidebar.options.messageId === message.id
-						}
-						direction={"row"}
-						alignItems={"center"}
-						spacing={2}
-						onClick={() => {
-							// toggle open / closed based on the state
-							if (
-								room.sidebar.isOpen &&
-								room.sidebar.options.type === "APP" &&
-								room.sidebar.options.messageId === message.id
-							) {
-								room.closeSidebar();
-							} else {
-								room.openSidebar({
-									type: "APP",
-									messageId: message.id,
-									toolName: t.name,
-									toolId: t.id,
-									toolParameters: t.parameters,
-								});
-							}
-						}}
-					>
-						<AppsRounded fontSize="medium" />
-						<Stack direction={"column"} spacing={1} flex={1}>
-							<Typography
-								variant="subtitle2"
-								sx={{
-									textOverflow: "ellipsis",
-								}}
-							>
-								{t.name}
-							</Typography>
-							<Typography variant="caption">
-								Click to Open
-							</Typography>
-						</Stack>
-					</StyledSidebarOpen>
+						room={room}
+						message={message}
+						tool={t}
+					/>
 				))}
 
 				{message.sources.length > 0 ? (

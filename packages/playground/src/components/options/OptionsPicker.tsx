@@ -166,20 +166,6 @@ export const OptionsPicker: React.FC<OptionsPickerProps> = observer((props) => {
 						step={0.01}
 						marks={marks}
 					/>
-					{/* <FormControlLabel
-                            control={
-                                <Checkbox
-                                    checked={options.showUi}
-                                    onChange={(e, val) =>
-                                        setOptions({
-                                            ...options,
-                                            showUi: !options.showUi,
-                                        })
-                                    }
-                                />
-                            }
-                            label="Show UI"
-                        /> */}
 				</StyledPopoverContent>
 			</StyledPopover>
 		</>

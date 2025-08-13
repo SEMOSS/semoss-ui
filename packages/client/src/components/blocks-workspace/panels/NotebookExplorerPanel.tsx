@@ -21,7 +21,7 @@ import { NotebookExplorerItem } from "./NotebookExplorerPanelItem";
 interface NotebookExplorerPanelProps {
 	title: string;
 	/** Current layoutobject */
-	layout: Layout;
+	layout: FlexLayout.Layout;
 }
 const StyledTitle = styled("div")(({ theme }) => ({
 	borderRadius: "16px",

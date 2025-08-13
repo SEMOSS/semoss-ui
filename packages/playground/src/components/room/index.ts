@@ -1,3 +1,3 @@
-export * from "./RoomApp";
-export * from "./RoomControls";
+export * from "./RoomArtifact";
 export * from "./RoomInput";
+export * from "./RoomMessage";
