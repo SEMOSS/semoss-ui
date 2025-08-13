@@ -89,6 +89,8 @@ const StyledStack = styled(Stack)({
 const RootStack = styled(Stack)(({ theme }) => ({
   width: "100%",
   padding: theme.spacing(2),
+  paddingTop: "8px",
+  marginTop: "0px",
 }));
 
 const StyledBox = styled(Box)({
