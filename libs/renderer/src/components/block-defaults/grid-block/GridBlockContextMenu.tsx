@@ -1,4 +1,4 @@
-import { Menu, MenuItem } from "@mui/material";
+import { Menu } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { GridBlockDef } from "./GridBlock";
@@ -48,7 +48,7 @@ export const GridBlockContextMenu: React.FC<GridBlockContextMenuProps> =
 					}
 				>
 					{contextMenu && !data.contextMenu?.hideUnfilter ? (
-						<MenuItem
+						<Menu.Item
 							dense={true}
 							value={"unfilter"}
 							onClick={() => {
@@ -57,10 +57,10 @@ export const GridBlockContextMenu: React.FC<GridBlockContextMenuProps> =
 							}}
 						>
 							Unfilter
-						</MenuItem>
+						</Menu.Item>
 					) : null}
 					{contextMenu && !data.contextMenu?.hideFilter ? (
-						<MenuItem
+						<Menu.Item
 							dense={true}
 							value={"filter"}
 							onClick={() => {
@@ -76,7 +76,7 @@ export const GridBlockContextMenu: React.FC<GridBlockContextMenuProps> =
 							{typeof contextMenu.value === "string"
 								? contextMenu.value
 								: JSON.stringify(contextMenu.value)}
-						</MenuItem>
+						</Menu.Item>
 					) : null}
 				</Menu>
 			);

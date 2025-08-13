@@ -2,7 +2,7 @@ import { Close } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	Button,
 	IconButton,
 	Modal,
@@ -353,7 +353,8 @@ export const JobBuilderModal = (props: {
 							Custom
 						</ToggleButton>
 					</ToggleButtonGroup>
-					<AutocompleteTwo
+					<Autocomplete
+                        multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>

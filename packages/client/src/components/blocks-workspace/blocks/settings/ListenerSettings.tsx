@@ -22,7 +22,7 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	BoxTwo,
+	Box,
 	Button,
 	IconButton,
 	Link,
@@ -216,7 +216,7 @@ export const ListenerSettings = observer(
 			};
 
 			return (
-				<BoxTwo
+				<Box
 					key={`action-${id}`}
 					ref={setNodeRef}
 					{...attributes}
@@ -224,7 +224,7 @@ export const ListenerSettings = observer(
 					sx={style}
 				>
 					{children}
-				</BoxTwo>
+				</Box>
 			);
 		};
 

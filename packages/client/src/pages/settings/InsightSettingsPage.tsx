@@ -6,7 +6,7 @@ import React, { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Grid,
-	MenuItem,
+	Menu,
 	Search,
 	Select,
 	styled,
@@ -147,7 +147,7 @@ export const InsightSettingsPage = () => {
 					value={sort}
 					onChange={(e) => setSort(e.target.value)}
 				>
-					<MenuItem value="name">Name</MenuItem>
+					<Menu.Item value="name">Name</Menu.Item>
 				</StyledSort>
 
 				<ToggleButtonGroup size={"small"} value={view}>

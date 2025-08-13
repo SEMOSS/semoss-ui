@@ -4,7 +4,7 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Droppable } from "react-beautiful-dnd";
 import {
 	type BlockDef,
@@ -14,10 +14,10 @@ import {
 	useFrameHeaders,
 } from "@semoss/renderer";
 import {
-	AutocompleteTwo,
-	MenuItem,
-	PopoverTwo,
-	SwitchTwo,
+	Autocomplete,
+	Menu,
+	Popover,
+	Switch,
 	styled,
 	TextField,
 } from "@semoss/ui";
@@ -77,8 +77,10 @@ const StyledLabelSection = styled("div")(() => ({
 const StyledSwitchSection = styled("div")(() => ({
 	display: "flex",
 	marginTop: "15px",
-	marginLeft: "8px",
+	marginLeft: "10px",
 	width: "100%",
+    alignItems: 'center',
+    gap: '8px',
 }));
 //styled label for the constants
 const StyledSpanSwitch = styled("span")(() => ({
@@ -371,7 +373,7 @@ export const DataTabStyling = observer(
 			<StyledMain>
 				<StyledSpanFrame>Selected Frame</StyledSpanFrame>
 				<StyledSubSection>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						id="Echart-Frame"
 						multiple={false}
@@ -400,7 +402,7 @@ export const DataTabStyling = observer(
 				<StyledSubSection
 					onClick={(e: any) => handleChangeVisual(initialVisual, e)}
 				>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						id="Echart-Visuals"
 						multiple={false}
@@ -658,27 +660,29 @@ export const DataTabStyling = observer(
 					</StyledDroppable>
 				))}
 				<StyledSwitchSection>
-					<SwitchTwo
+					<Switch
 						checked={checkedInstruction}
-						onChange={(event) =>
+						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
 							setCheckedInstruction(event.target.checked)
 						}
+                        size='small'
 						inputProps={{ "aria-label": "controlled" }}
 					/>
 					<StyledSpanSwitch>Show All Instruction</StyledSpanSwitch>
 				</StyledSwitchSection>
 				<StyledSwitchSection>
-					<SwitchTwo
+					<Switch
 						checked={checkedVisual}
-						onChange={(event) =>
+						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
 							setCheckedVisual(event.target.checked)
 						}
+                        size='small'
 						inputProps={{ "aria-label": "controlled" }}
 					/>
 					<StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>
 				</StyledSwitchSection>
 				<div>
-					<PopoverTwo
+					<Popover
 						id={"visual-popover"}
 						open={initialVisual}
 						onClose={() => {
@@ -695,10 +699,10 @@ export const DataTabStyling = observer(
 							selectedItem={handleSelectedItem}
 							handleClose={handleCloseVisual}
 						/>
-					</PopoverTwo>
+					</Popover>
 				</div>
 				<div>
-					<PopoverTwo
+					<Popover
 						id={"instruction-popover"}
 						open={Boolean(aggregateMenuAnchorEl)}
 						onClose={() => {
@@ -742,7 +746,7 @@ export const DataTabStyling = observer(
 									)
 								: aggregateOptions
 							).map((key) => (
-								<MenuItem
+								<Menu.Item
 									key={key}
 									value={key}
 									onClick={() => {
@@ -753,10 +757,10 @@ export const DataTabStyling = observer(
 									}}
 								>
 									{key}
-								</MenuItem>
+								</Menu.Item>
 							))}
 						</div>
-					</PopoverTwo>
+					</Popover>
 				</div>
 			</StyledMain>
 		);

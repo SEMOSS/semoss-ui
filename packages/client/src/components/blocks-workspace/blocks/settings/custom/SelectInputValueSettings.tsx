@@ -10,7 +10,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { AutocompleteTwo, TextField } from "@semoss/ui";
+import { Autocomplete, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -148,7 +148,7 @@ export const SelectInputValueSettings = observer(
 
 		return (
 			<BaseSettingSection label="Value">
-				<AutocompleteTwo
+				<Autocomplete
 					fullWidth
 					multiple={multipleple as boolean}
 					options={stringifiedOptions}
