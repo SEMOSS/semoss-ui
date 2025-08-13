@@ -8,7 +8,7 @@ import UpdateIcon from "@mui/icons-material/Update";
 import { IconButton } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
   Box,
@@ -520,7 +520,6 @@ export const AppDetailPage = () => {
 
           return;
         }
-        console.log(imageMeta, "test");
         // upload the image
         if (
           ((Array.isArray(imageMeta) && imageMeta[0] instanceof File) ||
@@ -573,8 +572,7 @@ export const AppDetailPage = () => {
         <InnerContainer>
           <Breadcrumbs separator="/">
             <Breadcrumbs.Item
-              as={Link}
-              to={`../../..`}
+              href={`../../..`}
               underline="none"
               color="inherit"
               variant="body1"
@@ -582,8 +580,7 @@ export const AppDetailPage = () => {
               App Catalog
             </Breadcrumbs.Item>
             <Breadcrumbs.Item
-              as={Link}
-              to={`.`}
+              href={`.`}
               underline="none"
               color="text.disabled"
               variant="body1"
@@ -697,9 +694,9 @@ export const AppDetailPage = () => {
               <TagsDescription variant="body1">
                 {tags ? (
                   <TagsBodyWrapper>
-                    {tags.map((tag, idx) => (
+                    {tags.map((tag) => (
                       <Chip
-                        key={`tag-${tag}-${idx}`}
+                        key={`tag-${tag}-${tag}`}
                         label={tag}
                         variant="outlined"
                       />

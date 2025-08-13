@@ -113,10 +113,10 @@ export const Dependencies = ({
 
   return (
     <RootStack spacing={2}>
-      {dependencies.map((dep, idx) => {
+      {dependencies.map((dep) => {
         const permissionKey = dep.userPermission || "NONE";
         return (
-          <StyledContainer key={idx}>
+          <StyledContainer key={dep.id}>
             <StyledBox>
               <StyledOutline>
                 <img src={OPEN_AI} alt={dep.name} width={48} height={48} />

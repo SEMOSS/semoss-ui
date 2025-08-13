@@ -287,11 +287,9 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output;
-        let type;
-
-        output = response.pixelReturn[0].output;
-        type = response.pixelReturn[0].operationType[0];
+        console.log(response,"response");
+        const output: string[] = response.pixelReturn[0].output;
+        const type: string = response.pixelReturn[0].operationType[0];
 
         if (type.indexOf("ERROR") > -1) {
           notification.add({
@@ -329,11 +327,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output;
-        let type;
-
-        output = response.pixelReturn[0].output;
-        type = response.pixelReturn[0].operationType[0];
+       const output: string[] = response.pixelReturn[0].output;
+       const type: string = response.pixelReturn[0].operationType[0];
 
         if (type.indexOf("ERROR") > -1) {
           notification.add({
@@ -369,16 +364,11 @@ export const SettingsTab = (props: AppSettingsProps) => {
    */
   const publish = () => {
     const pixelString = `PublishProject(project='${id}', release=true);`;
-
     monolithStore
       .runQuery(pixelString)
       .then((response) => {
-        let output;
-        let type;
-
-        output = response.pixelReturn[0].output;
-        type = response.pixelReturn[0].operationType[0];
-
+        const output: string = response.pixelReturn[0].output;
+        const type: string = response.pixelReturn[0].operationType[0];    
         if (type.indexOf("ERROR") > -1) {
           notification.add({
             color: "error",
@@ -501,6 +491,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
       setIsLoading(false);
     }
   });
+
+  console.log(portalReactors.reactors, test);
   return (
     <StyledContainer>
       {/* Access Section */}
@@ -625,8 +617,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
       {portalReactors.reactors.length > 0 ? (
         <StyledTable>
           <Table.Body>
-            {portalReactors.reactors.map((reactor, i) => (
-              <Table.Row key={reactor + i}>
+            {portalReactors.reactors.map((reactor) => (
+              <Table.Row key={`reactor-${reactor}`}>
                 <Table.Cell>{reactor}</Table.Cell>
                 <Table.Cell align="right">
                   <Java />

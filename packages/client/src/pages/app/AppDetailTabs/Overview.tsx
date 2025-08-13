@@ -7,10 +7,10 @@ import View from "../../../assets/img/ViewIcon.png";
 
 // Statistics configuration
 const stats = [
-  { icon: View, label: "Views", value: "100" },
-  { icon: Download, label: "Downloads", value: "45" },
-  { icon: Apps, label: "Apps", value: "10" },
-  { icon: Usability, label: "Usability", value: "9.5/10" },
+  { id: 1, icon: View, label: "Views", value: "100" },
+  { id: 2, icon: Download, label: "Downloads", value: "45" },
+  { id: 3, icon: Apps, label: "Apps", value: "10" },
+  { id: 4, icon: Usability, label: "Usability", value: "9.5/10" },
 ];
 
 // Similar Apps Data Placeholder
@@ -99,8 +99,8 @@ export const Overview = ({ appInfo }: OverviewProps) => {
       </SectionTitle>
 
       <Grid container spacing={2} mb={4}>
-        {stats.map((stat, index) => (
-          <Grid item xs={12} sm={6} md={3} key={index}>
+        {stats.map((stat) => (
+          <Grid item xs={12} sm={6} md={3} key={stat.id}>
             <StatCard>
               <img
                 src={stat.icon}

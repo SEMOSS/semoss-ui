@@ -225,6 +225,24 @@ interface User {
   max_response_time?: number;
 }
 
+interface AllAuthorsResponseData {
+  members: SETTINGS_PROVISIONED_USER[];
+}
+
+interface GetMembersData {
+  members: SETTINGS_PROVISIONED_USER[];
+  totalMembers: number;
+}
+
+interface JsonType {
+  userid: string;
+  permission: string;
+  maxResponseTime?: number;
+  usageRestriction?: string;
+  usageFrequency?: string;
+  maxTokens?: number;
+}
+
 export const MembersTable = (props: MembersTableProps) => {
   const { id, type, onChange = () => null } = props;
 
@@ -323,22 +341,23 @@ export const MembersTable = (props: MembersTableProps) => {
 
   // Update userDetails to AUTHOR if ADMIN
   const getMembers = useAPI(getMembersApi);
-  const userDetails = !adminMode
-    ? useAPI(getUserDataApi)
-    : {
+  const userDetailsResponse = useAPI(getUserDataApi);
+  const userDetails = adminMode
+    ? {
         data: {
           permission: "OWNER",
         },
         status: "SUCCESS",
         refresh: () => null,
-      };
-
+      }
+    : userDetailsResponse;
   const allAuthorsResponse = useAPI(getAllAuthorsApi);
   const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>([]);
 
   useEffect(() => {
     if (allAuthorsResponse.status === "SUCCESS" && allAuthorsResponse.data) {
-      setAllAuthors(allAuthorsResponse.data.members);
+        const data = allAuthorsResponse.data as AllAuthorsResponseData;
+        setAllAuthors(data.members);
     } else {
       setAllAuthors([]);
     }
@@ -414,7 +433,7 @@ export const MembersTable = (props: MembersTableProps) => {
     try {
       // construct requests for post data
       const requests = members.map((m) => {
-        const json = {
+        const json: JsonType  = {
           userid: m.id,
           permission: quickUpdate ? quickUpdate : "OWNER",
         };
@@ -428,9 +447,9 @@ export const MembersTable = (props: MembersTableProps) => {
         ) {
           // TODO: WE NEED CONSISTENCY, VERSUS HOW WE RECIEVE FROM BACKEND AND HOW WE SEND
           json.maxResponseTime = m.max_response_time;
-          json.usageRestriction = m.usage_restriction;
-          json.usageFrequency = m.usage_frequency;
-          json.maxTokens = m.max_tokens;
+					json.usageRestriction = m.usage_restriction;
+					json.usageFrequency = m.usage_frequency;
+					json.maxTokens = m.max_tokens;
         }
         return json;
       });
@@ -544,11 +563,11 @@ export const MembersTable = (props: MembersTableProps) => {
   const isLoading =
     getMembers.status === "INITIAL" || getMembers.status === "LOADING";
   const renderedMembers =
-    getMembers.status === "SUCCESS" ? getMembers.data.members : [];
+    getMembers.status === "SUCCESS" ? (getMembers.data as GetMembersData).members : [];
   const totalMembers =
-    getMembers.status === "SUCCESS" ? getMembers.data.totalMembers : 0;
+    getMembers.status === "SUCCESS" ? (getMembers.data as GetMembersData).totalMembers : 0;
   const hasMembers =
-    getMembers.status === "SUCCESS" && getMembers.data.totalMembers > 0;
+    getMembers.status === "SUCCESS" && (getMembers.data as GetMembersData).totalMembers > 0;
 
   /**
    * Sort Members
@@ -737,8 +756,8 @@ export const MembersTable = (props: MembersTableProps) => {
             <StyledMemberLoading>
               <StyledMemberTable>
                 <Table.Body>
-                  {[...Array(rowsPerPage)].map((_, idx) => (
-                    <Table.Row key={idx}>
+                  {[...Array(rowsPerPage)].map((item) => (
+                    <Table.Row key={item}>
                       <Table.Cell size="medium" padding="checkbox">
                         <Skeleton
                           variant="rectangular"
@@ -950,19 +969,19 @@ export const MembersTable = (props: MembersTableProps) => {
                               {type === "MODEL" && (
                                 <>
                                   <Table.Cell>
-                                    {user.usage_restriction !== undefined
-                                      ? formatValue(user.usage_restriction)
+                                    {(user as User)?.usage_restriction !== undefined
+                                      ? formatValue((user as User)?.usage_restriction)
                                       : formatValue("null")}
                                   </Table.Cell>
                                   <Table.Cell>
-                                    {user?.usage_restriction === "compute" &&
-                                      `${user.max_response_time?.toLocaleString()} ms`}
+                                    {(user as User)?.usage_restriction === "compute" &&
+                                      `${(user as User)?.max_response_time?.toLocaleString()} ms`}
 
-                                    {user?.usage_restriction === "token" &&
-                                      `${user.max_tokens?.toLocaleString()}`}
+                                    {(user as User)?.usage_restriction === "token" &&
+                                      `${(user as User)?.max_tokens?.toLocaleString()}`}
                                   </Table.Cell>
                                   <Table.Cell>
-                                    {formatValue(user.usage_frequency)}
+                                    {formatValue((user as User)?.usage_frequency)}
                                   </Table.Cell>
                                 </>
                               )}

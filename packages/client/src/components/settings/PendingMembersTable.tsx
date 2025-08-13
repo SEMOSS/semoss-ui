@@ -581,11 +581,11 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                       </StyledTableRow>
                     </Table.Head>
                     <Table.Body>
-                      {renderedMembers.map((member, i) => {
+                      {renderedMembers.map((member) => {
                         const isSelected = !!selectedMembers[member.ID];
 
                         return (
-                          <StyledTableRow key={i}>
+                          <StyledTableRow key={member.ID}>
                             <Table.Cell>
                               <Checkbox
                                 checked={isSelected}

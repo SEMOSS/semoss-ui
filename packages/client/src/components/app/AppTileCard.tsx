@@ -176,7 +176,7 @@ const StyledCardContent = styled(Card.Content)({
 
 const StyledTagChip = styled(Chip, {
   shouldForwardProp: (prop) => prop !== "maxWidth",
-})<{ maxWidth?: string }>(({ theme, maxWidth = "200px" }) => ({
+})<{ maxWidth?: string }>(({ maxWidth = "200px" }) => ({
   maxWidth: maxWidth,
   textOverflow: "ellipsis",
   height: "24px",

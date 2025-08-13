@@ -573,8 +573,8 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
             </StyledButtonBox>
             <CardContentOuterBox>
               <Stack spacing={2}>
-                {dependencies.map((dep, idx) => (
-                  <CardSubContentOuterBox key={idx}>
+                {dependencies.map((dep) => (
+                  <CardSubContentOuterBox key={dep.id}>
                     {/* Left side: Icon, Name, Tags, Description */}
                     <CardContentInnerBox>
                       <Container>
