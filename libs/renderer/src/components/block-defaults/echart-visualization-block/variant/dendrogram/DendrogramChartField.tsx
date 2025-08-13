@@ -3,7 +3,7 @@ import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { IconButton, MenuItem, Select, styled } from "@semoss/ui";
+import { IconButton, Menu, Select, styled } from "@semoss/ui";
 import { getValueByPath } from "@/utility";
 import { useBlock } from "../../../../../hooks";
 import type { BlockDef } from "../../../../../store";
@@ -154,9 +154,9 @@ export const DendrogramChartField = observer(
 					>
 						{facetList.length > 0 &&
 							facetList.map((item, index) => (
-								<MenuItem key={index} value={item.toString()}>
+								<Menu.Item key={index} value={item.toString()}>
 									{item}
-								</MenuItem>
+								</Menu.Item>
 							))}
 					</Select>
 				</StyledSection>
