@@ -549,6 +549,41 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 			},
 		},
 	},
+    {
+        section: SECTION_LAYOUT,
+        name: 'Tab Block',
+        helperText: 'Create a layout element for custom design',
+        activeImage: BLOCK_IMAGES['CONTAINER_ACTIVE'],
+        hoverImage: BLOCK_IMAGES['CONTAINER_HOVER'],
+        json: {
+            widget: 'tab-block',
+            data: {
+                style: {
+                    display: 'flex',
+                    flexDirection: 'column',
+                    padding: '4px',
+                    gap: '8px',
+                    flexWrap: 'wrap',
+                },
+                show: 'true',                
+                labels: [
+                    'Tab - 1',
+                    'Tab - 2',
+                    'Tab - 3',
+                ],
+                tabLength:3,                
+            },
+            listeners: {
+                preProcess: { type: 'sync', order: [] },
+                onChange: { type: 'sync', order: [] },
+            },
+            slots: {
+                tab0: [],
+                tab1: [],
+                tab2: []
+            },
+        },
+    },
 	{
 		section: SECTION_LAYOUT,
 		name: "Flip Card",

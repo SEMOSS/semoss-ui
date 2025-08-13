@@ -414,6 +414,10 @@ export class StateStore {
 				const { id, listener, actions, type } = action.payload;
 
 				this.setListener(id, listener, actions, type);
+			} else if( ActionMessages.SET_BLOCK_SLOTS === action.message) {
+				const { id,path, value } = action.payload;
+				
+				this.setBlockSlot(id,path, value);
 			} else if (ActionMessages.NEW_QUERY === action.message) {
 				const { queryId, config, isCommunity } = action.payload;
 
@@ -979,6 +983,48 @@ export class StateStore {
 		return false;
 	};
 
+	private setBlockSlot = (
+		id: string,
+		path: string | null,
+		value: unknown,
+	): void => {
+		if (!path) {
+			// set the value
+			this._store.blocks[id].slots = value as Record<string, { name: string; children: string[]; }>;
+			return;
+		}
+
+		// get the keys
+		const p = path.split(".");
+
+		// get the last key. If there is none, set the block data
+		const last = p.pop();
+		if (!last) {
+			return;
+		}
+
+		// traverse to the correct element
+		let current = this._store.blocks[id].slots = value as Record<string, { name: string; children: string[]; }>;
+		while (p.length) {
+			const key = p.shift();
+
+			if (!key) {
+				return;
+			}
+
+			// create the object if the key doesn't exist. This will allow us to have partials.
+			// TODO Generate with default?
+			if (!current[key]) {
+				current[key] = {name: key, children: []};
+			}
+
+			current = current[key] as any
+		}
+
+		// set the value
+		current[last] = value as { name: string; children: string[]; };
+	};
+	
 	private findIteratorChildIndex = (iteratorBlock, blockId) => {
 		const children = iteratorBlock.slots.children.children;
 

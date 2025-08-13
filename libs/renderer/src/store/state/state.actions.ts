@@ -9,63 +9,65 @@ import type {
 } from "./state.types";
 
 export enum ActionMessages {
-	SET_STATE = "SET_STATE",
-	ADD_BLOCK = "ADD_BLOCK",
-	MOVE_BLOCK = "MOVE_BLOCK",
-	REMOVE_BLOCK = "REMOVE_BLOCK",
-	SET_BLOCK_DATA = "SET_BLOCK_DATA",
-	DELETE_BLOCK_DATA = "DELETE_BLOCK_DATA",
-	SET_LISTENER = "SET_LISTENER",
-	SET_QUERY = "SET_QUERY",
-	NEW_QUERY = "NEW_QUERY",
-	NEW_CELL = "NEW_CELL",
-	MOVE_CELL = "MOVE_CELL",
-	DELETE_QUERY = "DELETE_QUERY",
-	DELETE_CELL = "DELETE_CELL",
-	UPDATE_QUERY = "UPDATE_QUERY",
-	UPDATE_CELL = "UPDATE_CELL",
-	ADD_VARIABLE = "ADD_VARIABLE",
-	RENAME_VARIABLE = "RENAME_VARIABLE",
-	EDIT_VARIABLE = "EDIT_VARIABLE",
-	DELETE_VARIABLE = "DELETE_VARIABLE",
-	SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
-	/**
-	 * Events
-	 */
-	RUN_CELL = "RUN_CELL",
-	RUN_QUERY = "RUN_QUERY",
-	DISPATCH_EVENT = "DISPATCH_EVENT",
-	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
-	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
-	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
+    SET_STATE = "SET_STATE",
+    ADD_BLOCK = "ADD_BLOCK",
+    MOVE_BLOCK = "MOVE_BLOCK",
+    REMOVE_BLOCK = "REMOVE_BLOCK",
+    SET_BLOCK_DATA = "SET_BLOCK_DATA",
+    DELETE_BLOCK_DATA = "DELETE_BLOCK_DATA",
+    SET_LISTENER = "SET_LISTENER",
+    SET_QUERY = "SET_QUERY",
+    NEW_QUERY = "NEW_QUERY",
+    NEW_CELL = "NEW_CELL",
+    MOVE_CELL = "MOVE_CELL",
+    DELETE_QUERY = "DELETE_QUERY",
+    DELETE_CELL = "DELETE_CELL",
+    UPDATE_QUERY = "UPDATE_QUERY",
+    UPDATE_CELL = "UPDATE_CELL",
+    ADD_VARIABLE = "ADD_VARIABLE",
+    RENAME_VARIABLE = "RENAME_VARIABLE",
+    EDIT_VARIABLE = "EDIT_VARIABLE",
+    DELETE_VARIABLE = "DELETE_VARIABLE",
+    SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
+    /**
+     * Events
+     */
+    RUN_CELL = "RUN_CELL",
+    RUN_QUERY = "RUN_QUERY",
+    DISPATCH_EVENT = "DISPATCH_EVENT",
+    DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
+    RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+    DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
+    SET_BLOCK_SLOTS = "SET_BLOCK_SLOTS",
 }
 
 export type Actions =
-	| SetStateAction
-	| AddBlockAction
-	| MoveBlockAction
-	| RemoveBlockAction
-	| SetBlockDataAction
-	| DeleteBlockDataAction
-	| SetListenerAction
-	| NewQueryAction
-	| DeleteQueryAction
-	| UpdateQueryAction
-	| RunQueryAction
-	| NewCellAction
-	| MoveCellAction
-	| DeleteCellAction
-	| UpdateCellAction
-	| RunCellAction
-	| RunMarkdownCellAction
-	| DispatchEventAction
-	| DispatchOutputsEventAction
-	| DispatchOpenEventAction
-	| AddVariableAction
-	| RenameVariableAction
-	| EditVariableAction
-	| DeleteVariableAction
-	| SetSheetExecutionOrderAction;
+    | SetStateAction
+    | AddBlockAction
+    | MoveBlockAction
+    | RemoveBlockAction
+    | SetBlockDataAction
+    | DeleteBlockDataAction
+    | SetListenerAction
+    | NewQueryAction
+    | DeleteQueryAction
+    | UpdateQueryAction
+    | RunQueryAction
+    | NewCellAction
+    | MoveCellAction
+    | DeleteCellAction
+    | UpdateCellAction
+    | RunCellAction
+    | RunMarkdownCellAction
+    | DispatchEventAction
+    | DispatchOutputsEventAction
+    | DispatchOpenEventAction
+    | AddVariableAction
+    | RenameVariableAction
+    | EditVariableAction
+    | DeleteVariableAction
+    | SetSheetExecutionOrderAction
+    | SetBlockSlotsAction;
 
 export interface Action {
 	message: string;
@@ -315,3 +317,13 @@ export interface SetSheetExecutionOrderAction extends Action {
 		list: string[];
 	};
 }
+   export interface SetBlockSlotsAction extends Action {
+    message: ActionMessages.SET_BLOCK_SLOTS;
+    payload: {
+        id: string;
+        path: string | null;
+        value: Record<string, unknown>;
+    };
+}
+  
+
