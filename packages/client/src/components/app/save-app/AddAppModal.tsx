@@ -177,6 +177,16 @@ export const AddAppModal = (props: AddAppProps) => {
 				data[ADD_APP_FORM_FIELD_IS_GLOBAL],
 			);
 
+			if (uploadResult.type === "error") {
+				notification.add({
+					color: "error",
+					message: `Error uploading app. Please check your zip file and try again. ${String(uploadResult.output)}`,
+				});
+
+				handleClose();
+				return;
+			}
+
 			// Process engine dependencies using utility function
 			updateEngineDependencies(
 				(uploadResult.output as UploadProjectAppOutput).engineIds,
@@ -185,15 +195,6 @@ export const AddAppModal = (props: AddAppProps) => {
 				(uploadResult.output as UploadProjectAppOutput).project_id,
 			);
 			setShowEngineModal(true);
-
-			if (uploadResult.type === "error") {
-				notification.add({
-					color: "error",
-					message: String(uploadResult.output),
-				});
-
-				return;
-			}
 		} else {
 			// Use pixel function for CreateProject
 			const createProjectResult = await createProject(
@@ -209,6 +210,7 @@ export const AddAppModal = (props: AddAppProps) => {
 					message: String(createProjectResult.output),
 				});
 
+				handleClose();
 				return;
 			}
 
@@ -227,6 +229,7 @@ export const AddAppModal = (props: AddAppProps) => {
 					message: String(metadataResult.output),
 				});
 
+				handleClose();
 				return;
 			}
 
@@ -243,6 +246,7 @@ export const AddAppModal = (props: AddAppProps) => {
 					message: String(deleteResult.output),
 				});
 
+				handleClose();
 				return;
 			}
 
@@ -268,6 +272,7 @@ export const AddAppModal = (props: AddAppProps) => {
 					message: String(unzipResult.output),
 				});
 
+				handleClose();
 				return;
 			}
 
@@ -286,7 +291,7 @@ export const AddAppModal = (props: AddAppProps) => {
 	return (
 		<>
 			<SaveAppModal
-				open={open}
+				open={open && !showEngineModal}
 				handleClose={handleClose}
 				title="Upload app from my computer"
 				steps={addAppFormSteps}

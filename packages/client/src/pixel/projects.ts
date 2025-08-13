@@ -6,6 +6,7 @@
 // ------------------------------------------------------------------------------------------
 
 import { runPixel, usePixel } from "@semoss/sdk/react";
+import type { engine } from "@/components/app/app-details.utility";
 import type { MonolithStore } from "@/stores";
 import type { ProjectDependencyEngine } from "@/types";
 
@@ -156,6 +157,32 @@ export const useGetProjectDependencies = (
 ): ReturnType<typeof usePixel<ProjectDependencyEngine[]>> => {
 	return usePixel<ProjectDependencyEngine[]>(
 		`GetProjectDependencies(project="${projectId}", details=[true]);`,
+	);
+};
+
+/**
+ * Hook to get available engines that user has access to
+ * @returns usePixel hook result for MyEngines query
+ */
+export const useMyEngines = (): ReturnType<typeof usePixel<engine[]>> => {
+	return usePixel<engine[]>("MyEngines();");
+};
+
+/**
+ * Replace inaccessible engines with accessible ones
+ * @param monolithStore
+ * @param appId
+ * @param replacements - Map of failed engine IDs to replacement engine IDs
+ * @returns Raw pixel result for detailed response processing
+ */
+export const replaceInaccessibleEngines = async (
+	monolithStore: MonolithStore,
+	appId: string,
+	replacements: Record<string, string>,
+): Promise<PixelResult> => {
+	const mapStr = JSON.stringify([replacements]);
+	return await monolithStore.runQuery(
+		`ReplaceInaccessibleEngines(project=["${appId}"], map=${mapStr});`,
 	);
 };
 
