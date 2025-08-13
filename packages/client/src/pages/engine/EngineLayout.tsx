@@ -83,7 +83,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		database_discoverable?: boolean;
 		database_created_by?: string;
 		database_date_created?: string;
-		database_date_updated?: string;
 		last_updated?: string;
 		description?: string;
 		database_type?: string;
@@ -219,7 +218,6 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					),
 					metadata: {
 						...values,
-						        database_date_updated: getEngineMetadata.data?.database_date_updated,
         						database_created_by: getEngineMetadata.data?.database_created_by,
 					},
 					refresh: getEngineMetadata.refresh,

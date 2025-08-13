@@ -222,26 +222,13 @@ export const EngineHeader: React.FC = () => {
 				</StyledInfoLeft>
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
-						{active.metadata?.database_date_updated ||
-						active.metadata?.database_created_by ? (
-							<>
+						{active.metadata?.database_created_by ? (
 								<Typography
 									variant="body2"
 									color="disabled"
 								>
 									{`Published by ${active.metadata.database_created_by}`}
 								</Typography>
-								<Typography
-									variant="body2"
-									color="disabled"
-								>	
-								{`Updated at ${
-									active.metadata.database_date_updated
-										? active.metadata.database_date_updated
-										: "N/A"
-								}`}									
-								</Typography>
-							</>
 						) : (
 							
 								<Typography
