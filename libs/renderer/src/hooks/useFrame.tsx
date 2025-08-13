@@ -118,9 +118,7 @@ export function useFrame(
 					limit !== -1 ? `| Limit(${limit})` : ""
 				} | Collect(${limit});`
 			: "",
-		{
-			silent: true,
-		},
+		undefined,
 		context.state.insightId,
 	);
 
@@ -131,9 +129,7 @@ export function useFrame(
 		enableCount && frame
 			? `META | Frame("${frame}") | ${selector} | Distinct(false) | QueryRowCount();`
 			: "",
-		{
-			silent: true,
-		},
+		{},
 		context.state.insightId,
 	);
 

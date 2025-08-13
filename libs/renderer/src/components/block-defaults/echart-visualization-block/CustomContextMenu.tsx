@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { MenuItemTwo, MenuTwo } from "@semoss/ui";
+import { Menu } from "@semoss/ui";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { EchartVisualizationBlockDef } from "./VisualizationBlock";
 
@@ -19,78 +19,73 @@ export interface VizBlockContextMenuProps {
 	onClose: () => void;
 }
 export const CustomContextMenu: React.FC<VizBlockContextMenuProps> = observer(
-    ({
-        id = "",
-        frame = null,
-        contextMenu = null,
-        onClose = () => null,
-    }) => {
-        const { data } = useBlock<EchartVisualizationBlockDef>(id);
-        return (
-            <MenuTwo
-                open={contextMenu !== null}
-                onClose={() => onClose()}
-                anchorReference="anchorPosition"
-                anchorPosition={
-                    contextMenu !== null
-                        ? {
-                              top: contextMenu.mouseY,
-                              left: contextMenu.mouseX,
-                          }
-                        : undefined
-                }
-            >
-                {contextMenu && !data.contextMenu?.hideUnfilter ? (
-                    <MenuItemTwo
-                        dense={true}
-                        value={"unfilter"}
-                        onClick={() => {
-                            frame.unfilter(data?.frame?.name);
-                            onClose();
-                        }}
-                    >
-                        Unfilter
-                    </MenuItemTwo>
-                ) : null}
-                {contextMenu && !data.contextMenu?.hideFilter ? (
-                    <MenuItemTwo
-                        dense={true}
-                        value={"filter"}
-                        onClick={() => {
-                            frame.filter(
-                                `SetFrameFilter(${
-                                    contextMenu.value.label
-                                }==${JSON.stringify(contextMenu.value.value)})`,
-                            );
-                            onClose();
-                        }}
-                    >
-                        Filter {contextMenu.value.label} ==
-                        {typeof contextMenu.value.value === "string"
-                            ? contextMenu.value.value
-                            : JSON.stringify(contextMenu.value.value)}
-                    </MenuItemTwo>
-                ) : null}
-                {contextMenu && !data.contextMenu?.hideExclude ? (
-                    <MenuItemTwo
-                        dense={true}
-                        value={"filter"}
-                        onClick={() => {
-                            frame.filter(
-                                `SetFrameFilter(${
-                                    contextMenu.value.label
-                                }!=${JSON.stringify(contextMenu.value.value)})`,
-                            );
-                            onClose();
-                        }}
-                    >
-                        Exclude {contextMenu.value.label} !=
-                        {typeof contextMenu.value.value === "string"
-                            ? contextMenu.value.value
-                            : JSON.stringify(contextMenu.value.value)}
-                    </MenuItemTwo>
-                ) : null}
-            </MenuTwo>
-        );
-    },
+	({ id = "", frame = null, contextMenu = null, onClose = () => null }) => {
+		const { data } = useBlock<EchartVisualizationBlockDef>(id);
+		return (
+			<Menu
+				open={contextMenu !== null}
+				onClose={() => onClose()}
+				anchorReference="anchorPosition"
+				anchorPosition={
+					contextMenu !== null
+						? {
+								top: contextMenu.mouseY,
+								left: contextMenu.mouseX,
+							}
+						: undefined
+				}
+			>
+				{contextMenu && !data.contextMenu?.hideUnfilter ? (
+					<Menu.Item
+						dense={true}
+						value={"unfilter"}
+						onClick={() => {
+							frame.unfilter(data?.frame?.name);
+							onClose();
+						}}
+					>
+						Unfilter
+					</Menu.Item>
+				) : null}
+				{contextMenu && !data.contextMenu?.hideFilter ? (
+					<Menu.Item
+						dense={true}
+						value={"filter"}
+						onClick={() => {
+							frame.filter(
+								`SetFrameFilter(${
+									contextMenu.value.label
+								}==${JSON.stringify(contextMenu.value.value)})`,
+							);
+							onClose();
+						}}
+					>
+						Filter {contextMenu.value.label} ==
+						{typeof contextMenu.value.value === "string"
+							? contextMenu.value.value
+							: JSON.stringify(contextMenu.value.value)}
+					</Menu.Item>
+				) : null}
+				{contextMenu && !data.contextMenu?.hideExclude ? (
+					<Menu.Item
+						dense={true}
+						value={"filter"}
+						onClick={() => {
+							frame.filter(
+								`SetFrameFilter(${
+									contextMenu.value.label
+								}!=${JSON.stringify(contextMenu.value.value)})`,
+							);
+							onClose();
+						}}
+					>
+						Exclude {contextMenu.value.label} !=
+						{typeof contextMenu.value.value === "string"
+							? contextMenu.value.value
+							: JSON.stringify(contextMenu.value.value)}
+					</Menu.Item>
+				) : null}
+			</Menu>
+		);
+	},
 );
