@@ -4,11 +4,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
 	styled,
-	TableBodyTwo,
-	TableCellTwo,
-	TableHeadTwo,
-	TableRowTwo,
-	TableTwo,
+	Table,
 } from "@semoss/ui";
 import { useBlock, useFrame } from "../../../../../hooks";
 import type { BlockDef } from "../../../../../store";
@@ -34,7 +30,7 @@ const StyledContainer = styled("div")(() => ({
 //styled span to render series name
 const StyledDataSpan = styled("span")(({}) => ({}));
 //styled table cell to have background color
-const StyledTableCell = styled(TableCellTwo)<{ backgroundColor?: string }>(
+const StyledTableCell = styled(Table.Cell)<{ backgroundColor?: string }>(
 	({ backgroundColor }) => ({
 		backgroundColor: backgroundColor ?? "#fff",
 		border: "1px solid #e6e6e6",
@@ -816,12 +812,12 @@ export const Gantt = observer(
 							>
 								{seriesName}
 							</StyledDataSpan>
-							<TableTwo
+							<Table
 								aria-label="simple table"
 								ref={(e) => (tableRef.current = e)}
 							>
-								<TableHeadTwo>
-									<TableRowTwo>
+								<Table.Head>
+									<Table.Row>
 										{quarterAndMonth.length &&
 											quarterAndMonth.map((item, i) => (
 												<StyledTableCell
@@ -843,10 +839,10 @@ export const Gantt = observer(
 														: ""}
 												</StyledTableCell>
 											))}
-									</TableRowTwo>
-								</TableHeadTwo>
-								<TableBodyTwo>
-									<TableRowTwo
+									</Table.Row>
+								</Table.Head>
+								<Table.Body>
+									<Table.Row
 										sx={{
 											"&:last-child td, &:last-child th":
 												{
@@ -869,9 +865,9 @@ export const Gantt = observer(
 													),
 												),
 											)}
-									</TableRowTwo>
-								</TableBodyTwo>
-							</TableTwo>
+									</Table.Row>
+								</Table.Body>
+							</Table>
 						</StyledContainer>
 					)}
 
