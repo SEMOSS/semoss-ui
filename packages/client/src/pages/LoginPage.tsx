@@ -97,7 +97,7 @@ const StyledImage = styled("img")(() => ({
 	objectFit: "cover",
 }));
 
-const StyledAction = styled(Button)({
+const StyledAction = styled(ButtonGroup.Item)({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
@@ -181,7 +181,7 @@ const StyledInstructions = styled(Typography)(({ theme }) => ({
 	marginBottom: theme.spacing(4),
 }));
 
-const StyledButtonText = styled(Button)({
+const StyledButtonText = styled(ButtonGroup.Item)({
 	fontFamily: "Inter",
 	fontSize: "15px",
 	fontStyle: "normal",
@@ -1068,7 +1068,7 @@ export const LoginPage = observer(() => {
 														}}
 													/>
 													<StyledGoBackBox>
-														<Button
+														<ButtonGroup.Item
 															fullWidth
 															variant={"text"}
 															onClick={() =>
@@ -1081,8 +1081,8 @@ export const LoginPage = observer(() => {
 															}
 														>
 															Go Back
-														</Button>
-														<Button
+														</ButtonGroup.Item>
+														<ButtonGroup.Item
 															fullWidth
 															variant={
 																"contained"
@@ -1095,7 +1095,7 @@ export const LoginPage = observer(() => {
 															}
 														>
 															Register
-														</Button>
+														</ButtonGroup.Item>
 													</StyledGoBackBox>
 												</>
 											)}
@@ -1225,7 +1225,7 @@ export const LoginPage = observer(() => {
 											)}
 											{!register && (
 												<>
-													<Button
+													<ButtonGroup.Item
 														fullWidth
 														variant={"contained"}
 														onClick={login}
@@ -1235,7 +1235,7 @@ export const LoginPage = observer(() => {
 														}
 													>
 														Login
-													</Button>
+													</ButtonGroup.Item>
 													{configStore.store.config
 														.nativeRegistration && (
 														<StyledRegisterNowBox>
@@ -1332,14 +1332,14 @@ export const LoginPage = observer(() => {
 					</Box>
 				</Modal.Content>
 				<Modal.Actions>
-					<Button
+					<ButtonGroup.Item
 						variant={"outlined"}
 						onClick={() => {
 							setForgotPassword(false);
 						}}
 					>
 						Ok
-					</Button>
+					</ButtonGroup.Item>
 				</Modal.Actions>
 			</Modal>
 		</>
