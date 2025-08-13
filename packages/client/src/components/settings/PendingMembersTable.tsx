@@ -1,21 +1,27 @@
 import {
-  Check,
-  CircleNotifications,
-  Close,
-  ExpandLess,
-  ExpandMore,
+	Add,
+	Check,
+	CircleNotifications,
+	Close,
+	ExpandLess,
+	ExpandMore,
 } from "@mui/icons-material";
+import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import {
-  Button,
-  Checkbox,
-  Collapse,Divider,Icon,IconButton, 
-  RadioGroup, 
-  Stack,
-  styled,
-  Table,Typography, 
-  useNotification
-} from '@semoss/ui';
+	Button,
+	Checkbox,
+	Collapse,
+	Divider,
+	Icon,
+	IconButton,
+	RadioGroup,
+	Stack,
+	styled,
+	Table,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import {
   approveEngineUserAccessRequest,
   approveProjectUserAccessRequest,
@@ -23,398 +29,405 @@ import {
   denyProjectUserAccessRequest,
 } from "@/api";
 import { LoadingScreen } from "@/components/ui";
-import { usePixel, useSettings } from "@/hooks";
-import { ALL_TYPES } from "@/types";
-import { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
-import Add from "@mui/icons-material/Add";
+import { usePixel, useRootStore, useSettings } from "@/hooks";
+import type { ALL_TYPES } from "@/types";
+import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
 const StyledMemberLoading = styled("div")(({ theme }) => ({
-  position: "relative",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  height: "160px",
+	position: "relative",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	height: "160px",
 }));
 
 const StyledMemberContent = styled("div")({
-  display: "flex",
-  width: "100%",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  gap: "25px",
-  flexShrink: "0",
+	display: "flex",
+	width: "100%",
+	flexDirection: "column",
+	alignItems: "flex-start",
+	gap: "25px",
+	flexShrink: "0",
 });
 
 const StyledMemberInnerContent = styled("div")({
-  display: "flex",
-  flexDirection: "column",
-  alignItems: "flex-start",
-  gap: "20px",
-  alignSelf: "stretch",
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "flex-start",
+	gap: "20px",
+	alignSelf: "stretch",
 });
 
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
-  borderRadius: "12px",
-  border: `1px solid ${theme.palette.secondary.border}`,
+	borderRadius: "12px",
+	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
 const StyledTableRow = styled(Table.Row)({
-  backgroundColor: "#FFF",
+	backgroundColor: "#FFF",
 });
 
 const StyledMemberTable = styled(Table)({});
 
-const StyledTableTitleContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: 'white',
+const StyledTableTitleContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	alignSelf: "stretch",
+	backgroundColor: "white",
 }));
 
 const StyledTableTitleDiv = styled("div")({
-  display: "flex",
-  padding: "12px 24px 12px 16px",
-  alignItems: "center",
-  gap: "10px",
+	display: "flex",
+	padding: "12px 24px 12px 16px",
+	alignItems: "center",
+	gap: "10px",
 });
 
 const StyledTableTitleMemberContainer = styled("div")({
-  display: "flex",
-  alignItems: "flex-start",
-  flex: "1 0 0",
+	display: "flex",
+	alignItems: "flex-start",
+	flex: "1 0 0",
 });
 
 const StyledTableTitleMemberCountContainer = styled("div")({
-  display: "flex",
-  //height: '56px',
-  padding: "6px 16px 6px 8px",
-  flexDirection: "column",
-  //justifyContent: 'center',
-  alignItems: "center",
-  gap: "10px",
+	display: "flex",
+	//height: '56px',
+	padding: "6px 16px 6px 8px",
+	flexDirection: "column",
+	//justifyContent: 'center',
+	alignItems: "center",
+	gap: "10px",
 });
 
 const StyledTableTitleMemberCount = styled("div")({
-  display: "flex",
-  //flexDirection: 'column',
-  alignItems: "flex-start",
+	display: "flex",
+	//flexDirection: 'column',
+	alignItems: "flex-start",
 });
 
 const StyledSearchButtonContainer = styled("div")({
-  display: "flex",
-  // padding: '5px 8px',
-  alignItems: "center",
-  // gap: '10px',
+	display: "flex",
+	// padding: '5px 8px',
+	alignItems: "center",
+	// gap: '10px',
 });
 
 const StyledFilterButtonContainer = styled("div")({
-  display: "flex",
-  padding: "5px 8px",
-  alignItems: "center",
-  gap: "10px",
+	display: "flex",
+	padding: "5px 8px",
+	alignItems: "center",
+	gap: "10px",
 });
 
 const StyledDeleteSelectedContainer = styled("div")({
-  display: "flex",
-  padding: "10px 8px 10px 16px",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: "10px",
+	display: "flex",
+	padding: "10px 8px 10px 16px",
+	flexDirection: "column",
+	justifyContent: "center",
+	alignItems: "center",
+	gap: "10px",
 });
 
 const StyledAddMemberContainer = styled("div")({
-  display: "flex",
-  padding: "10px 24px 10px 8px",
-  flexDirection: "column",
-  justifyContent: "center",
-  alignItems: "center",
-  gap: "10px",
+	display: "flex",
+	padding: "10px 24px 10px 8px",
+	flexDirection: "column",
+	justifyContent: "center",
+	alignItems: "center",
+	gap: "10px",
 });
 
 const StyledCircleNotification = styled(CircleNotifications)({
-  color: "#FF5F15",
+	color: "#FF5F15",
 });
 
 // maps for permissions,
 const permissionMapper = {
-  1: "Author", // BE: 'DISPLAY'
-  OWNER: "Author", // BE: 'DISPLAY'
-  Author: "OWNER", // DISPLAY: BE
-  2: "Editor", // BE: 'DISPLAY'
-  EDIT: "Editor", // BE: 'DISPLAY'
-  Editor: "EDIT", // DISPLAY: BE
-  3: "Read-Only", // BE: 'DISPLAY'
-  READ_ONLY: "Read-Only", // BE: 'DISPLAY'
-  "Read-Only": "READ_ONLY", // DISPLAY: BE
+	1: "Author", // BE: 'DISPLAY'
+	OWNER: "Author", // BE: 'DISPLAY'
+	Author: "OWNER", // DISPLAY: BE
+	2: "Editor", // BE: 'DISPLAY'
+	EDIT: "Editor", // BE: 'DISPLAY'
+	Editor: "EDIT", // DISPLAY: BE
+	3: "Read-Only", // BE: 'DISPLAY'
+	READ_ONLY: "Read-Only", // BE: 'DISPLAY'
+	"Read-Only": "READ_ONLY", // DISPLAY: BE
 };
 
 const StyledNoPendingReqs = styled("div")(({ theme }) => ({
-  width: "100%",
-  height: "503px",
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(1),
-  justifyContent: "center",
-  alignItems: "center",
+	width: "100%",
+	height: "503px",
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+	justifyContent: "center",
+	alignItems: "center",
 }));
 
 interface PendingMemberTableProps {
-  /**
-   * Id of the engine
-   */
-  id: string;
+	/**
+	 * Id of the engine
+	 */
+	id: string;
 
-  /**
-   * Type of the engine
-   */
-  type: ALL_TYPES;
+	/**
+	 * Type of the engine
+	 */
+	type: ALL_TYPES;
 
-  /**
-   * Called when permissions are changed
-   */
-  onChange?: () => void;
+	/**
+	 * Called when permissions are changed
+	 */
+	onChange?: () => void;
 }
 
 export const PendingMembersTable = (props: PendingMemberTableProps) => {
-  const { id, type, onChange = () => null } = props;
+	const { id, type, onChange = () => null } = props;
 
-  // const { monolithStore } = useRootStore();
-  const notification = useNotification();
-  const { adminMode } = useSettings();
+	const { monolithStore } = useRootStore();
+	const notification = useNotification();
+	const { adminMode } = useSettings();
 
-  const [renderedMembers, setRenderedMembers] = useState<
-    SETTINGS_PENDING_USER[]
-  >([]);
-  const [selectedMembers, setSelectedMembers] = useState<Record<string, true>>(
-    {}
-  );
-  const [openTable, setOpenTable] = useState(false);
+	const [renderedMembers, setRenderedMembers] = useState<
+		SETTINGS_PENDING_USER[]
+	>([]);
+	const [selectedMembers, setSelectedMembers] = useState<
+		Record<string, true>
+	>({});
+	const [openTable, setOpenTable] = useState(false);
 
-  const pendingUserAccessPixel =
-    type === "DATABASE" ||
-    type === "STORAGE" ||
-    type === "MODEL" ||
-    type === "VECTOR" ||
-    type === "FUNCTION"
-      ? `GetEngineUserAccessRequest(engine='${id}');`
-      : type === "APP"
-      ? `GetProjectUserAccessRequest(project='${id}')`
-      : "";
+	const pendingUserAccessPixel =
+		type === "DATABASE" ||
+		type === "STORAGE" ||
+		type === "MODEL" ||
+		type === "VECTOR" ||
+		type === "FUNCTION"
+			? `GetEngineUserAccessRequest(engine='${id}');`
+			: type === "APP"
+				? `GetProjectUserAccessRequest(project='${id}')`
+				: "";
 
-  // Pending Member Requests Pixel call
-  const pendingUserAccess = usePixel<SETTINGS_PENDING_USER[]>(
-    pendingUserAccessPixel
-  );
+	// Pending Member Requests Pixel call
+	const pendingUserAccess = usePixel<SETTINGS_PENDING_USER[]>(
+		pendingUserAccessPixel,
+	);
 
-  // track if the page is loading
-  const _isLoading =
-    pendingUserAccess.status === "INITIAL" ||
-    pendingUserAccess.status === "LOADING";
+	// track if the page is loading
+	const isLoading =
+		pendingUserAccess.status === "INITIAL" ||
+		pendingUserAccess.status === "LOADING";
 
-  // set the rendered users
-  useEffect(() => {
-    if (pendingUserAccess.status !== "SUCCESS") {
-      return;
-    }
+	// set the rendered users
+	useEffect(() => {
+		if (pendingUserAccess.status !== "SUCCESS") {
+			return;
+		}
 
-    const updatedMembers = pendingUserAccess.data.map((m) => ({
-      ...m,
-      PERMISSION: permissionMapper[m.PERMISSION], // comes in as 1,2,3 -> map to Author, Edit, Read-only
-    }));
-    setRenderedMembers(updatedMembers);
-  }, [pendingUserAccess.status, pendingUserAccess.data]);
+		const updatedMembers = pendingUserAccess.data.map((m) => ({
+			...m,
+			PERMISSION: permissionMapper[m.PERMISSION], // comes in as 1,2,3 -> map to Author, Edit, Read-only
+		}));
+		setRenderedMembers(updatedMembers);
+	}, [pendingUserAccess.status, pendingUserAccess.data]);
 
-  /** API Functions */
-  /**
-   * @name approvePendingMembers
-   * @param members - members to pass to approve api call
-   * @description Approve list of Pending Members
-   */
-  const approvePendingMembers = async (members: SETTINGS_PENDING_USER[]) => {
-    try {
-      // construct requests for post data
-      const requests = members.map((mem, i) => {
-        return {
-          requestid: mem.ID,
-          userid: mem.REQUEST_USERID,
-          permission: permissionMapper[mem.PERMISSION],
-        };
-      });
+	/** API Functions */
+	/**
+	 * @name approvePendingMembers
+	 * @param members - members to pass to approve api call
+	 * @description Approve list of Pending Members
+	 */
+	const approvePendingMembers = async (members: SETTINGS_PENDING_USER[]) => {
+		try {
+			// construct requests for post data
+			const requests = members.map((mem, i) => {
+				return {
+					requestid: mem.ID,
+					userid: mem.REQUEST_USERID,
+					permission: permissionMapper[mem.PERMISSION],
+				};
+			});
 
-      if (requests.length === 0) {
-        notification.add({
-          color: "warning",
-          message: `No permissions to change`,
-        });
+			if (requests.length === 0) {
+				notification.add({
+					color: "warning",
+					message: `No permissions to change`,
+				});
 
-        return;
-      }
+				return;
+			}
 
-      let response = null;
-      if (
-        type === "DATABASE" ||
-        type === "STORAGE" ||
-        type === "MODEL" ||
-        type === "VECTOR" ||
-        type === "FUNCTION"
-      ) {
-        response = await approveEngineUserAccessRequest(
-          adminMode,
-          id,
-          requests
-        );
-      } else if (type === "APP") {
-        response = await approveProjectUserAccessRequest(
-          adminMode,
-          id,
-          requests
-        );
-      }
+			let response = null;
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await approveEngineUserAccessRequest(
+					adminMode,
+					id,
+					requests,
+				);
+			} else if (type === "APP") {
+				response = await approveProjectUserAccessRequest(
+					adminMode,
+					id,
+					requests,
+				);
+			}
 
-      // ignore if there is no response
-      if (!response) {
-        return;
-      }
+			// ignore if there is no response
+			if (!response) {
+				return;
+			}
 
-      if (response.data.success) {
-        const updatedMembers = {
-          ...selectedMembers,
-        } as Record<string, true>;
+			if (response.data.success) {
+				const updatedMembers = {
+					...selectedMembers,
+				} as Record<string, true>;
 
-        for (const m of members) {
-          if (updatedMembers[m.ID]) {
-            delete updatedMembers[m.ID];
-          }
-        }
-        setSelectedMembers(updatedMembers);
+				for (const m of members) {
+					if (updatedMembers[m.ID]) {
+						delete updatedMembers[m.ID];
+					}
+				}
+				setSelectedMembers(updatedMembers);
 
-        // refresh the data
-        pendingUserAccess.refresh();
+				// refresh the data
+				pendingUserAccess.refresh();
 
-        // trigger onChange
-        onChange();
+				// trigger onChange
+				onChange();
 
-        notification.add({
-          color: "success",
-          message: "Succesfully approved user permissions",
-        });
-      } else {
-        notification.add({
-          color: "error",
-          message: `Error changing user permissions`,
-        });
-      }
-    } catch (e) {
-      notification.add({
-        color: "error",
-        message: String(e),
-      });
-    }
-  };
+				notification.add({
+					color: "success",
+					message: "Succesfully approved user permissions",
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: `Error changing user permissions`,
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
+		}
+	};
 
-  /**
-   * @name denyPendingMembers
-   * @param members - members to pass to deny api call
-   * @param quickActionFlag - quick deny button on table
-   * @description Deny Selected Pending Members
-   */
-  const denyPendingMembers = async (members: SETTINGS_PENDING_USER[]) => {
-    try {
-      // construct requests for post data
-      const requests = members.map((m) => {
-        return m.ID;
-      });
+	/**
+	 * @name denyPendingMembers
+	 * @param members - members to pass to deny api call
+	 * @param quickActionFlag - quick deny button on table
+	 * @description Deny Selected Pending Members
+	 */
+	const denyPendingMembers = async (members: SETTINGS_PENDING_USER[]) => {
+		try {
+			// construct requests for post data
+			const requests = members.map((m) => {
+				return m.ID;
+			});
 
-      if (requests.length === 0) {
-        notification.add({
-          color: "warning",
-          message: `No permissions to change`,
-        });
+			if (requests.length === 0) {
+				notification.add({
+					color: "warning",
+					message: `No permissions to change`,
+				});
 
-        return;
-      }
+				return;
+			}
 
-      let response: {
+			      let response: {
         response: Response;
         data: {
           success: boolean;
         };
       } | null = null;
-      if (
-        type === "DATABASE" ||
-        type === "STORAGE" ||
-        type === "MODEL" ||
-        type === "VECTOR" ||
-        type === "FUNCTION"
-      ) {
-        response = await denyEngineUserAccessRequest(adminMode, id, requests);
-      } else if (type === "APP") {
-        response = await denyProjectUserAccessRequest(adminMode, id, requests);
-      }
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await denyEngineUserAccessRequest(
+					adminMode,
+					id,
+					requests,
+				);
+			} else if (type === "APP") {
+				response = await denyProjectUserAccessRequest(
+					adminMode,
+					id,
+					requests,
+				);
+			}
 
-      // ignore if there is no response
-      if (!response) {
-        return;
-      }
+			// ignore if there is no response
+			if (!response) {
+				return;
+			}
 
-      if (response.data.success) {
-        const updatedMembers = {
-          ...selectedMembers,
-        } as Record<string, true>;
+			if (response.data.success) {
+				const updatedMembers = {
+					...selectedMembers,
+				} as Record<string, true>;
 
-        for (const m of members) {
-          if (updatedMembers[m.ID]) {
-            delete updatedMembers[m.ID];
-          }
-        }
-        setSelectedMembers(updatedMembers);
+				for (const m of members) {
+					if (updatedMembers[m.ID]) {
+						delete updatedMembers[m.ID];
+					}
+				}
+				setSelectedMembers(updatedMembers);
 
-        // refresh the data
-        pendingUserAccess.refresh();
+				// refresh the data
+				pendingUserAccess.refresh();
 
-        // trigger onChange
-        onChange();
+				// trigger onChange
+				onChange();
 
-        notification.add({
-          color: "success",
-          message: "Succesfully denied user permissions",
-        });
-      } else {
-        notification.add({
-          color: "error",
-          message: `Error changing user permissions`,
-        });
-      }
-    } catch (e) {
-      notification.add({
-        color: "error",
-        message: String(e),
-      });
-    }
-  };
+				notification.add({
+					color: "success",
+					message: "Succesfully denied user permissions",
+				});
+			} else {
+				notification.add({
+					color: "error",
+					message: `Error changing user permissions`,
+				});
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: String(e),
+			});
+		}
+	};
 
-  /** HELPERS */
-  /**
-   * @name updatePendingMemberPermission
-   * @param member
-   * @param value
-   * @desc Updates pending member permission in radiogroup
-   */
-  const _updatePendingMemberPermission = (
-    member: SETTINGS_PENDING_USER,
-    role: SETTINGS_ROLE
-  ) => {
-    const updatedRenderedMembers = renderedMembers.map((m) => {
-            if (member.ID === m.ID) {
-                return {
-                    ...m,
-                    PERMISSION: role,
-                };
-            }
+	/** HELPERS */
+	/**
+	 * @name updatePendingMemberPermission
+	 * @param member
+	 * @param value
+	 * @desc Updates pending member permission in radiogroup
+	 */
+	const updatePendingMemberPermission = (
+		member: SETTINGS_PENDING_USER,
+		role: SETTINGS_ROLE,
+	) => {
+		const updatedRenderedMembers = renderedMembers.map((m) => {
+			if (member.ID === m.ID) {
+				return {
+					...m,
+					PERMISSION: role,
+				};
+			}
 
-            return m;
-        });
+			return m;
+		});
 
         setRenderedMembers(updatedRenderedMembers);
   };
@@ -579,90 +592,100 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
               <Typography variant={"h6"}>Pending Requests</Typography>
             </StyledTableTitleDiv>
 
-            <StyledTableTitleMemberContainer>
-              <StyledTableTitleMemberCountContainer>
-                <StyledTableTitleMemberCount>
-                  <Stack
-                    alignItems={"center"}
-                    justifyContent={"flex-start"}
-                    direction={"row"}
-                  >
-                    <Typography variant={"body1"}>
-                      {renderedMembers.length == 1
-                        ? `${renderedMembers.length} pending request`
-                        : `${renderedMembers.length} pending requests`}
-                    </Typography>
-                    {renderedMembers.length > 0 && <StyledCircleNotification />}
-                  </Stack>
-                </StyledTableTitleMemberCount>
-              </StyledTableTitleMemberCountContainer>
-            </StyledTableTitleMemberContainer>
+						<StyledTableTitleMemberContainer>
+							<StyledTableTitleMemberCountContainer>
+								<StyledTableTitleMemberCount>
+									<Stack
+										alignItems={"center"}
+										justifyContent={"flex-start"}
+										direction={"row"}
+									>
+										<Typography variant={"body1"}>
+											{renderedMembers.length == 1
+												? `${renderedMembers.length} pending request`
+												: `${renderedMembers.length} pending requests`}
+										</Typography>
+										{renderedMembers.length > 0 && (
+											<StyledCircleNotification />
+										)}
+									</Stack>
+								</StyledTableTitleMemberCount>
+							</StyledTableTitleMemberCountContainer>
+						</StyledTableTitleMemberContainer>
 
-            <StyledSearchButtonContainer>
-              <IconButton>{/* <SearchOutlined></SearchOutlined> */}</IconButton>
-            </StyledSearchButtonContainer>
+						<StyledSearchButtonContainer>
+							<IconButton>
+								{/* <SearchOutlined></SearchOutlined> */}
+							</IconButton>
+						</StyledSearchButtonContainer>
 
-            <StyledFilterButtonContainer>
-              <IconButton>
-                {/* <FilterAltRounded></FilterAltRounded> */}
-              </IconButton>
-            </StyledFilterButtonContainer>
+						<StyledFilterButtonContainer>
+							<IconButton>
+								{/* <FilterAltRounded></FilterAltRounded> */}
+							</IconButton>
+						</StyledFilterButtonContainer>
 
-            {Object.keys(selectedMembers).length > 0 && (
-              <>
-                <StyledDeleteSelectedContainer>
-                  <Button
-                    variant={"outlined"}
-                    color="error"
-                    onClick={() => {
-                      const members = renderedMembers.filter(
-                        (m) => selectedMembers[m.ID]
-                      );
+						{Object.keys(selectedMembers).length > 0 && (
+							<>
+								<StyledDeleteSelectedContainer>
+									<Button
+										variant={"outlined"}
+										color="error"
+										onClick={() => {
+											const members =
+												renderedMembers.filter(
+													(m) =>
+														selectedMembers[m.ID],
+												);
 
-                      denyPendingMembers(members);
-                    }}
-                  >
-                    Deny Selected
-                  </Button>
-                </StyledDeleteSelectedContainer>
-                <StyledAddMemberContainer>
-                  <Button
-                    variant={"contained"}
-                    onClick={() => {
-                      const members = renderedMembers.filter(
-                        (m) => selectedMembers[m.ID]
-                      );
+											denyPendingMembers(members);
+										}}
+									>
+										Deny Selected
+									</Button>
+								</StyledDeleteSelectedContainer>
+								<StyledAddMemberContainer>
+									<Button
+										variant={"contained"}
+										onClick={() => {
+											const members =
+												renderedMembers.filter(
+													(m) =>
+														selectedMembers[m.ID],
+												);
 
-                      approvePendingMembers(Object.values(members));
-                    }}
-                  >
-                    Approve Selected
-                  </Button>
-                </StyledAddMemberContainer>
-              </>
-            )}
-            <StyledFilterButtonContainer>
-              <IconButton
-                onClick={() => setOpenTable(!openTable)}
-                disabled={renderedMembers.length == 0}
-              >
-                {openTable ? <ExpandLess /> : <ExpandMore />}
-              </IconButton>
-            </StyledFilterButtonContainer>
-          </StyledTableTitleContainer>
-          <Collapse in={openTable}>
-            {_isLoading ? (
-              <StyledMemberLoading>
-                <LoadingScreen relative={true}>
-                  <LoadingScreen.Trigger description="Getting members" />
-                </LoadingScreen>
-              </StyledMemberLoading>
-            ) : (
-                renderedMembersAvailableJsx
-            )}
-          </Collapse>
-        </StyledTableContainer>
-      </StyledMemberInnerContent>
-    </StyledMemberContent>
-  )
+											approvePendingMembers(
+												Object.values(members),
+											);
+										}}
+									>
+										Approve Selected
+									</Button>
+								</StyledAddMemberContainer>
+							</>
+						)}
+						<StyledFilterButtonContainer>
+							<IconButton
+								onClick={() => setOpenTable(!openTable)}
+								disabled={renderedMembers.length == 0}
+							>
+								{openTable ? <ExpandLess /> : <ExpandMore />}
+							</IconButton>
+						</StyledFilterButtonContainer>
+					</StyledTableTitleContainer>
+					<Collapse in={openTable}>
+						{isLoading ? (
+							<StyledMemberLoading>
+								<LoadingScreen relative={true}>
+									<LoadingScreen.Trigger description="Getting members" />
+								</LoadingScreen>
+							</StyledMemberLoading>
+						) : (
+							renderedMembersAvailableJsx
+						)}
+					</Collapse>
+				</StyledTableContainer>
+			</StyledMemberInnerContent>
+		</StyledMemberContent>
+	);
 };

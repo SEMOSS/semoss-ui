@@ -1,4 +1,4 @@
-import { DatePicker, DatePickerProps } from "./DatePicker";
+import { DatePicker, type DatePickerProps } from "./DatePicker";
 
 export type { DatePickerProps };
 

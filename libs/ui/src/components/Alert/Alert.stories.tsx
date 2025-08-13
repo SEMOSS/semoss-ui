@@ -2,24 +2,24 @@ import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { Alert } from "./index";
 
 const meta: Meta<typeof Alert> = {
-    title: "Components/Alert",
-    component: Alert,
-    subcomponents: {
-        Title: Alert.Title,
-    },
-    args: {
-        severity: "success",
-    },
-    argTypes: {
-        severity: {
-            options: ["success", "error", "info", "warning"],
-            control: { type: "select" },
-        },
-        colorOverride: {
-            options: ["secondary"],
-            control: { type: "select" },
-        },
-    },
+	title: "Components/Alert",
+	component: Alert,
+	subcomponents: {
+		Title: Alert.Title,
+	},
+	args: {
+		severity: "success",
+	},
+	argTypes: {
+		severity: {
+			options: ["success", "error", "info", "warning"],
+			control: { type: "select" },
+		},
+		colorOverride: {
+			options: ["secondary"],
+			control: { type: "select" },
+		},
+	},
 };
 
 export default meta;
@@ -27,12 +27,12 @@ export default meta;
 type Story = StoryObj<typeof Alert>;
 
 export const Default: Story = {
-    render: (args) => (
-        <Alert {...args}>
-            <>
-                <Alert.Title>Alert Title</Alert.Title>
-                Lorem Ipsum
-            </>
-        </Alert>
-    ),
+	render: (args) => (
+		<Alert {...args}>
+			<>
+				<Alert.Title>Alert Title</Alert.Title>
+				Lorem Ipsum
+			</>
+		</Alert>
+	),
 };

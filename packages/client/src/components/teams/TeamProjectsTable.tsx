@@ -4,7 +4,7 @@ import {
   EditRounded,
   RemoveRedEyeRounded,
 } from "@mui/icons-material";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { debounced } from "@semoss/sdk/react";
@@ -37,7 +37,7 @@ import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
-import { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
 import { useRootStore } from "@/hooks";
 
 const colors = [
