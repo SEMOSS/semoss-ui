@@ -1,8 +1,8 @@
-import { SelectStack, SelectStackProps } from "./SelectStack";
 import { MenuItem } from "../Menu";
+import { SelectStack, type SelectStackProps } from "./SelectStack";
 
 const SelectStackNameSpace = Object.assign(SelectStack, {
-    Item: MenuItem,
+	Item: MenuItem,
 });
 
 export type { SelectStackProps };

@@ -1,29 +1,29 @@
-import { CellConfig } from "../../../store";
-import { DataImportCell, DataImportCellDef } from "./DataImportCell";
+import type { CellConfig } from "../../../store";
+import { DataImportCell, type DataImportCellDef } from "./DataImportCell";
 
 export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
-    name: "Data Import",
-    widget: "data-import",
-    view: DataImportCell,
-    parameters: {
-        frameVariableName: "",
-        selectQuery: "",
-        databaseId: "",
-        frameType: "PY",
-        rootTable: "",
-        selectedColumns: [],
-        columnAliases: [],
-        tableNames: [],
-        joins: [],
+	name: "Data Import",
+	widget: "data-import",
+	view: DataImportCell,
+	parameters: {
+		frameVariableName: "",
+		selectQuery: "",
+		databaseId: "",
+		frameType: "PY",
+		rootTable: "",
+		selectedColumns: [],
+		columnAliases: [],
+		tableNames: [],
+		joins: [],
         dataLimit: null,
-        // TODO add filters and summaries
-        // filters: [],
-        // summaries: [],
-    },
-    toPixel: ({ frameType, frameVariableName, selectQuery }) => {
-        return (
-            selectQuery.slice(0, -1) +
-            ` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${frameVariableName}\" ] ) ] ) ; `
-        );
-    },
+		// TODO add filters and summaries
+		// filters: [],
+		// summaries: [],
+	},
+	toPixel: ({ frameType, frameVariableName, selectQuery }) => {
+		return (
+			selectQuery.slice(0, -1) +
+			` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${frameVariableName}\" ] ) ] ) ; `
+		);
+	},
 };
