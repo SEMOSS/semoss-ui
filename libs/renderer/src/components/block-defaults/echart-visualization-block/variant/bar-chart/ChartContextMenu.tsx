@@ -3,7 +3,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef } from "react";
 import type { PathValue } from "react-hook-form";
-import { MenuItemTwo, MenuTwo } from "@semoss/ui";
+import { Menu } from "@semoss/ui";
 import { useBlock, type useFrame } from "../../../../../hooks";
 import type { EchartVisualizationBlockDef } from "../../VisualizationBlock";
 
@@ -114,7 +114,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 			};
 		}
 		return (
-			<MenuTwo
+			<Menu
 				open={contextMenu !== null}
 				onClose={() => onClose()}
 				anchorReference="anchorPosition"
@@ -128,7 +128,7 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 				}
 			>
 				{contextMenu && !data.contextMenu?.hideUnfilter ? (
-					<MenuItemTwo
+					<Menu.Item
 						dense={true}
 						value={"unfilter"}
 						onClick={() => {
@@ -151,10 +151,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 						}}
 					>
 						Unfilter
-					</MenuItemTwo>
+					</Menu.Item>
 				) : null}
 				{contextMenu && !data.contextMenu?.hideFilter ? (
-					<MenuItemTwo
+					<Menu.Item
 						dense={true}
 						value={"filter"}
 						onClick={() => {
@@ -178,10 +178,10 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 						{typeof contextMenu.value === "string"
 							? contextMenu.value
 							: JSON.stringify(contextMenu.value.value)}
-					</MenuItemTwo>
+					</Menu.Item>
 				) : null}
 				{contextMenu && !data.contextMenu?.hideExclude ? (
-					<MenuItemTwo
+					<Menu.Item
 						dense={true}
 						value={"exclude"}
 						onClick={() => {
@@ -201,9 +201,9 @@ export const ChartContextMenu: React.FC<ChartContextMenuProps> = observer(
 					>
 						Exclude {contextMenu.value.name} !={" "}
 						{contextMenu?.value?.value}
-					</MenuItemTwo>
+					</Menu.Item>
 				) : null}
-			</MenuTwo>
+			</Menu>
 		);
 	},
 );

@@ -5,7 +5,7 @@ import {
 	darkTheme,
 	IconButton,
 	lightTheme,
-	MenuItem,
+	Menu,
 	Modal,
 	Select,
 	Stack,
@@ -89,9 +89,9 @@ export const config: BlockSettingsConfig = {
 							>
 								{Array.from(options, (option, i) => {
 									return (
-										<MenuItem key={i} value={option.value}>
+										<Menu.Item key={i} value={option.value}>
 											{option.display}
-										</MenuItem>
+										</Menu.Item>
 									);
 								})}
 							</Select>
