@@ -1,7 +1,7 @@
 import { Schema } from "@mui/icons-material";
 import { useRef, useState } from "react";
 import type { Block, BlockDef, Paths, PathValue } from "@semoss/renderer";
-import { AutocompleteTwo, TextField } from "@semoss/ui";
+import { Autocomplete, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { InputSettings, QueryInputSettings } from "../../settings";
 import { BaseSettingSection } from "../../settings/BaseSettingSection";
@@ -59,15 +59,24 @@ const SettingAutocomplete = <D extends BlockDef>({
 	};
 
 	return (
-		<AutocompleteTwo
+		<Autocomplete
 			fullWidth
 			options={options}
+            multiple={false}
 			value={options.find((opt) => opt.value === selectedValue) || null}
 			onChange={(_, newValue) => {
-				setBlockData(newValue?.value);
+				setBlockData(typeof newValue === 'object' && newValue !== null ? newValue.value : undefined);
 			}}
-			getOptionLabel={(option) => option.label}
+			getOptionLabel={(option) =>
+                typeof option === 'object' && option !== null ? option.label : ''
+            }
 			isOptionEqualToValue={(option, value) =>
+                typeof option === 'object' &&
+                option !== null &&
+                typeof value === 'object' &&
+                value !== null &&
+                'value' in option &&
+                'value' in value &&
 				option.value === value.value
 			}
 			renderInput={(params) => (

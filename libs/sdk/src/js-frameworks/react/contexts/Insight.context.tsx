@@ -1,5 +1,5 @@
 import { createContext, useEffect, useMemo, useState } from "react";
-import { Insight } from "../..";
+import { Insight } from "../../..";
 
 /**
  * Context of the react data

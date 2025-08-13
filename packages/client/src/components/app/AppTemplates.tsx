@@ -1,13 +1,11 @@
-import { Person, QueryBuilder } from "@mui/icons-material";
-import { Button, Card, Chip, Stack, styled, Typography } from "@semoss/ui";
-import { AppTileCard } from "./AppTileCard";
+import { Stack, styled } from "@semoss/ui";
 import type { AppMetadata } from "./app.types";
 import { BrowseTemplateTileCard } from "./BrowseTempateTitleCard";
 import {
-	AskCSVTemplate,
 	AskLLMTemplate,
 	BlocksGuideTemplate,
 	CreateDiabetesRecordTemplate,
+	CustomFrameToVisualizationTemplate,
 	DeleteDiabetesRecordTemplate,
 	LandingPageTemplate,
 	MultiPageTemplate,
@@ -20,6 +18,7 @@ import {
 const DEFAULT_TEMPLATE = [
 	LandingPageTemplate,
 	AskLLMTemplate,
+	CustomFrameToVisualizationTemplate,
 	VisualizeCSVTemplate,
 	BlocksGuideTemplate,
 	MultiPageTemplate,

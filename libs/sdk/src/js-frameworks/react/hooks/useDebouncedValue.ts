@@ -1,23 +1,22 @@
 import { useEffect, useRef, useState } from "react";
 
 /**
- * Debouncea
+ * Debounce a value
  * @param value - new value
  * @param delay - delay timer
  * @returns debounced value
  */
 export const useDebouncedValue = <T>(value: T, delay = 500) => {
 	const [debouncedValue, setDebouncedValue] = useState<T>(undefined);
-	const timerRef = useRef<ReturnType<typeof setTimeout>>();
+	const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
 	useEffect(() => {
-		// waittill it is set
-		timerRef.current = setTimeout(() => {
+		timeoutRef.current = setTimeout(() => {
 			setDebouncedValue(value);
 		}, delay);
 
 		return () => {
-			clearTimeout(timerRef.current);
+			clearTimeout(timeoutRef.current);
 		};
 	}, [value, delay]);
 
