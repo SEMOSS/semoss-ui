@@ -29,7 +29,7 @@ import {
 } from "@semoss/renderer";
 import {
 	Accordion,
-	AutocompleteTwo,
+	Autocomplete,
 	Divider,
 	Icon,
 	IconButton,
@@ -680,12 +680,13 @@ export const QueryInputSettings = observer(
 							</IconButton>
 						</Stack>
 					</Stack>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						disableClearable={value === ""}
 						size="small"
 						freeSolo
 						style={{ marginTop: "10px" }}
+                        multiple={false}
 						value={value}
 						inputValue={inputValue}
 						onInputChange={handleInputChange}
