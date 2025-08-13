@@ -14,7 +14,7 @@ import {
 	Box,
 	ClickAwayListener,
 	IconButton,
-	MenuItem,
+	Menu,
 	Select,
 	TextField,
 	ToggleButton,
@@ -221,12 +221,12 @@ export const BorderSettings = observer(
 							}
 						}}
 					>
-						<MenuItem value={""}>
+						<Menu.Item value={""}>
 							<em>None</em>
-						</MenuItem>
-						<MenuItem value={"solid"}>Solid</MenuItem>
-						<MenuItem value={"dashed"}>Dashed</MenuItem>
-						<MenuItem value={"dotted"}>Dotted</MenuItem>
+						</Menu.Item>
+						<Menu.Item value={"solid"}>Solid</Menu.Item>
+						<Menu.Item value={"dashed"}>Dashed</Menu.Item>
+						<Menu.Item value={"dotted"}>Dotted</Menu.Item>
 					</Select>
 				</BaseSettingSection>
 				<Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>

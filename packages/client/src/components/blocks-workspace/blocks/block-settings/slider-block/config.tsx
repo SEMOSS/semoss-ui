@@ -1,6 +1,6 @@
 import { BlurLinear } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { MenuItem, Select } from "@semoss/ui";
+import { Menu, Select } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import {
 	ColorSettings,
@@ -50,9 +50,9 @@ export const config: BlockSettingsConfig = {
 							>
 								{Array.from(options, (option, i) => {
 									return (
-										<MenuItem key={i} value={option.value}>
+										<Menu.Item key={i} value={option.value}>
 											{option.display}
-										</MenuItem>
+										</Menu.Item>
 									);
 								})}
 							</Select>

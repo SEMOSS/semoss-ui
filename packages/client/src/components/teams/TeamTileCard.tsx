@@ -17,7 +17,7 @@ import {
 	Chip,
 	IconButton,
 	Link,
-	MenuItemTwo,
+	Menu,
 	MenuList,
 	Modal,
 	Popover,
@@ -468,7 +468,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					>
 						<MenuList>
 							{type === "CUSTOM" && (
-								<MenuItemTwo
+								<Menu.Item
 									onClick={(e) => {
 										e.stopPropagation();
 										handleClose(e);
@@ -480,9 +480,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										<PersonAddIcon />
 										<div>Add member to team</div>
 									</Stack>
-								</MenuItemTwo>
+								</Menu.Item>
 							)}
-							<MenuItemTwo
+							<Menu.Item
 								onClick={(e) => {
 									e.stopPropagation();
 									handleClose(e);
@@ -493,8 +493,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
 									<EditIcon />
 									<div>Edit team</div>
 								</Stack>
-							</MenuItemTwo>
-							<MenuItemTwo
+							</Menu.Item>
+							<Menu.Item
 								onClick={(e) => {
 									e.stopPropagation();
 									setDeleteModal(true);
@@ -519,7 +519,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										Delete team
 									</div>
 								</Stack>
-							</MenuItemTwo>
+							</Menu.Item>
 						</MenuList>
 					</Popover>
 				</StyledActionContainer>

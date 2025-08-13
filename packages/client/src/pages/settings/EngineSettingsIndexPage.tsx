@@ -10,7 +10,7 @@ import {
 	Backdrop,
 	CircularProgress,
 	Grid,
-	MenuItem,
+	Menu,
 	Search,
 	Select,
 	Stack,
@@ -420,11 +420,11 @@ export const EngineSettingsIndexPage = (
 						onChange={(e) => setSort(e.target.value)}
 						label={"Sort By"}
 					>
-						<MenuItem value="ENGINENAME">Name</MenuItem>
-						<MenuItem value="DATECREATED">Date Created</MenuItem>
-						{/* <MenuItem value="Views">Views</MenuItem>
-                        <MenuItem value="Trending">Trending</MenuItem>
-                        <MenuItem value="Upvotes">Upvotes</MenuItem> */}
+						<Menu.Item value="ENGINENAME">Name</Menu.Item>
+						<Menu.Item value="DATECREATED">Date Created</Menu.Item>
+						{/* <Menu.Item value="Views">Views</Menu.Item>
+                        <Menu.Item value="Trending">Trending</Menu.Item>
+                        <Menu.Item value="Upvotes">Upvotes</Menu.Item> */}
 					</StyledSort>
 
 					<ToggleButtonGroup
