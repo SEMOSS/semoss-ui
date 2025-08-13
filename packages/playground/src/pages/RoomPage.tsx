@@ -26,6 +26,7 @@ import {
 	RoomMessage,
 } from "@/components";
 import { useChat } from "@/hooks";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
@@ -96,20 +97,43 @@ export const RoomPage = observer(() => {
 
 			navigate("/");
 		}
-	}, [room]);
+	}, [room, notification.add]);
 
 	// create a listener to process messages from the room
 	useEffect(() => {
-		// ignore if not initialized
-		if (!room || room.isInitialized) {
+		// ignore if there is no room
+		if (!room) {
 			return;
 		}
 
 		const handleMessage = async (
-			event: MessageEvent<{ data: Record<string, unknown> }>,
+			event: MessageEvent<{
+				type: "SMSS_TOOL";
+				messageId: string;
+				toolId: string;
+				toolName: string;
+				response: string;
+			}>,
 		) => {
 			try {
-				console.log("PROCESS EVENT", event);
+				if (!event.data || event.data.type !== "SMSS_TOOL") {
+					return;
+				}
+
+				const message = room.getMessage(event.data.messageId);
+				if (
+					!message ||
+					message instanceof ResponseMessageStore !== true
+				) {
+					return;
+				}
+
+				room.saveTool(
+					message,
+					event.data.toolId,
+					event.data.toolName,
+					event.data.response,
+				);
 			} catch {
 				// noop
 			}
@@ -120,7 +144,7 @@ export const RoomPage = observer(() => {
 		return () => {
 			window.removeEventListener("message", handleMessage);
 		};
-	}, []);
+	}, [room]);
 
 	if (!room || !room.isInitialized) {
 		return <LoadingScreen.Trigger />;

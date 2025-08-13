@@ -19,11 +19,22 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** tool execution id */
 		id: string;
 
+		/**  title of tool **/
+		title: string;
+
+		/** meta data from the tool */
+		_meta: {
+			map: {
+				SMSS_PROJECT_NAME: string;
+				SMSS_PROJECT_ID: string;
+			};
+		};
+
 		/**  Name of function **/
 		name: string;
 
 		/** Parameters used in the tool */
-		parameters: Record<string, unknown>;
+		arguments: Record<string, unknown>;
 	}[];
 
 	/**
@@ -45,11 +56,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	constructor(
 		id: string,
 		text: string,
-		tools: {
-			id: string;
-			name: string;
-			parameters: Record<string, unknown>;
-		}[],
+		tools: ResponseMessageStore["tools"],
 	) {
 		super(id);
 

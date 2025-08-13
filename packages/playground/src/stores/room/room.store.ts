@@ -4,6 +4,7 @@ import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import type { Knowledge, PixelMessage, Tool } from "@/types";
 import {
+	type AbstractMessageStore,
 	InputMessageStore,
 	ResponseMessageStore,
 	RootMessageStore,
@@ -196,6 +197,25 @@ export class RoomStore {
 	}
 
 	/**
+	 * Get a message by id the model
+	 * @param messageId - model to use in the room
+	 */
+	getMessage = (messageId: string) => {
+		const queue: AbstractMessageStore[] = [this._store.root];
+		while (queue.length > 0) {
+			const current = queue.shift();
+
+			if (current.id === messageId) {
+				return current;
+			}
+
+			queue.push(...current.children);
+		}
+
+		return null;
+	};
+
+	/**
 	 * Get the history of the room based on the active children
 	 */
 	get history(): (InputMessageStore | ResponseMessageStore)[] {
@@ -265,7 +285,6 @@ export class RoomStore {
 		};
 	};
 	/** Actions */
-
 	/**
 	 * Initialize the room and load messages if they are there
 	 */
@@ -474,9 +493,10 @@ paramValues=[${JSON.stringify({
 				for (const tool of responseMessage.tools) {
 					await this.runTool(
 						responseMessage,
+						tool._meta.map.SMSS_PROJECT_ID,
 						tool.id,
 						tool.name,
-						tool.parameters,
+						tool.arguments,
 					);
 				}
 			}
@@ -486,6 +506,7 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
+	// TODO: Optimize
 	/**
 	 * Rewrite a message and generate a new sibling
 	 * @param message - the original agent message
@@ -556,9 +577,10 @@ paramValues=[${JSON.stringify({
 				for (const tool of responseMessage.tools) {
 					await this.runTool(
 						responseMessage,
+						tool._meta.map.SMSS_PROJECT_ID,
 						tool.id,
 						tool.name,
-						tool.parameters,
+						tool.arguments,
 					);
 				}
 			}
@@ -571,23 +593,25 @@ paramValues=[${JSON.stringify({
 	/**
 	 * Run a tool
 	 * @param message - the original agent message
+	 * @param appId - id of the app
 `	 * @param toolId - id of the tool
 	 * @param toolName - func of the tool to run
-	 * @param toolParameters - parameters to pass in
+	 * @param toolArguments - arguments to pass in
 	 */
 	runTool = async (
 		message: ResponseMessageStore,
+		appId: string,
 		toolId: string,
 		toolName: string,
-		toolParameters: Record<string, unknown>,
+		toolArguments: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
 
 			// wait for the pixel to run
-			const response = await this.runPixel<[{ response: string }]>(
-				`RunMCPTool(project = [ "${toolId}" ], function=[ "${toolName}" ], paramValues=[ ${JSON.stringify(toolParameters)} ]);`,
+			const response = await this.runPixel<[string]>(
+				`RunMCPTool(project = [ "${appId}" ], function=[ "${toolName}" ], paramValues=[ ${JSON.stringify(toolArguments)} ]);`,
 			);
 
 			// throw errors
@@ -597,7 +621,7 @@ paramValues=[${JSON.stringify({
 
 			const { output } = response.pixelReturn[0];
 
-			this.saveTool(message, toolId, toolName, output.response);
+			this.saveTool(message, toolId, toolName, output);
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -629,7 +653,13 @@ paramValues=[${JSON.stringify({
 					},
 				]
 			>(
-				`AddPlaygroundToolExecution(roomId = [ "${this._store.roomId}" ], toolId = [ "${toolId}" ], toolName=[ "${toolName}" ], response=[ ${executionResponse} ]);`,
+				`AddPlaygroundToolExecution(
+engine=["${this._store.modelId}"],
+roomId = ["${this._store.roomId}"], 
+toolId = ["${toolId}"],
+toolName=["${toolName}"],
+tool_execution_response=["${executionResponse}"]
+);`,
 			);
 
 			// throw errors
@@ -772,11 +802,7 @@ paramValues=[${JSON.stringify({
 			return new ResponseMessageStore(
 				pixelMessage.messageId,
 				"",
-				pixelMessage.tool_responses.map((t) => ({
-					id: t.id,
-					name: t.name,
-					parameters: t.arguments,
-				})),
+				pixelMessage.tool_responses,
 			);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			return new ResponseMessageStore(
@@ -788,11 +814,7 @@ paramValues=[${JSON.stringify({
 			return new ResponseMessageStore(
 				pixelMessage.messageId,
 				"",
-				pixelMessage.tool_responses.map((t) => ({
-					id: t.id,
-					name: t.name,
-					parameters: t.arguments,
-				})),
+				pixelMessage.tool_responses,
 			);
 		}
 	};

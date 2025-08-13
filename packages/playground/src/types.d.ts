@@ -110,6 +110,17 @@ interface InputToolExecPixelMessage extends AbstractPixelMessage {
 		/** tool execution id */
 		id: string;
 
+		/** meta data from the tool */
+		_meta: {
+			map: {
+				SMSS_PROJECT_NAME: string;
+				SMSS_PROJECT_ID: string;
+			};
+		};
+
+		/**  Display of the tool **/
+		title: string;
+
 		/**  Name of function **/
 		name: string;
 
@@ -131,6 +142,17 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	tool_responses: {
 		/** tool execution id */
 		id: string;
+
+		/** meta data from the tool */
+		_meta: {
+			map: {
+				SMSS_PROJECT_NAME: string;
+				SMSS_PROJECT_ID: string;
+			};
+		};
+
+		/**  Display of the tool **/
+		title: string;
 
 		/**  Name of function **/
 		name: string;

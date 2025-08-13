@@ -82,10 +82,14 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							{
 								id: toolNodeId,
 								type: "tab",
-								name: tool.name,
+								name: tool.title,
 								component: "tools-artifact",
 								config: {
-									tool: tool,
+									messageId: message.id,
+									appId: tool._meta.map.SMSS_PROJECT_ID,
+									toolId: tool.id,
+									toolName: tool.name,
+									toolArguments: tool.arguments,
 								},
 								enableClose: true,
 							},
@@ -105,7 +109,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 							textOverflow: "ellipsis",
 						}}
 					>
-						{tool.name}
+						{tool.title}
 					</Typography>
 					<Typography variant="caption">Click to Open</Typography>
 				</Stack>

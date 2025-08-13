@@ -1,12 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { useMemo, useRef, useState } from "react";
+import { Env } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton, styled } from "@semoss/ui";
-import type { ResponseMessageStore } from "@/stores";
-
-const VITE_LOGO_TOOL_ARTIFACT_URL = import.meta.env.VITE_LOGO_TOOL_ARTIFACT_URL
-	? import.meta.env.VITE_LOGO_TOOL_ARTIFACT_URL
-	: "";
 
 const StyledContent = styled("div")(() => ({
 	display: "flex",
@@ -36,11 +32,15 @@ interface ArtifactAppProps {
 }
 
 export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
-	const config = node.getConfig() as {
-		tool: ResponseMessageStore["tools"][number];
-	};
-
-	const tool = config.tool;
+	const config: {
+		messageId?: string;
+		appId?: string;
+		toolId?: string;
+		toolName?: string;
+		toolArguments?: Record<string, unknown>;
+	} = useMemo(() => {
+		return node.getConfig();
+	}, [node]);
 
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -54,30 +54,33 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 
 	const url = useMemo(() => {
 		// ignore if no tool
-		if (!tool) {
+		if (!config || !config.appId) {
 			return "";
 		}
 
-		// construct the url
-		let url = `${VITE_LOGO_TOOL_ARTIFACT_URL}#/s/${tool.id}`;
+		const params = new URLSearchParams();
 
-		const params = [];
-		for (const [key, value] of Object.entries(tool.parameters)) {
-			if (typeof value !== "undefined") {
-				params.push(`${key}=${value}`);
-			}
+		params.set("messageId", config.messageId);
+		params.set("toolId", config.toolId);
+		params.set("toolName", config.toolName);
+		if (
+			config.toolArguments &&
+			Object.keys(config.toolArguments).length > 0
+		) {
+			params.set("toolArguments", JSON.stringify(config.toolArguments));
 		}
 
-		if (params.length > 0) {
-			url += `?${params.concat("&")}`;
-		}
+		return `${Env.MODULE}/public_home/${config.appId}/portals/?${params.toString()}`;
+	}, [
+		config,
+		config?.messageId,
+		config?.appId,
+		config?.toolId,
+		config?.toolName,
+		config?.toolArguments,
+	]);
 
-		return url;
-	}, [tool]);
-
-	console.log(url);
-
-	if (!tool) {
+	if (!config) {
 		return <div>No Tool</div>;
 	}
 
