@@ -235,6 +235,7 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					if (selectedFile === pathsToDelete[0]) {
 						setSelectedFile("");
 					}
+					setSelected([]);
 					refreshFiles();
 				}
 			} catch (e) {
@@ -288,7 +289,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					message: `Successfully deleted ${pathsToDelete.length} file(s)`,
 				});
 			} catch (e) {
-				console.error("Delete multiple error:", e);
 				notification.add({
 					color: "error",
 					message: `Failed to delete file(s): ${e.message || e}`,
@@ -342,8 +342,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					message: `Successfully downloaded: ${filename}`,
 				});
 			} catch (e) {
-				console.error("Download error:", e);
-
 				let errorMessage = "Download failed: ";
 				if (e instanceof Error) {
 					if (e.message.includes("directory")) {
@@ -425,8 +423,6 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 					setSelected([]);
 				}
 			} catch (e) {
-				console.error("Download multiple error:", e);
-
 				let errorMessage = "ZIP download failed: ";
 				if (e instanceof Error) {
 					if (e.message.includes("directory")) {
@@ -447,8 +443,10 @@ export const StorageFileExplorer = (props: StorageFileExplorerProps) => {
 				} else {
 					errorMessage += "An unexpected error occurred.";
 				}
-
-				console.error(errorMessage);
+				notification.add({
+					color: "error",
+					message: errorMessage,
+				});
 			}
 		}
 	};
