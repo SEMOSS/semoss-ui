@@ -87,7 +87,13 @@ export const AddAppModal = (props: AddAppProps) => {
 				ADD_APP_FORM_FIELD_TYPE,
 			],
 		},
-
+		{
+			name: "Tags",
+			icon: <LocalOffer />,
+			title: "Tags",
+			component: AppTagsStep,
+			requiredFields: [],
+		},
 		{
 			name: "Access",
 			icon: <Visibility />,
@@ -194,6 +200,30 @@ export const AddAppModal = (props: AddAppProps) => {
 			setPendingProjectId(
 				(uploadResult.output as UploadProjectAppOutput).project_id,
 			);
+
+			// Set tags if provided
+			if (
+				data[ADD_APP_FORM_FIELD_TAGS].length > 0 ||
+				data[ADD_APP_FORM_FIELD_DESCRIPTION]
+			) {
+				const metadataResult = await setProjectMetadataWithTags(
+					monolithStore,
+					(uploadResult.output as UploadProjectAppOutput).project_id,
+					data[ADD_APP_FORM_FIELD_TAGS],
+					data[ADD_APP_FORM_FIELD_DESCRIPTION] || "",
+				);
+
+				if (metadataResult.type === "error") {
+					notification.add({
+						color: "error",
+						message: String(metadataResult.output),
+					});
+
+					handleClose();
+					return;
+				}
+			}
+
 			setShowEngineModal(true);
 		} else {
 			// Use pixel function for CreateProject
@@ -219,8 +249,8 @@ export const AddAppModal = (props: AddAppProps) => {
 				monolithStore,
 				(createProjectResult.output as UploadProjectAppOutput)
 					.project_id,
-				data.tags,
-				data.description,
+				data[ADD_APP_FORM_FIELD_TAGS],
+				data[ADD_APP_FORM_FIELD_DESCRIPTION],
 			);
 
 			if (metadataResult.type === "error") {
