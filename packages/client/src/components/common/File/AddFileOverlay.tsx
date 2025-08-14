@@ -1,16 +1,19 @@
 import { useState } from "react";
 import {
-    Button,
-    Modal,
-    FileDropzone,
-    LinearProgress,
-    Typography,
-    Stack,
-    Checkbox,
-} from '@semoss/ui';
-import EngineIdsModal from '@/components/app/save-app/EngineIdsModal';
-import { useRootStore } from '@/hooks';
+	Button,
+	Checkbox,
+	FileDropzone,
+	LinearProgress,
+	Modal,
+	Stack,
+	Typography,
+} from "@semoss/ui";
+import EngineIdsModal from "@/components/app/save-app/EngineIdsModal";
+import { useRootStore } from "@/hooks";
+import { extractAndSetDependencies, unzipProjectFile } from "@/pixel/projects";
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
+
+type ExtractOutput = { engineIds: Record<string, unknown> };
 
 interface AddFileOverlayProps {
 	/** Type of file opened */
@@ -31,20 +34,23 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
 	const { monolithStore, configStore } = useRootStore();
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [uploadFile, setUploadFiles] = useState<File>(null);
-    const [unzipFile, setUnzipFile] = useState<boolean>(false);
-    const [showEngineIdsModal, setShowEngineIdsModal] = useState(false);
-    const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(null);
-    const { engineDependenciesState, updateEngineDependencies } = useEngineDependenciesState();
+	const [isLoading, setIsLoading] = useState(false);
+	const [uploadFile, setUploadFiles] = useState<File>(null);
+	const [unzipFile, setUnzipFile] = useState<boolean>(false);
+	const [showEngineIdsModal, setShowEngineIdsModal] = useState(false);
+	const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(
+		null,
+	);
+	const { engineDependenciesState, updateEngineDependencies } =
+		useEngineDependenciesState();
 
-    const handleEngineIdsModalClose = () => {
-        setShowEngineIdsModal(false);
-        if (pendingUploadPath) {
-            onClose(true, pendingUploadPath);
-            setPendingUploadPath(null);
-        }
-    };
+	const handleEngineIdsModalClose = () => {
+		setShowEngineIdsModal(false);
+		if (pendingUploadPath) {
+			onClose(true, pendingUploadPath);
+			setPendingUploadPath(null);
+		}
+	};
 
 	/**
 	 * Add the file to the app
@@ -71,25 +77,28 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
 			const path = `${uploadPath}${upload[0].fileName}`;
 
-            if (unzipFile) {
-                if (type === 'app') {
-                    await monolithStore.runQuery(
-                        `UnzipFile(filePath=["${path}"], space=["${space}"])`,
-                    );
-                    const extractResult = await monolithStore.runQuery(
-                        `ExtractAndSetDependencies(filePath=["version/assets"], project=["${space}"]);`
-                    );
-
-                    const extractOutput = extractResult.pixelReturn[0].output;
-                    // Process engine dependencies using utility function
-                    updateEngineDependencies(extractOutput.engineIds);
-                    setPendingUploadPath(path);
-                    setShowEngineIdsModal(true);
-                    return;
-                } else {
-                    throw new Error('TODO');
-                }
-            }
+			if (unzipFile) {
+				if (type === "app") {
+					await unzipProjectFile(monolithStore, path, space);
+					const extractResult = await extractAndSetDependencies(
+						monolithStore,
+						space,
+					);
+					const extractOutput: ExtractOutput =
+						extractResult.output &&
+						typeof extractResult.output === "object" &&
+						"engineIds" in extractResult.output
+							? (extractResult.output as ExtractOutput)
+							: { engineIds: {} };
+					// Process engine dependencies using utility function
+					updateEngineDependencies(extractOutput.engineIds);
+					setPendingUploadPath(path);
+					setShowEngineIdsModal(true);
+					return;
+				} else {
+					throw new Error("TODO");
+				}
+			}
 
 			onClose(true, path);
 		} catch (e) {
@@ -103,57 +112,57 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 		}
 	};
 
-    return (
-        <>
-            <Modal.Title>Upload Files</Modal.Title>
-            <Modal.Content>
-                <Stack direction={'column'} spacing={2}>
-                    <Typography variant="body2">
-                        Upload files to <b>{uploadPath}</b>
-                    </Typography>
-                    <FileDropzone
-                        multiple={false}
-                        value={uploadFile}
-                        disabled={isLoading}
-                        onChange={(newValue: File) => {
-                            setUploadFiles(newValue);
-                        }}
-                    />
-                    <Checkbox
-                        checked={unzipFile}
-                        onChange={() => {
-                            setUnzipFile(!unzipFile);
-                        }}
-                        label={<Typography variant="body2">Unzip?</Typography>}
-                    />
-                </Stack>
-            </Modal.Content>
-            <Modal.Actions>
-                <Button
-                    type="button"
-                    disabled={isLoading}
-                    onClick={() => onClose(false, '')}
-                >
-                    Cancel
-                </Button>
-                <Button
-                    variant={'contained'}
-                    disabled={isLoading}
-                    onClick={() => addFile()}
-                >
-                    Upload
-                </Button>
-            </Modal.Actions>
-            {isLoading && <LinearProgress />}
-            <EngineIdsModal
-                open={showEngineIdsModal}
-                successIds={engineDependenciesState.successfulEngineIds}
-                failedIds={engineDependenciesState.failedEngineIds}
-                onClose={handleEngineIdsModalClose}
-                appId={space}
-                isUploadProjectApp={false}
-                engineInfo={engineDependenciesState.engineDetails}
-            />
-        </>
-    );
+	return (
+		<>
+			<Modal.Title>Upload Files</Modal.Title>
+			<Modal.Content>
+				<Stack direction={"column"} spacing={2}>
+					<Typography variant="body2">
+						Upload files to <b>{uploadPath}</b>
+					</Typography>
+					<FileDropzone
+						multiple={false}
+						value={uploadFile}
+						disabled={isLoading}
+						onChange={(newValue: File) => {
+							setUploadFiles(newValue);
+						}}
+					/>
+					<Checkbox
+						checked={unzipFile}
+						onChange={() => {
+							setUnzipFile(!unzipFile);
+						}}
+						label={<Typography variant="body2">Unzip?</Typography>}
+					/>
+				</Stack>
+			</Modal.Content>
+			<Modal.Actions>
+				<Button
+					type="button"
+					disabled={isLoading}
+					onClick={() => onClose(false, "")}
+				>
+					Cancel
+				</Button>
+				<Button
+					variant={"contained"}
+					disabled={isLoading}
+					onClick={() => addFile()}
+				>
+					Upload
+				</Button>
+			</Modal.Actions>
+			{isLoading && <LinearProgress />}
+			<EngineIdsModal
+				open={showEngineIdsModal}
+				successIds={engineDependenciesState.successfulEngineIds}
+				failedIds={engineDependenciesState.failedEngineIds}
+				onClose={handleEngineIdsModalClose}
+				appId={space}
+				isUploadProjectApp={false}
+				engineInfo={engineDependenciesState.engineDetails}
+			/>
+		</>
+	);
 };

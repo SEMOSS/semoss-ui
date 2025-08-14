@@ -9,7 +9,7 @@ import {
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
-    Avatar,
+	Avatar,
 	Button,
 	Divider,
 	FileDropzone,
@@ -22,19 +22,22 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { Java } from '@/assets/img/Java';
-import { LoadingScreen } from '@/components/ui';
-import { usePixel, useRootStore, useSettings } from '@/hooks';
+import { Java } from "@/assets/img/Java";
+import { LoadingScreen } from "@/components/ui";
+import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { extractAndSetDependencies, unzipProjectFile } from "@/pixel/projects";
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
-import EngineIdsModal from './save-app/EngineIdsModal';
 
-const StyledAppSettings = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    width: '100%',
-    gap: '1rem',
-    marginBottom: theme.spacing(10),
+type ExtractOutput = { engineIds: Record<string, unknown> };
 
+import EngineIdsModal from "./save-app/EngineIdsModal";
+
+const StyledAppSettings = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	width: "100%",
+	gap: "1rem",
+	marginBottom: theme.spacing(10),
 }));
 
 const StyledCardContainer = styled("div")(({ theme }) => ({
@@ -230,693 +233,715 @@ type EditAppForm = {
 };
 
 export const AppSettings = (props: AppSettingsProps) => {
-    const { id, condensed = false } = props;
-    const { monolithStore, configStore } = useRootStore();
-    const notification = useNotification();
-    const { adminMode } = useSettings();
-    const [isLoading, setIsLoading] = useState<boolean>(false);
-    const [showEngineModal, setShowEngineModal] = useState(false);
-    const { engineDependenciesState, updateEngineDependencies } = useEngineDependenciesState();
+	const { id, condensed = false } = props;
+	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
+	const { adminMode } = useSettings();
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [showEngineModal, setShowEngineModal] = useState(false);
+	const { engineDependenciesState, updateEngineDependencies } =
+		useEngineDependenciesState();
 
-    const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
-        defaultValues: {
-            PROJECT_UPLOAD: null,
-        },
-    });
+	const { handleSubmit, control, reset, watch } = useForm<EditAppForm>({
+		defaultValues: {
+			PROJECT_UPLOAD: null,
+		},
+	});
 
-    const uploadFile = watch('PROJECT_UPLOAD');
+	const uploadFile = watch("PROJECT_UPLOAD");
 
-    const admin = configStore.store.user.admin;
+	const admin = configStore.store.user.admin;
 
-    const [portalReactors, setPortalReactors] = useState<{
-        reactors: string[];
-        lastCompiled?: string;
-        compiledBy?: string;
-    }>({
-        lastCompiled: '',
-        reactors: [],
-        compiledBy: '',
-    });
+	const [portalReactors, setPortalReactors] = useState<{
+		reactors: string[];
+		lastCompiled?: string;
+		compiledBy?: string;
+	}>({
+		lastCompiled: "",
+		reactors: [],
+		compiledBy: "",
+	});
 
-    const [portalDetails, setPortalDetails] = useState<{
-        url?: string;
-        hasPortal?: boolean;
-        // isPublished: boolean;
-        project_has_portal: boolean;
-        project_portal_url?: string;
-        lastCompiled?: string;
-        compiledBy?: string;
-    }>({
-        url: '',
-        hasPortal: false,
-        // isPublished: false,
-        project_has_portal: false,
-        project_portal_url: '',
-        lastCompiled: '12/25/2022',
-        compiledBy: 'J.Smith',
-    });
+	const [portalDetails, setPortalDetails] = useState<{
+		url?: string;
+		hasPortal?: boolean;
+		// isPublished: boolean;
+		project_has_portal: boolean;
+		project_portal_url?: string;
+		lastCompiled?: string;
+		compiledBy?: string;
+	}>({
+		url: "",
+		hasPortal: false,
+		// isPublished: false,
+		project_has_portal: false,
+		project_portal_url: "",
+		lastCompiled: "12/25/2022",
+		compiledBy: "J.Smith",
+	});
 
-    const getPortalDetails = usePixel<{
-        url?: string;
-        hasPortal?: boolean;
-        // isPublished: boolean;
-        project_has_portal: boolean;
-        project_portal_url?: string;
-        lastCompiled?: string;
-        compiledBy?: string;
-    }>(
-        adminMode
-            ? `AdminGetProjectPortalDetails('${id}');`
-            : `GetProjectPortalDetails('${id}');`,
-    );
+	const getPortalDetails = usePixel<{
+		url?: string;
+		hasPortal?: boolean;
+		// isPublished: boolean;
+		project_has_portal: boolean;
+		project_portal_url?: string;
+		lastCompiled?: string;
+		compiledBy?: string;
+	}>(
+		adminMode
+			? `AdminGetProjectPortalDetails('${id}');`
+			: `GetProjectPortalDetails('${id}');`,
+	);
 
-    useEffect(() => {
-        if (getPortalDetails.status !== 'SUCCESS') {
-            return;
-        }
+	useEffect(() => {
+		if (getPortalDetails.status !== "SUCCESS") {
+			return;
+		}
 
-        // Set Details for Portal
-        setPortalDetails({
-            ...getPortalDetails.data,
-        });
+		// Set Details for Portal
+		setPortalDetails({
+			...getPortalDetails.data,
+		});
 
-        // Get the portal reactors if we have a portal
-        if (getPortalDetails.data.project_has_portal) {
-            getPortalReactors();
-        }
-    }, [getPortalDetails.status, getPortalDetails.data]);
+		// Get the portal reactors if we have a portal
+		if (getPortalDetails.data.project_has_portal) {
+			getPortalReactors();
+		}
+	}, [getPortalDetails.status, getPortalDetails.data]);
 
-    /** LOADING */
-    if (getPortalDetails.status !== 'SUCCESS') {
-        return (
-            <LoadingScreen.Trigger description="Getting app portal details" />
-        );
-    }
+	/** LOADING */
+	if (getPortalDetails.status !== "SUCCESS") {
+		return (
+			<LoadingScreen.Trigger description="Getting app portal details" />
+		);
+	}
 
-    /**
-     * @name getPortalReactors
-     */
-    const getPortalReactors = () => {
-        const pixelString = adminMode
-            ? `AdminGetProjectAvailableReactors(project=['${id}']);`
-            : `GetProjectAvailableReactors(project=['${id}']);`;
+	/**
+	 * @name getPortalReactors
+	 */
+	const getPortalReactors = () => {
+		const pixelString = adminMode
+			? `AdminGetProjectAvailableReactors(project=['${id}']);`
+			: `GetProjectAvailableReactors(project=['${id}']);`;
 
-        monolithStore
-            .runQuery(pixelString)
-            .then((response) => {
-                let output = undefined;
-                let type = undefined;
+		monolithStore
+			.runQuery(pixelString)
+			.then((response) => {
+				let output;
+				let type;
 
-                output = response.pixelReturn[0].output;
-                type = response.pixelReturn[0].operationType[0];
+				output = response.pixelReturn[0].output;
+				type = response.pixelReturn[0].operationType[0];
 
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
+				if (type.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message: output,
+					});
 
-                    return;
-                }
+					return;
+				}
 
-                setPortalReactors({
-                    ...portalReactors,
-                    reactors: output,
-                });
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    message: error,
-                });
-            });
-    };
+				setPortalReactors({
+					...portalReactors,
+					reactors: output,
+				});
+			})
+			.catch((error) => {
+				notification.add({
+					color: "error",
+					message: error,
+				});
+			});
+	};
 
-    /**
-     * @name recompileReactors
-     */
-    const recompileReactors = ({ release }) => {
-        let pixelString;
-        if (release == null) {
-            pixelString = `ReloadInsightClasses(project='${id}');`;
-        } else {
-            pixelString = `ReloadInsightClasses(project='${id}', release=true);`;
-        }
+	/**
+	 * @name recompileReactors
+	 */
+	const recompileReactors = ({ release }) => {
+		let pixelString;
+		if (release == null) {
+			pixelString = `ReloadInsightClasses(project='${id}');`;
+		} else {
+			pixelString = `ReloadInsightClasses(project='${id}', release=true);`;
+		}
 
-        monolithStore
-            .runQuery(pixelString)
-            .then((response) => {
-                let output = undefined;
-                let type = undefined;
+		monolithStore
+			.runQuery(pixelString)
+			.then((response) => {
+				let output;
+				let type;
 
-                output = response.pixelReturn[0].output;
-                type = response.pixelReturn[0].operationType[0];
+				output = response.pixelReturn[0].output;
+				type = response.pixelReturn[0].operationType[0];
 
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
-                    return;
-                }
+				if (type.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message: output,
+					});
+					return;
+				}
 
-                if (release == null) {
-                    notification.add({
-                        color: 'success',
-                        message: 'Successfully recompiled',
-                    });
-                } else {
-                    notification.add({
-                        color: 'success',
-                        message: 'Successfully redeployed',
-                    });
-                }
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    message: error,
-                });
-            });
-    };
+				if (release == null) {
+					notification.add({
+						color: "success",
+						message: "Successfully recompiled",
+					});
+				} else {
+					notification.add({
+						color: "success",
+						message: "Successfully redeployed",
+					});
+				}
+			})
+			.catch((error) => {
+				notification.add({
+					color: "error",
+					message: error,
+				});
+			});
+	};
 
-    /**
-     * @name publish
-     * @desc Publishes Portal
-     */
-    const publish = () => {
-        const pixelString = `PublishProject(project='${id}', release=true);`;
+	/**
+	 * @name publish
+	 * @desc Publishes Portal
+	 */
+	const publish = () => {
+		const pixelString = `PublishProject(project='${id}', release=true);`;
 
-        monolithStore
-            .runQuery(pixelString)
-            .then((response) => {
-                let output = undefined;
-                let type = undefined;
+		monolithStore
+			.runQuery(pixelString)
+			.then((response) => {
+				let output;
+				let type;
 
-                output = response.pixelReturn[0].output;
-                type = response.pixelReturn[0].operationType[0];
+				output = response.pixelReturn[0].output;
+				type = response.pixelReturn[0].operationType[0];
 
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
+				if (type.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message: output,
+					});
 
-                    return;
-                }
+					return;
+				}
 
-                setPortalDetails({
-                    ...portalDetails,
-                    project_portal_url: output,
-                });
+				setPortalDetails({
+					...portalDetails,
+					project_portal_url: output,
+				});
 
-                notification.add({
-                    color: 'success',
-                    message: 'Successfully published',
-                });
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    message: error,
-                });
-            });
-    };
+				notification.add({
+					color: "success",
+					message: "Successfully published",
+				});
+			})
+			.catch((error) => {
+				notification.add({
+					color: "error",
+					message: error,
+				});
+			});
+	};
 
-    /**
-     * @name enablePublishing
-     */
-    const enablePublishing = () => {
-        monolithStore
-            .setProjectPortal(admin, id, !portalDetails.project_has_portal)
-            .then((resp) => {
-                if (resp.data) {
-                    setPortalDetails({
-                        ...portalDetails,
-                        project_has_portal: !portalDetails.project_has_portal,
-                    });
+	/**
+	 * @name enablePublishing
+	 */
+	const enablePublishing = () => {
+		monolithStore
+			.setProjectPortal(admin, id, !portalDetails.project_has_portal)
+			.then((resp) => {
+				if (resp.data) {
+					setPortalDetails({
+						...portalDetails,
+						project_has_portal: !portalDetails.project_has_portal,
+					});
 
-                    notification.add({
-                        color: 'success',
-                        message: `Successfully ${!portalDetails.project_has_portal
-                            ? 'enabled'
-                            : 'disabled'
-                            } portal`,
-                    });
-                } else {
-                    notification.add({
-                        color: 'error',
-                        message: `Unsuccessfully ${!portalDetails.project_has_portal
-                            ? 'disabled'
-                            : 'enabled'
-                            } portal`,
-                    });
-                }
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    message: error,
-                });
-            });
-    };
+					notification.add({
+						color: "success",
+						message: `Successfully ${
+							!portalDetails.project_has_portal
+								? "enabled"
+								: "disabled"
+						} portal`,
+					});
+				} else {
+					notification.add({
+						color: "error",
+						message: `Unsuccessfully ${
+							!portalDetails.project_has_portal
+								? "disabled"
+								: "enabled"
+						} portal`,
+					});
+				}
+			})
+			.catch((error) => {
+				notification.add({
+					color: "error",
+					message: error,
+				});
+			});
+	};
 
-    /**
-     * @name editApp
-     */
-    const editApp = handleSubmit(async (data: EditAppForm) => {
-        // turn on loading
-        setIsLoading(true);
+	/**
+	 * @name editApp
+	 */
+	const editApp = handleSubmit(async (data: EditAppForm) => {
+		// turn on loading
+		setIsLoading(true);
 
-        try {
-            const path = 'version/assets/';
+		try {
+			const path = "version/assets/";
 
-            // unzip the file in the new app
-            await monolithStore.runQuery(
-                `DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
-            );
+			// unzip the file in the new app
+			await monolithStore.runQuery(
+				`DeleteAsset(filePath=["${path}"], space=["${id}"]);`,
+			);
 
-            // upload the file
-            const upload = await monolithStore.uploadFile(
-                [data.PROJECT_UPLOAD],
-                configStore.store.insightID,
-                id,
-                path,
-            );
+			// upload the file
+			const upload = await monolithStore.uploadFile(
+				[data.PROJECT_UPLOAD],
+				configStore.store.insightID,
+				id,
+				path,
+			);
 
-            // upnzip the file in the new app
-            await monolithStore.runQuery(
-                `UnzipFile(filePath=["${`${path}${upload[0].fileName}`}"], space=["${id}"]);`,
-            );
+			// unzip the file in the new app
+			await unzipProjectFile(
+				monolithStore,
+				`${path}${upload[0].fileName}`,
+				id,
+			);
 
-            const extractResp = await monolithStore.runQuery(
-                `ExtractAndSetDependencies(filePath=["version/assets"], space=["${id}"]);`
-            );
-            const extractOutput = extractResp.pixelReturn?.[0]?.output || {
-                engineIds: {},
-            };
- 
-            // Process engine dependencies using utility function
-            updateEngineDependencies(extractOutput.engineIds);
- 
-            setShowEngineModal(true);
+			const extractResp = await extractAndSetDependencies(
+				monolithStore,
+				id,
+			);
 
-            // Load the insight classes
-            await monolithStore.runQuery(
-                `ReloadInsightClasses(project='${id}', release=true);`,
-            );
+			const extractOutput: ExtractOutput =
+				extractResp.output &&
+				typeof extractResp.output === "object" &&
+				"engineIds" in extractResp.output
+					? (extractResp.output as ExtractOutput)
+					: { engineIds: {} };
 
-            // set the app portal
-            await monolithStore.setProjectPortal(false, id, true, 'public');
+			// Process engine dependencies using utility function
+			updateEngineDependencies(extractOutput.engineIds);
 
-            // Publish the app the insight classes
-            await monolithStore.runQuery(
-                `PublishProject(project='${id}', release=true);`,
-            );
+			setShowEngineModal(true);
 
-            notification.add({
-                color: 'success',
-                message: 'Succesfully Updated Project',
-            });
+			// Load the insight classes
+			await monolithStore.runQuery(
+				`ReloadInsightClasses(project='${id}', release=true);`,
+			);
 
-            reset();
-        } catch (e) {
-            console.error(e);
+			// set the app portal
+			await monolithStore.setProjectPortal(false, id, true, "public");
 
-            notification.add({
-                color: 'error',
-                message: e.message,
-            });
-        } finally {
-            // turn of loading
-            setIsLoading(false);
-        }
-    });
-    const handleEngineModalClose = () => {
-        setShowEngineModal(false);
-    };
+			// Publish the app the insight classes
+			await monolithStore.runQuery(
+				`PublishProject(project='${id}', release=true);`,
+			);
 
-    if (condensed) {
-        return (
-            <StyledPaper>
-                <StyledCondensedPublishContainer>
-                    <StyledSubColumn style={{ width: '100%' }}>
-                        <StyledSubHeaderContainer>
-                            <div
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                }}
-                            >
-                                <StyledPublishIcon />
-                                <StyledTypography variant="body1">
-                                    Enable Publishing
-                                </StyledTypography>
-                            </div>
-                            <StyledRightSwitch
-                                checked={portalDetails.project_has_portal}
-                                value={portalDetails.project_has_portal}
-                                onChange={() => {
-                                    enablePublishing();
-                                }}
-                            ></StyledRightSwitch>
-                        </StyledSubHeaderContainer>
+			notification.add({
+				color: "success",
+				message: "Succesfully Updated Project",
+			});
 
-                        <StyledSubRow>
-                            <Typography variant="body2">
-                                Enable the publishing of the portal.
-                            </Typography>
-                        </StyledSubRow>
-                    </StyledSubColumn>
+			reset();
+		} catch (e) {
+			console.error(e);
 
-                    <>
-                        <Divider />
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			// turn of loading
+			setIsLoading(false);
+		}
+	});
+	const handleEngineModalClose = () => {
+		setShowEngineModal(false);
+	};
 
-                        <StyledSubColumn style={{ width: '100%' }}>
-                            <StyledSubRow>
-                                <div
-                                    style={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                    }}
-                                >
-                                    <StyledRefreshIcon />
-                                    <StyledTypography variant="body1">
-                                        Publish Portal
-                                    </StyledTypography>
-                                </div>
+	if (condensed) {
+		return (
+			<StyledPaper>
+				<StyledCondensedPublishContainer>
+					<StyledSubColumn style={{ width: "100%" }}>
+						<StyledSubHeaderContainer>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+								}}
+							>
+								<StyledPublishIcon />
+								<StyledTypography variant="body1">
+									Enable Publishing
+								</StyledTypography>
+							</div>
+							<StyledRightSwitch
+								checked={portalDetails.project_has_portal}
+								value={portalDetails.project_has_portal}
+								onChange={() => {
+									enablePublishing();
+								}}
+							></StyledRightSwitch>
+						</StyledSubHeaderContainer>
 
-                                <StyledRightButton
-                                    disabled={!portalDetails.project_has_portal}
-                                    variant="outlined"
-                                    onClick={() => {
-                                        publish();
-                                    }}
-                                >
-                                    Publish
-                                </StyledRightButton>
-                            </StyledSubRow>
+						<StyledSubRow>
+							<Typography variant="body2">
+								Enable the publishing of the portal.
+							</Typography>
+						</StyledSubRow>
+					</StyledSubColumn>
 
-                            <StyledSubRow>
-                                <Typography variant="body2">
-                                    Publish the portal to generate a shareable
-                                    link.
-                                </Typography>
-                            </StyledSubRow>
+					<>
+						<Divider />
 
-                            <StyledSubRow>
-                                <TextField
-                                    focused={false}
-                                    label={'Link'}
-                                    variant={'outlined'}
-                                    value={
-                                        portalDetails.project_has_portal
-                                            ? portalDetails.project_portal_url
-                                            : ''
-                                    }
-                                    sx={{ width: '100%' }}
-                                    InputProps={{
-                                        startAdornment: <InsertLink />,
-                                    }}
-                                >
-                                    {portalDetails.project_has_portal
-                                        ? portalDetails.project_portal_url
-                                        : ''}
-                                </TextField>
-                            </StyledSubRow>
-                        </StyledSubColumn>
-                    </>
-                </StyledCondensedPublishContainer>
-            </StyledPaper>
-        );
-    } else {
-        return (
-            <>
-                <StyledAppSettings>
-                    <StyledTopCardContainer>
-                        <StyledCardDiv>
-                            <StyledCardLeft>
-                                <StyledListItemHeader>
-                                    <Typography variant="h6">Portals</Typography>
-                                </StyledListItemHeader>
+						<StyledSubColumn style={{ width: "100%" }}>
+							<StyledSubRow>
+								<div
+									style={{
+										display: "flex",
+										alignItems: "center",
+									}}
+								>
+									<StyledRefreshIcon />
+									<StyledTypography variant="body1">
+										Publish Portal
+									</StyledTypography>
+								</div>
 
-                                <StyledLeftActionContainer>
-                                    {portalDetails.lastCompiled && (
-                                        <StyledLeftActionDiv>
-                                            <StyledActionDivLeft>
-                                                <Typography variant="body2">
-                                                    Last compiled by:
-                                                </Typography>
-                                            </StyledActionDivLeft>
-                                            <Avatar>
-                                                <StyledPersonIcon />
-                                            </Avatar>
-                                            <Typography variant="body2">
-                                                {portalDetails.compiledBy}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                on
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                {portalDetails.lastCompiled}
-                                            </Typography>
-                                        </StyledLeftActionDiv>
-                                    )}
-                                </StyledLeftActionContainer>
-                            </StyledCardLeft>
+								<StyledRightButton
+									disabled={!portalDetails.project_has_portal}
+									variant="outlined"
+									onClick={() => {
+										publish();
+									}}
+								>
+									Publish
+								</StyledRightButton>
+							</StyledSubRow>
 
-                            <StyledCardRight>
-                                <StyledSubColumn>
-                                    <StyledSubRow>
-                                        <StyledSwitchIcon />
-                                        <Typography variant="subtitle1">
-                                            Enable Publishing
-                                        </Typography>
-                                    </StyledSubRow>
+							<StyledSubRow>
+								<Typography variant="body2">
+									Publish the portal to generate a shareable
+									link.
+								</Typography>
+							</StyledSubRow>
 
-                                    <StyledSubRow>
-                                        <Typography variant="body2">
-                                            Enable the publishing of the portal.
-                                        </Typography>
+							<StyledSubRow>
+								<TextField
+									focused={false}
+									label={"Link"}
+									variant={"outlined"}
+									value={
+										portalDetails.project_has_portal
+											? portalDetails.project_portal_url
+											: ""
+									}
+									sx={{ width: "100%" }}
+									InputProps={{
+										startAdornment: <InsertLink />,
+									}}
+								>
+									{portalDetails.project_has_portal
+										? portalDetails.project_portal_url
+										: ""}
+								</TextField>
+							</StyledSubRow>
+						</StyledSubColumn>
+					</>
+				</StyledCondensedPublishContainer>
+			</StyledPaper>
+		);
+	} else {
+		return (
+			<>
+				<StyledAppSettings>
+					<StyledTopCardContainer>
+						<StyledCardDiv>
+							<StyledCardLeft>
+								<StyledListItemHeader>
+									<Typography variant="h6">
+										Portals
+									</Typography>
+								</StyledListItemHeader>
 
-                                        <StyledRightSwitch
-                                            checked={
-                                                portalDetails.project_has_portal
-                                            }
-                                            value={portalDetails.project_has_portal}
-                                            onChange={() => {
-                                                enablePublishing();
-                                            }}
-                                            disabled={
-                                                !configStore.isEngineOperationAvailable(
-                                                    'APP',
-                                                    'access',
-                                                )
-                                            }
-                                        ></StyledRightSwitch>
-                                    </StyledSubRow>
-                                </StyledSubColumn>
+								<StyledLeftActionContainer>
+									{portalDetails.lastCompiled && (
+										<StyledLeftActionDiv>
+											<StyledActionDivLeft>
+												<Typography variant="body2">
+													Last compiled by:
+												</Typography>
+											</StyledActionDivLeft>
+											<Avatar>
+												<StyledPersonIcon />
+											</Avatar>
+											<Typography variant="body2">
+												{portalDetails.compiledBy}
+											</Typography>
+											<Typography variant="body2">
+												on
+											</Typography>
+											<Typography variant="body2">
+												{portalDetails.lastCompiled}
+											</Typography>
+										</StyledLeftActionDiv>
+									)}
+								</StyledLeftActionContainer>
+							</StyledCardLeft>
 
-                                <>
-                                    <Divider />
+							<StyledCardRight>
+								<StyledSubColumn>
+									<StyledSubRow>
+										<StyledSwitchIcon />
+										<Typography variant="subtitle1">
+											Enable Publishing
+										</Typography>
+									</StyledSubRow>
 
-                                    <StyledSubColumn>
-                                        <StyledSubRow>
-                                            <StyledRefreshIcon />
-                                            <Typography variant="subtitle1">
-                                                Publish Portal
-                                            </Typography>
-                                        </StyledSubRow>
+									<StyledSubRow>
+										<Typography variant="body2">
+											Enable the publishing of the portal.
+										</Typography>
 
-                                        <StyledSubRow>
-                                            <Typography variant="body2">
-                                                Publish the portal to generate a
-                                                shareable link.
-                                            </Typography>
+										<StyledRightSwitch
+											checked={
+												portalDetails.project_has_portal
+											}
+											value={
+												portalDetails.project_has_portal
+											}
+											onChange={() => {
+												enablePublishing();
+											}}
+											disabled={
+												!configStore.isEngineOperationAvailable(
+													"APP",
+													"access",
+												)
+											}
+										></StyledRightSwitch>
+									</StyledSubRow>
+								</StyledSubColumn>
 
-                                            <StyledRightButton
-                                                variant="outlined"
-                                                startIcon={<StyledPublishedIcon />}
-                                                disabled={
-                                                    !portalDetails.project_has_portal ||
-                                                    !configStore.isEngineOperationAvailable(
-                                                        'APP',
-                                                        'access',
-                                                    )
-                                                }
-                                                onClick={() => {
-                                                    publish();
-                                                }}
-                                            >
-                                                Publish
-                                            </StyledRightButton>
-                                        </StyledSubRow>
+								<>
+									<Divider />
 
-                                        <StyledSubRow>
-                                            <TextField
-                                                focused={false}
-                                                label={'Link'}
-                                                variant={'outlined'}
-                                                value={
-                                                    portalDetails.project_has_portal
-                                                        ? portalDetails.project_portal_url
-                                                        : ''
-                                                }
-                                                sx={{ width: '100%' }}
-                                                InputProps={{
-                                                    startAdornment: <InsertLink />,
-                                                }}
-                                            >
-                                                {portalDetails.project_has_portal
-                                                    ? portalDetails.project_portal_url
-                                                    : ''}
-                                            </TextField>
-                                        </StyledSubRow>
-                                    </StyledSubColumn>
-                                </>
-                            </StyledCardRight>
-                        </StyledCardDiv>
-                    </StyledTopCardContainer>
+									<StyledSubColumn>
+										<StyledSubRow>
+											<StyledRefreshIcon />
+											<Typography variant="subtitle1">
+												Publish Portal
+											</Typography>
+										</StyledSubRow>
 
-                    <StyledCardContainer>
-                        <StyledCardDiv>
-                            <StyledCardLeft>
-                                <StyledListItemHeader>
-                                    <Typography variant="h6">Reactors</Typography>
-                                </StyledListItemHeader>
-                                <StyledListItemHeader>
-                                    Custom reactors created for the portal.
-                                </StyledListItemHeader>
-                                <Button
-                                    variant="contained"
-                                    onClick={() => {
-                                        recompileReactors({ release: null });
-                                    }}
-                                >
-                                    Compile Changes on This Instance
-                                </Button>
-                                <Button
-                                    variant="contained"
-                                    onClick={() => {
-                                        recompileReactors({ release: true });
-                                    }}
-                                >
-                                    Deploy and Persist Changes
-                                </Button>
-                                {portalReactors.lastCompiled && (
-                                    <StyledLeftActionContainer>
-                                        <StyledLeftActionDiv>
-                                            <StyledActionDivLeft>
-                                                <Typography variant="body2">
-                                                    Last compiled by:
-                                                </Typography>
-                                            </StyledActionDivLeft>
-                                            <Avatar>
-                                                <StyledPersonIcon />
-                                            </Avatar>
-                                            <Typography variant="body2">
-                                                {portalReactors.compiledBy}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                on
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                {portalReactors.lastCompiled}
-                                            </Typography>
-                                        </StyledLeftActionDiv>
-                                    </StyledLeftActionContainer>
-                                )}
-                            </StyledCardLeft>
+										<StyledSubRow>
+											<Typography variant="body2">
+												Publish the portal to generate a
+												shareable link.
+											</Typography>
 
-                            <StyledCardRight>
-                                {portalReactors.reactors.length > 0 ? (
-                                    <StyledTable>
-                                        <Table.Body>
-                                            {portalReactors.reactors.map(
-                                                (reactor, i) => (
-                                                    <Table.Row key={reactor + i}>
-                                                        <Table.Cell>
-                                                            {reactor}
-                                                        </Table.Cell>
-                                                        <Table.Cell align="right">
-                                                            <Java />
-                                                        </Table.Cell>
-                                                    </Table.Row>
-                                                ),
-                                            )}
-                                        </Table.Body>
-                                    </StyledTable>
-                                ) : (
-                                    <StyledCenteredFallback>
-                                        <Typography variant="body2">
-                                            No reactors available.
-                                        </Typography>
-                                    </StyledCenteredFallback>
-                                )}
-                            </StyledCardRight>
-                        </StyledCardDiv>
-                    </StyledCardContainer>
+											<StyledRightButton
+												variant="outlined"
+												startIcon={
+													<StyledPublishedIcon />
+												}
+												disabled={
+													!portalDetails.project_has_portal ||
+													!configStore.isEngineOperationAvailable(
+														"APP",
+														"access",
+													)
+												}
+												onClick={() => {
+													publish();
+												}}
+											>
+												Publish
+											</StyledRightButton>
+										</StyledSubRow>
 
-                    <StyledCardContainer>
-                        {isLoading && (
-                            <LoadingScreen.Trigger description="Updating Project" />
-                        )}
-                        <StyledCardDiv>
-                            <StyledCardLeft>
-                                <StyledListItemHeader>
-                                    <Typography variant="h6">
-                                        Update Project
-                                    </Typography>
-                                </StyledListItemHeader>
-                            </StyledCardLeft>
-                            <StyledCardRight>
-                                <Controller
-                                    name={'PROJECT_UPLOAD'}
-                                    control={control}
-                                    rules={{}}
-                                    disabled={
-                                        !configStore.isEngineOperationAvailable(
-                                            'APP',
-                                            'access',
-                                        )
-                                    }
-                                    render={({ field }) => {
-                                        return (
-                                            <FileDropzone
-                                                multiple={false}
-                                                value={field.value}
-                                                disabled={isLoading}
-                                                onChange={(newValues) => {
-                                                    field.onChange(newValues);
-                                                }}
-                                            />
-                                        );
-                                    }}
-                                />
-                                <Stack alignItems={'center'}>
-                                    <Button
-                                        type="submit"
-                                        variant={'contained'}
-                                        disabled={isLoading || !uploadFile}
-                                        onClick={editApp}
-                                    >
-                                        Update
-                                    </Button>
-                                </Stack>
-                            </StyledCardRight>
-                        </StyledCardDiv>
-                    </StyledCardContainer>
-                </StyledAppSettings>
-                <EngineIdsModal
-                    open={showEngineModal}
-                    successIds={engineDependenciesState.successfulEngineIds}
-                    failedIds={engineDependenciesState.failedEngineIds}
-                    onClose={handleEngineModalClose}
-                    appId={id}
-                    isUploadProjectApp={false}
-                    engineInfo={engineDependenciesState.engineDetails}
-                />
-            </>
-        );
-    }
+										<StyledSubRow>
+											<TextField
+												focused={false}
+												label={"Link"}
+												variant={"outlined"}
+												value={
+													portalDetails.project_has_portal
+														? portalDetails.project_portal_url
+														: ""
+												}
+												sx={{ width: "100%" }}
+												InputProps={{
+													startAdornment: (
+														<InsertLink />
+													),
+												}}
+											>
+												{portalDetails.project_has_portal
+													? portalDetails.project_portal_url
+													: ""}
+											</TextField>
+										</StyledSubRow>
+									</StyledSubColumn>
+								</>
+							</StyledCardRight>
+						</StyledCardDiv>
+					</StyledTopCardContainer>
+
+					<StyledCardContainer>
+						<StyledCardDiv>
+							<StyledCardLeft>
+								<StyledListItemHeader>
+									<Typography variant="h6">
+										Reactors
+									</Typography>
+								</StyledListItemHeader>
+								<StyledListItemHeader>
+									Custom reactors created for the portal.
+								</StyledListItemHeader>
+								<Button
+									variant="contained"
+									onClick={() => {
+										recompileReactors({ release: null });
+									}}
+								>
+									Compile Changes on This Instance
+								</Button>
+								<Button
+									variant="contained"
+									onClick={() => {
+										recompileReactors({ release: true });
+									}}
+								>
+									Deploy and Persist Changes
+								</Button>
+								{portalReactors.lastCompiled && (
+									<StyledLeftActionContainer>
+										<StyledLeftActionDiv>
+											<StyledActionDivLeft>
+												<Typography variant="body2">
+													Last compiled by:
+												</Typography>
+											</StyledActionDivLeft>
+											<Avatar>
+												<StyledPersonIcon />
+											</Avatar>
+											<Typography variant="body2">
+												{portalReactors.compiledBy}
+											</Typography>
+											<Typography variant="body2">
+												on
+											</Typography>
+											<Typography variant="body2">
+												{portalReactors.lastCompiled}
+											</Typography>
+										</StyledLeftActionDiv>
+									</StyledLeftActionContainer>
+								)}
+							</StyledCardLeft>
+
+							<StyledCardRight>
+								{portalReactors.reactors.length > 0 ? (
+									<StyledTable>
+										<Table.Body>
+											{portalReactors.reactors.map(
+												(reactor, i) => (
+													<Table.Row
+														key={reactor + i}
+													>
+														<Table.Cell>
+															{reactor}
+														</Table.Cell>
+														<Table.Cell align="right">
+															<Java />
+														</Table.Cell>
+													</Table.Row>
+												),
+											)}
+										</Table.Body>
+									</StyledTable>
+								) : (
+									<StyledCenteredFallback>
+										<Typography variant="body2">
+											No reactors available.
+										</Typography>
+									</StyledCenteredFallback>
+								)}
+							</StyledCardRight>
+						</StyledCardDiv>
+					</StyledCardContainer>
+
+					<StyledCardContainer>
+						{isLoading && (
+							<LoadingScreen.Trigger description="Updating Project" />
+						)}
+						<StyledCardDiv>
+							<StyledCardLeft>
+								<StyledListItemHeader>
+									<Typography variant="h6">
+										Update Project
+									</Typography>
+								</StyledListItemHeader>
+							</StyledCardLeft>
+							<StyledCardRight>
+								<Controller
+									name={"PROJECT_UPLOAD"}
+									control={control}
+									rules={{}}
+									disabled={
+										!configStore.isEngineOperationAvailable(
+											"APP",
+											"access",
+										)
+									}
+									render={({ field }) => {
+										return (
+											<FileDropzone
+												multiple={false}
+												value={field.value}
+												disabled={isLoading}
+												onChange={(newValues) => {
+													field.onChange(newValues);
+												}}
+											/>
+										);
+									}}
+								/>
+								<Stack alignItems={"center"}>
+									<Button
+										type="submit"
+										variant={"contained"}
+										disabled={isLoading || !uploadFile}
+										onClick={editApp}
+									>
+										Update
+									</Button>
+								</Stack>
+							</StyledCardRight>
+						</StyledCardDiv>
+					</StyledCardContainer>
+				</StyledAppSettings>
+				<EngineIdsModal
+					open={showEngineModal}
+					successIds={engineDependenciesState.successfulEngineIds}
+					failedIds={engineDependenciesState.failedEngineIds}
+					onClose={handleEngineModalClose}
+					appId={id}
+					isUploadProjectApp={false}
+					engineInfo={engineDependenciesState.engineDetails}
+				/>
+			</>
+		);
+	}
 };

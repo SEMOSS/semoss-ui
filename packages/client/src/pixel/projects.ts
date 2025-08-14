@@ -159,7 +159,21 @@ export const useGetProjectDependencies = (
 		`GetProjectDependencies(project="${projectId}", details=[true]);`,
 	);
 };
-
+/**
+ * Extract and set dependencies for a project
+ * @param monolithStore
+ * @param projectId
+ * @returns
+ */
+export const extractAndSetDependencies = async (
+	monolithStore: MonolithStore,
+	projectId: string,
+): Promise<PixelResponse> => {
+	return runMonolithQuery(
+		monolithStore,
+		`ExtractAndSetDependencies( project=["${projectId}"]);`,
+	);
+};
 /**
  * Hook to get available engines that user has access to
  * @returns usePixel hook result for MyEngines query
