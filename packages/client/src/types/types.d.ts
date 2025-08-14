@@ -109,3 +109,4 @@ export interface FileSavedEventDetail {
 export interface FileSavedEvent extends CustomEvent<FileSavedEventDetail> {
 	type: "fileSaved";
 }
+

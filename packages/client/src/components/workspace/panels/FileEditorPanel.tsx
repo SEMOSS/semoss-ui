@@ -1,17 +1,17 @@
-import { observer } from 'mobx-react-lite';
-import { Actions, TabNode } from 'flexlayout-react';
-import { IconButton, Stack, useNotification, Modal, Button, TextField, Box } from '@semoss/ui';
+import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
+import { Actions, TabNode } from "flexlayout-react";
+import { observer } from "mobx-react-lite";
+import { useRef, useState } from "react";
+import { IconButton, Stack, useNotification, Modal, Button, TextField, Box } from "@semoss/ui";
+import { FileEditor, type FileEditorRefDef } from "@/components/common";
+import { useWorkspace } from "@/hooks";
+import { Panel } from "./Panel";
+import type { FileSavedEventDetail } from "@/types/types";
 
-import { useWorkspace } from '@/hooks';
-import { FileEditor, FileEditorRefDef } from '@/components/common';
-import { Panel } from './Panel';
-import { useRef, useState } from 'react';
-import { ContentCopyOutlined, SaveOutlined } from '@mui/icons-material';
-import type { FileSavedEventDetail } from '@/types/types';
 
 interface FileEditorPanelProps {
-    /** Path to the file location */
-    path: string;
+	/** Path to the file location */
+	path: string;
 }
 
 export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
@@ -241,4 +241,5 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
             />
         </Panel>
     );
+
 });

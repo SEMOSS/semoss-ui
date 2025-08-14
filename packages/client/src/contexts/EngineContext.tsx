@@ -1,37 +1,36 @@
-import { createContext } from 'react';
-
-import { Role, ENGINE_TYPES } from '@/types';
+import { createContext } from "react";
+import type { ENGINE_TYPES, Role } from "@/types";
 
 /**
  * Value
  */
 export type EngineContextType = {
-    /** Type of the engine */
-    type: ENGINE_TYPES;
+	/** Type of the engine */
+	type: ENGINE_TYPES;
 
-    /** Name of the type */
-    name: string;
+	/** Name of the type */
+	name: string;
 
-    /** Path of the type */
-    path: string;
+	/** Path of the type */
+	path: string;
 
-    /** Active engine information */
-    active: {
-        /** ID of the engine to load */
-        id: string;
+	/** Active engine information */
+	active: {
+		/** ID of the engine to load */
+		id: string;
 
-        /** User's role associated with the engine */
-        role: Role;
+		/** User's role associated with the engine */
+		role: Role;
 
-        /** Name of the engine */
-        name: string;
+		/** Name of the engine */
+		name: string;
 
-        /** metadata to show on detail pages */
-        metadata: Record<string, unknown>;
+		/** metadata to show on detail pages */
+		metadata: Record<string, unknown>;
 
-        /** refreshes metadata for the active engine */
-        refresh: () => void;
-    };
+		/** refreshes metadata for the active engine */
+		refresh: () => void;
+	};
 };
 
 /**

@@ -1,7 +1,6 @@
 import { GetAppRounded } from "@mui/icons-material";
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
 	Container,
 	IconButton,
@@ -194,6 +193,7 @@ export const SettingsPanel = () => {
 							{view === "VERSIONS" && (
 								<VersionsTable id={workspace.appId} />
 							)}
+
 						</StyledContent>
 					</StyledContainer>
 				</Container>

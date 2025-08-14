@@ -374,5 +374,4 @@ export const BlocksWorkspaceActions = observer(() => {
 			</Modal>
 		</>
 	);
-
 });

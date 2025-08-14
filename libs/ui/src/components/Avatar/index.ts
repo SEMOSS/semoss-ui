@@ -1,4 +1,4 @@
-import { Avatar, AvatarProps } from "./Avatar";
+import { Avatar, type AvatarProps } from "./Avatar";
 
 export type { AvatarProps };
 

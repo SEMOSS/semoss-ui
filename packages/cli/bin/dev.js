@@ -2,8 +2,8 @@
 
 // eslint-disable-next-line
 async function main() {
-    const { execute } = await import('@oclif/core');
-    await execute({ development: true, dir: import.meta.url });
+	const { execute } = await import("@oclif/core");
+	await execute({ development: true, dir: import.meta.url });
 }
 
 await main();

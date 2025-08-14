@@ -55,7 +55,6 @@ interface FileEditorProps {
 	onFileSaved?: () => void;
 
 	/**
-	 *
 	 * @param isModified
 	 * @returns
 	 */
@@ -64,13 +63,11 @@ interface FileEditorProps {
 
 export interface FileEditorRefDef {
 	/**
-	 *
 	 * @returns Save the file
 	 */
 	saveFile: (commitMsg?: string) => Promise<void>;
 
 	/**
-	 *
 	 * @returns Format the file
 	 */
 	formatFile: () => Promise<void>;
@@ -270,6 +267,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 		/**
 		 * Save the File
 		 */
+
 		const saveFile = async (commitMsg = "Save from editor") => {
 			const content = editorRef.current.getValue();
 			try {
@@ -277,8 +275,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
 				let pixel = "";
 				if (type === "app") {
-					pixel = `
-                SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"],comment=[${JSON.stringify(commitMsg)}])`;
+					pixel = `SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"],comment=[${JSON.stringify(commitMsg)}])`;
 				} else if (type === "insight") {
 					throw Error("TODO");
 					// TODO: add insight
