@@ -4,7 +4,6 @@ import {
 	ReportRounded,
     EditOutlined,
 } from "@mui/icons-material";
-import html2canvas from "html2canvas";
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
@@ -31,7 +30,6 @@ import { BlockCardContent, blockCardWidth } from "./BlockMenuCardContent";
 const StyledCard = styled(Card)({
 	cursor: "grab",
 	border: `1px solid rgba(0, 0, 0, 0.12)`,
-	//TODO: styled needs to be updated to match the theme
 	borderRadius: "6px",
 	justifyContent: "center",
 });
@@ -324,20 +322,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 		};
 	}, [designer.drag.active, local, handleDocumentMouseUp]);
 
-	// useEffect(() => {
-	//     if (isClient) {
-	//         if (ref.current) {
-	//             html2canvas(ref.current).then((canvas) => {
-	//                 setImageSrc(canvas.toDataURL('image/png'));
-	//             });
-	//         }
-	//     }
-	// }, [isClient]);
-
-	// const randomColor = () => {
-	//     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
-	// };
-
 	return (
 		<Stack
 			spacing={1}
@@ -345,27 +329,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			height="100%"
 			justifyContent="flex-end"
 		>
-			{/* So we can snapshot picture for client */}
-			{/* {isClient && (
-                <div
-                    ref={ref}
-                    style={{ position: 'absolute', left: '-9999px', top: 0 }}
-                >
-                    <Stack padding={4}>
-                        <StyledTypography variant="body2">
-                            Show snapshot
-                        </StyledTypography>
-                        <button
-                            style={{
-                                backgroundColor: randomColor(),
-                                color: '#fff',
-                            }}
-                        >
-                            {item.name}
-                        </button>
-                    </Stack>
-                </div>
-            )} */}
 
             <StyledTypography
                 variant="body2"
@@ -409,7 +372,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                 {hovered && isCommunity && configStore.store.user.admin && (
                     <StyledContainer>
                         <StyleButtonGroup>
-                            <StyledButtonGroupIconButton
+                            {/* <StyledButtonGroupIconButton
                                 size="small"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -417,7 +380,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
                                 }}
                             >
                                 <EditOutlined sx={{ color: '#757575' }} />
-                            </StyledButtonGroupIconButton>
+                            </StyledButtonGroupIconButton> */}
                             <StyledButtonGroupIconButton
                                 size="small"
                                 onClick={(e) => {

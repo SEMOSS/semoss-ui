@@ -202,8 +202,7 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				<Modal.Title>Delete Selected Block?</Modal.Title>
 				<Modal.Content>
 					<Typography variant="body2">
-						You will permanently remove the block from Client
-                        blocks.
+						You will permanently remove the block from the community block section.
 					</Typography>
 				</Modal.Content>
 				<Modal.Actions>
