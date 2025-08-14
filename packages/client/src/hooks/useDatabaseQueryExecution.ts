@@ -63,7 +63,7 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
   const [query, setQuery] = useState('');
   const [previewData, setPreviewData] = useState<QueryResult | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
-  const [limit, setLimit] = useState(500);
+  // const [limit, setLimit] = useState(500);
 
   const clearQuery = () => {
     setQuery('');
@@ -84,10 +84,8 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
     try {
       const queryType = detectQueryType(query);
       console.log('Detected query type:', queryType);
-
-      const cleanedQuery = removeComments(query).replaceAll('`','');
-
-      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], limit=[${limit}], offset = [20],commit = [true]);`;
+      
+      let pixel = `SqlQuery(database=["${engineId}"], query=["<encode>${removeComments(query).replaceAll('`','')}</encode>"], commit = [true]);`;
       
       const response = await runPixel(pixel);
       console.log('Full response:', response);
@@ -136,7 +134,7 @@ export function useQueryExecution(engineId: string, options: QueryExecutionOptio
     clearQuery,
     clearResults,
     executeQuery,
-    limit,
-    setLimit
+    // limit,
+    // setLimit
   };
 }

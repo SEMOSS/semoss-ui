@@ -86,16 +86,16 @@ interface QueryResultsPanelProps {
     previewData: QueryResult | null;
     previewLoading: boolean;
     clearResults: () => void;
-    previewLimit: number;
+    //previewLimit: number;
     onExpandChange?: (expanded: boolean) => void; 
 }
 
 export const QueryResultsPanel: React.FC<QueryResultsPanelProps> = ({
     previewData,
     previewLoading,
-    previewLimit,
     onExpandChange,
 }) => {
+    const previewLimit = 50;
     const renderResults = useQueryResults();
     const [isExpanded, setIsExpanded] = useState(false);
 

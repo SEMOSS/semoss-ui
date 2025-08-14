@@ -67,8 +67,8 @@ interface SQLQueryEditorProps {
     // QueryActions props
     executeQuery: () => void;
     previewLoading: boolean;
-    limit: number;
-    setLimit: (limit: number) => void;
+    // limit: number;
+    // setLimit: (limit: number) => void;
 }
 
 export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
@@ -78,8 +78,8 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
     handleEditorMount,
     executeQuery,
     previewLoading,
-    limit,
-    setLimit,
+    // limit,
+    // setLimit,
 }) => {
     const handleCopyQuery = () => {
         if (query && navigator.clipboard) {
@@ -159,8 +159,8 @@ export const SQLQueryEditor: React.FC<SQLQueryEditorProps> = ({
                 executeQuery={executeQuery}
                 previewLoading={previewLoading}
                 query={query}
-                limit={limit}
-                setLimit={setLimit}
+                // limit={limit}
+                // setLimit={setLimit}
             />
         </StyledCard>
     );

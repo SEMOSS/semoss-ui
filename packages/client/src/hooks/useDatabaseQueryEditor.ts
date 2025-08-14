@@ -18,31 +18,31 @@ export function useQueryEditor({
 
     try {
 
-      const completionProvider = monaco.languages.registerCompletionItemProvider('sql', {
-        provideCompletionItems: (model: any, position: any) => {
-          const suggestions: any[] = [];
+      // const completionProvider = monaco.languages.registerCompletionItemProvider('sql', {
+      //   provideCompletionItems: (model: any, position: any) => {
+      //     const suggestions: any[] = [];
           
-          tables.forEach((table: any) => {
-            suggestions.push({
-              label: table.table,
-              kind: monaco.languages.CompletionItemKind.Class,
-              insertText: table.table,
-              detail: 'Table',
-            });
+      //     tables.forEach((table: any) => {
+      //       suggestions.push({
+      //         label: table.table,
+      //         kind: monaco.languages.CompletionItemKind.Class,
+      //         insertText: table.table,
+      //         detail: 'Table',
+      //       });
 
-            table.columns.forEach((column: any) => {
-              suggestions.push({
-                label: column.column,
-                kind: monaco.languages.CompletionItemKind.Field,
-                insertText: column.column,
-                detail: 'Column',
-              });
-            });
-          });
+      //       table.columns.forEach((column: any) => {
+      //         suggestions.push({
+      //           label: column.column,
+      //           kind: monaco.languages.CompletionItemKind.Field,
+      //           insertText: column.column,
+      //           detail: 'Column',
+      //         });
+      //       });
+      //     });
 
-          return { suggestions };
-        }
-      });
+      //     return { suggestions };
+      //   }
+      // });
 
       editor.addAction({
         id: 'run-query',
