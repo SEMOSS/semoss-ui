@@ -277,12 +277,14 @@ export const LoginPage = observer(() => {
 
 	const regPassword = watch("PASSWORD");
 
-	const regPasswordRules = {
-		length: regPassword.length >= 8,
-		upper: /[A-Z]/.test(regPassword),
-		lower: /[a-z]/.test(regPassword),
-		special: /[!@#$%^&*]/.test(regPassword),
-	};
+	const regPasswordRules = (password: string) => {
+		return {
+			length: password.length >= 8,
+			upper: /[A-Z]/.test(password),
+			lower: /[a-z]/.test(password),
+			special: /[!@#$%^&*]/.test(password),
+		};
+	}
 
 	const passwordTooltipContent = (
 		<Box>
@@ -948,21 +950,22 @@ export const LoginPage = observer(() => {
 														rules={{
 															required:
 																"Password is required",
-															validate: () => {
+															validate: (value) => {
+																const rules = regPasswordRules(value);
 																if (
-																	!regPasswordRules.length
+																	!rules.length
 																)
 																	return "Minimum 8 characters";
 																if (
-																	!regPasswordRules.upper
+																	!rules.upper
 																)
 																	return "At least one uppercase letter";
 																if (
-																	!regPasswordRules.lower
+																	!rules.lower
 																)
 																	return "At least one lowercase letter";
 																if (
-																	!regPasswordRules.special
+																	!rules.special
 																)
 																	return "At least one special character";
 																return true;
