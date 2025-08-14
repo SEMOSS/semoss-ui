@@ -1,6 +1,6 @@
-import { BlockConfig } from "../../../store";
-import { ImageBlockDef, ImageBlock } from "./ImageBlock";
+import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
+import { ImageBlock, type ImageBlockDef } from "./ImageBlock";
 
 export const config: BlockConfig<ImageBlockDef> = {
     widget: "image",

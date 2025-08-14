@@ -1,92 +1,91 @@
-import { useEffect } from "react";
+import { styled, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { styled, ToggleButtonGroup, ToggleButton } from "@mui/material";
-
-import { useBlock, useDebounce } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
-import { debounced } from "../../../utility";
+import { useEffect } from "react";
+import { debounced } from "@semoss/sdk/react";
+import { useBlock } from "../../../hooks";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 const StyledContainer = styled("div")(() => ({
-    padding: "4px",
-    width: "fit-content",
+	padding: "4px",
+	width: "fit-content",
 }));
 
 export interface ToggleButtonBlockDef extends BlockDef<"toggle-button"> {
-    widget: "toggle-button";
-    data: {
-        disabled: boolean;
-        color: "primary" | "secondary";
-        size: "small" | "medium" | "large";
-        options: Array<{ value: string; display: string }>;
-        value: string | Array<string>;
-        mandatory: boolean;
-        multiple: boolean;
-        show: string;
-    };
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-        onChange: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-    };
+	widget: "toggle-button";
+	data: {
+		disabled: boolean;
+		color: "primary" | "secondary";
+		size: "small" | "medium" | "large";
+		options: Array<{ value: string; display: string }>;
+		value: string | Array<string>;
+		mandatory: boolean;
+		multiple: boolean;
+		show: string;
+	};
+	listeners: {
+		preProcess: {
+			type: "sync" | "async";
+			order: ListenerActions[];
+		};
+		onChange: {
+			type: "sync" | "async";
+			order: ListenerActions[];
+		};
+	};
 }
 
 export const ToggleButtonBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, setData, listeners } =
-        useBlock<ToggleButtonBlockDef>(id);
+	const { attrs, data, setData, listeners } =
+		useBlock<ToggleButtonBlockDef>(id);
 
-    useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
-        }
-    }, []);
+	useEffect(() => {
+		if (listeners.preProcess) {
+			listeners.preProcess();
+		}
+	}, []);
 
-    const debouncedCallback = debounced(() => {
-        listeners.onChange();
-    }, 200);
+	const debouncedCallback = debounced(() => {
+		listeners.onChange();
+	}, 200);
 
-    return (
-        <StyledContainer {...attrs}>
-            <ToggleButtonGroup
-                disabled={data.disabled}
-                size={data.size}
-                color={data.color}
-                onChange={(_, newValue: string | string[] | null) => {
-                    if (data.mandatory) {
-                        if (Array.isArray(newValue)) {
-                            if (newValue.length) {
-                                setData("value", newValue);
-                                debouncedCallback();
-                            }
-                        } else {
-                            if (newValue !== null) {
-                                setData("value", newValue);
-                                debouncedCallback();
-                            }
-                        }
-                    } else {
-                        setData("value", newValue);
-                        debouncedCallback();
-                    }
-                }}
-                value={data.value}
-                exclusive={!data.multiple}
-            >
-                {Array.from(data.options, (option, index) => {
-                    return (
-                        <ToggleButton
-                            key={`${id}-${index}`}
-                            value={option.value}
-                        >
-                            {option.display}
-                        </ToggleButton>
-                    );
-                })}
-            </ToggleButtonGroup>
-        </StyledContainer>
-    );
+	return (
+		<StyledContainer {...attrs}>
+			<ToggleButtonGroup
+				disabled={data.disabled}
+				size={data.size}
+				color={data.color}
+				onChange={(_, newValue: string | string[] | null) => {
+					if (data.mandatory) {
+						if (Array.isArray(newValue)) {
+							if (newValue.length) {
+								setData("value", newValue);
+								debouncedCallback();
+							}
+						} else {
+							if (newValue !== null) {
+								setData("value", newValue);
+								debouncedCallback();
+							}
+						}
+					} else {
+						setData("value", newValue);
+						debouncedCallback();
+					}
+				}}
+				value={data.value}
+				exclusive={!data.multiple}
+			>
+				{Array.from(data.options, (option, index) => {
+					return (
+						<ToggleButton
+							key={`${id}-${index}`}
+							value={option.value}
+						>
+							{option.display}
+						</ToggleButton>
+					);
+				})}
+			</ToggleButtonGroup>
+		</StyledContainer>
+	);
 });

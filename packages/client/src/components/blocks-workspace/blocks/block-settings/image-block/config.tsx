@@ -1,14 +1,21 @@
-import { PanoramaOutlined } from '@mui/icons-material';
-import { AspectRatio, FitScreen, ImageAspectRatio } from '@mui/icons-material';
-
-import { BLOCK_TYPE_DISPLAY } from '../block-defaults.constants';
-import { ButtonGroupSettings, SelectInputSettings } from '../../settings';
 import {
-    buildDimensionsSection,
-    buildShowField,
-    buildListener,
-} from '../block-defaults.shared';
-import { BlockSettingsConfig } from '../settings.types';
+	AspectRatio,
+	FitScreen,
+	ImageAspectRatio,
+	PanoramaOutlined,
+} from "@mui/icons-material";
+import {
+	ButtonGroupSettings,
+	InputSettings,
+	SelectInputSettings,
+} from "../../settings";
+import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
+import {
+	buildDimensionsSection,
+	buildListener,
+	buildShowField,
+} from "../block-defaults.shared";
+import type { BlockSettingsConfig } from "../settings.types";
 import GeneralSettings from './GeneralSettings';
 
 export const config: BlockSettingsConfig = {
