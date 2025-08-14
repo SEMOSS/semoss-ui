@@ -268,6 +268,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		if (isLoading) {
 			return;
 		}
+		debugger
 		setIsLoading(true);
 		try {
 			let response;
@@ -381,7 +382,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				setHasEngines(true);
 			});
 	}, [
-		monolithStore.getTeamEngines,
 		groupId,
 		groupType,
 		enginesPage,
@@ -394,7 +394,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				getAdditionalEngines();
 			}
 		}
-	}, [isScrollBottom, canCollect, getAdditionalEngines]);
+	}, [isScrollBottom, canCollect]);
 
 	useEffect(() => {
 		if (searchEngineInput) {
@@ -412,7 +412,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 		}, 500);
 		return () => clearTimeout(timer);
-	}, [offset, searchEngineInput, canCollect, getEngines]);
+	}, [offset, searchEngineInput, canCollect]);
 
 	/**
 	 * @name submitNonGroupEngines
