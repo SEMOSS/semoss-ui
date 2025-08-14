@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { runPixel } from "@semoss/sdk/react";
-import type { AppMetadata } from "@/components/app";
+import { Env, runPixel } from "@semoss/sdk/react";
+import { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
 	type RootStore,
@@ -355,6 +355,9 @@ export class ConfigStore {
 
 		// get the user information
 		await this.getUser();
+
+		// Set CSRF flag to true before setGeneralReactors()
+		Env.update({ CSRF: this.store.config.csrf });
 
 		//set the reactors
 		await this.setGeneralReactors();
