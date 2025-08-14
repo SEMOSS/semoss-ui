@@ -645,99 +645,88 @@ export class StateStore {
 			}
 		}
 
-        // remove the brackets
-        cleaned = cleaned.replace(/{{|}}/g, "");
-        let combinedValues = "";
-        // split by space to get the variables
-        cleaned
-            .split(" ")
-            .filter((item) => item?.length > 0)
-            .forEach((path: string) => {
-                const pointer = Array.isArray(path) ? path[0] : null;
-                // Special syntax to parse by cell order
-                const isNumber = !isNaN(parseFloat(path[1]));
-                if (isNumber) {
-                    let q;
+		// remove the brackets
+		cleaned = cleaned.replace(/{{|}}/g, "");
+		let combinedValues = "";
+		// split by space to get the variables
+		cleaned
+			.split(" ")
+			.filter((item) => item?.length > 0)
+			.forEach((path: string) => {
+				const pointer = Array.isArray(path) ? path[0] : null;
+				// Special syntax to parse by cell order
+				const isNumber = !isNaN(parseFloat(path[1]));
+				if (isNumber) {
+					let q;
 
-			// TODO: Problem we want to reference cells by a special syntax
-			// I don't want to change ids to be numbered for cells,
-			// i think we are good with our id generation
-			if (this._store.variables[pointer]) {
-				const variable = this._store.variables[path[0]];
-				if (variable.type === "query") {
-					q = this._store.queries[variable.to];
+					// TODO: Problem we want to reference cells by a special syntax
+					// I don't want to change ids to be numbered for cells,
+					// i think we are good with our id generation
+					if (this._store.variables[pointer]) {
+						const variable = this._store.variables[path[0]];
+						if (variable.type === "query") {
+							q = this._store.queries[variable.to];
+						}
+					} else if (this._store.queries[pointer]) {
+						q = this._store.queries[pointer];
+					}
+
+					if (q) {
+						try {
+							const c = q.cellList[parseFloat(path) - 1];
+							const key = path;
+
+							if (key in c._exposed) {
+								combinedValues += ` ${getValueByPath(
+									c._exposed,
+									path,
+								)}`;
+							}
+						} catch (e) {
+							if (expression) {
+								combinedValues += ` ${expression}`;
+							}
+						}
+					}
 				}
-			} else if (this._store.queries[pointer]) {
-				q = this._store.queries[pointer];
-			}
 
-                    if (q) {
-                        try {
-                            const c = q.cellList[parseFloat(path) - 1];
-                            // const p = path;
-                            // p.splice(0, 2);
+				let variable = this._store.variables?.[path];
+				let fullPath: null | string[] = null;
+				if (
+					!variable &&
+					typeof path === "string" &&
+					path.trim().match(/\./)
+				) {
+					fullPath = path.split(".");
+					variable = this._store.variables?.[fullPath[0]];
+				}
+				if (variable) {
+					const value = this.getVariable(
+						variable.to,
+						variable.type,
+						fullPath ? fullPath : [path],
+						variable.cellId,
+						variable.type !== "cell" && variable.value
+							? variable.value
+							: null,
+					);
 
-                            // if (p.length === 0) {
-                            //     combinedValues += ` ${c.output}`;
-                            //     // return c.output
-                            // } else {
-                            const key = path; // p[0];
+					// TODO: Check this, protects for false values
+					// (query.isLoading tied to a block.label **bad use-case)
+					if (value !== undefined && value !== null) {
+						const newValue =
+							typeof value === "object"
+								? JSON.stringify(value)
+								: value;
+						combinedValues += ` ${newValue ?? ""}`;
+					}
+				} else {
+					combinedValues += ` ${path}`;
+				}
+			});
 
-                            if (key in c._exposed) {
-                                // get the search path
-                                // const s = p.join(".");
-
-                                combinedValues += ` ${getValueByPath(
-                                    c._exposed,
-                                    path,
-                                )}`;
-                            }
-                            //     }
-                        } catch (e) {
-                            if (expression) {
-                                combinedValues += ` ${expression}`;
-                            }
-                        }
-                    }
-                }
-
-                let variable = this._store.variables?.[path];
-                let fullPath;
-                if (
-                    !variable &&
-                    typeof path === "string" &&
-                    path.trim().match(/\./)
-                ) {
-                    fullPath = path.split(".");
-                    variable = this._store.variables?.[fullPath[0]];
-                }
-                if (variable) {
-                    const value = this.getVariable(
-                        variable.to,
-                        variable.type,
-                        fullPath ? fullPath : [path],
-                        variable.cellId,
-                        variable.type !== "cell" && variable.value
-                            ? variable.value
-                            : null,
-                    );
-
-                    // TODO: Check this, protects for false values
-                    // (query.isLoading tied to a block.label **bad use-case)
-                    if (value !== undefined && value !== null) {
-                        const newValue =
-                            typeof value === "object"
-                                ? JSON.stringify(value)
-                                : value;
-                        combinedValues += ` ${newValue ?? ""}`;
-                    }
-                } else {
-                    combinedValues += ` ${path}`;
-                }
-            });
-
-        return combinedValues || expression;
-    };
+		return combinedValues || expression;
+	};
 
 	/**
 	 * Flatten a string containing multiple variables
@@ -955,7 +944,7 @@ export class StateStore {
 			if (currentBlock.widget === "iteration") {
 				return currentBlock;
 			}
-			if (currentBlock.parent && currentBlock.parent.id) {
+			if (currentBlock.parent?.id) {
 				currentBlock = this._store.blocks[currentBlock.parent.id];
 			} else {
 				break;
@@ -1202,14 +1191,14 @@ export class StateStore {
 				if (variable) {
 					// retrieve the "to" value
 					const toValue = variable.to;
-					if (variable.type == "block") {
+					if (variable.type === "block") {
 						// Look into blocks section
 						if (this._store.blocks[toValue]) {
 							this._store.blocks[toValue].data.value = value;
 						}
 					} else if (
-						variable.type == "cell" ||
-						variable.type == "query"
+						variable.type === "cell" ||
+						variable.type === "query"
 					) {
 						// TODO: Handle query and cell types do we just swap output?
 					} else {
@@ -1878,7 +1867,7 @@ export class StateStore {
 
 				if (appPageMatch || sharePageMatch) {
 					const base = appPageMatch
-						? appPageMatch[0] + "/view"
+						? `${appPageMatch[0]}/view`
 						: sharePageMatch[0]; // This will be either #/s/:id/ or #/:id/view
 
 					const pageBlocks = this.getAllBlocksOfType("page");
@@ -1890,10 +1879,10 @@ export class StateStore {
 					if (urlPageRouteMatch) {
 						const newHash = destination.startsWith("/")
 							? base.replace(/\/$/, "") + destination
-							: base.replace(/\/$/, "") + "/" + destination; // Avoid double slashes
+							: `${base.replace(/\/$/, "")}/${destination}`; // Avoid double slashes
 
-                        window.location.hash = newHash;
-                    }
+						window.location.hash = newHash;
+					}
 
 					return;
 				}

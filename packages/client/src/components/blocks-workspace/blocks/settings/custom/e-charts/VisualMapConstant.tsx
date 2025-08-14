@@ -44,7 +44,7 @@ export const VisualMapConstant = {
 			icon: <BarChartIcon style={{ color: "#0471F0" }} />,
 			name: "bar",
 			label: "Bar Chart",
-			title: "echart-bar-graph",
+			title: "echart-bar-chart",
 			option: {
 				xAxis: {
 					type: "category",
@@ -114,7 +114,7 @@ export const VisualMapConstant = {
 					},
 				},
 				title: {
-					text: "Bar Graph",
+					text: "Bar Chart",
 					show: true,
 					left: "left",
 					textStyle: {
@@ -152,10 +152,10 @@ export const VisualMapConstant = {
 			icon: <img src={String(LineIcon)} alt="Line Icon" />,
 			name: "line",
 			label: "Line",
-			title: "echart-line-graph",
+			title: "echart-line-chart",
 			option: {
 				title: {
-					text: "ECharts Line Chart",
+					text: "Line Chart",
 					left: "center",
 					top: 20,
 					textStyle: {

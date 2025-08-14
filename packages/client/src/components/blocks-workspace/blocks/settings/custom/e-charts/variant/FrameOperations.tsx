@@ -190,7 +190,7 @@ export const FrameOperations = observer(
 		//Resets the block data related to fields so the frame change operation removes all data related to old frame
 		function resetBlockData() {
 			let parsedValue = JSON.parse(computedValue) || {};
-			if (data.variation === "echart-bar-graph") {
+			if (data.variation === "echart-bar-chart") {
 				parsedValue = {
 					...parsedValue,
 					["xAxis"]: {
@@ -233,7 +233,7 @@ export const FrameOperations = observer(
 						["facet"]: [],
 					},
 				};
-			} else if (data.variation === "echart-line-graph") {
+			} else if (data.variation === "echart-line-chart") {
 				const { _state, ...mainParsedData } = parsedValue;
 				parsedValue = {
 					...mainParsedData,
@@ -311,7 +311,7 @@ export const FrameOperations = observer(
 		//useeffect to run the operations essential when a block is changed from another
 		useEffect(() => {
 			let tempStoredColumnsForDropped = {};
-			if (data.variation === "echart-bar-graph") {
+			if (data.variation === "echart-bar-chart") {
 				const parsedOption = JSON.parse(computedValue) || {};
 				if (
 					Object.hasOwn(parsedOption, "xAxis") &&
@@ -423,7 +423,7 @@ export const FrameOperations = observer(
 					setSelectedColumn((preVCol) => tempStoredColumns);
 				}
 			}
-			if (data.variation === "echart-line-graph") {
+			if (data.variation === "echart-line-chart") {
 				const parsedOption = JSON.parse(computedValue) || {};
 				const dataTypeList = {};
 				if (
@@ -789,7 +789,7 @@ export const FrameOperations = observer(
 
 			const columns = { ...fieldsData };
 
-			if (variation === "echart-bar-graph") {
+			if (variation === "echart-bar-chart") {
 				let tempVal = JSON.parse(computedValue) || {};
 				if (firstColumn?.label) {
 					columns[firstColumn?.label] = [
@@ -1074,7 +1074,7 @@ export const FrameOperations = observer(
 				setData("option", tempValue);
 			}
 			if (
-				variation === "echart-line-graph" &&
+				variation === "echart-line-chart" &&
 				firstColumn !== null &&
 				secondColumn !== null
 			) {
