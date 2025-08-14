@@ -1,255 +1,258 @@
-import { SyntheticEvent, useMemo } from 'react';
+import { type SyntheticEvent, useMemo } from "react";
 import {
-    useParams,
-    useLocation,
-    useResolvedPath,
-    Outlet,
-    Navigate,
-    matchPath,
-    useNavigate,
-} from 'react-router-dom';
-import { styled, ToggleTabsGroup } from '@semoss/ui';
+	matchPath,
+	Navigate,
+	Outlet,
+	useLocation,
+	useNavigate,
+	useParams,
+	useResolvedPath,
+} from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
+import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
+import { EngineHeader } from "@/components/engine";
+import { LoadingScreen } from "@/components/ui";
+import { EngineContext } from "@/contexts";
+import { useAPI, useRootStore, useSettings } from "@/hooks";
+import { removeUnderscores } from "@/utility";
+import type { ENGINE_ROUTES } from "./engine.constants";
 
-import { ENGINE_TYPES } from '@/types';
-import { EngineContext } from '@/contexts';
-import { usePixel, useAPI, useRootStore, useSettings } from '@/hooks';
-
-import { LoadingScreen } from '@/components/ui';
-import { EngineShell } from '@/components/engine';
-
-import { ENGINE_ROUTES } from './engine.constants';
-
-const StyledDocument = styled('div')(({ theme }) => ({
-    width: '100%',
-    padding: theme.spacing(2),
-    backgroundColor: theme.palette.background.default,
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+	alignItems: "center",
+	padding: "0px 3px",
+	height: "42px",
+	width: "100%",
+	borderTopLeftRadius: theme.shape.borderRadiusLg,
+	borderTopRightRadius: theme.shape.borderRadiusLg,
+	borderBottomRightRadius: 0,
+	borderBottomLeftRadius: 0,
+	background: theme.palette.primary.selected,
 }));
 
-const StyledToggleTabsGroup = styled(ToggleTabsGroup)(() => ({
-    borderRadius: '12px 12px 0px 0px',
-    height: '42px',
-    alignItems: 'center',
-    padding: '0px 3px',
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+	height: "38px",
+	"&.Mui-selected": {
+		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
+		borderRadius: "12px",
+	},
 }));
 
-const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(() => ({
-    height: '38px',
-}));
-
-const StyledDiv = styled('div')(() => ({
-    width: '100%',
-    borderRadius: '12px 12px 0px 0px',
+const StyledContent = styled("div")(({ theme }) => ({
+	width: "100%",
+	padding: theme.spacing(2),
+	background: theme.palette.background.paper,
 }));
 
 interface EngineLayoutProps {
-    /** Type of the engine to render */
-    type: ENGINE_TYPES;
+	/** Rotue to render */
+	route: (typeof ENGINE_ROUTES)[number];
 }
 
 /**
  * Wrap the engine routes and add additional funcitonality
  */
-export const EngineLayout = (props: EngineLayoutProps) => {
-    const { type } = props;
+export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
+	const { engineId } = useParams();
+	const { configStore } = useRootStore();
+	const resolvedPath = useResolvedPath("");
+	const { pathname } = useLocation();
+	const navigate = useNavigate();
+	const { adminMode } = useSettings();
 
-    const { id } = useParams();
-    const { configStore } = useRootStore();
-    const resolvedPath = useResolvedPath('');
-    const { pathname } = useLocation();
-    const navigate = useNavigate();
-    const { adminMode } = useSettings();
+	// filter metakeys to the ones we want
+	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+		(k) => {
+			return (
+				k.metakey !== "description" &&
+				k.metakey !== "markdown" &&
+				k.metakey !== "tags"
+			);
+		},
+	);
 
-    // get the matching route
-    const route: (typeof ENGINE_ROUTES)[number] | null = useMemo(() => {
-        for (const r of ENGINE_ROUTES) {
-            if (r.type === type) {
-                return r;
-            }
-        }
+	// kets to get dbMetaData for
+	const metaKeys = [
+		"markdown",
+		"description",
+		...engineMetaKeys.map((k) => k.metakey),
+	];
 
-        return null;
-    }, [type]);
+	// get the metadata
+	const getEngineMetadata = usePixel<{
+		database_name?: string;
+		database_discoverable?: boolean;
+		database_created_by?: string;
+		database_date_created?: string;
+		last_updated?: string;
+		description?: string;
+		database_type?: string;
+		DATEADDED?: string;
+		PERMISSIONGRANTEDBY?: string;
+		markdown?: string;
+		tags?: string[];
+	}>(
+		engineId
+			? `GetEngineMetadata(engine=["${engineId}"], metaKeys=${JSON.stringify(
+					[metaKeys],
+				)}); `
+			: "",
+		{
+			data: {},
+		},
+	);
 
-    // filter metakeys to the ones we want
-    const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
-        (k) => {
-            return (
-                k.metakey !== 'description' &&
-                k.metakey !== 'markdown' &&
-                k.metakey !== 'tags'
-            );
-        },
-    );
+	// convert the data into an object
+	const values = useMemo(() => {
+		if (getEngineMetadata.status !== "SUCCESS") {
+			return {};
+		}
 
-    // kets to get dbMetaData for
-    const metaKeys = [
-        'markdown',
-        'description',
-        ...engineMetaKeys.map((k) => k.metakey),
-    ];
+		// Storage and Model currently not sending back Tag or Tags
+		return metaKeys.reduce((prev, curr) => {
+			// tag, domain, and etc either come in as a string or a string[], format it to correct type
+			const found = engineMetaKeys.find((obj) => obj.metakey === curr);
 
-    // get the metadata
-    const {
-        status: engineMetaStatus,
-        data: engineMetaData,
-        refresh: engineMetaRefresh,
-    } = usePixel<{
-        markdown?: string;
-        tags?: string[];
-    }>(
-        `GetEngineMetadata(engine=["${id}"], metaKeys=${JSON.stringify([
-            metaKeys,
-        ])}); `,
-    );
+			if (found) {
+				if (
+					found.display_options === "single-typeahead" ||
+					found.display_options === "select-box" ||
+					found.display_options === "multi-typeahead"
+				) {
+					if (typeof getEngineMetadata?.data[curr] === "string") {
+						prev[curr] = [getEngineMetadata?.data[curr]];
+					} else {
+						prev[curr] = getEngineMetadata?.data[curr];
+					}
+				}
+			} else {
+				prev[curr] = getEngineMetadata?.data[curr];
+			}
 
-    const { data: llmModels } = usePixel<
-        {
-            database_name: string;
-            database_id: string;
-        }[]
-    >(
-        `MyEngines( metaKeys = ["tag","domain","data classification","data restrictions","description"] , metaFilters = [ {} ] , filterWord=[""], userT = [true], engineTypes=['MODEL'],  offset=[0], limit=[15]) ;`,
-    );
+			return prev;
+		}, {});
+	}, [
+		getEngineMetadata.status,
+		getEngineMetadata?.data,
+		JSON.stringify(metaKeys),
+	]);
 
-    // convert the data into an object
-    const values = useMemo(() => {
-        if (engineMetaStatus !== 'SUCCESS') {
-            return {};
-        }
+	// get the user's role
+	const getUserEnginePermission =
+		!adminMode && engineId && useAPI(["getUserEnginePermission", engineId]);
 
-        // Storage and Model currently not sending back Tag or Tags
-        return metaKeys.reduce((prev, curr) => {
-            // tag, domain, and etc either come in as a string or a string[], format it to correct type
-            const found = engineMetaKeys.find((obj) => obj.metakey === curr);
+	// get the tabs based on permission
+	const tabs = useMemo(() => {
+		// must be valid
+		if (
+			!route ||
+			getUserEnginePermission.status !== "SUCCESS" ||
+			!getUserEnginePermission.data
+		) {
+			return [];
+		}
 
-            if (found) {
-                if (
-                    found.display_options === 'single-typeahead' ||
-                    found.display_options === 'select-box' ||
-                    found.display_options === 'multi-typeahead'
-                ) {
-                    if (typeof engineMetaData[curr] === 'string') {
-                        prev[curr] = [engineMetaData[curr]];
-                    } else {
-                        prev[curr] = engineMetaData[curr];
-                    }
-                }
-            } else {
-                prev[curr] = engineMetaData[curr];
-            }
+		// check the permission
+		const permission = getUserEnginePermission.data.permission;
 
-            return prev;
-        }, {});
-    }, [engineMetaStatus, engineMetaData, JSON.stringify(metaKeys)]);
+		// get the routes based on permission
+		return route.specific.filter((t) =>
+			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
+		);
+	}, [
+		route,
+		getUserEnginePermission.status,
+		getUserEnginePermission.data
+			? getUserEnginePermission.data.permission
+			: "",
+	]);
 
-    // get the user's role
-    const getUserEnginePermission =
-        !adminMode && useAPI(['getUserEnginePermission', id]);
+	/**
+	 * Gets active tab
+	 * @returns index of selectedTab
+	 */
+	const activeTabIdx: number = useMemo(() => {
+		if (!route) {
+			return -1;
+		}
 
-    // get the tabs based on permission
-    const tabs = useMemo(() => {
-        // must be valid
-        if (
-            !route ||
-            getUserEnginePermission.status !== 'SUCCESS' ||
-            !getUserEnginePermission.data
-        ) {
-            return [];
-        }
+		for (let tabIdx = 0, tabLen = tabs.length; tabIdx < tabLen; tabIdx++) {
+			if (
+				matchPath(
+					`${resolvedPath.pathname}/${tabs[tabIdx].path}`,
+					pathname,
+				)
+			) {
+				return tabIdx;
+			}
+		}
 
-        // check the permission
-        const permission = getUserEnginePermission.data.permission;
+		return -1;
+	}, [route, tabs, resolvedPath, pathname]);
 
-        // get the routes based on permission
-        return route.specific.filter((t) =>
-            t.restrict ? t.restrict.indexOf(permission) > -1 : true,
-        );
-    }, [
-        route,
-        getUserEnginePermission.status,
-        getUserEnginePermission.data
-            ? getUserEnginePermission.data.permission
-            : '',
-    ]);
+	// if the engine isn't found, navigate to the Home Page
+	if (!engineId || getUserEnginePermission.status === "ERROR") {
+		return <Navigate to={`${route.path}`} replace />;
+	}
 
-    /**
-     * Gets active tab
-     * @returns index of selectedTab
-     */
-    const activeTabIdx: number = useMemo(() => {
-        if (!route) {
-            return -1;
-        }
+	// show a loading screen when it is pending
+	if (getUserEnginePermission.status !== "SUCCESS") {
+		return <LoadingScreen.Trigger description="Checking Access" />;
+	}
 
-        for (let tabIdx = 0, tabLen = tabs.length; tabIdx < tabLen; tabIdx++) {
-            if (
-                matchPath(
-                    `${resolvedPath.pathname}/${tabs[tabIdx].path}`,
-                    pathname,
-                )
-            ) {
-                return tabIdx;
-            }
-        }
+	// show a loading screen when it is pending
+	if (getEngineMetadata.status !== "SUCCESS") {
+		return <LoadingScreen.Trigger description="Opening Engine" />;
+	}
 
-        return -1;
-    }, [route, tabs, resolvedPath, pathname]);
+	return (
+		<EngineContext.Provider
+			value={{
+				type: route.type,
+				path: route.path,
+				name: route.name,
+				active: {
+					id: engineId,
+					role: getUserEnginePermission.data.permission,
+					name: removeUnderscores(
+						(getEngineMetadata.data?.database_name as string) || "",
+					),
+					metadata: values,
+					refresh: getEngineMetadata.refresh,
+				},
+			}}
+		>
+			<Stack direction="column" spacing={2}>
+				<EngineHeader />
+				<Stack direction="column" spacing={0}>
+					{tabs.length > 0 && (
+						<StyledToggleTabsGroup
+							boxSx={{
+								width: "100%",
+							}}
+							value={activeTabIdx}
+							onChange={(e: SyntheticEvent, idx: number) => {
+								// get the specific route
+								const r = tabs[idx];
 
-    // if the engine isn't found, navigate to the Home Page
-    if (!id || getUserEnginePermission.status === 'ERROR') {
-        return <Navigate to={`${route.path}`} replace />;
-    }
-
-    // show a loading screen when it is pending
-    if (getUserEnginePermission.status !== 'SUCCESS') {
-        return <LoadingScreen.Trigger description="Checking Access" />;
-    }
-
-    return (
-        <EngineContext.Provider
-            value={{
-                id: id,
-                type: route.type,
-                name: route.name,
-                role: getUserEnginePermission.data.permission,
-                refresh: engineMetaRefresh,
-                metaVals: values, // Needed so edit button can be in header
-                llmModels: llmModels,
-            }}
-        >
-            <EngineShell>
-                {tabs.length > 0 && (
-                    <StyledDiv>
-                        <StyledToggleTabsGroup
-                            boxSx={{
-                                borderRadius: '12px 12px 0px 0px',
-                                width: '100%',
-                            }}
-                            value={activeTabIdx}
-                            onChange={(e: SyntheticEvent, idx: number) => {
-                                // get the specific route
-                                const r = tabs[idx];
-
-                                // navigate to it
-                                navigate(`${r.path}`);
-                            }}
-                        >
-                            {tabs.map((t) => {
-                                return (
-                                    <StyledToggleTabsGroupItem
-                                        key={t.path}
-                                        label={t.name}
-                                    ></StyledToggleTabsGroupItem>
-                                );
-                            })}
-                        </StyledToggleTabsGroup>
-                    </StyledDiv>
-                )}
-
-                <StyledDocument>
-                    <Outlet />
-                </StyledDocument>
-            </EngineShell>
-        </EngineContext.Provider>
-    );
+								// navigate to it
+								navigate(`${r.path}`);
+							}}
+						>
+							{tabs.map((t, tIdx) => {
+								return (
+									<StyledToggleTabsGroupItem
+										key={t.path}
+										label={t.name}
+									/>
+								);
+							})}
+						</StyledToggleTabsGroup>
+					)}
+					<StyledContent>
+						<Outlet />
+					</StyledContent>
+				</Stack>
+			</Stack>
+		</EngineContext.Provider>
+	);
 };

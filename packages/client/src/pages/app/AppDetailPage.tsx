@@ -1,996 +1,884 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 import {
-    Add,
-    Edit,
-    HdrAuto,
-    MoreVert,
-    Share,
-    EditLocation,
-    RemoveRedEyeRounded,
-    SimCardDownload,
-} from '@mui/icons-material';
-
+	Edit,
+	EditOutlined,
+	InfoRounded,
+	LockReset,
+	SimCardDownload,
+} from "@mui/icons-material";
+import UpdateIcon from "@mui/icons-material/Update";
+import { IconButton, Tooltip } from "@mui/material";
+import { useEffect, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useParams } from "react-router-dom";
+import { Env } from "@semoss/sdk/react";
 import {
-    Breadcrumbs,
-    Button,
-    IconButton,
-    Menu,
-    styled,
-    Typography,
-    useNotification,
-    Chip,
-    Modal,
-    Stack,
-    CircularProgress,
-} from '@semoss/ui';
-import { Env } from '@semoss/sdk/react';
-
-import { useRootStore } from '@/hooks';
-import { formatPermission, toTitleCase } from '@/utility';
-import { ShareOverlay } from '@/components/ui';
-import { SettingsContext } from '@/contexts';
+	Box,
+	Breadcrumbs,
+	Button,
+	Chip,
+	CircularProgress,
+	Grid,
+	Modal,
+	Stack,
+	styled,
+	ToggleTabsGroup,
+	Typography,
+	useNotification,
+} from "@semoss/ui";
 import {
-    MembersTable,
-    PendingMembersTable,
-    SettingsTiles,
-} from '@/components/settings';
-import {
-    AppDetailsFormTypes,
-    AppDetailsFormValues,
-    ChangeAccessModal,
-    DependencyTable,
-    EditDetailsModal,
-    EditDependenciesModal,
-    appDependency,
-    modelledDependency,
-    fetchAppInfo,
-    fetchMainUses,
-    fetchDependencies,
-    determineUserPermission,
-    DetailsForm,
-    AppDetailsRef,
-} from '@/components/app';
+	type AppDetailsFormTypes,
+	AppDetailsFormValues,
+	type appDependency,
+	ChangeAccessModal,
+	type DetailsForm,
+	determineUserPermission,
+	EditDependenciesModal,
+	EditDetailsModal,
+	fetchAppInfo,
+	fetchDependencies,
+	fetchMainUses,
+	type modelledDependency,
+} from "@/components/app";
+import { ShareOverlay } from "@/components/ui";
+import { SettingsContext } from "@/contexts";
+import { useRootStore } from "@/hooks";
+import type { Role } from "@/types";
+import { NavbarHeader, NavbarLeft } from "../../components/shared";
+import { AccessControl } from "./AppDetailTabs/AccessControl";
+import { Dependencies } from "./AppDetailTabs/Dependencies";
+import { Overview } from "./AppDetailTabs/Overview";
+import { SettingsTab } from "./AppDetailTabs/Settings";
 
-const OuterContainer = styled('div')(({ theme }) => ({
-    backgroundColor: theme.palette.background.paper,
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    justifyContent: 'center',
-    overflow: 'scroll',
-    padding: `${theme.spacing(6)} 1rem 0`,
-    width: '100%',
-}));
-
-const InnerContainer = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    gap: theme.spacing(3),
-    margin: 'auto',
-    maxWidth: '79rem',
-    width: '100%',
-}));
-
-const StyledLink = styled(Link)(({ theme }) => ({
-    textDecoration: 'none',
-}));
-
-const StyledCrumb = styled(Typography, {
-    shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled?: true }>(({ theme, disabled }) => ({
-    color: theme.palette.text.primary,
-
-    ...(disabled && {
-        color: theme.palette.text.disabled,
-    }),
-}));
-
-const ActionBar = styled('div')(({ theme }) => ({
-    display: 'flex',
-    gap: theme.spacing(1),
-    marginLeft: 'auto',
-}));
-
-const PageBody = styled('div')(({ theme }) => ({
-    marginLeft: '200px',
-    display: 'flex',
-    flexDirection: 'column',
-}));
-
-const SectionHeading = styled(Typography)(({ theme }) => ({
-    fontSize: 20,
-    fontWeight: '500',
-    marginBottom: theme.spacing(1),
-}));
-
-const TitleSection = styled('section')(({ theme }) => ({
-    display: 'flex',
-    gap: theme.spacing(2),
-    paddingBottom: theme.spacing(6),
-}));
-
-const TitleSectionImg = styled('img')(({ theme }) => ({
-    borderRadius: theme.spacing(0.75),
-    height: '135px',
-    width: '160px',
-    overflow: 'hidden',
-}));
-
-const TitleSectionBodyWrapper = styled('div')({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-    justifyContent: 'center',
+const OuterContainer = styled("div")({
+	height: "100%",
+	justifyContent: "center",
+	overflow: "scroll",
+	width: "100%",
 });
 
-const TitleSectionBody = styled(Typography)(({ theme }) => ({
-    alignItems: 'center',
-    color: theme.palette.secondary.dark,
-    display: 'flex',
-    gap: '0.25rem',
+const InnerContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	height: "100%",
+	gap: theme.spacing(3),
+	margin: "auto",
+	maxWidth: "79rem",
+	width: "100%",
 }));
 
-const TagsBodyWrapper = styled('div')({
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '0.6rem',
-});
-
-const StyledSection = styled('section')(({ theme }) => ({
-    paddingBottom: theme.spacing(3),
+const ActionBar = styled("div")(({ theme }) => ({
+	display: "flex",
+	gap: theme.spacing(1),
+	marginLeft: "auto",
 }));
 
-const DependenciesHeadingWrapper = styled('div')({
-    alignItems: 'start',
-    display: 'flex',
-    justifyContent: 'space-between',
-    position: 'relative',
+const PageBody = styled("div")({
+	//marginLeft: '200px',
+	display: "flex",
+	flexDirection: "column",
 });
 
-const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
-    color: theme.palette.secondary.dark,
-    display: 'flex',
-    gap: theme.spacing(0.5),
-    alignItems: 'center',
-    height: '48px',
+const TitleSection = styled("section")(({ theme }) => ({
+	display: "flex",
+	gap: theme.spacing(2),
+	paddingBottom: theme.spacing(2),
+	justifyContent: "space-between",
+	alignItems: "center",
+	flexWrap: "wrap",
+}));
+
+const TitleSectionImg = styled("img")(({ theme }) => ({
+	borderRadius: theme.spacing(0.75),
+	height: "64px",
+	width: "64px",
+	overflow: "hidden",
+}));
+
+const TitleSectionBodyWrapper = styled("div")({
+	display: "flex",
+	flexDirection: "column",
+	gap: "0.5rem",
+	justifyContent: "center",
+});
+
+const TagsBodyWrapper = styled("div")({
+	display: "flex",
+	flexWrap: "wrap",
+	gap: "0.6rem",
+});
+
+const Title = styled(Typography)({
+	fontSize: "34px",
+	fontWeight: "400",
+});
+
+const TagsDescription = styled(Typography)(({ theme }) => ({
+	paddingBottom: theme.spacing(2),
+}));
+
+const StyledContentContainer = styled(Box)(({ theme }) => ({
+	width: "100% !important",
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(3),
+	color: theme.palette.secondary.light,
+	"&.MuiBox-root": {
+		width: "100%",
+	},
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+	minHeight: "42px",
+	color: theme.palette.secondary.light,
+	//borderRadius: theme.shape.borderRadius,
+	alignItems: "center",
+	padding: "0px 3px",
+	display: "flex",
+	justifyContent: "flex-start", // or 'flex-start' if you want left alignment
+	borderBottomRadius: "0px",
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+	height: "38px",
+	padding: "8px 11px",
+	"&.MuiTab-root": {
+		borderRadius: theme.shape.borderRadius,
+	},
+	"&.Mui-selected": {
+		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
+	},
+}));
+
+const StyledTabs = {
+	width: "100%",
+	borderBottomLeftRadius: "0px",
+	borderBottomRightRadius: "0px",
+};
+
+const StyledTabsSection = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "row",
+	width: "100%",
+	flexWrap: "wrap",
+	gap: theme.spacing(3),
+	padding: "2px",
+	backgroundColor: theme.palette.background.paper,
+	// boxShadow: '0px 4px 4px 0px rgba(0, 0, 0, 0.05)',
+}));
+
+const StyledUpdateIcon = styled(UpdateIcon)(({ theme }) => ({
+	color: theme.palette.text.disabled,
+}));
+
+const StyledLockReset = styled(LockReset)(({ theme }) => ({
+	color: theme.palette.background.paper,
+}));
+
+const ContainerGrid = styled(Grid)(({ theme }) => ({
+	paddingBottom: theme.spacing(2),
+	alignItems: "flex-start", // align both columns to top
+}));
+
+const DescriptionText = styled(Typography)(({ theme }) => ({
+	paddingBottom: theme.spacing(2), // 16px
+	color: theme.palette.text.disabled,
+}));
+
+const RightColumn = styled(Grid)(() => ({
+	display: "flex",
+	justifyContent: "flex-end", // push content to the right
+}));
+
+const PublisherInfo = styled(Typography)(({ theme }) => ({
+	fontSize: theme.typography.pxToRem(14),
+	color: "gray",
+	display: "flex",
+	flexDirection: "column",
+	alignItems: "flex-end",
+	gap: theme.spacing(0.5),
+}));
+
+const HeaderRow = styled("div")({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+});
+
+const StyledInfoOutlined = styled(InfoRounded)(({ theme }) => ({
+	cursor: "pointer",
+	width: "15px",
+	height: "15px",
+	color: theme.palette.secondary.dark,
+}));
+
+const StyledTypography = styled(Typography)({
+	display: "flex",
+	alignItems: "center",
+	gap: "6px",
+});
+
+const StyledStack = styled(Stack)(({ theme }) => ({
+	width: "100%",
+	padding: theme.spacing(3),
 }));
 
 export const AppDetailPage = () => {
-    const { control, setValue, getValues, watch, handleSubmit } =
-        useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
-
-    const markdown = watch('markdown');
-    const tags = watch('tag');
-    const appInfo = watch('appInfo');
-    const userRole = watch('userRole');
-    const permission = watch('permission');
-    const dependencies = watch('dependencies');
-    const detailsForm = watch('detailsForm');
-
-    const [moreVertAnchorEl, setMoreVertAnchorEl] = useState(null);
-    const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
-    const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
-        useState(false);
-    const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
-    const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
-        useState(false);
-
-    const [values, setValues] = useState<DetailsForm>(
-        AppDetailsFormValues.detailsForm,
-    );
-
-    const markdownRef = useRef<HTMLElement>(null);
-    const tagsRef = useRef<HTMLElement>(null);
-    const dependenciesRef = useRef<HTMLElement>(null);
-    const appAccessRef = useRef<HTMLElement>(null);
-    const memberAccessRef = useRef<HTMLElement>(null);
-    const similarAppsRef = useRef<HTMLElement>(null);
-
-    const refs = useMemo<
-        { ref: React.MutableRefObject<HTMLElement>; display: string }[]
-    >(() => {
-        return [
-            { ref: markdownRef, display: 'Main Uses' },
-            { ref: tagsRef, display: 'Tags' },
-            { ref: dependenciesRef, display: 'Dependencies' },
-            { ref: appAccessRef, display: 'App Access' },
-            { ref: memberAccessRef, display: 'Member Access' },
-            { ref: similarAppsRef, display: 'Similar Apps' },
-        ];
-    }, []);
-
-    const { monolithStore, configStore } = useRootStore();
-    const navigate = useNavigate();
-    const notification = useNotification();
-    const { appId } = useParams();
-
-    useEffect(() => {
-        setValue('appId', appId);
-        fetchUserSpecificData();
-        fetchAppData(appId);
-    }, [appId]);
-
-    const fetchUserSpecificData = async () => {
-        const currPermission = getValues('permission');
-        await getPermission();
-        const newPermission = getValues('permission');
-
-        if (newPermission !== currPermission && newPermission === 'readOnly') {
-            fetchSimilarApps();
-        }
-    };
-
-    async function getPermission() {
-        const { permission: role } =
-            await monolithStore.getUserProjectPermission(appId);
-
-        setValue('userRole', role);
-        const permission = determineUserPermission(role);
-        setValue('permission', permission);
-
-        if (permission === 'author') setValue('requestedPermission', 'OWNER');
-        if (permission === 'editor') setValue('requestedPermission', 'EDIT');
-        if (permission === 'readOnly' || permission === 'discoverable')
-            setValue('requestedPermission', 'READ_ONLY');
-    }
-
-    const fetchAppData = async (id: string) => {
-        Promise.allSettled([
-            fetchAppInfo(
-                monolithStore,
-                id,
-                configStore.store.config.projectMetaKeys.map((a) => a.metakey),
-            ),
-            fetchMainUses(monolithStore, id),
-            fetchDependencies(monolithStore, id),
-        ]).then((results) =>
-            results.forEach((res, idx) => {
-                if (res.status === 'rejected') {
-                    emitMessage(true, res.reason);
-                } else {
-                    if (idx === 0) {
-                        if (res.value.type === 'error') {
-                            emitMessage(true, res.value.output);
-                        } else {
-                            setValue('appInfo', res.value.output);
-                            const output = res.value.output;
-
-                            const projectMetaKeys =
-                                configStore.store.config.projectMetaKeys;
-                            // Keep only relevant project keys defined for app details
-                            const parsedMeta = projectMetaKeys
-                                .map((k) => k.metakey)
-                                .reduce((prev, curr) => {
-                                    // tag, domain, and etc either come in as a string or a string[], format it to correct type
-                                    const found = projectMetaKeys.find(
-                                        (obj) => obj.metakey === curr,
-                                    );
-
-                                    if (curr === 'tag') {
-                                        if (typeof output[curr] === 'string') {
-                                            prev[curr] = [output[curr]];
-                                        } else {
-                                            prev[curr] = output[curr];
-                                        }
-                                    } else if (
-                                        found.display_options ===
-                                            'single-typeahead' ||
-                                        found.display_options ===
-                                            'select-box' ||
-                                        found.display_options ===
-                                            'multi-typeahead'
-                                    ) {
-                                        if (typeof output[curr] === 'string') {
-                                            prev[curr] = [output[curr]];
-                                        } else {
-                                            prev[curr] = output[curr];
-                                        }
-                                    } else {
-                                        prev[curr] = output[curr];
-                                    }
-
-                                    return prev;
-                                }, {}) as AppDetailsFormTypes['detailsForm'];
-                            setValue('detailsForm', parsedMeta);
-                            setValue('tag', parsedMeta.tag);
-                            setValue('markdown', parsedMeta.markdown);
-                            setValue(
-                                'detailsForm.markdown',
-                                parsedMeta.markdown,
-                            );
-                            setValues((prev) => ({
-                                ...prev,
-                                markdown: parsedMeta.markdown || '',
-                            }));
-                            setValues((prev) => ({ ...prev, ...parsedMeta }));
-                        }
-                    } else if (idx === 1) {
-                        if (res.value.type === 'error') {
-                            emitMessage(true, res.value.output);
-                        } else {
-                            if (res.value.output !== null) {
-                                setValue('markdown', res.value.output);
-                                setValue(
-                                    'detailsForm.markdown',
-                                    res.value.output,
-                                );
-                                setValues((prev) => ({
-                                    ...prev,
-                                    markdown: res.value.output || '',
-                                }));
-                            }
-                        }
-                    } else if (idx === 2) {
-                        if (res.value.type === 'error') {
-                            emitMessage(true, res.value.output);
-                        } else {
-                            const modelled = modelDependencies(
-                                res.value.output,
-                            );
-                            setValue('dependencies', modelled);
-                            setValue('selectedDependencies', modelled);
-                        }
-                    }
-                }
-            }),
-        );
-    };
-
-    const fetchSimilarApps = () => {
-        // TODO
-    };
-
-    const modelDependencies = (
-        dependencies: appDependency[],
-    ): modelledDependency[] => {
-        return dependencies.map((dep: appDependency) => ({
-            name: dep.engine_name ? dep.engine_name.replace(/_/g, ' ') : '',
-            id: dep.engine_id,
-            type: dep.engine_type,
-            userPermission: '', // TODO: no value currently available in the payload
-            isPublic: !!dep.engine_global,
-            isDiscoverable: !!dep.engine_discoverable,
-        }));
-    };
-
-    const emitMessage = (isError: boolean, message: string) => {
-        notification.add({
-            color: isError ? 'error' : 'success',
-            message,
-        });
-    };
-
-    const handleCloseChangeAccessModal = (refresh?: boolean) => {
-        if (refresh) {
-            // fetch updated permission.
-            getPermission();
-        } else {
-            // reset permission to original.
-            if (permission === 'author')
-                setValue('requestedPermission', 'OWNER');
-            if (permission === 'editor')
-                setValue('requestedPermission', 'EDIT');
-            if (permission === 'readOnly')
-                setValue('requestedPermission', 'READ_ONLY');
-        }
-        setIsChangeAccessModalOpen(false);
-    };
-
-    const handleCloseEditDetailsModal = (isReset?: boolean) => {
-        if (isReset) {
-            setValue('detailsForm', values);
-        }
-        setIsEditDetailsModalOpen(false);
-    };
-
-    const handleCloseDependenciesModal = async (refreshData: boolean) => {
-        const currDependencies = getValues('dependencies');
-
-        if (refreshData) {
-            const appId = getValues('appId');
-            const res = await fetchDependencies(monolithStore, appId);
-            if (res.type === 'success') {
-                const modelled = modelDependencies(res.output);
-                setValue('dependencies', modelled);
-                setValue('selectedDependencies', modelled);
-            } else {
-                setValue('selectedDependencies', currDependencies);
-                notification.add({
-                    color: 'error',
-                    message: res.output,
-                });
-            }
-        } else {
-            setValue('selectedDependencies', currDependencies);
-        }
-        setIsEditDependenciesModalOpen(false);
-    };
-
-    // export loading state
-    const [exportLoading, setExportLoading] = useState(false);
-    /**
-     * @name exportAPP
-     * @desc export APP pixel
-     */
-    const exportApp = () => {
-        setExportLoading(true);
-        const pixel = `ExportProjectApp(project=["${appId}"]);`;
-
-        monolithStore.runQuery(pixel).then((response) => {
-            const output = response.pixelReturn[0].output,
-                insightId = response.insightId;
-
-            monolithStore.download(insightId, output);
-        });
-        setExportLoading(false);
-    };
-
-    // filter metakeys to the variable ones
-    const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
-        (k) => {
-            return (
-                k.metakey !== 'description' &&
-                k.metakey !== 'markdown' &&
-                k.metakey !== 'tag'
-            );
-        },
-    );
-
-    // Create refs for dynamic fields
-    const createRefs = useMemo<AppDetailsRef[]>(() => {
-        const refs = [];
-        projectMetaKeys.forEach((meta) => {
-            if (detailsForm?.[meta.metakey]) {
-                refs.push({
-                    ref: React.createRef<HTMLElement>(),
-                    display: toTitleCase(meta.metakey),
-                    ...meta,
-                });
-            }
-        });
-        return refs as AppDetailsRef[];
-    }, [projectMetaKeys, detailsForm]);
-
-    // Merge default/dynamic refs for side bar navigiation
-    const detailRefs = [
-        ...refs,
-        ...createRefs.map((a) => ({ ref: a.ref, display: a.display })),
-    ];
-
-    /**
-     * @name onSubmit
-     * @desc update app details
-     * @param data - form data
-     */
-    const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
-        // copy over the defined keys
-        const meta = {} as AppDetailsFormTypes['detailsForm'];
-        let imageMeta = [] as File[];
-        if (data.detailsForm) {
-            for (const key in data.detailsForm) {
-                if (data.detailsForm[key] !== undefined && key !== 'appImage') {
-                    meta[key] = data.detailsForm[key];
-                }
-                if (key === 'appImage') {
-                    imageMeta = data.detailsForm[key] as File[];
-                }
-            }
-        }
-
-        if (Object.keys(meta).length === 0) {
-            notification.add({
-                color: 'warning',
-                message: 'Nothing to Save',
-            });
-
-            return;
-        }
-
-        monolithStore
-            .runQuery(
-                `SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
-                    meta,
-                )}], jsonCleanup=[true])`,
-            )
-            .then(async (response) => {
-                const { output, additionalOutput, operationType } =
-                    response.pixelReturn[0];
-
-                // track the errors
-                if (operationType.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message: output,
-                    });
-
-                    return;
-                }
-
-                // upload the image
-                if (imageMeta && appId) {
-                    await monolithStore.uploadImage(imageMeta, appId);
-                }
-
-                // close it, refresh and succesfully message
-                notification.add({
-                    color: 'success',
-                    message: additionalOutput[0].output,
-                });
-
-                fetchAppData(appId);
-                handleCloseEditDetailsModal();
-            })
-            .catch((error) => {
-                notification.add({
-                    color: 'error',
-                    message: error.message,
-                });
-            });
-    });
-
-    return (
-        <OuterContainer>
-            <InnerContainer>
-                <Breadcrumbs separator="/">
-                    <StyledLink to="../../..">
-                        <StyledCrumb variant="body1">App Library</StyledCrumb>
-                    </StyledLink>
-                    <StyledCrumb variant="body1" disabled>
-                        {appInfo?.project_name}
-                    </StyledCrumb>
-                </Breadcrumbs>
-
-                <div>
-                    <Sidebar permission={permission} refs={detailRefs} />
-                    <PageBody>
-                        <ActionBar>
-                            {permission === 'author' ? (
-                                <Button
-                                    disabled={exportLoading}
-                                    startIcon={
-                                        exportLoading ? (
-                                            <CircularProgress size="1em" />
-                                        ) : (
-                                            <SimCardDownload />
-                                        )
-                                    }
-                                    variant="outlined"
-                                    onClick={() => exportApp()}
-                                    data-testid={'app-detail-export-btn'}
-                                >
-                                    Export
-                                </Button>
-                            ) : (
-                                <Button
-                                    startIcon={<Add />}
-                                    variant="outlined"
-                                    onClick={() =>
-                                        setIsChangeAccessModalOpen(true)
-                                    }
-                                    sx={{ fontWeight: 'bold' }}
-                                    data-testid={'app-detail-access-btn'}
-                                >
-                                    {permission === 'discoverable' ? (
-                                        <>Request Access</>
-                                    ) : (
-                                        <>Change Access</>
-                                    )}
-                                </Button>
-                            )}
-
-                            <Button
-                                variant="contained"
-                                onClick={() => navigate(`/app/${appId}`)}
-                                data-testid={'app-detail-open-btn'}
-                            >
-                                Open
-                            </Button>
-
-                            <IconButton
-                                onClick={(event) =>
-                                    setMoreVertAnchorEl(event.currentTarget)
-                                }
-                                data-testid={'app-detail-more-btn'}
-                            >
-                                <MoreVert />
-                            </IconButton>
-
-                            <Menu
-                                anchorEl={moreVertAnchorEl}
-                                open={Boolean(moreVertAnchorEl)}
-                                onClose={() => setMoreVertAnchorEl(null)}
-                                anchorOrigin={{
-                                    vertical: 'bottom',
-                                    horizontal: 'right',
-                                }}
-                                transformOrigin={{
-                                    vertical: 'top',
-                                    horizontal: 'right',
-                                }}
-                                sx={{ borderRadius: '4px' }}
-                            >
-                                {permission === 'author' && (
-                                    <StyledMenuItem
-                                        onClick={() => {
-                                            setIsEditDetailsModalOpen(true);
-                                            setMoreVertAnchorEl(null);
-                                        }}
-                                        value={null}
-                                    >
-                                        <Edit fontSize="small" />
-                                        <Typography variant="caption">
-                                            Edit App Details
-                                        </Typography>
-                                    </StyledMenuItem>
-                                )}
-
-                                <StyledMenuItem
-                                    value={null}
-                                    onClick={() => setIsShareOverlayOpen(true)}
-                                >
-                                    <Share fontSize="small" />
-                                    <Typography variant="caption">
-                                        Share
-                                    </Typography>
-                                </StyledMenuItem>
-                            </Menu>
-                        </ActionBar>
-
-                        <TitleSection>
-                            <TitleSectionImg
-                                src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
-                                alt="App Image"
-                            />
-                            <TitleSectionBodyWrapper>
-                                <Typography variant="h6">
-                                    {appInfo?.project_name}
-                                </Typography>
-                                <TitleSectionBody variant="body1">
-                                    {permission === 'author' ? (
-                                        <HdrAuto />
-                                    ) : permission === 'editor' ? (
-                                        <EditLocation />
-                                    ) : permission === 'discoverable' ? (
-                                        <RemoveRedEyeRounded />
-                                    ) : null}
-                                    {`${formatPermission(userRole)} Access`}
-                                </TitleSectionBody>
-                                <TitleSectionBody variant="body1">
-                                    {appInfo?.description
-                                        ? appInfo?.description
-                                        : 'No description available'}
-                                </TitleSectionBody>
-                            </TitleSectionBodyWrapper>
-                        </TitleSection>
-
-                        <StyledSection ref={markdownRef}>
-                            <SectionHeading variant="h2">
-                                Main uses
-                            </SectionHeading>
-                            <Typography variant="body1">{markdown}</Typography>
-                        </StyledSection>
-
-                        <StyledSection ref={tagsRef}>
-                            <SectionHeading variant="h2">Tags</SectionHeading>
-                            {tags ? (
-                                <TagsBodyWrapper>
-                                    {tags.map((tag, idx) => (
-                                        <Chip
-                                            key={`tag-${tag}-${idx}`}
-                                            label={tag}
-                                        />
-                                    ))}
-                                </TagsBodyWrapper>
-                            ) : (
-                                <Typography variant="body1">
-                                    No tags available
-                                </Typography>
-                            )}
-                        </StyledSection>
-                        <>
-                            {createRefs.map((k) => {
-                                if (
-                                    values[k.metakey] === undefined ||
-                                    !Array.isArray(values[k.metakey])
-                                ) {
-                                    return null;
-                                }
-
-                                return (
-                                    <StyledSection key={k.metakey} ref={k.ref}>
-                                        <SectionHeading variant="h2">
-                                            {k.display}
-                                        </SectionHeading>
-                                        <TagsBodyWrapper>
-                                            {k.display_options ===
-                                                'multi-checklist' ||
-                                            k.display_options ===
-                                                'multi-select' ||
-                                            k.display_options ===
-                                                'multi-typeahead' ||
-                                            k.display_options ===
-                                                'select-box' ? (
-                                                <Stack
-                                                    direction={'row'}
-                                                    spacing={1}
-                                                    flexWrap={'wrap'}
-                                                >
-                                                    {(
-                                                        detailsForm[
-                                                            k.metakey
-                                                        ] as string[]
-                                                    ).map((tag) => {
-                                                        return (
-                                                            <Chip
-                                                                key={tag}
-                                                                label={tag}
-                                                            ></Chip>
-                                                        );
-                                                    })}
-                                                </Stack>
-                                            ) : (
-                                                (detailsForm[
-                                                    k.metakey
-                                                ] as string)
-                                            )}
-                                        </TagsBodyWrapper>
-                                    </StyledSection>
-                                );
-                            })}
-                        </>
-
-                        {permission && permission !== 'discoverable' && (
-                            <StyledSection ref={dependenciesRef}>
-                                <DependenciesHeadingWrapper>
-                                    <SectionHeading variant="h2">
-                                        Dependencies
-                                    </SectionHeading>
-                                    {permission === 'author' && (
-                                        <IconButton
-                                            onClick={() =>
-                                                setIsEditDependenciesModalOpen(
-                                                    true,
-                                                )
-                                            }
-                                            sx={{
-                                                position: 'absolute',
-                                                right: 0,
-                                                top: '-0.4rem',
-                                            }}
-                                            data-testid={'app-detail-edit-btn'}
-                                        >
-                                            <Edit />
-                                        </IconButton>
-                                    )}
-                                </DependenciesHeadingWrapper>
-
-                                {dependencies.length > 0 ? (
-                                    <DependencyTable
-                                        dependencies={dependencies}
-                                        permission={permission}
-                                    />
-                                ) : (
-                                    <Typography variant="body1">
-                                        No dependencies
-                                    </Typography>
-                                )}
-                            </StyledSection>
-                        )}
-
-                        {permission === 'author' && (
-                            <StyledSection ref={appAccessRef}>
-                                <SectionHeading variant="h2">
-                                    App Access
-                                </SectionHeading>
-                                <SettingsContext.Provider
-                                    value={{
-                                        adminMode: false,
-                                    }}
-                                >
-                                    <SettingsTiles
-                                        type={'APP'}
-                                        direction="row"
-                                        name={appInfo?.project_name || 'app'}
-                                        id={appId}
-                                        onDelete={() => {
-                                            navigate('/settings/app');
-                                        }}
-                                    />
-                                </SettingsContext.Provider>
-                            </StyledSection>
-                        )}
-
-                        {permission &&
-                            permission !== 'discoverable' &&
-                            permission !== 'readOnly' && (
-                                <StyledSection ref={memberAccessRef}>
-                                    <SectionHeading variant="h2">
-                                        Member Access
-                                    </SectionHeading>
-                                    <SettingsContext.Provider
-                                        value={{
-                                            adminMode: false,
-                                        }}
-                                    >
-                                        <Stack direction="column" spacing={2}>
-                                            <PendingMembersTable
-                                                type={'APP'}
-                                                id={appId}
-                                            />
-                                            <MembersTable
-                                                type={'APP'}
-                                                id={appId}
-                                                onChange={() => {
-                                                    fetchUserSpecificData();
-                                                }}
-                                            />
-                                        </Stack>
-                                    </SettingsContext.Provider>
-                                </StyledSection>
-                            )}
-
-                        {(permission === 'discoverable' ||
-                            permission === 'readOnly') && (
-                            <StyledSection ref={similarAppsRef}>
-                                <SectionHeading variant="h2">
-                                    Similar Apps
-                                </SectionHeading>
-                            </StyledSection>
-                        )}
-                    </PageBody>
-                </div>
-            </InnerContainer>
-
-            <Modal
-                open={isShareOverlayOpen}
-                onClose={() => setIsShareOverlayOpen(false)}
-            >
-                <ShareOverlay
-                    appId={appId}
-                    diffs={false}
-                    onClose={() => setIsShareOverlayOpen(false)}
-                />
-            </Modal>
-
-            <ChangeAccessModal
-                open={isChangeAccessModalOpen}
-                onClose={handleCloseChangeAccessModal}
-                control={control}
-                getValues={getValues}
-            />
-
-            <EditDetailsModal
-                isOpen={isEditDetailsModalOpen}
-                onClose={handleCloseEditDetailsModal}
-                control={control}
-                onSubmit={onSubmit}
-            />
-
-            <EditDependenciesModal
-                isOpen={isEditDependenciesModalOpen}
-                onClose={handleCloseDependenciesModal}
-                control={control}
-                getValues={getValues}
-                setValue={setValue}
-                watch={watch}
-            />
-        </OuterContainer>
-    );
-};
-
-const StyledSidebar = styled('div')(({ theme }) => ({
-    width: '145px',
-    borderRight: `1px solid ${theme.palette.secondary.main}`,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(0.5),
-    position: 'fixed',
-    paddingRight: theme.spacing(1),
-}));
-
-const StyledSidebarItem = styled(Button)(({ theme }) => ({
-    justifyContent: 'flex-start',
-    whiteSpace: 'nowrap',
-}));
-
-interface SidebarProps {
-    permission: string;
-    refs: { ref: React.MutableRefObject<HTMLElement>; display: string }[];
-}
-
-const Sidebar = ({ permission, refs }: SidebarProps) => {
-    const [
-        mainUsesRef,
-        tagsRef,
-        dependenciesRef,
-        appAccessRef,
-        memberAccessRef,
-        similarAppsRef,
-        ...dynamicRefs
-    ] = refs;
-
-    const scrollIntoView = (ref: React.MutableRefObject<HTMLElement>) => {
-        ref.current.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    const canEdit =
-        permission &&
-        permission !== 'discoverable' &&
-        permission !== 'readOnly';
-
-    return (
-        <StyledSidebar>
-            <StyledSidebarItem
-                variant="text"
-                color="secondary"
-                onClick={() => scrollIntoView(mainUsesRef.ref)}
-                value={null}
-            >
-                Main Uses
-            </StyledSidebarItem>
-            <StyledSidebarItem
-                variant="text"
-                color="secondary"
-                onClick={() => scrollIntoView(tagsRef.ref)}
-                value={null}
-            >
-                Tags
-            </StyledSidebarItem>
-            {dynamicRefs?.map((ref) => (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(ref.ref)}
-                    value={null}
-                    key={ref.display}
-                >
-                    {ref.display}
-                </StyledSidebarItem>
-            ))}
-            {permission !== 'discoverable' && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(dependenciesRef.ref)}
-                    value={null}
-                >
-                    Dependencies
-                </StyledSidebarItem>
-            )}
-            {permission === 'author' && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(appAccessRef.ref)}
-                    value={null}
-                >
-                    App Access
-                </StyledSidebarItem>
-            )}
-            {canEdit && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(memberAccessRef.ref)}
-                    value={null}
-                >
-                    Member Access
-                </StyledSidebarItem>
-            )}
-            {!canEdit && (
-                <StyledSidebarItem
-                    variant="text"
-                    color="secondary"
-                    onClick={() => scrollIntoView(similarAppsRef.ref)}
-                    value={null}
-                >
-                    Similar Apps
-                </StyledSidebarItem>
-            )}
-        </StyledSidebar>
-    );
+	const { control, setValue, getValues, watch, handleSubmit } =
+		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
+
+	const tags = watch("tag");
+	const appInfo = watch("appInfo");
+	const permission = watch("permission");
+	const dependencies = watch("dependencies");
+	const [isShareOverlayOpen, setIsShareOverlayOpen] = useState(false);
+	const [isChangeAccessModalOpen, setIsChangeAccessModalOpen] =
+		useState(false);
+	const [isEditDetailsModalOpen, setIsEditDetailsModalOpen] = useState(false);
+	const [responseStatus, setResponseStatus] = useState(false);
+	const [values, setValues] = useState<DetailsForm>(
+		AppDetailsFormValues.detailsForm,
+	);
+	const [pendingRequest, setPendingRequest] = useState(false);
+	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
+	const { appId } = useParams();
+	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
+		useState(false);
+
+	console.log(appInfo, "appInfo");
+
+	useEffect(() => {
+		setValue("appId", appId);
+		fetchUserSpecificData();
+		fetchAppData(appId);
+	}, [appId]);
+
+	const fetchUserSpecificData = async () => {
+		const currPermission = getValues("permission");
+		await getPermission();
+		const newPermission = getValues("permission");
+
+		if (newPermission !== currPermission && newPermission === "readOnly") {
+			fetchSimilarApps();
+		}
+	};
+	// This runs ONLY when `appId` changes — not when dependencies change
+	useEffect(() => {
+		if (appId) {
+			const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
+
+			monolithStore
+				.runQuery(requested)
+				.then((response) => {
+					const output = response?.pixelReturn?.[0]?.output;
+					if (Array.isArray(output) && output.length > 0) {
+						setPendingRequest(true);
+					} else {
+						setPendingRequest(false);
+					}
+				})
+				.catch((_error) => {
+					setPendingRequest(false); // fallback in case of error
+				});
+		}
+	}, [appId]);
+
+	async function getPermission() {
+		const { permission: role } =
+			await monolithStore.getUserProjectPermission(appId);
+
+		setValue("userRole", role);
+		const permission = determineUserPermission(role);
+		setValue("permission", permission);
+
+		if (permission === "author") setValue("requestedPermission", "OWNER");
+		if (permission === "editor") setValue("requestedPermission", "EDIT");
+		if (permission === "readOnly" || permission === "discoverable")
+			setValue("requestedPermission", "READ_ONLY");
+	}
+
+	const fetchAppData = async (id: string) => {
+		await getPermission();
+		const permission = getValues("permission");
+		const promises = [
+			fetchAppInfo(
+				monolithStore,
+				id,
+				configStore.store.config.projectMetaKeys.map((a) => a.metakey),
+			),
+			fetchMainUses(monolithStore, id),
+		];
+		if (permission !== "discoverable") {
+			promises.push(fetchDependencies(monolithStore, id));
+		}
+		const results = await Promise.allSettled(promises);
+		results.forEach((res, idx) => {
+			if (res.status === "rejected") {
+				emitMessage(true, res.reason);
+			} else {
+				if (idx === 0) {
+					if (res.value.type === "error") {
+						emitMessage(true, res.value.output);
+					} else {
+						setValue("appInfo", res.value.output);
+						const output = res.value.output;
+
+						const projectMetaKeys =
+							configStore.store.config.projectMetaKeys;
+						// Keep only relevant project keys defined for app details
+						const parsedMeta = projectMetaKeys
+							.map((k) => k.metakey)
+							.reduce((prev, curr) => {
+								// tag, domain, and etc either come in as a string or a string[], format it to correct type
+								const found = projectMetaKeys.find(
+									(obj) => obj.metakey === curr,
+								);
+
+								if (curr === "tag") {
+									if (typeof output[curr] === "string") {
+										prev[curr] = [output[curr]];
+									} else {
+										prev[curr] = output[curr];
+									}
+								} else if (
+									found.display_options ===
+										"single-typeahead" ||
+									found.display_options === "select-box" ||
+									found.display_options === "multi-typeahead"
+								) {
+									if (typeof output[curr] === "string") {
+										prev[curr] = [output[curr]];
+									} else {
+										prev[curr] = output[curr];
+									}
+								} else {
+									prev[curr] = output[curr];
+								}
+
+								return prev;
+							}, {}) as AppDetailsFormTypes["detailsForm"];
+						setValue("detailsForm", parsedMeta);
+						setValue("tag", parsedMeta.tag);
+						setValue("markdown", parsedMeta.markdown);
+						setValue("detailsForm.markdown", parsedMeta.markdown);
+						setValues((prev) => ({
+							...prev,
+							markdown: parsedMeta.markdown || "",
+						}));
+						setValues((prev) => ({ ...prev, ...parsedMeta }));
+					}
+				} else if (idx === 1) {
+					if (res.value.type === "error") {
+						emitMessage(true, res.value.output);
+					} else {
+						if (res.value.output !== null) {
+							setValue("markdown", res.value.output);
+							setValue("detailsForm.markdown", res.value.output);
+							setValues((prev) => ({
+								...prev,
+								markdown: res.value.output || "",
+							}));
+						}
+					}
+				} else if (idx === 2) {
+					if (res.value.type === "error") {
+						emitMessage(true, res.value.output);
+					} else {
+						const modelled = modelDependencies(res.value.output);
+						setValue("dependencies", modelled);
+						setValue("selectedDependencies", modelled);
+					}
+				}
+			}
+		});
+	};
+
+	const fetchSimilarApps = () => {
+		// TODO
+	};
+
+	const modelDependencies = (
+		dependencies: appDependency[],
+	): modelledDependency[] => {
+		return dependencies.map((dep: appDependency) => ({
+			name: dep.engine_name ? dep.engine_name.replace(/_/g, " ") : "",
+			id: dep.engine_id,
+			type: dep.engine_type,
+			userPermission: dep.permission_name as Role, // TODO: no value currently available in the payload
+			isPublic: !!dep.engine_global,
+			isDiscoverable: !!dep.engine_discoverable,
+			description: dep.description,
+			access_permission: dep.access_permission,
+		}));
+	};
+	const emitMessage = (isError: boolean, message: string) => {
+		notification.add({
+			color: isError ? "error" : "success",
+			message,
+		});
+	};
+
+	const handleCloseChangeAccessModal = (refresh?: boolean) => {
+		if (refresh) {
+			// fetch updated permission.
+			getPermission();
+		} else {
+			// reset permission to original.
+			if (permission === "author")
+				setValue("requestedPermission", "OWNER");
+			if (permission === "editor")
+				setValue("requestedPermission", "EDIT");
+			if (permission === "readOnly")
+				setValue("requestedPermission", "READ_ONLY");
+		}
+		setIsChangeAccessModalOpen(false);
+	};
+
+	const handleCloseEditDetailsModal = (isReset?: boolean) => {
+		if (isReset) {
+			setValue("detailsForm", values);
+		}
+		setIsEditDetailsModalOpen(false);
+	};
+
+	// export loading state
+	const [exportLoading, setExportLoading] = useState(false);
+	/**
+	 * @name exportAPP
+	 * @desc export APP pixel
+	 */
+	const exportApp = () => {
+		setExportLoading(true);
+		const pixel = `ExportProjectApp(project=["${appId}"]);`;
+
+		monolithStore.runQuery(pixel).then((response) => {
+			const output = response.pixelReturn[0].output,
+				insightId = response.insightId;
+
+			monolithStore.download(insightId, output);
+		});
+		setExportLoading(false);
+	};
+
+	const handleCloseDependenciesModal = async (refreshData: boolean) => {
+		const currDependencies = getValues("dependencies");
+
+		if (refreshData) {
+			const appId = getValues("appId");
+			const res = await fetchDependencies(monolithStore, appId);
+			if (res.type === "success") {
+				const modelled = modelDependencies(res.output);
+				setValue("dependencies", modelled);
+				setValue("selectedDependencies", modelled);
+			} else {
+				setValue("selectedDependencies", currDependencies);
+				notification.add({
+					color: "error",
+					message: res.output,
+				});
+			}
+		} else {
+			setValue("selectedDependencies", currDependencies);
+		}
+		setIsEditDependenciesModalOpen(false);
+	};
+
+	/**
+	 * @name onSubmit
+	 * @desc update app details
+	 * @param data - form data
+	 */
+	const onSubmit = handleSubmit((data: AppDetailsFormTypes) => {
+		// copy over the defined keys
+		const meta = {} as AppDetailsFormTypes["detailsForm"];
+		let imageMeta = [] as File[];
+		if (data?.detailsForm) {
+			for (const key in data?.detailsForm) {
+				if (
+					data?.detailsForm[key] !== undefined &&
+					key !== "appImage"
+				) {
+					meta[key] = data?.detailsForm[key];
+				}
+				if (key === "appImage") {
+					imageMeta = data?.detailsForm[key] as File[];
+				}
+			}
+		}
+
+		if (Object.keys(meta).length === 0) {
+			notification.add({
+				color: "warning",
+				message: "Nothing to Save",
+			});
+
+			return;
+		}
+
+		monolithStore
+			.runQuery(
+				`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
+					meta,
+				)}], jsonCleanup=[true])`,
+			)
+			.then(async (response) => {
+				const { output, additionalOutput, operationType } =
+					response.pixelReturn[0];
+
+				// track the errors
+				if (operationType.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message: output,
+					});
+
+					return;
+				}
+				// upload the image
+				if (
+					((Array.isArray(imageMeta) &&
+						imageMeta[0] instanceof File) ||
+						imageMeta instanceof File) &&
+					appId
+				) {
+					const filesToUpload = Array.isArray(imageMeta)
+						? imageMeta
+						: [imageMeta];
+					await monolithStore.uploadImage(filesToUpload, appId);
+				}
+
+				// close it, refresh and succesfully message
+				notification.add({
+					color: "success",
+					message: additionalOutput[0].output,
+				});
+
+				fetchAppData(appId);
+				handleCloseEditDetailsModal();
+			})
+			.catch((error) => {
+				notification.add({
+					color: "error",
+					message: error.message,
+				});
+			});
+	});
+
+	const handleAccessRequested = () => {
+		setResponseStatus(true);
+	};
+	const [selectedTab, setSelectedTab] = useState("Overview");
+
+	const TABS_BY_PERMISSION: Record<string, string[]> = {
+		author: ["Overview", "Access Control", "Dependencies", "Settings"],
+		editor: ["Overview", "Access Control"],
+		readOnly: ["Overview"],
+		discoverable: ["Overview"],
+	};
+
+	const visibleTabs = TABS_BY_PERMISSION[permission] || ["Overview"];
+
+	return (
+		<div>
+			<NavbarLeft>
+				<NavbarHeader />
+			</NavbarLeft>
+			<OuterContainer>
+				<InnerContainer>
+					<Breadcrumbs separator="/">
+						<Breadcrumbs.Item
+							href={`../../..`}
+							underline="none"
+							color="inherit"
+							variant="body1"
+						>
+							App Catalog
+						</Breadcrumbs.Item>
+						<Breadcrumbs.Item
+							href={`.`}
+							underline="none"
+							color="text.disabled"
+							variant="body1"
+						>
+							{appInfo?.project_name}
+						</Breadcrumbs.Item>
+					</Breadcrumbs>
+
+					<div>
+						<PageBody>
+							<TitleSection>
+								<Box>
+									<TitleSectionImg
+										src={`${Env.MODULE}/api/project-${appId}/projectImage/download`}
+										alt="App Image"
+									/>
+									<TitleSectionBodyWrapper>
+										<Title variant="h6">
+											{appInfo?.project_name}
+										</Title>
+									</TitleSectionBodyWrapper>
+								</Box>
+
+								<ActionBar>
+									{permission === "author" ? (
+										<Button
+											disabled={exportLoading}
+											startIcon={
+												exportLoading ? (
+													<CircularProgress size="1em" />
+												) : (
+													<SimCardDownload />
+												)
+											}
+											variant="outlined"
+											onClick={() => exportApp()}
+											data-testid={
+												"app-detail-export-btn"
+											}
+										>
+											Export
+										</Button>
+									) : (
+										<Button
+											startIcon={
+												responseStatus ? (
+													<StyledUpdateIcon />
+												) : permission ===
+													"discoverable" ? (
+													<StyledLockReset />
+												) : null
+											}
+											disabled={
+												responseStatus || pendingRequest
+											}
+											variant={
+												responseStatus
+													? "outlined"
+													: permission ===
+															"discoverable"
+														? "contained"
+														: "outlined"
+											}
+											onClick={() =>
+												setIsChangeAccessModalOpen(true)
+											}
+											data-testid={
+												"app-detail-access-btn"
+											}
+										>
+											{responseStatus || pendingRequest
+												? "Pending Access"
+												: permission === "discoverable"
+													? "Request Access"
+													: "Change Access"}
+										</Button>
+									)}
+									{permission !== "discoverable" &&
+										permission !== "readOnly" && (
+											<Button
+												variant="contained"
+												startIcon={
+													<EditOutlined fontSize="inherit" />
+												}
+												onClick={() => {
+													setIsEditDetailsModalOpen(
+														true,
+													);
+												}}
+												data-testid="app-detail-open-btn"
+											>
+												Edit
+											</Button>
+										)}
+								</ActionBar>
+							</TitleSection>
+							<ContainerGrid container spacing={2}>
+								<Grid item xs={12} md={8}>
+									<DescriptionText variant="body1">
+										{appInfo?.description ||
+											"No description available"}
+									</DescriptionText>
+								</Grid>
+
+								<RightColumn item xs={12} md={4}>
+									<PublisherInfo variant="body1">
+										<span>
+											Published by:{" "}
+											{appInfo?.project_created_by ||
+												"Unknown"}
+										</span>
+										Updated{" "}
+										{appInfo?.project_date_created
+											? new Date(
+													appInfo?.project_date_created,
+												).toLocaleString("en-US", {
+													month: "long",
+													day: "2-digit",
+													year: "numeric",
+													hour: "numeric",
+													minute: "2-digit",
+													hour12: true,
+												})
+											: "N/A"}
+									</PublisherInfo>
+								</RightColumn>
+							</ContainerGrid>
+
+							<TagsDescription variant="body1">
+								{tags ? (
+									<TagsBodyWrapper>
+										{tags.map((tag) => (
+											<Chip
+												key={`tag-${tag}-${tag}`}
+												label={tag}
+												variant="outlined"
+											/>
+										))}
+									</TagsBodyWrapper>
+								) : (
+									<Typography variant="body1">
+										No tags available
+									</Typography>
+								)}
+							</TagsDescription>
+
+							<StyledContentContainer>
+								<StyledToggleTabsGroup
+									value={selectedTab}
+									boxSx={StyledTabs}
+									onChange={(_e, val) =>
+										setSelectedTab(String(val))
+									}
+								>
+									{visibleTabs.includes("Overview") && (
+										<StyledToggleTabsGroupItem
+											label="Overview"
+											value="Overview"
+										/>
+									)}
+									{visibleTabs.includes("Access Control") && (
+										<StyledToggleTabsGroupItem
+											label="Access Control"
+											value="Access Control"
+										/>
+									)}
+									{visibleTabs.includes("Dependencies") && (
+										<StyledToggleTabsGroupItem
+											label="Dependencies"
+											value="Dependencies"
+										/>
+									)}
+									{visibleTabs.includes("Settings") && (
+										<StyledToggleTabsGroupItem
+											label="Settings"
+											value="Settings"
+										/>
+									)}
+								</StyledToggleTabsGroup>
+							</StyledContentContainer>
+							<StyledTabsSection>
+								{selectedTab === "Overview" && (
+									<Overview appInfo={appInfo} />
+								)}
+								{selectedTab === "Access Control" && (
+									<AccessControl
+										appInfo={appInfo}
+										appId={appId}
+										fetchUserSpecificData={
+											fetchUserSpecificData
+										}
+										permission={permission}
+									/>
+								)}
+								{selectedTab === "Dependencies" && (
+									<StyledStack>
+										<HeaderRow>
+											<StyledTypography variant="h6">
+												Dependencies
+												<Tooltip
+													title={
+														appInfo.project_type ===
+														"CODE"
+															? "Add/Remove dependencies using the Edit Icon"
+															: "Add/Remove dependencies using the Variables Tab"
+													}
+												>
+													<StyledInfoOutlined fontSize="small" />
+												</Tooltip>
+											</StyledTypography>
+
+											{appInfo.project_type === "CODE" &&
+												permission === "author" && (
+													<IconButton
+														size="small"
+														onClick={() =>
+															setIsEditDependenciesModalOpen(
+																true,
+															)
+														}
+														data-testid="app-detail-edit-btn"
+													>
+														<Edit />
+													</IconButton>
+												)}
+										</HeaderRow>
+
+										<Dependencies
+											dependencies={dependencies}
+										/>
+									</StyledStack>
+								)}
+								{selectedTab === "Settings" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<SettingsTab id={appId} />
+									</SettingsContext.Provider>
+								)}
+							</StyledTabsSection>
+						</PageBody>
+					</div>
+				</InnerContainer>
+
+				<Modal
+					open={isShareOverlayOpen}
+					onClose={() => setIsShareOverlayOpen(false)}
+				>
+					<ShareOverlay
+						appId={appId}
+						diffs={false}
+						onClose={() => setIsShareOverlayOpen(false)}
+					/>
+				</Modal>
+
+				<ChangeAccessModal
+					open={isChangeAccessModalOpen}
+					onClose={handleCloseChangeAccessModal}
+					control={control}
+					getValues={getValues}
+					dependencies={dependencies}
+					onSuccess={handleAccessRequested}
+					permission={permission}
+				/>
+
+				<EditDetailsModal
+					isOpen={isEditDetailsModalOpen}
+					onClose={handleCloseEditDetailsModal}
+					control={control}
+					onSubmit={onSubmit}
+				/>
+
+				<EditDependenciesModal
+					isOpen={isEditDependenciesModalOpen}
+					onClose={handleCloseDependenciesModal}
+					control={control}
+					getValues={getValues}
+					setValue={setValue}
+					watch={watch}
+				/>
+			</OuterContainer>
+		</div>
+	);
 };

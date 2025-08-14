@@ -1,387 +1,595 @@
-import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { observer } from 'mobx-react-lite';
-import { Menu, MenuOpen, Public, RestartAlt } from '@mui/icons-material';
-import { Layout, TabNode, Model } from 'flexlayout-react';
-import 'flexlayout-react/style/light.css';
-import './flexlayout.css';
-
+import { RestartAlt } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
+import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
 import {
-    Avatar,
-    styled,
-    Stack,
-    Typography,
-    IconButton,
-    Tooltip,
-    Drawer,
-    Button,
-} from '@semoss/ui';
-import { useBlocks } from '@semoss/renderer';
-import { Env } from '@semoss/sdk/react';
+	Breadcrumbs,
+	IconButton,
+	Stack,
+	styled,
+	Tooltip,
+	Typography,
+} from "@semoss/ui";
+import { ClosePage } from "@/assets/img/ClosePage";
+import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
+import { WorkspaceContext } from "@/contexts";
+import { SIDEBAR_MENU } from "@/pages/import/import.constants";
+import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
+import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
+import { WorkspaceLoading } from "./WorkspaceLoading";
+import { WorkspaceOverlay } from "./WorkspaceOverlay";
 
-import { THEME } from '@/constants';
-import { WorkspaceContext } from '@/contexts';
-import { WorkspaceStore, WorkspaceOptions } from '@/stores';
-import { useRootStore } from '@/hooks';
-import { LoginPopover } from '@/components/ui';
-import { WorkspaceOverlay } from './WorkspaceOverlay';
-import { WorkspaceLoading } from './WorkspaceLoading';
-import { WorkspaceTabs } from './WorkspaceTabs';
+type LayoutType = React.ElementRef<typeof Layout>;
 
-const StyledViewport = styled('div')(() => ({
-    height: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
+const StyledMain = styled("div")(() => ({
+	position: "relative",
+	height: "100%",
+	width: "100%",
+	display: "flex",
+	flexDirection: "column",
+	overflow: "hidden",
 }));
 
-const StyledMain = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'drawerOpen',
-})<{
-    drawerOpen: boolean;
-}>(({ drawerOpen }) => ({
-    position: 'relative',
-    flex: '1',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
-    width: drawerOpen ? 'calc(100% - 240px)' : '100%',
-    marginLeft: drawerOpen ? '240px' : '0',
-    transition: 'margin 0.3s ease, width 0.3s ease',
-    overflow: 'hidden',
+const StyledContent = styled("div")(({ theme }) => ({
+	position: "relative",
+	flex: "1",
+	height: "100%",
+	width: "100%",
+	overflow: "hidden",
+	marginTop: theme.spacing(1),
+	paddingTop: theme.spacing(1.5),
+	paddingLeft: theme.spacing(1.5),
+	paddingRight: theme.spacing(1.5),
+	paddingBottom: theme.spacing(1.5),
 }));
 
-const StyledContent = styled('div')(({ theme }) => ({
-    position: 'relative',
-    flex: '1',
-    height: '100%',
-    width: '100%',
-    overflow: 'hidden',
-    paddingLeft: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-    paddingBottom: theme.spacing(1.5),
+const StyledSpacer = styled("div")(({ theme }) => ({
+	position: "absolute",
+	top: 0,
+	left: theme.spacing(1.5),
+	right: theme.spacing(1.5),
+	bottom: theme.spacing(1.5),
+	overflow: "hidden",
 }));
 
-const StyledSpacer = styled('div')(({ theme }) => ({
-    position: 'absolute',
-    top: 0,
-    left: theme.spacing(1.5),
-    right: theme.spacing(1.5),
-    bottom: theme.spacing(1.5),
-    overflow: 'hidden',
+const StyledAppTypography = styled(Typography)(() => ({
+	color: "rgb(0, 0, 0)",
 }));
 
-const StyledMenuOpenIcon = styled(MenuOpen)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
-}));
+const StyledSemossImage = styled("img")(() => ({}));
 
-const StyledMenuIcon = styled(Menu)(() => ({
-    color: 'rgba(0, 0, 0, 0.54)',
+const StyledLetTabImage = styled("img")(() => ({
+	width: 50,
+	height: 40,
+	display: "block",
+	margin: "auto",
+	transition: "all 0.2s ease",
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-    color: 'inherit',
-    textDecoration: 'none',
-    cursor: 'pointer',
-    ':hover': {
-        bacakground: theme.palette.action.hover,
-    },
-}));
-
-const StyledHeaderLogoImg = styled('img')(({ theme }) => ({
-    width: theme.spacing(3),
+	color: "inherit",
+	textDecoration: "none",
+	cursor: "pointer",
+	":hover": {
+		bacakground: theme.palette.action.hover,
+	},
 }));
 
 const StyledActions = styled(Stack)(({ theme }) => ({
-    position: 'absolute',
-    bottom: '0',
-    left: '0',
-    width: '32px', // from flexlayout
-    zIndex: 1,
+	position: "absolute",
+	bottom: "8px",
+	left: "8px",
+	width: "32px", // from flexlayout
+	zIndex: 1,
+}));
+
+const StyledNavLeft = styled(Stack)(({ theme }) => ({
+	minWidth: 0,
+	overflow: "hidden",
+	whiteSpace: "nowrap",
+	textOverflow: "ellipsis",
+}));
+
+const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
+	"& .MuiBreadcrumbs-ol": {
+		flexWrap: "nowrap",
+	},
 }));
 
 type WorkspaceProps = {
-    /** End items to render in the top bar */
-    endTopbar?: React.ReactNode;
+	/** Actions to render in the navbar */
+	navbarActions?: React.ReactNode;
 
-    /** Alert to display in topbar */
-    alert?: React.ReactNode;
+	/** Workspace to render */
+	workspace: WorkspaceStore;
 
-    /** Footer to render */
-    footer?: React.ReactNode;
+	/** Options to load into the workspace */
+	options: WorkspaceOptions;
 
-    /** Workspace to render */
-    workspace: WorkspaceStore;
-
-    /** Options to load into the workspace */
-    options: WorkspaceOptions;
-
-    /** Factor method */
-    factory: (node: TabNode, layout: Layout) => React.ReactNode;
+	/** Factor method */
+	factory: (node: TabNode, layout: LayoutType) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
-    const {
-        endTopbar = null,
-        alert,
-        footer = null,
-        workspace,
-        options,
-        factory = () => null,
-    } = props;
-    const { configStore } = useRootStore();
+	const { navbarActions, workspace, options, factory = () => null } = props;
+	const layoutRef = useRef<LayoutType | null>(null);
+	const model = workspace.model;
 
-    const layoutRef = useRef<Layout>(null);
+	// build the model from the layout
+	useEffect(() => {
+		const handler = (e: CustomEvent) => {
+			const { destinationType, destination } = e.detail;
+			if (destinationType === "App Page") {
+				const model = workspace.model;
 
-    // const [model, setModel] = useState<Model | null>(null);
+				// get the model
+				if (!model) {
+					throw new Error("Missing model");
+				}
 
-    // build the model from the layout
-    const model = workspace.selectedLayout?.model;
-    const rawModel = workspace.selectedLayout?.model;
+				let selectedNode: TabNode | null = null;
 
-    // useEffect(() => {
-    //     if (!rawModel) return;
+				// visit the notes, and see if it exists
+				model.visitNodes((node) => {
+					// check if it is a tabNode
+					if (node instanceof TabNode) {
+						// it needs to be a notebook-viewer
+						const component = node.getComponent();
+						if (component !== "designer") {
+							return;
+						}
 
-    //     const modelJson = rawModel.toJson();
+						// path and space need to match
+						const config = node.getConfig();
+						if (config.id !== destination) {
+							return;
+						}
 
-    //     if (!modelJson) {
-    //         setModel(rawModel);
-    //         return;
-    //     }
+						selectedNode = node;
+					}
+				});
 
-    //     // List of notebooks tied to app
-    //     const validNotebookIds = new Set(notebook.queriesList.map((q) => q.id));
+				// create a new panel if there is no node
+				if (!selectedNode) {
+					// get the name
+					const name = destination;
 
-    //     const root = modelJson.layout.children?.[0];
-    //     if (!root || !Array.isArray(root.children)) return;
+					// where to add the node
+					const addId =
+						model.getActiveTabset()?.getId() ||
+						model.getRoot().getChildren()[0]?.getId() ||
+						"";
 
-    //     // Remove notebooks that are on react flow model but not actually saved in state
-    //     const filteredLayoutArray = root.children.filter((layout: any) => {
-    //         const isNotebook = layout.component === 'notebook-viewer';
-    //         const layoutId = layout.config?.id;
-    //         return !isNotebook || validNotebookIds.has(layoutId);
-    //     });
+					// create and select the panel
+					model.doAction(
+						Actions.addNode(
+							{
+								type: "tab",
+								name: name,
+								component: "designer",
+								config: {
+									id: destination,
+								},
+								enableClose: true,
+							},
+							addId,
+							DockLocation.CENTER,
+							-1,
+							true,
+						),
+					);
+				}
 
-    //     root.children = filteredLayoutArray;
-    //     root['selected'] = filteredLayoutArray.length - 1;
+				const selectedNodeId = selectedNode.getId();
+				model.doAction(Actions.selectTab(selectedNodeId));
+			}
+		};
+		window.addEventListener("OPEN_EVENT", handler as EventListener);
+		return () => {
+			window.removeEventListener("OPEN_EVENT", handler as EventListener);
+		};
+	}, []);
 
-    //     setModel(Model.fromJson(modelJson));
-    // }, [notebook.queriesList, rawModel]);
+	useEffect(() => {
+		// default options if not loaded from cache
+		const defaultOptions = JSON.parse(JSON.stringify(options));
 
-    useEffect(() => {
-        // default options if not loaded from cache
-        const defaultOptions = JSON.parse(JSON.stringify(options));
+		// set the workspace options
+		// try to load from cache
+		const isLoaded = workspace.loadFromCache();
+		if (!isLoaded) {
+			workspace.load(defaultOptions);
+		}
+	}, [options]);
 
-        // try to load from cache
-        const isLoaded = workspace.loadFromCache();
-        if (!isLoaded) {
-            workspace.load(defaultOptions);
-        }
-    }, [options]);
+	/**
+	 * reset the selected layout
+	 */
+	const resetWorkspace = () => {
+		try {
+			// copy the optoins
+			const layout = JSON.parse(JSON.stringify(options.layout));
 
-    const themeMap = useMemo(() => {
-        const theme = configStore.store.config['theme'];
+			// update the layout
+			workspace.updateLayout(layout);
+		} catch (e) {
+			console.error(e);
+			throw new e();
+		}
+	};
 
-        if (theme && theme['THEME_MAP']) {
-            try {
-                return JSON.parse(theme['THEME_MAP'] as string);
-            } catch {
-                return {};
-            }
-        }
+	const updateModel = (action) => {
+		if (!model) return;
 
-        return {};
-    }, [Object.keys(configStore.store.config).length]);
+		const isSettingsTab = action.data.tabNode === "settings";
+		const mainTabsetWeight = model
+			?.getNodeById("main-tabset")
+			?.getAttr("weight");
 
-    /**
-     * reset the selected layout
-     */
-    const resetWorkspace = () => {
-        try {
-            // reset only the selected one
-            const selected = workspace.selectedLayout.id;
-            if (!selected) {
-                return;
-            }
+		model
+			.getBorderSet()
+			.getBorders()
+			.forEach((border) => {
+				border.setSelected(isSettingsTab ? -1 : border.getSelected());
+			});
 
-            // copy the optoins
-            const layout = JSON.parse(
-                JSON.stringify(options.layout.available[selected]),
-            );
+		if (isSettingsTab || mainTabsetWeight === 0) {
+			model.visitNodes((node) => {
+				if (node.getType() === "tabset") {
+					const newWeight =
+						(isSettingsTab && node.getId() === "settings-tabset") ||
+						(!isSettingsTab &&
+							mainTabsetWeight === 0 &&
+							node.getId() !== "settings-tabset")
+							? 100
+							: 0;
+					model.doAction(
+						Actions.updateNodeAttributes(node.getId(), {
+							weight: newWeight,
+						}),
+					);
+				}
+			});
+		}
+	};
 
-            // update the layout
-            workspace.updateLayout(selected, layout);
-        } catch (e) {
-            //noop
-        }
-    };
-
-    return (
-        <WorkspaceContext.Provider
-            value={{
-                workspace: workspace,
-            }}
-        >
-            <WorkspaceOverlay />
-            <StyledViewport>
-                <StyledMain drawerOpen={workspace.drawer.isOpen}>
-                    <Stack
-                        direction={'row'}
-                        alignItems={'center'}
-                        padding={1}
-                        spacing={1}
-                    >
-                        <IconButton
-                            edge="start"
-                            color={'default'}
-                            aria-label="menu"
-                            size={'small'}
-                            onClick={() => {
-                                workspace.toggleDrawer();
-
-                                // save the workspace
-                                workspace.saveToCache();
-                            }}
-                        >
-                            {workspace.drawer.isOpen ? (
-                                <StyledMenuOpenIcon fontSize="inherit" />
-                            ) : (
-                                <StyledMenuIcon fontSize="inherit" />
-                            )}
-                        </IconButton>
-
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                        >
-                            <Avatar
-                                variant="rounded"
-                                src={`${Env.MODULE}/api/project-${workspace.appId}/projectImage/download`}
-                            />
-                            <Typography variant={'subtitle1'}>
-                                {workspace.metadata.project_name}
-                            </Typography>
-                        </Stack>
-
-                        <Stack
-                            flex={1}
-                            alignItems={'center'}
-                            justifyContent={'center'}
-                            overflow={'hidden'}
-                        >
-                            <div>{alert || <>&nbsp;</>}</div>
-                        </Stack>
-                        {endTopbar}
-                        <LoginPopover />
-                        <Button
-                            variant="contained"
-                            size={'small'}
-                            color="primary"
-                            disabled={
-                                !(
-                                    workspace.role === 'OWNER' ||
-                                    workspace.role === 'EDIT'
-                                )
-                            }
-                            endIcon={<Public fontSize="inherit" />}
-                            component={Link}
-                            //@ts-expect-error this is expected. props are forwarded
-                            to={`../../../app/${workspace.appId}`}
-                        >
-                            Show
-                        </Button>
-                    </Stack>
-                    <StyledContent>
-                        <WorkspaceLoading />
-                        <StyledSpacer>
-                            {model ? (
-                                <>
-                                    <Layout
-                                        ref={layoutRef}
-                                        model={model}
-                                        factory={(node) => {
-                                            return factory(
-                                                node,
-                                                layoutRef.current,
-                                            );
-                                        }}
-                                        onModelChange={() => {
-                                            workspace.saveToCache();
-                                        }}
-                                    />
-                                    <StyledActions
-                                        direction="column"
-                                        justifyContent={'center'}
-                                    >
-                                        <Tooltip title={'Reset workspace'}>
-                                            <IconButton
-                                                size={'small'}
-                                                color="default"
-                                                onClick={() => {
-                                                    resetWorkspace();
-                                                }}
-                                            >
-                                                <RestartAlt fontSize="inherit" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </StyledActions>
-                                </>
-                            ) : null}
-                        </StyledSpacer>
-                    </StyledContent>
-                    {footer}
-                </StyledMain>
-            </StyledViewport>
-            <Drawer
-                anchor="left"
-                variant="persistent"
-                open={workspace.drawer.isOpen}
-                ModalProps={{
-                    hideBackdrop: true, // Hide the backdrop
-                }}
-                PaperProps={{
-                    sx: {
-                        position: 'absolute',
-                        height: '100%',
-                        width: '240px',
-                        borderRadius: 0,
-                    },
-                }}
-            >
-                <Stack direction="column" gap={1} height={'100%'} padding={2}>
-                    <StyledHeaderLogo to={'/'}>
-                        <Stack
-                            direction="row"
-                            alignItems={'center'}
-                            spacing={1}
-                        >
-                            {themeMap.isLogoUrl ? (
-                                <StyledHeaderLogoImg src={themeMap.logo} />
-                            ) : THEME.logo ? (
-                                <StyledHeaderLogoImg src={THEME.logo} />
-                            ) : null}
-                            <Typography variant={'subtitle2'}>
-                                {themeMap.name ? themeMap.name : THEME.name}
-                            </Typography>
-                        </Stack>
-                    </StyledHeaderLogo>
-                    <Stack flex={1} direction="column" overflow={'auto'}>
-                        <WorkspaceTabs />
-                    </Stack>
-                    <Stack
-                        direction="column"
-                        justifyContent={'center'}
-                        spacing={0.25}
-                    >
-                        <Typography
-                            variant={'caption'}
-                            sx={{ fontSize: '.625rem' }}
-                        >
-                            ID: {workspace.appId}
-                        </Typography>
-                    </Stack>
-                </Stack>
-            </Drawer>
-        </WorkspaceContext.Provider>
-    );
+	return (
+		<WorkspaceContext.Provider
+			value={{
+				workspace: workspace,
+			}}
+		>
+			<NavbarLeft>
+				<NavbarHeader
+					logo={
+						<StyledSemossImage
+							src={SEMOSS_BLACK_LOGO}
+							alt="SEMOSS"
+						></StyledSemossImage>
+					}
+				/>
+				<StyledNavLeft>
+					<StyledBreadcrumbs separator=" /">
+						<StyledHeaderLogo to={"/app"}>
+							<Stack direction={"row"} alignItems={"center"}>
+								<StyledAppTypography variant={"subtitle1"}>
+									App Library
+								</StyledAppTypography>
+							</Stack>
+						</StyledHeaderLogo>
+						<StyledHeaderLogo
+							to={`/app/${workspace.metadata.project_id}/view`}
+						>
+							<StyledAppTypography variant={"subtitle1"}>
+								{workspace.metadata.project_name}
+							</StyledAppTypography>
+						</StyledHeaderLogo>
+						<StyledHeaderLogo to={""}>
+							<Typography
+								variant={"subtitle1"}
+								sx={{ display: "inline", mr: 0.5 }}
+							>
+								{workspace.metadata.project_name} - Editor
+							</Typography>
+						</StyledHeaderLogo>
+					</StyledBreadcrumbs>
+				</StyledNavLeft>
+			</NavbarLeft>
+			<NavbarRight>{navbarActions}</NavbarRight>
+			<WorkspaceOverlay />
+			<StyledMain>
+				<StyledContent>
+					<WorkspaceLoading />
+					<StyledSpacer>
+						{workspace.model ? (
+							<>
+								<Layout
+									ref={layoutRef}
+									model={workspace.model}
+									factory={(node) => {
+										return factory(node, layoutRef.current);
+									}}
+									icons={{
+										close: <ClosePage />,
+									}}
+									// onRenderTabSet={handleRenderTabSet}
+									onModelChange={() => {
+										workspace.saveToCache();
+									}}
+									onAction={(action) => {
+										updateModel(action);
+										return action;
+									}}
+									onRenderTab={(tabNode, renderValues) => {
+										const item = SIDEBAR_MENU.MENU.find(
+											(menuItem) =>
+												menuItem.name ===
+												tabNode.getName(),
+										);
+										const isSelected = tabNode.isSelected();
+										if (item && item.icon) {
+											const iconSrc = isSelected
+												? item.icon.active
+												: item.icon.default;
+											renderValues.content = (
+												<StyledLetTabImage
+													src={iconSrc}
+													alt={tabNode.getName()}
+												/>
+											);
+										}
+										return renderValues;
+									}}
+								/>
+								<StyledActions
+									direction="column"
+									justifyContent={"center"}
+								>
+									<Tooltip title={"Reset workspace"}>
+										<IconButton
+											size={"small"}
+											color="default"
+											onClick={() => {
+												resetWorkspace();
+											}}
+										>
+											<RestartAlt fontSize="inherit" />
+										</IconButton>
+									</Tooltip>
+								</StyledActions>
+							</>
+						) : null}
+					</StyledSpacer>
+				</StyledContent>
+			</StyledMain>
+			<WorkspaceOverlay />
+		</WorkspaceContext.Provider>
+	);
 });
+
+// NOTES: WE HAVE TO FIX ALOT HERE.
+// The code specific to blocks apps should not be here.
+// Interacting with the model seems to be something that is needed for alot of these conventions that we have here.
+// One issue i see is the renderTabSet.  it is dependent on the useBlocks hook.  We will need to figure out how to do this without the useBlocks Dependency here.
+// The quick fix is to comment out the action on the tabset
+
+// const StyledRenderTabSet = styled("div")(() => ({
+// 	padding: "0 8px",
+// 	cursor: "pointer",
+// 	display: "flex",
+// 	fontSize: "1.2rem",
+// 	alignItems: "center",
+// }));
+
+// TODO: Should not be used in workspace this is a shared component for apps that aren't drag and drop
+// const notification = useNotification();
+// const [layoutRefeshKey, setLayoutRefeshKey] = useState(0);
+// const { page } = usePage();
+// const { state } = useBlocks();
+// const { designer } = useDesigner();
+// const { configStore } = useRootStore();
+// const accordionRefs = useRef({});
+
+// TODO: probably should be passed as callback to the BlocksWorkspace
+// useEffect(() => {
+//     openTab();
+// }, [designer.selected]);
+
+// const openTab = () => {
+//     const layout = layoutRef.current;
+//     if (!layout) return;
+//     const model = workspace.model;
+//     const tabId = getIdByName(model['idMap'], 'Block Settings');
+//     model.doAction(Actions.selectTab(tabId));
+// };
+// const handlePageAdd = async () => {
+//     try{
+//     const newPageId = await state.dispatch({
+//         message: ActionMessages.ADD_BLOCK,
+//         payload: {
+//             json: PAGE_BLOCK,
+//         },
+//     });
+//     if (typeof newPageId === 'string') {
+//         const block = state.blocks[newPageId];
+//         handlePageSelection(block);
+//     } else {
+//         console.error('Invalid newPageId:', newPageId);
+//     }
+// } catch (error) {
+//     console.error('Error adding new page:', error);
+//     notification.add({
+//         color: 'error',
+//         message: 'Failed to add new page',
+//     });
+// };
+// };
+// function getIdByName(iMap, targetName: string): string | null {
+//     for (const [key, value] of iMap.entries()) {
+//         if (value?.attributes?.name === targetName) {
+//             if (!value?.visible) {
+//                 return key;
+//             }
+//         }
+//     }
+//     return null;
+// }
+// const handlePageSelection = (block) => {
+//     accordionRefs.current = {};
+//     // designer.setSelected(block.id);
+//     handleOnSelect(block);
+// };
+// const handleRenderTabSet = (tabSetNode, renderValues) => {
+//     if (
+//         tabSetNode.getId() === 'border_left' ||
+//         tabSetNode.getId() === 'border_right'
+//     ) {
+//         return;
+//     }
+//     renderValues.buttons.unshift(
+//         <StyledRenderTabSet
+//             key="custom-add-button"
+//             title="Add Tab"
+//             // onClick={() => handlePageAdd()}
+//         >
+//             <AddPage />
+//         </StyledRenderTabSet>,
+//     );
+// };
+// const handleOnSelect = (blockData) => {
+//     const id = blockData.id;
+//     if (blockData.widget !== 'page') {
+//         scrollIntoView(getBlockElement(id));
+//         return;
+//     }
+//     // try to select a panel, if it doesn't exist create it. Save the path
+//     const IsSelected = selectPanel(id);
+//     if (!IsSelected) {
+//         createPanel(id);
+//     }
+// };
+// const createPanel = (id: string): boolean => {
+//     try {
+//         if (!id) {
+//             return false;
+//         }
+
+//         // get the model
+//         const model = workspace.model;
+//         if (!model) {
+//             throw new Error('Missing model');
+//         }
+
+//         // get the name
+//         const name = id;
+
+//         // where to add the node
+//         const addId =
+//             model.getActiveTabset()?.getId() ||
+//             model.getRoot().getChildren()[0]?.getId() ||
+//             '';
+
+//         // create and select the panel
+//         model.doAction(
+//             Actions.addNode(
+//                 {
+//                     type: 'tab',
+//                     name: name,
+//                     component: 'designer',
+//                     config: {
+//                         id: id,
+//                     },
+//                     enableClose: true,
+//                 },
+//                 addId,
+//                 DockLocation.CENTER,
+//                 -1,
+//                 true,
+//             ),
+//         );
+//     } catch (e) {
+//         notification.add({
+//             color: 'error',
+//             message: e,
+//         });
+
+//         return false;
+//     }
+
+//     return true;
+// };
+// const scrollIntoView = (
+//     element: Element | null,
+//     {
+//         behavior = 'smooth' as ScrollBehavior,
+//         block = 'center' as ScrollLogicalPosition,
+//         inline = 'start' as ScrollLogicalPosition,
+//     } = {},
+// ) => {
+//     (element as HTMLElement)?.scrollIntoView({
+//         behavior,
+//         block,
+//         inline,
+//     });
+// };
+
+// const selectPanel = (id: string): boolean => {
+//     try {
+//         if (!id) {
+//             return false;
+//         }
+
+//         let selectedNode: TabNode | null = null;
+
+//         // get the model
+//         const model = workspace.model;
+//         if (!model) {
+//             throw new Error('Missing model');
+//         }
+
+//         selectedNode = getNodeInfo(id, model);
+
+//         // create a new panel if there is no node
+//         if (!selectedNode) {
+//             return false;
+//         }
+//         const selectedNodeId = selectedNode.getId();
+//         model.doAction(Actions.selectTab(selectedNodeId));
+//     } catch (e) {
+//         notification.add({
+//             color: 'error',
+//             message: e,
+//         });
+
+//         return false;
+//     }
+
+//     return true;
+// };
+
+// const getNodeInfo = (id, model) => {
+//     let returnedNode: TabNode | null = null;
+//     // visit the notes, and see if it exists
+//     model.visitNodes((node) => {
+//         // check if it is a tabNode
+//         if (node instanceof TabNode) {
+//             // it needs to be a notebook-viewer
+//             const component = node.getComponent();
+//             if (component !== 'designer') {
+//                 return;
+//             }
+
+//             // path and space need to match
+//             const config = node.getConfig();
+//             if (config.id !== id) {
+//                 return;
+//             }
+
+//             returnedNode = node;
+//         }
+//     });
+
+//     return returnedNode;
+// };

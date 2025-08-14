@@ -1,4 +1,7 @@
-import { PhoneNumberPicker, PhoneNumberPickerProps } from "./PhoneNumberPicker";
+import {
+	PhoneNumberPicker,
+	type PhoneNumberPickerProps,
+} from "./PhoneNumberPicker";
 
 export type { PhoneNumberPickerProps };
 
