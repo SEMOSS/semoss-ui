@@ -101,6 +101,16 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		},
 	);
 
+	// get the database category to check if it's SQL (only for DATABASE type engines)
+	const getDatabaseCategory = usePixel<string>(
+		engineId && route.type === 'DATABASE'
+			? `GetDatabaseCategoryReactor(engine=["${engineId}"]);`
+			: "",
+		{
+			data: "",
+		},
+	);
+
 	// convert the data into an object
 	const values = useMemo(() => {
 		if (getEngineMetadata.status !== "SUCCESS") {
@@ -140,7 +150,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const getUserEnginePermission =
 		!adminMode && engineId && useAPI(["getUserEnginePermission", engineId]);
 
-	// get the tabs based on permission
+	// get the tabs based on permission and database type
 	const tabs = useMemo(() => {
 		// must be valid
 		if (
@@ -155,15 +165,30 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		const permission = getUserEnginePermission.data.permission;
 
 		// get the routes based on permission
-		return route.specific.filter((t) =>
+		let filteredTabs = route.specific.filter((t) =>
 			t.restrict ? t.restrict.indexOf(permission) > -1 : true,
 		);
+
+		// additional filtering for DATABASE type engines - hide Query tab unless database is SQL
+		if (route.type === 'DATABASE') {
+			const databaseCategory = getDatabaseCategory.data;
+			filteredTabs = filteredTabs.filter((t) => {
+				// if it's the Query tab (path === 'query'), only show it if database is SQL
+				if (t.path === 'query') {
+					return databaseCategory === 'SQL';
+				}
+				return true;
+			});
+		}
+
+		return filteredTabs;
 	}, [
 		route,
 		getUserEnginePermission.status,
 		getUserEnginePermission.data
 			? getUserEnginePermission.data.permission
 			: "",
+		getDatabaseCategory.data,
 	]);
 
 	/**
@@ -202,6 +227,11 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	// show a loading screen when it is pending
 	if (getEngineMetadata.status !== "SUCCESS") {
 		return <LoadingScreen.Trigger description="Opening Engine" />;
+	}
+
+	// show a loading screen when checking database category for DATABASE engines
+	if (route.type === 'DATABASE' && getDatabaseCategory.status !== "SUCCESS") {
+		return <LoadingScreen.Trigger description="Loading Database Info" />;
 	}
 
 	return (

@@ -116,8 +116,8 @@ export const EngineQueryDataPage = observer(() => {
 		clearQuery: clearQueryInternal,
 		clearResults,
 		executeQuery: executeQueryInternal,
-		limit,
-		setLimit,
+		// limit,
+		// setLimit,
 	} = useQueryExecution(active.id || "", {
 		onSchemaChange: () => {
 			setRefreshMessage(
@@ -203,8 +203,8 @@ export const EngineQueryDataPage = observer(() => {
 							handleEditorMount={handleEditorMount}
 							executeQuery={executeQuery}
 							previewLoading={previewLoading}
-							limit={limit}
-							setLimit={setLimit}
+							// limit={limit}
+							// setLimit={setLimit}
 						/>
 					</StyledCard>
 				</StyledRight>
@@ -215,7 +215,7 @@ export const EngineQueryDataPage = observer(() => {
 					previewData={previewData}
 					previewLoading={previewLoading}
 					clearResults={clearResults}
-					previewLimit={limit}
+					// previewLimit={limit}
 					onExpandChange={setIsQueryResultsExpanded}
 				/>
 			</StyledQueryResultsWrapper>
