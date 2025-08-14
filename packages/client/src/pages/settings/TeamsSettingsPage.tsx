@@ -9,7 +9,7 @@ import {
 	Grid,
 	IconButton,
 	Menu,
-	MenuItemTwo,
+	MenuItem,
 	Search,
 	styled,
 	Typography,
@@ -118,8 +118,9 @@ export const TeamsSettingsPage = observer(() => {
 				value: data,
 			});
 		});
-	}, [search, adminMode]);
+	}, [adminMode, search]);
 
+	// Updated debounced filtering function
 	const filterTeams = useCallback(() => {
 		setFilteredTeams(
 			teams
@@ -132,9 +133,10 @@ export const TeamsSettingsPage = observer(() => {
 
 	const debouncedFilterTeams = debounced(filterTeams, 150);
 
+	// Trigger debounced filtering when teams or search changes
 	useEffect(() => {
 		debouncedFilterTeams();
-	}, [debouncedFilterTeams, teams, search]);
+	}, [teams, search, debouncedFilterTeams]);
 
 	const handleMenuClick = (event) => {
 		setAnchorEl(event.currentTarget);
@@ -245,22 +247,22 @@ export const TeamsSettingsPage = observer(() => {
 						},
 					}}
 				>
-					<MenuItemTwo
+					<MenuItem
 						onClick={() => handleSort("asc")}
 						sx={{
 							backgroundColor: isAsc() ? "#EBF3F8" : "inherit",
 						}}
 					>
 						A<ArrowForward fontSize="small" />Z
-					</MenuItemTwo>
-					<MenuItemTwo
+					</MenuItem>
+					<MenuItem
 						onClick={() => handleSort("desc")}
 						sx={{
 							backgroundColor: isDesc() ? "#EBF3F8" : "inherit",
 						}}
 					>
 						Z<ArrowBack fontSize="small" />A
-					</MenuItemTwo>
+					</MenuItem>
 				</Menu>
 
 				<Grid container spacing={3}>

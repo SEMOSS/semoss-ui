@@ -5,17 +5,17 @@ import {
 	getValueByPath,
 	syncronousPromise,
 } from "../../utility";
-import { CellStateConfig } from "./cell.state";
+import type { CellStateConfig } from "./cell.state";
 import { STATE_VERSION } from "./migration/MigrationManager";
-import { QueryState, QueryStateConfig } from "./query.state";
+import { QueryState, type QueryStateConfig } from "./query.state";
 import {
 	ActionMessages,
-	Actions,
-	AddBlockAction,
-	MoveBlockAction,
-	RemoveBlockAction,
+	type Actions,
+	type AddBlockAction,
+	type MoveBlockAction,
+	type RemoveBlockAction,
 } from "./state.actions";
-import {
+import type {
 	Block,
 	BlockJSON,
 	CellRegistry,
@@ -601,7 +601,9 @@ export class StateStore {
 						iteratorBlock,
 						id,
 					);
+
 					const iteratorList = iteratorBlock.data.source as string;
+
 					let list = this.parseVariable(iteratorList);
 
 					if (typeof list === "string") {
@@ -620,7 +622,7 @@ export class StateStore {
 						variable = expression.match(/^\$(\w+)/)?.[1];
 					}
 
-					const stripped = iteratorList.slice(2, -2);
+					const stripped = iteratorList.trim().slice(2, -2);
 
 					// TODO: how do we handle nested loops $array.warehouse.warehouseSections --> = []
 					// Do we just call this recursively
@@ -949,6 +951,7 @@ export class StateStore {
 			}
 		}
 
+		console.warn(`${blockId} is not a descendent of iterator`);
 		return false;
 	};
 
@@ -972,6 +975,7 @@ export class StateStore {
 			}
 		}
 
+		console.warn(`${blockId} is not a descendent of ${containerId}`);
 		return false;
 	};
 
@@ -989,6 +993,7 @@ export class StateStore {
 			}
 		}
 
+		console.warn(`Unable find iterator child`);
 		return -1; // Return -1 if not found
 	};
 
@@ -1734,7 +1739,7 @@ export class StateStore {
 				{
 					parameters: {
 						code: "",
-						type: "pixel",
+						type: "py",
 					},
 					widget: "code",
 				} as Omit<CellStateConfig, "id">,

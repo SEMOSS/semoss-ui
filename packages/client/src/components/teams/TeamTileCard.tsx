@@ -18,7 +18,7 @@ import {
 	IconButton,
 	Link,
 	Menu,
-	MenuItemTwo,
+	MenuItem,
 	MenuList,
 	Modal,
 	Stack,
@@ -481,7 +481,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					>
 						<MenuList>
 							{type === "CUSTOM" && (
-								<MenuItemTwo
+								<MenuItem
 									onClick={(e) => {
 										e.stopPropagation();
 										handleClose(e);
@@ -495,9 +495,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										/>
 										<div>Add member to team</div>
 									</Stack>
-								</MenuItemTwo>
+								</MenuItem>
 							)}
-							<MenuItemTwo
+							<MenuItem
 								onClick={(e) => {
 									e.stopPropagation();
 									handleClose(e);
@@ -508,8 +508,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
 									<EditIcon sx={{ color: "#0000008A" }} />
 									<div>Edit team</div>
 								</Stack>
-							</MenuItemTwo>
-							<MenuItemTwo
+							</MenuItem>
+							<MenuItem
 								onClick={(e) => {
 									e.stopPropagation();
 									setDeleteModal(true);
@@ -537,7 +537,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										Delete team
 									</div>
 								</Stack>
-							</MenuItemTwo>
+							</MenuItem>
 						</MenuList>
 					</Menu>
 				</StyledActionContainer>
