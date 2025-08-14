@@ -11,7 +11,7 @@ import migrate__1_0_0_alpha_9_to_1_0_0_alpha_10 from "./migrate__1_0_0_alpha_9__
 import migrate__1_0_0_alpha_10_to_1_0_0_alpha_11 from "./migrate__1_0_0_alpha_10__to__1_0_0_alpha_11";
 import migrate__1_0_0_alpha_11_to_1_0_0_alpha_12 from "./migrate__1_0_0_alpha_11__to___1_0_0_alpha_12";
 import migrate__1_0_0_alpha_12_to_1_0_0_alpha_13 from "./migrate__1_0_0_alpha_12__to___1_0_0_alpha_13";
-import { Migration, MigrationState } from "./migration.types";
+import type { Migration, MigrationState } from "./migration.types";
 
 // TODO: ANYTIME VERSION CHANGES
 // 1. Update Template Apps
