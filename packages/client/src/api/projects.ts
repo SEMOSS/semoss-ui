@@ -7,7 +7,7 @@ export const setProjectFavorite = async (
 ) => {
   let url = `${Env.MODULE}/api/auth/`;
 
-  const postData = {
+  const postData :Record<string, unknown> = {
     projectId: projectId,
     isFavorite: favorite,
   };
@@ -28,16 +28,22 @@ export const addProject = async (
 ) => {
   let url = `${Env.MODULE}/api/auth/admin/`;
   url += "group/addGroupProjectPermission";
-  const postData = {
+  let postData :Record<string, unknown> = {
     groupId: groupId,
     projectId: projectId,
     permission: permission,
   };
   if (type) {
-    postData["type"] = type;
+    postData = {
+      ...postData,
+      type: type
+    };
   }
   if (endDate) {
-    postData["endDate"] = endDate;
+    postData = {
+      ...postData,
+      endDate: endDate,
+    };
   }
 
   const response = await post<{
@@ -58,16 +64,22 @@ export const editProjectPermisison = async (
 ) => {
   let url = `${Env.MODULE}/api/auth/admin/`;
   url += "group/editGroupProjectPermission";
-  const postData = {
+  let postData :Record<string, unknown> = {
     groupId: groupId,
     projectId: project.projectid,
     permission: project.permission,
   };
   if (groupType) {
-    postData["type"] = project.project_type;
+    postData = {
+      ...postData,
+      type: project.project_type,
+    };
   }
   if (project.endDate) {
-    postData["endDate"] = project.endDate;
+    postData = {
+      ...postData,
+      endDate: project.endDate,
+    };
   }
 
   const response = await post<{
@@ -86,12 +98,15 @@ export const deleteProjectPermission = async (
 ) => {
   let url = `${Env.MODULE}/api/auth/admin/`;
   url += "group/removeGroupProjectPermission";
-  const postData = {
+  let postData :Record<string, unknown> = {
     groupId: groupId,
     projectId: project.projectid,
   };
   if (groupType) {
-    postData["type"] = groupType;
+    postData = {
+      ...postData,
+      type: groupType,
+    };
   }
   const response = await post<{
     success: boolean;
@@ -153,7 +168,7 @@ export const getProjectUsers = async (
   permission: string,
   offset?: number,
   limit?: number,
-  id?: string
+  _id?: string
 ) => {
   let url = `${Env.MODULE}/api/auth/`;
   if (admin) {
@@ -162,10 +177,10 @@ export const getProjectUsers = async (
 
   url += "project/getProjectUsers?";
   url += `projectId=${projectId}`;
-  user ? (url += `&userId=${user}`) : "";
-  permission ? (url += `&permission=${permission}`) : "";
-  offset ? (url += `&offset=${offset}`) : "";
-  limit ? (url += `&limit=${limit}`) : "";
+  url += user ? (`&userId=${user}`) : "";
+  url += permission ? (`&permission=${permission}`) : "";
+  url += offset ? (`&offset=${offset}`) : "";
+  url += limit ? (`&limit=${limit}`) : "";
 
   // get the response
   const response = await get<{
@@ -219,7 +234,7 @@ export const getProjectUsersNoCredentials = async (
 export const approveProjectUserAccessRequest = async (
   admin: boolean,
   appId: string,
-  requests: any[]
+  requests: unknown[]
 ) => {
   let url = `${Env.MODULE}/api/auth/`;
   const postData = {
@@ -365,7 +380,7 @@ export const setProjectVisiblity = async (admin, appId, visible) => {
 };
 
 export const setProjectPortal = async (
-  admin: boolean,
+  _admin: boolean,
   projectId: string,
   hasPortal: boolean,
   portalName?: string
@@ -427,8 +442,8 @@ export const setProjectPortal = async (
 
 
 
-const processPostData = (data: any) => {
-  let postRecordData: Record<string, unknown> = {};
+const processPostData = (data: Record<string, unknown>) => {
+  const postRecordData: Record<string, unknown> = {};
   Object.keys(data).forEach((item) => {
     postRecordData[item] = data[item];
   });

@@ -1,7 +1,6 @@
 import { Add, Delete, Edit } from "@mui/icons-material";
-import CopyAllIcon from "@mui/icons-material/CopyAll";
 import SearchIcon from "@mui/icons-material/Search";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -9,9 +8,7 @@ import {
 	Box,
 	Button,
 	Checkbox,
-	Grid,
 	IconButton,
-	Popover,
 	Search,
 	Stack,
 	styled,
@@ -19,9 +16,9 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { deleteMember, editMemberInfo } from '@/api';
 import { LoadingScreen } from "@/components/ui";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
-import { editMemberInfo, deleteMember } from '@/api';
+import { useAPI, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
 import { UserPopover } from "./UserPopover";
 
@@ -52,7 +49,7 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledMemberLoading = styled("div")(({ theme }) => ({
+const StyledMemberLoading = styled("div")(() => ({
 	position: "relative",
 	display: "flex",
 	alignItems: "center",
@@ -100,7 +97,7 @@ const StyledPrimaryText = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.primary,
 }));
 
-const StyledSecondaryText = styled(Typography)(({ theme }) => ({
+const _StyledSecondaryText = styled(Typography)(({ theme }) => ({
 	color: theme.palette.text.secondary,
 }));
 
@@ -215,7 +212,6 @@ export const UserTable = (props: UserTableProps) => {
 	const { onChange = () => null } = props;
 
 	const { adminMode } = useSettings();
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 
 	const [page, setPage] = useState<number>(0);
@@ -233,11 +229,11 @@ export const UserTable = (props: UserTableProps) => {
 	const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 	const [hoveredUser, setHoveredUser] = useState<User | null>(null);
 	const isPopoverOpen = Boolean(anchorEl);
-	/** Add User State */
+	/** Add User State*/
 	const [addModalOpen, setAddModalOpen] = useState<boolean>(false);
 	const [addModalUser, setAddModalUser] = useState<User | null>(null);
 
-	const userSearchRef = useRef(undefined);
+	const userSearchRef = useRef(null);
 
 	const getUsers = useAPI([
 		"getAllUsers",
@@ -251,11 +247,11 @@ export const UserTable = (props: UserTableProps) => {
 	const isLoading =
 		getUsers.status === "INITIAL" || getUsers.status === "LOADING";
 	const renderedMembers =
-		getUsers.status === "SUCCESS" ? getUsers.data["users"] : [];
+		getUsers.status === "SUCCESS" ? getUsers.data.users : [];
 	const totalUsers =
-		getUsers.status === "SUCCESS" ? getUsers.data["totalUsers"] : 0;
+		getUsers.status === "SUCCESS" ? getUsers.data.totalUsers : 0;
 	const hasUsers =
-		getUsers.status === "SUCCESS" && getUsers.data["totalUsers"] > 0;
+		getUsers.status === "SUCCESS" && getUsers.data.totalUsers > 0;
 
 	/**
 	 * Update a user
@@ -456,7 +452,7 @@ export const UserTable = (props: UserTableProps) => {
 									placeholder="Search Users"
 									size="small"
 									value={search}
-									onChange={(e) => {
+									onChange={(e : React.ChangeEvent<HTMLInputElement>) => {
 										setSearch(e.target.value);
 									}}
 								/>
@@ -504,16 +500,15 @@ export const UserTable = (props: UserTableProps) => {
 							</LoadingScreen>
 						</StyledMemberLoading>
 					) : (
-						<>
-							{hasUsers ? (
+						hasUsers ? (
 								<StyledMemberTable>
 									<Table.Head>
 										<Table.Row>
-											<Table.Cell
+										<Table.Cell
 												size="small"
 												padding="checkbox"
 											>
-												<Checkbox
+											<Checkbox
 													id={
 														"userTable-checkbox-selectAll"
 													}
@@ -563,7 +558,7 @@ export const UserTable = (props: UserTableProps) => {
 										</Table.Row>
 									</Table.Head>
 									<Table.Body>
-										{renderedMembers.map((user) => {
+									{renderedMembers.map((user) => {
 											let isSelected = false;
 											if (user) {
 												isSelected =
@@ -768,7 +763,7 @@ export const UserTable = (props: UserTableProps) => {
 										<Table.Row>
 											<Table.Pagination
 												disabled={isLoading}
-												onPageChange={(e, v) => {
+												onPageChange={(_e, v) => {
 													setPage(v);
 												}}
 												page={page}
@@ -782,7 +777,7 @@ export const UserTable = (props: UserTableProps) => {
 														parseInt(
 															e.target.value,
 															10,
-														),
+														)
 													);
 												}}
 												count={totalUsers}
@@ -825,8 +820,7 @@ export const UserTable = (props: UserTableProps) => {
 										Add Member
 									</Button>
 								</StyledNoUsersDiv>
-							)}
-						</>
+							)
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>
@@ -834,15 +828,14 @@ export const UserTable = (props: UserTableProps) => {
 			<UserAddOverlay
 				user={addModalUser}
 				open={addModalOpen}
-				onClose={(success) => {
-					// close it
+				onClose={(_success) => {
+					// close
 					setAddModalOpen(false);
-
 					// de-select the user
 					setAddModalUser(null);
 
 					// refresh if successful
-					if (success) {
+					if (_success) {
 						// trigger the update
 						onChange();
 

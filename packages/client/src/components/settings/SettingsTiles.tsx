@@ -13,6 +13,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { setEngineGlobal, setEngineVisiblity, setProjectGlobal, setProjectVisiblity } from "@/api";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -96,7 +97,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
-	const [closeEngineModal, setCloseEngineModal] = useState(false);
+	const [_closeEngineModal, setCloseEngineModal] = useState(false);
 	const [discoverable, setDiscoverable] = useState(false);
 	const [global, setGlobal] = useState(false);
 	const [loading, setLoading] = useState(false);
@@ -200,7 +201,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	/**
 	 * Close the engine for item
 	 */
-	const closeEngine = async () => {
+	const _closeEngine = async () => {
 		try {
 			// start the loading screen
 			setLoading(true);

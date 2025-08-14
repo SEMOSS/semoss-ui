@@ -6,7 +6,6 @@ import {
 	ExpandLess,
 	ExpandMore,
 } from "@mui/icons-material";
-import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import {
 	Button,
@@ -29,11 +28,11 @@ import {
   denyProjectUserAccessRequest,
 } from "@/api";
 import { LoadingScreen } from "@/components/ui";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { usePixel, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
-const StyledMemberLoading = styled("div")(({ theme }) => ({
+const StyledMemberLoading = styled("div")(() => ({
 	position: "relative",
 	display: "flex",
 	alignItems: "center",
@@ -67,9 +66,9 @@ const StyledTableRow = styled(Table.Row)({
 	backgroundColor: "#FFF",
 });
 
-const StyledMemberTable = styled(Table)({});
+const _StyledMemberTable = styled(Table)({});
 
-const StyledTableTitleContainer = styled("div")(({ theme }) => ({
+const StyledTableTitleContainer = styled("div")(() => ({
 	display: "flex",
 	alignItems: "center",
 	alignSelf: "stretch",
@@ -183,8 +182,7 @@ interface PendingMemberTableProps {
 
 export const PendingMembersTable = (props: PendingMemberTableProps) => {
 	const { id, type, onChange = () => null } = props;
-
-	const { monolithStore } = useRootStore();
+	
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -239,7 +237,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 	const approvePendingMembers = async (members: SETTINGS_PENDING_USER[]) => {
 		try {
 			// construct requests for post data
-			const requests = members.map((mem, i) => {
+			const requests = members.map((mem, _i) => {
 				return {
 					requestid: mem.ID,
 					userid: mem.REQUEST_USERID,
@@ -489,10 +487,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                     </Table.Head>
                     <Table.Body>
                       {
-                        renderedMembers.map((member, i) => {
-                          let isSelected = !!selectedMembers[member.ID];
+                        renderedMembers.map((member, _i) => {
+                          const isSelected = !!selectedMembers[member.ID];
                           return (
-                            <StyledTableRow key={i}>
+                            <StyledTableRow key={`selected_member_row_${member.REQUEST_USERID}`}>
                                 <Table.Cell>
                                   <Checkbox
                                     checked={isSelected}
@@ -526,7 +524,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
                                     onChange={(e) => {
                                       const val = e.target.value;
                                       if (val) {
-                                        _updatePendingMemberPermission(
+                                        updatePendingMemberPermission(
                                           member,
                                           val as SETTINGS_ROLE
                                         );
@@ -601,7 +599,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 										direction={"row"}
 									>
 										<Typography variant={"body1"}>
-											{renderedMembers.length == 1
+											{renderedMembers.length === 1
 												? `${renderedMembers.length} pending request`
 												: `${renderedMembers.length} pending requests`}
 										</Typography>
@@ -667,7 +665,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 						<StyledFilterButtonContainer>
 							<IconButton
 								onClick={() => setOpenTable(!openTable)}
-								disabled={renderedMembers.length == 0}
+								disabled={renderedMembers.length === 0}
 							>
 								{openTable ? <ExpandLess /> : <ExpandMore />}
 							</IconButton>

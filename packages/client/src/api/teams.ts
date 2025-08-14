@@ -26,14 +26,17 @@ export const addTeam = async (
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/addGroup";
 
-	const postData = {
+	let postData : Record<string, unknown> = {
 		groupId: groupId,
 		description: description,
 		isCustomGroup: isCustomGroup,
 	};
 
 	if (type) {
-		postData["type"] = type;
+		postData = {
+			...postData,
+			type: type
+		};
 	}
 	const response = await post<{
 		success: boolean;
@@ -79,11 +82,14 @@ export const deleteTeam = async (groupid: string, type?: string) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/deleteGroup";
 
-	const postData = {
+	let postData :Record<string, unknown> = {
 		groupId: groupid,
 	};
 	if (type) {
-		postData["type"] = type;
+		postData = {
+			...postData,
+			type: type,
+		};
 	}
 	const response = await post<{
 		success: boolean;
@@ -163,13 +169,16 @@ export const addTeamUser = async (
 		url += "admin/";
 	}
 	url += "group/addGroupMember";
-	const postData = {
+	let postData :Record<string, unknown> = {
 		groupId: groupId,
 		type: type,
 		userId: userId,
 	};
 	if (endDate) {
-		postData["endDate"] = endDate;
+		postData = {
+			...postData,
+			endDate: endDate,
+		};
 	}
 	const response = await post<{
 		success: boolean;

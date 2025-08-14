@@ -12,7 +12,7 @@ import {
 	TextField,
 	useNotification,
 } from "@semoss/ui";
-import { config, uploadImage } from '@/api';
+import { uploadImage } from '@/api';
 import { useRootStore } from "@/hooks";
 import type { AppMetadata } from "./app.types";
 
@@ -101,13 +101,13 @@ export const NewAppModal = (props: NewAppModalProps) => {
 					await uploadImage(data.APP_IMG, appId, configStore.store.insightID);
 				}
 				// after the project is created check for metadata. If true, run SetProjectMeta
-				if (data["APP_TAGS"].length || data["APP_DESCRIPTION"]) {
+				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data["APP_TAGS"],
-									description: data["APP_DESCRIPTION"],
+									tag: data.APP_TAGS,
+									description: data.APP_DESCRIPTION,
 								},
 							)}])`,
 						);
@@ -160,11 +160,8 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				const response =
 					await monolithStore.runQuery(saveIndexFilePixel);
 
-				let output;
-				let operationType;
-
-				output = response.pixelReturn[0].output;
-				operationType = response.pixelReturn[0].operationType;
+				let output = response.pixelReturn[0].output;
+				let operationType = response.pixelReturn[0].operationType;
 
 				if (operationType.indexOf("ERROR") > -1) {
 					notification.add({
@@ -185,13 +182,13 @@ export const NewAppModal = (props: NewAppModalProps) => {
 				}
 
 				// after the project is created check for metadata. If true, run SetProjectMeta
-				if (data["APP_TAGS"].length || data["APP_DESCRIPTION"]) {
+				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
 					const setProjectMetadataResponse =
 						await monolithStore.runQuery(
 							`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 								{
-									tag: data["APP_TAGS"],
-									description: data["APP_DESCRIPTION"],
+									tag: data.APP_TAGS,
+									description: data.APP_DESCRIPTION,
 								},
 							)}])`,
 						);

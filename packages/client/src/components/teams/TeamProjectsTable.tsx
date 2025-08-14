@@ -38,7 +38,6 @@ import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
-import { useRootStore } from "@/hooks";
 
 const colors = [
   "#22A4FF",
@@ -214,7 +213,6 @@ interface ProjectsTableProps {
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
   const { groupId, groupType } = props;
 
-  const { monolithStore } = useRootStore();
   const notification = useNotification();
   const AUTOCOMPLETE_LIMIT = 10;
   const AUTOCOMPLETE_OFFSET = 0;
@@ -356,7 +354,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
           | {
               response: Response;
               data: {
-                success: Boolean;
+                success: boolean;
               };
             }
           | null = null;
@@ -413,7 +411,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         | {
             response: Response;
             data: {
-              success: Boolean;
+              success: boolean;
             };
           }
         | null = null;
@@ -451,7 +449,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
             | {
                 response: Response;
                 data: {
-                  success: Boolean;
+                  success: boolean;
                 };
               }
             | null = null;
@@ -494,10 +492,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
     }
     setIsLoading(true);
     try {
-      let response;
       // possibly add more db table columns / keys here to get id type for display under projects
       // eslint-disable-next-line prefer-const
-      response = await getUnassignedTeamProjects(
+      const response = await getUnassignedTeamProjects(
         groupId,
         groupType,
         AUTOCOMPLETE_LIMIT,
@@ -508,7 +505,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
       // ignore if there is no response
       if (response) {
         let requests = reset ? [] : nonCredentialedProjects;
-        const projects = response.map((val) => {
+        const projects = response?.map((val) => {
           return {
             ...val,
             color: colors[Math.floor(Math.random() * colors.length)],
@@ -548,7 +545,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
         | {
             response: Response;
             data: {
-              success: Boolean;
+              success: boolean;
             };
           }
         | null = null;
@@ -608,7 +605,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
       0, // offset
       searchFilter,
       false
-    ).then((data: any[]) => setProjectCount(data.length));
+    ).then((data: unknown[]) => setProjectCount(data.length));
   }, [count, projectsPage, searchFilter]);
 
   const debouncedFilterProjects = debounced(filterProjects, 400);
@@ -710,10 +707,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 </Table.Row>
               </Table.Head>
               <Table.Body>
-                {projects &&
-                  projects.map((x, i) => {
+                {projects?.map((_x, i) => {
                     const project = projects[i];
-
                     let isSelected = false;
 
                     if (project) {
@@ -723,7 +718,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     }
                     if (project) {
                       return (
-                        <Table.Row key={project.projectid + i}>
+                        <Table.Row key={`${project.projectid}-${i}`}>
                           <StyledTableCell size="medium" padding="checkbox">
                             <StyledCheckbox
                               checked={isSelected}
@@ -795,7 +790,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                       );
                     } else {
                       return (
-                        <Table.Row key={i + "No data available"}>
+                        <Table.Row key={"No data available"}>
                           <Table.Cell size="medium"></Table.Cell>
                           <Table.Cell size="medium"></Table.Cell>
                           <Table.Cell size="medium"></Table.Cell>
@@ -810,7 +805,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                 <Table.Row>
                   <Table.Pagination
                     rowsPerPageOptions={paginationOptions.projectsPageCounts}
-                    onPageChange={(e, v) => {
+                    onPageChange={(_e, v) => {
                       setProjectsPage(v + 1);
                       setSelectedProojects([]);
                     }}
@@ -826,13 +821,13 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
           <StyledNonProjectsContainer>
             <StyledTableTitleContainer>
               <StyledTableTitleDiv>
-                <Typography variant={"h6"}>projects</Typography>
+                <Typography variant="h6">projects</Typography>
               </StyledTableTitleDiv>
             </StyledTableTitleContainer>
             <StyledNonProjectsDiv>
-              <Typography variant={"body1"}>No projects present</Typography>
+              <Typography variant="body1">No projects present</Typography>
               <Button
-                variant={"contained"}
+                variant="contained"
                 onClick={() => {
                   getProjects(true);
                   setAddProjectModal(true);
@@ -864,13 +859,13 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
               }
               value={selectedNonCredentialedProjects}
               inputValue={searchProjectInput}
-              getOptionLabel={(option: any) => {
-                return `${option.project_name} ID: ${option.project_id}`;
+              getOptionLabel={(option: unknown) => {
+                return `${(option as any).project_name} ID: ${(option as any).project_id}`;
               }}
               isOptionEqualToValue={(option, value) => {
-                return option.project_name === value.project_name;
+                return (option as any).project_name === (value as any).project_name;
               }}
-              onChange={(event, newValue: any) => {
+              onChange={(_event, newValue: unknown[]) => {
                 setSelectedNonCredentialedProjects([...newValue]);
               }}
               ListboxProps={{
@@ -885,17 +880,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
                     )
                   ),
               }}
-              onInputChange={(event, newValue) => {
+              onInputChange={(_event, newValue) => {
                 setSearchProjectInput(newValue);
                 setOffset(0);
               }}
             />
 
-            {selectedNonCredentialedProjects &&
-              selectedNonCredentialedProjects.map((project, idx) => {
+            {selectedNonCredentialedProjects?.map((project, idx) => {
                 return (
                   <Box
-                    key={idx}
+                    key={`non-credentialed-${project.project_id}`}
                     sx={{
                       display: "flex",
                       justifyContent: "left",

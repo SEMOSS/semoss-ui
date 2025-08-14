@@ -23,18 +23,18 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
-import { useRootStore, useSettings } from "@/hooks";
 import {
-  getProjectUsersNoCredentials,
-  getProjectUsers,
-  getEngineUsersNoCredentials,
-  getEngineUsers,
-  editProjectUserPermissions,
-  addProjectUserPermissions,
   addEngineUserPermissions,
+  addProjectUserPermissions,
   editEngineUserPermissions,
+  editProjectUserPermissions,
+  getEngineUsers,
+  getEngineUsersNoCredentials,
+  getProjectUsers,
+  getProjectUsersNoCredentials,
 } from "@/api";
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./MembersAddOverlayUser";
@@ -153,7 +153,6 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		setAddModalUser,
 		onChange = () => null,
 	} = props;
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -312,7 +311,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				const json = {
+				let json : Record<string, unknown> = {
 					userid: m.id,
 					permission: validSetting(selectedRole)
 						? permissionPriorityMapper(selectedRole)?.permission
@@ -321,21 +320,32 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 				// FOR MODELS
 				if (restriction !== "null") {
-					json["usageRestriction"] = restriction;
+					json = {
+						...json,
+						usageRestriction: restriction,
+					};
 				}
 
 				if (frequency) {
-					json["usageFrequency"] = frequency;
+					json = {
+						...json,
+						usageFrequency: frequency,
+					};
 				}
 
 				if (restriction === "token") {
-					json["maxTokens"] = Number(maxTokens);
+					json = {
+						...json,
+						maxTokens: Number(maxTokens),
+					};
 				}
 
 				if (restriction === "compute") {
-					json["maxResponseTime"] = Number(maxTime);
+					json = {
+						...json,
+						maxResponseTime: Number(maxTime),
+					};
 				}
-
 				return json;
 			});
 
@@ -417,7 +427,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 		try {
 			// construct requests for post data
-			let requests: any = null;
+			let requests: unknown[] = [];
 			if (type === "MODEL") {
 				requests = selectedMembers.map((m) => {
 					return {
@@ -487,7 +497,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
                 response = await addProjectUserPermissions(
                     adminMode,
                     id,
-                    requests,
+                    requests as string[],
                 );
             }
 
@@ -590,14 +600,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						isOptionEqualToValue={(option, value) => {
 							return option.id === value.id;
 						}}
-						onInputChange={(event, newValue) => {
+						onInputChange={(_event, newValue) => {
 							setSearch(newValue);
 							setOffset(0);
 							setInfiniteOn(true);
 							setRenderedMembers([]);
 							setSearchLoading(true);
 						}}
-						onChange={(event, newValue) => {
+						onChange={(_event, newValue) => {
 							setSelectedMembers(newValue || []);
 						}}
 						getOptionDisabled={(option) => !!option.permission}
@@ -880,11 +890,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 								}}
 							>
 								{Object.entries(usageRestritctionTypes).map(
-									(option, i) => {
+									(option, _i) => {
 										return (
 											<Select.Item
 												value={option[0]}
-												key={i}
+												key={`usageRestrictionType-${option[0]}`}
 											>
 												{option[1]}
 											</Select.Item>
@@ -913,11 +923,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 										}}
 									></TextField>
 									<Select label="Unit" value={unitTypes[0]}>
-										{unitTypes.map((option, i) => {
+										{unitTypes.map((option, _i) => {
 											return (
 												<Select.Item
 													value={option}
-													key={i}
+													key={`unitType-${option}`}
 												>
 													{option}
 												</Select.Item>
@@ -935,11 +945,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 									}}
 								>
 									{Object.entries(frequencyTypes).map(
-										(option, i) => {
+										(option, _i) => {
 											return (
 												<Select.Item
 													value={option[0]}
-													key={i}
+													key={`frequencyType-${option[0]}`}
 												>
 													{option[1]}
 												</Select.Item>

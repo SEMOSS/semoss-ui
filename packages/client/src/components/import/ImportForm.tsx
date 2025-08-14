@@ -1,8 +1,8 @@
 // InputForm
 
-import { ExpandLess, ExpandMore, Help } from "@mui/icons-material";
+import { ExpandLess, ExpandMore, } from "@mui/icons-material";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Controller, Form, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -15,7 +15,6 @@ import {
 	Stack,
 	styled,
 	TextField,
-	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
@@ -28,7 +27,7 @@ const StyledFlexEnd = styled("div")(({ theme }) => ({
 	gap: theme.spacing(1),
 }));
 
-const StyledProperty = styled("div")(({ theme }) => ({
+const _StyledProperty = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	flexDirection: "column",
@@ -239,7 +238,7 @@ export const ImportForm = (props) => {
 				// if they do match the user has not changed the initScript or they manually changed it back
 				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
 				const isMatched =
-					initScriptValueFromCallback == initScriptValueFromTextField;
+					initScriptValueFromCallback === initScriptValueFromTextField;
 				setIsDynamicInputChangedByUser(!isMatched);
 			}, 0);
 		}
@@ -251,7 +250,7 @@ export const ImportForm = (props) => {
 	 * May be combinable with another useEffect
 	 */
 	useEffect(() => {
-		defaultFields.forEach((val, i) => {
+		defaultFields.forEach((val, _i) => {
 			if (val.updateCallback) {
 				setUpdateFieldName(val.fieldName);
 				setInitScriptCallback(
@@ -716,10 +715,10 @@ export const ImportForm = (props) => {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Stack rowGap={2}>
-				{defaultFields.map((val, i) => {
+				{defaultFields.map((val, _i) => {
 					if (!val.hidden) {
 						return (
-							<StyledKeyValue key={i}>
+							<StyledKeyValue key={`importForm-${val.fieldName}`}>
 								<Controller
 									name={val.fieldName}
 									control={control}
@@ -789,7 +788,7 @@ export const ImportForm = (props) => {
 													// }}
 													helperText={
 														invalid
-															? error?.type ==
+															? error?.type ===
 																"checkField"
 																? val.rules
 																		.custom
@@ -863,7 +862,7 @@ export const ImportForm = (props) => {
 														(opt, i) => {
 															return (
 																<Menu.Item
-																	key={i}
+																	key={`importForm-selectField-${val.fieldName}-${i}`}
 																	value={
 																		opt.value
 																	}
@@ -960,10 +959,10 @@ export const ImportForm = (props) => {
 						</div>
 
 						{openAdvanced &&
-							advancedFields.map((val, i) => {
+							advancedFields.map((val, _i) => {
 								if (!val.hidden) {
 									return (
-										<StyledKeyValue key={i}>
+										<StyledKeyValue key={`importForm-advancedField-${val.fieldName}`}>
 											<Controller
 												name={val.fieldName}
 												control={control}
@@ -972,7 +971,7 @@ export const ImportForm = (props) => {
 													field,
 													fieldState,
 												}) => {
-													const hasError =
+													const _hasError =
 														fieldState.error;
 													if (
 														val.options
@@ -1165,9 +1164,7 @@ export const ImportForm = (props) => {
 																	) => {
 																		return (
 																			<Menu.Item
-																				key={
-																					i
-																				}
+																				key={`importForm-selectField-${val.fieldName}-${i}`}
 																				value={
 																					opt.value
 																				}

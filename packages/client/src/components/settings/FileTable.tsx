@@ -1,5 +1,5 @@
 import { Add, Delete, SimCardDownload } from "@mui/icons-material";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
 	Button,
@@ -299,10 +299,10 @@ export const FileTable = (props: FileTableProps) => {
 			const { fileName } = file;
 			if (index + 1 === files.length) {
 				//structuring the last element
-				fileArray = fileArray + `"${fileName}"`;
+				fileArray = `${fileArray}"${fileName}"`;
 			} else {
 				// all but the last element
-				fileArray = fileArray + `"${fileName}", `;
+				fileArray = `${fileArray}"${fileName}", `;
 			}
 		});
 
@@ -346,10 +346,10 @@ export const FileTable = (props: FileTableProps) => {
 			const { fileName } = file;
 			if (index + 1 === files.length) {
 				//structuring the last element
-				fileArray = fileArray + `"${fileName}"`;
+				fileArray = `${fileArray}"${fileName}"`;
 			} else {
 				// all but the last element
-				fileArray = fileArray + `"${fileName}", `;
+				fileArray = `${fileArray}"${fileName}", `;
 			}
 		});
 
@@ -364,7 +364,7 @@ export const FileTable = (props: FileTableProps) => {
 		setExportLoading(false);
 	};
 
-	const createSortHandler = (property) => (event) => {
+	const createSortHandler = (property) => (_event) => {
 		const isAsc = order === "asc";
 		const newOrder = isAsc ? "desc" : "asc";
 		setOrder(newOrder);
@@ -506,7 +506,7 @@ export const FileTable = (props: FileTableProps) => {
 						<Table.Cell size="small">Action</Table.Cell>
 					</Table.Head>
 					<Table.Body>
-						{verifiedFiles.map((x, i) => {
+						{verifiedFiles.map((_x, i) => {
 							if (
 								i >=
 									filePage * NUM_RESULTS_PER_PAGE -
@@ -524,7 +524,7 @@ export const FileTable = (props: FileTableProps) => {
 								}
 								if (file) {
 									return (
-										<Table.Row key={i}>
+										<Table.Row key={`${file.fileName}-${i}`}>
 											<Table.Cell size="medium">
 												<Checkbox
 													checked={isSelected}
@@ -601,7 +601,7 @@ export const FileTable = (props: FileTableProps) => {
 						<Table.Row>
 							<Table.Pagination
 								rowsPerPageOptions={[]}
-								onPageChange={(e, v) => {
+								onPageChange={(_e, v) => {
 									setFilePage(v + 1);
 									setSelectedFiles([]);
 								}}
@@ -660,7 +660,7 @@ export const FileTable = (props: FileTableProps) => {
 								isLoading ? (
 									<CircularProgress size="1em" />
 								) : (
-									<></>
+									null
 								)
 							}
 						>
@@ -700,7 +700,7 @@ export const FileTable = (props: FileTableProps) => {
 							deleteFile(fileToDelete);
 						}}
 						startIcon={
-							isLoading ? <CircularProgress size="1em" /> : <></>
+							isLoading ? <CircularProgress size="1em" /> : null
 						}
 					>
 						Confirm
@@ -727,7 +727,7 @@ export const FileTable = (props: FileTableProps) => {
 							deleteSelectedFiles(selectedFiles);
 						}}
 						startIcon={
-							isLoading ? <CircularProgress size="1em" /> : <></>
+							isLoading ? <CircularProgress size="1em" /> : null
 						}
 					>
 						Confirm

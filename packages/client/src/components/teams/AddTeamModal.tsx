@@ -16,6 +16,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { addTeam, editTeam } from "@/api/teams";
 import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
 import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
 import Dropbox from "@/assets/loginProviders/dropbox.png";
@@ -33,9 +34,8 @@ import Siteminder from "@/assets/loginProviders/siteminder.png";
 import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
-import { addTeam, editTeam } from "@/api/teams";
 
-const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
+const StyledModalTitle = styled(Modal.Title)(() => ({
 	width: "100%",
 	display: "flex",
 	justifyContent: "space-between",
@@ -69,7 +69,7 @@ const StyledSelectItem = styled(Select.Item, {
 })<{
 	/** Track if the page header is stuck */
 	type: string;
-}>(({ theme, type }) => ({
+}>(({ type }) => ({
 	borderBottom:
 		type === "CUSTOM"
 			? "1px solid var(--Secondary-Border, #C4C4C4)"
@@ -132,7 +132,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const navigate = useNavigate();
 	const notification = useNotification();
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 
 	// State to track the previous team name, type
 	const [previousTeamName, setPreviousTeamName] = React.useState<
@@ -273,7 +273,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						Edit Team
 					</Typography>
 				) : (
-					<>Create New Team</>
+					"Create New Team"
 				)}
 				<IconButton
 					onClick={() => {
@@ -315,10 +315,10 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 															"registration",
 														].includes(p.provider),
 												)
-												.map((p, idx) => {
+												.map((p, _idx) => {
 													return (
 														<StyledSelectItem
-															key={idx}
+															key={`logintype-${p.provider}`}
 															value={p.provider}
 															type={p.provider}
 														>
@@ -347,11 +347,12 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																			height: "24px",
 																			width: "24px",
 																		}}
+																		alt={'login provider icon'}
 																	/>
 																) : (
 																	<StyledIcon />
 																)}
-																<>{p.name}</>
+																{p.name}
 																{p.description && (
 																	<StyledMenuItemDesc
 																		variant={

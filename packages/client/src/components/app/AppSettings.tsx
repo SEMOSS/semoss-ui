@@ -22,10 +22,10 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
-import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 
 const StyledAppSettings = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -210,7 +210,7 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 }));
 
 // User Table
-interface User {
+interface _User {
 	id: string;
 	name: string;
 	date: string;
@@ -320,11 +320,8 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				let output;
-				let type;
-
-				output = response.pixelReturn[0].output;
-				type = response.pixelReturn[0].operationType[0];
+				const output = response.pixelReturn[0].output;
+				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
 					notification.add({
@@ -352,7 +349,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 	 * @name recompileReactors
 	 */
 	const recompileReactors = ({ release }) => {
-		let pixelString;
+		let pixelString: string;
 		if (release == null) {
 			pixelString = `ReloadInsightClasses(project='${id}');`;
 		} else {
@@ -362,11 +359,9 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				let output;
-				let type;
 
-				output = response.pixelReturn[0].output;
-				type = response.pixelReturn[0].operationType[0];
+				const output = response.pixelReturn[0].output;
+				const type: string = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
 					notification.add({
@@ -406,11 +401,9 @@ export const AppSettings = (props: AppSettingsProps) => {
 		monolithStore
 			.runQuery(pixelString)
 			.then((response) => {
-				let output;
-				let type;
 
-				output = response.pixelReturn[0].output;
-				type = response.pixelReturn[0].operationType[0];
+				const output = response.pixelReturn[0].output;
+				const type = response.pixelReturn[0].operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
 					notification.add({
@@ -494,7 +487,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 			);
 
 			// upload the file
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFileAPI(
 				[data.PROJECT_UPLOAD],
 				configStore.store.insightID,
 				id,
@@ -512,7 +505,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 			);
 
 			// set the app portal
-			await monolithStore.setProjectPortal(false, id, true, "public");
+			await setProjectPortal(false, id, true, "public");
 
 			// Publish the app the insight classes
 			await monolithStore.runQuery(
@@ -570,64 +563,61 @@ export const AppSettings = (props: AppSettingsProps) => {
 							</Typography>
 						</StyledSubRow>
 					</StyledSubColumn>
+					<Divider />
 
-					<>
-						<Divider />
+					<StyledSubColumn style={{ width: "100%" }}>
+						<StyledSubRow>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+								}}
+							>
+								<StyledRefreshIcon />
+								<StyledTypography variant="body1">
+									Publish Portal
+								</StyledTypography>
+							</div>
 
-						<StyledSubColumn style={{ width: "100%" }}>
-							<StyledSubRow>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-									}}
-								>
-									<StyledRefreshIcon />
-									<StyledTypography variant="body1">
-										Publish Portal
-									</StyledTypography>
-								</div>
+							<StyledRightButton
+								disabled={!portalDetails.project_has_portal}
+								variant="outlined"
+								onClick={() => {
+									publish();
+								}}
+							>
+								Publish
+							</StyledRightButton>
+						</StyledSubRow>
 
-								<StyledRightButton
-									disabled={!portalDetails.project_has_portal}
-									variant="outlined"
-									onClick={() => {
-										publish();
-									}}
-								>
-									Publish
-								</StyledRightButton>
-							</StyledSubRow>
+						<StyledSubRow>
+							<Typography variant="body2">
+								Publish the portal to generate a shareable
+								link.
+							</Typography>
+						</StyledSubRow>
 
-							<StyledSubRow>
-								<Typography variant="body2">
-									Publish the portal to generate a shareable
-									link.
-								</Typography>
-							</StyledSubRow>
-
-							<StyledSubRow>
-								<TextField
-									focused={false}
-									label={"Link"}
-									variant={"outlined"}
-									value={
-										portalDetails.project_has_portal
-											? portalDetails.project_portal_url
-											: ""
-									}
-									sx={{ width: "100%" }}
-									InputProps={{
-										startAdornment: <InsertLink />,
-									}}
-								>
-									{portalDetails.project_has_portal
+						<StyledSubRow>
+							<TextField
+								focused={false}
+								label={"Link"}
+								variant={"outlined"}
+								value={
+									portalDetails.project_has_portal
 										? portalDetails.project_portal_url
-										: ""}
-								</TextField>
-							</StyledSubRow>
-						</StyledSubColumn>
-					</>
+										: ""
+								}
+								sx={{ width: "100%" }}
+								InputProps={{
+									startAdornment: <InsertLink />,
+								}}
+							>
+								{portalDetails.project_has_portal
+									? portalDetails.project_portal_url
+									: ""}
+							</TextField>
+						</StyledSubRow>
+					</StyledSubColumn>
 				</StyledCondensedPublishContainer>
 			</StyledPaper>
 		);
@@ -697,8 +687,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 									></StyledRightSwitch>
 								</StyledSubRow>
 							</StyledSubColumn>
-
-							<>
 								<Divider />
 
 								<StyledSubColumn>
@@ -754,7 +742,6 @@ export const AppSettings = (props: AppSettingsProps) => {
 										</TextField>
 									</StyledSubRow>
 								</StyledSubColumn>
-							</>
 						</StyledCardRight>
 					</StyledCardDiv>
 				</StyledTopCardContainer>
@@ -815,7 +802,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 									<Table.Body>
 										{portalReactors.reactors.map(
 											(reactor, i) => (
-												<Table.Row key={reactor + i}>
+												<Table.Row key={`${reactor + i}`}>
 													<Table.Cell>
 														{reactor}
 													</Table.Cell>

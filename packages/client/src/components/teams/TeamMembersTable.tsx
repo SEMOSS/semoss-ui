@@ -22,8 +22,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
-import { getTeamUsers, getNonTeamUsers, addTeamUser, deleteTeamUser } from '@/api/teams';
+import { addTeamUser, deleteTeamUser, getNonTeamUsers, getTeamUsers } from '@/api/teams';
 
 const colors = [
 	"#22A4FF",
@@ -193,7 +192,6 @@ interface MembersTableProps {
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -469,10 +467,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			let response;
 			// possibly add more db table columns / keys here to get id type for display under username
 			// eslint-disable-next-line prefer-const
-			response = await getNonTeamUsers(
+			const response = await getNonTeamUsers(
 				groupId,
 				AUTOCOMPLETE_LIMIT,
 				offset,
@@ -584,8 +581,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											variant={"circular"}
 											max={4}
 											total={
-												teamMembers &&
-												teamMembers.length
+												teamMembers?.length
 											}
 										>
 											{Avatars.map((el) => {
@@ -673,8 +669,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{teamMembers &&
-									teamMembers.map((x, i) => {
+								{teamMembers?.map((_x, i) => {
 										const user = teamMembers[i];
 
 										let isSelected = false;
@@ -691,7 +686,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										}
 										if (user) {
 											return (
-												<Table.Row key={user.name + i}>
+												<Table.Row key={`${user.name + i}`}>
 													<StyledTableCell
 														size="medium"
 														padding="checkbox"
@@ -774,7 +769,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											return (
 												<Table.Row
 													key={
-														i + "No data available"
+														"No data available"
 													}
 												>
 													<Table.Cell size="medium"></Table.Cell>
@@ -793,8 +788,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
-										onPageChange={(e, v) => {
-											setMembersPage(v + 1);
+										onPageChange={(_e,_v) => {
+											setMembersPage(_v + 1);
 											setSelectedMembers([]);
 										}}
 										page={membersPage - 1}
@@ -848,13 +843,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option: any) => {
-								return `${option.name}`;
+							getOptionLabel={(option: unknown) => {
+								return `${(option as { name: string }).name}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
-								return option.name === value.name;
+								return (option as { name: string }).name === (value as { name: string }).name;
 							}}
-							onChange={(event, newValue: any) => {
+							onChange={(_event, newValue: unknown[]) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{
@@ -869,14 +864,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
-						{selectedNonCredentialedUsers &&
-							selectedNonCredentialedUsers.map((user, idx) => {
+						{selectedNonCredentialedUsers?.map((user, idx) => {
 								const space = user.name.indexOf(" ");
 								const initial = user.name
 									? space > -1
@@ -887,7 +881,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									: user.id[0].toUpperCase();
 								return (
 									<Box
-										key={idx}
+										key={`selected-non-credentialed-user-${user.id}`}
 										sx={{
 											display: "flex",
 											justifyContent: "left",

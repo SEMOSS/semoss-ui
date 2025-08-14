@@ -19,11 +19,10 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
-import { editProjectUserPermissions, editEngineUserPermissions } from "@/api";
 import { MembersAddOverlay } from "./MembersAddOverlay";
 import { MembersDeleteOverlay } from "./MembersDeleteOverlay";
 import type {
@@ -59,7 +58,7 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledMemberLoading = styled("div")(({ theme }) => ({
+const StyledMemberLoading = styled("div")(() => ({
 	position: "relative",
 	display: "flex",
 	alignItems: "center",
@@ -220,7 +219,7 @@ interface User {
 export const MembersTable = (props: MembersTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -229,7 +228,7 @@ export const MembersTable = (props: MembersTableProps) => {
 	const [rowsPerPage, setRowsPerPage] = useState<number>(5);
 	const [search, setSearch] = useState<string>("");
 	const [isSearch, setIsSearch] = useState<boolean>(false);
-	const [permissionFilter, setPermissionFilter] = useState<string>("");
+	const [permissionFilter, _setPermissionFilter] = useState<string>("");
 	const [selectedMembers, setSelectedMembers] = useState<
 		SETTINGS_PROVISIONED_USER[]
 	>([]);
@@ -338,7 +337,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			allAuthorsResponse.status === "SUCCESS" &&
 			allAuthorsResponse.data
 		) {
-			setAllAuthors(allAuthorsResponse.data["members"]);
+			setAllAuthors(allAuthorsResponse.data.members);
 		} else {
 			setAllAuthors([]);
 		}
@@ -417,7 +416,7 @@ export const MembersTable = (props: MembersTableProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				const json = {
+				const json :Record<string, unknown> = {
 					userid: m.id,
 					permission: quickUpdate ? quickUpdate : "OWNER",
 				};
@@ -430,10 +429,10 @@ export const MembersTable = (props: MembersTableProps) => {
 					m.max_tokens
 				) {
 					// TODO: WE NEED CONSISTENCY, VERSUS HOW WE RECIEVE FROM BACKEND AND HOW WE SEND
-					json["maxResponseTime"] = m.max_response_time;
-					json["usageRestriction"] = m.usage_restriction;
-					json["usageFrequency"] = m.usage_frequency;
-					json["maxTokens"] = m.max_tokens;
+					json.maxResponseTime = m.max_response_time;
+					json.usageRestriction = m.usage_restriction;
+					json.usageFrequency = m.usage_frequency;
+					json.maxTokens = m.max_tokens;
 				}
 				return json;
 			});
@@ -559,11 +558,11 @@ export const MembersTable = (props: MembersTableProps) => {
 	const isLoading =
 		getMembers.status === "INITIAL" || getMembers.status === "LOADING";
 	const renderedMembers =
-		getMembers.status === "SUCCESS" ? getMembers.data["members"] : [];
+		getMembers.status === "SUCCESS" ? (getMembers.data as Record<string, unknown>)?.members as User[] : [];
 	const totalMembers =
-		getMembers.status === "SUCCESS" ? getMembers.data["totalMembers"] : 0;
+		getMembers.status === "SUCCESS" ? Number((getMembers.data as Record<string, unknown>)?.totalMembers) : 0;
 	const hasMembers =
-		getMembers.status === "SUCCESS" && getMembers.data["totalMembers"] > 0;
+		getMembers.status === "SUCCESS" && Number((getMembers.data as Record<string, unknown>)?.totalMembers) > 0;
 
 	/**
 	 * Sort Members
@@ -760,8 +759,8 @@ export const MembersTable = (props: MembersTableProps) => {
 						<StyledMemberLoading>
 							<StyledMemberTable>
 								<Table.Body>
-									{[...Array(rowsPerPage)].map((_, idx) => (
-										<Table.Row key={idx}>
+									{[...Array(rowsPerPage)].map((_, _idx) => (
+										<Table.Row key={`loading-skeleton-row`}>
 											<Table.Cell
 												size="medium"
 												padding="checkbox"
@@ -806,8 +805,7 @@ export const MembersTable = (props: MembersTableProps) => {
 							</StyledMemberTable>
 						</StyledMemberLoading>
 					) : (
-						<>
-							{hasMembers ? (
+						hasMembers ? (
 								<>
 									<StyledMemberTable>
 										<Table.Head>
@@ -889,7 +887,7 @@ export const MembersTable = (props: MembersTableProps) => {
 											</Table.Row>
 										</Table.Head>
 										<Table.Body>
-											{sortedMembers.map((x, i) => {
+											{sortedMembers.map((_x, i) => {
 												const user = sortedMembers[i];
 
 												let isSelected = false;
@@ -954,6 +952,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																			);
 																		}
 																	}}
+																	data-testid={`checkbox-${user.id}`}
 																/>
 															</StyledTableCell>
 															<Table.Cell>
@@ -1172,7 +1171,7 @@ export const MembersTable = (props: MembersTableProps) => {
 											<Table.Row>
 												<Table.Pagination
 													disabled={isLoading}
-													onPageChange={(e, v) => {
+													onPageChange={(_e, v) => {
 														setPage(v);
 														setSelectedMembers([]);
 													}}
@@ -1232,13 +1231,13 @@ export const MembersTable = (props: MembersTableProps) => {
 												setAddModalUser(null);
 												openAddMembersModal();
 											}}
+											data-testid="add-members-button"
 										>
 											Add Members
 										</Button>
 									)}
 								</StyledNoMembersDiv>
-							)}
-						</>
+							)
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>

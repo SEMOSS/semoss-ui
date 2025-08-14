@@ -26,13 +26,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { getTeamEngines, getUnassignedTeamEngines, addEnginePermission, editEnginePermission, deleteEnginePermission } from "@/api";
+import { addEnginePermission, deleteEnginePermission, editEnginePermission, getTeamEngines, getUnassignedTeamEngines } from "@/api";
 import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
-import { useRootStore } from "@/hooks";
 
 const colors = [
 	"#22A4FF",
@@ -221,7 +220,6 @@ interface Engine {
 export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const { groupId, groupType } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -271,10 +269,10 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			let response;
+			// let response;
 			// possibly add more db table columns / keys here to get id type for display under engines
 			// eslint-disable-next-line prefer-const
-			response = await getUnassignedTeamEngines(
+			const response = await getUnassignedTeamEngines(
 				groupId,
 				groupType,
 				AUTOCOMPLETE_LIMIT,
@@ -285,7 +283,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedEngines;
-				const engines = response.map((val: Engine) => {
+				const engines = (response as Engine[]).map((val: Engine) => {
 					return {
 						...val,
 						color: colors[
@@ -377,7 +375,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				enginesPage * limit - limit, // offset
 			searchFilter,
 		);
-		setEngines((response as any).data as any[]);
+		setEngines((response as {data: Engine[], response: unknown }).data as Engine[]);
 		setHasEngines(true);
 	};
 	getTeamEnginesData();
@@ -412,7 +410,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 		}, 500);
 		return () => clearTimeout(timer);
-	}, [offset, searchEngineInput, canCollect, getEngines]);
+	}, [offset, searchEngineInput, canCollect]);
 
 	/**
 	 * @name submitNonGroupEngines
@@ -643,7 +641,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				searchFilter,
 			);
 
-		setEngines((response as any).data as any[]);
+		setEngines((response as unknown as {data: Engine[], response: unknown }).data as Engine[]);
 		setHasEngines(true);
 
 		const responseData = getTeamEngines(
@@ -654,7 +652,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				searchFilter,
 			);
 
-		setEngineCount(((responseData as any).data as any[]).length);
+		setEngineCount(((responseData as unknown as {data: Engine[], response: unknown }).data as Engine[]).length);
 
 	}, [
 		enginesPage,
@@ -750,10 +748,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{engines &&
-									engines.map((x, i) => {
+								{engines?.map((_x, i) => {
 										const engine = engines[i];
-
 										let isSelected = false;
 
 										if (engine) {
@@ -769,7 +765,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										if (engine) {
 											return (
 												<Table.Row
-													key={engine.engineid + i}
+													key={`${engine.engineid} + ${i}`}
 												>
 													<StyledTableCell
 														size="medium"
@@ -896,7 +892,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 											return (
 												<Table.Row
 													key={
-														i + "No data available"
+														`No data available`
 													}
 												>
 													<Table.Cell size="medium"></Table.Cell>
@@ -915,7 +911,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.enginesPageCounts
 										}
-										onPageChange={(e, v) => {
+										onPageChange={(_e, v) => {
 											setEnginesPage(v + 1);
 											setSelectedEngines([]);
 										}}
@@ -983,9 +979,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									option.engine_name === value.engine_name
 								);
 							}}
-							onChange={(event, newValue: Engine[]) => {
+							onChange={(_event,newValue: Engine[]) => {
 								setSelectedNonCredentialedEngines([
-									...newValue,
+									...newValue
 								]);
 							}}
 							ListboxProps={{
@@ -1000,18 +996,16 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchEngineInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
-						{selectedNonCredentialedEngines &&
-							selectedNonCredentialedEngines.map(
-								(engine, idx) => {
+						{selectedNonCredentialedEngines?.map((engine, idx)=>{
 									return (
 										<Box
-											key={idx}
+											key={`${engine.engine_name}- ${idx}`}
 											sx={{
 												display: "flex",
 												justifyContent: "left",
