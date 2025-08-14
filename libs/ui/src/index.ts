@@ -105,35 +105,16 @@ import {
 export type { SvgIconProps };
 
 export {
-	Input as InputTwo,
-	Checkbox as CheckboxTwo,
+	Input,
 	OutlinedInput,
 	SvgIcon,
-	Box as BoxTwo,
 	Fade,
-	ListItem as ListItemTwo,
 	ListItemIcon,
 	ListItemText,
-	ListItemButton as ListItemButtonTwo,
 	MenuList,
 	Popper,
-	Menu as MenuTwo,
-	MenuItem as MenuItemTwo,
-	Tooltip as TooltipTwo,
-	Chip as ChipTwo,
-	Autocomplete as AutocompleteTwo,
 	ClickAwayListener,
-	Popover as PopoverTwo,
-	Switch as SwitchTwo,
-	Select as SelectTwo,
-	Table as TableTwo,
-	TableHead as TableHeadTwo,
-	TableRow as TableRowTwo,
-	TableCell as TableCellTwo,
-	TableBody as TableBodyTwo,
 	FormHelperText,
 };
 
 export { blue, green } from "@mui/material/colors";
-
-export type { TooltipProps as TooltipPropsTwo };

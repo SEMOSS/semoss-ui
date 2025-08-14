@@ -14,6 +14,9 @@ export interface appDependency {
 	engine_name: string;
 	engine_subtype: string;
 	engine_type: string;
+	permission_name: string;
+	description: string;
+	access_permission: number;
 }
 
 export interface modelledDependency {
@@ -23,6 +26,8 @@ export interface modelledDependency {
 	userPermission: Role | "";
 	isPublic: boolean;
 	isDiscoverable: boolean;
+	description: string;
+	access_permission: number;
 }
 
 export interface engine {
@@ -43,6 +48,8 @@ export interface engine {
 	low_database_name: string;
 	permission: number;
 	user_permission: Role;
+	description: string;
+	access_permission: number;
 }
 
 export interface AppDetailsRef {
@@ -76,7 +83,7 @@ export interface DetailsForm extends Record<string, unknown> {
 
 export interface AppDetailsFormTypes {
 	appId: string;
-	appInfo: any;
+	appInfo;
 	userRole: Role | "";
 	permission: "author" | "editor" | "readOnly" | "discoverable" | "";
 
@@ -121,7 +128,7 @@ export const AppDetailsFormValues: AppDetailsFormTypes = {
  * -----------------------------------------------------------------------
  */
 export const fetchAppInfo = async (
-	monolithStore: any,
+	monolithStore,
 	appId: string,
 	metaKeys: string[],
 ) => {
@@ -147,7 +154,7 @@ export const fetchAppInfo = async (
 	}
 };
 
-export const fetchMainUses = async (monolithStore: any, appId: string) => {
+export const fetchMainUses = async (monolithStore, appId: string) => {
 	const res = await monolithStore.runQuery(
 		`GetProjectMarkdown(project="${appId}")`,
 	);
@@ -168,7 +175,7 @@ export const fetchMainUses = async (monolithStore: any, appId: string) => {
 	}
 };
 
-export const fetchDependencies = async (monolithStore: any, appId: string) => {
+export const fetchDependencies = async (monolithStore, appId: string) => {
 	const res = await monolithStore.runQuery(
 		`GetProjectDependencies(project="${appId}")`,
 	);
@@ -190,7 +197,7 @@ export const fetchDependencies = async (monolithStore: any, appId: string) => {
 };
 
 export const updateProjectDetails = async (
-	monolithStore: any,
+	monolithStore,
 	appId: string,
 	data: object,
 ) => {
@@ -219,7 +226,7 @@ export const updateProjectDetails = async (
 };
 
 export const SetProjectDependencies = async (
-	monolithStore: any,
+	monolithStore,
 	appId: string,
 	dependencies: string[],
 ) => {

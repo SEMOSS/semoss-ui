@@ -9,7 +9,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { AutocompleteTwo, TextField } from "@semoss/ui";
+import { Autocomplete, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -129,10 +129,11 @@ export const QuerySelectionSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<AutocompleteTwo
+				<Autocomplete
 					fullWidth
 					disableClearable={value === ""}
 					size="small"
+                    multiple={false}
 					value={value}
 					options={Object.keys(queries)}
 					getOptionLabel={(id: string) => {
