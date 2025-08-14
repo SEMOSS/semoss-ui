@@ -1,6 +1,6 @@
-import { styled, Box, Typography, ListItemText, IconButton } from '@semoss/ui';
-import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import DeleteIcon from '@mui/icons-material/Delete';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import { Box, IconButton, ListItemText, styled, Typography } from '@semoss/ui';
 
 const StyledListItem = styled(Box)(({ theme }) => ({
     display: 'flex',
@@ -15,6 +15,10 @@ const StyledInfo = styled(Typography)(({ theme }) => ({
     gap: theme.spacing(1),
     marginTop: 0,
 }));
+
+const StyledInfoIcon = styled(InfoOutlinedIcon)({
+  fontSize: 2,
+});
 
 const SelectedItem = ({ file, setData }) => {
     return file ? (
@@ -33,7 +37,7 @@ const SelectedItem = ({ file, setData }) => {
                 </IconButton>
             </StyledListItem>
             <StyledInfo variant="caption">
-                <InfoOutlinedIcon sx={{ fontSize: 16 }} />
+                <StyledInfoIcon />
                 Delete current file to upload a new one.
             </StyledInfo>
         </Box>

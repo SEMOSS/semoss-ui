@@ -1,4 +1,4 @@
-import { Select, ListItemText } from '@semoss/ui';
+import { ListItemText, Select } from '@semoss/ui';
 import { BaseSettingSection } from '../../../settings';
 
 const SelectImage = ({ data, imageFiles, setData }) => {

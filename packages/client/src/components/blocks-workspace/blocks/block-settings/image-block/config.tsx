@@ -6,7 +6,6 @@ import {
 } from "@mui/icons-material";
 import {
 	ButtonGroupSettings,
-	InputSettings,
 	SelectInputSettings,
 } from "../../settings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
