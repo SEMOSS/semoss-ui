@@ -532,7 +532,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated permissions",
+					message: "Successfully updated permissions",
 				});
 			} else {
 				notification.add({
