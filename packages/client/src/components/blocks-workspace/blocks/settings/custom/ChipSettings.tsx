@@ -11,7 +11,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { AutocompleteTwo, Avatar, Chip, Stack, TextField } from "@semoss/ui";
+import { Autocomplete, Avatar, Chip, Stack, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 import { IconSelectSettings, inputOptions } from "./IconSelectSettings";
@@ -116,9 +116,10 @@ export const ChipSettings = observer(
 			<Stack width="100%">
 				<BaseSettingSection label={label}>
 					<Stack flexDirection="column" width="100%">
-						<AutocompleteTwo
+						<Autocomplete
 							fullWidth
 							size="small"
+                            multiple={false}
 							value={value}
 							onChange={(_, newValue) => {
 								onChange(newValue);
