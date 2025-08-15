@@ -66,8 +66,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				}
 			},
 			slots: {
-				"tab-1": [],
-				"tab-2": [],
+				"1": [],
+				"2": [],
 			},
 		},
 	},

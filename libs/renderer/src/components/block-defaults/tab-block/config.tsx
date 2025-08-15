@@ -26,8 +26,8 @@ export const config: BlockConfig<TabBlockDef> = {
         },
     },
     slots: {
-        "tab-1": [],
-        "tab-2": []
+        "1": [],
+        "2": []
     },
     render: TabBlock,
 }; 

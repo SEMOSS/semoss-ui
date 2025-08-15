@@ -53,7 +53,7 @@ export const TabBlockArraySettings = observer(({
     const { state } = useBlocks();
     // use state.dispatch to update tab block slots
 
-    const addTab = () => {
+    const addTab = (newItem: string, index: number, allItems: string[]) => {
         console.log('add')
 
         state.dispatch({
@@ -64,14 +64,14 @@ export const TabBlockArraySettings = observer(({
         })
     }
 
-    const removeTab = () => {
+    const removeTab = (removedItem: string, index: number, allItems: string[]) => {
         console.log('remove')
 
         state.dispatch({
             message: ActionMessages.REMOVE_DYNAMIC_SLOT,
             payload: {
                 id: id, 
-                indexToRemove: 1,
+                indexToRemove: index,
             }
         })
 

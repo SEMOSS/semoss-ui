@@ -467,12 +467,15 @@ export class StateStore {
 
 				this.setListener(id, listener, actions, type);
 			} else if (ActionMessages.ADD_DYNAMIC_SLOT) {
+				const { id } = action.payload
 
-				console.log(action.payload)
+				this.addDynamicSlot(id)
 			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT) {
 
 				console.log(action.payload)
+				const { id, indexToRemove } = action.payload
 
+				this.removeDynamicSlot(id, indexToRemove)
 			}
 			/**
 			 * --------------------------------------------------
@@ -1559,6 +1562,32 @@ export class StateStore {
 			type: type,
 			order: actions,
 		};
+	};
+
+	/**
+	 * Set a listener on a block
+	 * @param id - id of the block
+	 * @param listener - listener to add to the block
+	 * @param actions - actions to add to the block
+	 */
+	private addDynamicSlot = (
+		id: string
+	): void => {
+		console.log(this._store.blocks[id].slots)
+	};
+
+	/**
+	 * Set a listener on a block
+	 * @param id - id of the block
+	 * @param listener - listener to add to the block
+	 * @param actions - actions to add to the block
+	 */
+	private removeDynamicSlot = (
+		id: string,
+		indexToRemove: string,
+	): void => {
+		console.log(this._store.blocks[id].slots)
+		console.log(indexToRemove)
 	};
 
 	/**

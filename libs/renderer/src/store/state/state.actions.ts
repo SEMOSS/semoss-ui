@@ -68,6 +68,8 @@ export type Actions =
 	| DeleteCellAction
 	| UpdateCellAction
 	| RunCellAction
+	| RemoveDynamicSlotAction
+	| AddDynamicSlotAction
 	| RunMarkdownCellAction
 	| DispatchEventAction
 	| DispatchOutputsEventAction

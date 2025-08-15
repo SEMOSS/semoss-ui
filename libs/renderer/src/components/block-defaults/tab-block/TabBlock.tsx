@@ -49,7 +49,7 @@ export interface TabBlockDef extends BlockDef<"tab"> {
         tabLabels: string[]
     };
     slots: {
-        [key: `tab-${number}`]: true
+        [key: `${number}`]: true
     };
     listeners: {
         preProcess: {
@@ -108,7 +108,7 @@ export const TabBlock: BlockComponent = observer(({ id }) => {
     ));
 
     // Get the current active tab's slot
-    const activeTabSlotKey = `tab-${activeTab}` as keyof typeof slots;
+    const activeTabSlotKey = `${activeTab}` as keyof typeof slots;
     const activeTabSlot = slots[activeTabSlotKey];
 
     console.log(activeTabSlotKey)
