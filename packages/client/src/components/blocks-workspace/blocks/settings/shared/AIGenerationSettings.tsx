@@ -185,7 +185,7 @@ export const AIGenerationSettings = observer(
 					null,
 					null,
 				);
-				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] ) | FrameToGraph ( model = '${selectedModel}', userInput = '${prompt}')`;
+				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] ) | FrameToGraph ( model = "${selectedModel}", userInput = "${prompt}", insightName="${configStore.store.insightID}")`;
 				// const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") `
 				const response = await monolithStore.runQuery(pixel);
 				console.log("Response from runQuery:", response);
