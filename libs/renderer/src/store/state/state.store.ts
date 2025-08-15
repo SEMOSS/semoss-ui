@@ -385,91 +385,15 @@ export class StateStore {
 		);
 
 		try {
-			// apply the action
+			/**
+			 * --------------------------------------------------
+			 * All
+			 * --------------------------------------------------
+			 */
 			if (ActionMessages.SET_STATE === action.message) {
 				const { state } = action.payload;
 
 				this.setState(state);
-			} else if (ActionMessages.ADD_BLOCK === action.message) {
-				const { json, position, isCommunity } = action.payload;
-
-				return this.addBlock(json, position, isCommunity);
-			} else if (ActionMessages.MOVE_BLOCK === action.message) {
-				const { id, position } = action.payload;
-
-				this.moveBlock(id, position);
-			} else if (ActionMessages.REMOVE_BLOCK === action.message) {
-				const { id, keep } = action.payload;
-
-				this.removeBlock(id, keep);
-			} else if (ActionMessages.SET_BLOCK_DATA === action.message) {
-				const { id, path, value } = action.payload;
-
-				this.setBlockData(id, path, value);
-			} else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
-				const { id, path } = action.payload;
-
-				this.deleteBlockData(id, path);
-			} else if (ActionMessages.SET_LISTENER === action.message) {
-				const { id, listener, actions, type } = action.payload;
-
-				this.setListener(id, listener, actions, type);
-			} else if (ActionMessages.NEW_QUERY === action.message) {
-				const { queryId, config, isCommunity } = action.payload;
-
-				this.newQuery(queryId, config, isCommunity);
-			} else if (ActionMessages.DELETE_QUERY === action.message) {
-				const { queryId } = action.payload;
-
-				this.deleteQuery(queryId);
-			} else if (ActionMessages.UPDATE_QUERY === action.message) {
-				const { queryId, path, value } = action.payload;
-
-				this.updateQuery(queryId, path, value);
-			} else if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId } = action.payload;
-
-				return this.runQuery(queryId);
-			} else if (ActionMessages.NEW_CELL === action.message) {
-				const { queryId, config, previousCellId } = action.payload;
-
-				return this.newCell(queryId, config, previousCellId);
-			} else if (ActionMessages.MOVE_CELL === action.message) {
-				const { queryId, activeCellId, overCellId } = action.payload;
-
-				this.moveCell(queryId, activeCellId, overCellId);
-			} else if (ActionMessages.DELETE_CELL === action.message) {
-				const { queryId, cellId } = action.payload;
-
-				this.deleteCell(queryId, cellId);
-			} else if (ActionMessages.UPDATE_CELL === action.message) {
-				const { queryId, cellId, path, value } = action.payload;
-
-				this.updateCell(queryId, cellId, path, value);
-			} else if (ActionMessages.RUN_CELL === action.message) {
-				const { queryId, cellId } = action.payload;
-
-				this.runCell(queryId, cellId);
-			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
-				const { name, detail } = action.payload;
-
-				this.dispatchEvent(name, detail);
-			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
-				const { queryId, cellId, marked } = action.payload;
-
-				this.runMarkdownCell(queryId, cellId, marked);
-			} else if (
-				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-			) {
-				this.dispatchOutputsEvent();
-			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
-				const { destinationType, destination } = action.payload;
-
-				this.dispatchOpenEvent(destinationType, destination);
-			} else if (ActionMessages.RENAME_VARIABLE === action.message) {
-				const { id, alias } = action.payload;
-
-				return this.renameVariable(id, alias);
 			} else if (ActionMessages.ADD_VARIABLE === action.message) {
 				const { id, to, type, cellId, value, isInput, isOutput } =
 					action.payload;
@@ -502,12 +426,117 @@ export class StateStore {
 				const { id } = action.payload;
 
 				this.deleteVariable(id);
-			} else if (
+			} else if (ActionMessages.RENAME_VARIABLE === action.message) {
+				const { id, alias } = action.payload;
+
+				return this.renameVariable(id, alias);
+			}  else if (
 				ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
 			) {
 				const { list } = action.payload;
 
 				return this.setExecutionOrder(list);
+			}
+			/**
+			 * --------------------------------------------------
+			 * Blocks
+			 * --------------------------------------------------
+			 */
+			else if (ActionMessages.ADD_BLOCK === action.message) {
+				const { json, position, isCommunity } = action.payload;
+
+				return this.addBlock(json, position, isCommunity);
+			} else if (ActionMessages.MOVE_BLOCK === action.message) {
+				const { id, position } = action.payload;
+
+				this.moveBlock(id, position);
+			} else if (ActionMessages.REMOVE_BLOCK === action.message) {
+				const { id, keep } = action.payload;
+
+				this.removeBlock(id, keep);
+			} else if (ActionMessages.SET_BLOCK_DATA === action.message) {
+				const { id, path, value } = action.payload;
+
+				this.setBlockData(id, path, value);
+			} else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
+				const { id, path } = action.payload;
+
+				this.deleteBlockData(id, path);
+			} else if (ActionMessages.SET_LISTENER === action.message) {
+				const { id, listener, actions, type } = action.payload;
+
+				this.setListener(id, listener, actions, type);
+			} else if (ActionMessages.ADD_DYNAMIC_SLOT) {
+
+				console.log(action.payload)
+			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT) {
+
+				console.log(action.payload)
+
+			}
+			/**
+			 * --------------------------------------------------
+			 * Notebooks
+			 * --------------------------------------------------
+			 */
+			else if (ActionMessages.NEW_QUERY === action.message) {
+				const { queryId, config, isCommunity } = action.payload;
+
+				this.newQuery(queryId, config, isCommunity);
+			} else if (ActionMessages.DELETE_QUERY === action.message) {
+				const { queryId } = action.payload;
+
+				this.deleteQuery(queryId);
+			} else if (ActionMessages.UPDATE_QUERY === action.message) {
+				const { queryId, path, value } = action.payload;
+
+				this.updateQuery(queryId, path, value);
+			} else if (ActionMessages.NEW_CELL === action.message) {
+				const { queryId, config, previousCellId } = action.payload;
+
+				return this.newCell(queryId, config, previousCellId);
+			} else if (ActionMessages.MOVE_CELL === action.message) {
+				const { queryId, activeCellId, overCellId } = action.payload;
+
+				this.moveCell(queryId, activeCellId, overCellId);
+			} else if (ActionMessages.DELETE_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				this.deleteCell(queryId, cellId);
+			} else if (ActionMessages.UPDATE_CELL === action.message) {
+				const { queryId, cellId, path, value } = action.payload;
+
+				this.updateCell(queryId, cellId, path, value);
+			} 
+			/**
+			 * --------------------------------------------------
+			 * Events
+			 * --------------------------------------------------
+			 */
+			else if (ActionMessages.RUN_QUERY === action.message) {
+				const { queryId } = action.payload;
+
+				return this.runQuery(queryId);
+			} else if (ActionMessages.RUN_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				this.runCell(queryId, cellId);
+			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
+				const { name, detail } = action.payload;
+
+				this.dispatchEvent(name, detail);
+			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+				const { queryId, cellId, marked } = action.payload;
+
+				this.runMarkdownCell(queryId, cellId, marked);
+			} else if (
+				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
+			) {
+				this.dispatchOutputsEvent();
+			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+				const { destinationType, destination } = action.payload;
+
+				this.dispatchOpenEvent(destinationType, destination);
 			}
 		} catch (e) {
 			console.error(e);
