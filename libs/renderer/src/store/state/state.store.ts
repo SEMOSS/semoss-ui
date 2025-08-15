@@ -466,16 +466,17 @@ export class StateStore {
 				const { id, listener, actions, type } = action.payload;
 
 				this.setListener(id, listener, actions, type);
-			} else if (ActionMessages.ADD_DYNAMIC_SLOT) {
+			} else if (ActionMessages.ADD_DYNAMIC_SLOT === action.message) {
 				const { id } = action.payload
 
 				this.addDynamicSlot(id)
-			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT) {
+			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT === action.message) {
 
 				console.log(action.payload)
 				const { id, indexToRemove } = action.payload
 
-				this.removeDynamicSlot(id, indexToRemove)
+				const i = JSON.stringify(indexToRemove)
+				this.removeDynamicSlot(id, i)
 			}
 			/**
 			 * --------------------------------------------------
@@ -1583,10 +1584,10 @@ export class StateStore {
  			.filter(name => !isNaN(Number(name)))
  			.map(name => Number(name))
  			.sort((a, b) => a - b);
-		
+
  		const nextSlotNumber = slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
  		const newSlotName = nextSlotNumber.toString();
-		
+
  		// Add the new slot
  		block.slots[newSlotName] = {
  			name: newSlotName,
@@ -1619,14 +1620,23 @@ export class StateStore {
  			.map(name => Number(name))
  			.sort((a, b) => a - b);
 
+		console.log('slotnames', slotNames)
+
  		// Find the slot name at the specified index
  		const slotNameToRemove = slotNames[indexToRemove];
  		if (slotNameToRemove === undefined) {
  			return;
  		}
+
+
+		console.log('nameToRemove',slotNameToRemove)
+		debugger
 	
+		console.log("before Delete",block.slots)
  		// Remove the slot at the specified index
  		delete block.slots[slotNameToRemove];
+
+		console.log("after deleet", block.slots)
 	
  		// Shift all subsequent slots down by one
  		const slotsToShift = slotNames.filter(name => name > slotNameToRemove);

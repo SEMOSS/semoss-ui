@@ -48,13 +48,9 @@ export const TabBlockArraySettings = observer(({
     minItems,
     maxItems,
 }: TabBlockArraySettingsProps) => {
-    // Pass all the basic props down to ArraySettings
-
     const { state } = useBlocks();
-    // use state.dispatch to update tab block slots
 
     const addTab = (newItem: string, index: number, allItems: string[]) => {
-        console.log('add')
 
         state.dispatch({
             message: ActionMessages.ADD_DYNAMIC_SLOT,
@@ -72,6 +68,15 @@ export const TabBlockArraySettings = observer(({
             payload: {
                 id: id, 
                 indexToRemove: index,
+            }
+        })
+
+        state.dispatch({
+            message: ActionMessages.SET_BLOCK_DATA,
+            payload: {
+                id: id,
+                path: "activeTab",
+                value: 1
             }
         })
 

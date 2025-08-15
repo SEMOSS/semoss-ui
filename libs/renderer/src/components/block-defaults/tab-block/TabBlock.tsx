@@ -68,11 +68,11 @@ export const TabBlock: BlockComponent = observer(({ id }) => {
     const { attrs, data, slots, listeners } = useBlock<TabBlockDef>(id);
     const [activeTab, setActiveTab] = useState(data.activeTab || 1);
 
-    console.log(attrs)
-    console.log(data)
-    console.log(slots)
-    console.log(listeners)
-    console.log(activeTab)
+    // console.log(attrs)
+    // console.log(data)
+    // console.log(slots)
+    // console.log(listeners)
+    // console.log(activeTab)
 
     /**
      * Process data needed for 
@@ -116,6 +116,7 @@ export const TabBlock: BlockComponent = observer(({ id }) => {
 
     return (
         <Box {...attrs} sx={{ ...data.style }}>
+            {data.activeTab}
             <Tabs
                 value={activeTab}
                 onChange={handleTabChange}

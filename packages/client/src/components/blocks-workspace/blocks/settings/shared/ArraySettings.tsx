@@ -68,7 +68,7 @@ export const ArraySettings = observer(({
     onRemoveItem,
     onUpdateItem,
 }: ArraySettingsProps) => {
-    const { data, setData } = useBlockSettings(id);
+    const { data } = useBlockSettings(id);
     const [items, setItems] = useState<string[]>([]);
 
     useEffect(() => {
