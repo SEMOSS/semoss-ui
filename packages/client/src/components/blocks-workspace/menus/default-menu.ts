@@ -45,9 +45,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		json: {
 			widget: "tab",
 			data: {
-				style: {
-					padding: "20px",
-				},
+				style: {},
 				triggerBgColor: "",
 				contentBgColor: "",
 				showExpandIcon: false,
