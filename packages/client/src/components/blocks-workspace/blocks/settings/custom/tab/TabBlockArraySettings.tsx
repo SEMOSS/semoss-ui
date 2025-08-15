@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { ArraySettings } from "../../shared/ArraySettings";
+import { ActionMessages, useBlocks } from "@semoss/renderer";
 
 interface TabBlockArraySettingsProps {
     /**
@@ -49,14 +50,31 @@ export const TabBlockArraySettings = observer(({
 }: TabBlockArraySettingsProps) => {
     // Pass all the basic props down to ArraySettings
 
+    const { state } = useBlocks();
     // use state.dispatch to update tab block slots
 
     const addTab = () => {
         console.log('add')
+
+        state.dispatch({
+            message: ActionMessages.ADD_DYNAMIC_SLOT,
+            payload: {
+                id: id
+            }
+        })
     }
 
     const removeTab = () => {
         console.log('remove')
+
+        state.dispatch({
+            message: ActionMessages.REMOVE_DYNAMIC_SLOT,
+            payload: {
+                id: id, 
+                indexToRemove: 1,
+            }
+        })
+
     }
 
     return (

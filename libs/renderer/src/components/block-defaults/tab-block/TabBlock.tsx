@@ -130,7 +130,9 @@ export const TabBlock: BlockComponent = observer(({ id }) => {
                 {tabItems}
             </Tabs>
             <TabPanel value={activeTab} index={activeTab}>
-                <Slot slot={activeTabSlot} />
+                {activeTabSlot && (
+                    <Slot slot={activeTabSlot} />
+                )}
             </TabPanel>
         </Box>
     );
