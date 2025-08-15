@@ -71,7 +71,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 				notification.add({
 					color: "success",
-					message: "Succesfully copied to clipboard",
+					message: "Successfully copied to clipboard",
 				});
 			} catch (e) {
 				notification.add({
@@ -91,7 +91,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 				notification.add({
 					color: "success",
-					message: "Succesfully saved feedback",
+					message: "Successfully saved feedback",
 				});
 			} catch (e) {
 				notification.add({
@@ -111,7 +111,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 				notification.add({
 					color: "success",
-					message: "Succesfully rewrote message",
+					message: "Successfully rewrote message",
 				});
 			} catch (e) {
 				notification.add({

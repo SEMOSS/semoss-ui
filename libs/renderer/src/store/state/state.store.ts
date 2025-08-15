@@ -1739,7 +1739,7 @@ export class StateStore {
 				{
 					parameters: {
 						code: "",
-						type: "pixel",
+						type: "py",
 					},
 					widget: "code",
 				} as Omit<CellStateConfig, "id">,
