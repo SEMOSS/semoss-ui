@@ -1573,7 +1573,26 @@ export class StateStore {
 	private addDynamicSlot = (
 		id: string
 	): void => {
-		console.log(this._store.blocks[id].slots)
+		const block = this._store.blocks[id];
+ 		if (!block || !block.slots) {
+ 			return;
+ 		}
+
+ 		// Find the next available slot number
+ 		const slotNames = Object.keys(block.slots)
+ 			.filter(name => !isNaN(Number(name)))
+ 			.map(name => Number(name))
+ 			.sort((a, b) => a - b);
+		
+ 		const nextSlotNumber = slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
+ 		const newSlotName = nextSlotNumber.toString();
+		
+ 		// Add the new slot
+ 		block.slots[newSlotName] = {
+ 			name: newSlotName,
+ 			children: []
+ 		};
+
 	};
 
 	/**
@@ -1588,6 +1607,35 @@ export class StateStore {
 	): void => {
 		console.log(this._store.blocks[id].slots)
 		console.log(indexToRemove)
+		const block = this._store.blocks[id];
+
+		if (!block || !block.slots) {
+ 			return;
+		}
+
+		// Convert slot names to array and sort them numerically
+ 		const slotNames = Object.keys(block.slots)
+ 			.filter(name => !isNaN(Number(name)))
+ 			.map(name => Number(name))
+ 			.sort((a, b) => a - b);
+
+ 		// Find the slot name at the specified index
+ 		const slotNameToRemove = slotNames[indexToRemove];
+ 		if (slotNameToRemove === undefined) {
+ 			return;
+ 		}
+	
+ 		// Remove the slot at the specified index
+ 		delete block.slots[slotNameToRemove];
+	
+ 		// Shift all subsequent slots down by one
+ 		const slotsToShift = slotNames.filter(name => name > slotNameToRemove);
+ 		slotsToShift.forEach(oldSlotName => {
+ 			const newSlotName = oldSlotName - 1;
+ 			block.slots[newSlotName] = block.slots[oldSlotName];
+ 			block.slots[newSlotName].name = newSlotName.toString();
+ 			delete block.slots[oldSlotName];
+ 		});
 	};
 
 	/**

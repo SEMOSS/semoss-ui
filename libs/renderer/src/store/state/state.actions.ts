@@ -235,7 +235,6 @@ export interface AddDynamicSlotAction extends Action {
 	message: ActionMessages.ADD_DYNAMIC_SLOT;
 	payload: {
 		id: string;
-		slotName: string;
 	};
 }
 
@@ -243,7 +242,7 @@ export interface RemoveDynamicSlotAction extends Action {
 	message: ActionMessages.REMOVE_DYNAMIC_SLOT;
 	payload: {
 		id: string;
-		slotName: string;
+		indexToRemove: number;
 	};
 }
 
