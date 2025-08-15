@@ -53,7 +53,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				showExpandIcon: false,
 				activeTab: 1,
 				show: "true",
-				tabLabels: ["JOHN", "JUNE"]
+				tabLabels: ["Tab 1", "Tab 2"]
 			},
 			listeners: {
 				preProcess: {
