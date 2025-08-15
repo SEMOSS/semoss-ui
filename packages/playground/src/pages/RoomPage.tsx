@@ -108,19 +108,24 @@ export const RoomPage = observer(() => {
 
 		const handleMessage = async (
 			event: MessageEvent<{
-				type: "SMSS_TOOL";
-				messageId: string;
-				toolId: string;
-				toolName: string;
-				response: string;
+				type: "SMSS_EXEC_TOOL";
+				tool: {
+					type: "MCP";
+					message: string;
+					id: string;
+					name: string;
+					response: string;
+				};
 			}>,
 		) => {
 			try {
-				if (!event.data || event.data.type !== "SMSS_TOOL") {
+				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
 					return;
 				}
 
-				const message = room.getMessage(event.data.messageId);
+				const tool = event.data.tool;
+
+				const message = room.getMessage(tool.message);
 				if (
 					!message ||
 					message instanceof ResponseMessageStore !== true
@@ -128,12 +133,7 @@ export const RoomPage = observer(() => {
 					return;
 				}
 
-				room.saveTool(
-					message,
-					event.data.toolId,
-					event.data.toolName,
-					event.data.response,
-				);
+				room.saveTool(message, tool.id, tool.name, tool.response);
 			} catch {
 				// noop
 			}

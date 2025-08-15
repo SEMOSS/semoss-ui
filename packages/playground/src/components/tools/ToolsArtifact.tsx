@@ -1,5 +1,6 @@
+import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Env } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton, styled } from "@semoss/ui";
@@ -27,17 +28,19 @@ const StyledIframe = styled("iframe")(() => ({
 }));
 
 interface ArtifactAppProps {
-	/** Room to render */
+	/** Node */
 	node: FlexLayout.TabNode;
 }
 
 export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 	const config: {
-		messageId?: string;
-		appId?: string;
-		toolId?: string;
-		toolName?: string;
-		toolArguments?: Record<string, unknown>;
+		app: string;
+		tool: {
+			message: string;
+			id: string;
+			name: string;
+			parameters: Record<string, unknown>;
+		};
 	} = useMemo(() => {
 		return node.getConfig();
 	}, [node]);
@@ -45,40 +48,41 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
-	/**
-	 * Handle iframe load event
-	 */
-	const handleOnLoad = () => {
-		setIsLoading(false);
-	};
+	// Send parameters to iframe
+	useEffect(() => {
+		if (isLoading) {
+			return;
+		}
+
+		iframeRef.current?.contentWindow?.postMessage(
+			{
+				type: "SMSS_INIT_TOOL",
+				tool: {
+					type: "MCP",
+					message: config?.tool?.message || "",
+					id: config?.tool?.id || "",
+					name: config?.tool?.name || "",
+					parameters: toJS(config?.tool?.parameters || {}),
+				},
+			},
+			"*",
+		);
+	}, [
+		isLoading,
+		config?.tool?.message,
+		config?.tool?.id,
+		config?.tool?.name,
+		config?.tool?.parameters,
+	]);
 
 	const url = useMemo(() => {
 		// ignore if no tool
-		if (!config || !config.appId) {
+		if (!config || !config.app) {
 			return "";
 		}
 
-		const params = new URLSearchParams();
-
-		params.set("messageId", config.messageId);
-		params.set("toolId", config.toolId);
-		params.set("toolName", config.toolName);
-		if (
-			config.toolArguments &&
-			Object.keys(config.toolArguments).length > 0
-		) {
-			params.set("toolArguments", JSON.stringify(config.toolArguments));
-		}
-
-		return `${Env.MODULE}/public_home/${config.appId}/portals/?${params.toString()}`;
-	}, [
-		config,
-		config?.messageId,
-		config?.appId,
-		config?.toolId,
-		config?.toolName,
-		config?.toolArguments,
-	]);
+		return `${Env.MODULE}/public_home/${config.app}/portals/`;
+	}, [config, config?.app]);
 
 	if (!config) {
 		return <div>No Tool</div>;
@@ -96,7 +100,7 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 			<StyledIframe
 				ref={iframeRef}
 				src={url}
-				onLoad={() => handleOnLoad()}
+				onLoad={() => setIsLoading(false)}
 			/>
 		</StyledContent>
 	);

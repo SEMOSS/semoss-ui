@@ -496,7 +496,7 @@ paramValues=[${JSON.stringify({
 						tool._meta.map.SMSS_PROJECT_ID,
 						tool.id,
 						tool.name,
-						tool.arguments,
+						tool.parameters,
 					);
 				}
 			}
@@ -580,7 +580,7 @@ paramValues=[${JSON.stringify({
 						tool._meta.map.SMSS_PROJECT_ID,
 						tool.id,
 						tool.name,
-						tool.arguments,
+						tool.parameters,
 					);
 				}
 			}
@@ -596,14 +596,14 @@ paramValues=[${JSON.stringify({
 	 * @param appId - id of the app
 `	 * @param toolId - id of the tool
 	 * @param toolName - func of the tool to run
-	 * @param toolArguments - arguments to pass in
+	 * @param toolParameters - parameters to pass to the tool
 	 */
 	runTool = async (
 		message: ResponseMessageStore,
 		appId: string,
 		toolId: string,
 		toolName: string,
-		toolArguments: Record<string, unknown>,
+		toolParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			// turn on the loading screen
@@ -611,7 +611,7 @@ paramValues=[${JSON.stringify({
 
 			// wait for the pixel to run
 			const response = await this.runPixel<[string]>(
-				`RunMCPTool(project = [ "${appId}" ], function=[ "${toolName}" ], paramValues=[ ${JSON.stringify(toolArguments)} ]);`,
+				`RunMCPTool(project = [ "${appId}" ], function=[ "${toolName}" ], paramValues=[ ${JSON.stringify(toolParameters)} ]);`,
 			);
 
 			// throw errors
@@ -802,7 +802,13 @@ tool_execution_response=["${executionResponse}"]
 			return new ResponseMessageStore(
 				pixelMessage.messageId,
 				"",
-				pixelMessage.tool_responses,
+				pixelMessage.tool_responses.map((t) => ({
+					id: t.id,
+					_meta: t._meta,
+					title: t.title,
+					name: t.name,
+					parameters: t.arguments,
+				})),
 			);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			return new ResponseMessageStore(
@@ -814,7 +820,13 @@ tool_execution_response=["${executionResponse}"]
 			return new ResponseMessageStore(
 				pixelMessage.messageId,
 				"",
-				pixelMessage.tool_responses,
+				pixelMessage.tool_responses.map((t) => ({
+					id: t.id,
+					_meta: t._meta,
+					title: t.title,
+					name: t.name,
+					parameters: t.arguments,
+				})),
 			);
 		}
 	};

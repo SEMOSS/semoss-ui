@@ -85,11 +85,13 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 								name: tool.title,
 								component: "tools-artifact",
 								config: {
-									messageId: message.id,
-									appId: tool._meta.map.SMSS_PROJECT_ID,
-									toolId: tool.id,
-									toolName: tool.name,
-									toolArguments: tool.arguments,
+									app: tool._meta.map.SMSS_PROJECT_ID,
+									tool: {
+										message: message.id,
+										id: tool.id,
+										name: tool.name,
+										parameters: tool.parameters,
+									},
 								},
 								enableClose: true,
 							},
