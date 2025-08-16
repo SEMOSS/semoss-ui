@@ -8,12 +8,12 @@ const CSRF = {
 
 // set up the request interceptor
 interceptors.request = async (options) => {
-	if (Env.ACCESS_KEY && Env.SECRET_KEY) {
-		// create the headeres
-		if (!options.headers) {
-			options.headers = {};
-		}
+	// create the headers if it doesn't exist
+	if (!options.headers) {
+		options.headers = {};
+	}
 
+	if (Env.ACCESS_KEY && Env.SECRET_KEY) {
 		// add the authorization tokens
 		options.headers = {
 			...options.headers,
@@ -26,33 +26,22 @@ interceptors.request = async (options) => {
 	// only set if enabled
 	if (CSRF.isEnabled || Env.CSRF) {
 		if (options.method === "POST") {
-			// ensure headers object exists
-			if (!options.headers) {
-				options.headers = {};
-			}
 			// use the token if it is there otherwise fetch it
 			if (!CSRF.token) {
-				try {
-					const response = await fetch(
-						`${Env.MODULE}/api/config/fetchCsrf`,
-						{
-							headers: {
-								"X-CSRF-Token": "fetch",
-							},
+				const response = await fetch(
+					`${Env.MODULE}/api/config/fetchCsrf`,
+					{
+						headers: {
+							"X-CSRF-Token": "fetch",
 						},
-					);
-					// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-					CSRF.token =
-						response.headers.get("X-CSRF-Token") ||
-						response.headers.get("x-csrf-token") ||
-						"";
-				} catch (error) {
-					if (error instanceof Error) {
-						throw error;
-					}
-					throw Error("Failed to fetch CSRF token:");
-					CSRF.token = "";
-				}
+					},
+				);
+
+				// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+				CSRF.token =
+					response.headers.get("X-CSRF-Token") ||
+					response.headers.get("x-csrf-token") ||
+					"";
 			}
 
 			// add the token
@@ -64,32 +53,6 @@ interceptors.request = async (options) => {
 			}
 		}
 	}
-
-
-	// 		if (!CSRF.token) {
-	// 			const { response } = await get(
-	// 				`${Env.MODULE}/api/config/fetchCsrf`,
-	// 				{
-	// 					headers: {
-	// 						"X-CSRF-Token": "fetch",
-	// 					},
-	// 				},
-	// 			);
-
-	// 			CSRF.token =
-	// 				response.headers.get("X-CSRF-Token") ||
-	// 				response.headers.get("x-csrf-token") ||
-	// 				"";
-	// 		}
-
-	// 		if (options.headers) {
-	// 			options.headers = {
-	// 				...options.headers,
-	// 				"X-CSRF-Token": CSRF.token,
-	// 			};
-	// 		}
-	// 	}
-	// }
 
 	return options;
 };
@@ -127,7 +90,7 @@ export const getSystemConfig = async (): Promise<{
 		[key: string]: unknown;
 	}>(`${Env.MODULE}/api/config`);
 
-	if (response.data && response.data.csrf) {
+	if (response.data?.csrf) {
 		const token = response.data["X-CSRF-Token"] as string;
 
 		// enable and store the token
@@ -205,9 +168,9 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
 	// build the expression
 	let postData = "";
 
-	postData += "expression=" + encodeURIComponent(pixel);
+	postData += `expression=${encodeURIComponent(pixel)}`;
 	if (insightId) {
-		postData += "&insightId=" + encodeURIComponent(insightId);
+		postData += `&insightId=${encodeURIComponent(insightId)}`;
 	}
 
 	try {

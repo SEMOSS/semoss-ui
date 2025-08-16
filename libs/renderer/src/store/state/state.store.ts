@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
-import { download, runPixel } from "@semoss/sdk/react";
+import { download, Env, runPixel } from "@semoss/sdk/react";
 import {
 	cancellablePromise,
 	getValueByPath,
@@ -458,10 +458,6 @@ export class StateStore {
 				const { queryId, cellId, marked } = action.payload;
 
 				this.runMarkdownCell(queryId, cellId, marked);
-			} else if (
-				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-			) {
-				this.dispatchOutputsEvent();
 			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
 				const { destinationType, destination } = action.payload;
 
@@ -471,18 +467,9 @@ export class StateStore {
 
 				return this.renameVariable(id, alias);
 			} else if (ActionMessages.ADD_VARIABLE === action.message) {
-				const { id, to, type, cellId, value, isInput, isOutput } =
-					action.payload;
+				const { id, to, type, cellId, value } = action.payload;
 
-				return this.addVariable(
-					id,
-					to,
-					type,
-					cellId,
-					value,
-					isInput,
-					isOutput,
-				);
+				return this.addVariable(id, to, type, cellId, value);
 			} else if (ActionMessages.EDIT_VARIABLE === action.message) {
 				const { id, from, to } = action.payload;
 
@@ -490,12 +477,15 @@ export class StateStore {
 					type: to.type,
 				};
 
-				if (to.to) newVariable["to"] = to.to;
-				if (to.cellId) newVariable["cellId"] = to.cellId;
-				if (to.value) newVariable["value"] = to.value;
-
-				newVariable["isInput"] = to.isInput ? to.isInput : false;
-				newVariable["isOutput"] = to.isOutput ? to.isOutput : false;
+				if (to.to) {
+					newVariable["to"] = to.to;
+				}
+				if (to.cellId) {
+					newVariable["cellId"] = to.cellId;
+				}
+				if (to.value) {
+					newVariable["value"] = to.value;
+				}
 
 				this.editVariable(id, from, newVariable);
 			} else if (ActionMessages.DELETE_VARIABLE === action.message) {
@@ -547,10 +537,6 @@ export class StateStore {
 				const { name, detail } = action.payload;
 
 				this.dispatchEvent(name, detail);
-			} else if (
-				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-			) {
-				this.dispatchOutputsEvent();
 			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
 				const { destinationType, destination } = action.payload;
 
@@ -780,6 +766,8 @@ export class StateStore {
 			operation.includes("FRAME_FILTER_CHANGE")
 		) {
 			this.syncFrame((output as { name: string }).name);
+		} else if (operation.includes("MCP_TOOL_EXECUTION")) {
+			this.notifyToolExecution(output as string);
 		}
 	};
 
@@ -1130,6 +1118,29 @@ export class StateStore {
 
 		// increment the key
 		this._store.frames[name].key = this._store.frames[name].key + 1;
+	};
+
+	/**
+	 * Notifiy that a tool has been run
+	 */
+	private notifyToolExecution = (response: string) => {
+		if (Env.TOOL) {
+			if (window.parent) {
+				window.parent.postMessage(
+					{
+						type: "SMSS_EXEC_TOOL",
+						tool: {
+							type: "MCP",
+							message: Env.TOOL.message,
+							id: Env.TOOL.id,
+							name: Env.TOOL.name,
+							response: response,
+						},
+					},
+					"*",
+				);
+			}
+		}
 	};
 
 	/**
@@ -1558,7 +1569,6 @@ export class StateStore {
 				id: queryId,
 				type: "query",
 				to: queryId,
-				isOutput: true,
 			},
 		});
 
@@ -1896,30 +1906,6 @@ export class StateStore {
 		window.dispatchEvent(event);
 	};
 
-	/**
-	 *
-	 * Dispatch an event
-	 * @param detail - payload associated with event
-	 */
-	private dispatchOutputsEvent = (): void => {
-		const outputMap = {};
-
-		Object.keys(this._store.variables).forEach((k) => {
-			if (this._store.variables[k].isOutput) {
-				outputMap[k] = this.parseVariable(`{{${k}}}`);
-			}
-		});
-
-		// Communication with Iframe
-		window.parent.postMessage(
-			{
-				type: "DISPATCH_APP_OUTPUTS",
-				data: outputMap,
-			},
-			"*",
-		); // --> Cross Origin Communications
-	};
-
 	// -----------------------------------
 	// REVIEW VARIABLE AND DEPENDENCY CODE
 	// -----------------------------------
@@ -1934,9 +1920,7 @@ export class StateStore {
 		to: string,
 		type: VariableType,
 		cellId?: string,
-		value?,
-		isInput?,
-		isOutput?,
+		value?: unknown,
 	) => {
 		if (id.includes(".")) {
 			return false;
@@ -1948,11 +1932,15 @@ export class StateStore {
 
 		const token = { type };
 
-		if (to) token["to"] = to;
-		if (cellId) token["cellId"] = cellId;
-		if (isInput) token["isInput"] = isInput;
-		if (isOutput) token["isOutput"] = isOutput;
-		if (value) token["value"] = value;
+		if (to) {
+			token["to"] = to;
+		}
+		if (cellId) {
+			token["cellId"] = cellId;
+		}
+		if (value) {
+			token["value"] = value;
+		}
 
 		this._store.variables[id] = token as Variable;
 

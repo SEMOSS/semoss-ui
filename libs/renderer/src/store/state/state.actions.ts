@@ -35,7 +35,6 @@ export enum ActionMessages {
 	RUN_CELL = "RUN_CELL",
 	RUN_QUERY = "RUN_QUERY",
 	DISPATCH_EVENT = "DISPATCH_EVENT",
-	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 }
@@ -59,7 +58,6 @@ export type Actions =
 	| RunCellAction
 	| RunMarkdownCellAction
 	| DispatchEventAction
-	| DispatchOutputsEventAction
 	| DispatchOpenEventAction
 	| AddVariableAction
 	| RenameVariableAction
@@ -77,11 +75,6 @@ export interface SetStateAction extends Action {
 	payload: {
 		state?: SerializedState;
 	};
-}
-
-export interface DispatchOutputsEventAction extends Action {
-	message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
-	payload: {};
 }
 
 export interface DispatchOpenEventAction extends Action {
@@ -273,8 +266,6 @@ export interface AddVariableAction extends Action {
 		to?: string;
 		cellId?: string;
 		value?: string;
-		isInput?: boolean;
-		isOutput?: boolean;
 	};
 }
 
@@ -288,8 +279,6 @@ export interface EditVariableAction extends Action {
 			to?: string;
 			cellId?: string;
 			value?: string;
-			isInput?: boolean;
-			isOutput?: boolean;
 		};
 	};
 }
