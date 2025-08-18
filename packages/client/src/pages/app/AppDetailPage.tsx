@@ -40,11 +40,10 @@ import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
 import {
-	fetchAppInfo,
-	fetchMainUses,
-	fetchProjectDependencies,
+	fetchAppInfoPixel,
+	fetchMainUsesPixel,
+	fetchProjectDependenciesPixel,
 } from "@/pixel/projects";
-import { formatPermission, toTitleCase } from "@/utility";
 import type { Role } from "@/types";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 import { AccessControl } from "./AppDetailTabs/AccessControl";
@@ -304,15 +303,14 @@ export const AppDetailPage = () => {
 		await getPermission();
 		const permission = getValues("permission");
 		const promises = [
-			fetchAppInfo(
-				monolithStore,
+			fetchAppInfoPixel(
 				id,
 				configStore.store.config.projectMetaKeys.map((a) => a.metakey),
 			),
-			fetchMainUses(monolithStore, id),
+			fetchMainUsesPixel(id),
 		];
 		if (permission !== "discoverable") {
-			promises.push(fetchProjectDependencies(monolithStore, id));
+			promises.push(fetchProjectDependenciesPixel(id));
 		}
 		const results = await Promise.allSettled(promises);
 		results.forEach((res, idx) => {
@@ -321,10 +319,10 @@ export const AppDetailPage = () => {
 			} else {
 				if (idx === 0) {
 					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
+						emitMessage(true, String(res.value.output));
 					} else {
 						setValue("appInfo", res.value.output);
-						const output = res.value.output;
+						const output: any = res.value.output as any;
 
 						const projectMetaKeys =
 							configStore.store.config.projectMetaKeys;
@@ -372,22 +370,23 @@ export const AppDetailPage = () => {
 					}
 				} else if (idx === 1) {
 					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
-					} else {
-						if (res.value.output !== null) {
-							setValue("markdown", res.value.output);
-							setValue("detailsForm.markdown", res.value.output);
-							setValues((prev) => ({
-								...prev,
-								markdown: res.value.output || "",
-							}));
-						}
+						emitMessage(true, String(res.value.output));
+					} else if (res.value.output !== null) {
+						const markdown = String(res.value.output || "");
+						setValue("markdown", markdown);
+						setValue("detailsForm.markdown", markdown);
+						setValues((prev) => ({
+							...prev,
+							markdown,
+						}));
 					}
 				} else if (idx === 2) {
 					if (res.value.type === "error") {
-						emitMessage(true, res.value.output);
+						emitMessage(true, String(res.value.output));
 					} else {
-						const modelled = modelDependencies(res.value.output);
+						const modelled = modelDependencies(
+							(res.value.output as any[]) || [],
+						);
 						setValue("dependencies", modelled);
 						setValue("selectedDependencies", modelled);
 					}
@@ -468,16 +467,16 @@ export const AppDetailPage = () => {
 
 		if (refreshData) {
 			const appId = getValues("appId");
-			const res = await fetchDependencies(monolithStore, appId);
+			const res = await fetchProjectDependenciesPixel(appId);
 			if (res.type === "success") {
-				const modelled = modelDependencies(res.output);
+				const modelled = modelDependencies((res.output as any[]) || []);
 				setValue("dependencies", modelled);
 				setValue("selectedDependencies", modelled);
 			} else {
 				setValue("selectedDependencies", currDependencies);
 				notification.add({
 					color: "error",
-					message: res.output,
+					message: String(res.output),
 				});
 			}
 		} else {

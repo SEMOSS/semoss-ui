@@ -10,7 +10,10 @@ import {
 } from "@semoss/ui";
 import EngineIdsModal from "@/components/app/save-app/EngineIdsModal";
 import { useRootStore } from "@/hooks";
-import { extractAndSetDependencies, unzipProjectFile } from "@/pixel/projects";
+import {
+	extractAndSetDependenciesPixel,
+	unzipFilePixel,
+} from "@/pixel/projects";
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
 
 type ExtractOutput = { engineIds: Record<string, unknown> };
@@ -79,11 +82,13 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
 			if (unzipFile) {
 				if (type === "app") {
-					await unzipProjectFile(monolithStore, path, space);
-					const extractResult = await extractAndSetDependencies(
-						monolithStore,
+					await unzipFilePixel(
+						path,
 						space,
+						configStore.store.insightID,
 					);
+					const extractResult =
+						await extractAndSetDependenciesPixel(space);
 					const extractOutput: ExtractOutput =
 						extractResult.output &&
 						typeof extractResult.output === "object" &&

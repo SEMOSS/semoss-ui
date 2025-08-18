@@ -1,7 +1,7 @@
 import { Add } from "@mui/icons-material";
 import { useState } from "react";
 import { Box, Button, styled, Typography, useNotification } from "@semoss/ui";
-import { useGetProjectDependencies } from "@/pixel/projects";
+import { useGetProjectDependenciesPixel } from "@/pixel/projects";
 import type { ProjectDependencyEngine, User } from "@/types";
 import { MemberDependencyOverlay } from "./MemberDependencyOverlay";
 import type { SETTINGS_ROLE } from "./settings.types";
@@ -60,7 +60,7 @@ const StyledHeader = styled("div")({
 });
 
 export const DependencyList = ({ id }: DependencyListProps) => {
-	const getProjectDependencies = useGetProjectDependencies(id);
+	const getProjectDependencies = useGetProjectDependenciesPixel(id);
 	const notification = useNotification();
 
 	/** Add Member State */

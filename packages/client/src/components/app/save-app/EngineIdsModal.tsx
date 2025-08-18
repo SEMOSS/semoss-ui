@@ -34,8 +34,10 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
-import { replaceInaccessibleEngines, useMyEngines } from "@/pixel/projects";
+import {
+	replaceInaccessibleEnginesPixel,
+	useMyEnginesPixel,
+} from "@/pixel/projects";
 import type {
 	EngineIdsModalProps,
 	ReplaceEnginesOutput,
@@ -66,7 +68,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 	const [replacementsToShow, setReplacementsToShow] = useState<
 		Record<string, string>
 	>({});
-	const { monolithStore } = useRootStore();
 	const [showDiscovery, setShowDiscovery] = useState(open);
 	const [replacementDetails, setReplacementDetails] = useState<
 		Record<
@@ -76,7 +77,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 	>({});
 
 	// Fetch available engines that user has access to
-	const availableEngines = useMyEngines();
+	const availableEngines = useMyEnginesPixel();
 
 	//	Initialize replacement state when modal opens
 	useEffect(() => {
@@ -120,8 +121,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			);
 
 		// Format map as required
-		const response = await replaceInaccessibleEngines(
-			monolithStore,
+		const response = await replaceInaccessibleEnginesPixel(
 			appId,
 			validReplacements,
 		);

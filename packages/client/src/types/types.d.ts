@@ -167,3 +167,10 @@ export interface UploadProjectAppOutput {
 		>;
 	};
 }
+
+// Create Project types
+export interface CreateProjectOutput {
+	project_id: string;
+	portal_id?: string;
+	[key: string]: unknown; // allow backend-extensible fields
+}

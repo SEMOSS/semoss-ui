@@ -10,13 +10,12 @@ import type { Control } from "react-hook-form";
 import { useNotification } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import {
-	createProject,
-	deleteProjectAsset,
-	setProjectMetadataWithTags,
-	unzipProjectFile,
-	uploadProjectApp,
+	createProjectPixel,
+	deleteVersionAssetsPixel,
+	setProjectMetadataPixel,
+	unzipFilePixel,
+	uploadProjectAppPixel,
 } from "@/pixel/projects";
-import type { UploadProjectAppOutput } from "@/types";
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
 import { AppAccessStep } from "./AppAccessStep";
 import { AppDetailsStep } from "./AppDetailsStep";
@@ -168,149 +167,77 @@ export const AddAppModal = (props: AddAppProps) => {
 	 * Method that is called to create the app
 	 */
 	const createApp = async (data: AddAppForm) => {
-		// upload the file
-
-		if (data[ADD_APP_FORM_FIELD_TYPE] === "App Zip") {
-			const upload = await monolithStore.uploadFile(
-				[data[ADD_APP_FORM_FIELD_UPLOAD]],
-				configStore.store.insightID,
-			);
-
-			// Use pixel function for UploadProjectApp
-			const uploadResult = await uploadProjectApp(
-				monolithStore,
-				upload[0].fileLocation,
-				data[ADD_APP_FORM_FIELD_IS_GLOBAL],
-			);
-
-			if (uploadResult.type === "error") {
-				notification.add({
-					color: "error",
-					message: `Error uploading app. Please check your zip file and try again. ${String(uploadResult.output)}`,
-				});
-
-				handleClose();
-				return;
-			}
-
-			// Process engine dependencies using utility function
-			updateEngineDependencies(
-				(uploadResult.output as UploadProjectAppOutput).engineIds,
-			);
-			setPendingProjectId(
-				(uploadResult.output as UploadProjectAppOutput).project_id,
-			);
-
-			// Set tags if provided
-			if (
-				data[ADD_APP_FORM_FIELD_TAGS].length > 0 ||
-				data[ADD_APP_FORM_FIELD_DESCRIPTION]
-			) {
-				const metadataResult = await setProjectMetadataWithTags(
-					monolithStore,
-					(uploadResult.output as UploadProjectAppOutput).project_id,
-					data[ADD_APP_FORM_FIELD_TAGS],
-					data[ADD_APP_FORM_FIELD_DESCRIPTION] || "",
+		const insightId = configStore.store.insightID;
+		try {
+			if (data[ADD_APP_FORM_FIELD_TYPE] === "App Zip") {
+				const upload = await monolithStore.uploadFile(
+					[data[ADD_APP_FORM_FIELD_UPLOAD]],
+					insightId,
 				);
 
-				if (metadataResult.type === "error") {
-					notification.add({
-						color: "error",
-						message: String(metadataResult.output),
-					});
+				const uploadOutput = await uploadProjectAppPixel(
+					upload[0].fileLocation,
+					data[ADD_APP_FORM_FIELD_IS_GLOBAL],
+					insightId,
+				);
 
-					handleClose();
-					return;
+				updateEngineDependencies(uploadOutput.engineIds);
+				setPendingProjectId(uploadOutput.project_id);
+
+				if (
+					data[ADD_APP_FORM_FIELD_TAGS].length > 0 ||
+					data[ADD_APP_FORM_FIELD_DESCRIPTION]
+				) {
+					await setProjectMetadataPixel(
+						uploadOutput.project_id,
+						data[ADD_APP_FORM_FIELD_TAGS],
+						data[ADD_APP_FORM_FIELD_DESCRIPTION] || "",
+						insightId,
+					);
 				}
+
+				setShowEngineModal(true);
+			} else {
+				const createOutput = await createProjectPixel(
+					data[ADD_APP_FORM_FIELD_NAME],
+					data[ADD_APP_FORM_FIELD_IS_GLOBAL],
+					data[ADD_APP_FORM_FIELD_APP_TYPE],
+					insightId,
+				);
+
+				await setProjectMetadataPixel(
+					createOutput.project_id,
+					data[ADD_APP_FORM_FIELD_TAGS],
+					data[ADD_APP_FORM_FIELD_DESCRIPTION],
+					insightId,
+				);
+
+				await deleteVersionAssetsPixel(
+					createOutput.project_id,
+					insightId,
+				);
+
+				const upload = await monolithStore.uploadFile(
+					[data[ADD_APP_FORM_FIELD_UPLOAD]],
+					insightId,
+					createOutput.project_id,
+					"version",
+				);
+
+				await unzipFilePixel(
+					upload[0].fileLocation,
+					createOutput.project_id,
+					insightId,
+				);
+
+				handleClose(createOutput.project_id);
 			}
-
-			setShowEngineModal(true);
-		} else {
-			// Use pixel function for CreateProject
-			const createProjectResult = await createProject(
-				monolithStore,
-				data[ADD_APP_FORM_FIELD_NAME],
-				data[ADD_APP_FORM_FIELD_IS_GLOBAL],
-				data[ADD_APP_FORM_FIELD_APP_TYPE],
-			);
-
-			if (createProjectResult.type === "error") {
-				notification.add({
-					color: "error",
-					message: String(createProjectResult.output),
-				});
-
-				handleClose();
-				return;
-			}
-
-			// Use pixel function for SetProjectMetadata
-			const metadataResult = await setProjectMetadataWithTags(
-				monolithStore,
-				(createProjectResult.output as UploadProjectAppOutput)
-					.project_id,
-				data[ADD_APP_FORM_FIELD_TAGS],
-				data[ADD_APP_FORM_FIELD_DESCRIPTION],
-			);
-
-			if (metadataResult.type === "error") {
-				notification.add({
-					color: "error",
-					message: String(metadataResult.output),
-				});
-
-				handleClose();
-				return;
-			}
-
-			// Use pixel function for DeleteAsset
-			const deleteResult = await deleteProjectAsset(
-				monolithStore,
-				(createProjectResult.output as UploadProjectAppOutput)
-					.project_id,
-			);
-
-			if (deleteResult.type === "error") {
-				notification.add({
-					color: "error",
-					message: String(deleteResult.output),
-				});
-
-				handleClose();
-				return;
-			}
-
-			const upload = await monolithStore.uploadFile(
-				[data[ADD_APP_FORM_FIELD_UPLOAD]],
-				configStore.store.insightID,
-				(createProjectResult.output as UploadProjectAppOutput)
-					.project_id,
-				"version",
-			);
-
-			// Use pixel function for UnzipFile
-			const unzipResult = await unzipProjectFile(
-				monolithStore,
-				upload[0].fileLocation,
-				(createProjectResult.output as UploadProjectAppOutput)
-					.project_id,
-			);
-
-			if (unzipResult.type === "error") {
-				notification.add({
-					color: "error",
-					message: String(unzipResult.output),
-				});
-
-				handleClose();
-				return;
-			}
-
-			// close it
-			handleClose(
-				(createProjectResult.output as UploadProjectAppOutput)
-					.project_id,
-			);
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: `Error creating app: ${e instanceof Error ? e.message : String(e)}`,
+			});
+			handleClose();
 		}
 	};
 	const handleEngineModalClose = () => {

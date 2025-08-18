@@ -25,7 +25,10 @@ import {
 import { Java } from "@/assets/img/Java";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
-import { extractAndSetDependencies, unzipProjectFile } from "@/pixel/projects";
+import {
+	extractAndSetDependenciesPixel,
+	unzipFilePixel,
+} from "@/pixel/projects";
 import { useEngineDependenciesState } from "@/utility/engineDependencies";
 
 type ExtractOutput = { engineIds: Record<string, unknown> };
@@ -213,14 +216,6 @@ const StyledPaper = styled(Paper)(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
 	padding: theme.spacing(2),
 }));
-
-// User Table
-interface User {
-	id: string;
-	name: string;
-	date: string;
-	time: string;
-}
 
 interface AppSettingsProps {
 	id: string;
@@ -511,16 +506,13 @@ export const AppSettings = (props: AppSettingsProps) => {
 			);
 
 			// unzip the file in the new app
-			await unzipProjectFile(
-				monolithStore,
-				`${path}${upload[0].fileName}`,
+			await unzipFilePixel(
+				`${path}${upload[0].fileName}}`,
 				id,
+				configStore.store.insightID,
 			);
 
-			const extractResp = await extractAndSetDependencies(
-				monolithStore,
-				id,
-			);
+			const extractResp = await extractAndSetDependenciesPixel(id);
 
 			const extractOutput: ExtractOutput =
 				extractResp.output &&
@@ -602,63 +594,60 @@ export const AppSettings = (props: AppSettingsProps) => {
 						</StyledSubRow>
 					</StyledSubColumn>
 
-					<>
-						<Divider />
+					<Divider />
 
-						<StyledSubColumn style={{ width: "100%" }}>
-							<StyledSubRow>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-									}}
-								>
-									<StyledRefreshIcon />
-									<StyledTypography variant="body1">
-										Publish Portal
-									</StyledTypography>
-								</div>
+					<StyledSubColumn style={{ width: "100%" }}>
+						<StyledSubRow>
+							<div
+								style={{
+									display: "flex",
+									alignItems: "center",
+								}}
+							>
+								<StyledRefreshIcon />
+								<StyledTypography variant="body1">
+									Publish Portal
+								</StyledTypography>
+							</div>
 
-								<StyledRightButton
-									disabled={!portalDetails.project_has_portal}
-									variant="outlined"
-									onClick={() => {
-										publish();
-									}}
-								>
-									Publish
-								</StyledRightButton>
-							</StyledSubRow>
+							<StyledRightButton
+								disabled={!portalDetails.project_has_portal}
+								variant="outlined"
+								onClick={() => {
+									publish();
+								}}
+							>
+								Publish
+							</StyledRightButton>
+						</StyledSubRow>
 
-							<StyledSubRow>
-								<Typography variant="body2">
-									Publish the portal to generate a shareable
-									link.
-								</Typography>
-							</StyledSubRow>
+						<StyledSubRow>
+							<Typography variant="body2">
+								Publish the portal to generate a shareable link.
+							</Typography>
+						</StyledSubRow>
 
-							<StyledSubRow>
-								<TextField
-									focused={false}
-									label={"Link"}
-									variant={"outlined"}
-									value={
-										portalDetails.project_has_portal
-											? portalDetails.project_portal_url
-											: ""
-									}
-									sx={{ width: "100%" }}
-									InputProps={{
-										startAdornment: <InsertLink />,
-									}}
-								>
-									{portalDetails.project_has_portal
+						<StyledSubRow>
+							<TextField
+								focused={false}
+								label={"Link"}
+								variant={"outlined"}
+								value={
+									portalDetails.project_has_portal
 										? portalDetails.project_portal_url
-										: ""}
-								</TextField>
-							</StyledSubRow>
-						</StyledSubColumn>
-					</>
+										: ""
+								}
+								sx={{ width: "100%" }}
+								InputProps={{
+									startAdornment: <InsertLink />,
+								}}
+							>
+								{portalDetails.project_has_portal
+									? portalDetails.project_portal_url
+									: ""}
+							</TextField>
+						</StyledSubRow>
+					</StyledSubColumn>
 				</StyledCondensedPublishContainer>
 			</StyledPaper>
 		);
@@ -734,67 +723,61 @@ export const AppSettings = (props: AppSettingsProps) => {
 									</StyledSubRow>
 								</StyledSubColumn>
 
-								<>
-									<Divider />
+								<Divider />
 
-									<StyledSubColumn>
-										<StyledSubRow>
-											<StyledRefreshIcon />
-											<Typography variant="subtitle1">
-												Publish Portal
-											</Typography>
-										</StyledSubRow>
+								<StyledSubColumn>
+									<StyledSubRow>
+										<StyledRefreshIcon />
+										<Typography variant="subtitle1">
+											Publish Portal
+										</Typography>
+									</StyledSubRow>
 
-										<StyledSubRow>
-											<Typography variant="body2">
-												Publish the portal to generate a
-												shareable link.
-											</Typography>
+									<StyledSubRow>
+										<Typography variant="body2">
+											Publish the portal to generate a
+											shareable link.
+										</Typography>
 
-											<StyledRightButton
-												variant="outlined"
-												startIcon={
-													<StyledPublishedIcon />
-												}
-												disabled={
-													!portalDetails.project_has_portal ||
-													!configStore.isEngineOperationAvailable(
-														"APP",
-														"access",
-													)
-												}
-												onClick={() => {
-													publish();
-												}}
-											>
-												Publish
-											</StyledRightButton>
-										</StyledSubRow>
+										<StyledRightButton
+											variant="outlined"
+											startIcon={<StyledPublishedIcon />}
+											disabled={
+												!portalDetails.project_has_portal ||
+												!configStore.isEngineOperationAvailable(
+													"APP",
+													"access",
+												)
+											}
+											onClick={() => {
+												publish();
+											}}
+										>
+											Publish
+										</StyledRightButton>
+									</StyledSubRow>
 
-										<StyledSubRow>
-											<TextField
-												focused={false}
-												label={"Link"}
-												variant={"outlined"}
-												value={
-													portalDetails.project_has_portal
-														? portalDetails.project_portal_url
-														: ""
-												}
-												sx={{ width: "100%" }}
-												InputProps={{
-													startAdornment: (
-														<InsertLink />
-													),
-												}}
-											>
-												{portalDetails.project_has_portal
+									<StyledSubRow>
+										<TextField
+											focused={false}
+											label={"Link"}
+											variant={"outlined"}
+											value={
+												portalDetails.project_has_portal
 													? portalDetails.project_portal_url
-													: ""}
-											</TextField>
-										</StyledSubRow>
-									</StyledSubColumn>
-								</>
+													: ""
+											}
+											sx={{ width: "100%" }}
+											InputProps={{
+												startAdornment: <InsertLink />,
+											}}
+										>
+											{portalDetails.project_has_portal
+												? portalDetails.project_portal_url
+												: ""}
+										</TextField>
+									</StyledSubRow>
+								</StyledSubColumn>
 							</StyledCardRight>
 						</StyledCardDiv>
 					</StyledTopCardContainer>

@@ -1,21 +1,29 @@
 // ------------------------------------------------------------------------------------------
 // PIXEL LAYER (PROJECTS)
 // All pixels that interact with projects should come through here
-//
 // We do this so we only have one reference to a pixel
 // ------------------------------------------------------------------------------------------
 
 import { runPixel, usePixel } from "@semoss/sdk/react";
 import type { engine } from "@/components/app/app-details.utility";
-import type { MonolithStore } from "@/stores";
-import type { ProjectDependencyEngine } from "@/types";
+import type {
+	CreateProjectOutput,
+	ProjectDependencyEngine,
+	UploadProjectAppOutput,
+} from "@/types";
 
-// Helper types
+// Helper types ----------------------------------------------------------------
+/**
+ * Standardized shape returned by lightweight pixel helper wrappers.
+ * type === "error" indicates the underlying pixel operationType contained "ERROR".
+ * output remains unknown for caller-side narrowing / casting.
+ */
 type PixelResponse = {
 	type: "success" | "error";
 	output: unknown;
 };
 
+/** Raw pixel execution envelope (subset of SDK return) exposing all operations. */
 type PixelResult = {
 	pixelReturn: Array<{
 		operationType: string | string[];
@@ -23,7 +31,140 @@ type PixelResult = {
 	}>;
 };
 
-// Helper functions for common patterns
+// ---------------------------------------------------------------------------
+// New strongly-typed helpers (insight-aware) --------------------------------
+// These mirror the generic helpers above but return typed outputs and accept
+// an optional insightId when provided by consumer contexts.
+// ---------------------------------------------------------------------------
+
+// Minimal internal assertion helper to surface pixel errors consistently
+/**
+ * Assert the first pixel operation succeeded.
+ * @param result PixelResult subset containing pixelReturn
+ * @returns The first operation object when successful
+ * @throws {Error} When the first operationType contains "ERROR"
+ */
+function assertNoError(result: { pixelReturn: PixelResult["pixelReturn"] }) {
+	const first = result.pixelReturn[0];
+	const opType = Array.isArray(first.operationType)
+		? first.operationType.join(" ")
+		: first.operationType;
+	if (opType.includes("ERROR")) {
+		throw new Error(String(first.output));
+	}
+	return first;
+}
+
+// Typed output shapes now sourced from shared types (see @/types) ---------
+
+/**
+ * Upload a project app archive (already present in temp storage) and return
+ * project id plus any discovered engine ids.
+ * @param fileLocation Temporary file path returned by uploadFile
+ * @param isGlobal Whether the project should be global
+ * @param insightId Insight context id for scoping
+ * @returns Parsed UploadProjectAppOutput
+ */
+export async function uploadProjectAppPixel(
+	fileLocation: string,
+	isGlobal: boolean,
+	insightId: string,
+): Promise<UploadProjectAppOutput> {
+	const { pixelReturn } = await runPixel<[UploadProjectAppOutput]>(
+		`UploadProjectApp(filePath=["${fileLocation}"], global=[${isGlobal}]);`,
+		insightId,
+	);
+	const first = assertNoError({ pixelReturn });
+	return first.output as UploadProjectAppOutput;
+}
+
+/**
+ * Create a new project.
+ * @param name Project name
+ * @param isGlobal Whether project is global
+ * @param projectType Project type identifier (e.g. CODE)
+ * @param insightId Insight context id
+ * @param portal Whether to create portal (default true)
+ * @returns Parsed CreateProjectOutput
+ */
+export async function createProjectPixel(
+	name: string,
+	isGlobal: boolean,
+	projectType: string,
+	insightId: string,
+	portal = true,
+): Promise<CreateProjectOutput> {
+	const { pixelReturn } = await runPixel<[CreateProjectOutput]>(
+		`CreateProject(project=["${name}"], global=["${isGlobal}"], projectType=["${projectType}"], portal=["${portal}"])`,
+		insightId,
+	);
+	const first = assertNoError({ pixelReturn });
+	return first.output as CreateProjectOutput;
+}
+
+/**
+ * Set tags & description for a project. Keys omitted remain unchanged.
+ * @param projectId Project identifier
+ * @param tags Tag list
+ * @param description Human-readable description
+ * @param insightId Insight context id
+ */
+export async function setProjectMetadataPixel(
+	projectId: string,
+	tags: string[],
+	description: string,
+	insightId: string,
+): Promise<void> {
+	const meta = { tag: tags, description };
+	const { pixelReturn } = await runPixel<[{ success?: boolean }]>(
+		`SetProjectMetadata(project=["${projectId}"], meta=[${JSON.stringify(meta)}])`,
+		insightId,
+	);
+	assertNoError({ pixelReturn });
+}
+
+/**
+ * Delete existing version assets directory for a project.
+ * @param projectId Project identifier
+ * @param insightId Insight context id
+ */
+export async function deleteVersionAssetsPixel(
+	projectId: string,
+	insightId: string,
+): Promise<void> {
+	const { pixelReturn } = await runPixel<[{ success?: boolean }]>(
+		`DeleteAsset(filePath=["version/assets/"], space=["${projectId}"]);`,
+		insightId,
+	);
+	assertNoError({ pixelReturn });
+}
+
+/**
+ * Unzip a previously uploaded archive into the project space.
+ * Typically used after creating a project and uploading a version zip.
+ * @param fileLocation File path in temporary storage
+ * @param projectId Target project id
+ * @param insightId Insight context id
+ */
+export async function unzipFilePixel(
+	fileLocation: string,
+	projectId: string,
+	insightId: string,
+): Promise<void> {
+	const { pixelReturn } = await runPixel<[{ success?: boolean }]>(
+		`UnzipFile(filePath=["${fileLocation}"], space=["${projectId}"]);`,
+		insightId,
+	);
+	assertNoError({ pixelReturn });
+}
+
+// Helper functions for common patterns ---------------------------------------
+/**
+ * Interpret a raw PixelResult into a simpler PixelResponse at a given index.
+ * @param result Raw pixel result
+ * @param operationIndex Index of operation to inspect (default 0)
+ * @returns Simplified PixelResponse
+ */
 const processPixelResponse = (
 	result: PixelResult,
 	operationIndex: number = 0,
@@ -39,67 +180,43 @@ const processPixelResponse = (
 	};
 };
 
+/**
+ * Execute a pixel string and condense the first operation to PixelResponse.
+ * @param query Pixel script string
+ * @returns PixelResponse summarizing success/error & output
+ */
 const runPixelQuery = async (query: string): Promise<PixelResponse> => {
 	const res = await runPixel(query);
 	return processPixelResponse(res);
 };
 
-const runMonolithQuery = async (
-	monolithStore: MonolithStore,
-	query: string,
-): Promise<PixelResponse> => {
-	const res = await monolithStore.runQuery(query);
-	return processPixelResponse(res);
-};
-/**
- * Gets All Dependencies for a project
- * @param monolithStore
- * @param appId
- * @returns
- */
-export const fetchProjectDependencies = async (
-	monolithStore: MonolithStore,
+// NOTE: All functions below use SDK runPixel directly (monolithStore removed)
+/** Get all dependency engines (detailed) for a project. */
+export const fetchProjectDependenciesPixel = async (
 	appId: string,
 ): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
+	return runPixelQuery(
 		`GetProjectDependencies(project="${appId}", details=[true])`,
 	);
 };
 
-/**
- * Sets project dependencies
- * @param monolithStore
- * @param appId
- * @param dependencies
- * @returns
- */
-export const setProjectDependencies = async (
-	monolithStore: MonolithStore,
+/** Set project dependency engines (empty array clears dependencies). */
+export const setProjectDependenciesPixel = async (
 	appId: string,
 	dependencies: string[],
 ): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
+	return runPixelQuery(
 		`SetProjectDependencies(project="${appId}", dependencies=${JSON.stringify(
 			dependencies.length > 0 ? dependencies : null,
 		)})`,
 	);
 };
 
-/**
- * Updates project details/metadata
- * @param monolithStore
- * @param appId
- * @param data
- * @returns
- */
-export const updateProjectDetails = async (
-	monolithStore: MonolithStore,
+/** Partially update project metadata (only defined keys sent). */
+export const updateProjectDetailsPixel = async (
 	appId: string,
 	data: Record<string, unknown>,
 ): Promise<PixelResponse> => {
-	// copy over the defined keys
 	const meta: Record<string, unknown> = {};
 	if (data) {
 		for (const key in data) {
@@ -108,209 +225,66 @@ export const updateProjectDetails = async (
 			}
 		}
 	}
-	return runMonolithQuery(
-		monolithStore,
+	return runPixelQuery(
 		`SetProjectMetadata(project=["${appId}"], meta=[${JSON.stringify(
 			meta,
 		)}], jsonCleanup=[true])`,
 	);
 };
 
-/**
- * Fetches app metadata information
- * @param monolithStore
- * @param appId
- * @param metaKeys
- * @returns
- */
-export const fetchAppInfo = async (
-	monolithStore: MonolithStore,
+/** Fetch selected metadata keys for a project. */
+export const fetchAppInfoPixel = async (
 	appId: string,
 	metaKeys: string[],
 ): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
+	return runPixelQuery(
 		`GetProjectMetadata(project="${appId}", metaKeys=${JSON.stringify([
 			metaKeys,
 		])})`,
 	);
 };
 
-/**
- * Fetches project markdown/main uses
- * @param monolithStore
- * @param appId
- * @returns
- */
-export const fetchMainUses = async (
-	monolithStore: MonolithStore,
+/** Fetch project markdown / README (main uses). */
+export const fetchMainUsesPixel = async (
 	appId: string,
 ): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
-		`GetProjectMarkdown(project="${appId}")`,
-	);
+	return runPixelQuery(`GetProjectMarkdown(project="${appId}")`);
 };
 
-export const useGetProjectDependencies = (
+/** React hook streaming project dependencies. */
+export const useGetProjectDependenciesPixel = (
 	projectId: string,
 ): ReturnType<typeof usePixel<ProjectDependencyEngine[]>> => {
 	return usePixel<ProjectDependencyEngine[]>(
 		`GetProjectDependencies(project="${projectId}", details=[true]);`,
 	);
 };
-/**
- * Extract and set dependencies for a project
- * @param monolithStore
- * @param projectId
- * @returns
- */
-export const extractAndSetDependencies = async (
-	monolithStore: MonolithStore,
+/** Extract and persist dependency engines discovered in project assets. */
+export const extractAndSetDependenciesPixel = async (
 	projectId: string,
 ): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
+	return runPixelQuery(
 		`ExtractAndSetDependencies( project=["${projectId}"]);`,
 	);
 };
-/**
- * Hook to get available engines that user has access to
- * @returns usePixel hook result for MyEngines query
- */
-export const useMyEngines = (): ReturnType<typeof usePixel<engine[]>> => {
+/** Hook returning engines the current user can access. */
+export const useMyEnginesPixel = (): ReturnType<typeof usePixel<engine[]>> => {
 	return usePixel<engine[]>("MyEngines();");
 };
 
 /**
- * Replace inaccessible engines with accessible ones
- * @param monolithStore
- * @param appId
- * @param replacements - Map of failed engine IDs to replacement engine IDs
- * @returns Raw pixel result for detailed response processing
+ * Replace inaccessible engine references with provided accessible engines.
+ * Returns raw pixel result so caller can inspect success / failed maps.
+ * @param appId Project identifier
+ * @param replacements Map of failedEngineId -> replacementEngineId
+ * @returns Raw PixelResult for further inspection
  */
-export const replaceInaccessibleEngines = async (
-	monolithStore: MonolithStore,
+export const replaceInaccessibleEnginesPixel = async (
 	appId: string,
 	replacements: Record<string, string>,
 ): Promise<PixelResult> => {
 	const mapStr = JSON.stringify([replacements]);
-	return await monolithStore.runQuery(
+	return (await runPixel(
 		`ReplaceInaccessibleEngines(project=["${appId}"], map=${mapStr});`,
-	);
-};
-
-/**
- * Upload a project app (supports both runPixel and monolithStore)
- * @param filePathOrStore - Either file path (string) or monolithStore object
- * @param fileLocationOrGlobal - Either file location (when using monolithStore) or isGlobal boolean
- * @param isGlobal - isGlobal boolean (when using monolithStore)
- * @returns
- */
-export const uploadProjectApp = async (
-	filePathOrStore: string | MonolithStore,
-	fileLocationOrGlobal: string | boolean,
-	isGlobal?: boolean,
-): Promise<PixelResponse> => {
-	// If first parameter is string, use runPixel
-	if (typeof filePathOrStore === "string") {
-		return runPixelQuery(
-			`UploadProjectApp(filePath=["${filePathOrStore}"], global=[${fileLocationOrGlobal}]);`,
-		);
-	}
-
-	// Otherwise use monolithStore
-	return runMonolithQuery(
-		filePathOrStore,
-		`UploadProjectApp(filePath=["${fileLocationOrGlobal}"], global=[${isGlobal}]);`,
-	);
-};
-
-/**
- * Create a new project (supports both runPixel and monolithStore)
- * @param nameOrStore - Either project name (string) or monolithStore object
- * @param nameOrGlobal - Either project name (when using monolithStore) or isGlobal boolean
- * @param projectTypeOrGlobal - Either project type (when using monolithStore) or isGlobal boolean
- * @param projectType - Project type (when using monolithStore)
- * @param hasPortal - Whether to create portal (default: true)
- * @returns
- */
-export const createProject = async (
-	nameOrStore: string | MonolithStore,
-	nameOrGlobal: string | boolean,
-	projectTypeOrGlobal?: string | boolean,
-	projectType?: string,
-	hasPortal: boolean = true,
-): Promise<PixelResponse> => {
-	// If first parameter is string, use runPixel
-	if (typeof nameOrStore === "string") {
-		return runPixelQuery(
-			`CreateProject(project=["${nameOrStore}"], global=["${nameOrGlobal}"], projectType=["${projectTypeOrGlobal}"], portal=["${hasPortal}"]);`,
-		);
-	}
-
-	// Otherwise use monolithStore
-	return runMonolithQuery(
-		nameOrStore,
-		`CreateProject(project=["${nameOrGlobal}"], global=["${projectTypeOrGlobal}"], projectType=["${projectType}"], portal=["true"])`,
-	);
-};
-
-/**
- * Set project metadata with tags and description
- * @param monolithStore
- * @param projectId
- * @param tags
- * @param description
- * @returns
- */
-export const setProjectMetadataWithTags = async (
-	monolithStore: MonolithStore,
-	projectId: string,
-	tags: string[],
-	description: string,
-): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
-		`SetProjectMetadata(project=["${projectId}"], meta=[${JSON.stringify({
-			tag: tags,
-			description: description,
-		})}])`,
-	);
-};
-
-/**
- * Delete asset from project
- * @param monolithStore
- * @param projectId
- * @param filePath
- * @returns
- */
-export const deleteProjectAsset = async (
-	monolithStore: MonolithStore,
-	projectId: string,
-	filePath: string = "version/assets/",
-): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
-		`DeleteAsset(filePath=["${filePath}"], space=["${projectId}"]);`,
-	);
-};
-
-/**
- * Unzip file in project space
- * @param monolithStore
- * @param fileLocation
- * @param projectId
- * @returns
- */
-export const unzipProjectFile = async (
-	monolithStore: MonolithStore,
-	fileLocation: string,
-	projectId: string,
-): Promise<PixelResponse> => {
-	return runMonolithQuery(
-		monolithStore,
-		`UnzipFile(filePath=["${fileLocation}"], space=["${projectId}"]);`,
-	);
+	)) as PixelResult; // keeping original return shape
 };
