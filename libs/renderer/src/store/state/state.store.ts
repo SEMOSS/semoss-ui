@@ -314,7 +314,7 @@ export class StateStore {
 				) {
 					return value;
 				} else if (type === "array" || type === "JSON") {
-					let v;
+					let v: unknown;
 					if (value === "string") {
 						v = JSON.parse(value as string);
 					} else v = value;
@@ -401,18 +401,23 @@ export class StateStore {
 			} else if (ActionMessages.EDIT_VARIABLE === action.message) {
 				const { id, from, to } = action.payload;
 
-				const newVariable = {
+				const newVariable: {
+					type: string;
+					to?: string;
+					cellId?: string;
+					value?: string;
+				} = {
 					type: to.type,
 				};
 
 				if (to.to) {
-					newVariable["to"] = to.to;
+					newVariable.to = to.to;
 				}
 				if (to.cellId) {
-					newVariable["cellId"] = to.cellId;
+					newVariable.cellId = to.cellId;
 				}
 				if (to.value) {
-					newVariable["value"] = to.value;
+					newVariable.value = to.value;
 				}
 
 				this.editVariable(id, from, newVariable);
@@ -512,13 +517,10 @@ export class StateStore {
 
 				// If callback is provided, run as async with promise
 				if (callbackMessage) {
-					const run = () =>
-						new Promise(async (resolve) => {
-							await this.runQuery(queryId, callbackMessage);
-							resolve(this._store.queries[queryId].output);
-						});
-
-					return run();
+					return (async () => {
+						await this.runQuery(queryId, callbackMessage);
+						return this._store.queries[queryId].output;
+					})();
 				} else {
 					return this.runQuery(queryId);
 				}
@@ -527,20 +529,11 @@ export class StateStore {
 
 				// If callback is provided, run as async with promise
 				if (callbackMessage) {
-					const run = () =>
-						new Promise(async (resolve) => {
-							await this.runCell(
-								queryId,
-								cellId,
-								callbackMessage,
-							);
-
-							resolve(
-								this._store.queries[queryId].cells[cellId]
-									.output,
-							);
-						});
-					return run();
+					return (async () => {
+						await this.runCell(queryId, cellId, callbackMessage);
+						return this._store.queries[queryId].cells[cellId]
+							.output;
+					})();
 				} else {
 					this.runCell(queryId, cellId);
 				}
@@ -611,7 +604,7 @@ export class StateStore {
 						}
 					}
 
-					let variable;
+					let variable: string;
 
 					if (expression.includes(".")) {
 						variable = expression.match(/\$(.*?)\./)[1];
@@ -653,11 +646,8 @@ export class StateStore {
 		const isNumber = !isNaN(parseFloat(path[1]));
 
 		if (isNumber) {
-			let q;
+			let q: QueryState;
 
-			// TODO: Problem we want to reference cells by a special syntax
-			// I don't want to change ids to be numbered for cells,
-			// i think we are good with our id generation
 			if (this._store.variables[pointer]) {
 				const variable = this._store.variables[path[0]];
 				if (variable.type === "query") {
@@ -1025,12 +1015,14 @@ export class StateStore {
 
 	extractDependenciesFromString = (str) => {
 		const regex = /{{\s*([\w_]+)\s*}}/g;
-		let match,
-			deps = [];
-		while ((match = regex.exec(str)) !== null) {
+		const deps = [];
+		while (true) {
+			const match = regex.exec(str);
+			if (match === null) {
+				break;
+			}
 			deps.push(match[1]);
 		}
-
 		return deps;
 	};
 
@@ -1213,14 +1205,14 @@ export class StateStore {
 				if (variable) {
 					// retrieve the "to" value
 					const toValue = variable.to;
-					if (variable.type == "block") {
+					if (variable.type === "block") {
 						// Look into blocks section
 						if (this._store.blocks[toValue]) {
 							this._store.blocks[toValue].data.value = value;
 						}
 					} else if (
-						variable.type == "cell" ||
-						variable.type == "query"
+						variable.type === "cell" ||
+						variable.type === "query"
 					) {
 						// TODO: Handle query and cell types do we just swap output?
 					} else {
@@ -1590,8 +1582,6 @@ export class StateStore {
 	 * @param actions - actions to add to the block
 	 */
 	private removeDynamicSlot = (id: string, indexToRemove: string): void => {
-		console.log(this._store.blocks[id].slots);
-		console.log(indexToRemove);
 		const block = this._store.blocks[id];
 
 		if (!block || !block.slots) {
@@ -1604,22 +1594,13 @@ export class StateStore {
 			.map((name) => Number(name))
 			.sort((a, b) => a - b);
 
-		console.log("slotnames", slotNames);
-
 		// Find the slot name at the specified index
 		const slotNameToRemove = slotNames[indexToRemove];
 		if (slotNameToRemove === undefined) {
 			return;
 		}
-
-		console.log("nameToRemove", slotNameToRemove);
-		debugger;
-
-		console.log("before Delete", block.slots);
 		// Remove the slot at the specified index
 		delete block.slots[slotNameToRemove];
-
-		console.log("after deleet", block.slots);
 
 		// Shift all subsequent slots down by one
 		const slotsToShift = slotNames.filter(
@@ -1728,7 +1709,10 @@ export class StateStore {
 	 * Run a query
 	 * @param queryId - name of the query that we are running
 	 */
-	private runQuery = (queryId: string, type?: "sync" | "async"): void => {
+	private runQuery = (
+		queryId: string,
+		type?: "sync" | "async",
+	): void | Promise<boolean> => {
 		const q = this._store.queries[queryId];
 
 		const key = `query--${queryId};`;
@@ -1736,8 +1720,8 @@ export class StateStore {
 		// cancel a previous command
 		this._utils.queryPromises[key]?.cancel();
 
-		let p;
-		let sync;
+		let p: { promise: Promise<boolean>; cancel: () => void };
+		let sync: boolean;
 
 		if (!type || type === "async") {
 			sync = false;
@@ -1877,7 +1861,7 @@ export class StateStore {
 		queryId: string,
 		cellId: string,
 		type?: string,
-	): void => {
+	): void | Promise<boolean> => {
 		const q = this._store.queries[queryId];
 		const c = q.getCell(cellId);
 
@@ -1886,8 +1870,8 @@ export class StateStore {
 		// cancel a previous command
 		this._utils.queryPromises[key]?.cancel();
 
-		let p;
-		let sync;
+		let p: { promise: Promise<boolean>; cancel: () => void };
+		let sync: boolean;
 
 		if (!type || type === "async") {
 			sync = false;
@@ -1925,14 +1909,6 @@ export class StateStore {
 		this._utils.queryPromises[key] = p;
 	};
 
-	private runMarkdownCell = (
-		queryId: string,
-		cellId: string,
-		marked: boolean,
-	): void => {
-		// make the cell as marked
-		this._store.queries[queryId].cells[cellId].parameters.marked = marked;
-	};
 	/**
 	 * Dispatch a custom event
 	 * @param name - name of the event
