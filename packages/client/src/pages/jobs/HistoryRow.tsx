@@ -2,7 +2,7 @@ import { ChevronRight, KeyboardArrowDown } from "@mui/icons-material";
 import { useState } from "react";
 import {
 	Box,
-	ChipTwo,
+	Chip,
 	Collapse,
 	IconButton,
 	Stack,
@@ -50,11 +50,11 @@ export const HistoryRow = (props: {
 				<Table.Cell>{row.execStart}</Table.Cell>
 				<Table.Cell>{row.execDelta}</Table.Cell>
 				<Table.Cell>
-					<ChipTwo
+					<Chip
 						label={row.success ? "Success" : "Failed"}
 						avatar={null}
 						variant="filled"
-						color={row.success ? "success" : "error"}
+						color={row.success ? "green" : "red"}
 					/>
 				</Table.Cell>
 			</Table.Row>

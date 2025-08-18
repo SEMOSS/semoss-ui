@@ -10,6 +10,7 @@ export { ContainerLayoutSettings } from "./ContainerLayoutSettings";
 export * from "./data-grid";
 export { FontSizeSettings } from "./FontSizeSettings";
 export { GridSettings } from "./grid";
+export { TabBlockArraySettings } from "./tab";
 export { IconSelectSettings } from "./IconSelectSettings";
 export { OptionsSettings } from "./OptionsSettings";
 export { QueryInputSettings } from "./QueryInputSettings";

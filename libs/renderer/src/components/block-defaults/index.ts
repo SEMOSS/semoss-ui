@@ -118,6 +118,8 @@ import {
 	type VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
 
+import { config as TabBlockConfig, type TabBlockDef } from './tab-block'
+
 import { config as GmailBlockConfig, GmailBlockDef } from "./gmail-block";
 
 export type DefaultBlockDefinitions =
@@ -162,6 +164,7 @@ export type DefaultBlockDefinitions =
 	| TimePickerBlockDef
 	| VisualizationFilterBlockDef
 	| GridDynamicFrameBlockDef
+	| TabBlockDef
     | GmailBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
@@ -206,6 +209,7 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
 	[GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
     [GmailBlockConfig.widget]: GmailBlockConfig,
+	[TabBlockConfig.widget]: TabBlockConfig,
 };
 
 export {
@@ -248,4 +252,5 @@ export {
 	VisualizationFilterBlockConfig,
 	GridDynamicFrameBlockConfig,
     GmailBlockConfig,
+	TabBlockConfig
 };

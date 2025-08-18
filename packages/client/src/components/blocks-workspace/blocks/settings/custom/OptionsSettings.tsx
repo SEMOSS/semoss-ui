@@ -18,7 +18,7 @@ import {
 	type Paths,
 	type PathValue,
 } from "@semoss/renderer";
-import { BoxTwo, Button, IconButton, Stack, TextField } from "@semoss/ui";
+import { Box, Button, IconButton, Stack, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -345,22 +345,23 @@ const SortableItems = ({
 	};
 
 	return (
-		<BoxTwo
+		<Box
 			ref={setNodeRef}
-			sx={style}
-			display={"flex"}
-			gap={1}
-			alignItems={"center"}
+			sx={{
+                ...style,
+                display: 'flex',
+                gap: 1,
+                alignItems: 'center',
+            }}
 		>
 			{children}
-			<BoxTwo
+			<Box
 				{...attributes}
 				{...listeners}
-				display={"flex"}
-				alignItems={"center"}
+				sx={{ display: 'flex', alignItems: 'center' }}
 			>
 				<DragIndicator />
-			</BoxTwo>
-		</BoxTwo>
+			</Box>
+		</Box>
 	);
 };
