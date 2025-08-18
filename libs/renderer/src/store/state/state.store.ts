@@ -376,7 +376,7 @@ export class StateStore {
 	 *
 	 * @param action - Action to execute
 	 */
-	dispatch = (action: Actions) => {
+	dispatch = async (action: Actions, callbackMessage?: "sync" | "async") => {
 		// TODO: Develop History + Invert + UNDO;
 		console.log(
 			"ACTION :::",
@@ -510,54 +510,40 @@ export class StateStore {
 				 */
 				const { queryId } = action.payload;
 
-				return this.runQuery(queryId);
+				// If callback is provided, run as async with promise
+				if (callbackMessage) {
+					const run = () =>
+						new Promise(async (resolve) => {
+							await this.runQuery(queryId, callbackMessage);
+							resolve(this._store.queries[queryId].output);
+						});
+
+					return run();
+				} else {
+					return this.runQuery(queryId);
+				}
 			} else if (ActionMessages.RUN_CELL === action.message) {
 				const { queryId, cellId } = action.payload;
 
-				this.runCell(queryId, cellId);
-			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
-				const { name, detail } = action.payload;
+				// If callback is provided, run as async with promise
+				if (callbackMessage) {
+					const run = () =>
+						new Promise(async (resolve) => {
+							await this.runCell(
+								queryId,
+								cellId,
+								callbackMessage,
+							);
 
-				this.dispatchEvent(name, detail);
-			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
-				const { destinationType, destination } = action.payload;
-
-				this.dispatchOpenEvent(destinationType, destination);
-			}
-		} catch (e) {
-			console.error(e);
-		}
-	};
-
-	/**
-	 * TODO: Needs to get folded into code above --> useBlock.tsx
-	 * @param action
-	 * @returns
-	 */
-	dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
-		try {
-			if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId } = action.payload;
-
-				const run = () =>
-					new Promise(async (resolve) => {
-						await this.runQuery(queryId, type);
-						resolve(this._store.queries[queryId].output);
-					});
-
-				return await run();
-			} else if (ActionMessages.RUN_CELL === action.message) {
-				const { queryId, cellId } = action.payload;
-
-				const run = () =>
-					new Promise(async (resolve) => {
-						await this.runCell(queryId, cellId, type);
-
-						resolve(
-							this._store.queries[queryId].cells[cellId].output,
-						);
-					});
-				return await run();
+							resolve(
+								this._store.queries[queryId].cells[cellId]
+									.output,
+							);
+						});
+					return run();
+				} else {
+					this.runCell(queryId, cellId);
+				}
 			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
 				const { name, detail } = action.payload;
 
