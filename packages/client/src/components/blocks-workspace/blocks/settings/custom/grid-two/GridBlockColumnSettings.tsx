@@ -80,7 +80,7 @@ export const GridBlockColumnSettings = observer(
 
 				notification.add({
 					color: "success",
-					message: "Succesfully synchronized headers",
+					message: "Successfully synchronized headers",
 				});
 			} catch (e) {
 				notification.add({
