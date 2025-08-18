@@ -13,8 +13,9 @@ import {
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { useInfinitePixel, useInfiniteScroll, usePixel, useRootStore } from "@/hooks";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
+import { getPageSizeBasedOnScreen } from "@/utility";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -141,13 +142,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const { configStore, monolithStore } = useRootStore();
 	const navigate = useNavigate();
 
-	const [state, dispatch] = useReducer(reducer, initialState);
-	const { favoritedApps, apps } = state;
-	const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
-	const [mode, setMode] = useState<MODE>("Mine");
-
-	const [inputValue, setInputValue] = useState("");
-	const [search, setSearch] = useState("");
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { favoritedApps, apps } = state;
+  const [metaFilters, setMetaFilters] = useState<Record<string, unknown>>({});
+  const [mode, setMode] = useState<MODE>("Mine");
+  const [inputValue, setInputValue] = useState("");
+  const [search, setSearch] = useState("");
+  const limit = getPageSizeBasedOnScreen({ rowHeight: 322, rowWidth: 325 });
 
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -169,36 +170,38 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		return k.metakey;
 	});
 
-	let pixel = mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects";
+  const { data, status, currLen, collect } = useInfinitePixel(
+    mode === "Mine" ? "MyProjects" : "MyDiscoverableProjects",
+    `metaKeys = ${JSON.stringify([
+      ...metaKeys,
+      "description",
+    ])}, metaFilters=[${JSON.stringify(
+      metaFilters
+    )}], filterWord=["${search}"], onlyPortals=[true], limit=[${limit}]`
+  );
 
-	pixel += `(metaKeys = ${JSON.stringify([
-		...metaKeys,
-		"description",
-	])}, metaFilters=[${JSON.stringify(
-		metaFilters,
-	)}], filterWord=["${search}"], onlyPortals=[true]);`;
+  const { reset } = useInfiniteScroll({
+    limit,
+    length: currLen,
+    collect,
+  });
 
-	/**
-	 * @desc Get & Set Apps
-	 */
-	const getApps = usePixel<AppMetadata[]>(pixel);
+  /**
+   * @desc Get & Set Apps
+   */
+  // const getApps = usePixel<AppMetadata[]>(pixel);
 
-	useEffect(() => {
-		if (getApps.status !== "SUCCESS") {
-			dispatch({
-				type: "field",
-				field: "apps",
-				value: [],
-			});
-			return;
-		}
+  useEffect(() => {
+    if (status !== "SUCCESS") {
+      return;
+    }
 
-		dispatch({
-			type: "field",
-			field: "apps",
-			value: getApps.data,
-		});
-	}, [getApps.status, getApps.data]);
+    dispatch({
+      type: "field",
+      field: "apps",
+      value: Array.isArray(data) ? data : [],
+    });
+  }, [status, data]);
 
 	/**
 	 * @desc Get & Sets Favorited Apps
@@ -234,10 +237,10 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		setSearch(newInputValue);
 	}, 300);
 
-	const handleInputChange = (newInputValue) => {
-		setInputValue(newInputValue);
-		debouncedSet(newInputValue);
-	};
+  const handleInputChange = (newInputValue) => {
+    setInputValue(newInputValue);
+    debouncedSet(newInputValue);
+  };
 
 	/**
 	 * @name favoriteApp
@@ -455,41 +458,41 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									/>
 								)}
 
-								{"terminal".includes(search.toLowerCase()) && (
-									<AppTileCard
-										// image={UPDATED_TERMINAL}
-										app={TERMINAL_APP}
-										background="#BADEFF"
-										href="../../../#!/embed-terminal"
-										systemApp={true}
-										appType={"TERMINAL"}
-										isLoading={false}
-										showSkeleton={false}
-									/>
-								)}
-							</StyledSection>
-						)}
-						{mode != "System" && getApps.status !== "SUCCESS" ? (
-							<StyledSection>
-								{Array.from({
-									length: SKELETON_CARD_COUNT,
-								}).map((_, i) => (
-									<AppTileCard
-										key={`skeleton-${i}`}
-										app={TERMINAL_APP}
-										systemApp={false}
-										isDiscoverable={mode !== "Mine"}
-										isLoading={true}
-										showSkeleton={true}
-									/>
-								))}
-							</StyledSection>
-						) : null}
-						{mode != "System" && apps.length > 0 ? (
-							<StyledSectionLabel variant="subtitle1">
-								All Apps
-							</StyledSectionLabel>
-						) : null}
+                {"terminal".includes(search.toLowerCase()) && (
+                  <AppTileCard
+                    // image={UPDATED_TERMINAL}
+                    app={TERMINAL_APP}
+                    background="#BADEFF"
+                    href="../../../#!/embed-terminal"
+                    systemApp={true}
+                    appType={"TERMINAL"}
+                    isLoading={false}
+                    showSkeleton={false}
+                  />
+                )}
+              </StyledSection>
+            )}
+            {mode != "System" && status !== "SUCCESS" ? (
+              <StyledSection>
+                {Array.from({
+                  length: SKELETON_CARD_COUNT,
+                }).map((_, i) => (
+                  <AppTileCard
+                    key={`skeleton-${i}`}
+                    app={TERMINAL_APP}
+                    systemApp={false}
+                    isDiscoverable={mode !== "Mine"}
+                    isLoading={true}
+                    showSkeleton={true}
+                  />
+                ))}
+              </StyledSection>
+            ) : null}
+            {mode != "System" && apps.length > 0 ? (
+              <StyledSectionLabel variant="subtitle1">
+                All Apps
+              </StyledSectionLabel>
+            ) : null}
 
 						{/* do not show favorited apps in all apps view */}
 						{mode != "System" && apps.length > 0 ? (

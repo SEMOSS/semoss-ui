@@ -21,7 +21,8 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { ProjectTileCard } from "@/components/app";
-import { useAPI, useSettings } from "../../hooks";
+import { useAPI, useSettings, useInfiniteScroll } from "../../hooks";
+import { getPageSizeBasedOnScreen } from "@/utility";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -106,15 +107,17 @@ export const ProjectSettingsPage = () => {
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { projects } = state;
 
-	const [view, setView] = useState("tile");
-	const [search, setSearch] = useState("");
-	const [sort, setSort] = useState("Name");
-	const [sortOrder, setSortOrder] = useState("ASC");
-	const [canCollect, setCanCollect] = useState(true);
-	const [offset, setOffset] = useState(0);
+    const [view, setView] = useState('tile');
+    const [search, setSearch] = useState('');
+    const [sort, setSort] = useState('Name');
+    const [sortOrder, setSortOrder] = useState('ASC');
 
-	//** amount of items to be loaded */
-	const limit = 30;
+    //** amount of items to be loaded */
+    const limit = getPageSizeBasedOnScreen({ rowHeight: 270, rowWidth: 136, isFullWidth: true });
+
+    const { offset, checkHasReached, reset } = useInfiniteScroll({
+        limit,
+    });
 
 	// To focus when getting new results
 	const searchbarRef = useRef(null);
@@ -136,15 +139,15 @@ export const ProjectSettingsPage = () => {
 		return frags.join(" ");
 	};
 
-	//** reset dataMode if adminMode is toggled */
-	useEffect(() => {
-		setOffset(0);
-		dispatch({
-			type: "field",
-			field: "projects",
-			value: [],
-		});
-	}, [adminMode, search]);
+    //** reset dataMode if adminMode is toggled */
+    useEffect(() => {
+        reset();
+        dispatch({
+            type: 'field',
+            field: 'projects',
+            value: [],
+        });
+    }, [adminMode, search]);
 
 	//** append data through infinite scroll */
 	useEffect(() => {
@@ -152,15 +155,14 @@ export const ProjectSettingsPage = () => {
 			return;
 		}
 
-		if (getProjects.data.length < limit) {
-			setCanCollect(false);
-		} else {
-			if (!canCollectRef.current) {
-				setCanCollect(true);
-			}
-		}
+        if (
+            getProjects.status === 'SUCCESS' &&
+            getProjects.data instanceof Array
+        ) {
+            checkHasReached(getProjects.data.length);
+        }
 
-		const mutateListWithVotes = projects;
+		const mutateListWithVotes = [];
 
 		getProjects.data.forEach((proj) => {
 			mutateListWithVotes.push({
@@ -176,52 +178,11 @@ export const ProjectSettingsPage = () => {
 		dispatch({
 			type: "field",
 			field: "projects",
-			value: mutateListWithVotes,
+			value: offset ? [...projects, ...mutateListWithVotes] : mutateListWithVotes,
 		});
 
-		searchbarRef.current?.focus();
-	}, [getProjects.status, getProjects.data]);
-
-	//** infinite sroll variables */
-	let scrollEle, scrollTimeout, currentScroll, previousScroll;
-	const offsetRef = useRef(0);
-	offsetRef.current = offset;
-	const canCollectRef = useRef(true);
-	canCollectRef.current = canCollect;
-
-	const scrollAll = () => {
-		currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
-		if (
-			currentScroll > scrollEle.scrollHeight * 0.75 &&
-			currentScroll > previousScroll
-		) {
-			if (scrollTimeout) {
-				clearTimeout(scrollTimeout);
-			}
-
-			scrollTimeout = setTimeout(() => {
-				if (!canCollectRef.current) {
-					return;
-				}
-
-				setOffset(offsetRef.current + limit);
-			}, 500);
-		}
-
-		previousScroll = currentScroll;
-	};
-
-	/**
-	 * @desc infinite scroll
-	 */
-	useEffect(() => {
-		scrollEle = document.querySelector("#home__content");
-
-		scrollEle.addEventListener("scroll", scrollAll);
-		return () => {
-			scrollEle.removeEventListener("scroll", scrollAll);
-		};
-	}, [scrollEle]);
+        searchbarRef.current?.focus();
+    }, [getProjects.status, getProjects.data]);
 
 	return (
 		<>
@@ -242,6 +203,7 @@ export const ProjectSettingsPage = () => {
 					<StyledSearch
 						value={search}
 						onChange={(e) => {
+                            reset();
 							setSearch(e.target.value);
 						}}
 						placeholder="Project"

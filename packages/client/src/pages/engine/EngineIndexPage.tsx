@@ -14,10 +14,11 @@ import {
 import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
-import { usePixel, useRootStore } from "@/hooks";
+import { usePixel, useRootStore, useInfiniteScroll, useInfinitePixel } from "@/hooks";
 import { ENGINE_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
+import { getPageSizeBasedOnScreen } from "@/utility";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -97,7 +98,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const { configStore, monolithStore } = useRootStore();
 		const navigate = useNavigate();
-
+    
 		// get a list of the keys
 		const databaseMetaKeys =
 			configStore.store.config.databaseMetaKeys.filter((k) => {
@@ -120,18 +121,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		const [state, dispatch] = useReducer(reducer, initialState);
 		const { favoritedDbs, databases } = state;
 
-		const [offset, setOffset] = useState(0);
-		const [canCollect, setCanCollect] = useState(true);
-		const canCollectRef = useRef(true);
-		canCollectRef.current = canCollect;
-		const limit = 10;
+    const limit = getPageSizeBasedOnScreen({isFullWidth: true, rowHeight: 88});
 
-		const offsetRef = useRef(0);
-		offsetRef.current = offset;
-		let scrollEle, scrollTimeout, currentScroll, previousScroll;
-
-		const [inputValue, setInputValue] = useState("");
-		const [search, setSearch] = useState("");
+    const [search, setSearch] = useState("");
+    const [inputValue, setInputValue] = useState("");
 
 		// which view we are on
 		const [mode, setMode] = useState<MODE>("Mine");
@@ -139,69 +132,76 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			{},
 		);
 
-		const dbPixelPrefix: string =
-			mode === "Mine" ? `MyEngines` : "MyDiscoverableEngines";
+    const dbPixelPrefix: string =
+      mode === "Mine" ? `MyEngines` : "MyDiscoverableEngines";
 
-		const isDiscoverable = mode !== "Mine";
+    const isDiscoverable = mode !== "Mine";
 
-		const metaKeysDescription = [...metaKeys, "description"];
+    const metaKeysDescription = [...metaKeys, "description"];
 
-		const getFavoritedDatabases = usePixel(
-			!isDiscoverable &&
-				`
+    const getFavoritedDatabases = usePixel(
+      !isDiscoverable &&
+        `
         ${dbPixelPrefix}(metaKeys = ${JSON.stringify(
-			metaKeysDescription,
-		)}, metaFilters = [ ${JSON.stringify(
-			metaFilters,
-		)} ] , filterWord=["${search}"], onlyFavorites=[true], ${
-			route ? `engineTypes=['${route.type}']` : ""
-		});
-    `,
-		);
+          metaKeysDescription
+        )}, metaFilters = [ ${JSON.stringify(
+          metaFilters
+        )} ] , filterWord=["${search}"], onlyFavorites=[true], ${
+          route ? `engineTypes=['${route.type}']` : ""
+        });
+    `
+    );
 
-		const getDatabases = usePixel<
-			{
-				app_cost: string;
-				app_id: string;
-				app_name: string;
-				app_type: string;
-				database_cost: string;
-				database_global: boolean;
-				database_id: string;
-				database_name: string;
-				database_type: string;
-				database_created_by: string;
-				database_date_created: string;
-				description: string;
-				low_database_name: string;
-				permission: number;
-				tag: string;
-				user_permission: number;
-				upvotes: number;
-			}[]
-		>(
-			`${dbPixelPrefix}( metaKeys = ${JSON.stringify(
-				metaKeysDescription,
-			)} , metaFilters = [ ${JSON.stringify(
-				metaFilters,
-			)} ] , filterWord=["${search}"], userT = [true], ${
-				route ? `engineTypes=['${route.type}'], ` : ""
-			} offset=[${offset}], limit=[${limit}]) ;`,
-		);
+    const getDatabases = useInfinitePixel<
+      {
+        app_cost: string;
+        app_id: string;
+        app_name: string;
+        app_type: string;
+        database_cost: string;
+        database_global: boolean;
+        database_id: string;
+        database_name: string;
+        database_type: string;
+        database_created_by: string;
+        database_date_created: string;
+        description: string;
+        low_database_name: string;
+        permission: number;
+        tag: string;
+        user_permission: number;
+        upvotes: number;
+      }[]
+    >(
+      dbPixelPrefix,
+      `metaKeys = ${JSON.stringify(
+        metaKeysDescription
+      )} , metaFilters = [ ${JSON.stringify(
+        metaFilters
+      )} ] , filterWord=["${search}"], userT = [true], ${
+        route ? `engineTypes=['${route.type}'], ` : ""
+      } limit=[${limit}]`
+    );
 
-		const getCatalogFilters = usePixel<
-			{
-				METAKEY: string;
-				METAVALUE: string;
-				count: number;
-			}[]
-		>(
-			metaKeys.length > 0
-				? `GetEngineMetaValues( ${
-						route ? `engineTypes=['${route.type}'], ` : ""
-					} metaKeys = ${JSON.stringify(metaKeys)} ) ;`
-				: "",
-		);
+    const { reset } = useInfiniteScroll({
+    limit,
+    length: getDatabases.currLen,
+    collect: getDatabases.collect,
+  });
+
+    const getCatalogFilters = usePixel<
+      {
+        METAKEY: string;
+        METAVALUE: string;
+        count: number;
+      }[]
+    >(
+      metaKeys.length > 0
+        ? `GetEngineMetaValues( ${
+            route ? `engineTypes=['${route.type}'], ` : ""
+          } metaKeys = ${JSON.stringify(metaKeys)} ) ;`
+        : ""
+    );
 
 		const debouncedSet = debounced((newInputValue) => {
 			setSearch(newInputValue);
@@ -344,366 +344,290 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			});
 		};
 
-		const scrollAll = () => {
-			currentScroll = scrollEle.scrollTop + scrollEle.offsetHeight;
-			if (
-				currentScroll > scrollEle.scrollHeight * 0.75 &&
-				currentScroll > previousScroll
-			) {
-				if (scrollTimeout) {
-					clearTimeout(scrollTimeout);
-				}
+    /**
+     * @desc anytime we change catalogType clean up engines
+     */
+    useEffect(() => {
+      // Prevent cleanup on first render.
+      if (routeTypeRef.current === "") {
+        routeTypeRef.current = route.type;
+        return;
+      }
 
-				scrollTimeout = setTimeout(() => {
-					if (!canCollectRef.current) {
-						return;
-					}
+      dispatch({
+        type: "field",
+        field: "databases",
+        value: [],
+      });
+      reset();
+      setMetaFilters({});
+      routeTypeRef.current = route.type;
+    }, [route.type]);
 
-					setOffset(offsetRef.current + limit);
-				}, 500);
-			}
+    /**
+     * @desc Set Databases
+     */
+    useEffect(() => {
+      if (getDatabases.status !== "SUCCESS") {
+        return;
+      }
 
-			previousScroll = currentScroll;
-		};
+      const mutateListWithVotes = []; //databases;
 
-		/**
-		 * @desc anytime we change catalogType clean up engines
-		 */
-		useEffect(() => {
-			// Prevent cleanup on first render.
-			if (routeTypeRef.current === "") {
-				routeTypeRef.current = route.type;
-				return;
-			}
+      getDatabases.data.forEach((db:{upvotes?: number}) => {
+        mutateListWithVotes.push({
+          ...db,
+          upvotes: db.upvotes ? db.upvotes : 0,
+          views: "N/A",
+          trending: "N/A",
+        });
+      });
 
-			dispatch({
-				type: "field",
-				field: "databases",
-				value: [],
-			});
-			setCanCollect(true);
-			setOffset(0);
-			setMetaFilters({});
-			routeTypeRef.current = route.type;
-		}, [route.type]);
+      dispatch({
+        type: "field",
+        field: "databases",
+        value: mutateListWithVotes,
+      });
+    }, [getDatabases.status, getDatabases.data]);
 
-		/**
-		 * @desc Set Databases
-		 */
-		useEffect(() => {
-			if (getDatabases.status !== "SUCCESS") {
-				return;
-			}
+    /**
+     * @desc Sets Favorited Engines
+     */
+    useEffect(() => {
+      if (getFavoritedDatabases.status !== "SUCCESS") {
+        return;
+      }
 
-			if (getDatabases.data.length < limit) {
-				setCanCollect(false);
-			} else {
-				if (!canCollectRef.current) {
-					setCanCollect(true);
-				}
-			}
+      dispatch({
+        type: "field",
+        field: "favoritedDbs",
+        value: getFavoritedDatabases.data,
+      });
+    }, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
-			const mutateListWithVotes = databases;
+    useEffect(() => {
+      dispatch({
+        type: "field",
+        field: "databases",
+        value: [],
+      });
+    }, [search]);
 
-			getDatabases.data.forEach((db) => {
-				mutateListWithVotes.push({
-					...db,
-					upvotes: db.upvotes ? db.upvotes : 0,
-					views: "N/A",
-					trending: "N/A",
-				});
-			});
+    // finish loading the page
+    if (
+      getDatabases.status === "ERROR" ||
+      getCatalogFilters.status === "ERROR"
+    ) {
+      return <>ERROR</>;
+    }
 
-			dispatch({
-				type: "field",
-				field: "databases",
-				value: mutateListWithVotes,
-			});
-		}, [getDatabases.status, getDatabases.data]);
+    return (
+      <Stack direction="column" gap={2}>
+        <Stack>
+          <Stack
+            direction="row"
+            alignItems={"center"}
+            justifyContent={"space-between"}
+            spacing={4}
+          >
+            <Typography variant={"h4"}>
+              {route ? route.name : ""} Catalog
+            </Typography>
 
-		/**
-		 * @desc Sets Favorited Engines
-		 */
-		useEffect(() => {
-			if (getFavoritedDatabases.status !== "SUCCESS") {
-				return;
-			}
+            {configStore.isEngineOperationAvailable(route.type, "add") && (
+              <Stack direction="row" alignItems={"center"} spacing={3}>
+                <Button
+                  size={"large"}
+                  variant={"contained"}
+                  onClick={() => {
+                    navigate(`/engine/${route.type.toLowerCase()}/new`);
+                  }}
+                  aria-label={`Navigate to import ${
+                    route ? route.name : "Engine"
+                  }`}
+                  data-testid={"engine-catalog-add-btn"}
+                >
+                  Add {route ? route.name : "Engine"}
+                </Button>
+              </Stack>
+            )}
+          </Stack>
+          <Stack
+            direction="row"
+            alignItems={"center"}
+            justifyContent={"space-between"}
+            spacing={4}
+            sx={{ paddingTop: "10px" }}
+          >
+            <Typography variant={"subtitle1"}>
+              {route ? route.description : ""}
+            </Typography>
+          </Stack>
+        </Stack>
+        <TextField
+          size="small"
+          label="Search"
+          value={inputValue}
+          onChange={(e) => handleInputChange(e.target.value)}
+        />
+        <StyledContainer>
+          <Filterbox
+            type={route.type}
+            onChange={(filters: Record<string, unknown>) => {
+              dispatch({
+                type: "field",
+                field: "databases",
+                value: [],
+              });
+              reset();
+              setMetaFilters(filters);
+            }}
+          />
+          <StyledContent>
+            <Stack
+              direction="row"
+              alignItems={"center"}
+              justifyContent={"space-between"}
+            >
+              <StyledToggleTabsGroup
+                value={mode}
+                onChange={(e: React.SyntheticEvent, val) => {
+                  dispatch({
+                    type: "field",
+                    field: "databases",
+                    value: [],
+                  });
+                  reset();
+                  setMode(val as MODE);
+                }}
+              >
+                <StyledToggleTabsGroupItem
+                  value="Mine"
+                  label={`My ${route ? `${route.name}s` : "Engines"}`}
+                />
+                <StyledToggleTabsGroupItem
+                  value="Discoverable"
+                  label={`Discoverable ${route ? `${route.name}s` : "Engines"}`}
+                />
+              </StyledToggleTabsGroup>
+            </Stack>
 
-			dispatch({
-				type: "field",
-				field: "favoritedDbs",
-				value: getFavoritedDatabases.data,
-			});
-		}, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+            {"bi".includes(search.toLowerCase()) &&
+              Object.entries(metaFilters).length === 0 &&
+              "terminal".includes(search.toLowerCase()) &&
+              !isDiscoverable &&
+              favoritedDbs.length > 0 && (
+                <StyledSectionLabel variant="subtitle1">
+                  Bookmarked
+                </StyledSectionLabel>
+              )}
 
-		/**
-		 * @desc infinite scroll
-		 */
-		useEffect(() => {
-			scrollEle = document.querySelector("#home__content");
+            {!isDiscoverable &&
+            favoritedDbs.length &&
+            Object.entries(metaFilters).length === 0 ? (
+              <Grid container spacing={3}>
+                {favoritedDbs.map((db) => {
+                  return (
+                    <Grid item key={db.database_id} sm={12}>
+                      <EngineLandscapeCard
+                        name={removeUnderscores(db.database_name)}
+                        type={db.database_type}
+                        id={db.database_id}
+                        tag={db.tag}
+                        owner={db.database_created_by}
+                        date={db.database_date_created}
+                        description={db.description}
+                        votes={db.upvotes}
+                        views={db.views}
+                        sub_type={db.database_subtype}
+                        trending={db.trending}
+                        isGlobal={db.database_global}
+                        isUpvoted={db.hasUpvoted}
+                        isFavorite={
+                          isDiscoverable ? false : isFavorited(db.database_id)
+                        }
+                        isDiscoverable={isDiscoverable}
+                        onClick={() => {
+                          navigate(`${db.database_id}`);
+                        }}
+                        favorite={() => {
+                          favoriteDb(db);
+                        }}
+                        upvote={() => {
+                          upvoteDb(db);
+                        }}
+                        global={
+                          db.user_permission === 1
+                            ? () => {
+                                setGlobal(db);
+                              }
+                            : null
+                        }
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            ) : null}
 
-			scrollEle.addEventListener("scroll", scrollAll);
-			return () => {
-				scrollEle.removeEventListener("scroll", scrollAll);
-			};
-		}, [scrollEle]);
+            {"bi".includes(search.toLowerCase()) &&
+              Object.entries(metaFilters).length === 0 &&
+              "terminal".includes(search.toLowerCase()) &&
+              databases.length > 0 && (
+                <StyledSectionLabel variant="subtitle1">
+                  All {route.name}s
+                </StyledSectionLabel>
+              )}
 
-		/**
-		 * Reset tiles anytime search changes
-		 */
-		useEffect(() => {
-			dispatch({
-				type: "field",
-				field: "databases",
-				value: [],
-			});
-			setOffset(0);
-		}, [search]);
-
-		// finish loading the page
-		if (
-			getDatabases.status === "ERROR" ||
-			getCatalogFilters.status === "ERROR"
-		) {
-			return <>ERROR</>;
-		}
-
-		return (
-			<Stack direction="column" gap={2}>
-				<Stack>
-					<Stack
-						direction="row"
-						alignItems={"center"}
-						justifyContent={"space-between"}
-						spacing={4}
-					>
-						<Typography variant={"h4"}>
-							{route ? route.name : ""} Catalog
-						</Typography>
-
-						{configStore.isEngineOperationAvailable(
-							route.type,
-							"add",
-						) && (
-							<Stack
-								direction="row"
-								alignItems={"center"}
-								spacing={3}
-							>
-								<Button
-									size={"large"}
-									variant={"contained"}
-									onClick={() => {
-										navigate(
-											`/engine/${route.type.toLowerCase()}/new`,
-										);
-									}}
-									aria-label={`Navigate to import ${
-										route ? route.name : "Engine"
-									}`}
-									data-testid={"engine-catalog-add-btn"}
-								>
-									Add {route ? route.name : "Engine"}
-								</Button>
-							</Stack>
-						)}
-					</Stack>
-					<Stack
-						direction="row"
-						alignItems={"center"}
-						justifyContent={"space-between"}
-						spacing={4}
-						sx={{ paddingTop: "10px" }}
-					>
-						<Typography variant={"subtitle1"}>
-							{route ? route.description : ""}
-						</Typography>
-					</Stack>
-				</Stack>
-				<TextField
-					size="small"
-					label="Search"
-					value={inputValue}
-					onChange={(e) => handleInputChange(e.target.value)}
-				/>
-				<StyledContainer>
-					<Filterbox
-						type={route.type}
-						onChange={(filters: Record<string, unknown>) => {
-							dispatch({
-								type: "field",
-								field: "databases",
-								value: [],
-							});
-							setMetaFilters(filters);
-							setOffset(0);
-						}}
-					/>
-					<StyledContent>
-						<Stack
-							direction="row"
-							alignItems={"center"}
-							justifyContent={"space-between"}
-						>
-							<StyledToggleTabsGroup
-								value={mode}
-								onChange={(e: React.SyntheticEvent, val) => {
-									dispatch({
-										type: "field",
-										field: "databases",
-										value: [],
-									});
-									setMode(val as MODE);
-									setOffset(0);
-								}}
-							>
-								<StyledToggleTabsGroupItem
-									value="Mine"
-									label={`My ${
-										route ? `${route.name}s` : "Engines"
-									}`}
-								/>
-								<StyledToggleTabsGroupItem
-									value="Discoverable"
-									label={`Discoverable ${
-										route ? `${route.name}s` : "Engines"
-									}`}
-								/>
-							</StyledToggleTabsGroup>
-						</Stack>
-
-						{"bi".includes(search.toLowerCase()) &&
-							Object.entries(metaFilters).length === 0 &&
-							"terminal".includes(search.toLowerCase()) &&
-							!isDiscoverable &&
-							favoritedDbs.length > 0 && (
-								<StyledSectionLabel variant="subtitle1">
-									Bookmarked
-								</StyledSectionLabel>
-							)}
-
-						{!isDiscoverable &&
-						favoritedDbs.length &&
-						Object.entries(metaFilters).length === 0 ? (
-							<Grid container spacing={3}>
-								{favoritedDbs.map((db) => {
-									return (
-										<Grid item key={db.database_id} sm={12}>
-											<EngineLandscapeCard
-												name={removeUnderscores(
-													db.database_name,
-												)}
-												type={db.database_type}
-												id={db.database_id}
-												tag={db.tag}
-												owner={db.database_created_by}
-												date={db.database_date_created}
-												description={db.description}
-												votes={db.upvotes}
-												views={db.views}
-												sub_type={db.database_subtype}
-												trending={db.trending}
-												isGlobal={db.database_global}
-												isUpvoted={db.hasUpvoted}
-												isFavorite={
-													isDiscoverable
-														? false
-														: isFavorited(
-																db.database_id,
-															)
-												}
-												isDiscoverable={isDiscoverable}
-												onClick={() => {
-													navigate(
-														`${db.database_id}`,
-													);
-												}}
-												favorite={() => {
-													favoriteDb(db);
-												}}
-												upvote={() => {
-													upvoteDb(db);
-												}}
-												global={
-													db.user_permission === 1
-														? () => {
-																setGlobal(db);
-															}
-														: null
-												}
-											/>
-										</Grid>
-									);
-								})}
-							</Grid>
-						) : null}
-
-						{"bi".includes(search.toLowerCase()) &&
-							Object.entries(metaFilters).length === 0 &&
-							"terminal".includes(search.toLowerCase()) &&
-							databases.length > 0 && (
-								<StyledSectionLabel variant="subtitle1">
-									All {route.name}s
-								</StyledSectionLabel>
-							)}
-
-						{databases.length ? (
-							<Grid container spacing={3}>
-								{databases.map((db) => {
-									return (
-										<Grid item key={db.database_id} sm={12}>
-											<EngineLandscapeCard
-												name={removeUnderscores(
-													db.database_name,
-												)}
-												type={db.database_type}
-												id={db.database_id}
-												tag={db.tag}
-												date={db.database_date_created}
-												owner={db.database_created_by}
-												description={db.description}
-												votes={db.upvotes}
-												views={db.views}
-												sub_type={db.database_subtype}
-												trending={db.trending}
-												isGlobal={db.database_global}
-												isUpvoted={db.hasUpvoted}
-												isFavorite={
-													isDiscoverable
-														? false
-														: isFavorited(
-																db.database_id,
-															)
-												}
-												isDiscoverable={isDiscoverable}
-												onClick={() => {
-													navigate(
-														`${db.database_id}`,
-													);
-												}}
-												favorite={() => {
-													favoriteDb(db);
-												}}
-												upvote={() => {
-													upvoteDb(db);
-												}}
-												global={
-													db.user_permission === 1
-														? () => {
-																setGlobal(db);
-															}
-														: null
-												}
-											/>
-										</Grid>
-									);
-								})}
-							</Grid>
-						) : null}
-					</StyledContent>
-				</StyledContainer>
-				<Help />
-			</Stack>
-		);
-	},
+            {databases.length ? (
+              <Grid container spacing={3}>
+                {databases.map((db) => {
+                  return (
+                    <Grid item key={db.database_id} sm={12}>
+                      <EngineLandscapeCard
+                        name={removeUnderscores(db.database_name)}
+                        type={db.database_type}
+                        id={db.database_id}
+                        tag={db.tag}
+                        date={db.database_date_created}
+                        owner={db.database_created_by}
+                        description={db.description}
+                        votes={db.upvotes}
+                        views={db.views}
+                        sub_type={db.database_subtype}
+                        trending={db.trending}
+                        isGlobal={db.database_global}
+                        isUpvoted={db.hasUpvoted}
+                        isFavorite={
+                          isDiscoverable ? false : isFavorited(db.database_id)
+                        }
+                        isDiscoverable={isDiscoverable}
+                        onClick={() => {
+                          navigate(`${db.database_id}`);
+                        }}
+                        favorite={() => {
+                          favoriteDb(db);
+                        }}
+                        upvote={() => {
+                          upvoteDb(db);
+                        }}
+                        global={
+                          db.user_permission === 1
+                            ? () => {
+                                setGlobal(db);
+                              }
+                            : null
+                        }
+                      />
+                    </Grid>
+                  );
+                })}
+              </Grid>
+            ) : null}
+          </StyledContent>
+        </StyledContainer>
+        <Help />
+      </Stack>
+    );
+  }
 );
