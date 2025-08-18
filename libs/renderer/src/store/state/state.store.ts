@@ -385,87 +385,15 @@ export class StateStore {
 		);
 
 		try {
-			// apply the action
+			/**
+			 * --------------------------------------------------
+			 * All
+			 * --------------------------------------------------
+			 */
 			if (ActionMessages.SET_STATE === action.message) {
 				const { state } = action.payload;
 
 				this.setState(state);
-			} else if (ActionMessages.ADD_BLOCK === action.message) {
-				const { json, position, isCommunity } = action.payload;
-
-				return this.addBlock(json, position, isCommunity);
-			} else if (ActionMessages.MOVE_BLOCK === action.message) {
-				const { id, position } = action.payload;
-
-				this.moveBlock(id, position);
-			} else if (ActionMessages.REMOVE_BLOCK === action.message) {
-				const { id, keep } = action.payload;
-
-				this.removeBlock(id, keep);
-			} else if (ActionMessages.SET_BLOCK_DATA === action.message) {
-				const { id, path, value } = action.payload;
-
-				this.setBlockData(id, path, value);
-			} else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
-				const { id, path } = action.payload;
-
-				this.deleteBlockData(id, path);
-			} else if (ActionMessages.SET_LISTENER === action.message) {
-				const { id, listener, actions, type } = action.payload;
-
-				this.setListener(id, listener, actions, type);
-			} else if (ActionMessages.NEW_QUERY === action.message) {
-				const { queryId, config, isCommunity } = action.payload;
-
-				this.newQuery(queryId, config, isCommunity);
-			} else if (ActionMessages.DELETE_QUERY === action.message) {
-				const { queryId } = action.payload;
-
-				this.deleteQuery(queryId);
-			} else if (ActionMessages.UPDATE_QUERY === action.message) {
-				const { queryId, path, value } = action.payload;
-
-				this.updateQuery(queryId, path, value);
-			} else if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId } = action.payload;
-
-				return this.runQuery(queryId);
-			} else if (ActionMessages.NEW_CELL === action.message) {
-				const { queryId, config, previousCellId } = action.payload;
-
-				return this.newCell(queryId, config, previousCellId);
-			} else if (ActionMessages.MOVE_CELL === action.message) {
-				const { queryId, activeCellId, overCellId } = action.payload;
-
-				this.moveCell(queryId, activeCellId, overCellId);
-			} else if (ActionMessages.DELETE_CELL === action.message) {
-				const { queryId, cellId } = action.payload;
-
-				this.deleteCell(queryId, cellId);
-			} else if (ActionMessages.UPDATE_CELL === action.message) {
-				const { queryId, cellId, path, value } = action.payload;
-
-				this.updateCell(queryId, cellId, path, value);
-			} else if (ActionMessages.RUN_CELL === action.message) {
-				const { queryId, cellId } = action.payload;
-
-				this.runCell(queryId, cellId);
-			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
-				const { name, detail } = action.payload;
-
-				this.dispatchEvent(name, detail);
-			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
-				const { queryId, cellId, marked } = action.payload;
-
-				this.runMarkdownCell(queryId, cellId, marked);
-			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
-				const { destinationType, destination } = action.payload;
-
-				this.dispatchOpenEvent(destinationType, destination);
-			} else if (ActionMessages.RENAME_VARIABLE === action.message) {
-				const { id, alias } = action.payload;
-
-				return this.renameVariable(id, alias);
 			} else if (ActionMessages.ADD_VARIABLE === action.message) {
 				const { id, to, type, cellId, value } = action.payload;
 
@@ -492,12 +420,113 @@ export class StateStore {
 				const { id } = action.payload;
 
 				this.deleteVariable(id);
+			} else if (ActionMessages.RENAME_VARIABLE === action.message) {
+				const { id, alias } = action.payload;
+
+				return this.renameVariable(id, alias);
 			} else if (
 				ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
 			) {
 				const { list } = action.payload;
 
 				return this.setExecutionOrder(list);
+			} else if (ActionMessages.ADD_BLOCK === action.message) {
+			/**
+			 * --------------------------------------------------
+			 * Blocks
+			 * --------------------------------------------------
+			 */
+				const { json, position, isCommunity } = action.payload;
+
+				return this.addBlock(json, position, isCommunity);
+			} else if (ActionMessages.MOVE_BLOCK === action.message) {
+				const { id, position } = action.payload;
+
+				this.moveBlock(id, position);
+			} else if (ActionMessages.REMOVE_BLOCK === action.message) {
+				const { id, keep } = action.payload;
+
+				this.removeBlock(id, keep);
+			} else if (ActionMessages.SET_BLOCK_DATA === action.message) {
+				const { id, path, value } = action.payload;
+
+				this.setBlockData(id, path, value);
+			} else if (ActionMessages.DELETE_BLOCK_DATA === action.message) {
+				const { id, path } = action.payload;
+
+				this.deleteBlockData(id, path);
+			} else if (ActionMessages.SET_LISTENER === action.message) {
+				const { id, listener, actions, type } = action.payload;
+
+				this.setListener(id, listener, actions, type);
+			} else if (ActionMessages.ADD_DYNAMIC_SLOT === action.message) {
+				const { id } = action.payload;
+
+				this.addDynamicSlot(id);
+			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT === action.message) {
+				console.log(action.payload);
+				const { id, indexToRemove } = action.payload;
+
+				const i = JSON.stringify(indexToRemove);
+				this.removeDynamicSlot(id, i);
+			} else if (ActionMessages.NEW_QUERY === action.message) {
+			/**
+			 * --------------------------------------------------
+			 * Notebooks
+			 * --------------------------------------------------
+			 */
+				const { queryId, config, isCommunity } = action.payload;
+
+				this.newQuery(queryId, config, isCommunity);
+			} else if (ActionMessages.DELETE_QUERY === action.message) {
+				const { queryId } = action.payload;
+
+				this.deleteQuery(queryId);
+			} else if (ActionMessages.UPDATE_QUERY === action.message) {
+				const { queryId, path, value } = action.payload;
+
+				this.updateQuery(queryId, path, value);
+			} else if (ActionMessages.NEW_CELL === action.message) {
+				const { queryId, config, previousCellId } = action.payload;
+
+				return this.newCell(queryId, config, previousCellId);
+			} else if (ActionMessages.MOVE_CELL === action.message) {
+				const { queryId, activeCellId, overCellId } = action.payload;
+
+				this.moveCell(queryId, activeCellId, overCellId);
+			} else if (ActionMessages.DELETE_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				this.deleteCell(queryId, cellId);
+			} else if (ActionMessages.UPDATE_CELL === action.message) {
+				const { queryId, cellId, path, value } = action.payload;
+
+				this.updateCell(queryId, cellId, path, value);
+			} else if (ActionMessages.RUN_QUERY === action.message) {
+			/**
+			 * --------------------------------------------------
+			 * Events
+			 * --------------------------------------------------
+			 */
+				const { queryId } = action.payload;
+
+				return this.runQuery(queryId);
+			} else if (ActionMessages.RUN_CELL === action.message) {
+				const { queryId, cellId } = action.payload;
+
+				this.runCell(queryId, cellId);
+			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
+				const { name, detail } = action.payload;
+
+				this.dispatchEvent(name, detail);
+			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
+				const { queryId, cellId, marked } = action.payload;
+
+				this.runMarkdownCell(queryId, cellId, marked);
+			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
+				const { destinationType, destination } = action.payload;
+
+				this.dispatchOpenEvent(destinationType, destination);
 			}
 		} catch (e) {
 			console.error(e);
@@ -1541,6 +1570,85 @@ export class StateStore {
 			type: type,
 			order: actions,
 		};
+	};
+
+	/**
+	 * Set a listener on a block
+	 * @param id - id of the block
+	 * @param listener - listener to add to the block
+	 * @param actions - actions to add to the block
+	 */
+	private addDynamicSlot = (id: string): void => {
+		const block = this._store.blocks[id];
+		if (!block || !block.slots) {
+			return;
+		}
+
+		// Find the next available slot number
+		const slotNames = Object.keys(block.slots)
+			.filter((name) => !isNaN(Number(name)))
+			.map((name) => Number(name))
+			.sort((a, b) => a - b);
+
+		const nextSlotNumber =
+			slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
+		const newSlotName = nextSlotNumber.toString();
+
+		// Add the new slot
+		block.slots[newSlotName] = {
+			name: newSlotName,
+			children: [],
+		};
+	};
+
+	/**
+	 * Set a listener on a block
+	 * @param id - id of the block
+	 * @param listener - listener to add to the block
+	 * @param actions - actions to add to the block
+	 */
+	private removeDynamicSlot = (id: string, indexToRemove: string): void => {
+		console.log(this._store.blocks[id].slots);
+		console.log(indexToRemove);
+		const block = this._store.blocks[id];
+
+		if (!block || !block.slots) {
+			return;
+		}
+
+		// Convert slot names to array and sort them numerically
+		const slotNames = Object.keys(block.slots)
+			.filter((name) => !isNaN(Number(name)))
+			.map((name) => Number(name))
+			.sort((a, b) => a - b);
+
+		console.log("slotnames", slotNames);
+
+		// Find the slot name at the specified index
+		const slotNameToRemove = slotNames[indexToRemove];
+		if (slotNameToRemove === undefined) {
+			return;
+		}
+
+		console.log("nameToRemove", slotNameToRemove);
+		debugger;
+
+		console.log("before Delete", block.slots);
+		// Remove the slot at the specified index
+		delete block.slots[slotNameToRemove];
+
+		console.log("after deleet", block.slots);
+
+		// Shift all subsequent slots down by one
+		const slotsToShift = slotNames.filter(
+			(name) => name > slotNameToRemove,
+		);
+		slotsToShift.forEach((oldSlotName) => {
+			const newSlotName = oldSlotName - 1;
+			block.slots[newSlotName] = block.slots[oldSlotName];
+			block.slots[newSlotName].name = newSlotName.toString();
+			delete block.slots[oldSlotName];
+		});
 	};
 
 	/**
