@@ -28,6 +28,7 @@ import type {
 	FilterCategory,
 } from "../menus/menu-types";
 import { BlocksMenuPanelFilterMenu } from "./BlocksMenuPanelFilterMenu";
+import { AddClientBlockModal } from '@/components/designer/AddClientBlockModal';
 
 const StyledTitle = styled("div")(({ theme }) => ({
 	borderRadius: "16px",
@@ -119,7 +120,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const { title, items } = props;
 	const notification = useNotification();
 	const { workspace } = useWorkspace();
-
 	const [search, setSearch] = useState("");
 	const [communityBlock, setCommunityBlock] = useState([]);
 	const [loading, setLoading] = useState(false);
@@ -199,18 +199,19 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const handleOnTrashClick = (blockId: string, blockName: string) => {
 		workspace.openOverlay(() => (
 			<>
-				<Modal.Title>Are you sure?</Modal.Title>
+				<Modal.Title>Delete Selected Block?</Modal.Title>
 				<Modal.Content>
 					<Typography variant="body2">
-						This will delete <b>{blockName}</b>
+						You will permanently remove the block from the community block section.
 					</Typography>
 				</Modal.Content>
 				<Modal.Actions>
 					<Button
-						variant={"outlined"}
+						variant={"text"}
+                        color="secondary"
 						onClick={() => workspace.closeOverlay()}
 					>
-						Close
+						Cancel
 					</Button>
 					<Button
 						color={"error"}
@@ -223,6 +224,17 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 			</>
 		));
 	};
+    const handleOnEditClick = (blockId: string, item: DesignerMenuItem) => {
+        workspace.openOverlay(() => (
+            <AddClientBlockModal
+                isOpen={true}
+                onClose={() => workspace.closeOverlay()}
+                selected={blockId}
+                isEdit={true}
+                block_json={item}
+            />
+        ));
+    };
 
 	const sortedItems = useMemo(() => {
 		// Use community Block when mode is COMMUNITY otherwise use items from the props
@@ -439,6 +451,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 													handleOnTrashClick={
 														handleOnTrashClick
 													}
+                                                    handleOnEditClick={
+                                                        handleOnEditClick
+                                                    }
 												/>
 											</Grid>
 										))}

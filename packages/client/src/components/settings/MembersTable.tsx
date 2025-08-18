@@ -492,7 +492,7 @@ export const MembersTable = (props: MembersTableProps) => {
       if (response.data.success) {
         notification.add({
           color: "success",
-          message: "Succesfully updated user permissions",
+          message: "Successfully updated user permissions",
         });
 
         // refresh the members
