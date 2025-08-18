@@ -37,6 +37,7 @@ import {
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
 	SelectedBlockPanel,
+	SettingsPanel as SettingsNavPanel,
 	VariablesPanel,
 } from "./panels";
 
@@ -100,7 +101,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						name: "Settings",
 						component: "settings",
 						config: {},
-						maxWidth: 1,
+						// maxWidth: 1,
 						helpText: "Settings",
 						enableDrag: false,
 					},
@@ -302,7 +303,7 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 		} else if (component === "settingsPanel") {
 			return <SettingsPanel />;
 		} else if (component === "settings") {
-			return null;
+			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
 		}
 		return <>{component}</>;
 	};
