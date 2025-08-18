@@ -2,17 +2,11 @@ import { Tab } from "@mui/icons-material";
 import {
 	InputSettings,
 	SelectInputSettings,
-	StandardColorSettings,
 	SwitchSettings,
 	TabBlockArraySettings,
 } from "../../settings";
-import { ArraySettings } from "../../settings/shared/ArraySettings";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
-import {
-	buildDimensionsSection,
-	buildListener,
-	buildShowField,
-} from "../block-defaults.shared";
+import { buildListener, buildShowField } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
 export const config: BlockSettingsConfig = {

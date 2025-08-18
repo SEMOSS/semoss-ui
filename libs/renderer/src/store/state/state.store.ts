@@ -431,11 +431,11 @@ export class StateStore {
 
 				return this.setExecutionOrder(list);
 			} else if (ActionMessages.ADD_BLOCK === action.message) {
-			/**
-			 * --------------------------------------------------
-			 * Blocks
-			 * --------------------------------------------------
-			 */
+				/**
+				 * --------------------------------------------------
+				 * Blocks
+				 * --------------------------------------------------
+				 */
 				const { json, position, isCommunity } = action.payload;
 
 				return this.addBlock(json, position, isCommunity);
@@ -470,11 +470,11 @@ export class StateStore {
 				const i = JSON.stringify(indexToRemove);
 				this.removeDynamicSlot(id, i);
 			} else if (ActionMessages.NEW_QUERY === action.message) {
-			/**
-			 * --------------------------------------------------
-			 * Notebooks
-			 * --------------------------------------------------
-			 */
+				/**
+				 * --------------------------------------------------
+				 * Notebooks
+				 * --------------------------------------------------
+				 */
 				const { queryId, config, isCommunity } = action.payload;
 
 				this.newQuery(queryId, config, isCommunity);
@@ -503,11 +503,11 @@ export class StateStore {
 
 				this.updateCell(queryId, cellId, path, value);
 			} else if (ActionMessages.RUN_QUERY === action.message) {
-			/**
-			 * --------------------------------------------------
-			 * Events
-			 * --------------------------------------------------
-			 */
+				/**
+				 * --------------------------------------------------
+				 * Events
+				 * --------------------------------------------------
+				 */
 				const { queryId } = action.payload;
 
 				return this.runQuery(queryId);
@@ -519,10 +519,6 @@ export class StateStore {
 				const { name, detail } = action.payload;
 
 				this.dispatchEvent(name, detail);
-			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
-				const { queryId, cellId, marked } = action.payload;
-
-				this.runMarkdownCell(queryId, cellId, marked);
 			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
 				const { destinationType, destination } = action.payload;
 

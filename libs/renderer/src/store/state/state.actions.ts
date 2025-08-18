@@ -48,7 +48,6 @@ export enum ActionMessages {
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
-	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
 }
 
 export type Actions =
@@ -70,7 +69,6 @@ export type Actions =
 	| RunCellAction
 	| RemoveDynamicSlotAction
 	| AddDynamicSlotAction
-	| RunMarkdownCellAction
 	| DispatchEventAction
 	| DispatchOpenEventAction
 	| AddVariableAction
@@ -344,14 +342,5 @@ export interface RunCellAction extends Action {
 	payload: {
 		queryId: string;
 		cellId: string;
-	};
-}
-
-export interface RunMarkdownCellAction extends Action {
-	message: ActionMessages.RUN_MARKDOWN_CELL;
-	payload: {
-		queryId: string;
-		cellId: string;
-		marked: boolean;
 	};
 }
