@@ -11,11 +11,11 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
+import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { ENGINE_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
@@ -219,10 +219,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const setGlobal = (db) => {
 			setEngineGlobal(
-					configStore.store.user.admin,
-					db.database_id,
-					!db.database_global,
-				)
+				configStore.store.user.admin,
+				db.database_id,
+				!db.database_global,
+			)
 				.then((response) => {
 					if (response.data.success) {
 						const newDatabases = [];

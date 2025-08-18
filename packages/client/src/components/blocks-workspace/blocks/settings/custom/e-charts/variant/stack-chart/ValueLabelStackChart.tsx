@@ -325,7 +325,9 @@ export const ValueLabelStackChart = observer(
 									sans-serif
 								</Menu.Item>
 								<Menu.Item value="serif">serif</Menu.Item>
-								<Menu.Item value="monospace">monospace</Menu.Item>
+								<Menu.Item value="monospace">
+									monospace
+								</Menu.Item>
 							</Select>
 						</StyledAxisColDiv>
 

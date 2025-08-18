@@ -523,8 +523,8 @@ export class MonolithStore {
 			throw Error("No Response to get Apps");
 		}
 
-    return response.data;
-  }
+		return response.data;
+	}
 
 	// ----------------------------------------------------------------------
 	// Database Level
@@ -562,21 +562,19 @@ export class MonolithStore {
 			throw Error("No Response to get Apps");
 		}
 
-    return response.data;
-  }
+		return response.data;
+	}
 
-  // ----------------------------------------------------------------------
-  // Project Level
-  // ----------------------------------------------------------------------
-  // ----------------------------------------------------------------------
-  // Insight Level
-  // ----------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+	// Project Level
+	// ----------------------------------------------------------------------
+	// ----------------------------------------------------------------------
+	// Insight Level
+	// ----------------------------------------------------------------------
 
-  async getInsights() {
-    console.error("needs to be added on BE");
-  }
+	async getInsights() {
+		console.error("needs to be added on BE");
+	}
 
-  // Verified Project Member actions
-
+	// Verified Project Member actions
 }
-

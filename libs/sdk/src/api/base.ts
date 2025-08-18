@@ -26,26 +26,37 @@ interceptors.request = async (options) => {
 	// only set if enabled
 	if (CSRF.isEnabled || Env.CSRF) {
 		if (options.method === "POST") {
-			// use the token if it is there
+			// ensure headers object exists
+			if (!options.headers) {
+				options.headers = {};
+			}
+			// use the token if it is there otherwise fetch it
 			if (!CSRF.token) {
-				const { response } = await get(
-					`${Env.MODULE}/api/config/fetchCsrf`,
-					{
-						headers: {
-							"X-CSRF-Token": "fetch",
+				try {
+					const response = await fetch(
+						`${Env.MODULE}/api/config/fetchCsrf`,
+						{
+							headers: {
+								"X-CSRF-Token": "fetch",
+							},
 						},
-					},
-				);
-
-				// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-				CSRF.token =
-					response.headers.get("X-CSRF-Token") ||
-					response.headers.get("x-csrf-token") ||
-					"";
+					);
+					// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+					CSRF.token =
+						response.headers.get("X-CSRF-Token") ||
+						response.headers.get("x-csrf-token") ||
+						"";
+				} catch (error) {
+					if (error instanceof Error) {
+						throw error;
+					}
+					throw Error("Failed to fetch CSRF token:");
+					CSRF.token = "";
+				}
 			}
 
 			// add the token
-			if (options.headers) {
+			if (CSRF.token) {
 				options.headers = {
 					...options.headers,
 					"X-CSRF-Token": CSRF.token,
@@ -53,6 +64,31 @@ interceptors.request = async (options) => {
 			}
 		}
 	}
+
+	// 		if (!CSRF.token) {
+	// 			const { response } = await get(
+	// 				`${Env.MODULE}/api/config/fetchCsrf`,
+	// 				{
+	// 					headers: {
+	// 						"X-CSRF-Token": "fetch",
+	// 					},
+	// 				},
+	// 			);
+
+	// 			CSRF.token =
+	// 				response.headers.get("X-CSRF-Token") ||
+	// 				response.headers.get("x-csrf-token") ||
+	// 				"";
+	// 		}
+
+	// 		if (options.headers) {
+	// 			options.headers = {
+	// 				...options.headers,
+	// 				"X-CSRF-Token": CSRF.token,
+	// 			};
+	// 		}
+	// 	}
+	// }
 
 	return options;
 };

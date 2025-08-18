@@ -20,7 +20,7 @@ export interface PopoverPosition {
 }
 
 // Define the type alias for anchorReference
-export type PopoverAnchorReference = 'anchorEl' | 'anchorPosition';
+export type PopoverAnchorReference = "anchorEl" | "anchorPosition";
 
 export interface PopoverProps {
 	/**
@@ -71,10 +71,10 @@ export interface PopoverProps {
 	 */
 	anchorPosition?: PopoverPosition;
 
-    /**
-     * Determines which anchor prop to use for positioning the popover.
-     */
-    anchorReference?: PopoverAnchorReference;
+	/**
+	 * Determines which anchor prop to use for positioning the popover.
+	 */
+	anchorReference?: PopoverAnchorReference;
 
 	/**
 	 * The content of the component.

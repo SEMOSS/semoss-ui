@@ -19,6 +19,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { AddBlocksMenuCard } from "@/components/designer";
+import { AddClientBlockModal } from "@/components/designer/AddClientBlockModal";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { SECTION_ORDER } from "../menus/default-menu";
@@ -119,7 +120,6 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const { title, items } = props;
 	const notification = useNotification();
 	const { workspace } = useWorkspace();
-
 	const [search, setSearch] = useState("");
 	const [communityBlock, setCommunityBlock] = useState([]);
 	const [loading, setLoading] = useState(false);
@@ -199,18 +199,20 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 	const handleOnTrashClick = (blockId: string, blockName: string) => {
 		workspace.openOverlay(() => (
 			<>
-				<Modal.Title>Are you sure?</Modal.Title>
+				<Modal.Title>Delete Selected Block?</Modal.Title>
 				<Modal.Content>
 					<Typography variant="body2">
-						This will delete <b>{blockName}</b>
+						You will permanently remove the block from the community
+						block section.
 					</Typography>
 				</Modal.Content>
 				<Modal.Actions>
 					<Button
-						variant={"outlined"}
+						variant={"text"}
+						color="secondary"
 						onClick={() => workspace.closeOverlay()}
 					>
-						Close
+						Cancel
 					</Button>
 					<Button
 						color={"error"}
@@ -221,6 +223,17 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 					</Button>
 				</Modal.Actions>
 			</>
+		));
+	};
+	const handleOnEditClick = (blockId: string, item: DesignerMenuItem) => {
+		workspace.openOverlay(() => (
+			<AddClientBlockModal
+				isOpen={true}
+				onClose={() => workspace.closeOverlay()}
+				selected={blockId}
+				isEdit={true}
+				block_json={item}
+			/>
 		));
 	};
 
@@ -438,6 +451,9 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 													isCommunity={isCommunity}
 													handleOnTrashClick={
 														handleOnTrashClick
+													}
+													handleOnEditClick={
+														handleOnEditClick
 													}
 												/>
 											</Grid>

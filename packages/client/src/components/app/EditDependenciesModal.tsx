@@ -1,6 +1,6 @@
 import { Close } from "@mui/icons-material";
 import { useEffect } from "react";
-import { type Control, Controller } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import { Env } from "@semoss/sdk/react";
 import {
 	Autocomplete,
@@ -61,10 +61,10 @@ const StyledCardImage = styled("img")({
 interface EditDependenciesModalProps {
 	isOpen: boolean;
 	onClose: (refresh: boolean) => void;
-	control: Control<any, any>;
-	getValues: any;
-	setValue: any;
-	watch: any;
+	control;
+	getValues;
+	setValue;
+	watch;
 }
 
 export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
@@ -96,6 +96,8 @@ export const EditDependenciesModal = (props: EditDependenciesModalProps) => {
 			userPermission: d.user_permission,
 			isPublic: !!d.database_global,
 			isDiscoverable: !!d.database_discoverable,
+			description: d.description,
+			access_permission: d.access_permission,
 		}));
 		return modelled;
 	};

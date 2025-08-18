@@ -11,13 +11,7 @@ import {
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
-import {
-	Autocomplete,
-	List,
-	Stack,
-	styled,
-	TextField,
-} from "@semoss/ui";
+import { Autocomplete, List, Stack, styled, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { getShowFieldOptions } from "../../../../../block-settings/block-defaults.shared";
 import { SelectInputSettings } from "../../../../../settings";

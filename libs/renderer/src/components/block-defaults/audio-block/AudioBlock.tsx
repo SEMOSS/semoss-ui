@@ -4,14 +4,14 @@ import { styled } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
-const StyledLabel = styled("span")(({ theme }) => ({
+const StyledLabel = styled("span")({
 	marginBottom: "4px",
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
 	justifyContent: "center",
 	gap: "4px",
-}));
+});
 
 export interface AudioBlockDef extends BlockDef<"audio-player"> {
 	widget: "audio-player";

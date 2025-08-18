@@ -8,7 +8,7 @@ import {
 	Stack,
 	Typography,
 } from "@semoss/ui";
-import { uploadFile as uploadFileAPI } from '@/api';
+import { uploadFile as uploadFileAPI } from "@/api";
 import { useRootStore } from "@/hooks";
 
 interface AddFileOverlayProps {

@@ -40,6 +40,37 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	// ----------------------------------------------------------
 	{
 		section: SECTION_LAYOUT,
+		name: "Tab",
+		helperText: "Show content in tabular manner",
+		json: {
+			widget: "tab",
+			data: {
+				style: {},
+				triggerBgColor: "",
+				contentBgColor: "",
+				showExpandIcon: false,
+				activeTab: 1,
+				show: "true",
+				tabLabels: ["Tab 1", "Tab 2"],
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+				onChange: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {
+				"1": [],
+				"2": [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
 		name: "Accordion",
 		activeImage: BLOCK_IMAGES["ACCORDION_ACTIVE"],
 		hoverImage: BLOCK_IMAGES["ACCORDION_HOVER"],
@@ -620,29 +651,30 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 			slots: {} as BlockJSON["slots"],
 		},
 	},
-	// {
-	//     section: SECTION_ELEMENT,
-	//     name: 'PDF Viewer',
-	//     helperText: 'Embed a PDF for viewing',
-	//     activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-	//     hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-	//     json: {
-	//         widget: 'pdfViewer',
-	//         data: {
-	//             style: {
-	//                 width: '100%',
-	//                 height: '82%',
-	//                 padding: '8px',
-	//             },
-	//             selectedPdf: null,
-	//             show: 'true',
-	//         },
-	//         listeners: {
-	//             preProcess: { type: 'sync', order: [] },
-	//         },
-	//         slots: {} as BlockJSON['slots'],
-	//     },
-	// },
+	{
+		section: SECTION_ELEMENT,
+		name: "PDF Viewer",
+		helperText: "Embed a PDF for viewing",
+		activeImage: BLOCK_IMAGES["PDF_VIEWER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["PDF_VIEWER_HOVER"],
+		json: {
+			widget: "pdfViewer",
+			data: {
+				style: {
+					width: "100%",
+					height: "82%",
+					padding: "8px",
+				},
+				selectedPdf: null,
+				engineId: "",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
 	{
 		section: SECTION_ELEMENT,
 		name: "Image",

@@ -1,6 +1,6 @@
 // InputForm
 
-import { ExpandLess, ExpandMore, } from "@mui/icons-material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -18,7 +18,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { uploadFile } from '@/api';
+import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
@@ -238,7 +238,8 @@ export const ImportForm = (props) => {
 				// if they do match the user has not changed the initScript or they manually changed it back
 				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
 				const isMatched =
-					initScriptValueFromCallback === initScriptValueFromTextField;
+					initScriptValueFromCallback ===
+					initScriptValueFromTextField;
 				setIsDynamicInputChangedByUser(!isMatched);
 			}, 0);
 		}
@@ -962,7 +963,9 @@ export const ImportForm = (props) => {
 							advancedFields.map((val, _i) => {
 								if (!val.hidden) {
 									return (
-										<StyledKeyValue key={`importForm-advancedField-${val.fieldName}`}>
+										<StyledKeyValue
+											key={`importForm-advancedField-${val.fieldName}`}
+										>
 											<Controller
 												name={val.fieldName}
 												control={control}

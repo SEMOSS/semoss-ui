@@ -1,4 +1,5 @@
 import {
+	Add,
 	ClearRounded,
 	Delete,
 	EditRounded,
@@ -26,7 +27,13 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { addEnginePermission, deleteEnginePermission, editEnginePermission, getTeamEngines, getUnassignedTeamEngines } from "@/api";
+import {
+	addEnginePermission,
+	deleteEnginePermission,
+	editEnginePermission,
+	getTeamEngines,
+	getUnassignedTeamEngines,
+} from "@/api";
 import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
@@ -52,14 +59,24 @@ const StyledModal = styled(Modal)({
 	},
 });
 
-const UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
-
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
+});
+
+const NameTableCell = styled(Table.Cell)({
+	width: "100%",
+	maxWidth: "1px",
+});
+
+const DateTableCell = styled(Table.Cell)({
+	whiteSpace: "nowrap",
+	"@media (max-width: 768px)": {
+		whiteSpace: "normal",
+	},
+});
+
+const StyledTablePagination = styled(Table.Pagination)({
+	border: "none",
 });
 
 const StyledEngineContent = styled("div")({
@@ -81,7 +98,6 @@ const StyledEngineInnerContent = styled("div")({
 
 const StyledTableContainer = styled(Table.Container)({
 	borderRadius: "12px",
-	/* Devias Drop Shadow */
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
@@ -97,14 +113,15 @@ const StyledTableTitleContainer = styled("div")({
 
 const StyledTableTitleDiv = styled("div")({
 	display: "flex",
-	padding: "12px 24px 12px 16px",
+	padding: "12px 16px 12px 16px",
 	alignItems: "center",
 	gap: "10px",
+	fontWeight: 500,
 });
 
 const StyledTableTitleEngineContainer = styled("div")({
 	display: "flex",
-	alignItems: "flex-start",
+	alignItems: "center",
 	flex: "1 0 0",
 });
 
@@ -131,12 +148,6 @@ const StyledAddEnginesContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledNonEnginesContainer = styled("div")({
-	width: "100%",
-	borderRadius: "12px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-});
-
 const StyledNonEnginesDiv = styled("div")({
 	width: "100%",
 	height: "503px",
@@ -145,10 +156,7 @@ const StyledNonEnginesDiv = styled("div")({
 	gap: "1rem",
 	justifyContent: "center",
 	alignItems: "center",
-});
-
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
+	background: "white",
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -184,6 +192,11 @@ const StyledSelectEngineTypography = styled(Typography)({
 	font: "Inter",
 	fontWeight: "500",
 	fontSize: "16px",
+});
+
+const StyledRadioGroup = styled(RadioGroup)({
+	flexWrap: "nowrap",
+	whiteSpace: "nowrap",
 });
 
 // maps for permissions,
@@ -373,18 +386,19 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				groupType,
 				limit,
 				enginesPage * limit - limit, // offset
-			searchFilter,
-		);
-		setEngines((response as {data: Engine[], response: unknown }).data as Engine[]);
-		setHasEngines(true);
-	};
-	getTeamEnginesData();
-	}, [
-		groupId,
-		groupType,
-		enginesPage,
-		searchFilter,
-	]);
+				searchFilter,
+			);
+			setEngines(
+				(response as { data: Engine[]; response: unknown })
+					.data as Engine[],
+			);
+			setHasEngines(
+				(response as { data: Engine[]; response: unknown }).data
+					.length > 0,
+			);
+		};
+		getTeamEnginesData();
+	}, [groupId, groupType, enginesPage, searchFilter]);
 
 	useEffect(() => {
 		if (isScrollBottom) {
@@ -392,7 +406,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				getAdditionalEngines();
 			}
 		}
-	}, [isScrollBottom, canCollect, getAdditionalEngines]);
+	}, [isScrollBottom, canCollect]);
 
 	useEffect(() => {
 		if (searchEngineInput) {
@@ -438,11 +452,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				let response:
 					| AxiosResponse<{ success: boolean }>
 					| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-						}
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
 					| null = null;
 				response = await addEnginePermission(
 					groupId,
@@ -493,19 +507,15 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const deleteEngine = async (engine: Engine) => {
 		try {
 			let response:
-			| AxiosResponse<{ success: boolean }>
-			| {
-				response: Response;
-				data: {
-				success: boolean;
-				};
-			}
-			| null = null;
-			response = await deleteEnginePermission(
-				groupId,
-				groupType,
-				engine,
-			);
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await deleteEnginePermission(groupId, groupType, engine);
 
 			if (!response) {
 				return;
@@ -535,14 +545,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			for (let i = 0; i < selectedEngines.length; i++) {
 				try {
 					let response:
-					| AxiosResponse<{ success: boolean }>
-					| {
-						response: Response;
-						data: {
-						success: boolean;
-						};
-					}
-					| null = null;
+						| AxiosResponse<{ success: boolean }>
+						| {
+								response: Response;
+								data: {
+									success: boolean;
+								};
+						  }
+						| null = null;
 					response = await deleteEnginePermission(
 						groupId,
 						groupType,
@@ -585,18 +595,15 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 
 			let response:
-        | AxiosResponse<{ success: boolean }>
-        | {
-            response: Response;
-            data: {
-              success: boolean;
-            };
-          }
-        | null = null;
-			response = await editEnginePermission(
-				groupId,
-				engine,
-			);
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await editEnginePermission(groupId, engine);
 
 			if (!response) {
 				return;
@@ -606,7 +613,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated permissions",
+					message: "Successfully updated permissions",
 				});
 			} else {
 				notification.add({
@@ -634,32 +641,41 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 
 	const filterEngines = useCallback(() => {
 		const response = getTeamEngines(
-				groupId,
-				groupType,
-				limit,
-				enginesPage * limit - limit, // offset
-				searchFilter,
-			);
+			groupId,
+			groupType,
+			limit,
+			enginesPage * limit - limit, // offset
+			searchFilter,
+		);
 
-		setEngines((response as unknown as {data: Engine[], response: unknown }).data as Engine[]);
-		setHasEngines(true);
+		setEngines(
+			(response as unknown as { data: Engine[]; response: unknown })
+				.data as Engine[],
+		);
+		setHasEngines(
+			(response as unknown as { data: Engine[]; response: unknown }).data
+				.length > 0,
+		);
 
 		const responseData = getTeamEngines(
-				groupId,
-				groupType,
-				100,
-				0, // offset
-				searchFilter,
-			);
+			groupId,
+			groupType,
+			100,
+			0, // offset
+			searchFilter,
+		);
 
-		setEngineCount(((responseData as unknown as {data: Engine[], response: unknown }).data as Engine[]).length);
-
-	}, [
-		enginesPage,
-		searchFilter,
-		groupId,
-		groupType,
-	]);
+		setEngineCount(
+			(
+				(
+					responseData as unknown as {
+						data: Engine[];
+						response: unknown;
+					}
+				).data as Engine[]
+			).length,
+		);
+	}, [enginesPage, searchFilter, groupId, groupType]);
 
 	const debouncedFilterProjects = debounced(filterEngines, 400);
 
@@ -676,8 +692,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				hasEngines ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
-							<StyledTableTitleDiv>Engines</StyledTableTitleDiv>
-							<StyledTableTitleEngineContainer />
+							<StyledTableTitleEngineContainer>
+								<StyledTableTitleDiv>
+									Engines
+								</StyledTableTitleDiv>
+								<Typography variant="body1">
+									{engines.length} Engines
+								</Typography>
+							</StyledTableTitleEngineContainer>
 							<StyledSearchButtonContainer>
 								<Search
 									ref={engineSearchRef}
@@ -694,12 +716,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								{selectedEngines.length > 0 && (
 									<Button
 										variant={"outlined"}
-										color="error"
 										onClick={() =>
 											setDeleteEnginesModal(true)
 										}
 									>
-										Delete Selected
+										Delete
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -710,6 +731,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										getEngines(true);
 										setAddEngineModal(true);
 									}}
+									startIcon={<Add />}
 								>
 									Add Engines
 								</Button>
@@ -718,7 +740,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 						<StyledEngineTable>
 							<Table.Head>
 								<Table.Row>
-									<Table.Cell size="small" padding="checkbox">
+									<NameTableCell size="small">
 										<Checkbox
 											checked={
 												selectedEngines.length ===
@@ -738,8 +760,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												}
 											}}
 										/>
-									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
+										Name
+									</NameTableCell>
 									<Table.Cell size="small">Access</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
@@ -748,28 +770,28 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{engines?.map((_x, i) => {
-										const engine = engines[i];
-										let isSelected = false;
+								{engines?.map((engine, i) => {
+									let isSelected = false;
 
-										if (engine) {
-											isSelected = selectedEngines.some(
-												(value) => {
-													return (
-														value.engineid ===
-														engine.engineid
-													);
-												},
-											);
-										}
-										if (engine) {
-											return (
-												<Table.Row
-													key={`${engine.engineid} + ${i}`}
-												>
-													<StyledTableCell
-														size="medium"
-														padding="checkbox"
+									if (engine) {
+										isSelected = selectedEngines.some(
+											(value) => {
+												return (
+													value.engineid ===
+													engine.engineid
+												);
+											},
+										);
+									}
+									if (engine) {
+										return (
+											<Table.Row
+												key={`${engine.engineid} + ${i}`}
+											>
+												<Table.Cell size="small">
+													<Stack
+														direction="row"
+														spacing={0}
 													>
 														<StyledCheckbox
 															checked={isSelected}
@@ -803,111 +825,103 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																}
 															}}
 														/>
-													</StyledTableCell>
-													<UserInfoTableCell
-														size="medium"
-														component="td"
-														scope="row"
-													>
 														<NameIDWrapper>
-															<Stack>
+															<Typography variant="body2">
 																{
 																	engine.engine_name
 																}
-															</Stack>
-															<Stack>
+															</Typography>
+															<Typography
+																variant="body2"
+																color="secondary"
+															>
 																{`Engine ID: ${engine.engineid}`}
-															</Stack>
+															</Typography>
 														</NameIDWrapper>
-													</UserInfoTableCell>
-													<Table.Cell size="medium">
-														<RadioGroup
-															row
-															defaultValue={
-																engine.permission
-															}
-															onChange={(e) => {
-																console.log(
-																	"Hit Update Permission fn and fix in state",
-																);
-																updateSelectedEngines(
-																	{
-																		engineid:
-																			engine.engineid,
-																		type: engine.type,
-																		permission:
-																			e
-																				.target
-																				.value,
-																		engine_name:
-																			engine.engine_name,
-																		engine_id:
-																			engine.engine_id,
-																		engine_type:
-																			engine.engine_type,
-																		engine_date_created:
-																			engine.engine_date_created,
-																	},
-																);
-															}}
-														>
-															<RadioGroup.Item
-																value="1"
-																label="Author"
-															/>
-															<RadioGroup.Item
-																value="2"
-																label="Editor"
-															/>
-															<RadioGroup.Item
-																value="3"
-																label="Read-Only"
-															/>
-														</RadioGroup>
-													</Table.Cell>
-													<Table.Cell size="medium">
-														{
-															engine.engine_date_created
+													</Stack>
+												</Table.Cell>
+												<Table.Cell size="small">
+													<StyledRadioGroup
+														row
+														defaultValue={
+															engine.permission
 														}
-													</Table.Cell>
-													<Table.Cell size="medium">
-														<IconButton
-															onClick={() => {
-																// set engine
-																setEngineToDelete(
-																	engine,
-																);
-																// open modal
-																setDeleteEngineModal(
-																	true,
-																);
-															}}
-														>
-															<Delete></Delete>
-														</IconButton>
-													</Table.Cell>
-												</Table.Row>
-											);
-										} else {
-											return (
-												<Table.Row
-													key={
-														`No data available`
-													}
-												>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-												</Table.Row>
-											);
-										}
-									})}
+														onChange={(e) => {
+															console.log(
+																"Hit Update Permission fn and fix in state",
+															);
+															updateSelectedEngines(
+																{
+																	engineid:
+																		engine.engineid,
+																	type: engine.type,
+																	permission:
+																		e.target
+																			.value,
+																	engine_name:
+																		engine.engine_name,
+																	engine_id:
+																		engine.engine_id,
+																	engine_type:
+																		engine.engine_type,
+																	engine_date_created:
+																		engine.engine_date_created,
+																},
+															);
+														}}
+													>
+														<RadioGroup.Item
+															value="1"
+															label="Author"
+														/>
+														<RadioGroup.Item
+															value="2"
+															label="Editor"
+														/>
+														<RadioGroup.Item
+															value="3"
+															label="Read-Only"
+														/>
+													</StyledRadioGroup>
+												</Table.Cell>
+												<DateTableCell size="small">
+													{engine.engine_date_created}
+												</DateTableCell>
+												<Table.Cell size="small">
+													<IconButton
+														onClick={() => {
+															// set engine
+															setEngineToDelete(
+																engine,
+															);
+															// open modal
+															setDeleteEngineModal(
+																true,
+															);
+														}}
+													>
+														<Delete></Delete>
+													</IconButton>
+												</Table.Cell>
+											</Table.Row>
+										);
+									} else {
+										return (
+											<Table.Row
+												key={`No data available`}
+											>
+												<Table.Cell size="small"></Table.Cell>
+												<Table.Cell size="small"></Table.Cell>
+												<Table.Cell size="small"></Table.Cell>
+												<Table.Cell size="small"></Table.Cell>
+											</Table.Row>
+										);
+									}
+								})}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
-									<Table.Pagination
+									<StyledTablePagination
 										rowsPerPageOptions={
 											paginationOptions.enginesPageCounts
 										}
@@ -917,17 +931,17 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										}}
 										page={enginesPage - 1}
 										rowsPerPage={5}
-										count={enginesCount}
+										count={engines ? engines.length : 0}
 									/>
 								</Table.Row>
 							</Table.Footer>
 						</StyledEngineTable>
 					</StyledTableContainer>
 				) : (
-					<StyledNonEnginesContainer>
+					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>
-								<Typography variant={"h6"}>engines</Typography>
+								<Typography variant={"h6"}>Engines</Typography>
 							</StyledTableTitleDiv>
 						</StyledTableTitleContainer>
 						<StyledNonEnginesDiv>
@@ -944,7 +958,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								Add Engines
 							</Button>
 						</StyledNonEnginesDiv>
-					</StyledNonEnginesContainer>
+					</StyledTableContainer>
 				)}
 			</StyledEngineInnerContent>
 			<StyledModal open={addEngineModal} maxWidth="lg">
@@ -979,9 +993,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									option.engine_name === value.engine_name
 								);
 							}}
-							onChange={(_event,newValue: Engine[]) => {
+							onChange={(_event, newValue: Engine[]) => {
 								setSelectedNonCredentialedEngines([
-									...newValue
+									...newValue,
 								]);
 							}}
 							ListboxProps={{
@@ -1002,160 +1016,144 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							}}
 						/>
 
-						{selectedNonCredentialedEngines?.map((engine, idx)=>{
-									return (
+						{selectedNonCredentialedEngines?.map((engine, idx) => {
+							return (
+								<Box
+									key={`${engine.engine_name}- ${idx}`}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+									}}
+								>
+									<Box
+										sx={{
+											width: "100%",
+											gap: "8px",
+											position: "relative",
+											paddingBottom: "7px",
+											border: "0px",
+											display: "flex",
+											alignItems: "center",
+										}}
+									>
 										<Box
-											key={`${engine.engine_name}- ${idx}`}
 											sx={{
 												display: "flex",
-												justifyContent: "left",
-												align: "center",
-												backgroundColor:
-													idx % 2 !== 0
-														? "rgba(0, 0, 0, .03)"
-														: "",
+												justifyContent: "center",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
+												float: "left",
 											}}
 										>
 											<Box
 												sx={{
-													width: "100%",
-													gap: "8px",
-													position: "relative",
-													paddingBottom: "7px",
-													border: "0px",
 													display: "flex",
+													height: "32px",
+													width: "32px",
+													justifyContent: "center",
 													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "8px",
 												}}
 											>
-												<Box
+												<Avatar
+													aria-label="avatar"
 													sx={{
 														display: "flex",
-														justifyContent:
-															"center",
-														marginTop: "6px",
-														marginLeft: "8px",
-														marginRight: "8px",
-														float: "left",
-													}}
-												>
-													<Box
-														sx={{
-															display: "flex",
-															height: "32px",
-															width: "32px",
-															justifyContent:
-																"center",
-															alignItems:
-																"center",
-															border: "0.5px solid rgba(0, 0, 0, .05)",
+														width: "32px",
+														height: "32px",
+														borderRadius: "8px",
+														"& img": {
+															width: "100%",
+															height: "100%",
+															objectFit: "cover",
 															borderRadius: "8px",
-														}}
-													>
-														<Avatar
-															aria-label="avatar"
-															sx={{
-																display: "flex",
-																width: "32px",
-																height: "32px",
-																borderRadius:
-																	"8px",
-																"& img": {
-																	width: "100%",
-																	height: "100%",
-																	objectFit:
-																		"cover",
-																	borderRadius:
-																		"8px",
-																},
-															}}
-															src={getRandomImageForProject(
-																engine.engine_name,
-															)}
-														/>
-													</Box>
-												</Box>
-
-												<Card.Header
-													title={
-														<Typography variant="body1">
-															{engine.engine_name}
-														</Typography>
-													}
-													sx={{
-														color: "#000",
-														maxWidth: "85%",
-														width: "100%",
-														float: "left",
-														display: "inline-flex",
-														alignItems: "center",
-														margin: "0px 0px 0px 0px",
-														"& .MuiCardHeader-content":
-															{
-																gap: "4px",
-															},
+														},
 													}}
-													subheader={
-														<Box
-															sx={{
-																display: "flex",
-																gap: 2,
-																alignItems:
-																	"center",
-															}}
-														>
-															<Typography
-																variant="body2"
-																sx={{
-																	display:
-																		"inline",
-																	color: "#000000DE",
-																}}
-															>
-																{
-																	engine?.engine_type
-																}{" "}
-																| Engine ID:{" "}
-																{
-																	engine?.engine_id
-																}
-															</Typography>
-														</Box>
-													}
-													action={
-														<IconButton
-															sx={{
-																height: "48px",
-																width: "48px",
-																fontSize:
-																	"small",
-																color: "rgba( 0, 0, 0, .7)",
-																mr: "2px",
-																top: "0px",
-																position:
-																	"absolute",
-																padding: "10px",
-															}}
-															onClick={() => {
-																const filtered =
-																	selectedNonCredentialedEngines.filter(
-																		(val) =>
-																			val.engine_id !==
-																			engine.engine_id,
-																	);
-																setSelectedNonCredentialedEngines(
-																	filtered,
-																);
-															}}
-														>
-															<ClearRounded />
-														</IconButton>
-													}
+													src={getRandomImageForProject(
+														engine.engine_name,
+													)}
 												/>
 											</Box>
 										</Box>
-									);
-								},
-							)}
+
+										<Card.Header
+											title={
+												<Typography variant="body1">
+													{engine.engine_name}
+												</Typography>
+											}
+											sx={{
+												color: "#000",
+												maxWidth: "85%",
+												width: "100%",
+												float: "left",
+												display: "inline-flex",
+												alignItems: "center",
+												margin: "0px 0px 0px 0px",
+												"& .MuiCardHeader-content": {
+													gap: "4px",
+												},
+											}}
+											subheader={
+												<Box
+													sx={{
+														display: "flex",
+														gap: 2,
+														alignItems: "center",
+													}}
+												>
+													<Typography
+														variant="body2"
+														sx={{
+															display: "inline",
+															color: "#000000DE",
+														}}
+													>
+														{engine?.engine_type} |
+														Engine ID:{" "}
+														{engine?.engine_id}
+													</Typography>
+												</Box>
+											}
+											action={
+												<IconButton
+													sx={{
+														height: "48px",
+														width: "48px",
+														fontSize: "small",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "2px",
+														top: "0px",
+														position: "absolute",
+														padding: "10px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedEngines.filter(
+																(val) =>
+																	val.engine_id !==
+																	engine.engine_id,
+															);
+														setSelectedNonCredentialedEngines(
+															filtered,
+														);
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
+									</Box>
+								</Box>
+							);
+						})}
 
 						<StyledSelectEngineTypography variant="subtitle1">
 							Permissions

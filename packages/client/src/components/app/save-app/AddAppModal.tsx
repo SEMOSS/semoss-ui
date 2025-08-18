@@ -178,7 +178,8 @@ export const AddAppModal = (props: AddAppProps) => {
 				`CreateProject(project=["${data[ADD_APP_FORM_FIELD_NAME]}"], global=["${data[ADD_APP_FORM_FIELD_IS_GLOBAL]}"], projectType=["${data[ADD_APP_FORM_FIELD_APP_TYPE]}"], portal=["true"])`,
 			);
 
-			const createProjectOutput = createProjectResponse.pixelReturn[0].output;
+			const createProjectOutput =
+				createProjectResponse.pixelReturn[0].output;
 			const type = createProjectResponse.pixelReturn[0].operationType[0];
 
 			if (type.indexOf("ERROR") > -1) {
@@ -198,8 +199,10 @@ export const AddAppModal = (props: AddAppProps) => {
 				})}])`,
 			);
 
-			const projectOutput = setProjectMetadataResponse.pixelReturn[0].output;
-			const projectType = setProjectMetadataResponse.pixelReturn[0].operationType[0];
+			const projectOutput =
+				setProjectMetadataResponse.pixelReturn[0].output;
+			const projectType =
+				setProjectMetadataResponse.pixelReturn[0].operationType[0];
 
 			if (projectType.indexOf("ERROR") > -1) {
 				notification.add({
@@ -214,7 +217,8 @@ export const AddAppModal = (props: AddAppProps) => {
 				`DeleteAsset(filePath=["version/assets/"], space=["${createProjectOutput.project_id}"]);`,
 			);
 			const deleteAssetOutput = deleteAssetResponse.pixelReturn[0].output;
-			const deleteAssetType = deleteAssetResponse.pixelReturn[0].operationType[0];
+			const deleteAssetType =
+				deleteAssetResponse.pixelReturn[0].operationType[0];
 
 			if (deleteAssetType.indexOf("ERROR") > -1) {
 				notification.add({

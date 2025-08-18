@@ -5,7 +5,6 @@ import {
 	Box,
 	Button,
 	Card,
-	Icon,
 	Modal,
 	RadioGroup,
 	Stack,
@@ -21,7 +20,55 @@ const StyledCard = styled(Card)({
 	borderRadius: "12px",
 });
 
-export const EngineAccessButton = () => {
+const StyledButton = styled(Button)(({ theme }) => ({
+	borderRadius: "12px",
+	border: `1px solid ${theme.palette.primary.main}`,
+	fontSize: theme.typography.pxToRem(13),
+	height: "30px",
+	padding: theme.spacing(0, 1.5),
+}));
+
+const HeaderRow = styled(Box)(({ theme }) => ({
+	display: "flex",
+	fontSize: theme.typography.pxToRem(16),
+}));
+
+const TitleAvatar = styled(Avatar)(({ theme }) => ({
+	width: "22px",
+	height: "22px",
+	marginTop: theme.spacing(0.25), // ~2px
+	marginRight: theme.spacing(1.5), // 12px
+	fontSize: theme.typography.pxToRem(12),
+	fontWeight: 700,
+	backgroundColor: "rgba(0, 0, 0, .5)",
+}));
+
+const IconWrapper = styled("span")(({ theme }) => ({
+	display: "inline-flex",
+	marginTop: theme.spacing(0.25),
+	marginRight: theme.spacing(1.5),
+	fontWeight: 700,
+	color: "rgba(0, 0, 0, .5)",
+}));
+
+const SubheaderOffset = styled(Box)(() => ({
+	marginLeft: "30px",
+}));
+
+const EditRoundedIcon = styled(EditRounded)(() => ({
+	width: "22px",
+	height: "22px",
+}));
+const RemoveRedEyeRoundedIcon = styled(RemoveRedEyeRounded)(() => ({
+	width: "22px",
+	height: "22px",
+}));
+
+type EngineAccessButtonProps = {
+	fromApp?: boolean;
+};
+
+export const EngineAccessButton = ({ fromApp }: EngineAccessButtonProps) => {
 	const { type, active } = useEngine();
 
 	const { monolithStore } = useRootStore();
@@ -75,45 +122,50 @@ export const EngineAccessButton = () => {
 			// close is
 			setOpen(false);
 		} catch (e) {
-			// noop
+			console.log(e);
 		}
 	};
 
 	// cannot request access if the owner
-	if (active.role === "OWNER") {
+	if (active?.role === "OWNER" && !fromApp) {
 		return null;
 	}
-
 	return (
 		<>
-			<Button
-				startIcon={<Add />}
-				variant="outlined"
-				onClick={() => setOpen(true)}
-			>
-				{active.role === "DISCOVERABLE" ? (
-					<>Request Access</>
-				) : (
-					<>Change Access</>
-				)}
-			</Button>
+			{fromApp ? (
+				<StyledButton onClick={() => setOpen(true)}>
+					{active?.role === "DISCOVERABLE" || !active.role
+						? "Request Access"
+						: "Change Access"}
+				</StyledButton>
+			) : (
+				<Button
+					startIcon={<Add />}
+					variant="outlined"
+					onClick={() => setOpen(true)}
+				>
+					{active?.role === "DISCOVERABLE" || !active.role
+						? "Request Access"
+						: "Change Access"}
+				</Button>
+			)}
+
 			<Modal
 				open={open}
 				maxWidth={"md"}
 				onClose={() => {
-					// close is
 					setOpen(false);
 				}}
 			>
 				<Modal.Title>
-					{active.role === "DISCOVERABLE"
+					{active?.role === "DISCOVERABLE"
 						? "Request Access"
 						: "Change Access"}
 				</Modal.Title>
 				<Modal.Content>
 					<RadioGroup
 						label={""}
-						defaultValue={active.role}
+						defaultValue={active?.role}
 						onChange={(e) => {
 							setRequestedRole(e.target.value as Role);
 						}}
@@ -122,37 +174,18 @@ export const EngineAccessButton = () => {
 							<StyledCard>
 								<Card.Header
 									title={
-										<Box
-											sx={{
-												display: "flex",
-												fontSize: "16px",
-											}}
-										>
-											<Avatar
-												sx={{
-													width: "20px",
-													height: "20px",
-													mt: "2px",
-													marginRight: "12px",
-													fontSize: "12px",
-													fontWeight: "bold",
-													backgroundColor:
-														"rgba(0, 0, 0, .5)",
-												}}
-											>
-												A
-											</Avatar>
+										<HeaderRow>
+											<TitleAvatar>A</TitleAvatar>
 											Author
-										</Box>
+										</HeaderRow>
 									}
-									sx={{ color: "#000" }}
 									subheader={
-										<Box sx={{ marginLeft: "30px" }}>
+										<SubheaderOffset>
 											{
 												PERMISSION_DESCRIPTION_MAP[type]
 													.author
 											}
-										</Box>
+										</SubheaderOffset>
 									}
 									action={
 										<RadioGroup.Item
@@ -165,37 +198,20 @@ export const EngineAccessButton = () => {
 							<StyledCard>
 								<Card.Header
 									title={
-										<Box
-											sx={{
-												display: "flex",
-												fontSize: "16px",
-											}}
-										>
-											<Icon
-												sx={{
-													width: "20px",
-													height: "20px",
-													mt: "2px",
-													marginRight: "12px",
-													fontSize: "12px",
-													fontWeight: "bold",
-													color: "rgba(0, 0, 0, .5)",
-													maxWidth: "20px",
-												}}
-											>
-												<EditRounded />
-											</Icon>
+										<HeaderRow>
+											<IconWrapper>
+												<EditRoundedIcon />
+											</IconWrapper>
 											Editor
-										</Box>
+										</HeaderRow>
 									}
-									sx={{ color: "#000" }}
 									subheader={
-										<Box sx={{ marginLeft: "30px" }}>
+										<SubheaderOffset>
 											{
 												PERMISSION_DESCRIPTION_MAP[type]
 													.editor
 											}
-										</Box>
+										</SubheaderOffset>
 									}
 									action={
 										<RadioGroup.Item
@@ -208,37 +224,20 @@ export const EngineAccessButton = () => {
 							<StyledCard>
 								<Card.Header
 									title={
-										<Box
-											sx={{
-												display: "flex",
-												fontSize: "16px",
-											}}
-										>
-											<Icon
-												sx={{
-													width: "20px",
-													height: "20px",
-													mt: "2px",
-													marginRight: "12px",
-													fontSize: "12px",
-													fontWeight: "bold",
-													color: "rgba(0, 0, 0, .5)",
-													maxWidth: "20px",
-												}}
-											>
-												<RemoveRedEyeRounded />
-											</Icon>
+										<HeaderRow>
+											<IconWrapper>
+												<RemoveRedEyeRoundedIcon />
+											</IconWrapper>
 											Read-Only
-										</Box>
+										</HeaderRow>
 									}
-									sx={{ color: "#000" }}
 									subheader={
-										<Box sx={{ marginLeft: "30px" }}>
+										<SubheaderOffset>
 											{
 												PERMISSION_DESCRIPTION_MAP[type]
 													.readonly
 											}
-										</Box>
+										</SubheaderOffset>
 									}
 									action={
 										<RadioGroup.Item
@@ -272,13 +271,13 @@ export const EngineAccessButton = () => {
 					<Button
 						variant={"contained"}
 						disabled={
-							!requestedRole || requestedRole === active.role
+							!requestedRole || requestedRole === active?.role
 						}
 						onClick={() => {
 							requestAccess();
 						}}
 					>
-						Request
+						{fromApp ? "Submit" : "Request"}
 					</Button>
 				</Modal.Actions>
 			</Modal>

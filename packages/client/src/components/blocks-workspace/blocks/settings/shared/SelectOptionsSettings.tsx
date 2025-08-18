@@ -240,7 +240,7 @@ export const SelectOptionsSettings = observer(
 							>
 								<Autocomplete
 									fullWidth
-                                    multiple={false}
+									multiple={false}
 									value={parsedData[d.path]}
 									options={keys}
 									onChange={(_, newValue) => {

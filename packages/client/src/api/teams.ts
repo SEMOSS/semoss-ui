@@ -26,7 +26,7 @@ export const addTeam = async (
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/addGroup";
 
-	let postData : Record<string, unknown> = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		description: description,
 		isCustomGroup: isCustomGroup,
@@ -35,7 +35,7 @@ export const addTeam = async (
 	if (type) {
 		postData = {
 			...postData,
-			type: type
+			type: type,
 		};
 	}
 	const response = await post<{
@@ -44,45 +44,43 @@ export const addTeam = async (
 	return response;
 };
 
+/**
+ * @name editTeam
+ * @param groupId
+ * @param description
+ * @param type
+ * @returns
+ */
+export const editTeam = async (
+	groupId: string,
+	description: string,
+	type?: string,
+	previousTeamName?: string,
+	previousType?: string,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/`,
+		postData = {};
 
-  /**
-   * @name editTeam
-   * @param groupId
-   * @param description
-   * @param type
-   * @returns
-   */
-export const editTeam = async(
-    groupId: string,
-    description: string,
-    type?: string,
-    previousTeamName?: string,
-    previousType?: string
-  ) => {
-    let url = `${Env.MODULE}/api/auth/admin/`,
-      postData = {
-      };
+	url += "group/editGroupDetails";
 
-    url += "group/editGroupDetails";
+	postData = {
+		groupId: encodeURIComponent(previousTeamName),
+		newGroupId: encodeURIComponent(groupId),
+		newDescription: encodeURIComponent(description),
+		type: encodeURIComponent(previousType),
+		newType: encodeURIComponent(type),
+	};
 
-    postData = {
-      groupId: encodeURIComponent(previousTeamName),
-      newGroupId: encodeURIComponent(groupId),
-      newDescription: encodeURIComponent(description),
-      type: encodeURIComponent(previousType),
-      newType: encodeURIComponent(type),
-    };
+	const response = await post<{ success: boolean }>(url, postData, {});
 
-    const response = await post<{ success: boolean }>(url, postData, {});
-
-    return response;
-  }
+	return response;
+};
 
 export const deleteTeam = async (groupid: string, type?: string) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/deleteGroup";
 
-	let postData :Record<string, unknown> = {
+	let postData: Record<string, unknown> = {
 		groupId: groupid,
 	};
 	if (type) {
@@ -169,7 +167,7 @@ export const addTeamUser = async (
 		url += "admin/";
 	}
 	url += "group/addGroupMember";
-	let postData :Record<string, unknown> = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		type: type,
 		userId: userId,

@@ -7,7 +7,7 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
 import type { AxiosResponse } from "axios";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Autocomplete,
 	Avatar,
@@ -18,17 +18,17 @@ import {
 	IconButton,
 	Link,
 	Menu,
+	MenuItem,
 	MenuList,
 	Modal,
-	Popover,
 	Stack,
 	styled,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { addTeamUser, deleteTeam, getNonTeamUsers } from "@/api/teams";
 import { useRootStore } from "@/hooks";
 import { AddTeamModal } from "./AddTeamModal";
-import { deleteTeam, getNonTeamUsers, addTeamUser } from '@/api/teams';
 
 const colors = [
 	"rgba(111, 212, 203, 1)",
@@ -43,27 +43,32 @@ const colors = [
 	"rgba(207, 216, 220, 1)",
 ];
 
+interface NonCredentialedUser {
+	name: string;
+}
+
 const StyledTileCard = styled(Card, {
 	shouldForwardProp: (prop) => prop !== "color",
 })<{ bordercolor?: string }>(({ bordercolor = "rgba(0, 0, 0, 0.6)" }) => ({
 	"&:hover": {
 		cursor: "pointer",
 	},
+	width: "100%",
 	padding: "8px",
 	borderTopLeftRadius: "12px",
 	borderBottomLeftRadius: "12px",
 	borderLeft: `solid 10px ${bordercolor}`,
-	minWidth: "298px",
-	maxWidth: "298px",
+	minWidth: "288px",
 	maxHeight: "200px",
 }));
 
 const StyledCardDescription = styled(Typography)({
-	display: "block",
+	display: "-webkit-box",
 	minHeight: "40px",
 	maxHeight: "40px",
 	maxWidth: "256px",
-	whiteSpace: "pre-wrap",
+	WebkitLineClamp: 2,
+	WebkitBoxOrient: "vertical",
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	fontSize: "14px",
@@ -189,13 +194,72 @@ export const TeamTileCard = (props: TeamCardProps) => {
 		return colors[Math.floor(Math.random() * colors.length)];
 	}, []);
 
+	const getAdditionalUsersNonGroup = () => {
+		setOffset(offset + AUTOCOMPLETE_LIMIT);
+	};
+
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
 				getAdditionalUsersNonGroup();
 			}
 		}
-	}, [isScrollBottom]);
+	}, [isScrollBottom, canCollect]);
+
+	const getUsersNonGroup = useCallback(
+		async (reset: boolean) => {
+			if (isLoading) {
+				return;
+			}
+			setIsLoading(true);
+
+			if (type === "CUSTOM") {
+				try {
+					const response = await monolithStore.getNonTeamUsers(
+						id,
+						AUTOCOMPLETE_LIMIT,
+						offset,
+						searchMemberInput,
+					);
+
+					// ignore if there is no response
+					if (response) {
+						let requests = reset ? [] : nonCredentialedUsers;
+						const users = response.map((val) => {
+							return {
+								...val,
+								color: colors[
+									Math.floor(Math.random() * colors.length)
+								],
+							};
+						});
+						requests = requests.concat(users);
+						setNonCredentialedUsers(requests);
+						setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
+						setIsLoading(false);
+						setSearchLoading(false);
+					}
+				} catch (e) {
+					notification.add({
+						color: "error",
+						message: String(e),
+					});
+					setIsLoading(false);
+					setSearchLoading(false);
+				}
+			}
+		},
+		[
+			isLoading,
+			type,
+			id,
+			offset,
+			searchMemberInput,
+			nonCredentialedUsers,
+			monolithStore,
+			notification,
+		],
+	);
 
 	useEffect(() => {
 		if (addMembersModal) {
@@ -215,21 +279,21 @@ export const TeamTileCard = (props: TeamCardProps) => {
 			}, 500);
 			return () => clearTimeout(timer);
 		}
-	}, [addMembersModal, offset, searchMemberInput]);
+	}, [
+		addMembersModal,
+		offset,
+		searchMemberInput,
+		canCollect,
+		getUsersNonGroup,
+	]);
 
-	const nearBottom = (
-		target: {
-			scrollHeight?: number;
-			scrollTop?: number;
-			clientHeight?: number;
-		} = {},
-	) => {
+	const nearBottom = (target: {
+		scrollHeight?: number;
+		scrollTop?: number;
+		clientHeight?: number;
+	}) => {
 		const diff = Math.round(target.scrollHeight - target.scrollTop);
 		return diff - 25 <= target.clientHeight;
-	};
-
-	const getAdditionalUsersNonGroup = () => {
-		setOffset(offset + AUTOCOMPLETE_LIMIT);
 	};
 
 	const deleteGroup = () => {
@@ -284,21 +348,21 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				return;
 			}
 
-            for (let i = 0; i < requests.length; i++) {
-                const response:
-                  | AxiosResponse<{ success: boolean }>
-                  | {
-                      response: Response;
-                      data: {
-                        success: boolean;
-                      };
-                    }
-                  | null = await addTeamUser(
-                        id,
-                        requests[i].type,
-                        requests[i].userid,
-                        true,
-                    );
+			for (let i = 0; i < requests.length; i++) {
+				const response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = await addTeamUser(
+					id,
+					requests[i].type,
+					requests[i].userid,
+					true,
+				);
 
 				if (!response) {
 					return;
@@ -378,7 +442,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 	};
 
 	const open = Boolean(anchorEl);
-	const popoverId = open ? "simple-popover" : undefined;
+	const _popoverId = open ? "simple-popover" : undefined;
 
 	return (
 		<React.Fragment>
@@ -386,7 +450,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				onClick={() => onClick(id)}
 				bordercolor={randomColor}
 			>
-				{/* Use Card.Media instead, uses img tag */}
 				<Card.Header
 					title={
 						<div
@@ -416,27 +479,24 @@ export const TeamTileCard = (props: TeamCardProps) => {
 						<StyledChipContainer>
 							{tag !== undefined &&
 								(Array.isArray(tag) ? (
-									<>
-										{tag.map((t, i) => {
-											if (i <= 3) {
-												return (
-													<StyledTagChip
-														maxWidth={
-															tag.length === 2
-																? "100px"
-																: tag.length ===
-																		1
-																	? "200px"
-																	: "75px"
-														}
-														key={`${id}${i}`}
-														label={t}
-														variant="filled"
-													/>
-												);
-											}
-										})}
-									</>
+									tag.map((t, i) => {
+										if (i <= 3) {
+											return (
+												<StyledTagChip
+													maxWidth={
+														tag.length === 2
+															? "100px"
+															: tag.length === 1
+																? "200px"
+																: "75px"
+													}
+													key={`${id}${i}`}
+													label={t}
+													variant="filled"
+												/>
+											);
+										}
+									})
 								) : (
 									<StyledTagChip
 										key={`${id}0`}
@@ -455,20 +515,27 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					>
 						<StyledMoreVert hover={hover} />
 					</IconButton>
-					<Popover
-						id={popoverId}
-						open={open}
+					<Menu
 						anchorEl={anchorEl}
+						open={Boolean(anchorEl)}
 						onClose={handleClose}
 						anchorOrigin={{
-							vertical: "bottom",
+							vertical: "top",
 							horizontal: "right",
 						}}
-						// transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+						transformOrigin={{
+							vertical: "top",
+							horizontal: "right",
+						}}
+						sx={{
+							"& .MuiPaper-root": {
+								borderRadius: "4px",
+							},
+						}}
 					>
 						<MenuList>
 							{type === "CUSTOM" && (
-								<Menu.Item
+								<MenuItem
 									onClick={(e) => {
 										e.stopPropagation();
 										handleClose(e);
@@ -477,12 +544,14 @@ export const TeamTileCard = (props: TeamCardProps) => {
 									}}
 								>
 									<Stack direction="row" gap={2}>
-										<PersonAddIcon />
+										<PersonAddIcon
+											sx={{ color: "#0000008A" }}
+										/>
 										<div>Add member to team</div>
 									</Stack>
-								</Menu.Item>
+								</MenuItem>
 							)}
-							<Menu.Item
+							<MenuItem
 								onClick={(e) => {
 									e.stopPropagation();
 									handleClose(e);
@@ -490,11 +559,11 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								}}
 							>
 								<Stack direction="row" gap={2}>
-									<EditIcon />
+									<EditIcon sx={{ color: "#0000008A" }} />
 									<div>Edit team</div>
 								</Stack>
-							</Menu.Item>
-							<Menu.Item
+							</MenuItem>
+							<MenuItem
 								onClick={(e) => {
 									e.stopPropagation();
 									setDeleteModal(true);
@@ -503,13 +572,16 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								onMouseOver={() => {
 									setHover(true);
 								}}
+								sx={{ color: hover ? "red" : "#0000008A" }}
 								onMouseLeave={() => {
 									setHover(false);
 								}}
 							>
 								<Stack direction="row" gap={2}>
 									<DeleteRounded
-										sx={{ color: hover ? "red" : "black" }}
+										sx={{
+											color: hover ? "red" : "#0000008A",
+										}}
 									/>
 									<div
 										style={{
@@ -519,9 +591,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										Delete team
 									</div>
 								</Stack>
-							</Menu.Item>
+							</MenuItem>
 						</MenuList>
-					</Popover>
+					</Menu>
 				</StyledActionContainer>
 			</StyledTileCard>
 			<StyledDeleteModal open={deleteModal}>
@@ -582,13 +654,16 @@ export const TeamTileCard = (props: TeamCardProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option: any) => {
+							getOptionLabel={(option: NonCredentialedUser) => {
 								return `${option.name}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
 								return option.name === value.name;
 							}}
-							onChange={(event, newValue: any) => {
+							onChange={(
+								_event,
+								newValue: NonCredentialedUser[],
+							) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{
@@ -603,139 +678,133 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										),
 									),
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 								setNonCredentialedUsers([]);
 							}}
 						/>
 
-						{selectedNonCredentialedUsers &&
-							selectedNonCredentialedUsers.map((user, idx) => {
-								const space = user.name.indexOf(" ");
-								const initial = user.name
-									? space > -1
-										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
-										: user.name[0].toUpperCase()
-									: user.id[0].toUpperCase();
-								return (
+						{selectedNonCredentialedUsers?.map((user, idx) => {
+							const space = user.name.indexOf(" ");
+							const initial = user.name
+								? space > -1
+									? `${user.name[0].toUpperCase()}${user.name[
+											space + 1
+										].toUpperCase()}`
+									: user.name[0].toUpperCase()
+								: user.id[0].toUpperCase();
+							return (
+								<Box
+									key={idx}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+									}}
+								>
 									<Box
-										key={idx}
 										sx={{
 											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
+											justifyContent: "center",
+											marginTop: "6px",
+											marginLeft: "8px",
+											marginRight: "8px",
 										}}
 									>
 										<Box
 											sx={{
 												display: "flex",
+												height: "80px",
+												width: "80px",
 												justifyContent: "center",
-												marginTop: "6px",
-												marginLeft: "8px",
-												marginRight: "8px",
+												alignItems: "center",
+												border: "0.5px solid rgba(0, 0, 0, .05)",
+												borderRadius: "50%",
 											}}
 										>
+											<Avatar
+												aria-label="avatar"
+												sx={{
+													display: "flex",
+													width: "60px",
+													height: "60px",
+													fontSize: "24px",
+													backgroundColor: user.color,
+												}}
+											>
+												{initial}
+											</Avatar>
+										</Box>
+									</Box>
+									<Card.Header
+										title={
+											<Typography variant="h5">
+												{user.name}
+											</Typography>
+										}
+										subheader={
 											<Box
 												sx={{
 													display: "flex",
-													height: "80px",
-													width: "80px",
-													justifyContent: "center",
-													alignItems: "center",
-													border: "0.5px solid rgba(0, 0, 0, .05)",
-													borderRadius: "50%",
+													gap: 2,
+													marginTop: "4px",
 												}}
 											>
-												<Avatar
-													aria-label="avatar"
-													sx={{
-														display: "flex",
-														width: "60px",
-														height: "60px",
-														fontSize: "24px",
-														backgroundColor:
-															user.color,
+												<span
+													style={{
+														opacity: 0.9,
+														fontSize: "14px",
 													}}
 												>
-													{initial}
-												</Avatar>
-											</Box>
-										</Box>
-										<Card.Header
-											title={
-												<Typography variant="h5">
-													{user.name}
-												</Typography>
-											}
-											sx={{
-												color: "#000",
-												width: "100%",
-											}}
-											subheader={
-												<Box
-													sx={{
-														display: "flex",
-														gap: 2,
-														marginTop: "4px",
-													}}
-												>
-													<span
-														style={{
-															opacity: 0.9,
-															fontSize: "14px",
-														}}
+													{`User ID: `}
+													<Chip
+														label={user.id}
+														size="small"
+													/>
+												</span>
+												{`• `}
+												<span>
+													{`Email: `}
+													<Link
+														href={`mailto:${user.email}`}
+														underline="none"
 													>
-														{`User ID: `}
-														<Chip
-															label={user.id}
-															size="small"
-														/>
-													</span>
-													{`• `}
-													<span>
-														{`Email: `}
-														<Link
-															href={`mailto:${user.email}`}
-															underline="none"
-														>
-															{user.email}
-														</Link>
-													</span>
-												</Box>
-											}
-											action={
-												<IconButton
-													sx={{
-														mt: "16px",
-														color: "rgba( 0, 0, 0, .7)",
-														mr: "24px",
-													}}
-													onClick={() => {
-														const filtered =
-															selectedNonCredentialedUsers.filter(
-																(val) =>
-																	val.id !==
-																	user.id,
-															);
-														setSelectedNonCredentialedUsers(
-															filtered,
+														{user.email}
+													</Link>
+												</span>
+											</Box>
+										}
+										action={
+											<IconButton
+												sx={{
+													mt: "16px",
+													color: "rgba( 0, 0, 0, .7)",
+													mr: "24px",
+												}}
+												onClick={() => {
+													const filtered =
+														selectedNonCredentialedUsers.filter(
+															(val) =>
+																val.id !==
+																user.id,
 														);
-													}}
-												>
-													<ClearRounded />
-												</IconButton>
-											}
-										/>
-									</Box>
-								);
-							})}
+													setSelectedNonCredentialedUsers(
+														filtered,
+													);
+												}}
+											>
+												<ClearRounded />
+											</IconButton>
+										}
+									/>
+								</Box>
+							);
+						})}
 					</StyledModalContentText>
 				</Modal.Content>
 				<Modal.Actions>

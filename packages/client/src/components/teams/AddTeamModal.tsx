@@ -227,7 +227,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 				const response = await addTeam(
 					data.TEAM_NAME,
 					data.TEAM_DESCRIPTION,
-                    false,
+					false,
 					data.TEAM_TYPE,
 				);
 				if (!response.data) {
@@ -347,7 +347,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																			height: "24px",
 																			width: "24px",
 																		}}
-																		alt={'login provider icon'}
+																		alt={
+																			"login provider icon"
+																		}
 																	/>
 																) : (
 																	<StyledIcon />

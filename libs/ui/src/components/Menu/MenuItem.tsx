@@ -62,15 +62,15 @@ export interface MenuItemProps {
 	 */
 	value?: any;
 
-    /**
-     * Mouse over event handler
-     */
-    onMouseOver?: (event: React.MouseEvent) => void;
+	/**
+	 * Mouse over event handler
+	 */
+	onMouseOver?: (event: React.MouseEvent) => void;
 
-    /**
-     * Mouse leave event handler
-     */
-    onMouseLeave?: (event: React.MouseEvent) => void;
+	/**
+	 * Mouse leave event handler
+	 */
+	onMouseLeave?: (event: React.MouseEvent) => void;
 
 	/**
 	 * The system prop that allows defining system overrides as well as additional CSS styles.

@@ -23,8 +23,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	createUserAccessKey,
+	deleteUserAccessKeys,
+	editMemberInfo,
+} from "@/api/auth";
 import { LoadingScreen } from "@/components/ui";
-import { editMemberInfo, createUserAccessKey, deleteUserAccessKeys } from '@/api/auth';
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 
@@ -293,8 +297,7 @@ export const MyProfilePage = () => {
 	 */
 	const deleteAccessKey = async (accessKey: string) => {
 		try {
-			const response =
-				await deleteUserAccessKeys(accessKey);
+			const response = await deleteUserAccessKeys(accessKey);
 
 			if (!response) {
 				throw new Error("Error deleting key");

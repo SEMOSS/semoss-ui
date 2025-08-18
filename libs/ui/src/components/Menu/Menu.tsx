@@ -4,11 +4,11 @@ import {
 	type PopoverProps,
 } from "@mui/material";
 
-export type MenuAnchorReference = 'anchorEl' | 'anchorPosition';
+export type MenuAnchorReference = "anchorEl" | "anchorPosition";
 
 export interface MenuPosition {
-    top: number;
-    left: number;
+	top: number;
+	left: number;
 }
 
 export interface MenuProps {
@@ -36,17 +36,17 @@ export interface MenuProps {
 	/**
 	 * Menu contents, normally `MenuItem`s.
 	 */
-    /**
-        * This is the position that may be used to set the position of the popover.
-        * The coordinates are relative to the application's client area.
-    */
-    anchorPosition?: MenuPosition;
+	/**
+	 * This is the position that may be used to set the position of the popover.
+	 * The coordinates are relative to the application's client area.
+	 */
+	anchorPosition?: MenuPosition;
 
 	children?: React.ReactNode;
-     /**
-         * Determines which anchor prop to use for positioning the popover.
-     */
-    anchorReference?: MenuAnchorReference;
+	/**
+	 * Determines which anchor prop to use for positioning the popover.
+	 */
+	anchorReference?: MenuAnchorReference;
 	/**
 	 * When opening the menu will not focus the active item but the `[role="menu"]`
 	 * unless `autoFocus` is also set to `false`. Not using the default means not

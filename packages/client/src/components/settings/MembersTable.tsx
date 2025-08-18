@@ -20,6 +20,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
+import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
@@ -58,12 +59,12 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledMemberLoading = styled("div")(() => ({
+const StyledMemberLoading = styled("div")({
 	position: "relative",
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
-}));
+});
 
 const StyledMemberTable = styled(Table)({
 	backgroundColor: "white",
@@ -164,9 +165,18 @@ const StyledCenteredBox = styled(Box)({
 	alignItems: "center",
 	gap: "8px",
 });
+
 const StyledNameStack = styled(Stack)({
 	alignItems: "center",
 	flex: 1,
+});
+
+const StyledSelectedTableRow = styled(Table.Row)(({ theme }) => ({
+	backgroundColor: theme.palette.primary.selected, // light blue, adjust as needed
+}));
+
+const StyledRadioGroup = styled(RadioGroup)({
+	flexWrap: "nowrap",
 });
 
 const formatValue = (input: string) => {
@@ -214,6 +224,24 @@ interface User {
 	usage_frequency?: string;
 	max_tokens?: number;
 	max_response_time?: number;
+}
+
+interface AllAuthorsResponseData {
+	members: SETTINGS_PROVISIONED_USER[];
+}
+
+interface GetMembersData {
+	members: SETTINGS_PROVISIONED_USER[];
+	totalMembers: number;
+}
+
+interface JsonType {
+	userid: string;
+	permission: string;
+	maxResponseTime?: number;
+	usageRestriction?: string;
+	usageFrequency?: string;
+	maxTokens?: number;
 }
 
 export const MembersTable = (props: MembersTableProps) => {
@@ -317,16 +345,16 @@ export const MembersTable = (props: MembersTableProps) => {
 
 	// Update userDetails to AUTHOR if ADMIN
 	const getMembers = useAPI(getMembersApi);
-	const userDetails = !adminMode
-		? useAPI(getUserDataApi)
-		: {
+	const userDetailsResponse = useAPI(getUserDataApi);
+	const userDetails = adminMode
+		? {
 				data: {
 					permission: "OWNER",
 				},
 				status: "SUCCESS",
 				refresh: () => null,
-			};
-
+			}
+		: userDetailsResponse;
 	const allAuthorsResponse = useAPI(getAllAuthorsApi);
 	const [allAuthors, setAllAuthors] = useState<SETTINGS_PROVISIONED_USER[]>(
 		[],
@@ -337,7 +365,8 @@ export const MembersTable = (props: MembersTableProps) => {
 			allAuthorsResponse.status === "SUCCESS" &&
 			allAuthorsResponse.data
 		) {
-			setAllAuthors(allAuthorsResponse.data.members);
+			const data = allAuthorsResponse.data as AllAuthorsResponseData;
+			setAllAuthors(data.members);
 		} else {
 			setAllAuthors([]);
 		}
@@ -416,7 +445,7 @@ export const MembersTable = (props: MembersTableProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				const json :Record<string, unknown> = {
+				const json: JsonType = {
 					userid: m.id,
 					permission: quickUpdate ? quickUpdate : "OWNER",
 				};
@@ -446,34 +475,34 @@ export const MembersTable = (props: MembersTableProps) => {
 				return;
 			}
 
-      let response:
-        | AxiosResponse<{ success: boolean }>
-        | {
-            response: Response;
-            data: {
-              success: boolean;
-            };
-          }
-        | null = null;
-            if (
-                type === 'DATABASE' ||
-                type === 'STORAGE' ||
-                type === 'MODEL' ||
-                type === 'VECTOR' ||
-                type === 'FUNCTION'
-            ) {
-                response = await editEngineUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            } else if (type === 'APP') {
-                response = await editProjectUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            }
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await editEngineUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
+			} else if (type === "APP") {
+				response = await editProjectUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
+			}
 
 			if (!response) {
 				return;
@@ -483,7 +512,7 @@ export const MembersTable = (props: MembersTableProps) => {
 			if (response.data.success) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated user permissions",
+					message: "Successfully updated user permissions",
 				});
 
 				// refresh the members
@@ -558,11 +587,16 @@ export const MembersTable = (props: MembersTableProps) => {
 	const isLoading =
 		getMembers.status === "INITIAL" || getMembers.status === "LOADING";
 	const renderedMembers =
-		getMembers.status === "SUCCESS" ? (getMembers.data as Record<string, unknown>)?.members as User[] : [];
+		getMembers.status === "SUCCESS"
+			? (getMembers.data as GetMembersData).members
+			: [];
 	const totalMembers =
-		getMembers.status === "SUCCESS" ? Number((getMembers.data as Record<string, unknown>)?.totalMembers) : 0;
+		getMembers.status === "SUCCESS"
+			? (getMembers.data as GetMembersData).totalMembers
+			: 0;
 	const hasMembers =
-		getMembers.status === "SUCCESS" && Number((getMembers.data as Record<string, unknown>)?.totalMembers) > 0;
+		getMembers.status === "SUCCESS" &&
+		(getMembers.data as GetMembersData).totalMembers > 0;
 
 	/**
 	 * Sort Members
@@ -665,7 +699,7 @@ export const MembersTable = (props: MembersTableProps) => {
 				<StyledTableContainer>
 					<StyledTableTitleContainer>
 						<StyledTableTitleDiv>
-							<Typography variant={"h6"}>Members</Typography>
+							<Typography variant={"h6"}>Permissions</Typography>
 						</StyledTableTitleDiv>
 						<StyledTableTitleMemberContainer>
 							{Avatars.length > 0 ? (
@@ -685,12 +719,18 @@ export const MembersTable = (props: MembersTableProps) => {
 							<StyledTableTitleMemberCountContainer>
 								<StyledTableTitleMemberCount>
 									<Typography variant={"caption"}>
-										{totalMembers} Members
+										{totalMembers} member
 									</Typography>
 								</StyledTableTitleMemberCount>
 							</StyledTableTitleMemberCountContainer>
 						</StyledTableTitleMemberContainer>
-
+						<IconButton
+							onClick={() => {
+								//setIsSearch(!isSearch);
+							}}
+						>
+							<img src={FilteredIcon} alt="Filter" />
+						</IconButton>
 						<StyledSearchButtonContainer>
 							{isSearch ? (
 								<Search
@@ -759,8 +799,8 @@ export const MembersTable = (props: MembersTableProps) => {
 						<StyledMemberLoading>
 							<StyledMemberTable>
 								<Table.Body>
-									{[...Array(rowsPerPage)].map((_, _idx) => (
-										<Table.Row key={`loading-skeleton-row`}>
+									{[...Array(rowsPerPage)].map((item) => (
+										<Table.Row key={item}>
 											<Table.Cell
 												size="medium"
 												padding="checkbox"
@@ -805,7 +845,8 @@ export const MembersTable = (props: MembersTableProps) => {
 							</StyledMemberTable>
 						</StyledMemberLoading>
 					) : (
-						hasMembers ? (
+						<Box>
+							{hasMembers ? (
 								<>
 									<StyledMemberTable>
 										<Table.Head>
@@ -905,8 +946,12 @@ export const MembersTable = (props: MembersTableProps) => {
 												}
 
 												if (user) {
+													const RowComponent =
+														isSelected
+															? StyledSelectedTableRow
+															: Table.Row;
 													return (
-														<Table.Row
+														<RowComponent
 															key={user.id}
 														>
 															<StyledTableCell
@@ -987,7 +1032,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																</StyledCenteredBox>
 															</Table.Cell>
 															<Table.Cell size="medium">
-																<RadioGroup
+																<StyledRadioGroup
 																	row
 																	defaultValue={
 																		permissionPriorityMapper(
@@ -995,10 +1040,6 @@ export const MembersTable = (props: MembersTableProps) => {
 																		)
 																			?.permission
 																	}
-																	sx={{
-																		flexWrap:
-																			"nowrap",
-																	}}
 																	onChange={(
 																		e,
 																	) => {
@@ -1080,7 +1121,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																				!adminMode)
 																		}
 																	/>
-																</RadioGroup>
+																</StyledRadioGroup>
 															</Table.Cell>
 															<Table.Cell>
 																{user?.date_added ??
@@ -1090,27 +1131,42 @@ export const MembersTable = (props: MembersTableProps) => {
 																"MODEL" && (
 																<>
 																	<Table.Cell>
-																		{user.usage_restriction !==
+																		{(
+																			user as User
+																		)
+																			?.usage_restriction !==
 																		undefined
 																			? formatValue(
-																					user.usage_restriction,
+																					(
+																						user as User
+																					)
+																						?.usage_restriction,
 																				)
 																			: formatValue(
 																					"null",
 																				)}
 																	</Table.Cell>
 																	<Table.Cell>
-																		{user?.usage_restriction ===
+																		{(
+																			user as User
+																		)
+																			?.usage_restriction ===
 																			"compute" &&
-																			`${user.max_response_time?.toLocaleString()} ms`}
+																			`${(user as User)?.max_response_time?.toLocaleString()} ms`}
 
-																		{user?.usage_restriction ===
+																		{(
+																			user as User
+																		)
+																			?.usage_restriction ===
 																			"token" &&
-																			`${user.max_tokens?.toLocaleString()}`}
+																			`${(user as User)?.max_tokens?.toLocaleString()}`}
 																	</Table.Cell>
 																	<Table.Cell>
 																		{formatValue(
-																			user.usage_frequency,
+																			(
+																				user as User
+																			)
+																				?.usage_frequency,
 																		)}
 																	</Table.Cell>
 																</>
@@ -1160,7 +1216,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																	<Delete></Delete>
 																</IconButton>
 															</Table.Cell>
-														</Table.Row>
+														</RowComponent>
 													);
 												}
 
@@ -1237,7 +1293,8 @@ export const MembersTable = (props: MembersTableProps) => {
 										</Button>
 									)}
 								</StyledNoMembersDiv>
-							)
+							)}
+						</Box>
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>

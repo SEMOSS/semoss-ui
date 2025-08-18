@@ -38,7 +38,7 @@ export const run = async <O extends unknown[] | []>(
 	if (insightID) {
 		postData = {
 			...postData,
-			insightId: insightID
+			insightId: insightID,
 		};
 	}
 	const response = await post<{
@@ -292,7 +292,7 @@ export const getLoginProperties = async () => {
 };
 
 export const modifyLoginProperties = async (provider, properties) => {
-	const url = `${Env.MODULE}/api/auth/modifyLoginProperties/${provider}` ;
+	const url = `${Env.MODULE}/api/auth/modifyLoginProperties/${provider}`;
 	const postData = {
 		modifications: JSON.stringify(properties),
 	};
@@ -701,13 +701,20 @@ export const editMemberInfo = async (admin: boolean, user: unknown) => {
 		url += "admin/";
 	}
 	url += "user/editUser";
-	const response = await post<boolean>(url, processPostData(postData), {}).catch((e) => {
+	const response = await post<boolean>(
+		url,
+		processPostData(postData),
+		{},
+	).catch((e) => {
 		throw Error(e);
 	});
 	return response;
 };
 
-export const createUser = async (admin: boolean, user: Record<string, unknown>) => {
+export const createUser = async (
+	admin: boolean,
+	user: Record<string, unknown>,
+) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	if (admin) {
 		url += "admin/";
@@ -717,74 +724,74 @@ export const createUser = async (admin: boolean, user: Record<string, unknown>) 
 	if (user.id) {
 		newUserInfo = {
 			...newUserInfo,
-			userId: user.id
+			userId: user.id,
 		};
 	}
 	if (user.type) {
 		newUserInfo = {
 			...newUserInfo,
-			type: user.type
+			type: user.type,
 		};
 	}
 	if (user.type === "NATIVE") {
 		newUserInfo = {
 			...newUserInfo,
-			username: user.id
+			username: user.id,
 		};
 	} else if (user.username) {
 		newUserInfo = {
 			...newUserInfo,
-			username: user.username
+			username: user.username,
 		};
 	}
 	if (user.password) {
 		newUserInfo = {
 			...newUserInfo,
-			password: user.password
+			password: user.password,
 		};
 	}
 	if (user.admin) {
 		newUserInfo = {
 			...newUserInfo,
-			admin: user.admin
+			admin: user.admin,
 		};
 	}
 	if (user.publisher) {
 		newUserInfo = {
 			...newUserInfo,
-			publisher: user.publisher
+			publisher: user.publisher,
 		};
 	}
 	if (user.exporter) {
 		newUserInfo = {
 			...newUserInfo,
-			exporter: user.exporter
+			exporter: user.exporter,
 		};
 	}
 	if (user.name) {
 		newUserInfo = {
 			...newUserInfo,
-			name: user.name
+			name: user.name,
 		};
 	}
 	if (user.email) {
 		newUserInfo = {
 			...newUserInfo,
-			type: user.type
+			type: user.type,
 		};
 		newUserInfo.email = user.email;
 	}
 	if (user.phone) {
 		newUserInfo = {
 			...newUserInfo,
-			phone: user.phone
+			phone: user.phone,
 		};
 	}
 
 	if (user.phoneextension) {
 		newUserInfo = {
 			...newUserInfo,
-			phoneextension: user.phoneextension
+			phoneextension: user.phoneextension,
 		};
 	}
 	if (user.model_usage_restriction) {
@@ -793,25 +800,25 @@ export const createUser = async (admin: boolean, user: Record<string, unknown>) 
 		}
 		newUserInfo = {
 			...newUserInfo,
-			modelUsageRestriction: user.model_usage_restriction
+			modelUsageRestriction: user.model_usage_restriction,
 		};
 	}
 	if (user.model_usage_frequency) {
 		newUserInfo = {
 			...newUserInfo,
-			modelUsageFrequency: user.model_usage_frequency
+			modelUsageFrequency: user.model_usage_frequency,
 		};
 	}
 	if (user.model_max_tokens) {
 		newUserInfo = {
 			...newUserInfo,
-			modelMaxTokens: user.model_max_tokens
+			modelMaxTokens: user.model_max_tokens,
 		};
 	}
 	if (user.model_max_response_time) {
 		newUserInfo = {
 			...newUserInfo,
-			modelMaxResponseTime: user.model_max_response_time
+			modelMaxResponseTime: user.model_max_response_time,
 		};
 	}
 	const response = await post<boolean>(url, processPostData(newUserInfo), {});
@@ -873,9 +880,9 @@ export const deleteUserAccessKeys = async (accessKey: string) => {
 };
 
 const processPostData = (data: unknown) => {
-  const postRecordData: Record<string, unknown> = {};
-  Object.keys(data).forEach((item) => {
-    postRecordData[item] = data[item];
-  });
-  return postRecordData;
+	const postRecordData: Record<string, unknown> = {};
+	Object.keys(data).forEach((item) => {
+		postRecordData[item] = data[item];
+	});
+	return postRecordData;
 };

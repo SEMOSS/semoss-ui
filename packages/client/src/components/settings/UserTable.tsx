@@ -16,7 +16,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { deleteMember, editMemberInfo } from '@/api';
+import { deleteMember, editMemberInfo } from "@/api";
 import { LoadingScreen } from "@/components/ui";
 import { useAPI, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
@@ -269,10 +269,7 @@ export const UserTable = (props: UserTableProps) => {
 					user.exporter = false;
 				}
 			}
-			const response = await editMemberInfo(
-				adminMode,
-				user,
-			);
+			const response = await editMemberInfo(adminMode, user);
 
 			if (!response) {
 				return;
@@ -282,7 +279,7 @@ export const UserTable = (props: UserTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated user",
+					message: "Successfully updated user",
 				});
 
 				onChange();
@@ -308,11 +305,7 @@ export const UserTable = (props: UserTableProps) => {
 	 */
 	const deleteUser = async (user: User) => {
 		try {
-			const response = await deleteMember(
-				adminMode,
-				user.id,
-				user.type,
-			);
+			const response = await deleteMember(adminMode, user.id, user.type);
 
 			if (!response) {
 				return;
@@ -322,7 +315,7 @@ export const UserTable = (props: UserTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully deleting user",
+					message: "Successfully deleting user",
 				});
 
 				onChange();
@@ -452,7 +445,9 @@ export const UserTable = (props: UserTableProps) => {
 									placeholder="Search Users"
 									size="small"
 									value={search}
-									onChange={(e : React.ChangeEvent<HTMLInputElement>) => {
+									onChange={(
+										e: React.ChangeEvent<HTMLInputElement>,
+									) => {
 										setSearch(e.target.value);
 									}}
 								/>
@@ -499,328 +494,283 @@ export const UserTable = (props: UserTableProps) => {
 								<LoadingScreen.Trigger description="Getting Members" />
 							</LoadingScreen>
 						</StyledMemberLoading>
-					) : (
-						hasUsers ? (
-								<StyledMemberTable>
-									<Table.Head>
-										<Table.Row>
-										<Table.Cell
-												size="small"
-												padding="checkbox"
-											>
-											<Checkbox
-													id={
-														"userTable-checkbox-selectAll"
-													}
-													checked={
-														selectedMembers.length ===
-															renderedMembers.length &&
-														renderedMembers.length >
-															0
-													}
-													onChange={() => {
-														if (
-															selectedMembers.length !==
-															renderedMembers.length
-														) {
-															setSelectedMembers(
-																renderedMembers,
-															);
-														} else {
-															setSelectedMembers(
-																[],
-															);
-														}
-													}}
-												/>
-											</Table.Cell>
-											<Table.Cell size="small">
-												Name
-											</Table.Cell>
-											<Table.Cell size="small">
-												Type
-											</Table.Cell>
-											<Table.Cell size="small">
-												Model Limit Type
-											</Table.Cell>
-											<Table.Cell size="small">
-												Limit Value
-											</Table.Cell>
-											<Table.Cell size="small">
-												Frequency
-											</Table.Cell>
-											<Table.Cell size="small">
-												Role
-											</Table.Cell>
-											<Table.Cell size="small">
-												Actions
-											</Table.Cell>
-										</Table.Row>
-									</Table.Head>
-									<Table.Body>
-									{renderedMembers.map((user) => {
-											let isSelected = false;
-											if (user) {
-												isSelected =
-													selectedMembers.some(
-														(value) => {
-															return (
-																value.id ===
-																user.id
-															);
-														},
-													);
-												return (
-													<Table.Row key={user.id}>
-														<StyledTableCell
-															size="medium"
-															padding="checkbox"
-														>
-															<StyledCheckbox
-																checked={
-																	isSelected
-																}
-																onChange={() => {
-																	if (
-																		isSelected
-																	) {
-																		const selMembers =
-																			[];
-																		selectedMembers.forEach(
-																			(
-																				u,
-																			) => {
-																				if (
-																					u.id !==
-																					user.id
-																				)
-																					selMembers.push(
-																						u,
-																					);
-																			},
-																		);
-																		setSelectedMembers(
-																			selMembers,
-																		);
-																	} else {
-																		setSelectedMembers(
-																			[
-																				...selectedMembers,
-																				user,
-																			],
-																		);
-																	}
-																}}
-															/>
-														</StyledTableCell>
-														<Table.Cell>
-															<StyledCenteredBox>
-																<StyledNameStack
-																	direction="row"
-																	onMouseEnter={(
-																		event,
-																	) => {
-																		setAnchorEl(
-																			event.currentTarget,
-																		);
-																		setHoveredUser(
-																			user,
-																		);
-																	}}
-																	onMouseLeave={() =>
-																		handlePopoverClose
-																	}
-																	aria-owns="mouse-over-popover"
-																	aria-haspopup="true"
-																>
-																	<AvatarWrapper>
-																		<Avatar>
-																			{user.name[0].toUpperCase()}
-																		</Avatar>
-																	</AvatarWrapper>
-
-																	<StyledPrimaryText
-																		variant="body1"
-																		noWrap={
-																			true
-																		}
-																		title={`Name: ${user.name}`}
-																	>
-																		{user.name || (
-																			<>
-																				&nbsp;
-																			</>
-																		)}
-																	</StyledPrimaryText>
-																</StyledNameStack>
-															</StyledCenteredBox>
-														</Table.Cell>
-														<Table.Cell>
-															{user.type}
-														</Table.Cell>
-														<Table.Cell>
-															{formatValue(
-																user?.model_usage_restriction,
-															)}
-														</Table.Cell>
-														<Table.Cell>
-															{user?.model_usage_restriction ===
-																"compute" &&
-																`${user?.model_max_response_time?.toLocaleString()} ms`}
-
-															{user?.model_usage_restriction ===
-																"token" &&
-																`${user?.model_max_tokens?.toLocaleString()}`}
-														</Table.Cell>
-														<Table.Cell>
-															{formatValue(
-																user?.model_usage_frequency,
-															)}
-														</Table.Cell>
-														<Table.Cell>
-															<StyledCenteredBox>
-																<Checkbox
-																	label="Publisher"
-																	checked={
-																		user.publisher
-																	}
-																	onChange={() => {
-																		updateUser(
-																			{
-																				...user,
-																				publisher:
-																					!user.publisher,
-																			},
-																		);
-																	}}
-																/>
-																<Checkbox
-																	label="Exporter"
-																	checked={
-																		user.exporter
-																	}
-																	onChange={() => {
-																		updateUser(
-																			{
-																				...user,
-																				exporter:
-																					!user.exporter,
-																			},
-																		);
-																	}}
-																/>
-																<Checkbox
-																	label="Admin"
-																	checked={
-																		user.admin
-																	}
-																	onChange={() => {
-																		updateUser(
-																			{
-																				...user,
-																				admin:
-																					!user.admin,
-																			},
-																		);
-																	}}
-																/>
-															</StyledCenteredBox>
-														</Table.Cell>
-														<Table.Cell>
-															<StyledCenteredBox>
-																<IconButton
-																	onClick={() => {
-																		setAddModalOpen(
-																			true,
-																		);
-
-																		setAddModalUser(
-																			user,
-																		);
-																	}}
-																>
-																	<Edit />
-																</IconButton>
-																<IconButton
-																	onClick={() => {
-																		deleteUser(
-																			user,
-																		);
-																	}}
-																>
-																	<Delete />
-																</IconButton>
-															</StyledCenteredBox>
-														</Table.Cell>
-													</Table.Row>
-												);
+					) : hasUsers ? (
+						<StyledMemberTable>
+							<Table.Head>
+								<Table.Row>
+									<Table.Cell size="small" padding="checkbox">
+										<Checkbox
+											id={"userTable-checkbox-selectAll"}
+											checked={
+												selectedMembers.length ===
+													renderedMembers.length &&
+												renderedMembers.length > 0
 											}
-											return null;
-										})}
-									</Table.Body>
-
-									<Table.Footer>
-										<Table.Row>
-											<Table.Pagination
-												disabled={isLoading}
-												onPageChange={(_e, v) => {
-													setPage(v);
-												}}
-												page={page}
-												rowsPerPage={rowsPerPage}
-												rowsPerPageOptions={[
-													10, 25, 50, 100,
-												]}
-												onRowsPerPageChange={(e) => {
-													// set the new limit
-													setRowsPerPage(
-														parseInt(
-															e.target.value,
-															10,
-														)
+											onChange={() => {
+												if (
+													selectedMembers.length !==
+													renderedMembers.length
+												) {
+													setSelectedMembers(
+														renderedMembers,
 													);
-												}}
-												count={totalUsers}
-											/>
-										</Table.Row>
-									</Table.Footer>
-									<UserPopover
-										hoveredUser={
-											hoveredUser
-												? {
-														id: hoveredUser.id,
-														name:
-															hoveredUser.name ||
-															"Unknown",
-														email:
-															hoveredUser.email ||
-															"",
-													}
-												: null
-										}
-										isPopoverOpen={isPopoverOpen}
-										anchorEl={anchorEl}
-										handlePopoverClose={handlePopoverClose}
-									/>
-								</StyledMemberTable>
-							) : (
-								<StyledNoUsersDiv>
-									<Typography variant={"body2"}>
-										No Members
-									</Typography>
-									<Button
+												} else {
+													setSelectedMembers([]);
+												}
+											}}
+										/>
+									</Table.Cell>
+									<Table.Cell size="small">Name</Table.Cell>
+									<Table.Cell size="small">Type</Table.Cell>
+									<Table.Cell size="small">
+										Model Limit Type
+									</Table.Cell>
+									<Table.Cell size="small">
+										Limit Value
+									</Table.Cell>
+									<Table.Cell size="small">
+										Frequency
+									</Table.Cell>
+									<Table.Cell size="small">Role</Table.Cell>
+									<Table.Cell size="small">
+										Actions
+									</Table.Cell>
+								</Table.Row>
+							</Table.Head>
+							<Table.Body>
+								{renderedMembers.map((user) => {
+									let isSelected = false;
+									if (user) {
+										isSelected = selectedMembers.some(
+											(value) => {
+												return value.id === user.id;
+											},
+										);
+										return (
+											<Table.Row key={user.id}>
+												<StyledTableCell
+													size="medium"
+													padding="checkbox"
+												>
+													<StyledCheckbox
+														checked={isSelected}
+														onChange={() => {
+															if (isSelected) {
+																const selMembers =
+																	[];
+																selectedMembers.forEach(
+																	(u) => {
+																		if (
+																			u.id !==
+																			user.id
+																		)
+																			selMembers.push(
+																				u,
+																			);
+																	},
+																);
+																setSelectedMembers(
+																	selMembers,
+																);
+															} else {
+																setSelectedMembers(
+																	[
+																		...selectedMembers,
+																		user,
+																	],
+																);
+															}
+														}}
+													/>
+												</StyledTableCell>
+												<Table.Cell>
+													<StyledCenteredBox>
+														<StyledNameStack
+															direction="row"
+															onMouseEnter={(
+																event,
+															) => {
+																setAnchorEl(
+																	event.currentTarget,
+																);
+																setHoveredUser(
+																	user,
+																);
+															}}
+															onMouseLeave={() =>
+																handlePopoverClose
+															}
+															aria-owns="mouse-over-popover"
+															aria-haspopup="true"
+														>
+															<AvatarWrapper>
+																<Avatar>
+																	{user.name[0].toUpperCase()}
+																</Avatar>
+															</AvatarWrapper>
+
+															<StyledPrimaryText
+																variant="body1"
+																noWrap={true}
+																title={`Name: ${user.name}`}
+															>
+																{user.name || (
+																	<>&nbsp;</>
+																)}
+															</StyledPrimaryText>
+														</StyledNameStack>
+													</StyledCenteredBox>
+												</Table.Cell>
+												<Table.Cell>
+													{user.type}
+												</Table.Cell>
+												<Table.Cell>
+													{formatValue(
+														user?.model_usage_restriction,
+													)}
+												</Table.Cell>
+												<Table.Cell>
+													{user?.model_usage_restriction ===
+														"compute" &&
+														`${user?.model_max_response_time?.toLocaleString()} ms`}
+
+													{user?.model_usage_restriction ===
+														"token" &&
+														`${user?.model_max_tokens?.toLocaleString()}`}
+												</Table.Cell>
+												<Table.Cell>
+													{formatValue(
+														user?.model_usage_frequency,
+													)}
+												</Table.Cell>
+												<Table.Cell>
+													<StyledCenteredBox>
+														<Checkbox
+															label="Publisher"
+															checked={
+																user.publisher
+															}
+															onChange={() => {
+																updateUser({
+																	...user,
+																	publisher:
+																		!user.publisher,
+																});
+															}}
+														/>
+														<Checkbox
+															label="Exporter"
+															checked={
+																user.exporter
+															}
+															onChange={() => {
+																updateUser({
+																	...user,
+																	exporter:
+																		!user.exporter,
+																});
+															}}
+														/>
+														<Checkbox
+															label="Admin"
+															checked={user.admin}
+															onChange={() => {
+																updateUser({
+																	...user,
+																	admin:
+																		!user.admin,
+																});
+															}}
+														/>
+													</StyledCenteredBox>
+												</Table.Cell>
+												<Table.Cell>
+													<StyledCenteredBox>
+														<IconButton
+															onClick={() => {
+																setAddModalOpen(
+																	true,
+																);
+
+																setAddModalUser(
+																	user,
+																);
+															}}
+														>
+															<Edit />
+														</IconButton>
+														<IconButton
+															onClick={() => {
+																deleteUser(
+																	user,
+																);
+															}}
+														>
+															<Delete />
+														</IconButton>
+													</StyledCenteredBox>
+												</Table.Cell>
+											</Table.Row>
+										);
+									}
+									return null;
+								})}
+							</Table.Body>
+
+							<Table.Footer>
+								<Table.Row>
+									<Table.Pagination
 										disabled={isLoading}
-										variant={"contained"}
-										onClick={() => {
-											// open the modal to a new user
-											setAddModalOpen(true);
-											setAddModalUser(null);
+										onPageChange={(_e, v) => {
+											setPage(v);
 										}}
-									>
-										Add Member
-									</Button>
-								</StyledNoUsersDiv>
-							)
+										page={page}
+										rowsPerPage={rowsPerPage}
+										rowsPerPageOptions={[10, 25, 50, 100]}
+										onRowsPerPageChange={(e) => {
+											// set the new limit
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
+										}}
+										count={totalUsers}
+									/>
+								</Table.Row>
+							</Table.Footer>
+							<UserPopover
+								hoveredUser={
+									hoveredUser
+										? {
+												id: hoveredUser.id,
+												name:
+													hoveredUser.name ||
+													"Unknown",
+												email: hoveredUser.email || "",
+											}
+										: null
+								}
+								isPopoverOpen={isPopoverOpen}
+								anchorEl={anchorEl}
+								handlePopoverClose={handlePopoverClose}
+							/>
+						</StyledMemberTable>
+					) : (
+						<StyledNoUsersDiv>
+							<Typography variant={"body2"}>
+								No Members
+							</Typography>
+							<Button
+								disabled={isLoading}
+								variant={"contained"}
+								onClick={() => {
+									// open the modal to a new user
+									setAddModalOpen(true);
+									setAddModalUser(null);
+								}}
+							>
+								Add Member
+							</Button>
+						</StyledNoUsersDiv>
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>

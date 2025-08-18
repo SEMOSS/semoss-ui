@@ -24,14 +24,14 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
-  addEngineUserPermissions,
-  addProjectUserPermissions,
-  editEngineUserPermissions,
-  editProjectUserPermissions,
-  getEngineUsers,
-  getEngineUsersNoCredentials,
-  getProjectUsers,
-  getProjectUsersNoCredentials,
+	addEngineUserPermissions,
+	addProjectUserPermissions,
+	editEngineUserPermissions,
+	editProjectUserPermissions,
+	getEngineUsers,
+	getEngineUsersNoCredentials,
+	getProjectUsers,
+	getProjectUsersNoCredentials,
 } from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
 import { useSettings } from "@/hooks";
@@ -311,7 +311,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				let json : Record<string, unknown> = {
+				let json: Record<string, unknown> = {
 					userid: m.id,
 					permission: validSetting(selectedRole)
 						? permissionPriorityMapper(selectedRole)?.permission
@@ -361,11 +361,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			let response:
 				| AxiosResponse<{ success: boolean }>
 				| {
-					response: Response;
-					data: {
-					success: boolean;
-					};
-				}
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
 				| null = null;
 			if (
 				type === "DATABASE" ||
@@ -395,7 +395,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 			if (response.data.success) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated user permissions",
+					message: "Successfully updated user permissions",
 				});
 
 				success = true;
@@ -472,34 +472,34 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				return;
 			}
 
-      let response:
-        | AxiosResponse<{ success: boolean }>
-        | {
-            response: Response;
-            data: {
-              success: boolean;
-            };
-          }
-        | null = null;
-            if (
-                type === 'DATABASE' ||
-                type === 'STORAGE' ||
-                type === 'MODEL' ||
-                type === 'VECTOR' ||
-                type === 'FUNCTION'
-            ) {
-                response = await addEngineUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            } else if (type === 'APP') {
-                response = await addProjectUserPermissions(
-                    adminMode,
-                    id,
-                    requests as string[],
-                );
-            }
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await addEngineUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
+			} else if (type === "APP") {
+				response = await addProjectUserPermissions(
+					adminMode,
+					id,
+					requests as string[],
+				);
+			}
 
 			if (!response) {
 				return;

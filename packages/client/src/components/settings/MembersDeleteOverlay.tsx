@@ -1,10 +1,10 @@
 import type { AxiosResponse } from "axios";
 import { Button, Modal, useNotification } from "@semoss/ui";
-import { useRootStore, useSettings } from "@/hooks";
 import {
-  removeEngineUserPermissions,
-  removeProjectUserPermissions,
+	removeEngineUserPermissions,
+	removeProjectUserPermissions,
 } from "@/api";
+import { useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PROVISIONED_USER } from "./settings.types";
 
@@ -67,34 +67,34 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				return m.id;
 			});
 
-      let response:
-        | AxiosResponse<{ success: boolean }>
-        | {
-            response: Response;
-            data: {
-              success: boolean;
-            };
-          }
-        | null = null;
-            if (
-                type === 'DATABASE' ||
-                type === 'STORAGE' ||
-                type === 'MODEL' ||
-                type === 'VECTOR' ||
-                type === 'FUNCTION'
-            ) {
-                response = await removeEngineUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            } else if (type === 'APP') {
-                response = await removeProjectUserPermissions(
-                    adminMode,
-                    id,
-                    requests,
-                );
-            }
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			if (
+				type === "DATABASE" ||
+				type === "STORAGE" ||
+				type === "MODEL" ||
+				type === "VECTOR" ||
+				type === "FUNCTION"
+			) {
+				response = await removeEngineUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
+			} else if (type === "APP") {
+				response = await removeProjectUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
+			}
 
 			if (!response) {
 				return;

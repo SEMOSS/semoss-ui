@@ -31,6 +31,7 @@ import { config as SelectSettingsConfig } from "./block-settings/select-block";
 import { config as SidebarSettingsConfig } from "./block-settings/sidebar-block";
 import { config as SliderSettingsConfig } from "./block-settings/slider-block";
 import { config as SwitchSettingsConfig } from "./block-settings/switch-block";
+import { config as TabSettingsConfig } from "./block-settings/tab-block";
 import { config as TextSettingsConfig } from "./block-settings/text-block";
 import { config as ThemeSettingsConfig } from "./block-settings/theme-block";
 import { config as TimePickerSettingsConfig } from "./block-settings/time-picker-block";
@@ -72,6 +73,7 @@ export const BlockSettingsRegistry = {
 	["sidebar"]: SidebarSettingsConfig,
 	["slider"]: SliderSettingsConfig,
 	["switch"]: SwitchSettingsConfig,
+	["tab"]: TabSettingsConfig,
 	["text"]: TextSettingsConfig,
 	["timepicker"]: TimePickerSettingsConfig,
 	["theme"]: ThemeSettingsConfig,

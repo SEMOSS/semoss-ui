@@ -1,4 +1,4 @@
-import { ClearRounded, Delete } from "@mui/icons-material";
+import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
 import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
@@ -22,7 +22,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { addTeamUser, deleteTeamUser, getNonTeamUsers, getTeamUsers } from '@/api/teams';
+import {
+	addTeamUser,
+	deleteTeamUser,
+	getNonTeamUsers,
+	getTeamUsers,
+} from "@/api/teams";
 
 const colors = [
 	"#22A4FF",
@@ -34,19 +39,29 @@ const colors = [
 	"#4CAF50",
 ];
 
-const UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
-
-const AvatarWrapper = styled("div")({
-	display: "inline-block",
-	width: "50px",
-});
-
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
+});
+
+const NameTableCell = styled(Table.Cell)({
+	width: "100%",
+	maxWidth: "1px",
+});
+
+const DateTableCell = styled(Table.Cell)({
+	whiteSpace: "nowrap",
+	"@media (max-width: 768px)": {
+		whiteSpace: "normal",
+	},
+});
+
+const StyledAvatar = styled(Avatar)({
+	width: "32px",
+	height: "32px",
+});
+
+const StyledTablePagination = styled(Table.Pagination)({
+	border: "none",
 });
 
 const StyledMemberContent = styled("div")({
@@ -68,7 +83,6 @@ const StyledMemberInnerContent = styled("div")({
 
 const StyledTableContainer = styled(Table.Container)({
 	borderRadius: "12px",
-	/* Devias Drop Shadow */
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
@@ -87,6 +101,7 @@ const StyledTableTitleDiv = styled("div")({
 	padding: "12px 24px 12px 16px",
 	alignItems: "center",
 	gap: "10px",
+	fontWeight: 500,
 });
 
 const StyledTableTitleMemberContainer = styled("div")({
@@ -95,15 +110,17 @@ const StyledTableTitleMemberContainer = styled("div")({
 	flex: "1 0 0",
 });
 
+const StyledAvatarGroup = styled(AvatarGroup)({
+	"& .MuiAvatar-root": {
+		marginLeft: "-20px",
+		border: "2px solid white",
+	},
+});
+
 const StyledAvatarGroupContainer = styled("div")({
 	display: "flex",
-	width: "130px",
 	height: "56px",
-	padding: "10px 16px",
-	flexDirection: "column",
-	justifyContent: "center",
 	alignItems: "center",
-	gap: "10px",
 });
 
 const StyledTableTitleMemberCountContainer = styled("div")({
@@ -145,12 +162,6 @@ const StyledAddMemberContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledNoMembersContainer = styled("div")({
-	width: "100%",
-	borderRadius: "12px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-});
-
 const StyledNoMembersDiv = styled("div")({
 	width: "100%",
 	height: "503px",
@@ -159,14 +170,7 @@ const StyledNoMembersDiv = styled("div")({
 	gap: "1rem",
 	justifyContent: "center",
 	alignItems: "center",
-});
-
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
-});
-
-const StyledEmptyTableCell = styled(Table.Cell)({
-	width: "700px",
+	background: "white",
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -262,15 +266,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 */
 	useEffect(() => {
 		getTeamUsers(
-				groupId,
-				limit,
-				membersPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(true);
-			});
+			groupId,
+			limit,
+			membersPage * limit - limit, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setTeamMembers(data);
+			setHasMembers(data?.length > 0);
+		});
 	}, []);
 
 	useEffect(() => {
@@ -323,22 +326,22 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				return;
 			}
 
-            for (let i = 0; i < requests.length; i++) {
-                let response:
-                  | AxiosResponse<{ success: boolean }>
-                  | {
-                      response: Response;
-                      data: {
-                        success: boolean;
-                      };
-                    }
-                  | null = null;
-                response = await addTeamUser(
-                    groupId,
-                    requests[i].type,
-                    requests[i].userid,
-                    true,
-                );
+			for (let i = 0; i < requests.length; i++) {
+				let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = null;
+				response = await addTeamUser(
+					groupId,
+					requests[i].type,
+					requests[i].userid,
+					true,
+				);
 
 				if (!response) {
 					return;
@@ -375,22 +378,22 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 	};
 
-    /**
-     * @name deleteUser
-     * @param user
-     */
-    const deleteUser = async (user) => {
-        try {
-            let response:
-                  | AxiosResponse<{ success: boolean }>
-                  | {
-                      response: Response;
-                      data: {
-                        success: boolean;
-                      };
-                    }
-                  | null = null;
-            response = await deleteTeamUser(user);
+	/**
+	 * @name deleteUser
+	 * @param user
+	 */
+	const deleteUser = async (user) => {
+		try {
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await deleteTeamUser(user);
 
 			if (!response) {
 				return;
@@ -412,26 +415,24 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		// refresh the members
 	};
 
-    /**
-     * @name deleteTeamUsers
-     * @param user
-     */
-    const deleteTeamUsers = async () => {
-        try {
-            for (let i = 0; i < selectedMembers.length; i++) {
-                try {
-                    let response:
-                      | AxiosResponse<{ success: boolean }>
-                      | {
-                          response: Response;
-                          data: {
-                            success: boolean;
-                          };
-                        }
-                      | null = null;
-                    response = await deleteTeamUser(
-                        selectedMembers[i],
-                    );
+	/**
+	 * @name deleteTeamUsers
+	 * @param user
+	 */
+	const deleteTeamUsers = async () => {
+		try {
+			for (let i = 0; i < selectedMembers.length; i++) {
+				try {
+					let response:
+						| AxiosResponse<{ success: boolean }>
+						| {
+								response: Response;
+								data: {
+									success: boolean;
+								};
+						  }
+						| null = null;
+					response = await deleteTeamUser(selectedMembers[i]);
 
 					if (!response) {
 						return;
@@ -479,7 +480,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = response.map((val) => {
+				const users = (response as unknown as any[]).map((val) => {
 					return {
 						...val,
 						color: colors[
@@ -531,26 +532,24 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 	const filterUsers = useCallback(() => {
 		getTeamUsers(
-				groupId,
-				limit,
-				membersPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(true);
-			});
+			groupId,
+			limit,
+			membersPage * limit - limit, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setTeamMembers(data);
+			setHasMembers(data?.length > 0);
+		});
 	}, [count, membersPage, searchFilter]);
 
-    const filterUsersTwo = useCallback(() => {
-        getTeamUsers(
-            groupId,
-            100,
-            0, // offset
-            searchFilter,
-        )
-            .then((data :any[]) => setMemberCount(data.length));
-    }, [count, membersPage, searchFilter]);
+	const filterUsersTwo = useCallback(() => {
+		getTeamUsers(
+			groupId,
+			100,
+			0, // offset
+			searchFilter,
+		).then((data: unknown[]) => setMemberCount(data.length));
+	}, [count, membersPage, searchFilter]);
 
 	const filter = () => {
 		filterUsers();
@@ -576,18 +575,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<StyledTableTitleMemberContainer>
 								{Avatars.length > 0 ? (
 									<StyledAvatarGroupContainer>
-										<AvatarGroup
+										<StyledAvatarGroup
 											spacing={"small"}
 											variant={"circular"}
-											max={4}
-											total={
-												teamMembers?.length
-											}
+											max={5}
+											total={teamMembers?.length}
 										>
 											{Avatars.map((el) => {
 												return el;
 											})}
-										</AvatarGroup>
+										</StyledAvatarGroup>
 									</StyledAvatarGroupContainer>
 								) : null}
 								<StyledTableTitleMemberCountContainer>
@@ -615,12 +612,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								{selectedMembers.length > 0 && (
 									<Button
 										variant={"outlined"}
-										color="error"
 										onClick={() =>
 											setDeleteMembersModal(true)
 										}
 									>
-										Delete Selected
+										Delete
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -631,15 +627,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										setAddMembersModal(true);
 										getUsersNonGroup(false);
 									}}
+									startIcon={<Add />}
 								>
-									Add Members{" "}
+									Add Members
 								</Button>
 							</StyledAddMemberContainer>
 						</StyledTableTitleContainer>
 						<StyledMemberTable>
 							<Table.Head>
 								<Table.Row>
-									<Table.Cell size="small" padding="checkbox">
+									<NameTableCell size="small">
 										<Checkbox
 											checked={
 												selectedMembers.length ===
@@ -659,9 +656,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											}}
 										/>
-									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
-									<StyledEmptyTableCell />
+										Name
+									</NameTableCell>
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -670,26 +666,27 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							</Table.Head>
 							<Table.Body>
 								{teamMembers?.map((_x, i) => {
-										const user = teamMembers[i];
+									const user = teamMembers[i];
 
-										let isSelected = false;
+									let isSelected = false;
 
-										if (user) {
-											isSelected = selectedMembers.some(
-												(value) => {
-													return (
-														value.userid ===
-														user.userid
-													);
-												},
-											);
-										}
-										if (user) {
-											return (
-												<Table.Row key={`${user.name + i}`}>
-													<StyledTableCell
-														size="medium"
-														padding="checkbox"
+									if (user) {
+										isSelected = selectedMembers.some(
+											(value) => {
+												return (
+													value.userid === user.userid
+												);
+											},
+										);
+									}
+
+									if (user) {
+										return (
+											<Table.Row key={`${user.name + i}`}>
+												<Table.Cell size="small">
+													<Stack
+														direction="row"
+														spacing={0}
 													>
 														<StyledCheckbox
 															checked={isSelected}
@@ -723,85 +720,85 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																}
 															}}
 														/>
-													</StyledTableCell>
-													<UserInfoTableCell
-														size="medium"
-														component="td"
-														scope="row"
-													>
-														<AvatarWrapper>
-															<Avatar>
-																{user.name[0].toUpperCase()}
-															</Avatar>
-														</AvatarWrapper>
-														<NameIDWrapper>
-															<Stack>
-																{user.name}
-															</Stack>
-															<Stack>
-																{`${user.type} ID: ${user.userid}`}
-															</Stack>
-														</NameIDWrapper>
-													</UserInfoTableCell>
-													<Table.Cell />
-													<Table.Cell size="medium">
-														{user.dateadded}
-													</Table.Cell>
-													<Table.Cell size="medium">
-														<IconButton
-															onClick={() => {
-																// set user
-																setUserToDelete(
-																	user,
-																);
-																// open modal
-																setDeleteMemberModal(
-																	true,
-																);
-															}}
+														<Stack
+															direction="row"
+															spacing={1}
+															alignItems="center"
 														>
-															<Delete></Delete>
-														</IconButton>
-													</Table.Cell>
-												</Table.Row>
-											);
-										} else {
-											return (
-												<Table.Row
-													key={
-														"No data available"
-													}
-												>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-												</Table.Row>
-											);
-										}
-									})}
+															<StyledAvatar>
+																{user.name[0].toUpperCase()}
+															</StyledAvatar>
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{user.name}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`${user.type} ID: ${user.userid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Stack>
+												</Table.Cell>
+
+												<DateTableCell size="small">
+													{user.dateadded}
+												</DateTableCell>
+
+												<Table.Cell size="small">
+													<IconButton
+														size="small"
+														onClick={() => {
+															setUserToDelete(
+																user,
+															);
+															setDeleteMemberModal(
+																true,
+															);
+														}}
+													>
+														<DeleteRounded />
+													</IconButton>
+												</Table.Cell>
+											</Table.Row>
+										);
+									} else {
+										return (
+											<Table.Row
+												key={"No data available"}
+											>
+												<Table.Cell size="small"></Table.Cell>
+												<Table.Cell size="small"></Table.Cell>
+												<Table.Cell size="small"></Table.Cell>
+											</Table.Row>
+										);
+									}
+								})}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
-									<Table.Pagination
+									<StyledTablePagination
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
-										onPageChange={(_e,_v) => {
+										onPageChange={(_e, _v) => {
 											setMembersPage(_v + 1);
 											setSelectedMembers([]);
 										}}
 										page={membersPage - 1}
 										rowsPerPage={5}
-										count={memberCount}
+										count={
+											teamMembers ? teamMembers.length : 0
+										}
 									/>
 								</Table.Row>
 							</Table.Footer>
 						</StyledMemberTable>
 					</StyledTableContainer>
 				) : (
-					<StyledNoMembersContainer>
+					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>
 								<Typography variant={"h6"}>Members</Typography>
@@ -821,7 +818,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								Add Members{" "}
 							</Button>
 						</StyledNoMembersDiv>
-					</StyledNoMembersContainer>
+					</StyledTableContainer>
 				)}
 			</StyledMemberInnerContent>
 
@@ -847,7 +844,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								return `${(option as { name: string }).name}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
-								return (option as { name: string }).name === (value as { name: string }).name;
+								return (
+									(option as { name: string }).name ===
+									(value as { name: string }).name
+								);
 							}}
 							onChange={(_event, newValue: unknown[]) => {
 								setSelectedNonCredentialedUsers([...newValue]);
@@ -871,162 +871,159 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						/>
 
 						{selectedNonCredentialedUsers?.map((user, idx) => {
-								const space = user.name.indexOf(" ");
-								const initial = user.name
-									? space > -1
-										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
-										: user.name[0].toUpperCase()
-									: user.id[0].toUpperCase();
-								return (
+							const space = user.name.indexOf(" ");
+							const initial = user.name
+								? space > -1
+									? `${user.name[0].toUpperCase()}${user.name[
+											space + 1
+										].toUpperCase()}`
+									: user.name[0].toUpperCase()
+								: user.id[0].toUpperCase();
+							return (
+								<Box
+									key={`selected-non-credentialed-user-${user.id}`}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+									}}
+								>
 									<Box
-										key={`selected-non-credentialed-user-${user.id}`}
 										sx={{
-											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
+											height: "56px",
+											width: "100%",
+											gap: "8px",
+											position: "relative",
+											border: "5px",
 										}}
 									>
 										<Box
 											sx={{
-												height: "56px",
-												width: "100%",
-												gap: "8px",
-												position: "relative",
-												border: "5px",
+												display: "flex",
+												justifyContent: "left",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
+												float: "left",
 											}}
 										>
 											<Box
 												sx={{
 													display: "flex",
-													justifyContent: "left",
-													marginTop: "6px",
-													marginLeft: "8px",
-													marginRight: "8px",
-													float: "left",
+													height: "32px",
+													width: "32px",
+													justifyContent: "center",
+													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "50%",
 												}}
 											>
+												<Avatar
+													aria-label="avatar"
+													sx={{
+														display: "flex",
+														width: "32px",
+														height: "32px",
+														fontSize: "24px",
+														backgroundColor:
+															user.color,
+													}}
+												>
+													{initial}
+												</Avatar>
+											</Box>
+										</Box>
+										<Card.Header
+											title={
+												<Typography
+													variant="h6"
+													sx={{
+														maxHeight: "24px",
+														height: "90%",
+														marginTop: "5px",
+													}}
+												>
+													{user.name}
+												</Typography>
+											}
+											sx={{
+												color: "#000",
+												maxWidth: "466px",
+												height: "15px",
+												width: "100%",
+												float: "left",
+												gap: "16px",
+											}}
+											subheader={
 												<Box
 													sx={{
 														display: "flex",
-														height: "32px",
-														width: "32px",
-														justifyContent:
-															"center",
-														alignItems: "center",
-														border: "0.5px solid rgba(0, 0, 0, .05)",
-														borderRadius: "50%",
+														gap: "2px",
+														marginTop: "2px",
 													}}
 												>
-													<Avatar
-														aria-label="avatar"
-														sx={{
-															display: "flex",
-															width: "32px",
-															height: "32px",
-															fontSize: "24px",
-															backgroundColor:
-																user.color,
+													<span
+														style={{
+															opacity: 0.9,
+															fontSize: "11px",
 														}}
 													>
-														{initial}
-													</Avatar>
-												</Box>
-											</Box>
-											<Card.Header
-												title={
-													<Typography
-														variant="h6"
-														sx={{
-															maxHeight: "24px",
-															height: "90%",
-															marginTop: "5px",
-														}}
-													>
-														{user.name}
-													</Typography>
-												}
-												sx={{
-													color: "#000",
-													maxWidth: "466px",
-													height: "15px",
-													width: "100%",
-													float: "left",
-													gap: "16px",
-												}}
-												subheader={
-													<Box
-														sx={{
-															display: "flex",
-															gap: "2px",
-															marginTop: "2px",
-														}}
-													>
-														<span
-															style={{
-																opacity: 0.9,
-																fontSize:
-																	"11px",
-															}}
+														{`User ID: `}
+														<Chip
+															label={user.id}
+															size="small"
+														/>
+													</span>
+													{`• `}
+													<span>
+														{`Email: `}
+														<Link
+															href={`mailto:${user.email}`}
+															underline="none"
 														>
-															{`User ID: `}
-															<Chip
-																label={user.id}
-																size="small"
-															/>
-														</span>
-														{`• `}
-														<span>
-															{`Email: `}
-															<Link
-																href={`mailto:${user.email}`}
-																underline="none"
-															>
-																{user.email}
-															</Link>
-														</span>
-													</Box>
-												}
-												action={
-													<IconButton
-														sx={{
-															height: "28px",
-															width: "28px",
-															gap: "30px",
-															fontSize: "small",
-															mt: "16px",
-															color: "rgba( 0, 0, 0, .7)",
-															mr: "2px",
-															top: "0px",
-															position:
-																"absolute",
-															padding: "10px",
-														}}
-														onClick={() => {
-															const filtered =
-																selectedNonCredentialedUsers.filter(
-																	(val) =>
-																		val.id !==
-																		user.id,
-																);
-															setSelectedNonCredentialedUsers(
-																filtered,
+															{user.email}
+														</Link>
+													</span>
+												</Box>
+											}
+											action={
+												<IconButton
+													sx={{
+														height: "28px",
+														width: "28px",
+														gap: "30px",
+														fontSize: "small",
+														mt: "16px",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "2px",
+														top: "0px",
+														position: "absolute",
+														padding: "10px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedUsers.filter(
+																(val) =>
+																	val.id !==
+																	user.id,
 															);
-														}}
-													>
-														<ClearRounded />
-													</IconButton>
-												}
-											/>
-										</Box>
+														setSelectedNonCredentialedUsers(
+															filtered,
+														);
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
 									</Box>
-								);
-							})}
+								</Box>
+							);
+						})}
 					</StyledModalContentText>
 				</Modal.Content>
 				<Modal.Actions>

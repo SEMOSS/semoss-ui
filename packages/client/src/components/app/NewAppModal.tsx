@@ -12,7 +12,7 @@ import {
 	TextField,
 	useNotification,
 } from "@semoss/ui";
-import { uploadImage } from '@/api';
+import { uploadImage } from "@/api";
 import { useRootStore } from "@/hooks";
 import type { AppMetadata } from "./app.types";
 
@@ -98,7 +98,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				// upload the image
 				if (data.APP_IMG && appId) {
-					await uploadImage(data.APP_IMG, appId, configStore.store.insightID);
+					await uploadImage(
+						data.APP_IMG,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 				// after the project is created check for metadata. If true, run SetProjectMeta
 				if (data.APP_TAGS.length || data.APP_DESCRIPTION) {
@@ -143,7 +147,11 @@ export const NewAppModal = (props: NewAppModalProps) => {
 
 				// upload the image
 				if (data.APP_IMG && appId) {
-					await uploadImage(data.APP_IMG, appId, configStore.store.insightID);
+					await uploadImage(
+						data.APP_IMG,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// after the project is created run a pixel to create a new portals/index.html file

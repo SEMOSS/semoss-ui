@@ -19,7 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { createUser, editMemberInfo } from '@/api';
+import { createUser, editMemberInfo } from "@/api";
 import { useRootStore, useSettings } from "@/hooks";
 
 const StyledModalContent = styled(Modal.Content)(() => ({
@@ -234,14 +234,14 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 			}
 			let success = false;
 
-            try {
-                let response:
-                  | AxiosResponse<boolean>
-                  | {
-                      response: Response;
-                      data: boolean;
-                    }
-                  | null = null;
+			try {
+				let response:
+					| AxiosResponse<boolean>
+					| {
+							response: Response;
+							data: boolean;
+					  }
+					| null = null;
 
 				if (data.model_usage_restriction === "token") {
 					data.model_max_response_time = null;
@@ -257,7 +257,10 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 				}
 
 				if (isNewUser) {
-					response = await createUser(adminMode, data as unknown as Record<string, unknown>);
+					response = await createUser(
+						adminMode,
+						data as unknown as Record<string, unknown>,
+					);
 				} else {
 					if (
 						data.exporter === undefined ||
@@ -272,10 +275,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 							data.exporter = false;
 						}
 					}
-					response = await editMemberInfo(
-						adminMode,
-						data,
-					);
+					response = await editMemberInfo(adminMode, data);
 				}
 
 				if (!response) {
@@ -406,8 +406,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 											label="Username"
 											disabled={
 												!!(
-												user?.type === "NATIVE" ||
-												type === "NATIVE")
+													user?.type === "NATIVE" ||
+													type === "NATIVE"
+												)
 											}
 											value={
 												isNewUser && type === "NATIVE"

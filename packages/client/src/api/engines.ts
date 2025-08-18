@@ -14,13 +14,15 @@ export const getEngines = async (
 	}
 	url += "engine/getEngines?";
 	url += `engineTypes=${engineType}`;
-	url += search ? (`&filterWord=${search}`) : "";
-	url += offset ? (`&offset=${offset}`) : "";
-	url += limit ? (`&limit=${limit}`) : "";
+	url += search ? `&filterWord=${search}` : "";
+	url += offset ? `&offset=${offset}` : "";
+	url += limit ? `&limit=${limit}` : "";
 	// get the response
-	const response = await get<Record<string, unknown>[]>(url).catch((error) => {
-		throw Error(error);
-	});
+	const response = await get<Record<string, unknown>[]>(url).catch(
+		(error) => {
+			throw Error(error);
+		},
+	);
 	// there was no response, that is an error
 	if (!response) {
 		throw Error("No Response to get Apps");
@@ -59,10 +61,10 @@ export const getEngineUsers = async (
 
 	url += "engine/getEngineUsers?";
 	url += `engineId=${databaseId}`;
-	url += user ? (`&searchTerm=${user}`) : "";
-	url += permission ? (`&permission=${permission}`) : "";
-	url += offset ? (`&offset=${offset}`) : "";
-	url += limit ? (`&limit=${limit}`) : "";
+	url += user ? `&searchTerm=${user}` : "";
+	url += permission ? `&permission=${permission}` : "";
+	url += offset ? `&offset=${offset}` : "";
+	url += limit ? `&limit=${limit}` : "";
 
 	// get the response
 	const response = await get<{
@@ -129,7 +131,7 @@ export const addEngineUserPermissions = async (
 		url += "admin/";
 	}
 	url += "engine/addEngineUserPermissions";
-	const postData : Record<string, unknown> = {
+	const postData: Record<string, unknown> = {
 		engineId: appId,
 		userpermissions: users,
 	};
@@ -196,7 +198,7 @@ export const setEngineVisiblity = async (
 		url += "admin/";
 	}
 	url += "engine/setEngineDiscoverable";
-	const postData : Record<string, unknown> = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		discoverable: visible,
 	};
@@ -213,7 +215,7 @@ export const setEngineFavorite = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/`;
 	url += "engine/setEngineFavorite";
-	const postData : Record<string, unknown> = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		isFavorite: favorite,
 	};
@@ -234,7 +236,7 @@ export const approveEngineUserAccessRequest = async (
 		url += "admin/";
 	}
 	url += "engine/approveEngineUserAccessRequest";
-	const postData : Record<string, unknown> = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		requests: requests,
 	};
@@ -254,7 +256,7 @@ export const denyEngineUserAccessRequest = async (
 		url += "admin/";
 	}
 	url += "engine/denyEngineUserAccessRequest";
-	const postData : Record<string, unknown> = {
+	const postData: Record<string, unknown> = {
 		engineId: engineId,
 		requestIds: userIds,
 	};
@@ -308,10 +310,10 @@ export const editEnginePermission = async (
 		permission: engine.permission,
 	};
 	if (engine.type) {
-		postData = {  ...postData, type: engine.type, };
+		postData = { ...postData, type: engine.type };
 	}
 	if (engine.endDate) {
-		postData = {  ...postData, endDate: engine.endDate, };
+		postData = { ...postData, endDate: engine.endDate };
 	}
 
 	const response = await post<{
@@ -330,58 +332,66 @@ export const deleteEnginePermission = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/removeGroupEnginePermission";
-	let postData : Record<string, unknown> = {
+	let postData: Record<string, unknown> = {
 		groupId: groupId,
 		engineId: engine.engineid,
 	};
 	if (groupType) {
-		postData  = {
+		postData = {
 			...postData,
-			type: engine.type
+			type: engine.type,
 		};
 	}
 
-  const response = await post<{
-    success: boolean;
-  }>(url, processPostData(postData), {});
-  return response;
+	const response = await post<{
+		success: boolean;
+	}>(url, processPostData(postData), {});
+	return response;
 };
 
-  /**
-   * @name editEngineUserPermissions
-   * @param admin
-   * @param appId
-   * @param users
-   * @returns
-   */
-  
+/**
+ * @name editEngineUserPermissions
+ * @param admin
+ * @param appId
+ * @param users
+ * @returns
+ */
+
 // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-export  const editEngineUserPermissions = async (admin: boolean, appId: string, users: any[]) => {
-    let url = `${Env.MODULE}/api/auth/`,
-      postData : Record<string, unknown> = {};
+export const editEngineUserPermissions = async (
+	admin: boolean,
+	appId: string,
+	users: any[],
+) => {
+	let url = `${Env.MODULE}/api/auth/`,
+		postData: Record<string, unknown> = {};
 
-    if (admin) {
-      url += "admin/";
-    }
+	if (admin) {
+		url += "admin/";
+	}
 
-    url += "engine/editEngineUserPermissions";
+	url += "engine/editEngineUserPermissions";
 
-    postData = {
-      engineId: appId,
-      userpermissions: users,
-    };
+	postData = {
+		engineId: appId,
+		userpermissions: users,
+	};
 
-    const response = await post<{ success: boolean }>(url, processPostData(postData), {});
+	const response = await post<{ success: boolean }>(
+		url,
+		processPostData(postData),
+		{},
+	);
 
-    return response;
+	return response;
 
-    // figure out whether we want to do .catch here
-  }
+	// figure out whether we want to do .catch here
+};
 
 const processPostData = (data: Record<string, unknown>) => {
-  const postRecordData: Record<string, unknown> = {};
-  Object.keys(data).forEach((item) => {
-    postRecordData[item] = data[item];
-  });
-  return postRecordData;
+	const postRecordData: Record<string, unknown> = {};
+	Object.keys(data).forEach((item) => {
+		postRecordData[item] = data[item];
+	});
+	return postRecordData;
 };

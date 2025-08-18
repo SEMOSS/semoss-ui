@@ -17,11 +17,11 @@ import {
 	ToggleButtonGroup,
 	Typography,
 } from "@semoss/ui";
+import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore } from "@/hooks";
 import { useSettings } from "@/hooks/useSettings";
 import { removeUnderscores } from "@/utility";
-import { setEngineGlobal, setEngineFavorite } from "@/api";
 
 export interface DBMember {
 	ID: string;

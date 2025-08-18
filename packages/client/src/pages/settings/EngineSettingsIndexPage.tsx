@@ -20,11 +20,11 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
+import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard, EngineTileCard } from "@/components/engine";
 import { useAPI, usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
-import { setEngineGlobal, setEngineFavorite } from "@/api";
 
 export interface DBMember {
 	ID: string;

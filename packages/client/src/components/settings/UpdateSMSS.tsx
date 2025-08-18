@@ -7,7 +7,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { updateDatabaseSmssProperties } from '@/api';
+import { updateDatabaseSmssProperties } from "@/api";
 import { usePixel, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 

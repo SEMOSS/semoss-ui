@@ -10,11 +10,11 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
+import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { setProjectFavorite } from "@/api";
 import { NavbarHeader, NavbarLeft } from "../../components/shared";
 
 const StyledContainer = styled("div")(({ theme }) => ({

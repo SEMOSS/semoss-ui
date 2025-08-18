@@ -6,14 +6,18 @@ import {
 	ExpandLess,
 	ExpandMore,
 } from "@mui/icons-material";
+import SearchIcon from "@mui/icons-material/Search";
+import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import {
+	Box,
 	Button,
 	Checkbox,
 	Collapse,
 	Divider,
 	Icon,
 	IconButton,
+	LoadingScreen,
 	RadioGroup,
 	Stack,
 	styled,
@@ -22,32 +26,34 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
-  approveEngineUserAccessRequest,
-  approveProjectUserAccessRequest,
-  denyEngineUserAccessRequest,
-  denyProjectUserAccessRequest,
+	approveEngineUserAccessRequest,
+	approveProjectUserAccessRequest,
+	denyEngineUserAccessRequest,
+	denyProjectUserAccessRequest,
 } from "@/api";
-import { LoadingScreen } from "@/components/ui";
+import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { usePixel, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
-const StyledMemberLoading = styled("div")(() => ({
+const StyledMemberLoading = styled("div")({
 	position: "relative",
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
 	height: "160px",
-}));
+});
 
-const StyledMemberContent = styled("div")({
+const StyledMemberContent = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	flexDirection: "column",
 	alignItems: "flex-start",
 	gap: "25px",
 	flexShrink: "0",
-});
+	border: `1px solid ${theme.palette.secondary.main}`,
+	borderRadius: "12px",
+}));
 
 const StyledMemberInnerContent = styled("div")({
 	display: "flex",
@@ -62,18 +68,18 @@ const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
-const StyledTableRow = styled(Table.Row)({
-	backgroundColor: "#FFF",
-});
+const StyledTableRow = styled(Table.Row)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+}));
 
-const _StyledMemberTable = styled(Table)({});
+const StyledMemberTable = styled(Table)({});
 
-const StyledTableTitleContainer = styled("div")(() => ({
+const StyledTableTitleContainer = styled("div")({
 	display: "flex",
 	alignItems: "center",
 	alignSelf: "stretch",
 	backgroundColor: "white",
-}));
+});
 
 const StyledTableTitleDiv = styled("div")({
 	display: "flex",
@@ -136,9 +142,9 @@ const StyledAddMemberContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledCircleNotification = styled(CircleNotifications)({
-	color: "#FF5F15",
-});
+const StyledCircleNotification = styled(CircleNotifications)(({ theme }) => ({
+	color: theme.palette.orange[500],
+}));
 
 // maps for permissions,
 const permissionMapper = {
@@ -155,12 +161,16 @@ const permissionMapper = {
 
 const StyledNoPendingReqs = styled("div")(({ theme }) => ({
 	width: "100%",
-	height: "503px",
 	display: "flex",
+	padding: "10px 24px 10px 8px",
 	flexDirection: "column",
 	gap: theme.spacing(1),
 	justifyContent: "center",
 	alignItems: "center",
+}));
+
+const IconWrapper = styled(Icon)(({ theme }) => ({
+	color: theme.palette.secondary.light,
 }));
 
 interface PendingMemberTableProps {
@@ -182,7 +192,7 @@ interface PendingMemberTableProps {
 
 export const PendingMembersTable = (props: PendingMemberTableProps) => {
 	const { id, type, onChange = () => null } = props;
-	
+
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -300,7 +310,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
 				notification.add({
 					color: "success",
-					message: "Succesfully approved user permissions",
+					message: "Successfully approved user permissions",
 				});
 			} else {
 				notification.add({
@@ -338,12 +348,15 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				return;
 			}
 
-			      let response: {
-        response: Response;
-        data: {
-          success: boolean;
-        };
-      } | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -389,7 +402,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
 				notification.add({
 					color: "success",
-					message: "Succesfully denied user permissions",
+					message: "Successfully denied user permissions",
 				});
 			} else {
 				notification.add({
@@ -427,168 +440,25 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 			return m;
 		});
 
-        setRenderedMembers(updatedRenderedMembers);
-  };
-  const updateSelectedMembers = () => {
-                                  if (
-                                    Object.keys(selectedMembers).length !==
-                                    renderedMembers.length
-                                  ) {
-                                    const updatedMembers = renderedMembers.reduce(
-                                      (acc, val) => {
-                                        acc[val.ID] = val;
+		setRenderedMembers(updatedRenderedMembers);
+	};
 
-                                        return acc;
-                                      },
-                                      {},
-                                    );
-
-                                    setSelectedMembers(updatedMembers);
-                                  } else {
-                                    setSelectedMembers({});
-                                  }
-                              }
-  const renderedMembersAvailable :boolean =  renderedMembers.length > 0;
-
-  const renderedMembersAvailableJsx = renderedMembersAvailable ? (
-    <Table>
-                    <Table.Head>
-                      <StyledTableRow>
-                        <Table.Cell size="small" padding="checkbox">
-                          <Checkbox
-                            checked={Object.keys(selectedMembers).length === renderedMembers.length && renderedMembers.length > 0}
-                            onChange={updateSelectedMembers}
-                          />
-                        </Table.Cell>
-                        <Table.Cell size="small">ID</Table.Cell>
-                        <Table.Cell size="small">Name</Table.Cell>
-                        <Table.Cell size="small">
-                          <div
-                            style={{
-                              display: "flex",
-                              flexDirection: "row",
-                              justifyContent: "space-between",
-                            }}
-                          >
-                            Request Date
-                            <Divider></Divider>
-                            <Icon
-                              sx={{
-                                color: "#E9E9E9",
-                              }}
-                            >
-                              <Add />
-                            </Icon>
-                          </div>
-                        </Table.Cell>
-                        <Table.Cell size="small">Permission</Table.Cell>
-                        <Table.Cell size="small">Actions</Table.Cell>
-                      </StyledTableRow>
-                    </Table.Head>
-                    <Table.Body>
-                      {
-                        renderedMembers.map((member, _i) => {
-                          const isSelected = !!selectedMembers[member.ID];
-                          return (
-                            <StyledTableRow key={`selected_member_row_${member.REQUEST_USERID}`}>
-                                <Table.Cell>
-                                  <Checkbox
-                                    checked={isSelected}
-                                    onChange={() => {
-                                      // update selected members
-                                      const updatedMembers = {
-                                        ...selectedMembers,
-                                      } as Record<string, true>;
-
-                                      if (isSelected) {
-                                        delete updatedMembers[member.ID];
-                                      } else {
-                                        updatedMembers[member.ID] = true;
-                                      }
-
-                                      setSelectedMembers(updatedMembers);
-                                    }}
-                                  />
-                                </Table.Cell>
-                                <Table.Cell component="td" scope="row">
-                                  {member.REQUEST_USERID}
-                                </Table.Cell>
-                                <Table.Cell component="td" scope="row">
-                                  {member.NAME}
-                                </Table.Cell>
-                                <Table.Cell>{member.REQUEST_TIMESTAMP}</Table.Cell>
-                                <Table.Cell>
-                                  <RadioGroup
-                                    row
-                                    value={member.PERMISSION}
-                                    onChange={(e) => {
-                                      const val = e.target.value;
-                                      if (val) {
-                                        updatePendingMemberPermission(
-                                          member,
-                                          val as SETTINGS_ROLE
-                                        );
-                                      }
-                                    }}
-                                  >
-                                    <RadioGroup.Item
-                                      value="Author"
-                                      label="Author"
-                                    />
-                                    <RadioGroup.Item
-                                      value="Editor"
-                                      label="Editor"
-                                    />
-                                    <RadioGroup.Item
-                                      value="Read-Only"
-                                      label="Read-Only"
-                                    />
-                                  </RadioGroup>
-                                </Table.Cell>
-                                <Table.Cell>
-                                  <IconButton
-                                    onClick={() => {
-                                      approvePendingMembers([member]);
-                                    }}
-                                  >
-                                    <Check color={"success"} />
-                                  </IconButton>
-                                  <IconButton
-                                    onClick={() => {
-                                      denyPendingMembers([member]);
-                                    }}
-                                  >
-                                    <Close />
-                                  </IconButton>
-                                </Table.Cell>
-                            </StyledTableRow>                          
-                          );
-                        })
-                      }
-                    </Table.Body>
-    </Table>
-  ) : (
-        <StyledNoPendingReqs>
-            <Typography variant={"body2"}>
-              No requests pending
-            </Typography>
-        </StyledNoPendingReqs>
-  );
-
-  return (
-    <StyledMemberContent>
-      <StyledMemberInnerContent>
-        <StyledTableContainer>
-          <StyledTableTitleContainer
-            onClick={() => {
-              if (renderedMembers.length > 0) {
-                setOpenTable(!openTable);
-              }
-            }}
-          >
-            <StyledTableTitleDiv>
-              <Typography variant={"h6"}>Pending Requests</Typography>
-            </StyledTableTitleDiv>
+	return (
+		<StyledMemberContent>
+			<StyledMemberInnerContent>
+				<StyledTableContainer>
+					<StyledTableTitleContainer
+						onClick={() => {
+							if (renderedMembers.length > 0) {
+								setOpenTable(!openTable);
+							}
+						}}
+					>
+						<StyledTableTitleDiv>
+							<Typography variant={"h6"}>
+								Pending Requests
+							</Typography>
+						</StyledTableTitleDiv>
 
 						<StyledTableTitleMemberContainer>
 							<StyledTableTitleMemberCountContainer>
@@ -613,13 +483,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 
 						<StyledSearchButtonContainer>
 							<IconButton>
-								{/* <SearchOutlined></SearchOutlined> */}
+								<SearchIcon />
 							</IconButton>
 						</StyledSearchButtonContainer>
 
 						<StyledFilterButtonContainer>
 							<IconButton>
-								{/* <FilterAltRounded></FilterAltRounded> */}
+								<img src={FilteredIcon} alt="Filter" />
 							</IconButton>
 						</StyledFilterButtonContainer>
 
@@ -679,7 +549,230 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 								</LoadingScreen>
 							</StyledMemberLoading>
 						) : (
-							renderedMembersAvailableJsx
+							<Box>
+								{renderedMembers.length ? (
+									<StyledMemberTable>
+										<Table.Head>
+											<StyledTableRow>
+												<Table.Cell
+													size="small"
+													padding="checkbox"
+												>
+													<Checkbox
+														checked={
+															Object.keys(
+																selectedMembers,
+															).length ===
+																renderedMembers.length &&
+															renderedMembers.length >
+																0
+														}
+														onChange={() => {
+															if (
+																Object.keys(
+																	selectedMembers,
+																).length !==
+																renderedMembers.length
+															) {
+																const updatedMembers =
+																	renderedMembers.reduce(
+																		(
+																			acc,
+																			val,
+																		) => {
+																			acc[
+																				val.ID
+																			] =
+																				val;
+
+																			return acc;
+																		},
+																		{},
+																	);
+
+																setSelectedMembers(
+																	updatedMembers,
+																);
+															} else {
+																setSelectedMembers(
+																	{},
+																);
+															}
+														}}
+													/>
+												</Table.Cell>
+												<Table.Cell size="small">
+													ID
+												</Table.Cell>
+												<Table.Cell size="small">
+													Name
+												</Table.Cell>
+												<Table.Cell size="small">
+													<div
+														style={{
+															display: "flex",
+															flexDirection:
+																"row",
+															justifyContent:
+																"space-between",
+														}}
+													>
+														Request Date
+														<Divider></Divider>
+														<IconWrapper>
+															<Add />
+														</IconWrapper>
+													</div>
+												</Table.Cell>
+												<Table.Cell size="small">
+													Permission
+												</Table.Cell>
+												<Table.Cell size="small">
+													Actions
+												</Table.Cell>
+											</StyledTableRow>
+										</Table.Head>
+										<Table.Body>
+											{renderedMembers.map((member) => {
+												const isSelected =
+													!!selectedMembers[
+														member.ID
+													];
+
+												return (
+													<StyledTableRow
+														key={member.ID}
+													>
+														<Table.Cell>
+															<Checkbox
+																checked={
+																	isSelected
+																}
+																onChange={() => {
+																	// update selected members
+																	const updatedMembers =
+																		{
+																			...selectedMembers,
+																		} as Record<
+																			string,
+																			true
+																		>;
+
+																	if (
+																		isSelected
+																	) {
+																		delete updatedMembers[
+																			member
+																				.ID
+																		];
+																	} else {
+																		updatedMembers[
+																			member.ID
+																		] =
+																			true;
+																	}
+
+																	setSelectedMembers(
+																		updatedMembers,
+																	);
+																}}
+															/>
+														</Table.Cell>
+														<Table.Cell
+															component="td"
+															scope="row"
+														>
+															{
+																member.REQUEST_USERID
+															}
+														</Table.Cell>
+														<Table.Cell
+															component="td"
+															scope="row"
+														>
+															{member.NAME}
+														</Table.Cell>
+														<Table.Cell>
+															{
+																member.REQUEST_TIMESTAMP
+															}
+														</Table.Cell>
+														<Table.Cell>
+															<RadioGroup
+																row
+																value={
+																	member.PERMISSION
+																}
+																onChange={(
+																	e,
+																) => {
+																	const val =
+																		e.target
+																			.value;
+																	if (val) {
+																		updatePendingMemberPermission(
+																			member,
+																			val as SETTINGS_ROLE,
+																		);
+																	}
+																}}
+															>
+																<RadioGroup.Item
+																	value="Author"
+																	label="Author"
+																/>
+																<RadioGroup.Item
+																	value="Editor"
+																	label="Editor"
+																/>
+																<RadioGroup.Item
+																	value="Read-Only"
+																	label="Read-Only"
+																/>
+															</RadioGroup>
+														</Table.Cell>
+
+														<Table.Cell>
+															<IconButton
+																onClick={() => {
+																	approvePendingMembers(
+																		[
+																			member,
+																		],
+																	);
+																}}
+															>
+																<Check
+																	color={
+																		"success"
+																	}
+																/>
+															</IconButton>
+															<IconButton
+																onClick={() => {
+																	denyPendingMembers(
+																		[
+																			member,
+																		],
+																	);
+																}}
+															>
+																<Close />
+															</IconButton>
+														</Table.Cell>
+													</StyledTableRow>
+												);
+											})}
+										</Table.Body>
+									</StyledMemberTable>
+								) : (
+									<StyledNoPendingReqs>
+										<Typography variant={"body2"}>
+											No requests pending
+										</Typography>
+									</StyledNoPendingReqs>
+								)}
+							</Box>
 						)}
 					</Collapse>
 				</StyledTableContainer>

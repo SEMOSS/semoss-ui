@@ -20,9 +20,9 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { setProjectFavorite } from "@/api";
 import { CodeRenderer } from "@/components/code-workspace";
 import { LoadingScreen, ShareOverlay } from "@/components/ui";
-import { setProjectFavorite } from "@/api";
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";

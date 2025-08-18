@@ -1,7 +1,10 @@
+import LockIcon from "@mui/icons-material/Lock";
+import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import type { AxiosResponse } from "axios";
 import { useEffect, useState } from "react";
 import {
 	Alert,
+	Box,
 	Button,
 	Grid,
 	Modal,
@@ -13,7 +16,13 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { setEngineGlobal, setEngineVisiblity, setProjectGlobal, setProjectVisiblity } from "@/api";
+import {
+	setEngineGlobal,
+	setEngineVisiblity,
+	setProjectGlobal,
+	setProjectVisiblity,
+} from "@/api";
+import databaseIcon from "@/assets/img/databaseIcon.png";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -32,11 +41,10 @@ const StyledAlert = styled(Alert, {
 	borderRadius: "12px",
 	color: theme.palette.text.primary,
 	background: theme.palette.background.paper,
-	border: `1px solid ${theme.palette.secondary.border}`,
+	border: `1px solid ${theme.palette.secondary.main}`,
 	".MuiAlert-action": {
 		paddingRight: "8px",
 	},
-
 	...(setBounds && {
 		height: theme.spacing(13),
 		width: "600px",
@@ -47,13 +55,25 @@ const StyledGrid = styled(Grid)(() => ({
 	flex: "1",
 }));
 
-const StyledTypography = styled(Typography, {
-	shouldForwardProp: (prop) => prop !== "isDisabled",
-})<{
-	// Track if discoverable will be disabled or not
-	isDisabled: boolean;
-}>(({ isDisabled, theme }) => ({
-	color: isDisabled ? theme.palette.text.disabled : "inherit",
+const StyledWidth = () => ({
+	width: "100%",
+});
+
+const StyledBlock = styled(Box)({
+	display: "flex",
+	alignItems: "flex-start",
+	gap: "8px",
+});
+
+const StyledIcon = styled("span")(({ theme }) => ({
+	color: theme.palette.secondary.dark,
+	width: "20px",
+	height: "20px",
+	"& svg": {
+		fontSize: theme.typography.pxToRem(16),
+		width: "20px",
+		height: "20px",
+	},
 }));
 
 interface SettingsTilesProps {
@@ -97,9 +117,8 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	const { adminMode } = useSettings();
 
 	const [deleteModal, setDeleteModal] = useState(false);
-	const [_closeEngineModal, setCloseEngineModal] = useState(false);
-	const [discoverable, setDiscoverable] = useState(false);
-	const [global, setGlobal] = useState(false);
+	const [discoverable, setDiscoverable] = useState(true);
+	const [global, setGlobal] = useState(true);
 	const [loading, setLoading] = useState(false);
 
 	const engineInfo = usePixel(
@@ -199,51 +218,6 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 	};
 
 	/**
-	 * Close the engine for item
-	 */
-	const _closeEngine = async () => {
-		try {
-			// start the loading screen
-			setLoading(true);
-
-			// run the pixel
-			const response = await monolithStore.runQuery(
-				type === "DATABASE" ||
-					type === "STORAGE" ||
-					type === "MODEL" ||
-					type === "VECTOR" ||
-					type === "FUNCTION"
-					? `CloseEngine(engine=['${id}']);`
-					: "",
-			);
-
-			const operationType = response.pixelReturn[0].operationType;
-			const output = response.pixelReturn[0].output;
-
-			if (operationType.indexOf("ERROR") === -1) {
-				notification.add({
-					color: "success",
-					message: `Successfully closed engine for ${name}`,
-				});
-			} else {
-				notification.add({
-					color: "error",
-					message: output,
-				});
-			}
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: String(e),
-			});
-		} finally {
-			// stop the loading screen
-			setLoading(false);
-			setCloseEngineModal(false);
-		}
-	};
-
-	/**
 	 * @name changeDiscoverable
 	 */
 	const changeDiscoverable = async () => {
@@ -252,14 +226,14 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			setLoading(true);
 
 			let response:
-        | AxiosResponse<{ success: boolean }>
-        | {
-            response: Response;
-            data: {
-              success: boolean;
-            };
-          }
-        | null = null;
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -321,14 +295,14 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			setLoading(true);
 
 			let response:
-        | AxiosResponse<{ success: boolean }>
-        | {
-            response: Response;
-            data: {
-              success: boolean;
-            };
-          }
-        | null = null;
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -336,17 +310,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await setEngineGlobal(
-					adminMode,
-					id,
-					!global,
-				);
+				response = await setEngineGlobal(adminMode, id, !global);
 			} else if (type === "APP") {
-				response = await setProjectGlobal(
-					adminMode,
-					id,
-					!global,
-				);
+				response = await setProjectGlobal(adminMode, id, !global);
 			}
 
 			// ignore if there is no response
@@ -366,9 +332,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			} else {
 				notification.add({
 					color: "error",
-					message: `Error making ${name} ${
-						global ? "non-global" : "global"
-					}`,
+					message: `Error making ${name} ${global ? "non-global" : "global"}`,
 				});
 			}
 		} catch (e) {
@@ -389,11 +353,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 	if (condensed) {
 		return (
-			<Paper sx={{ width: "100%" }}>
+			<Paper sx={StyledWidth}>
 				<Stack direction={direction}>
 					<StyledAlert
 						setBounds={direction === "column"}
-						sx={{ width: "100%" }}
+						sx={StyledWidth}
 						icon={false}
 						action={
 							<Switch
@@ -402,7 +366,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										? `Make ${name} private`
 										: `Make ${name} public`
 								}
-								checked={global}
+								checked={!global}
 								disabled={
 									!configStore.isEngineOperationAvailable(
 										type,
@@ -416,9 +380,27 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					>
 						<Alert.Title>
-							<Typography variant="body1">Make Public</Typography>
+							<StyledBlock>
+								{/* Single Lock Icon on the left */}
+								<StyledIcon>
+									<LockIcon />
+								</StyledIcon>
+
+								{/* Text Stack on the right */}
+								<Box>
+									<Typography
+										variant="body1"
+										fontWeight="500"
+									>
+										Private
+									</Typography>
+									<Typography variant="body2">
+										No one outside of the specified member
+										group can access
+									</Typography>
+								</Box>
+							</StyledBlock>
 						</Alert.Title>
-						{`Show ${name} to all users and automatically give them read-only access. Users can request elevated access.`}
 					</StyledAlert>
 					{global ? (
 						<Tooltip
@@ -427,7 +409,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						>
 							<StyledAlert
 								setBounds={direction === "column"}
-								sx={{ width: "100%" }}
+								sx={StyledWidth}
 								icon={false}
 								action={
 									<Switch
@@ -443,7 +425,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												"discoverable",
 											)
 										}
-										checked={discoverable}
+										checked={!discoverable}
 										onChange={() => {
 											changeDiscoverable();
 										}}
@@ -451,25 +433,32 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								}
 							>
 								<Alert.Title>
-									<StyledTypography
-										variant="body1"
-										isDisabled={true}
-									>
-										Make Discoverable
-									</StyledTypography>
+									<StyledBlock>
+										{/* Single Lock Icon on the left */}
+										<StyledIcon>
+											<VisibilityOffIcon />
+										</StyledIcon>
+										{/* Text Stack on the right */}
+										<Box>
+											<Typography
+												variant="body1"
+												fontWeight="500"
+											>
+												Non Discoverable
+											</Typography>
+											<Typography variant="body2">
+												Users cannot request access to
+												this database if private
+											</Typography>
+										</Box>
+									</StyledBlock>
 								</Alert.Title>
-								<StyledTypography
-									variant="body2"
-									isDisabled={true}
-								>
-									{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-								</StyledTypography>
 							</StyledAlert>
 						</Tooltip>
 					) : (
 						<StyledAlert
 							setBounds={direction === "column"}
-							sx={{ width: "100%" }}
+							sx={StyledWidth}
 							icon={false}
 							action={
 								<Switch
@@ -485,7 +474,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											"discoverable",
 										)
 									}
-									checked={discoverable}
+									checked={!discoverable}
 									onChange={() => {
 										changeDiscoverable();
 									}}
@@ -493,24 +482,32 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						>
 							<Alert.Title>
-								<StyledTypography
-									variant="body1"
-									isDisabled={false}
-								>
-									Make Discoverable
-								</StyledTypography>
+								<StyledBlock>
+									{/* Single Lock Icon on the left */}
+									<StyledIcon>
+										<VisibilityOffIcon />
+									</StyledIcon>
+
+									{/* Text Stack on the right */}
+									<Box>
+										<Typography
+											variant="body1"
+											fontWeight="500"
+										>
+											Non Discoverable
+										</Typography>
+										<Typography variant="body2">
+											Users cannot request access to this
+											database if private
+										</Typography>
+									</Box>
+								</StyledBlock>
 							</Alert.Title>
-							<StyledTypography
-								variant="body2"
-								isDisabled={false}
-							>
-								{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-							</StyledTypography>
 						</StyledAlert>
 					)}
 					<StyledAlert
 						setBounds={direction === "column"}
-						sx={{ width: "100%" }}
+						sx={StyledWidth}
 						icon={false}
 						action={
 							<Button
@@ -529,11 +526,33 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					>
 						<Alert.Title>
-							<Typography variant="body1">Delete</Typography>
+							<StyledBlock>
+								{/* Single Lock Icon on the left */}
+								<img
+									src={databaseIcon}
+									alt="Database Icon"
+									style={{
+										width: "22px",
+										height: "22px",
+										marginTop: "2px",
+									}}
+								/>
+
+								{/* Text Stack on the right */}
+								<Box>
+									<Typography
+										variant="body1"
+										fontWeight="500"
+									>
+										Delete Database
+									</Typography>
+									<Typography variant="body2">
+										Users cannot request access to this
+										database if private
+									</Typography>
+								</Box>
+							</StyledBlock>
 						</Alert.Title>
-						<Typography variant="body2">
-							{`Delete ${name} from catalog.`}
-						</Typography>
 					</StyledAlert>
 					<Modal open={deleteModal}>
 						<Modal.Title>Are you sure?</Modal.Title>
@@ -610,7 +629,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										? `Make ${name} private`
 										: `Make ${name} public`
 								}
-								checked={global}
+								checked={!global}
 								disabled={
 									!configStore.isEngineOperationAvailable(
 										type,
@@ -624,11 +643,27 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						}
 					>
 						<Alert.Title>
-							<Typography variant="body1">Make Public</Typography>
+							<StyledBlock>
+								{/* Single Lock Icon on the left */}
+								<StyledIcon>
+									<LockIcon />
+								</StyledIcon>
+
+								{/* Text Stack on the right */}
+								<Box>
+									<Typography
+										variant="body1"
+										fontWeight="500"
+									>
+										Private
+									</Typography>
+									<Typography variant="body2">
+										No one outside of the specified member
+										group can access
+									</Typography>
+								</Box>
+							</StyledBlock>
 						</Alert.Title>
-						<Typography variant="body2">
-							{`Show ${name} to all users and automatically give them read-only access. Users can request elevated access.`}
-						</Typography>
 					</StyledAlert>
 				</Grid>
 				{global ? (
@@ -654,7 +689,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												? `Make ${name} non-discoverable`
 												: `Make ${name} discoverable`
 										}
-										checked={discoverable}
+										checked={!discoverable}
 										onChange={() => {
 											changeDiscoverable();
 										}}
@@ -662,19 +697,27 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								}
 							>
 								<Alert.Title>
-									<StyledTypography
-										variant="body1"
-										isDisabled={true}
-									>
-										Make Discoverable
-									</StyledTypography>
+									<StyledBlock>
+										{/* Single Lock Icon on the left */}
+										<StyledIcon>
+											<VisibilityOffIcon />
+										</StyledIcon>
+
+										{/* Text Stack on the right */}
+										<Box>
+											<Typography
+												variant="body1"
+												fontWeight="500"
+											>
+												Non Discoverable
+											</Typography>
+											<Typography variant="body2">
+												Users cannot request access to
+												this database if private
+											</Typography>
+										</Box>
+									</StyledBlock>
 								</Alert.Title>
-								<StyledTypography
-									variant="body2"
-									isDisabled={true}
-								>
-									{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-								</StyledTypography>
 							</StyledAlert>
 						</Grid>
 					</Tooltip>
@@ -697,7 +740,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											? `Make ${name} non-discoverable`
 											: `Make ${name} discoverable`
 									}
-									checked={discoverable}
+									checked={!discoverable}
 									onChange={() => {
 										changeDiscoverable();
 									}}
@@ -705,19 +748,27 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						>
 							<Alert.Title>
-								<StyledTypography
-									variant="body1"
-									isDisabled={false}
-								>
-									Make Discoverable
-								</StyledTypography>
+								<StyledBlock>
+									{/* Single Lock Icon on the left */}
+									<StyledIcon>
+										<VisibilityOffIcon />
+									</StyledIcon>
+
+									{/* Text Stack on the right */}
+									<Box>
+										<Typography
+											variant="body1"
+											fontWeight="500"
+										>
+											Non Discoverable
+										</Typography>
+										<Typography variant="body2">
+											Users cannot request access to this
+											database if private
+										</Typography>
+									</Box>
+								</StyledBlock>
 							</Alert.Title>
-							<StyledTypography
-								variant="body2"
-								isDisabled={false}
-							>
-								{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
-							</StyledTypography>
 						</StyledAlert>
 					</Grid>
 				)}
@@ -743,11 +794,33 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							}
 						>
 							<Alert.Title>
-								<Typography variant="body1">Delete</Typography>
+								<StyledBlock>
+									{/* Single Lock Icon on the left */}
+									<img
+										src={databaseIcon}
+										alt="Database Icon"
+										style={{
+											width: 18,
+											height: 18,
+											marginTop: "2px",
+										}}
+									/>
+
+									{/* Text Stack on the right */}
+									<Box>
+										<Typography
+											variant="body1"
+											fontWeight="500"
+										>
+											Delete Database
+										</Typography>
+										<Typography variant="body2">
+											Users cannot request access to this
+											database if private
+										</Typography>
+									</Box>
+								</StyledBlock>
 							</Alert.Title>
-							<Typography variant="body2">
-								{`Delete ${name} from catalog.`}
-							</Typography>
 						</StyledAlert>
 						<Modal open={deleteModal}>
 							<Modal.Title>Are you sure?</Modal.Title>

@@ -4,12 +4,12 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Renderer } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import { styled, useNotification } from "@semoss/ui";
+import { getUserProjectPermission as getUserProjectLevelPermission } from "@/api";
 import type { AppMetadata, AppType } from "@/components/app";
 import { CodeRenderer } from "@/components/code-workspace";
 import { PlatformMessages } from "@/components/shared";
 import { LoadingScreen } from "@/components/ui";
 import { useRootStore } from "@/hooks";
-import { getUserProjectPermission as getUserProjectLevelPermission } from "@/api";
 
 const StyledViewport = styled("div")(() => ({
 	display: "flex",

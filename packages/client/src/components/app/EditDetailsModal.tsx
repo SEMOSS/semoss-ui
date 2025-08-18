@@ -1,6 +1,6 @@
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
-import { type Control, Controller } from "react-hook-form";
+import { Controller } from "react-hook-form";
 import {
 	Autocomplete,
 	Button,
@@ -44,8 +44,8 @@ const StyledEditorContainer = styled("div")(({ theme }) => ({
 interface EditDetailsModalProps {
 	isOpen: boolean;
 	onClose: (reset?: boolean) => void;
-	control: Control<any, any>;
-	onSubmit: any;
+	control;
+	onSubmit;
 }
 
 export const EditDetailsModal = (props: EditDetailsModalProps) => {
@@ -299,7 +299,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 											value={
 												(field.value as string) || ""
 											}
-											onChange={(event, newValue) => {
+											onChange={(_event, newValue) => {
 												field.onChange(newValue);
 											}}
 										/>
@@ -327,7 +327,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 											value={
 												(field.value as string[]) || []
 											}
-											onChange={(event, newValue) => {
+											onChange={(_event, newValue) => {
 												field.onChange(newValue);
 											}}
 										/>
@@ -360,7 +360,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 												(formattedValue as string[]) ||
 												[]
 											}
-											onChange={(event, newValue) => {
+											onChange={(_event, newValue) => {
 												field.onChange(newValue);
 											}}
 										/>

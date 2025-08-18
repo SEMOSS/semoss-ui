@@ -188,7 +188,10 @@ const FilterListComponent = ({
 	return (
 		<List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
 			{multi && (
-				<List.Item key="select-all" onClick={handleToggle("Select All")}>
+				<List.Item
+					key="select-all"
+					onClick={handleToggle("Select All")}
+				>
 					<List.Icon>
 						<Checkbox
 							edge="start"

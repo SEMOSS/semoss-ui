@@ -207,7 +207,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 			.then(() => {
 				notification.add({
 					color: "success",
-					message: "Succesfully copied to clipboard",
+					message: "Successfully copied to clipboard",
 				});
 			})
 			.catch((e) => {
@@ -223,7 +223,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 	 * @param db
 	 */
 	const _favoriteProject = (project) => {
-    setProjectFavorite(project.project_id, true)
+		setProjectFavorite(project.project_id, true)
 			.then(() => {
 				return;
 			})
@@ -296,7 +296,7 @@ export const AppLandscapeCard = (props: AppTileCardProps) => {
 							<IconButton onClick={handleClick}>
 								<StyledVert />
 							</IconButton>
-						) : (null)}
+						) : null}
 						<Menu
 							open={open}
 							anchorEl={anchorEl}

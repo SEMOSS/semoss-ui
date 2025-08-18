@@ -15,7 +15,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { uploadFile } from '@/api';
+import { uploadFile } from "@/api";
 import { usePixel, useRootStore } from "@/hooks";
 
 const StyledTableContainer = styled(Table.Container)({
@@ -524,7 +524,9 @@ export const FileTable = (props: FileTableProps) => {
 								}
 								if (file) {
 									return (
-										<Table.Row key={`${file.fileName}-${i}`}>
+										<Table.Row
+											key={`${file.fileName}-${i}`}
+										>
 											<Table.Cell size="medium">
 												<Checkbox
 													checked={isSelected}
@@ -659,9 +661,7 @@ export const FileTable = (props: FileTableProps) => {
 							startIcon={
 								isLoading ? (
 									<CircularProgress size="1em" />
-								) : (
-									null
-								)
+								) : null
 							}
 						>
 							Embed

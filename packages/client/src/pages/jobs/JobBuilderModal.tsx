@@ -354,7 +354,7 @@ export const JobBuilderModal = (props: {
 						</ToggleButton>
 					</ToggleButtonGroup>
 					<Autocomplete
-                        multiple={false}
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>
