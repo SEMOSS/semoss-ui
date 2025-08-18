@@ -224,7 +224,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 		if (!model) return;
 
 		const isSettingsTab = action.data.tabNode === "settings";
-		const settingsTabWeight = model.getNodeById("settings-tabset").getAttr("weight");
+		const settingsTabWeight = model.getNodeById("settings-tabset")?.getAttr("weight");
 		const isSettingsSelected = settingsTabWeight !== 0;
 		const mainTabsetWeight = model
 			?.getNodeById("main-tabset")
