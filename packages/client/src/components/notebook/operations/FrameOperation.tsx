@@ -19,12 +19,10 @@ export interface FrameOperationProps {
 		/** Type of the frame */
 		type: "NATIVE" | "PY" | "GRID" | "R";
 	};
-    fetchAllResults?: boolean; // Optional prop to fetch all results
-    queryToRun?: string; // Optional prop to run a custom query
 }
 
 export const FrameOperation = observer((props: FrameOperationProps) => {
-	const { output, fetchAllResults = false, queryToRun } = props;
+	const { output } = props;
 
 	// get the data from the frame
 	const getData = useBlocksPixel<{
@@ -33,16 +31,12 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 			headers: string[];
 		};
 	}>(
-        `Frame(frame=[${output.name}] )|${
-            queryToRun ? queryToRun + '|' : 'QueryAll()|'
-        }${fetchAllResults ? '' : 'Limit(20) | '}CollectAll();`,
+        `Frame(frame=[${output.name}] )|QueryAll()|Limit(20) |CollectAll();`,
     );
 
 	// get the count of data in the frame
 	const getCount = useBlocksPixel<number>(
-		`Frame(frame=[${output.name}] )|${
-            queryToRun ? queryToRun + '|' : 'QueryAll()|'
-        }QueryRowCount();`,
+		`Frame(frame=[${output.name}] )|QueryAll()|Limit(20) |CollectAll();`,
 	);
 
 	// get the statuses
@@ -60,7 +54,7 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 						<Table.Row>
 							{getData.status === "SUCCESS" &&
 								getData.data.data.headers.map((h, hIdx) => (
-									<Table.Cell key={hIdx}>{h}</Table.Cell>
+									<Table.Cell key={`${hIdx}-${h}`}>{h}</Table.Cell>
 								))}
 						</Table.Row>
 					</Table.Head>
@@ -77,9 +71,9 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 						)}
 						{getData.status === "SUCCESS" &&
 							getData.data.data.values.map((r, rIdx) => (
-								<Table.Row key={rIdx}>
+								<Table.Row key={`${rIdx}-${r.join(",")}`}>
 									{r.map((v, vIdx) => (
-										<Table.Cell key={`${rIdx}-${vIdx}`}>
+										<Table.Cell key={`${vIdx}-${v}`}>
 											{v}
 										</Table.Cell>
 									))}

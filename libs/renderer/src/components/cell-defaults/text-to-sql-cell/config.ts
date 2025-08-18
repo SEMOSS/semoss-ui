@@ -1,5 +1,5 @@
-import { CellConfig } from "../../../store";
-import TextToSqlCell, { TextToSqlCellDef } from "./TextToSqlCell";
+import type { CellConfig } from "../../../store";
+import TextToSqlCell, { type TextToSqlCellDef } from "./TextToSqlCell";
 
 const sanitizeQuery = (query: string): string => {
     return query
@@ -29,14 +29,8 @@ export const TextToSqlCellConfig: CellConfig<TextToSqlCellDef> = {
         frameVariableName,
         userQuery,
         model,
-        dataFrameId,
-        dataFrameQuery,
     }) => {
-        const dataFrameQuerySanitized = sanitizeQuery(dataFrameQuery);
         const userQuerySanitized = sanitizeQuery(userQuery);
-        if (dataFrameId !== "") {
-            return `Frame(frame=[${dataFrameId}]) | Query("<encode>${dataFrameQuerySanitized}</encode>") | CollectAll()`;
-        }
         return `NLPQuery3(command=["${userQuerySanitized}"], json=true, tokenCount=["${userQuerySanitized.length}"],  frame = [${frameVariableName}], allFrames = [""], dialect = [""], engine=["${model}"])`;
     },
 };

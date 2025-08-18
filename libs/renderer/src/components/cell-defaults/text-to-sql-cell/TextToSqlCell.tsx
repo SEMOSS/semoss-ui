@@ -1,28 +1,28 @@
-import { useState, useEffect } from "react";
-import { observer } from "mobx-react-lite";
-import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
     CropFree,
     DriveFileRenameOutlineRounded,
     ExpandMore,
     KeyboardArrowDown,
 } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
-    styled,
+    Accordion,
+    Icon,
+    InputAdornment,
     Select,
     Stack,
+    styled,
     TextField,
-    InputAdornment,
     Typography,
-    Icon,
-    Accordion,
 } from "@semoss/ui";
-import { TransformationTargetCell } from "../shared";
-import { ActionMessages, CellComponent, CellDef } from "../../../store";
-import { useBlocks } from "../../../hooks";
 import { TextFields } from "../../../assets/TextFields";
+import { useBlocks } from "../../../hooks";
+import { ActionMessages, type CellComponent, type CellDef } from "../../../store";
+import type { TransformationTargetCell } from "../shared";
 
-const StyledContent = styled("div")(({}) => ({
+const StyledContent = styled("div")(() => ({
     position: "relative",
     width: "100%",
 }));
@@ -179,14 +179,61 @@ const StackFrameModel = styled(Stack)(({theme}) => ({
     padding: theme.spacing(0,2),
 }));
 
-const StyledIcon = styled(Icon)(({theme})=>({
+const StyledIcon = styled(Icon)(()=>({
     width: "20px", 
     height: "20px"
 }));
 
 const StyledExpandMore = styled(ExpandMore)(({theme})=>({
     color: theme.palette.text.secondary,
-}))
+}));
+
+interface Model{
+    database_date_created: string;
+    app_type: string;
+    app_subtype: string;
+    database_name: string;
+    low_database_name: string;
+    database_favorite: number;
+    permission: number;
+    database_type: string;
+    app_name: string;
+    database_id: string;
+    database_cost: string;
+    domain: string;
+    database_discoverable: boolean;
+    user_permission: number;
+    tag: string[];
+    database_global: boolean;
+    database_created_by: string;
+    app_favorite: number;
+    app_id: string;
+    database_subtype: string;
+    database_created_by_type: string;
+    app_cost: string;
+};
+interface MetaModel{
+    edges: string[];
+    physicalTypes: Record<string, string>;
+    dataTypes: Record<string, string>;
+    positions: Record<string, unknown>;
+    nodes: unknown[];
+    additionalDataTypes: Record<string, unknown>;
+}
+
+interface OutputQueryResponse{
+  SAMPLE: string;
+  Query: string;
+  COLUMN_CHANGE: string;
+  frameType?: string;
+  frame?: string;
+};
+
+interface TextToSQLQueryResponse {
+  output: OutputQueryResponse;
+  operationType: string[];
+}
+
 export interface TextToSqlCellDef extends CellDef<"text-to-sql"> {
     widget: "text-to-sql";
     parameters: {
@@ -223,7 +270,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
     });
     const [modelDetail, setModelDetail] = useState<{
         loading: boolean;
-        modelData: any[];
+        modelData: Model[];
         selectedModel: string;
     }>({
         loading: true,
@@ -279,10 +326,10 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
         const myModels = await state.runSideEffect(
             `MyEngines(engineTypes=['MODEL']);`,
         );
-        const modelsData: any = myModels.pixelReturn?.[0].output;
+        const modelsData = myModels.pixelReturn?.[0].output;
         setModelDetail({
             loading: false,
-            modelData: modelsData,
+            modelData: modelsData as Model[],
             selectedModel: modelsData?.[0]?.app_id,
         });
     };
@@ -304,15 +351,15 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
             `META|GetDatabaseTableStructure(database=["${databaseDetails.dbId}"]);
              META|GetDatabaseMetamodel(database=["${databaseDetails.dbId}"], options=["dataTypes","positions"])`
           );
-          const output: any = res.pixelReturn[0]?.output || [];
-          columnAlias = output.map((item) => item[4]);
+          const output = res.pixelReturn[0]?.output || [];
+          columnAlias = (output as unknown[]).map((item) => item[4]);
 
-          const metaModelOutput: any = res.pixelReturn[1]?.output || {};
+          const metaModelOutput = res.pixelReturn[1]?.output;
           if (
-            metaModelOutput.dataTypes &&
-            typeof metaModelOutput.dataTypes === "object"
+            (metaModelOutput as MetaModel).dataTypes &&
+            typeof (metaModelOutput as MetaModel).dataTypes === "object"
           ) {
-            columnNames = Object.keys(metaModelOutput.dataTypes);
+            columnNames = Object.keys((metaModelOutput as MetaModel).dataTypes);
           }
           //final query to create a frame
           const gridQuery =
@@ -340,40 +387,30 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
     useEffect(() => {
         if (!cell.isSuccessful) return;
 
-        const output = (cell.output as any)?.output || {};
+        const output = (cell.output as TextToSQLQueryResponse)?.output as OutputQueryResponse || {};
         if (
             !output ||
             typeof output !== "object" ||
-            !output.hasOwnProperty("Query")
+            !Object.hasOwn(output, "Query")
         )
             return;
 
         // Update dataFrameId if present
-        if (output.frame) {
+        if ((output as OutputQueryResponse).frame) {
             runStateDispatch([{
                 path: "parameters.dataFrameId",
-                value: output.frame,
+                value: (output as OutputQueryResponse).frame,
             }]);
         }
 
         // Update dataFrameQuery if present and valid
-        if (typeof output.Query === "string") {
+        if (typeof (output as OutputQueryResponse).Query === "string") {
             runStateDispatch([{
                 path: "parameters.dataFrameQuery",
-                value: sanitizeQuery(output.Query),
+                value: sanitizeQuery((output as OutputQueryResponse).Query),
             }]);
         }
 
-        // Trigger RUN_CELL only if both frame and Query are present
-        if (output.frame && typeof output.Query === "string") {
-            state.dispatch({
-                message: ActionMessages.RUN_CELL,
-                payload: {
-                    queryId: cell.query.id,
-                    cellId: cell.id,
-                },
-            });
-        }
     }, [cell.isExecuted, cell.isLoading, cell.isSuccessful]);
     /**
      * Remove dynamic frame and query from the cell parameters
@@ -402,7 +439,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
      *   @param path - The parameter path within the cell to update.
      *   @param value - The new value to set for the specified parameter path.
      */
-    const runStateDispatch = (payloadProps: {queryId?: string; cellId?: string; path: string; value: any}[]) => {
+    const runStateDispatch = (payloadProps: {queryId?: string; cellId?: string; path: string; value: unknown}[]) => {
         payloadProps.forEach(({ queryId = cell.query.id, cellId = cell.id, path, value }) => {
             state.dispatch({
                 message: ActionMessages.UPDATE_CELL,
@@ -493,7 +530,7 @@ const TextToSqlCell: CellComponent<TextToSqlCellDef> = observer((props) => {
                 disabled={cell.isLoading}
                 title={"Select Database"}
                 value={cell.parameters.databaseId}
-                data-testid={"user-databaseid-" + cell.id}
+                data-testid={`user-databaseid-${cell.id}`}
                 SelectProps={{
                   IconComponent: KeyboardArrowDown,
                 }}
