@@ -1,15 +1,19 @@
 import { Add, Delete, SimCardDownload } from "@mui/icons-material";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import {
+	Box,
 	Button,
 	Checkbox,
 	CircularProgress,
 	FileDropzone,
 	IconButton,
 	LinearProgress,
+	MenuItem,
 	Modal,
 	Search,
+	Select,
+	Stack,
 	styled,
 	Table,
 	Typography,
@@ -56,6 +60,12 @@ const StyledIcon = styled(Add)(({ theme }) => ({
 }));
 
 const StyledFileTable = styled(Table)({ backgroundColor: "white" });
+
+const splittingOptions = [
+	{ label: "Tokens", value: "Tokens" },
+	{ label: "Recursive", value: "Recursive" },
+	{ label: "Semantic", value: "Semantic" },
+];
 
 interface FileTableProps {
 	/**
@@ -124,6 +134,8 @@ export const FileTable = (props: FileTableProps) => {
 
 	//grabbing ID out of props
 	const { id } = props;
+
+	const [selectedSplitOptions, setSelectedSplitOptions] = useState("Tokens");
 
 	//for the pagination of the files page
 	const paginationOptions = {
@@ -227,7 +239,7 @@ export const FileTable = (props: FileTableProps) => {
 
 			// Embedding the File
 			const response = await monolithStore.runQuery(`
-                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}])
+                CreateEmbeddingsFromDocuments( engine= "${id}", filePaths= [${fileLocations}], splitOptions="${selectedSplitOptions}")
             `);
 
 			const { output, operationType } = response.pixelReturn[0];
@@ -298,10 +310,10 @@ export const FileTable = (props: FileTableProps) => {
 			const { fileName } = file;
 			if (index + 1 === files.length) {
 				//structuring the last element
-				fileArray = fileArray + `"${fileName}"`;
+				fileArray = `${fileArray}"${fileName}"`;
 			} else {
 				// all but the last element
-				fileArray = fileArray + `"${fileName}", `;
+				fileArray = `${fileArray}"${fileName}", `;
 			}
 		});
 
@@ -345,10 +357,10 @@ export const FileTable = (props: FileTableProps) => {
 			const { fileName } = file;
 			if (index + 1 === files.length) {
 				//structuring the last element
-				fileArray = fileArray + `"${fileName}"`;
+				fileArray = `${fileArray}"${fileName}"`;
 			} else {
 				// all but the last element
-				fileArray = fileArray + `"${fileName}", `;
+				fileArray = `${fileArray}"${fileName}", `;
 			}
 		});
 
@@ -363,7 +375,7 @@ export const FileTable = (props: FileTableProps) => {
 		setExportLoading(false);
 	};
 
-	const createSortHandler = (property) => (event) => {
+	const createSortHandler = (property) => (_event) => {
 		const isAsc = order === "asc";
 		const newOrder = isAsc ? "desc" : "asc";
 		setOrder(newOrder);
@@ -505,7 +517,7 @@ export const FileTable = (props: FileTableProps) => {
 						<Table.Cell size="small">Action</Table.Cell>
 					</Table.Head>
 					<Table.Body>
-						{verifiedFiles.map((x, i) => {
+						{verifiedFiles.map((_x, i) => {
 							if (
 								i >=
 									filePage * NUM_RESULTS_PER_PAGE -
@@ -523,7 +535,7 @@ export const FileTable = (props: FileTableProps) => {
 								}
 								if (file) {
 									return (
-										<Table.Row key={i}>
+										<Table.Row key={file.fileName}>
 											<Table.Cell size="medium">
 												<Checkbox
 													checked={isSelected}
@@ -600,7 +612,7 @@ export const FileTable = (props: FileTableProps) => {
 						<Table.Row>
 							<Table.Pagination
 								rowsPerPageOptions={[]}
-								onPageChange={(e, v) => {
+								onPageChange={(_e, v) => {
 									setFilePage(v + 1);
 									setSelectedFiles([]);
 								}}
@@ -622,23 +634,55 @@ export const FileTable = (props: FileTableProps) => {
 							rules={{}}
 							render={({ field }) => {
 								return (
-									<FileDropzone
-										multiple={true}
-										value={field.value}
-										extensions={[
-											".pdf",
-											".csv",
-											".txt",
-											".doc",
-											".ppt",
-											".docx",
-											".pptx",
-										]}
-										disabled={isLoading}
-										onChange={(newValues) => {
-											field.onChange(newValues);
-										}}
-									/>
+									<Stack>
+										<Box>
+											<Select
+												sx={{
+													mb: 2,
+													"& .MuiInputBase-input": {
+														padding: "15px",
+													},
+												}}
+												size="small"
+												fullWidth
+												label="Select a Split Options"
+												value={selectedSplitOptions}
+												onChange={(e) =>
+													setSelectedSplitOptions(
+														e.target.value,
+													)
+												}
+											>
+												{splittingOptions.map(
+													(option) => (
+														<MenuItem
+															key={option.value}
+															value={option.value}
+														>
+															{option.label}
+														</MenuItem>
+													),
+												)}
+											</Select>
+										</Box>
+										<FileDropzone
+											multiple={true}
+											value={field.value}
+											extensions={[
+												".pdf",
+												".csv",
+												".txt",
+												".doc",
+												".ppt",
+												".docx",
+												".pptx",
+											]}
+											disabled={isLoading}
+											onChange={(newValues) => {
+												field.onChange(newValues);
+											}}
+										/>
+									</Stack>
 								);
 							}}
 						/>
@@ -658,9 +702,7 @@ export const FileTable = (props: FileTableProps) => {
 							startIcon={
 								isLoading ? (
 									<CircularProgress size="1em" />
-								) : (
-									<></>
-								)
+								) : null
 							}
 						>
 							Embed
@@ -699,7 +741,7 @@ export const FileTable = (props: FileTableProps) => {
 							deleteFile(fileToDelete);
 						}}
 						startIcon={
-							isLoading ? <CircularProgress size="1em" /> : <></>
+							isLoading ? <CircularProgress size="1em" /> : null
 						}
 					>
 						Confirm
@@ -726,7 +768,7 @@ export const FileTable = (props: FileTableProps) => {
 							deleteSelectedFiles(selectedFiles);
 						}}
 						startIcon={
-							isLoading ? <CircularProgress size="1em" /> : <></>
+							isLoading ? <CircularProgress size="1em" /> : null
 						}
 					>
 						Confirm

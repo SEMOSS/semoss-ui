@@ -42,7 +42,6 @@ import GOOGLE_CLOUD from "@/assets/img/GOOGLE_CLOUD_STORAGE.png";
 import GOOGLE_DRIVE from "@/assets/img/GOOGLE_DRIVE.png";
 import GOOGLE_OCR from "@/assets/img/GOOGLE_OCR.png";
 import GOOGLE_SPEECH_TO_TEXT from "@/assets/img/GOOGLE_SPEECH_TO_TEXT.png";
-import GOOGLE from "@/assets/img/google.png";
 import H2_DB from "@/assets/img/H2_DB.png";
 import HIVE from "@/assets/img/HIVE.jpg";
 import IMPALA from "@/assets/img/IMPALA.png";
@@ -160,7 +159,7 @@ export type EngineFields = {
 			pixel?: string; // Pixel to populate options for select
 		};
 		disabled: boolean;
-		rules: Record<string, any>; // react hook form
+		rules: Record<string, unknown>; // react hook form
 		pixel?: string; // used to populate default value
 	}[];
 }[];
@@ -6760,6 +6759,32 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true, min: 0 },
 					},
 					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
+					},
+					{
 						fieldName: "METHOD_NAME",
 						label: "Method Name",
 						defaultValue: "hnsw",
@@ -7100,6 +7125,32 @@ export const CONNECTION_OPTIONS = {
 						rules: {},
 					},
 					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
+					},
+					{
 						fieldName: "DISTANCE_METHOD",
 						label: "Distance Method",
 						defaultValue: "cosine",
@@ -7359,6 +7410,32 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
 					},
 					{
 						fieldName: "DIMENSION_SIZE",
@@ -7632,6 +7709,32 @@ export const CONNECTION_OPTIONS = {
 						rules: {},
 					},
 					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
+					},
+					{
 						fieldName: "DISTANCE_METHOD",
 						label: "Distance Method",
 						defaultValue: "Squared Euclidean (L2) distance",
@@ -7880,6 +7983,32 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",
@@ -8165,6 +8294,32 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",
@@ -8500,6 +8655,32 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",
@@ -9025,6 +9206,32 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "SPLITTING_OPTIONS",
+						label: "Splitting Options",
+						defaultValue: "Tokens",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "Tokens",
+									value: "Tokens",
+								},
+								{
+									display: "Recursive",
+									value: "Recursive",
+								},
+								{
+									display: "Semantic",
+									value: "Semantic",
+								},
+							],
+						},
+						disabled: false,
+						rules: { required: false },
+						advanced: true,
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",

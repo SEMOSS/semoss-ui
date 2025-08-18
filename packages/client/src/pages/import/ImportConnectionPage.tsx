@@ -1,10 +1,22 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, styled, useNotification } from "@semoss/ui";
 import { ImportForm } from "@/components/import";
 import { useRootStore, useStepper } from "@/hooks";
 
-const StyledBox = styled(Box)(({ theme }) => ({
+interface VectorDatabaseFields {
+	NAME: string;
+	VECTOR_TYPE: string;
+	EMBEDDER_ENGINE_ID: string;
+	INDEX_CLASSES: string;
+	CHUNKING_STRATEGY: string;
+	CONTENT_LENGTH: number;
+	CONTENT_OVERLAP: number;
+	KEEP_INPUT_OUTPUT: string;
+	DISTANCE_METHOD: string;
+	SPLITTING_OPTIONS?: string;
+}
+
+const StyledBox = styled(Box)(() => ({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 	width: "100%",
 	padding: "16px 16px 16px 16px",
@@ -16,10 +28,6 @@ export const ImportConnectionPage = () => {
 	const navigate = useNavigate();
 	const notification = useNotification();
 	const { steps, setIsLoading } = useStepper();
-
-	// File Uploads Database
-	const [predictDataTypes, setPredictDataTypes] = React.useState(null);
-	const [metamodel, setMetamodel] = React.useState(null);
 
 	/**
 	 *
@@ -33,7 +41,7 @@ export const ImportConnectionPage = () => {
 	const formSubmit = async (values: {
 		type: "VECTOR" | "STORAGE" | "MODEL" | "FUNCTION" | "UPLOAD";
 		name: string;
-		fields: unknown[];
+		fields: VectorDatabaseFields;
 		secondaryFields?: unknown[];
 	}) => {
 		// let pixel = ''; // 'VECTOR' | 'STORAGE' | 'MODEL' | 'FUNCTION' | 'UPLOAD'
@@ -70,10 +78,10 @@ export const ImportConnectionPage = () => {
 			return;
 		} else if (values.type === "MODEL") {
 			/** Model: START */
-			let pixel;
-			if (values.secondaryFields["FILE"]) {
+			let pixel: string;
+			if (values.secondaryFields.FILE) {
 				const upload = await monolithStore.uploadFile(
-					[values.secondaryFields["FILE"]],
+					[values.secondaryFields.FILE],
 					configStore.store.insightID,
 				);
 				pixel = `CreateModelEngine(
@@ -112,16 +120,18 @@ export const ImportConnectionPage = () => {
 		} else if (values.type === "VECTOR") {
 			/** Vector Database: START */
 			const meta = {};
-			if (values.fields["DESCRIPTION"]) {
-				meta["description"] = values.fields["DESCRIPTION"];
+			if (values.fields.DESCRIPTION) {
+				meta.description = values.fields.DESCRIPTION;
 			}
-			if (values.fields["TAGS"]) {
-				meta["tag"] = values.fields["TAGS"];
+			if (values.fields.TAGS) {
+				meta.tag = values.fields.TAGS;
 			}
+			const { SPLITTING_OPTIONS, ...fields } = values.fields;
+			const filteredFields = { ...fields, SPLITTING_OPTIONS };
 			const pixel = `
                 CreateVectorDatabaseEngine ( 
                     database=["${values.name}"], 
-                    conDetails=[${JSON.stringify(values.fields)}]
+                    conDetails=[${JSON.stringify(filteredFields)}]
                 ) ;
             `;
 
@@ -143,15 +153,16 @@ export const ImportConnectionPage = () => {
 					message: `Successfully added vector database to catalog`,
 				});
 
-				if (values.secondaryFields["EMBEDDINGS"]) {
+				if (values.secondaryFields.EMBEDDINGS) {
 					const upload = await monolithStore.uploadFile(
-						[values.secondaryFields["EMBEDDINGS"]],
+						[values.secondaryFields.EMBEDDINGS],
 						configStore.store.insightID,
 					);
 
 					const secondaryPixel = `CreateEmbeddingsFromDocuments(
                         engine="${output.database_id}", 
-                        filePaths=["${upload[0].fileLocation}"]
+                        filePaths=["${upload[0].fileLocation}"],
+						splitOptions="${SPLITTING_OPTIONS}"
                     );`;
 
 					monolithStore.runQuery(secondaryPixel).then((response) => {
@@ -203,10 +214,10 @@ export const ImportConnectionPage = () => {
 			return;
 		} else if (values.type === "FUNCTION") {
 			/** Function: START */
-			let pixel;
-			if (values.secondaryFields["FILE"]) {
+			let pixel: string;
+			if (values.secondaryFields.FILE) {
 				const upload = await monolithStore.uploadFile(
-					[values.secondaryFields["FILE"]],
+					[values.secondaryFields.FILE],
 					configStore.store.insightID,
 				);
 				pixel = `
@@ -311,7 +322,17 @@ export const ImportConnectionPage = () => {
 		<StyledBox>
 			<ImportForm
 				fields={steps[1].data}
-				submitFunc={(vals) => formSubmit(vals)}
+				submitFunc={(vals: {
+					type:
+						| "VECTOR"
+						| "STORAGE"
+						| "MODEL"
+						| "FUNCTION"
+						| "UPLOAD";
+					name: string;
+					fields: VectorDatabaseFields;
+					secondaryFields?: unknown[];
+				}) => formSubmit(vals)}
 			/>
 		</StyledBox>
 	);
