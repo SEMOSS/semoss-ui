@@ -19,6 +19,9 @@ export function useInfiniteScroll({
 	const scrollElRef = useRef(null);
 	const scrollTimeoutRef = useRef(null);
 	const previousScrollRef = useRef(0);
+	const offsetRef = useRef(offset);
+	const canCollectRef = useRef(canCollect);
+	canCollectRef.current = canCollect;
 	let currentScroll;
 
 	const reset = () => {
@@ -29,7 +32,8 @@ export function useInfiniteScroll({
 		if (len < limit) {
 			setCanCollect(false);
 		} else {
-			if (!canCollect) {
+			if (!canCollectRef.current) {
+				offsetRef.current = 0;
 				setCanCollect(true);
 			}
 		}
@@ -47,10 +51,11 @@ export function useInfiniteScroll({
 			}
 
 			scrollTimeoutRef.current = setTimeout(() => {
-				if (!canCollect) {
+				if (!canCollectRef.current) {
 					return;
 				}
-				const nextOffset = offset + limit;
+				const nextOffset = offsetRef.current + limit;
+				offsetRef.current = nextOffset;
 				setOffset(nextOffset);
 				collect(nextOffset);
 			}, 500);
@@ -91,4 +96,4 @@ export function useInfiniteScroll({
 	};
 }
 
-export default useInfiniteScroll;
+// export default useInfiniteScroll;
