@@ -67,7 +67,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
     const [localExpanded, setLocalExpanded] = React.useState<string[]>([]);
 
     const handleOnNodeSelect = (selected: string[]) => {
-        onSelect(selected[0] || '');
+       searchText.length===0 && onSelect(selected[0] || '');
         setSelected(selected);
     };
 
@@ -86,6 +86,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
                     current[fullPath] = {
                         name: part,
                         path: fullPath,
+                        originalPath: file.path,
                         type: i === parts.length - 1 ? file.type : 'directory',
                         lastModified: file.lastModified,
                         children: {},
@@ -141,7 +142,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 
     const renderTree = (node: any) => {
         return Object.entries(node).map(([path, entry]: any) => (
-            <div key={path} onClick={() => handleSearchItemClick(entry.path)}>
+            <div key={path} onClick={() => handleSearchItemClick(entry.originalPath)}>
                 <FileExplorerItem
                     type={type}
                     space={space}
