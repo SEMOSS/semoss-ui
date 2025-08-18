@@ -469,7 +469,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
       notification.add({
         color: "success",
-        message: "Succesfully copied to clipboard",
+        message: "Successfully copied to clipboard",
       });
     } catch (e) {
       notification.add({
