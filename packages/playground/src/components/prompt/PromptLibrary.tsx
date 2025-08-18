@@ -1,12 +1,12 @@
 import { Close } from "@mui/icons-material";
 import { useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	CircularProgress,
 	Grid,
 	IconButton,
-	MenuItem,
+	Menu,
 	Modal,
 	Search,
 	Stack,
@@ -14,7 +14,6 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { useDebounceValue } from "@/hooks";
 import type { Prompt } from "@/types";
 
 const StyledHolder = styled("div")(({ theme }) => ({
@@ -62,7 +61,7 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({ onClose }) => {
 	const [filter, setFilter] = useState<string>("");
 
 	// debounce the input
-	const debouncedSearch = useDebounceValue(search);
+	const debouncedSearch = useDebouncedValue(search);
 
 	const getAllTags = usePixel<
 		{
@@ -131,11 +130,11 @@ export const PromptLibrary: React.FC<PromptLibraryProps> = ({ onClose }) => {
 							}}
 							onChange={(e) => setFilter(e.target.value)}
 						>
-							<MenuItem value={""}>All</MenuItem>
+							<Menu.Item value={""}>All</Menu.Item>
 							{getAllTags.data.map((t, tIdx) => (
-								<MenuItem key={tIdx} value={t.METAVALUE}>
+								<Menu.Item key={tIdx} value={t.METAVALUE}>
 									{t.METAVALUE}
-								</MenuItem>
+								</Menu.Item>
 							))}
 						</TextField>
 					</Stack>

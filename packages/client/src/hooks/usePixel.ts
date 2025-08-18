@@ -27,6 +27,7 @@ interface usePixel<D> extends PixelState<D> {
 }
 
 /**
+ * @deprecated - use from @semoss/sdk/react
  * Send a command to the backend and recieve a response. This is intended to be used by a single pixel statement (nothing seperated by ;)
  *
  * @param pixel - pixel string to call

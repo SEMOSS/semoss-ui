@@ -16,7 +16,7 @@ import {
 } from "@semoss/renderer";
 import {
 	Autocomplete,
-	BoxTwo,
+	Box,
 	IconButton,
 	List,
 	Stack,
@@ -80,7 +80,7 @@ export const GridBlockColumnSettings = observer(
 
 				notification.add({
 					color: "success",
-					message: "Succesfully synchronized headers",
+					message: "Successfully synchronized headers",
 				});
 			} catch (e) {
 				notification.add({
@@ -229,7 +229,7 @@ const SortableItems = ({
 	};
 
 	return (
-		<BoxTwo
+		<Box
 			key={`action-${id}`}
 			ref={setNodeRef}
 			{...attributes}
@@ -237,6 +237,6 @@ const SortableItems = ({
 			sx={style}
 		>
 			{children}
-		</BoxTwo>
+		</Box>
 	);
 };

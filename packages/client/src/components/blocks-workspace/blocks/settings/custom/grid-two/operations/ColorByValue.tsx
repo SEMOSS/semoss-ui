@@ -13,16 +13,12 @@ import {
 	useFrame,
 } from "@semoss/renderer";
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	Button,
 	IconButton,
 	Switch,
 	styled,
-	TableBodyTwo,
-	TableCellTwo,
-	TableHeadTwo,
-	TableRowTwo,
-	TableTwo,
+	Table,
 	TextField,
 	Typography,
 } from "@semoss/ui";
@@ -233,9 +229,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 							Select Column to Color
 						</Typography>{" "}
 					</label>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						size="small"
+                        multiple={false}
 						value={editingRule?.column}
 						onChange={(_, newValue) => {
 							updateFields("column", newValue || "");
@@ -284,9 +281,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 							Select Column of Values
 						</Typography>{" "}
 					</label>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						size="small"
+                        multiple={false}
 						value={editingRule?.valueColumn}
 						onChange={(_, newValue) => {
 							updateFields("valueColumn", newValue || "");
@@ -310,19 +308,25 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 							Select Comparator
 						</Typography>{" "}
 					</label>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						size="small"
+                        multiple={false}
 						value={
 							columnComparision.find(
 								(c) => c.value === editingRule?.comparator,
 							) ?? null
 						}
 						onChange={(_, newValue) => {
-							updateFields("comparator", newValue?.value ?? "");
+							updateFields(
+                                "comparator",
+                                typeof newValue === 'object' && newValue !== null ? newValue.value : ""
+                            );
 						}}
 						options={columnComparision}
-						getOptionLabel={(option) => option.name}
+						getOptionLabel={(option) =>
+                            typeof option === 'string' ? option : option.name
+                        }
 						renderInput={(params) => (
 							<TextField
 								{...params}
@@ -341,9 +345,10 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 							Select Value
 						</Typography>{" "}
 					</label>
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						size="small"
+                        multiple={false}
 						value={editingRule?.value}
 						onChange={(_, newValue) => {
 							updateFields("value", newValue || "");
@@ -382,24 +387,24 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 			{/* List of the applied rule  */}
 			<div>
 				{rules.length > 0 && (
-					<TableTwo size="small">
-						<TableHeadTwo>
-							<TableRowTwo>
-								<TableCellTwo>Column</TableCellTwo>
-								<TableCellTwo>Applied Rule</TableCellTwo>
-								<TableCellTwo>Action</TableCellTwo>
-							</TableRowTwo>
-						</TableHeadTwo>
-						<TableBodyTwo>
+					<Table size="small">
+						<Table.Head>
+							<Table.Row>
+								<Table.Cell>Column</Table.Cell>
+								<Table.Cell>Applied Rule</Table.Cell>
+								<Table.Cell>Action</Table.Cell>
+							</Table.Row>
+						</Table.Head>
+						<Table.Body>
 							{rules.map((rule) => (
-								<TableRowTwo key={rule.id}>
-									<TableCellTwo>{rule.column}</TableCellTwo>
-									<TableCellTwo>
+								<Table.Row key={rule.id}>
+									<Table.Cell>{rule.column}</Table.Cell>
+									<Table.Cell>
 										{rule.column}
 										{rule.comparator}
 										{rule.value}
-									</TableCellTwo>
-									<TableCellTwo>
+									</Table.Cell>
+									<Table.Cell>
 										<div>
 											<IconButton
 												onClick={() =>
@@ -416,11 +421,11 @@ export const ColorByValue = observer<ColorByValueProps>(({ id, path }) => {
 												<Delete />
 											</IconButton>
 										</div>
-									</TableCellTwo>
-								</TableRowTwo>
+									</Table.Cell>
+								</Table.Row>
 							))}
-						</TableBodyTwo>
-					</TableTwo>
+						</Table.Body>
+					</Table>
 				)}
 			</div>
 			<div style={{ display: "flex", justifyContent: "center" }}>
