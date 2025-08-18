@@ -285,7 +285,7 @@ export const UserTable = (props: UserTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated user",
+					message: "Successfully updated user",
 				});
 
 				onChange();
@@ -325,7 +325,7 @@ export const UserTable = (props: UserTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully deleting user",
+					message: "Successfully deleting user",
 				});
 
 				onChange();

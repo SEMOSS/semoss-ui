@@ -806,7 +806,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 									notification.add({
 										color: "success",
-										message: `Succesfully editted ${variable.id}, remember to save your app.`,
+										message: `Successfully editted ${variable.id}, remember to save your app.`,
 									});
 									onClose();
 								} else {
@@ -893,7 +893,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 									notification.add({
 										color: success ? "success" : "error",
 										message: success
-											? `Succesfully added ${variableName}, remember to save your app.`
+											? `Successfully added ${variableName}, remember to save your app.`
 											: `Unable to create ${variableName}`,
 									});
 									onClose();

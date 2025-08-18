@@ -31,7 +31,7 @@ export const copyTextToClipboard = (text: string, notificationService) => {
 
 		notificationService.add({
 			color: "success",
-			message: "Succesfully copied to clipboard",
+			message: "Successfully copied to clipboard",
 		});
 	} catch (e) {
 		notificationService.add({
