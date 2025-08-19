@@ -49,7 +49,7 @@ export const ShareOverlay = observer((props: ShareOverlayProps) => {
 
 			notification.add({
 				color: "success",
-				message: "Succesfully copied to clipboard",
+				message: "Successfully copied to clipboard",
 			});
 			setIsCopied(true);
 		} catch (e) {

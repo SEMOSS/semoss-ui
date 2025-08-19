@@ -1,4 +1,5 @@
 import {
+	Add,
 	ClearRounded,
 	Delete,
 	EditRounded,
@@ -52,14 +53,24 @@ const StyledModal = styled(Modal)({
 	},
 });
 
-const UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
-
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
+});
+
+const NameTableCell = styled(Table.Cell)({
+	width: "100%",
+	maxWidth: "1px",
+});
+
+const DateTableCell = styled(Table.Cell)({
+	whiteSpace: "nowrap",
+	"@media (max-width: 768px)": {
+		whiteSpace: "normal",
+	},
+});
+
+const StyledTablePagination = styled(Table.Pagination)({
+	border: "none",
 });
 
 const StyledEngineContent = styled("div")({
@@ -81,7 +92,6 @@ const StyledEngineInnerContent = styled("div")({
 
 const StyledTableContainer = styled(Table.Container)({
 	borderRadius: "12px",
-	/* Devias Drop Shadow */
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
@@ -97,14 +107,15 @@ const StyledTableTitleContainer = styled("div")({
 
 const StyledTableTitleDiv = styled("div")({
 	display: "flex",
-	padding: "12px 24px 12px 16px",
+	padding: "12px 16px 12px 16px",
 	alignItems: "center",
 	gap: "10px",
+	fontWeight: 500,
 });
 
 const StyledTableTitleEngineContainer = styled("div")({
 	display: "flex",
-	alignItems: "flex-start",
+	alignItems: "center",
 	flex: "1 0 0",
 });
 
@@ -131,12 +142,6 @@ const StyledAddEnginesContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledNonEnginesContainer = styled("div")({
-	width: "100%",
-	borderRadius: "12px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-});
-
 const StyledNonEnginesDiv = styled("div")({
 	width: "100%",
 	height: "503px",
@@ -145,10 +150,7 @@ const StyledNonEnginesDiv = styled("div")({
 	gap: "1rem",
 	justifyContent: "center",
 	alignItems: "center",
-});
-
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
+	background: "white",
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -183,6 +185,11 @@ const StyledSelectEngineTypography = styled(Typography)({
 	font: "Inter",
 	fontWeight: "500",
 	fontSize: "16px",
+});
+
+const StyledRadioGroup = styled(RadioGroup)({
+	flexWrap: "nowrap",
+	whiteSpace: "nowrap",
 });
 
 // maps for permissions,
@@ -369,14 +376,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	useEffect(() => {
 		filterEngines();	
 	}, [groupId, groupType, enginesPage, searchFilter, count,rowsPerPage]);
-
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
 				getAdditionalEngines();
 			}
 		}
-	}, [isScrollBottom, canCollect, getAdditionalEngines]);
+	}, [isScrollBottom, canCollect]);
 
 	useEffect(() => {
 		if (searchEngineInput) {
@@ -559,7 +565,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated permissions",
+					message: "Successfully updated permissions",
 				});
 			} else {
 				notification.add({
@@ -596,7 +602,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			)
 			.then((data) => {
 				setEngines(data);
-				setHasEngines(true);
+				setHasEngines(data.length > 0);
 			});
 		monolithStore
 			.getTeamEngines(
@@ -631,8 +637,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				hasEngines ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
-							<StyledTableTitleDiv>Engines</StyledTableTitleDiv>
-							<StyledTableTitleEngineContainer />
+							<StyledTableTitleEngineContainer>
+								<StyledTableTitleDiv>
+									Engines
+								</StyledTableTitleDiv>
+								<Typography variant="body1">
+									{engines.length} Engines
+								</Typography>
+							</StyledTableTitleEngineContainer>
 							<StyledSearchButtonContainer>
 								<Search
 									ref={engineSearchRef}
@@ -649,12 +661,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								{selectedEngines.length > 0 && (
 									<Button
 										variant={"outlined"}
-										color="error"
 										onClick={() =>
 											setDeleteEnginesModal(true)
 										}
 									>
-										Delete Selected
+										Delete
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -666,6 +677,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										setAddEngineRole(undefined);
 										setAddEngineModal(true);
 									}}
+									startIcon={<Add />}
 								>
 									Add Engines
 								</Button>
@@ -674,7 +686,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 						<StyledEngineTable>
 							<Table.Head>
 								<Table.Row>
-									<Table.Cell size="small" padding="checkbox">
+									<NameTableCell size="small">
 										<Checkbox
 											checked={
 												selectedEngines.length ===
@@ -694,8 +706,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												}
 											}}
 										/>
-									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
+										Name
+									</NameTableCell>
 									<Table.Cell size="small">Access</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
@@ -705,9 +717,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							</Table.Head>
 							<Table.Body>
 								{engines &&
-									engines.map((x, i) => {
-										const engine = engines[i];
-
+									engines.map((engine, i) => {
 										let isSelected = false;
 
 										if (engine) {
@@ -725,61 +735,64 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 												<Table.Row
 													key={engine.engineid + i}
 												>
-													<StyledTableCell
-														size="medium"
-														padding="checkbox"
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selEngines =
-																		[];
-																	selectedEngines.forEach(
-																		(p) => {
-																			if (
-																				p.engineid !==
-																				engine.engineid
-																			)
-																				selEngines.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedEngines(
-																		selEngines,
-																	);
-																} else {
-																	setSelectedEngines(
-																		[
-																			...selectedEngines,
-																			engine,
-																		],
-																	);
 																}
-															}}
-														/>
-													</StyledTableCell>
-													<UserInfoTableCell
-														size="medium"
-														component="td"
-														scope="row"
-													>
-														<NameIDWrapper>
-															<Stack>
-																{
-																	engine.engine_name
-																}
-															</Stack>
-															<Stack>
-																{`Engine ID: ${engine.engineid}`}
-															</Stack>
-														</NameIDWrapper>
-													</UserInfoTableCell>
-													<Table.Cell size="medium">
-														<RadioGroup
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selEngines =
+																			[];
+																		selectedEngines.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.engineid !==
+																					engine.engineid
+																				)
+																					selEngines.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedEngines(
+																			selEngines,
+																		);
+																	} else {
+																		setSelectedEngines(
+																			[
+																				...selectedEngines,
+																				engine,
+																			],
+																		);
+																	}
+																}}
+															/>
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		engine.engine_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`Engine ID: ${engine.engineid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
 															row
 															defaultValue={
 																engine.permission
@@ -821,14 +834,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																value="3"
 																label="Read-Only"
 															/>
-														</RadioGroup>
+														</StyledRadioGroup>
 													</Table.Cell>
-													<Table.Cell size="medium">
+													<DateTableCell size="small">
 														{
 															engine.engine_date_created
 														}
-													</Table.Cell>
-													<Table.Cell size="medium">
+													</DateTableCell>
+													<Table.Cell size="small">
 														<IconButton
 															onClick={() => {
 																// set engine
@@ -853,11 +866,10 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														i + "No data available"
 													}
 												>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
 												</Table.Row>
 											);
 										}
@@ -865,7 +877,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
-									<Table.Pagination
+									<StyledTablePagination
 										rowsPerPageOptions={
 											paginationOptions.enginesPageCounts
 										}
@@ -886,10 +898,10 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 						</StyledEngineTable>
 					</StyledTableContainer>
 				) : (
-					<StyledNonEnginesContainer>
+					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>
-								<Typography variant={"h6"}>engines</Typography>
+								<Typography variant={"h6"}>Engines</Typography>
 							</StyledTableTitleDiv>
 						</StyledTableTitleContainer>
 						<StyledNonEnginesDiv>
@@ -906,7 +918,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								Add Engines
 							</Button>
 						</StyledNonEnginesDiv>
-					</StyledNonEnginesContainer>
+					</StyledTableContainer>
 				)}
 			</StyledEngineInnerContent>
 			<StyledModal open={addEngineModal} maxWidth="lg">
