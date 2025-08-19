@@ -9093,22 +9093,29 @@ export const CONNECTION_OPTIONS = {
 			},
 			{
 				name: "CSV",
-				disable: true,
+				disable: false,
 				icon: CSV,
 				fields: [
-					// baseUpload
-					// PredictDataTypes
-					{
-						fieldName: "ZIP",
-						label: "Zip File",
-						defaultValue: null,
-						options: {
-							component: "file-upload",
-						},
-						disabled: true,
-						rules: { required: true },
-					},
-				],
+                    {
+                        fieldName: 'CSV',
+                        label: 'CSV File',
+                        defaultValue: null,
+                        options: {
+                            component: 'CSV-file-upload',
+                            accept: '.csv',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            validate: {
+                                isCSV: (file: File) =>
+                                    file && file.name.endsWith('.csv')
+                                        ? true
+                                        : 'Only CSV files are allowed.',
+                            },
+                        },
+                    },
+                ],
 			},
 			{
 				name: "Excel",

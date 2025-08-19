@@ -575,16 +575,23 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 																		!stage.disable
 																	) {
 																		setSteps(
-																			[
-																				...steps,
-																				{
-																					id: `${kv[0]}.${stage.name}`,
-																					title: stage.name,
-																					description: `Fill out ${
-																						stage.name
-																					} details in order to add ${steps[0].data.toLowerCase()} to catalog`,
-																					data: stage.fields,
-																				},
+                                                                            [
+                                                                                ...steps,
+                                                                                stage.name ===
+                                                                                'CSV'
+                                                                                    ? {
+                                                                                          id: `${kv[0]}.${stage.name}`,
+                                                                                          title: 'Upload Csv',
+                                                                                          description: `To configure the database, set up the necessary connection parameters such as Database name,Description and Tags in the configuration file.
+                                                                                    Ensure proper indexing and security measures are in place for optimal performance and protection.`,
+                                                                                          data: stage.fields,
+                                                                                      }
+                                                                                    : {
+                                                                                          id: `${kv[0]}.${stage.name}`,
+                                                                                          title: stage.name,
+                                                                                          description: `Fill out  details in order to add  to catalog`,
+                                                                                          data: stage.fields,
+                                                                                      },
 																			],
 																			steps.length +
 																				1,
