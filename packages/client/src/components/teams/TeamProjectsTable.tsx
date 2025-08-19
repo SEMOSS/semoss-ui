@@ -233,11 +233,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	] = useState([]);
 	const [addProjectRole, setAddProjectRole] = useState<SETTINGS_ROLE>();
 
-	const [projects, setProjects] = useState(null);
-	const [projectCount, setProjectCount] = useState(null);
+	const [projects, setProjects] = useState([]);
+	const [projectCount, setProjectCount] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasProjects, setHasProject] = useState(false);
 
-	const limit = 5;
 	const [searchProjectInput, setSearchProjectInput] = useState<string>("");
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -285,20 +285,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 * @desc - sets projects in react hook form
 	 */
 	useEffect(() => {
-		monolithStore
-			.getTeamProjects(
-				groupId,
-				groupType,
-				limit,
-				projectsPage * limit - limit, // offset
-				searchFilter,
-				false,
-			)
-			.then((data) => {
-				setProjects(data);
-				setHasProject(true);
-			});
-	}, []);
+		filterProjects();
+	}, [groupId, groupType, count, projectsPage, searchFilter,rowsPerPage]);
 
 	useEffect(() => {
 		if (isScrollBottom) {
@@ -563,16 +551,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		projectsPageCounts: [5],
 	};
 
-	projects > 9 && paginationOptions.projectsPageCounts.push(10);
-	projects > 19 && paginationOptions.projectsPageCounts.push(20);
+	projectCount > 9 && paginationOptions.projectsPageCounts.push(10);
+	projectCount > 19 && paginationOptions.projectsPageCounts.push(20);
 
 	const filterProjects = useCallback(() => {
 		monolithStore
 			.getTeamProjects(
 				groupId,
 				groupType,
-				limit,
-				projectsPage * limit - limit, // offset
+				rowsPerPage,
+				projectsPage * rowsPerPage - rowsPerPage, // offset
 				searchFilter,
 				false,
 			)
@@ -590,7 +578,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				false,
 			)
 			.then((data) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter]);
+	}, [count, projectsPage, searchFilter,rowsPerPage]);
 
 	const debouncedFilterProjects = debounced(filterProjects, 400);
 
@@ -663,6 +651,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									variant={"contained"}
 									onClick={() => {
 										getProjects(true);
+										setAddProjectRole(undefined);
 										setAddProjectModal(true);
 									}}
 								>
@@ -864,8 +853,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 											setProjectsPage(v + 1);
 											setSelectedProojects([]);
 										}}
+										onRowsPerPageChange={(e) => {
+											setRowsPerPage(parseInt(e.target.value, 10));
+											setProjectsPage(1);
+										}}
 										page={projectsPage - 1}
-										rowsPerPage={5}
+										rowsPerPage={rowsPerPage}
 										count={projectCount}
 									/>
 								</Table.Row>
