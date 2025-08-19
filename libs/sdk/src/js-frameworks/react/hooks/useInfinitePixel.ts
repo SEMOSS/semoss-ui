@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { type PixelConfig, type PixelState, usePixel } from "./usePixel";
 
 interface PixelResult<D> extends Pick<PixelState<D>, "status" | "error"> {
-    data: D;
+    data: D | D[];
     update: (data: D[] | D | Partial<D>) => void;
     refresh: () => void;
 	offset?: number;
@@ -21,13 +21,13 @@ export function useInfinitePixel<D>(
 	const [state, setState] = useState<D[]>([]);
 	const offsetPixel = `${fun}(${pixel}, offset=[${offset || 0}]);`;
 	
-	const pixelConfig: Partial<PixelConfig<D[]>> = config
+	const pixelConfig: Partial<PixelConfig<D | D[]>> = config
 		? {
 				...config,
 				data: Array.isArray(config.data)
 					? config.data
 					: config.data !== undefined
-						? [config.data]
+						? config.data
 						: [],
 			}
 		: {};

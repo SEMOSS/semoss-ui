@@ -22,7 +22,7 @@ export function useInfiniteScroll({
 	const offsetRef = useRef(offset);
 	const canCollectRef = useRef(canCollect);
 	canCollectRef.current = canCollect;
-	let currentScroll;
+	let currentScroll: number | undefined;
 
 	const reset = () => {
 		setOffset(0);
