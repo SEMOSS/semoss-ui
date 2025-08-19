@@ -17,7 +17,6 @@ import {
 import { getTeams } from "@/api";
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
 import { TeamTileCard } from "@/components/teams/TeamTileCard";
-import { useRootStore } from "@/hooks";
 import { useSettings } from "@/hooks/useSettings";
 
 export interface DBMember {
@@ -98,7 +97,6 @@ const TeamsList = styled("div")({
 
 export const TeamsSettingsPage = observer(() => {
 	const { adminMode } = useSettings();
-	const { monolithStore } = useRootStore();
 	const navigate = useNavigate();
 
 	const [addModal, setAddModal] = useState(false);
@@ -112,7 +110,7 @@ export const TeamsSettingsPage = observer(() => {
 	const searchbarRef = useRef(null);
 
 	useEffect(() => {
-		monolithStore.getTeams(true).then((data) => {
+		getTeams(true).then((data) => {
 			dispatch({
 				type: "field",
 				field: "teams",

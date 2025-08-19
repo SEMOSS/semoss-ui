@@ -47,6 +47,20 @@ interface NonCredentialedUser {
 	name: string;
 }
 
+interface NonTeamMembers {
+	admin: boolean;
+	countrycode: string;
+	email: string;
+	exporter: boolean;
+	id: string;
+	name: string;
+	phone: string;
+	phoneextension: string;
+	publisher: boolean;
+	type: string;
+	username: string;
+}
+
 const StyledTileCard = styled(Card, {
 	shouldForwardProp: (prop) => prop !== "color",
 })<{ bordercolor?: string }>(({ bordercolor = "rgba(0, 0, 0, 0.6)" }) => ({
@@ -215,7 +229,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
 			if (type === "CUSTOM") {
 				try {
-					const response = await monolithStore.getNonTeamUsers(
+					const response = await getNonTeamUsers(
 						id,
 						AUTOCOMPLETE_LIMIT,
 						offset,
@@ -225,7 +239,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					// ignore if there is no response
 					if (response) {
 						let requests = reset ? [] : nonCredentialedUsers;
-						const users = response.map((val) => {
+						const users = (response as unknown as NonTeamMembers[]).map((val) => {
 							return {
 								...val,
 								color: colors[
@@ -398,49 +412,6 @@ export const TeamTileCard = (props: TeamCardProps) => {
 		}
 	};
 
-	const getUsersNonGroup = async (reset: boolean) => {
-		if (isLoading) {
-			return;
-		}
-		setIsLoading(true);
-
-		if (type === "CUSTOM") {
-			try {
-				const response = await getNonTeamUsers(
-					id,
-					AUTOCOMPLETE_LIMIT,
-					offset,
-					searchMemberInput,
-				);
-
-				// ignore if there is no response
-				if (response) {
-					let requests = reset ? [] : nonCredentialedUsers;
-					const users = (response as unknown as any[]).map((val) => {
-						return {
-							...val,
-							color: colors[
-								Math.floor(Math.random() * colors.length)
-							],
-						};
-					});
-					requests = requests.concat(users);
-					setNonCredentialedUsers(requests);
-					setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
-					setIsLoading(false);
-					setSearchLoading(false);
-				}
-			} catch (e) {
-				notification.add({
-					color: "error",
-					message: String(e),
-				});
-				setIsLoading(false);
-				setSearchLoading(false);
-			}
-		}
-	};
-
 	const open = Boolean(anchorEl);
 	const _popoverId = open ? "simple-popover" : undefined;
 
@@ -490,7 +461,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 																? "200px"
 																: "75px"
 													}
-													key={`${id}${i}`}
+													key={`tag-${t}`}
 													label={t}
 													variant="filled"
 												/>
@@ -499,7 +470,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 									})
 								) : (
 									<StyledTagChip
-										key={`${id}0`}
+										key={`tag-none`}
 										label={tag}
 										variant="filled"
 									/>
@@ -696,7 +667,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								: user.id[0].toUpperCase();
 							return (
 								<Box
-									key={idx}
+									key={`${user.id}-${idx}`}
 									sx={{
 										display: "flex",
 										justifyContent: "left",

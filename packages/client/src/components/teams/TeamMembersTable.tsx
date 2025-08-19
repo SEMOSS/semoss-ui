@@ -193,6 +193,21 @@ interface MembersTableProps {
 	name: string;
 }
 
+interface TeamMember {
+	admin: boolean;
+	countrycode: string;
+	email: string;
+	exporter: boolean;
+	id: string;
+	name: string;
+	phone: string;
+	phoneextension: string;
+	publisher: boolean;
+	type: string;
+	username: string;
+};
+
+
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
 
@@ -480,7 +495,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = (response as unknown as any[]).map((val) => {
+				const users = (response as unknown as TeamMember[]).map((val) => {
 					return {
 						...val,
 						color: colors[

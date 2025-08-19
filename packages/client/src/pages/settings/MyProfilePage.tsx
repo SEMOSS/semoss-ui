@@ -117,7 +117,7 @@ const CustomGridItem = styled(GridItem)(({ theme }) => ({
 	zIndex: 8,
 }));
 
-const StyledCodeBlock = styled("pre")(({ theme }) => ({
+const _StyledCodeBlock = styled("pre")(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	gap: theme.spacing(5),
@@ -171,7 +171,7 @@ interface EditUserInfoForm {
 
 export const MyProfilePage = () => {
 	const notification = useNotification();
-	const { configStore, monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const { email, id, name, admin, loggedIn } = configStore.store.user;
 
 	// track the models
@@ -183,7 +183,7 @@ export const MyProfilePage = () => {
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
-	const nativeLogin = logins["NATIVE"];
+	const nativeLogin = logins.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -215,7 +215,7 @@ export const MyProfilePage = () => {
 	const SECRETKEY = watch("SECRETKEY");
 
 	// track if we can create a key
-	const isCreated = ACCESSKEY && SECRETKEY ? true : false;
+	const isCreated = !!(ACCESSKEY && SECRETKEY );
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
@@ -228,7 +228,7 @@ export const MyProfilePage = () => {
 			// need to confirm reactor for runQuery or monolithStore method for editing profile
 			console.log(data);
 
-			const userObj = {
+			const userObj :Record<string, unknown> = {
 				password: "",
 				id: nativeLogin,
 				email: email,
@@ -236,9 +236,9 @@ export const MyProfilePage = () => {
 				name: data.NAME,
 			};
 
-			data.USERID !== nativeLogin && (userObj["newId"] = data.USERID);
-			data.USERNAME !== id && (userObj["newUsername"] = data.USERNAME);
-			data.EMAIL !== email && (userObj["newEmail"] = data.EMAIL);
+			userObj.newId = data.USERID !== nativeLogin ? ( data.USERID) : null;
+			userObj.newUsername =data.USERNAME !== id ? ( data.USERNAME) : null;
+			userObj.newEmail = data.EMAIL !== email ? (data.EMAIL) : null;
 
 			const response = await editMemberInfo(true, userObj);
 
@@ -353,7 +353,7 @@ export const MyProfilePage = () => {
 				color: "success",
 				message: "Successfully copied code",
 			});
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to copy code",
@@ -695,7 +695,7 @@ export const MyProfilePage = () => {
 							getUserAccessKeys.data.length !== 0
 								? getUserAccessKeys.data.map((k, idx) => {
 										return (
-											<Table.Row key={idx}>
+											<Table.Row key={`${k.TOKENNAME}-${idx}`}>
 												<Table.Cell align={"left"}>
 													{k.TOKENNAME}
 												</Table.Cell>

@@ -14,7 +14,7 @@ import {
 	Avatar,
 	Box,
 	Button,
-	Card,
+Card,
 	Checkbox,
 	Icon,
 	IconButton,
@@ -697,7 +697,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									Engines
 								</StyledTableTitleDiv>
 								<Typography variant="body1">
-									{engines.length} Engines
+									{engines?.length} Engines
 								</Typography>
 							</StyledTableTitleEngineContainer>
 							<StyledSearchButtonContainer>
@@ -744,13 +744,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										<Checkbox
 											checked={
 												selectedEngines.length ===
-													engines.length &&
-												engines.length > 0
+													engines?.length &&
+												engines?.length > 0
 											}
 											onChange={() => {
 												if (
 													selectedEngines.length !==
-													engines.length
+													engines?.length
 												) {
 													setSelectedEngines(
 														engines || [],

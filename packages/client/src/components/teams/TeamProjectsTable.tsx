@@ -212,6 +212,22 @@ interface ProjectsTableProps {
 	name: string;
 }
 
+interface TeamProjects { 
+	low_project_name: string;
+	project_cost: string;
+	project_created_by: string;
+	project_created_by_type: string;
+	project_date_created: string;
+	project_discoverable: boolean;
+	project_global: boolean;
+	project_has_portal: boolean;
+	project_id: string;
+	project_name: string;
+	project_portal_name: string;
+	project_type: string;
+}
+
+
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const { groupId, groupType } = props;
 
@@ -514,7 +530,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedProjects;
-				const projects = (response as unknown as any[])?.map((val) => {
+				const projects = (response as unknown as TeamProjects[])?.map((val) => {
 					return {
 						...val,
 						color: colors[

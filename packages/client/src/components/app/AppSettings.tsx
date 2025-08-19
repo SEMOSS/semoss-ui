@@ -85,7 +85,7 @@ const StyledCardLeft = styled("div")(({ theme }) => ({
 	alignItems: "flex-start",
 }));
 
-const StyledCondensedPublishContainer = styled("div")(({ theme }) => ({
+const StyledCondensedPublishContainer = styled("div")(({
 	display: "flex",
 	width: "100%",
 	gap: "1rem",
@@ -121,7 +121,7 @@ const StyledSubRow = styled("div")({
 	},
 });
 
-const StyledSubHeaderContainer = styled("div")(({ theme }) => ({
+const StyledSubHeaderContainer = styled("div")(({
 	display: "flex",
 	flexDirection: "row",
 	justifyContent: "space-between",
@@ -195,7 +195,7 @@ const StyledTable = styled(Table)(({ theme }) => ({
 	borderWidth: "thin",
 }));
 
-const StyledCenteredFallback = styled("div")(({ theme }) => ({
+const StyledCenteredFallback = styled("div")(({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
