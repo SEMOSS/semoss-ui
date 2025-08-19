@@ -518,7 +518,7 @@ export class StateStore {
 			 * --------------------------------------------------
 			 */
 			else if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId, value } = action.payload;
+				const { queryId } = action.payload;
 
 				return this.runQuery(queryId);
 			} else if (ActionMessages.RUN_CELL === action.message) {
@@ -568,7 +568,7 @@ export class StateStore {
 	dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
 		try {
 			if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId,value } = action.payload;
+				const { queryId } = action.payload;
 
 				const run = () =>
 					new Promise(async (resolve) => {
