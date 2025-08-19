@@ -1,1 +1,1 @@
-export * from './ToolsOverlayComponent';
+export * from "./ToolsOverlay";

@@ -1,6 +1,5 @@
 import { configure } from "mobx";
-
-import { MonolithStore, ConfigStore } from "@/stores";
+import { ConfigStore, MonolithStore } from "@/stores";
 
 configure({
 	enforceActions: "always",

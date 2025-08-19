@@ -4,7 +4,29 @@ interface ChatMessageInterface {
 	/**
 	 * Id of the message
 	 */
-	messageId: string;
+	id: string;
+
+	/**
+	 * Parent of the message
+	 */
+	parent: ChatMessage;
+
+	/**
+	 * Current position of message
+	 */
+	position: number;
+
+	/**
+	 * Children messages
+	 */
+	children: ChatMessage[];
+
+	/**
+	 * Active Child Position
+	 *
+	 * o
+	 */
+	activeChildPosition: number;
 
 	/**
 	 * Track if it is an input or an output
@@ -56,7 +78,11 @@ interface ChatMessageInterface {
  */
 export class ChatMessage {
 	private _store: ChatMessageInterface = {
-		messageId: "",
+		id: "",
+		parent: null,
+		position: -1,
+		children: [],
+		activeChildPosition: -1,
 		type: "AGENT",
 		content: {
 			type: "TEXT",
@@ -66,7 +92,10 @@ export class ChatMessage {
 		rating: null,
 	};
 
-	constructor() {
+	constructor(id: string) {
+		// set the id
+		this._store.id = id;
+
 		// make it observable
 		makeAutoObservable(this);
 	}
@@ -77,8 +106,50 @@ export class ChatMessage {
 	/**
 	 * Get the id of the message
 	 */
-	get messageId() {
-		return this._store.messageId;
+	get id() {
+		return this._store.id;
+	}
+
+	/**
+	 * Get the position
+	 */
+	get position() {
+		return this._store.position;
+	}
+
+	/**
+	 * Check if there are siblings
+	 */
+	get siblings() {
+		return this._store.parent.children;
+	}
+
+	/**
+	 * Get the previous sibling
+	 */
+	get previousSibling() {
+		return this._store.parent.children[this._store.position - 1];
+	}
+
+	/**
+	 * Get the next sibling
+	 */
+	get nextSibling() {
+		return this._store.parent.children[this._store.position + 1];
+	}
+
+	/**
+	 * Get the children
+	 */
+	get children() {
+		return this._store.children;
+	}
+
+	/**
+	 * Get the active child
+	 */
+	get activeChild() {
+		return this._store.children[this._store.activeChildPosition];
 	}
 
 	/**
@@ -111,36 +182,36 @@ export class ChatMessage {
 
 	/** Actions */
 	/**
-	 * Save the id of the message
+	 * Upadate the id of the message
 	 *
 	 * @param id - id to update
 	 */
-	saveId(id: string) {
-		this._store.messageId = id;
-	}
+	updateId = (id: string) => {
+		this._store.id = id;
+	};
 
 	/**
 	 * Update the type of the message
 	 */
-	updateType(type: ChatMessageInterface["type"]) {
+	updateType = (type: ChatMessageInterface["type"]) => {
 		this._store.type = type;
-	}
+	};
 
 	/**
 	 * Save the associated rating
 	 */
-	updateContent(content: ChatMessageInterface["content"]) {
+	updateContent = (content: ChatMessageInterface["content"]) => {
 		this._store.content = {
 			...content,
 		};
-	}
+	};
 
 	/**
 	 * Save the associated rating
 	 */
-	updateSources(sources: ChatMessageInterface["sources"]) {
+	updateSources = (sources: ChatMessageInterface["sources"]) => {
 		this._store.sources = sources;
-	}
+	};
 
 	/**
 	 * Save the associated rating
@@ -148,4 +219,44 @@ export class ChatMessage {
 	saveRating(rating: ChatMessageInterface["rating"]) {
 		this._store.rating = rating;
 	}
+
+	/**
+	 * Connect the parent and store the position
+	 */
+	connectParent = (parentMessage: ChatMessage, position: number) => {
+		// store the parent and position
+		this._store.parent = parentMessage;
+		this._store.position = position;
+	};
+
+	/**
+	 * Add a child message
+	 */
+	addChild = (message: ChatMessage) => {
+		// store it
+		this._store.children.push(message);
+
+		// last idx is the position
+		const position = this._store.children.length - 1;
+
+		// connect the child to the parent
+		message.connectParent(this, position);
+
+		// set as the active message
+		message.activateMessage();
+	};
+
+	/**
+	 * Add a child message
+	 */
+	setActiveChild = (position: number) => {
+		this._store.activeChildPosition = position;
+	};
+
+	/**
+	 * Set the current message as active
+	 */
+	activateMessage = () => {
+		this._store.parent.setActiveChild(this._store.position);
+	};
 }

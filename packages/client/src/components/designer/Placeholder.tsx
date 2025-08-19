@@ -1,15 +1,14 @@
-import { observer } from 'mobx-react-lite';
-import { styled } from '@semoss/ui';
+import { observer } from "mobx-react-lite";
+import { styled } from "@semoss/ui";
+import { useDesigner } from "@/hooks";
+import type { DesignerStoreInterface } from "@/stores";
 
-import { useDesigner } from '@/hooks';
-import { DesignerStoreInterface } from '@/stores';
-
-const StyledPlaceholder = styled('div')(({ theme }) => ({
-    position: 'absolute',
-    zIndex: '20',
-    pointerEvents: 'none',
-    userSelect: 'none',
-    backgroundColor: theme.palette.primary.main,
+const StyledPlaceholder = styled("div")(({ theme }) => ({
+	position: "absolute",
+	zIndex: "20",
+	pointerEvents: "none",
+	userSelect: "none",
+	backgroundColor: theme.palette.primary.main,
 }));
 
 /**
@@ -19,71 +18,71 @@ const StyledPlaceholder = styled('div')(({ theme }) => ({
  * @returns bounding box of the placeholder
  */
 function getPlaceholderStyle(
-    placeholderAction: DesignerStoreInterface['drag']['placeholderAction'],
-    placeholderSize: DesignerStoreInterface['drag']['placeholderSize'],
+	placeholderAction: DesignerStoreInterface["drag"]["placeholderAction"],
+	placeholderSize: DesignerStoreInterface["drag"]["placeholderSize"],
 ) {
-    const spacer = 3;
+	const spacer = 3;
 
-    if (!placeholderAction || !placeholderSize) {
-        return {
-            display: 'none',
-        };
-    }
+	if (!placeholderAction || !placeholderSize) {
+		return {
+			display: "none",
+		};
+	}
 
-    const { type } = placeholderAction;
+	const { type } = placeholderAction;
 
-    // calculate the relative size
-    if (type === 'before') {
-        return {
-            top: `${placeholderSize.top - spacer / 2}px`,
-            left: `${placeholderSize.left}px`,
-            height: `${spacer}px`,
-            width: `${placeholderSize.width}px`,
-            opacity: 1,
-        };
-    } else if (type === 'after') {
-        return {
-            top: `${
-                placeholderSize.top + placeholderSize.height - spacer / 2
-            }px`,
-            left: `${placeholderSize.left}px`,
-            height: `${spacer}px`,
-            width: `${placeholderSize.width}px`,
-            opacity: 1,
-        };
-    } else if (type === 'replace') {
-        return {
-            top: `${placeholderSize.top}px`,
-            left: `${placeholderSize.left}px`,
-            height: `${placeholderSize.height}px`,
-            width: `${placeholderSize.width}px`,
-            opacity: 0.3,
-        };
-    }
+	// calculate the relative size
+	if (type === "before") {
+		return {
+			top: `${placeholderSize.top - spacer / 2}px`,
+			left: `${placeholderSize.left}px`,
+			height: `${spacer}px`,
+			width: `${placeholderSize.width}px`,
+			opacity: 1,
+		};
+	} else if (type === "after") {
+		return {
+			top: `${
+				placeholderSize.top + placeholderSize.height - spacer / 2
+			}px`,
+			left: `${placeholderSize.left}px`,
+			height: `${spacer}px`,
+			width: `${placeholderSize.width}px`,
+			opacity: 1,
+		};
+	} else if (type === "replace") {
+		return {
+			top: `${placeholderSize.top}px`,
+			left: `${placeholderSize.left}px`,
+			height: `${placeholderSize.height}px`,
+			width: `${placeholderSize.width}px`,
+			opacity: 0.3,
+		};
+	}
 
-    return {};
+	return {};
 }
 
 /**
  * Rendered Placeholder for the view
  */
 export const Placeholder = observer(() => {
-    // get the store
-    const { designer } = useDesigner();
+	// get the store
+	const { designer } = useDesigner();
 
-    // get the placeholder information
-    if (!designer.drag.placeholderAction || !designer.drag.placeholderSize) {
-        return <></>;
-    }
+	// get the placeholder information
+	if (!designer.drag.placeholderAction || !designer.drag.placeholderSize) {
+		return <></>;
+	}
 
-    return (
-        <StyledPlaceholder
-            style={{
-                ...getPlaceholderStyle(
-                    designer.drag.placeholderAction,
-                    designer.drag.placeholderSize,
-                ),
-            }}
-        ></StyledPlaceholder>
-    );
+	return (
+		<StyledPlaceholder
+			style={{
+				...getPlaceholderStyle(
+					designer.drag.placeholderAction,
+					designer.drag.placeholderSize,
+				),
+			}}
+		></StyledPlaceholder>
+	);
 });
