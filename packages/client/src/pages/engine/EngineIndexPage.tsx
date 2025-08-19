@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
@@ -16,7 +16,6 @@ import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { ENGINE_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -129,7 +128,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const offsetRef = useRef(0);
 		offsetRef.current = offset;
-		let scrollEle, scrollTimeout, currentScroll, previousScroll;
+		let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
 
 		const [inputValue, setInputValue] = useState("");
 		const [search, setSearch] = useState("");
@@ -204,11 +203,11 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				: "",
 		);
 
-		const debouncedSet = debounced((newInputValue) => {
+		const debouncedSet = debounced((newInputValue: string) => {
 			setSearch(newInputValue);
 		}, 300);
 
-		const handleInputChange = (newInputValue) => {
+		const handleInputChange = (newInputValue: string) => {
 			setInputValue(newInputValue);
 			debouncedSet(newInputValue);
 		};
@@ -255,8 +254,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const favoriteDb = (db) => {
 			const favorite = !isFavorited(db.database_id);
-			monolithStore
-				.setEngineFavorite(db.database_id, favorite)
+			setEngineFavorite(db.database_id, favorite)
 				.then(() => {
 					if (!favorite) {
 						const newFavorites = favoritedDbs;
@@ -314,7 +312,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 			monolithStore.runQuery(pixelString).then((response) => {
 				const type = response.pixelReturn[0].operationType;
-				const pixelResponse = response.pixelReturn[0].output;
+				const _pixelResponse = response.pixelReturn[0].output;
 
 				if (type.indexOf("ERROR") === -1) {
 					const newDatabases = [];
@@ -325,7 +323,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							newCopy.upvotes = !db.hasUpvoted
 								? newCopy.upvotes + 1
 								: newCopy.upvotes - 1;
-							newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
+							newCopy.hasUpvoted = !db.hasUpvoted;
 
 							newDatabases.push(newCopy);
 						} else {
@@ -465,7 +463,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			getDatabases.status === "ERROR" ||
 			getCatalogFilters.status === "ERROR"
 		) {
-			return <>ERROR</>;
+			return "ERROR";
 		}
 
 		return (
@@ -547,7 +545,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						>
 							<StyledToggleTabsGroup
 								value={mode}
-								onChange={(e: React.SyntheticEvent, val) => {
+								onChange={(_e: React.SyntheticEvent, val) => {
 									dispatch({
 										type: "field",
 										field: "databases",

@@ -473,9 +473,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							<StyledSection>
 								{Array.from({
 									length: SKELETON_CARD_COUNT,
-								}).map((_, i) => (
+								}).map((_, _i) => (
 									<AppTileCard
-										key={`skeleton-list-${i}`}
+										key={`skeleton-list`}
 										app={TERMINAL_APP}
 										systemApp={false}
 										isDiscoverable={mode !== "Mine"}

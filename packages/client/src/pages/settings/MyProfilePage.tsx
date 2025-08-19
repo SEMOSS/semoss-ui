@@ -32,41 +32,41 @@ import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
+const StyledAvatar = styled(Avatar)(({
 	display: "flex",
 	alignContent: "center",
 	justifyContent: "center",
 	backgroundColor: "#975FE4",
 }));
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)(({
 	padding: "40px 30px 20px 50px",
 }));
 
-const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+const StyledAccessTokensPaper = styled(Paper)(({
 	padding: "40px 30px 20px 28px",
 }));
 
-const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+const HeaderCell = styled(Table.Cell)(({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 }));
 
-const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const LeftHeaderCell = styled(Table.Cell)(({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "20px 0 0 0",
 	textAlign: "center",
 }));
 
-const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const RightHeaderCell = styled(Table.Cell)(({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "0 20px 0 0",
 	textAlign: "center",
 }));
 
-const MessageDiv = styled("div")(({ theme }) => ({
+const MessageDiv = styled("div")(({
 	textAlign: "center",
 	marginTop: "100px",
 	fontSize: "13px",
@@ -76,43 +76,43 @@ const MessageDiv = styled("div")(({ theme }) => ({
 	margin: "75px auto 85px",
 }));
 
-const AvatarForm = styled("form")(({ theme }) => ({
+const AvatarForm = styled("form")(({
 	paddingTop: "15px",
 	width: "750px",
 }));
 
-const CurrentAvatarStack = styled(Stack)(({ theme }) => ({
+const CurrentAvatarStack = styled(Stack)(({
 	alignItems: "center",
 }));
 
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+const StyledTableContainer = styled(Table.Container)(({
 	marginTop: "20px",
 }));
 
-const StyledGrid = styled(Grid)(({ theme }) => ({
+const StyledGrid = styled(Grid)(({
 	marginBottom: "40px",
 }));
 
-const MonolithGrid = styled(Grid)(({ theme }) => ({
+const MonolithGrid = styled(Grid)(({
 	display: "flex",
 	alignItems: "center",
 }));
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)(({
 	marginBottom: "15px",
 }));
 
-const CopyGridItem = styled(Grid)(({ theme }) => ({
+const CopyGridItem = styled(Grid)(({
 	padding: 0,
 	display: "flex",
 	justifyContent: "right",
 }));
 
-const GridItem = styled(Grid)(({ theme }) => ({
+const GridItem = styled(Grid)(({
 	padding: 0,
 }));
 
-const CustomGridItem = styled(GridItem)(({ theme }) => ({
+const CustomGridItem = styled(GridItem)(({
 	padding: 0,
 	zIndex: 8,
 }));
@@ -172,7 +172,7 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const notification = useNotification();
 	const { configStore } = useRootStore();
-	const { email, id, name, admin, loggedIn } = configStore.store.user;
+	const { email, id, name, admin } = configStore.store.user;
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
@@ -183,7 +183,7 @@ export const MyProfilePage = () => {
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
-	const nativeLogin = logins.NATIVE;
+	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({

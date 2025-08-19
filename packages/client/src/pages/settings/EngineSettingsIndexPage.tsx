@@ -201,7 +201,7 @@ export const EngineSettingsIndexPage = (
 
 		const mutateListWithVotes = databases;
 
-		getEngines.data.forEach((db, i) => {
+		getEngines.data.forEach((db, _i) => {
 			mutateListWithVotes.push({
 				...db,
 				upvotes: db.upvotes ? db.upvotes : 0,
@@ -227,7 +227,7 @@ export const EngineSettingsIndexPage = (
 	const favoriteDb = (db) => {
 		const favorite = !isFavorited(db.database_id);
 		setEngineFavorite(db.database_id, favorite)
-			.then((response) => {
+			.then((_response) => {
 				if (!favorite) {
 					const newFavorites = favoritedDbs;
 					for (let i = newFavorites.length - 1; i >= 0; i--) {
@@ -281,7 +281,7 @@ export const EngineSettingsIndexPage = (
 
 		monolithStore.runQuery(pixelString).then((response) => {
 			const type = response.pixelReturn[0].operationType;
-			const pixelResponse = response.pixelReturn[0].output;
+			const _pixelResponse = response.pixelReturn[0].output;
 
 			if (type.indexOf("ERROR") === -1) {
 				const newDatabases = [];
@@ -292,7 +292,7 @@ export const EngineSettingsIndexPage = (
 						newCopy.upvotes = !db.hasUpvoted
 							? newCopy.upvotes + 1
 							: newCopy.upvotes - 1;
-						newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
+						newCopy.hasUpvoted = !db.hasUpvoted;
 
 						newDatabases.push(newCopy);
 					} else {
@@ -344,7 +344,7 @@ export const EngineSettingsIndexPage = (
 	};
 
 	//** infinite sroll variables */
-	let scrollEle, scrollTimeout, currentScroll, previousScroll;
+	let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
 	const offsetRef = useRef(0);
 	offsetRef.current = offset;
 	const canCollectRef = useRef(true);
@@ -433,7 +433,7 @@ export const EngineSettingsIndexPage = (
 						color="primary"
 					>
 						<ToggleButton
-							onClick={(e, v) => setSortOrder(v)}
+							onClick={(_e, v) => setSortOrder(v)}
 							value={"DESC"}
 							aria-label={"Descending Order"}
 						>
@@ -442,7 +442,7 @@ export const EngineSettingsIndexPage = (
 							</Tooltip>
 						</ToggleButton>
 						<ToggleButton
-							onClick={(e, v) => setSortOrder(v)}
+							onClick={(_e, v) => setSortOrder(v)}
 							value={"ASC"}
 							aria-label={"Ascending Order"}
 						>
@@ -458,7 +458,7 @@ export const EngineSettingsIndexPage = (
 						color="primary"
 					>
 						<ToggleButton
-							onClick={(e, v) => setView(v)}
+							onClick={(_e, v) => setView(v)}
 							value={"tile"}
 						>
 							<Tooltip title={"Tile View"}>
@@ -466,7 +466,7 @@ export const EngineSettingsIndexPage = (
 							</Tooltip>
 						</ToggleButton>
 						<ToggleButton
-							onClick={(e, v) => setView(v)}
+							onClick={(_e, v) => setView(v)}
 							value={"list"}
 						>
 							<Tooltip title={"List View"}>
@@ -477,11 +477,11 @@ export const EngineSettingsIndexPage = (
 				</StyledSearchbarContainer>
 				<Grid container spacing={3}>
 					{databases.length
-						? databases.map((db, i) => {
+						? databases.map((db, _i) => {
 								return (
 									<Grid
 										item
-										key={i}
+										key={`${db.database_name}`}
 										sm={view === "list" ? 12 : 12}
 										md={view === "list" ? 12 : 6}
 										lg={view === "list" ? 12 : 4}
@@ -502,10 +502,10 @@ export const EngineSettingsIndexPage = (
 												isFavorite={isFavorited(
 													db.database_id,
 												)}
-												favorite={(val) => {
+												favorite={(_val) => {
 													favoriteDb(db);
 												}}
-												onClick={(id) => {
+												onClick={(_id) => {
 													navigate(
 														`${db.database_id}`,
 														{
@@ -520,10 +520,10 @@ export const EngineSettingsIndexPage = (
 														},
 													);
 												}}
-												upvote={(val) => {
+												upvote={(_val) => {
 													upvoteDb(db);
 												}}
-												global={(val) => {
+												global={(_val) => {
 													setDbGlobal(db);
 												}}
 											/>
