@@ -201,7 +201,7 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 	width: "28px",
 	borderRadius: "24px",
 	zIndex: 1,
-	"&.MuiButtonBase-root :hover": {
+	"&.MuiButtonBase-root:hover": {
 		backgroundColor: theme.palette.background.paper,
 		borderRadius: "24px",
 		$icon: {
@@ -481,7 +481,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 	// Function to generate the API URL
 	const generateProjectImageURL = (appId: string): string => {
-		return `${Env.MODULE}/api/project-${appId}/projectImage/download`;
+		const safeId = encodeURIComponent(appId);
+		return `${Env.MODULE}/api/project-${safeId}/projectImage/download`;
 	};
 
 	useEffect(() => {
@@ -790,19 +791,11 @@ export const AppTileCard = (props: AppTileCardProps) => {
 							/>
 						</StyledSkeletonImage>
 					) : (
+						//onError 
 						<StyledTileCardMedia
 							src="img"
-							image={
-								base64Image ? base64Image : image ? image : ""
-							}
+							image={ base64Image || image || ""}
 							sx={StyledCardImage}
-							onError={(e) => {
-								// Fallback to default image if base64 image fails to load
-								const target = e.target as HTMLImageElement;
-								if (base64Image && image) {
-									target.src = image;
-								}
-							}}
 						/>
 					)}
 					<StyledCardContentSection>&nbsp;</StyledCardContentSection>

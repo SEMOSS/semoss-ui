@@ -2,7 +2,6 @@ import axios from "axios";
 import { makeAutoObservable } from "mobx";
 import { Env } from "@semoss/sdk/react";
 import type { RootStore } from "@/stores";
-import type { Role } from "@/types";
 
 /**
  * Store that manages instances of the insights and handles applicaiton level querying
@@ -66,9 +65,9 @@ export class MonolithStore {
 		// build the expression
 		let postData = "";
 
-		postData += "expression=" + encodeURIComponent(pixel);
+		postData += `expression=${encodeURIComponent(pixel)}`;
 		if (insightID) {
-			postData += "&insightId=" + encodeURIComponent(insightID);
+			postData += `&insightId=${encodeURIComponent(insightID)}`;
 		}
 
 		const response = await axios
@@ -313,7 +312,7 @@ export class MonolithStore {
 	async logout(): Promise<boolean> {
 		await axios
 			.get(`${Env.MODULE}/api/auth/logout/all`, {
-				validateStatus: (status) => true,
+				validateStatus: (_status) => true,
 			})
 			.catch((err) => {
 				throw Error(err);
@@ -339,7 +338,7 @@ export class MonolithStore {
 			});
 
 		//check if they are already logged in
-		if (response.data && response.data.name) {
+		if (response.data?.name) {
 			return true;
 		}
 
@@ -348,7 +347,7 @@ export class MonolithStore {
 			const popUpWindow = window.top.open(
 				url,
 				"_blank",
-				"height=600,width=400,top=300,left=" + 600,
+				`height=600,width=400,top=300,left=${600}`,
 			);
 
 			// setup an interval to see if the popup window is closed or successful
@@ -376,7 +375,7 @@ export class MonolithStore {
 						// close it
 						resolve(response);
 					}
-				} catch (err) {
+				} catch (_err: unknown) {
 					// do nothing
 					// this is to work around the blocked frame error that comes up
 				}
@@ -399,10 +398,10 @@ export class MonolithStore {
 	}
 
 	async modifyLoginProperties(provider, properties) {
-		const url = `${Env.MODULE}/api/auth/modifyLoginProperties/` + provider;
+		const url = `${Env.MODULE}/api/auth/modifyLoginProperties/${provider}`;
 		let postData = "";
 
-		postData += "modifications=" + JSON.stringify(properties);
+		postData += `modifications=${JSON.stringify(properties)}`;
 
 		const response = await axios
 			.post<boolean>(url, postData, {
@@ -450,9 +449,9 @@ export class MonolithStore {
 
 		let postData = "";
 
-		postData += "name=" + encodeURIComponent(data.name);
-		postData += "&json=" + encodeURIComponent(JSON.stringify(data.json));
-		postData += "&isActive=" + encodeURIComponent(data.isActive);
+		postData += `name=${encodeURIComponent(data.name)}`;
+		postData += `&json=${encodeURIComponent(JSON.stringify(data.json))}`;
+		postData += `&isActive=${encodeURIComponent(data.isActive)}`;
 
 		const response = await axios.post<boolean>(url, postData, {
 			headers: {
@@ -500,14 +499,19 @@ export class MonolithStore {
 
 		url += "engine/getEngines";
 
-		const params = {};
+		const params = {
+			engineTypes: "",
+			filterWord: "",
+			offset: "",
+			limit: "",
+		};
 
-		params["engineTypes"] = engineType;
-		search && (params["filterWord"] = search);
+		params.engineTypes = engineType;
+		params.filterWord = search ? search : "";
 
-		offset && (params["offset"] = offset);
+		params.offset = offset ? offset.toString() : "0";
 
-		limit && (params["limit"] = limit);
+		params.limit = limit ? limit.toString() : "10";
 
 		// get the response
 		const response = await axios

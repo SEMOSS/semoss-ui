@@ -491,17 +491,9 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await editEngineUserPermissions(
-					adminMode,
-					id,
-					requests,
-				);
+				response = await editEngineUserPermissions(adminMode, id, requests,);
 			} else if (type === "APP") {
-				response = await editProjectUserPermissions(
-					adminMode,
-					id,
-					requests,
-				);
+				response = await editProjectUserPermissions(adminMode,id,requests,);
 			}
 
 			if (!response) {
@@ -1014,9 +1006,7 @@ export const MembersTable = (props: MembersTableProps) => {
 																				user,
 																			);
 																		}}
-																		onMouseLeave={() =>
-																			handlePopoverClose
-																		}
+																		onMouseLeave={handlePopoverClose}
 																		aria-owns="mouse-over-popover"
 																		aria-haspopup="true"
 																	>
