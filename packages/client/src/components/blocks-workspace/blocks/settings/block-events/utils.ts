@@ -24,6 +24,10 @@ export const getDefaultFormValues = (
 			message: ActionMessages.DISPATCH_OPEN_EVENT,
 			payload: { destinationType: "", destination: "" },
 		},
+		[ActionMessages.SET_DATA_VARIABLE]: {
+			message: ActionMessages.SET_DATA_VARIABLE,
+			payload: { id: ""},
+		},
 	};
 
 	return formConfigs[message] || formConfigs[ActionMessages.RUN_QUERY];
@@ -44,6 +48,8 @@ export const validateForm = (
 			return !!payload.destinationType && !!payload.destination;
 		case ActionMessages.DISPATCH_OUTPUTS_EVENT:
 			return true;
+		case ActionMessages.SET_DATA_VARIABLE:
+			return !!payload.id;
 		default:
 			return false;
 	}

@@ -37,6 +37,7 @@ export interface ButtonBlockDef extends BlockDef<"button"> {
 		color: "primary" | "secondary" | "success" | "warning" | "error";
 		show: string;
 		type: "button" | "submit" | "reset";
+		dataVariable?: string;
 	};
 	listeners: {
 		onClick: {
@@ -73,9 +74,19 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 				type={data?.type}
 				sx={{
 					...data.style,
-				}}
-				onClick={() => {
-					listeners.onClick();
+				}}	
+				data-value={data.dataVariable}
+				onClick={(event) => {
+					listeners.onClick((action) => {
+						const value = event.currentTarget?.getAttribute("data-value");
+						return {
+							...action,
+							payload: {
+								...action.payload,
+								value,
+							},
+						};
+					});
 				}}
 			>
 				<StyledLabel loading={data?.loading}>{data.label}</StyledLabel>

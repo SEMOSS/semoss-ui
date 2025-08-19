@@ -246,6 +246,8 @@ export const ListenerSettings = observer(
 				} else if (item.payload["destinationType"]) {
 					if (item.payload["destination"])
 						display = item.payload["destination"];
+				} else if (item.message === "SET_DATA_VARIABLE" && item.payload["id"]) {
+						display = item.payload["id"];
 				} else {
 					if (item.payload["name"]) {
 						display = item.payload["name"];

@@ -3,6 +3,7 @@ import { BlockEventNameSelector } from "./BlockEventNameSelector";
 import { CellIdSelector } from "./CellIdSelector";
 import { QueryIdSelector } from "./QueryIdSelector";
 import { RedirectDestinationSelector } from "./RedirectDestinationSelector";
+import { VariableIdSelector } from "./VariableIdSelector";
 
 interface ActionFormFieldsProps {
 	message: ActionMessages;
@@ -13,6 +14,7 @@ interface ActionFormFieldsProps {
 	queryId: string;
 	destinationType: string;
 	pages: any[];
+	variables: any;
 }
 
 export const ActionFormFields = ({
@@ -24,7 +26,8 @@ export const ActionFormFields = ({
 	queryId,
 	destinationType,
 	pages,
-}: ActionFormFieldsProps) => {
+	variables,
+	}: ActionFormFieldsProps) => {
 	const renderFields = () => {
 		switch (message) {
 			case ActionMessages.RUN_QUERY:
@@ -61,6 +64,13 @@ export const ActionFormFields = ({
 
 			case ActionMessages.DISPATCH_OUTPUTS_EVENT:
 				return null;
+
+			case ActionMessages.SET_DATA_VARIABLE:
+				return (
+					<>
+						<VariableIdSelector control={control} variables={variables || []} />
+					</>
+				);
 
 			default:
 				return null;

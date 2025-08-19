@@ -49,6 +49,7 @@ export enum ActionMessages {
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+	SET_DATA_VARIABLE = "SET_DATA_VARIABLE",
 }
 
 export type Actions =
@@ -78,7 +79,8 @@ export type Actions =
 	| RenameVariableAction
 	| EditVariableAction
 	| DeleteVariableAction
-	| SetSheetExecutionOrderAction;
+	| SetSheetExecutionOrderAction
+	| SetDataVariableAction;
 
 
 /**
@@ -340,6 +342,7 @@ export interface RunQueryAction extends Action {
 	message: ActionMessages.RUN_QUERY;
 	payload: {
 		queryId: string;
+		value:string; 
 	};
 }
 
@@ -358,4 +361,12 @@ export interface RunMarkdownCellAction extends Action {
 		cellId: string;
 		marked: boolean;
 	};
+}
+
+export interface SetDataVariableAction extends Action {
+    message: ActionMessages.SET_DATA_VARIABLE;
+    payload: {
+        id: string; 				
+    	value: string;           
+	}
 }

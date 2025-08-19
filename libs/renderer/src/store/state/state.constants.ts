@@ -37,4 +37,5 @@ export const ACTIONS_DISPLAY = {
 	[ActionMessages.DISPATCH_EVENT]: "Dispatch Event",
 	[ActionMessages.DISPATCH_OUTPUTS_EVENT]: "Dispatch App Outputs",
 	[ActionMessages.DISPATCH_OPEN_EVENT]: "Navigate",
+	[ActionMessages.SET_DATA_VARIABLE]: "Set Data Variable",
 };

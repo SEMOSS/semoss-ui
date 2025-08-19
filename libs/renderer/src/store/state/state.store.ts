@@ -518,7 +518,7 @@ export class StateStore {
 			 * --------------------------------------------------
 			 */
 			else if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId } = action.payload;
+				const { queryId, value } = action.payload;
 
 				return this.runQuery(queryId);
 			} else if (ActionMessages.RUN_CELL === action.message) {
@@ -541,7 +541,20 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
-			}
+			}else if (
+				ActionMessages.SET_DATA_VARIABLE === action.message
+			) {
+				const { id, value } = action.payload;
+				const from = this.variables[id];
+				if (from) {
+					const to = {
+						...from,
+						value,
+					};
+					this.editVariable(id, from, to);
+				}
+				
+    		}
 		} catch (e) {
 			console.error(e);
 		}
@@ -555,7 +568,7 @@ export class StateStore {
 	dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
 		try {
 			if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId } = action.payload;
+				const { queryId,value } = action.payload;
 
 				const run = () =>
 					new Promise(async (resolve) => {
@@ -588,7 +601,20 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
-			}
+			}else if (
+				ActionMessages.SET_DATA_VARIABLE === action.message
+			) {
+				const { id, value} = action.payload;
+				const from = this.variables[id];
+				if (from) {
+					const to = {
+						...from,
+						value,
+					};
+					this.editVariable(id, from, to);
+				}
+				
+    		}
 		} catch (e) {
 			console.error(e);
 		}

@@ -3,6 +3,7 @@ import type { CSSProperties } from "react";
 import {
 	InputSettings,
 	QuerySelectionSettings,
+	QueryInputSettings,
 	SelectInputSettings,
 } from "../../settings";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
@@ -65,6 +66,17 @@ export const config: BlockSettingsConfig = {
 					),
 				},
 			],
+		},
+		{
+			name: "Data Variable",
+			children: [
+				   {
+					   description: "Data Variable",
+					   render: ({ id }) => (
+						   <QueryInputSettings id={id} label="Data Variable" path="dataVariable" />
+					   ),
+				   },
+			   ],
 		},
 		{
 			name: "Conditional",

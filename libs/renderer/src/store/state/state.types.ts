@@ -7,6 +7,7 @@ import type {
 	DispatchOutputsEventAction,
 	RunCellAction,
 	RunQueryAction,
+	SetDataVariableAction,
 } from "./state.actions";
 
 export type SerializedState = {
@@ -262,7 +263,8 @@ export type ListenerActions =
 	| DispatchEventAction
 	| DispatchOutputsEventAction
 	| RunCellAction
-	| DispatchOpenEventAction;
+	| DispatchOpenEventAction
+	| SetDataVariableAction;
 
 /**
  * Cell Definition

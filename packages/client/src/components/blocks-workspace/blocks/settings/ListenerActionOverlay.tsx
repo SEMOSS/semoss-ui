@@ -3,6 +3,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import {
 	ActionMessages,
+	useBlocks,
 	type BlockDef,
 	type ListenerActions,
 } from "@semoss/renderer";
@@ -34,6 +35,7 @@ export const ListenerActionOverlay = observer(
 	<D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
 		const { id, type, listener, actionIdx = -1, onClose } = props;
 		const { listeners, setListener } = useBlockSettings(id);
+		const { state } = useBlocks();
 
 		const isNewAction = actionIdx === -1;
 		const existingAction =
@@ -115,6 +117,7 @@ export const ListenerActionOverlay = observer(
 							queryId={queryId}
 							destinationType={destinationType}
 							pages={pages}
+							variables={state.variables}
 						/>
 					</Stack>
 				</Modal.Content>
