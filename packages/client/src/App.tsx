@@ -1,6 +1,6 @@
 import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
-import { Env } from "@semoss/sdk/react";
+import { Env, fetchCsrfTokenIfNeeded, getCsrfToken } from "@semoss/sdk/react";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
 import { AppWrapper } from "./AppWrapper";
@@ -14,30 +14,6 @@ const CSRF = {
 	isEnabled: false,
 	token: "",
 };
-
-/**
- * Get the CSRF Token
- * @returns token
- */
-async function getToken(): Promise<string> {
-	try {
-		const response = await axios.get(`${Env.MODULE}/api/config/fetchCsrf`, {
-			headers: {
-				"X-CSRF-Token": "fetch",
-			},
-		});
-
-		// not sure why the server is sending it as lowercase, preserving headers doesn't fix it
-		const token =
-			response.headers["X-CSRF-Token"] ||
-			response.headers["x-csrf-token"] ||
-			"";
-
-		return token;
-	} catch {
-		return "";
-	}
-}
 
 // add interceptors
 axios.interceptors.request.use(
@@ -70,7 +46,9 @@ axios.interceptors.request.use(
 		if (CSRF.isEnabled || _store.configStore.store.config.csrf) {
 			if (config.method === "post") {
 				if (!CSRF.token) {
-					CSRF.token = await getToken();
+					// fetch the CSRF token if it is not set, use getCsrfToken() or fetchCsrfTokenIfNeeded()
+					CSRF.token =
+						getCsrfToken() || (await fetchCsrfTokenIfNeeded());
 				}
 
 				config.headers["X-CSRF-Token"] = CSRF.token;

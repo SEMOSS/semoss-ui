@@ -1,7 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { Env, runPixel } from "@semoss/sdk/react";
-import { AppMetadata } from "@/components/app";
+import {
+	Env,
+	fetchCsrfTokenIfNeeded,
+	getCsrfToken,
+	runPixel,
+} from "@semoss/sdk/react";
+import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
 	type RootStore,
@@ -351,6 +356,11 @@ export class ConfigStore {
 			this._store.status === "MISSING AUTHENTICATION"
 		) {
 			return;
+		}
+
+		// fetch the CSRF token
+		if (this.store.config.csrf) {
+			getCsrfToken() || (await fetchCsrfTokenIfNeeded());
 		}
 
 		// get the user information
