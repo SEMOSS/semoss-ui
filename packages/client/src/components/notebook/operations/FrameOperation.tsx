@@ -44,6 +44,7 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 	const isSuccess =
 		getData.status === "SUCCESS" && getCount.status === "SUCCESS";
 
+	
 	return (
 		<>
 			<StyledTableContainer>
@@ -52,7 +53,7 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 						<Table.Row>
 							{getData.status === "SUCCESS" &&
 								getData.data.data.headers.map((h, _hIdx) => (
-									<Table.Cell key={`${h}`}>{h}</Table.Cell>
+									<Table.Cell key={`header-${_hIdx}-${h[_hIdx]}`}>{h}</Table.Cell>
 								))}
 						</Table.Row>
 					</Table.Head>
@@ -68,10 +69,10 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 							</Table.Cell>
 						)}
 						{getData.status === "SUCCESS" &&
-							getData.data.data.values.map((r, rIdx) => (
-								<Table.Row key={`${r[rIdx]}`}>
-									{r.map((v) => (
-										<Table.Cell key={`${v}`}>
+							getData.data.data.values.map((r, _rIdx) => (
+								<Table.Row key={`data-row-${getData.data.data.headers[_rIdx]}-${_rIdx}`}>
+									{r.map((v, _vIdx) => (
+										<Table.Cell key={`data-row-col-${getData.data.data.headers[_rIdx]}-${_rIdx}-${_vIdx}`}>
 											{v}
 										</Table.Cell>
 									))}
