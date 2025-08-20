@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { type PixelConfig, type PixelState, usePixel } from "./usePixel";
 
 interface PixelResult<D> extends Pick<PixelState<D>, "status" | "error"> {
@@ -19,7 +19,9 @@ export function useInfinitePixel<D>(
 	const [currLen, setCurrLen] = useState(0);
 	const [offset, setOffset] = useState(0);
 	const [state, setState] = useState<D[]>([]);
-	const offsetPixel = `${fun}(${pixel}, offset=[${offset || 0}]);`;
+	const pixelRef = useRef(pixel);
+	
+	const offsetPixel = pixelRef.current !== pixel ? '' : `${fun}(${pixel}, offset=[${offset || 0}]);`;
 	
 	const pixelConfig: Partial<PixelConfig<D | D[]>> = config
 		? {
@@ -58,7 +60,10 @@ export function useInfinitePixel<D>(
 	};
 
 	useEffect(() => {
-		collect(0);
+		if(pixel !== pixelRef.current) {
+			pixelRef.current = pixel;
+			collect(0); 
+		}
 	}, [pixel, insightId, fun]);
 
 	return {
