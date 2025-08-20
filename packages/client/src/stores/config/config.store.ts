@@ -29,6 +29,8 @@ interface ConfigStoreInterface {
 	};
 	/** App Builder mode (local storage, based on userEpoch) */
 	globalSearch: string;
+	/** Flag to trigger reloading of the file explorer UI */
+	reloadFiles: string;
 	/** Config information */
 	config: {
 		databaseMetaKeys: {
@@ -153,6 +155,7 @@ export class ConfigStore {
 		insightID: "",
 		userEpoch: "",
 		globalSearch: "",
+		reloadFiles: "",
 		user: {
 			loggedIn: false,
 			id: "",
@@ -491,6 +494,12 @@ export class ConfigStore {
 	setGlobalSearch(text = "") {
 		runInAction(() => {
 			this._store.globalSearch = text;
+		});
+	}
+
+	setReloadFiles(value: string) {
+		runInAction(() => {
+			this._store.reloadFiles = value;
 		});
 	}
 

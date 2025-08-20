@@ -48,7 +48,7 @@ const StyledTitle = styled("div")(({ theme }) => ({
 	color: theme.palette.info.dark,
 }));
 
-const StyledFileSpan = styled("span")(({ theme }) => ({
+const StyledFileSpan = styled("span")(() => ({
 	color: "var(--Text-Primary, #212121)",
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontFamily: "Inter",
@@ -59,7 +59,7 @@ const StyledFileSpan = styled("span")(({ theme }) => ({
 	letterSpacing: "0.15px",
 }));
 
-const StyledTitleSpan = styled("span")(({ theme }) => ({
+const StyledTitleSpan = styled("span")(() => ({
 	color: "var(--Primary-Dark, #1260DD)",
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontSize: "13px",
@@ -72,7 +72,7 @@ const StyledTitleSpan = styled("span")(({ theme }) => ({
 	marginTop: "8px",
 }));
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(() => ({
 	paddingRight: "16px",
 	paddingLeft: "16px",
 	marginTop: "8px",
@@ -84,7 +84,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	const { title, layout } = props;
 
 	const { workspace } = useWorkspace();
-	const { monolithStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 
 	const notification = useNotification();
 
@@ -95,6 +95,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
 	// temporary fix for dead refresh button should be removed
 	const [counter, setCounter] = useState(0);
+	const uploadedRefresh = configStore.store.reloadFiles;
 
 	// set the uploadPath based on the selected item
 	useEffect(() => {
@@ -120,6 +121,13 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		// increment the counter
 		setCounter(counter + 1);
 	};
+
+	useEffect(() => {
+		if (uploadedRefresh !== "") {
+			refreshFiles();
+			configStore.setReloadFiles("");
+		}
+	}, [uploadedRefresh]);
 
 	const handleToggleExpand = (path: string) => {
 		setExpandedPaths((prev) =>

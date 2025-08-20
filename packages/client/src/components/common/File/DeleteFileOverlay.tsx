@@ -19,7 +19,7 @@ interface DeleteFileOverlayProps {
 export const DeleteFileOverlay = (props: DeleteFileOverlayProps) => {
 	const { type, space, fileDeletePath = "", onClose = () => null } = props;
 
-	const { monolithStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 
 	const [isLoading, setIsLoading] = useState(false);
 
@@ -36,6 +36,7 @@ export const DeleteFileOverlay = (props: DeleteFileOverlayProps) => {
 				await monolithStore.runQuery(
 					`DeleteAsset(filePath=["${fileDeletePath}"], space=["${space}"]);`,
 				);
+				configStore.setReloadFiles("Delete");
 			} else if (type === "insight") {
 				throw new Error("TODO");
 			}

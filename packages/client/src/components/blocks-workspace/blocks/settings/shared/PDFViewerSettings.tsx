@@ -29,6 +29,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { useRootStore } from "@/hooks";
 
 //styled section for the selected tab
 const StyledSubSection = styled("div")(() => ({
@@ -70,8 +71,8 @@ const StyledTypographyEror = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledAutocomplete = styled(Autocomplete)({
-    paddingLeft: "9px",
-    marginTop: "12px",
+	paddingLeft: "9px",
+	marginTop: "12px",
 });
 
 const StyledEngineContent = styled(Accordion.Content)(({ theme }) => ({
@@ -107,10 +108,11 @@ interface PDFViewerSettings<D extends BlockDef = BlockDef> {
 }
 
 export const PDFViewerSettings = observer(
-	<D extends BlockDef = BlockDef>({ id, path }: PDFViewerSettings<D>) => {
+	<D extends BlockDef = BlockDef>({ id }: PDFViewerSettings<D>) => {
 		const { data, setData, insightId } = useBlock<PDFViewerBlockDef>(id);
 		const notification = useNotification();
 		const { appId } = useParams();
+		const { configStore, monolithStore } = useRootStore();
 		const [appOptions, setAppOptions] = useState([]);
 		const [engineOptions, setEngineOptions] = useState<
 			{
@@ -129,6 +131,7 @@ export const PDFViewerSettings = observer(
 		const [selectedTab, setSelectedTab] = useState(tabs[1]);
 		const [uploadFiles, setUploadFiles] = useState<File>(null);
 		const [isLoading, setIsLoading] = useState(false);
+		const uploadedRefresh = configStore.store.reloadFiles;
 		const [engineAutocompleteOpen, setEngineAutocompleteOpen] =
 			useState(false);
 		const allEngineTypes = [
@@ -200,8 +203,42 @@ export const PDFViewerSettings = observer(
 				runPixel(
 					`BrowseAppAssets(project=["${appId}"], filePath=["/"]);`,
 				),
-			[appId],
+			[appId, uploadedRefresh],
 		);
+
+		const deleteFile = async (fileDeletePath: string) => {
+			await monolithStore.runQuery(
+				`DeleteAsset(filePath=["${fileDeletePath}"], space=["${appId}"]);`,
+			);
+			configStore.setReloadFiles("Delete");
+		};
+
+		const refreshFiles = async () => {
+			const result = await getAssetsApp;
+			const outputArray = result?.pixelReturn?.[0]?.output;
+
+			// Check if uploadedFiles exists in outputArray
+			if (
+				uploadFiles &&
+				Array.isArray(outputArray) &&
+				!outputArray.some(
+					(item) =>
+						item.name === uploadFiles.name ||
+						item.path === selectedPdfPath,
+				)
+			) {
+				setUploadFiles(null);
+				setData("selectedPdf", "", true);
+				setData("engineId", "", true);
+				setSelectedPdfPath("");
+			}
+		};
+
+		useEffect(() => {
+			if (uploadedRefresh === "Delete") {
+				refreshFiles();
+			}
+		}, [uploadedRefresh]);
 
 		useEffect(() => {
 			// Fetch Engine Ids
@@ -366,6 +403,7 @@ export const PDFViewerSettings = observer(
 				setData("selectedPdf", uploadTemp[0].fileLocation, true);
 				setData("engineId", "", true);
 				setSelectedPdfPath(uploadTemp[0].fileLocation || "");
+				configStore.setReloadFiles("Upload");
 
 				notification.add({
 					color: "success",
@@ -470,6 +508,7 @@ export const PDFViewerSettings = observer(
 							setUploadFiles={setUploadFiles}
 							isLoading={isLoading}
 							addFile={addFile}
+							deleteFile={deleteFile}
 						/>
 					)}
 				</StyledSubSection>
@@ -702,6 +741,7 @@ const AppTab: React.FC<{
 	setUploadFiles: (file: File | null) => void;
 	isLoading: boolean;
 	addFile: (file: File) => void;
+	deleteFile: (fileDeletePath: string) => void;
 }> = ({
 	appOptions,
 	selectedPdfPath,
@@ -711,6 +751,7 @@ const AppTab: React.FC<{
 	setUploadFiles,
 	isLoading,
 	addFile,
+	deleteFile,
 }) => (
 	<Stack sx={{ paddingLeft: "9px", marginTop: "12px" }}>
 		{uploadFiles ? (
@@ -725,7 +766,7 @@ const AppTab: React.FC<{
 					<Typography variant="body1">{uploadFiles.name}</Typography>
 					<StyledDeleteIcon
 						onClick={() => {
-							setUploadFiles(null);
+							deleteFile(selectedPdfPath);
 						}}
 					/>
 				</Box>
