@@ -5,7 +5,7 @@ import { Link } from "react-router-dom";
 import { IconButton, Stack, styled, Typography } from "@semoss/ui";
 import { usePage, useRootStore } from "@/hooks";
 
-const StyledNavbarHeader = styled(Stack)(({ theme }) => ({
+const StyledNavbarHeader = styled(Stack)(() => ({
 	position: "relative",
 	background: "transparent",
 	zIndex: 0,
@@ -24,7 +24,7 @@ const StyledNavbarHeaderLink = styled(Link)(({ theme }) => ({
 	},
 }));
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
+const StyledIconButton = styled(IconButton)(() => ({
 	borderRadius: "7.5px",
 	border: "0.938px solid #323232",
 }));
@@ -47,17 +47,14 @@ export const NavbarHeader = observer((props: NavbarHeaderProps) => {
 			justifyContent={"flex-start"}
 			spacing={2}
 		>
-			<StyledIconButton
-				size="small"
-				onMouseOver={() => page.openSidebar()}
-			>
+			<StyledIconButton size="small" onClick={() => page.openSidebar()}>
 				<MenuRounded fontSize="medium" />
 			</StyledIconButton>
 
 			{!logo ? (
 				<StyledNavbarHeaderLink to={"/"} aria-label={"Go Home"}>
 					{configStore.theme.logo ? (
-						<img src={configStore.theme.logo} />
+						<img src={configStore.theme.logo} alt="home" />
 					) : null}
 					<Typography variant="h6" sx={{ fontWeight: 700 }}>
 						{configStore.theme.name}

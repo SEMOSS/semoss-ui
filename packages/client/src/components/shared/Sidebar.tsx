@@ -89,13 +89,13 @@ const StyledSidebar = styled(Drawer)(() => ({
 	],
 }));
 
-const StyledSidebarContent = styled(Stack)(({ theme }) => ({
+const StyledSidebarContent = styled(Stack)(() => ({
 	flexDirection: "column",
 	width: "100%",
 	overflowY: "auto",
 }));
 
-const StyledSidebarFooter = styled(Stack)(({ theme }) => ({
+const StyledSidebarFooter = styled(Stack)(() => ({
 	overflowY: "hidden",
 }));
 
@@ -128,7 +128,7 @@ const StyledLink = styled(Link)(({ theme }) => ({
 	padding: theme.spacing(0.5, 0),
 }));
 
-const StyledSettingsArea = styled(Stack)(({ theme }) => ({
+const StyledSettingsArea = styled(Stack)(() => ({
 	flexDirection: "column",
 	width: "100%",
 	overflowY: "auto",
@@ -179,15 +179,6 @@ export const Sidebar: React.FC = observer(() => {
 			anchor="left"
 			open={page.sidebar.open}
 			onClose={closeSidebar}
-			PaperProps={{
-				onMouseLeave: () => {
-					// closes if it is not pinned
-					if (page.sidebar.pinned) {
-						return;
-					}
-					closeSidebar();
-				},
-			}}
 		>
 			<StyledNavHeader
 				direction={"row"}
@@ -215,6 +206,7 @@ export const Sidebar: React.FC = observer(() => {
 						<StyledListItemButton
 							selected={!!matchPath("/", pathname)}
 							dense={true}
+							onClick={closeSidebar}
 						>
 							<StyledListItemIcon>
 								<HomeIcon />
@@ -252,6 +244,7 @@ export const Sidebar: React.FC = observer(() => {
 										}
 										aria-label={r.text}
 										dense={true}
+										onClick={closeSidebar}
 									>
 										<StyledListItemIcon>
 											{r.icon}
@@ -273,6 +266,7 @@ export const Sidebar: React.FC = observer(() => {
 						<StyledListItemButton
 							selected={!!matchPath(`/settings/*`, pathname)}
 							dense={true}
+							onClick={closeSidebar}
 						>
 							<StyledListItemIcon>
 								<SettingsIcon />
