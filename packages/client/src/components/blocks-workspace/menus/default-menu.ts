@@ -2011,7 +2011,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						},
 					},
 					title: {
-						text: "Map Graph",
+						text: "World Map Chart",
 						show: true,
 						left: "left",
 						textStyle: {

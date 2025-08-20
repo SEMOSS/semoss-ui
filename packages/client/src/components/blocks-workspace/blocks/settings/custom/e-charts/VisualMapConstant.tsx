@@ -420,7 +420,7 @@ export const VisualMapConstant = {
 					},
 				},
 				title: {
-					text: "Map Graph",
+					text: "World Map Chart",
 					show: true,
 					left: "left",
 					textStyle: {
@@ -1082,7 +1082,7 @@ export const VisualMapConstant = {
 						initialTreeDepth: -1,
 					},
 				],
-				["_state"]: {
+				"_state": {
 					dimensions: [],
 					facet: [],
 				},
