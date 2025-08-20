@@ -575,16 +575,16 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 																		!stage.disable
 																	) {
 																		setSteps(
-																			[
-																				...steps,
-																				{
-																					id: `${kv[0]}.${stage.name}`,
-																					title: stage.name,
-																					description: `Fill out ${
-																						stage.name
-																					} details in order to add ${steps[0].data.toLowerCase()} to catalog`,
-																					data: stage.fields,
-																				},
+                                                                            [
+                                                                                ...steps,
+                                                                                 {
+                                                                                    id: `${kv[0]}.${stage.name}`,
+                                                                                    title: stage.name === 'csv' ?  `Upload ${stage.name}` : stage.name,
+                                                                                    description: `Fill out ${
+                                                                                        stage.name
+                                                                                    } details in order to add ${steps[0].data.toLowerCase()} to catalog`,
+                                                                                    data: stage.fields,
+                                                                                },
 																			],
 																			steps.length +
 																				1,

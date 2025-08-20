@@ -20,6 +20,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useRootStore, useStepper } from "@/hooks";
+import CsvImport from "../ConnectToDatabase/CsvImport";
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -89,6 +90,7 @@ export const ImportForm = (props) => {
 		useState(false);
 
 	const watchedFieldRef = useRef({});
+	const name = fields[0].fieldName;
 
 	//** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
 	const {
@@ -931,6 +933,12 @@ export const ImportForm = (props) => {
 													/>
 												</StyledDropzoneField>
 											);
+										} else if (
+                                            val.options.component ===
+                                            'CSV-file-upload'
+                                        ) {
+                                            return <CsvImport></CsvImport>;
+                                        
 										}
 									}}
 								/>
@@ -1210,19 +1218,23 @@ export const ImportForm = (props) => {
 							})}
 					</>
 				) : null}
-				<StyledFlexEnd>
-					<StyledSubmitButton
-						disabled={formLoading || !isValid}
-						type="submit"
-						variant="contained"
-					>
-						{formLoading ? (
-							<CircularProgress size="1.5em" />
-						) : (
-							`Create ${steps[0].data.toLowerCase()}`
-						)}
-					</StyledSubmitButton>
-				</StyledFlexEnd>
+				{name == 'CSV' ? (
+                    ''
+                ) : (
+                    <StyledFlexEnd>
+                        <StyledSubmitButton
+                            disabled={formLoading}
+                            type="submit"
+                            variant="contained"
+                        >
+                            {formLoading ? (
+                                <CircularProgress size="1.5em" />
+                            ) : (
+                                `Create ${steps[0].data.toLowerCase()}`
+                            )}
+                        </StyledSubmitButton>
+                    </StyledFlexEnd>
+                )}
 			</Stack>
 		</form>
 	);

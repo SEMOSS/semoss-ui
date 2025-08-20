@@ -96,6 +96,7 @@ import VERTEX from "@/assets/img/VERTEX_AI.png";
 import VICUNA from "@/assets/img/VICUNA.jpg";
 import WEVIATE from "@/assets/img/WEVIATE.png";
 import ZIP from "@/assets/img/ZIP.png";
+import FILE_EXCEL from '@/assets/img/file-excel.svg';
 //Vector
 import MICROSOFT from "@/assets/loginProviders/microsoft.png";
 
@@ -9093,22 +9094,29 @@ export const CONNECTION_OPTIONS = {
 			},
 			{
 				name: "CSV",
-				disable: true,
+				disable: false,
 				icon: CSV,
 				fields: [
-					// baseUpload
-					// PredictDataTypes
-					{
-						fieldName: "ZIP",
-						label: "Zip File",
-						defaultValue: null,
-						options: {
-							component: "file-upload",
-						},
-						disabled: true,
-						rules: { required: true },
-					},
-				],
+                    {
+                        fieldName: 'CSV',
+                        label: 'CSV File',
+                        defaultValue: null,
+                        options: {
+                            component: 'CSV-file-upload',
+                            accept: '.csv',
+                        },
+                        disabled: false,
+                        rules: {
+                            required: true,
+                            validate: {
+                                isCSV: (file: File) =>
+                                    file && file.name.endsWith('.csv')
+                                        ? true
+                                        : 'Only CSV files are allowed.',
+                            },
+                        },
+                    },
+                ],
 			},
 			{
 				name: "Excel",
@@ -15562,4 +15570,8 @@ export const SIDEBAR_MENU = {
 			icon: { default: LAYERS, active: LAYERS_SELECTED },
 		},
 	],
+};
+
+ export const CSV_UPLOAD_ICONS = {
+    FILE_EXCEL,
 };
