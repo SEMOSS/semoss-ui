@@ -597,11 +597,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								{selectedMembers.length > 0 && (
 									<Button
 										variant={"outlined"}
+										color="error"
 										onClick={() =>
 											setDeleteMembersModal(true)
 										}
 									>
-										Delete
+										Delete Selected
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -621,7 +622,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						<StyledMemberTable>
 							<Table.Head>
 								<Table.Row>
-									<NameTableCell size="small">
+									<Table.Cell size="small">
 										<Checkbox
 											checked={
 												selectedMembers.length ===
@@ -731,8 +732,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 																	</Typography>
 																</NameIDWrapper>
 															</Stack>
-														</NameIDWrapper>
-													</UserInfoTableCell>
+														</Stack>
+													</Table.Cell>
 													<Table.Cell size="medium">
 														{user.dateadded}
 													</Table.Cell>

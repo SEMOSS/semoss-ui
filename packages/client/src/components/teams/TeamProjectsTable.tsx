@@ -631,11 +631,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 								{selectedProjects.length > 0 && (
 									<Button
 										variant={"outlined"}
+										color="error"
 										onClick={() =>
 											setDeleteProjectsModal(true)
 										}
 									>
-										Delete
+										Delete Selected
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>

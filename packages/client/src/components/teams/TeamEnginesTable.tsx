@@ -661,11 +661,12 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								{selectedEngines.length > 0 && (
 									<Button
 										variant={"outlined"}
+										color="error"
 										onClick={() =>
 											setDeleteEnginesModal(true)
 										}
 									>
-										Delete
+										Delete Selected
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
