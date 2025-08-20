@@ -642,7 +642,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									Engines
 								</StyledTableTitleDiv>
 								<Typography variant="body1">
-									{engines.length} Engines
+									{enginesCount} Engines
 								</Typography>
 							</StyledTableTitleEngineContainer>
 							<StyledSearchButtonContainer>

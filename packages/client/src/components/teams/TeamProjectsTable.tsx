@@ -612,7 +612,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 							<StyledTableTitleDiv>Apps</StyledTableTitleDiv>
 							<StyledTableTitleProjectCountContainer>
 								<Typography variant="body1">
-									{projects.length} Apps
+									{projectCount} Apps
 								</Typography>
 							</StyledTableTitleProjectCountContainer>
 							<StyledSearchButtonContainer>
