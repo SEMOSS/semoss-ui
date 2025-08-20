@@ -72,8 +72,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_LAYOUT,
 		name: "Accordion",
-		activeImage: BLOCK_IMAGES["ACCORDION_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["ACCORDION_HOVER"],
+		activeImage: BLOCK_IMAGES.ACCORDION_ACTIVE,
+		hoverImage: BLOCK_IMAGES.ACCORDION_HOVER,
 		helperText: "Click to expand and collapse sections for more details",
 		json: {
 			widget: "accordion",
@@ -109,8 +109,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_LAYOUT,
 		name: "Popover",
-		activeImage: BLOCK_IMAGES["POPOVER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["POPOVER_HOVER"],
+		activeImage: BLOCK_IMAGES.POPOVER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.POPOVER_HOVER,
 		helperText: "Click or Hover to show the popover",
 		json: {
 			widget: "popover",
@@ -141,8 +141,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_MISC,
 		name: "Theme Block",
 		helperText: "Determine the theme of your page with our Theme Block",
-		activeImage: BLOCK_IMAGES["THEME_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["THEME_HOVER"],
+		activeImage: BLOCK_IMAGES.THEME_ACTIVE,
+		hoverImage: BLOCK_IMAGES.THEME_HOVER,
 		json: {
 			widget: "theme",
 			data: {
@@ -158,8 +158,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Audio Player",
 		helperText: "Play back audio responses or other files",
-		activeImage: BLOCK_IMAGES["AUDIO_PLAYER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["AUDIO_PLAYER_HOVER"],
+		activeImage: BLOCK_IMAGES.AUDIO_PLAYER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.AUDIO_PLAYER_HOVER,
 		json: {
 			widget: "audio-player",
 			data: {
@@ -183,8 +183,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "Divider",
 		helperText: "Separate content with a horizontal line",
-		activeImage: BLOCK_IMAGES["DIVIDER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["DIVIDER_HOVER"],
+		activeImage: BLOCK_IMAGES.DIVIDER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.DIVIDER_HOVER,
 		json: {
 			widget: "divider",
 			data: {
@@ -214,8 +214,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "Ratings ",
 		helperText: "Add an rating to your layout",
-		activeImage: BLOCK_IMAGES["RATING_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["RATING_HOVER"],
+		activeImage: BLOCK_IMAGES.RATING_ACTIVE,
+		hoverImage: BLOCK_IMAGES.RATING_HOVER,
 		json: {
 			widget: "ratings",
 			data: {
@@ -244,8 +244,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Switch",
 		helperText: "Switch between multiple options",
-		activeImage: BLOCK_IMAGES["SWITCH_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["SWITCH_HOVER"],
+		activeImage: BLOCK_IMAGES.SWITCH_ACTIVE,
+		hoverImage: BLOCK_IMAGES.SWITCH_HOVER,
 		json: {
 			widget: "switch",
 			data: {
@@ -279,8 +279,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Time Picker",
 		helperText: "Select a time from a time picker",
-		activeImage: BLOCK_IMAGES["TIME_PICKER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["TIME_PICKER_HOVER"],
+		activeImage: BLOCK_IMAGES.TIME_PICKER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.TIME_PICKER_HOVER,
 		json: {
 			widget: "timepicker",
 			data: {
@@ -318,8 +318,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Button",
 		helperText: "Creates a click event",
-		activeImage: BLOCK_IMAGES["BUTTON_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["BUTTON_HOVER"],
+		activeImage: BLOCK_IMAGES.BUTTON_ACTIVE,
+		hoverImage: BLOCK_IMAGES.BUTTON_HOVER,
 		json: {
 			widget: "button",
 			data: {
@@ -346,8 +346,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Checkbox",
 		helperText: "Add a checkbox for user selection",
-		activeImage: BLOCK_IMAGES["CHECKBOX_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["CHECKBOX_HOVER"],
+		activeImage: BLOCK_IMAGES.CHECKBOX_ACTIVE,
+		hoverImage: BLOCK_IMAGES.CHECKBOX_HOVER,
 		json: {
 			widget: "checkbox",
 			data: {
@@ -370,8 +370,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_INPUT,
 		name: "Radio",
-		activeImage: BLOCK_IMAGES["RADIO_BUTTON_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["RADIO_BUTTON_HOVER"],
+		activeImage: BLOCK_IMAGES.RADIO_BUTTON_ACTIVE,
+		hoverImage: BLOCK_IMAGES.RADIO_BUTTON_HOVER,
 		helperText: "User select between multiple items",
 		json: {
 			widget: "radio",
@@ -401,8 +401,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_LAYOUT,
 		name: "Modal",
-		activeImage: BLOCK_IMAGES["MODAL_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["MODAL_HOVER"],
+		activeImage: BLOCK_IMAGES.MODAL_ACTIVE,
+		hoverImage: BLOCK_IMAGES.MODAL_HOVER,
 		helperText: "Overlay to show more info or action to user",
 		json: {
 			widget: "modal",
@@ -429,8 +429,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Input",
 		helperText: "Add an input box for typing text",
-		activeImage: BLOCK_IMAGES["INPUT_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["INPUT_HOVER"],
+		activeImage: BLOCK_IMAGES.INPUT_ACTIVE,
+		hoverImage: BLOCK_IMAGES.INPUT_HOVER,
 		json: {
 			widget: "input",
 			data: {
@@ -462,8 +462,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Audio Input",
 		helperText: "Input audio from the user",
-		activeImage: BLOCK_IMAGES["AUDIO_INPUT_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["AUDIO_INPUT_HOVER"],
+		activeImage: BLOCK_IMAGES.AUDIO_INPUT_ACTIVE,
+		hoverImage: BLOCK_IMAGES.AUDIO_INPUT_HOVER,
 		json: {
 			widget: "audio-input",
 			data: {
@@ -490,8 +490,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Select",
 		helperText: "Choose an option from a dropdown list",
-		activeImage: BLOCK_IMAGES["SELECT_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["SELECT_HOVER"],
+		activeImage: BLOCK_IMAGES.SELECT_ACTIVE,
+		hoverImage: BLOCK_IMAGES.SELECT_HOVER,
 		json: {
 			widget: "select",
 			data: {
@@ -521,8 +521,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Upload",
 		helperText: "Upload files like documents or images",
-		activeImage: BLOCK_IMAGES["UPLOAD_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["UPLOAD_HOVER"],
+		activeImage: BLOCK_IMAGES.UPLOAD_ACTIVE,
+		hoverImage: BLOCK_IMAGES.UPLOAD_HOVER,
 		json: {
 			widget: "upload",
 			data: {
@@ -551,8 +551,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_LAYOUT,
 		name: "Container",
 		helperText: "Create a layout element for custom design",
-		activeImage: BLOCK_IMAGES["CONTAINER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["CONTAINER_HOVER"],
+		activeImage: BLOCK_IMAGES.CONTAINER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.CONTAINER_HOVER,
 		json: {
 			widget: "container",
 			data: {
@@ -584,8 +584,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_LAYOUT,
 		name: "Flip Card",
 		helperText: "Flip content on hover or click to reveal more information",
-		activeImage: BLOCK_IMAGES["FLIP_CARD_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["FLIP_CARD_HOVER"],
+		activeImage: BLOCK_IMAGES.FLIP_CARD_ACTIVE,
+		hoverImage: BLOCK_IMAGES.FLIP_CARD_HOVER,
 		json: {
 			widget: "flip-card",
 			data: {
@@ -613,8 +613,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "Progress",
 		helperText: "Display progress tracking or status",
-		activeImage: BLOCK_IMAGES["PROGRESS_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["PROGRESS_HOVER"],
+		activeImage: BLOCK_IMAGES.PROGRESS_ACTIVE,
+		hoverImage: BLOCK_IMAGES.PROGRESS_HOVER,
 		json: {
 			widget: "progress",
 			data: {
@@ -634,8 +634,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "Iframe",
 		helperText: "Embed a webpage using a source link",
-		activeImage: BLOCK_IMAGES["IFRAME_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["IFRAME_HOVER"],
+		activeImage: BLOCK_IMAGES.IFRAME_ACTIVE,
+		hoverImage: BLOCK_IMAGES.IFRAME_HOVER,
 		json: {
 			widget: "iframe",
 			data: {
@@ -655,8 +655,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "PDF Viewer",
 		helperText: "Embed a PDF for viewing",
-		activeImage: BLOCK_IMAGES["PDF_VIEWER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["PDF_VIEWER_HOVER"],
+		activeImage: BLOCK_IMAGES.PDF_VIEWER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.PDF_VIEWER_HOVER,
 		json: {
 			widget: "pdfViewer",
 			data: {
@@ -679,8 +679,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "Image",
 		helperText: "Add an image to your layout",
-		activeImage: BLOCK_IMAGES["IMAGE_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["IMAGE_HOVER"],
+		activeImage: BLOCK_IMAGES.IMAGE_ACTIVE,
+		hoverImage: BLOCK_IMAGES.IMAGE_HOVER,
 		json: {
 			widget: "image",
 			data: {
@@ -708,8 +708,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "Icon",
 		helperText: "Add an icon to your layout",
-		activeImage: BLOCK_IMAGES["ICON_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["ICON_HOVER"],
+		activeImage: BLOCK_IMAGES.ICON_ACTIVE,
+		hoverImage: BLOCK_IMAGES.ICON_HOVER,
 		json: {
 			widget: "icon",
 			data: {
@@ -741,8 +741,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Logs",
 		helperText: "Show logs from the notebook",
-		activeImage: BLOCK_IMAGES["LOGS_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["LOGS_HOVER"],
+		activeImage: BLOCK_IMAGES.LOGS_ACTIVE,
+		hoverImage: BLOCK_IMAGES.LOGS_HOVER,
 		json: {
 			widget: "logs",
 			data: {
@@ -760,8 +760,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_LAYOUT,
 		name: "Iterator",
 		helperText: "Render a template for each item in a list/array",
-		activeImage: BLOCK_IMAGES["ITERATOR_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["ITERATOR_HOVER"],
+		activeImage: BLOCK_IMAGES.ITERATOR_ACTIVE,
+		hoverImage: BLOCK_IMAGES.ITERATOR_HOVER,
 		isBeta: true,
 		json: {
 			widget: "iteration",
@@ -784,8 +784,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	},
 	{
 		section: SECTION_ELEMENT,
-		activeImage: BLOCK_IMAGES["CHIP_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["CHIP_HOVER"],
+		activeImage: BLOCK_IMAGES.CHIP_ACTIVE,
+		hoverImage: BLOCK_IMAGES.CHIP_HOVER,
 		name: "Chip",
 		json: {
 			widget: "chip",
@@ -811,8 +811,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Toggle Button",
 		helperText: "Switch between multiple options",
-		activeImage: BLOCK_IMAGES["TOGGLE_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["TOGGLE_HOVER"],
+		activeImage: BLOCK_IMAGES.TOGGLE_ACTIVE,
+		hoverImage: BLOCK_IMAGES.TOGGLE_HOVER,
 		json: {
 			widget: "toggle-button",
 			data: {
@@ -845,8 +845,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Link",
 		helperText: "Access a webpage through a clickable URL",
-		activeImage: BLOCK_IMAGES["LINK_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["LINK_HOVER"],
+		activeImage: BLOCK_IMAGES.LINK_ACTIVE,
+		hoverImage: BLOCK_IMAGES.LINK_HOVER,
 		json: {
 			widget: "link",
 			data: {
@@ -869,8 +869,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Markdown",
 		helperText: "Show text in markdown format",
-		activeImage: BLOCK_IMAGES["MARKDOWN_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["MARKDOWN_HOVER"],
+		activeImage: BLOCK_IMAGES.MARKDOWN_ACTIVE,
+		hoverImage: BLOCK_IMAGES.MARKDOWN_HOVER,
 		json: {
 			widget: "markdown",
 			data: {
@@ -890,8 +890,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_ELEMENT,
 		name: "HTML",
 		helperText: "Write custom HTML manually or with AI assistance",
-		activeImage: BLOCK_IMAGES["HTML_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["HTML_HOVER"],
+		activeImage: BLOCK_IMAGES.HTML_ACTIVE,
+		hoverImage: BLOCK_IMAGES.HTML_HOVER,
 		json: {
 			widget: "html",
 			data: {
@@ -910,8 +910,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text (h1)",
 		helperText: "Display Text in header 1",
-		activeImage: BLOCK_IMAGES["H1_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["H1_HOVER"],
+		activeImage: BLOCK_IMAGES.H1_ACTIVE,
+		hoverImage: BLOCK_IMAGES.H1_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -934,8 +934,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text (h2)",
 		helperText: "Display Text in header 2",
-		activeImage: BLOCK_IMAGES["H2_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["H2_HOVER"],
+		activeImage: BLOCK_IMAGES.H2_ACTIVE,
+		hoverImage: BLOCK_IMAGES.H2_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -958,8 +958,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text (h3)",
 		helperText: "Display Text in header 3",
-		activeImage: BLOCK_IMAGES["H3_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["H3_HOVER"],
+		activeImage: BLOCK_IMAGES.H3_ACTIVE,
+		hoverImage: BLOCK_IMAGES.H3_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -982,8 +982,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text (h4)",
 		helperText: "Display Text in header 4",
-		activeImage: BLOCK_IMAGES["H4_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["H4_HOVER"],
+		activeImage: BLOCK_IMAGES.H4_ACTIVE,
+		hoverImage: BLOCK_IMAGES.H4_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -1006,8 +1006,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text (h5)",
 		helperText: "Display Text in header 5",
-		activeImage: BLOCK_IMAGES["H5_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["H5_HOVER"],
+		activeImage: BLOCK_IMAGES.H5_ACTIVE,
+		hoverImage: BLOCK_IMAGES.H5_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -1030,8 +1030,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text (h6)",
 		helperText: "Display Text in header 6",
-		activeImage: BLOCK_IMAGES["H6_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["H6_HOVER"],
+		activeImage: BLOCK_IMAGES.H6_ACTIVE,
+		hoverImage: BLOCK_IMAGES.H6_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -1054,8 +1054,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_TEXT,
 		name: "Text",
 		helperText: "Show text in a regular paragraph style",
-		activeImage: BLOCK_IMAGES["PARAGRAPH_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["PARAGRAPH_HOVER"],
+		activeImage: BLOCK_IMAGES.PARAGRAPH_ACTIVE,
+		hoverImage: BLOCK_IMAGES.PARAGRAPH_HOVER,
 		json: {
 			widget: "text",
 			data: {
@@ -1084,8 +1084,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Pie Chart",
 		helperText: "Show proportions of a whole",
-		activeImage: BLOCK_IMAGES["PIE_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["PIE_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.PIE_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.PIE_CHART_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -1245,8 +1245,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		name: "Bar Chart",
 		helperText:
 			"Compare cumulative totals and individual segments across categories",
-		activeImage: BLOCK_IMAGES["BAR_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["BAR_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.BAR_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.BAR_CHART_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -1353,10 +1353,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	},
 	{
 		section: SECTION_CHARTS,
-		name: "Scatter Plot",
+		name: "Scatter Plots",
 		helperText: "Show relationships between two variables",
-		activeImage: BLOCK_IMAGES["SCATTER_PLOT_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["SCATTER_PLOT_HOVER"],
+		activeImage: BLOCK_IMAGES.SCATTER_PLOT_ACTIVE,
+		hoverImage: BLOCK_IMAGES.SCATTER_PLOT_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -1535,8 +1535,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Line Chart",
 		helperText: "Show relationships between two variables",
-		activeImage: BLOCK_IMAGES["LINE_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["LINE_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.LINE_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.LINE_CHART_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -1714,8 +1714,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		name: "Bar Chart - Stacked",
 		helperText:
 			"Compare cumulative totals and individual segments across categories",
-		activeImage: BLOCK_IMAGES["STACK_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["STACK_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.STACK_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.STACK_CHART_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -1726,7 +1726,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				option: {
 					title: {
-						text: "",
+						text: "Bar Chart - Stacked",
 						left: "center",
 						top: "top",
 					},
@@ -1927,8 +1927,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_CHARTS,
 		name: "World Map Chart",
-		activeImage: BLOCK_IMAGES["WORLD_MAP_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["WORLD_MAP_HOVER"],
+		activeImage: BLOCK_IMAGES.WORLD_MAP_ACTIVE,
+		hoverImage: BLOCK_IMAGES.WORLD_MAP_HOVER,
 		helperText: "Show data on a map",
 		json: {
 			widget: "e-chart",
@@ -2037,8 +2037,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Gantt Chart",
 		helperText: "Gannt chart for task management",
-		activeImage: BLOCK_IMAGES["GANTT_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["GANTT_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.GANTT_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.GANTT_CHART_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -2121,8 +2121,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Dendrogram Chart",
 		helperText: "Dendrogram chart",
-		activeImage: BLOCK_IMAGES["DENDROGRAM_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["DENDROGRAM_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.DENDROGRAM_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.DENDROGRAM_CHART_HOVER,
 		json: {
 			widget: "e-chart",
 			data: {
@@ -2198,7 +2198,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							initialTreeDepth: -1,
 						},
 					],
-					["_state"]: {
+					"_state": {
 						dimensions: [],
 						facet: [],
 					},
@@ -2222,8 +2222,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Vega",
 		helperText: "Paste JSON to make a custom chart",
-		activeImage: BLOCK_IMAGES["VEGA_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["VEGA_HOVER"],
+		activeImage: BLOCK_IMAGES.VEGA_ACTIVE,
+		hoverImage: BLOCK_IMAGES.VEGA_HOVER,
 		json: {
 			widget: "vega",
 			data: {
@@ -2238,8 +2238,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Dynamic Data Grid",
 		helperText: "Organize and display dynamic data in a tabular format",
-		activeImage: BLOCK_IMAGES["DATA_GRID_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["DATA_GRID_HOVER"],
+		activeImage: BLOCK_IMAGES.DATA_GRID_ACTIVE,
+		hoverImage: BLOCK_IMAGES.DATA_GRID_HOVER,
 		json: {
 			widget: "grid-dynamic-frame",
 			data: {
@@ -2269,8 +2269,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		recentChanges:
 			"If you are looking to build a table with unstructured headers, please use the Dynamic Data Grid block.",
 		helperText: "Organize and display known data in a tabular format",
-		activeImage: BLOCK_IMAGES["DATA_GRID_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["DATA_GRID_HOVER"],
+		activeImage: BLOCK_IMAGES.DATA_GRID_ACTIVE,
+		hoverImage: BLOCK_IMAGES.DATA_GRID_HOVER,
 		json: {
 			widget: "grid",
 			data: {
@@ -2300,8 +2300,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		name: "Grouped Bar Chart",
 		helperText:
 			"Compare individual values across multiple categories side by side",
-		activeImage: BLOCK_IMAGES["BAR_CHART_GROUPED_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["BAR_CHART_GROUPED_HOVER"],
+		activeImage: BLOCK_IMAGES.BAR_CHART_GROUPED_ACTIVE,
+		hoverImage: BLOCK_IMAGES.BAR_CHART_GROUPED_HOVER,
 		json: {
 			widget: "vega",
 			data: {
@@ -2346,8 +2346,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Radial Plot",
 		helperText: "Compare multiple variables relative to a central point",
-		activeImage: BLOCK_IMAGES["RADIAL_PLOT_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["RADIAL_PLOT_HOVER"],
+		activeImage: BLOCK_IMAGES.RADIAL_PLOT_ACTIVE,
+		hoverImage: BLOCK_IMAGES.RADIAL_PLOT_HOVER,
 		json: {
 			widget: "vega",
 			data: {
@@ -2415,8 +2415,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Area Chart",
 		helperText: "Show trends over time with cumulative data",
-		activeImage: BLOCK_IMAGES["AREA_CHART_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["AREA_CHART_HOVER"],
+		activeImage: BLOCK_IMAGES.AREA_CHART_ACTIVE,
+		hoverImage: BLOCK_IMAGES.AREA_CHART_HOVER,
 		json: {
 			widget: "vega",
 			data: {
@@ -2462,8 +2462,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_CHARTS,
 		name: "Area Chart with Gradient",
-		activeImage: BLOCK_IMAGES["AREA_CHART_GRADIENT_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["AREA_CHART_GRADIENT_HOVER"],
+		activeImage: BLOCK_IMAGES.AREA_CHART_GRADIENT_ACTIVE,
+		hoverImage: BLOCK_IMAGES.AREA_CHART_GRADIENT_HOVER,
 		helperText:
 			"Show trends over time with cumulative data in a different style",
 		json: {
@@ -2537,8 +2537,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_CHARTS,
 		name: "Mermaid Chart",
-		activeImage: BLOCK_IMAGES["MERMAIDJS_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["MERMAIDJS_HOVER"],
+		activeImage: BLOCK_IMAGES.MERMAIDJS_ACTIVE,
+		hoverImage: BLOCK_IMAGES.MERMAIDJS_HOVER,
 		helperText: "Customize and display MermaidJS diagrams",
 		json: {
 			widget: "mermaid",
@@ -2549,6 +2549,11 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
                         B-->D;
                         C-->D;
                     `,
+				option: {
+					title: {
+						text: "Mermaid Chart",
+					},
+				},
 			},
 			listeners: {},
 			slots: {} as BlockJSON["slots"],
@@ -2557,8 +2562,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	{
 		section: SECTION_LAYOUT,
 		name: "Sidebar-Menu",
-		activeImage: BLOCK_IMAGES["SIDEBAR_MENU_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["SIDEBAR_MENU_HOVER"],
+		activeImage: BLOCK_IMAGES.SIDEBAR_MENU_ACTIVE,
+		hoverImage: BLOCK_IMAGES.SIDEBAR_MENU_HOVER,
 		helperText:
 			"Use the sidebar to navigate between the tools and components",
 		json: {
@@ -2585,8 +2590,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_INPUT,
 		name: "Slider",
 		helperText: "Allows user to select a value from a specified range",
-		activeImage: BLOCK_IMAGES["SLIDER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["SLIDER_HOVER"],
+		activeImage: BLOCK_IMAGES.SLIDER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.SLIDER_HOVER,
 		json: {
 			widget: "slider",
 			data: {
@@ -2615,8 +2620,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 		section: SECTION_CHARTS,
 		name: "Visualization Filter",
 		helperText: "Filter data based on set criteria",
-		activeImage: BLOCK_IMAGES["VISUALIZATION_FILTER_ACTIVE"],
-		hoverImage: BLOCK_IMAGES["VISUALIZATION_FILTER_HOVER"],
+		activeImage: BLOCK_IMAGES.VISUALIZATION_FILTER_ACTIVE,
+		hoverImage: BLOCK_IMAGES.VISUALIZATION_FILTER_HOVER,
 		json: {
 			widget: "visualization-filter",
 			data: {

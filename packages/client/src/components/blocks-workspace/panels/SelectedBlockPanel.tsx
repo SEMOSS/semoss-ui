@@ -31,7 +31,7 @@ const StyledTitle = styled(Typography)(() => ({
 	textTransform: "capitalize",
 	fontWeight: "bold",
 }));
-const StyledBlockTitle = styled("div")(({ theme }) => ({
+const _StyledBlockTitle = styled("div")(({ theme }) => ({
 	borderRadius: "16px",
 	background: " #EBF4FE",
 	width: "fit-content",
@@ -178,7 +178,7 @@ export interface SelectedBlocksProps {
 	title: string;
 }
 
-const StyledTitleSpan = styled("span")(() => ({
+const _StyledTitleSpan = styled("span")(() => ({
 	color: "var(--Primary-Dark, #1260DD)",
 	fontFamily: "Inter",
 	fontFeatureSettings: "'liga' off, 'clig' off",
@@ -318,7 +318,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 	}, [BlockSettingsRegistry, block ? block.widget : ""]);
 
 	// get the icon
-	const icon = useMemo(() => {
+	const _icon = useMemo(() => {
 		if (
 			!BlockSettingsRegistry ||
 			!block ||
@@ -347,7 +347,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 				color: "success",
 				message: "Successfully copied ID",
 			});
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to copy ID",
@@ -364,14 +364,25 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 	}, [block]);
 
 	const getBlockDisplay = () => {
-		if (block) {
-			return block.data?.variation
-				? (block.data.variation as string).replace('echart-', '').replaceAll("-", " ")
-				: block.widget.replaceAll("-", " ");
-		} else {
-			return "";
-		}
-	};
+    if (block) {
+      const title =
+        block.data?.option &&
+        typeof block.data.option === "object" &&
+        "title" in block.data.option
+          ? (block.data.option as { title?: { text?: string } }).title?.text
+          : undefined;
+      if (title) {
+        return title;
+      }
+      return block.data?.variation
+        ? (block.data.variation as string)
+            .replace("echart-", "")
+            .replaceAll("-", " ")
+        : block.widget.replaceAll("-", " ");
+    } else {
+      return "";
+    }
+  };
 	if (designer.selectedBlocks.length > 1) {
 		return (
 			<Panel>
@@ -526,7 +537,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								variant="fullWidth"
 								value={settingSection}
 								onChange={(
-									e: React.SyntheticEvent,
+									_e: React.SyntheticEvent,
 									val: string,
 								) => {
 									setSettingSection(val);
@@ -553,7 +564,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								role="tabpanel"
 								id={`simple-tabpanel-0`}
 								aria-labelledby={`simple-tab-0`}
-								hidden={settingSection !== 0 ? true : false}
+								hidden={settingSection !== 0}
 							>
 								{contentMenu.length ? (
 									<SelectedMenuSection
@@ -564,7 +575,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 										setAccordion={setContentAccordion}
 									/>
 								) : (
-									<></>
+									null
 								)}
 							</StyledCustomTabPanel>
 						)
@@ -578,7 +589,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								role="tabpanel"
 								id={`simple-tabpanel-1`}
 								aria-labelledby={`simple-tab-1`}
-								hidden={settingSection !== 1 ? true : false}
+								hidden={settingSection  !== 1}
 							>
 								{styleMenu.length ? (
 									<SelectedMenuSection
@@ -589,7 +600,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 										setAccordion={setStyleAccordion}
 									/>
 								) : (
-									<></>
+									null
 								)}
 							</StyledCustomTabPanel>
 						)
