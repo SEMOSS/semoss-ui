@@ -1,9 +1,13 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Env } from "@semoss/sdk/react";
+import { Env, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton, styled } from "@semoss/ui";
+
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
 
 const StyledContent = styled("div")(() => ({
 	display: "flex",
@@ -48,6 +52,15 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
+	// get the metadata
+	const getAppInfo = usePixel<{
+		project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
+	}>(config.app ? `ProjectInfo(project=["${config.app}"]);` : "", {
+		data: {
+			project_type: "",
+		},
+	});
+
 	// Send parameters to iframe
 	useEffect(() => {
 		if (isLoading) {
@@ -77,12 +90,16 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 
 	const url = useMemo(() => {
 		// ignore if no tool
-		if (!config || !config.app) {
+		if (!config || !config.app || getAppInfo.status !== "SUCCESS") {
 			return "";
 		}
 
+		if (getAppInfo.data.project_type === "BLOCKS") {
+			return `${PLATFORM_URL}/#/s/${config.app}/`;
+		}
+
 		return `${Env.MODULE}/public_home/${config.app}/portals/`;
-	}, [config, config?.app]);
+	}, [config, config?.app, getAppInfo.status, getAppInfo.data]);
 
 	if (!config) {
 		return <div>No Tool</div>;
@@ -90,7 +107,7 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 
 	return (
 		<StyledContent>
-			{isLoading && (
+			{(!url || isLoading) && (
 				<StyledIframeSkeleton
 					variant="rectangular"
 					width="100%"
