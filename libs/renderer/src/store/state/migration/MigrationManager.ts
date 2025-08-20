@@ -12,13 +12,14 @@ import migrate__1_0_0_alpha_10_to_1_0_0_alpha_11 from "./migrate__1_0_0_alpha_10
 import migrate__1_0_0_alpha_11_to_1_0_0_alpha_12 from "./migrate__1_0_0_alpha_11__to___1_0_0_alpha_12";
 import migrate__1_0_0_alpha_12_to_1_0_0_alpha_13 from "./migrate__1_0_0_alpha_12__to___1_0_0_alpha_13";
 import migrate__1_0_0_alpha_13__to_1_0_0_alpha_14 from "./migrate__1_0_0_alpha_13__to___1_0_0_alpha_14";
+import migrate__1_0_0_alpha_14__to_1_0_0_alpha_15 from "./migrate__1_0_0_alpha_14__to_1_0_0_alpha_15";
 import type { Migration, MigrationState } from "./migration.types";
 
 // TODO: ANYTIME VERSION CHANGES
 // 1. Update Template Apps
 // 2. Update Agent Builder
 
-export const STATE_VERSION = "1.0.0-alpha.14";
+export const STATE_VERSION = "1.0.0-alpha.15";
 
 export class MigrationManager {
 	/**
@@ -58,6 +59,8 @@ export class MigrationManager {
 			migrate__1_0_0_alpha_12_to_1_0_0_alpha_13,
 		[migrate__1_0_0_alpha_13__to_1_0_0_alpha_14.versionFrom]:
 			migrate__1_0_0_alpha_13__to_1_0_0_alpha_14,
+		[migrate__1_0_0_alpha_14__to_1_0_0_alpha_15.versionFrom]:
+			migrate__1_0_0_alpha_14__to_1_0_0_alpha_15,
 	};
 
 	/**

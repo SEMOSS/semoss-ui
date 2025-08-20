@@ -542,6 +542,43 @@ export function getShowFieldOptions(id: string) {
 }
 
 /**
+ *
+ * @param description - Description to be shown in accordion
+ * @param label - input label
+ * @param path - path to update
+ * @returns
+ */
+export const buildLoadingFields = (
+	description,
+	label,
+	path,
+): {
+	description: string;
+	render: ({ id }: { id: string }) => JSX.Element;
+}[] => {
+	return [
+		{
+			description: "Show Loading",
+			render: ({ id }) => (
+				<QueryInputSettings
+					id={id}
+					label={"Load state"}
+					path={"loading"}
+					defaultPathMap={{
+						...trueSegment,
+						...falseSegment,
+					}}
+				/>
+			),
+		},
+	];
+};
+
+// -----------------------------------
+// TODO: Why cant we generecize below
+// -----------------------------------
+
+/**
  * Show field for the block which contains both static true & false, with other variables and send the field
  */
 export const buildShowField = <D extends BlockDef = BlockDef>() => [

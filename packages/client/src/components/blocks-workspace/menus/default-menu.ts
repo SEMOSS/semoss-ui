@@ -563,6 +563,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					gap: "8px",
 					flexWrap: "wrap",
 				},
+				loading: false,
+				loadType: "Skeleton",
 				show: "true",
 				boxShadowParts: {
 					offsetX: "",
