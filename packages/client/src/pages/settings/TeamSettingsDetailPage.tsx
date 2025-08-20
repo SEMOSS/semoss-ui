@@ -1,4 +1,4 @@
-import { useLocation, useParams, useSearchParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { styled } from "@semoss/ui";
 import {
 	TeamEnginesTable,
@@ -14,6 +14,7 @@ const StyledContainer = styled("div")(({ theme }) => ({
 	flexDirection: "column",
 	alignItems: "flex-start",
 	gap: theme.spacing(2),
+	paddingBottom: "16px",
 }));
 
 const StyledContent = styled("div")(({ theme }) => ({
