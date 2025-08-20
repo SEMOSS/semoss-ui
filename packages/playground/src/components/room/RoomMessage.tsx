@@ -104,7 +104,7 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 
 			notification.add({
 				color: "success",
-				message: "Succesfully copied to clipboard",
+				message: "Successfully copied to clipboard",
 			});
 		} catch (e) {
 			notification.add({
@@ -124,7 +124,7 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 
 			notification.add({
 				color: "success",
-				message: "Succesfully saved feedback",
+				message: "Successfully saved feedback",
 			});
 		} catch (e) {
 			notification.add({
@@ -143,7 +143,7 @@ export const RoomMessage: React.FC<RoomMessageProps> = observer((props) => {
 			// await room.recordFeedback(message, rating);
 			// notification.add({
 			// 	color: "success",
-			// 	message: "Succesfully saved feedback",
+			// 	message: "Successfully saved feedback",
 			// });
 		} catch (e) {
 			notification.add({
