@@ -366,8 +366,44 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 		};
 
         const updateDataLimit  = (query: string) :string => {
-            return query.replace(/Limit\s*\(\s*\-*\d+\s*\)/, `Limit ( ${cell.parameters.dataLimit || -1} )`);
+            return query.replace(/Limit\s*\(\s*-*\d+\s*\)/, `Limit ( ${cell.parameters.dataLimit || -1} )`);
         }
+
+		const handleDataLimitUpdate = (e: React.ChangeEvent<HTMLInputElement>) => {
+			let value = parseInt(e.target.value);
+			if (Number.isNaN(value)) {
+				value = -1;
+			} else {
+				if (value <= 0) {
+					value = 1;
+				}
+				if (value >= 10000) {
+					value = 10000;
+				}
+			}
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.dataLimit",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: value,
+				},
+			});
+			const updatedSelectQuery = updateDataLimit(
+				cell.parameters.selectQuery,
+			);
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.selectQuery",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: updatedSelectQuery,
+				},
+			});
+			setDataLimit(value === -1 ? null : value);
+		};
 
 		return (
 			<StyledContent>
@@ -433,12 +469,11 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 					{showStyledView ? (
 						<>
 							<StyledFlexDiv>
-								{cell.parameters.tableNames &&
-									cell.parameters.tableNames.map(
-										(tableName, tableIdx) => (
+								{cell.parameters.tableNames?.map(
+										(tableName) => (
 											<Tooltip
 												title={`${tableName} Table`}
-												key={tableIdx}
+												key={`${tableName}`}
 											>
 												<StyledTableTitleBubble>
 													<StyledCalendarViewMonth fontSize="small" />
@@ -451,11 +486,11 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
 							{isExpanded &&
 								cell.parameters.joins &&
-								cell.parameters.joins.map((join, joinIdx) => (
+								cell.parameters.joins.map((join) => (
 									<StyledBlockStack
 										direction="column"
 										spacing={1}
-										key={joinIdx}
+										key={`${join.leftTable}-${join.joinType}}`}
 									>
 										<StyledModalTitleWrapper>
 											<StyledPaddedFlexDiv>
@@ -556,34 +591,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
                                 size="small"
                                 label="Data Limit"
                                 value={dataLimit}
-                                InputProps={{ inputProps: { min: 1, max: 10000 } }}
-                                onChange={(e) => {
-                                    let value = parseInt(e.target.value);
-                                    if (isNaN(value)) {
-                                        value = -1;
-                                    }
-                                    if(value===0){value=1;}
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            path: "parameters.dataLimit",
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            value: value,
-                                        },
-                                    });
-                                let updatedSelectQuery = updateDataLimit(cell.parameters.selectQuery);
-                                    state.dispatch({
-                                        message: ActionMessages.UPDATE_CELL,
-                                        payload: {
-                                            path: "parameters.selectQuery",
-                                            queryId: cell.query.id,
-                                            cellId: cell.id,
-                                            value: updatedSelectQuery,
-                                        }
-                                    });
-                                    setDataLimit((prevValue)=> value===-1 ? null : value);
-                                }}
+                                onChange={handleDataLimitUpdate}
                             />
 							<Button
 								variant={"text"}

@@ -51,8 +51,8 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 					<Table.Head>
 						<Table.Row>
 							{getData.status === "SUCCESS" &&
-								getData.data.data.headers.map((h, hIdx) => (
-									<Table.Cell key={hIdx}>{h}</Table.Cell>
+								getData.data.data.headers.map((h, _hIdx) => (
+									<Table.Cell key={`${h}`}>{h}</Table.Cell>
 								))}
 						</Table.Row>
 					</Table.Head>
@@ -69,9 +69,9 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 						)}
 						{getData.status === "SUCCESS" &&
 							getData.data.data.values.map((r, rIdx) => (
-								<Table.Row key={rIdx}>
-									{r.map((v, vIdx) => (
-										<Table.Cell key={`${rIdx}-${vIdx}`}>
+								<Table.Row key={`${r[rIdx]}`}>
+									{r.map((v) => (
+										<Table.Cell key={`${v}`}>
 											{v}
 										</Table.Cell>
 									))}
