@@ -4,10 +4,9 @@ import {
 	CheckCircle,
 	ContentCopy,
 	Delete,
-	Error,
+	Error as ErrorIcon,
 	KeyboardArrowRight,
 	LibraryAdd,
-	LowPriority,
 	MoreVert,
 	Pending,
 	PlayArrowRounded,
@@ -19,7 +18,6 @@ import { ActionMessages, useBlocks } from "@semoss/renderer";
 import {
 	ButtonGroup,
 	Card,
-	Chip,
 	CircularProgress,
 	Collapse,
 	type CustomShapeOptions,
@@ -67,7 +65,7 @@ const StyledStackTwo = styled(Stack)(({ theme }) => ({
 	},
 }));
 
-const StyledName = styled(Typography)(({ theme }) => ({}));
+const StyledName = styled(Typography)(() => ({}));
 
 const StyledCellActions = styled(Collapse)(({ theme }) => ({
 	position: "absolute",
@@ -92,11 +90,11 @@ const StyledCollapseStack = styled("div")(({ theme }) => ({
 	alignItems: "start",
 }));
 
-const StyledActionsCollapseStack = styled(StyledCollapseStack)(({ theme }) => ({
+const StyledActionsCollapseStack = styled(StyledCollapseStack)(() => ({
 	marginTop: "0px !important",
 }));
 
-const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
+const StyledRunIconButton = styled(IconButton)(() => ({
 	padding: 0,
 	width: "35px",
 	display: "flex",
@@ -161,17 +159,13 @@ const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
 	border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledIdChip = styled(Chip)(({ theme }) => ({
-	height: theme.spacing(3.5),
-}));
-
 const StyledSidebar = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "row",
 	cursor: "pointer",
 	gap: theme.spacing(1),
 }));
-const StyledExpandContainer = styled("div")(({ theme }) => ({
+const StyledExpandContainer = styled("div")(() => ({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
@@ -304,7 +298,7 @@ export const NotebookCell = observer(
 		]);
 
 		useEffect(() => {
-			if (cell.isExecuted == false) {
+			if (cell.isExecuted === false) {
 				setLocalCellPlayNumber(null);
 			} else {
 				const newPlayCount = cellPlayCounter + 1;
@@ -320,20 +314,20 @@ export const NotebookCell = observer(
 			}
 		}, [cellPlayCounter]);
 
-		const cellOrderNumber = useMemo(() => {
-			const nbCellList = state.queries[cell.query.id].cellList;
+		// const cellOrderNumber = useMemo(() => {
+		// 	const nbCellList = state.queries[cell.query.id].cellList;
 
-			let matchIndex = 0;
-			nbCellList.forEach((c, i) => {
-				if (c.id === cell.id) matchIndex = i;
-			});
+		// 	let matchIndex = 0;
+		// 	nbCellList.forEach((c, i) => {
+		// 		if (c.id === cell.id) matchIndex = i;
+		// 	});
 
-			return matchIndex + 1;
-		}, [
-			cell.id,
-			cell.query.list.indexOf(cell.id),
-			cell.query.cellList.length,
-		]);
+		// 	return matchIndex + 1;
+		// }, [
+		// 	cell.id,
+		// 	cell.query.list.indexOf(cell.id),
+		// 	cell.query.cellList.length,
+		// ]);
 
 		/**
 		 * Create a duplicate cell
@@ -449,7 +443,7 @@ export const NotebookCell = observer(
 			} else if (cell.isSuccessful) {
 				return <CheckCircle color="success" />;
 			} else if (cell.isError) {
-				return <Error color="error" />;
+				return <ErrorIcon color="error" />;
 			} else {
 				return <Pending color="disabled" />;
 			}
@@ -460,7 +454,7 @@ export const NotebookCell = observer(
 				const currentCellIndex = query.list.indexOf(cell.id);
 				const allCells = query.list;
 
-				allCells.slice(currentCellIndex).forEach((currCellId, idx) => {
+				allCells.slice(currentCellIndex).forEach((currCellId) => {
 					state.dispatch({
 						message: ActionMessages.RUN_CELL,
 						payload: {
@@ -480,7 +474,7 @@ export const NotebookCell = observer(
 				const allCells = query.list;
 				allCells
 					.slice(0, currentCellIndex)
-					.forEach((currCellId, idx) => {
+					.forEach((currCellId) => {
 						state.dispatch({
 							message: ActionMessages.RUN_CELL,
 							payload: {
@@ -659,7 +653,9 @@ export const NotebookCell = observer(
 								)}
 								<StyledButtonGroupButton
 									title="Delete cell"
-									disabled={cell.isLoading}
+									disabled={
+										cell.isLoading || query.list.length <= 1
+									}
 									size="small"
 									onClick={(e) => {
 										e.stopPropagation();
@@ -733,7 +729,7 @@ export const NotebookCell = observer(
 								</StyledExpandContainer>
 							</StyledCollapseStack>
 							{cell.isExecuted &&
-								cell.parameters.type != "markdown" && (
+								cell.parameters.type !== "markdown" && (
 									<StyledActionsCollapseStack
 										id={`notebook-cell-${queryId}-${cellId}-card-actions-collapse`}
 										ref={targetActionsCollapseRef}
@@ -756,7 +752,7 @@ export const NotebookCell = observer(
 					</StyledSidebar>
 					<StyledCard
 						isCardCellSelected={
-							(notebook?.selectedCell?.id ?? "") == cell.id
+							(notebook?.selectedCell?.id ?? "") === cell.id
 						}
 						onClick={() => {
 							notebook.selectCell(cell.query.id, cell.id);
@@ -796,14 +792,14 @@ export const NotebookCell = observer(
 							</StyledRunIconButton>
 							<StyledCardInput>{rendered}</StyledCardInput>
 						</StyledCardContent>
-						{cell.parameters.type != "markdown" && (
+						{cell.parameters.type !== "markdown" && (
 							<>
 								{cell.widget === "code" ? (
 									<>
 										{cell.messages.length > 0 && (
 											<>
 												{(notebook?.selectedCell?.id ??
-													"") == cell.id && (
+													"") === cell.id && (
 													<Divider />
 												)}
 												<StyledCardActions
@@ -861,7 +857,7 @@ export const NotebookCell = observer(
 											!cell.messages.length && (
 												<>
 													{(notebook?.selectedCell
-														?.id ?? "") ==
+														?.id ?? "") ===
 														cell.id && <Divider />}
 													<StyledCardActions
 														id={`notebook-cell-${queryId}-${cellId}-card-actions`}
@@ -920,7 +916,7 @@ export const NotebookCell = observer(
 										{cell.isExecuted && (
 											<>
 												{(notebook?.selectedCell?.id ??
-													"") == cell.id && (
+													"") === cell.id && (
 													<Divider />
 												)}
 												<StyledCardActions
