@@ -175,7 +175,7 @@ function CsvImport() {
                     (file) =>
                         `PredictDataTypes(filePath=["${file.fileLocation}"], delimiter=["${delimiter}"], rowCount=[false])`,
                 );
-            } else if (selectedMetaModelType === 'asSuggestedMetamodel') {
+            } else if (selectedMetaModelType === 'asSuggestedMetaModel') {
                 pixelExpressions = upload.map(
                     (file) =>
                         `PredictMetamodel(filePath=["${file.fileLocation}"], delimiter=["${delimiter}"], rowCount=[false])`,
