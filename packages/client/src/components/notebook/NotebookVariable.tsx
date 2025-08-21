@@ -145,7 +145,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
 			notification.add({
 				color: "success",
-				message: "Succesfully copied to clipboard",
+				message: "Successfully copied to clipboard",
 			});
 		} catch (e) {
 			notification.add({
@@ -348,7 +348,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 															? "success"
 															: "error",
 														message: success
-															? `Succesfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
+															? `Successfully renamed variable ${id} to ${newTokenAlias}, remember to save your app.`
 															: `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
 													});
 

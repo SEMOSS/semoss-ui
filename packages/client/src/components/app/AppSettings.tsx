@@ -541,7 +541,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 			notification.add({
 				color: "success",
-				message: "Succesfully Updated Project",
+				message: "Successfully Updated Project",
 			});
 
 			reset();
