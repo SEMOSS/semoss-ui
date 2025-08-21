@@ -1,6 +1,7 @@
 import { HighlightAlt } from "@mui/icons-material";
 import { ContainerLayoutSettings } from "../../settings";
 import { SelectInputSettings } from "../../settings/shared/SelectInputSettings";
+import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
 import { SizeSettings } from "../../settings/shared/SizeSettings";
 import { BLOCK_TYPE_LAYOUT } from "../block-defaults.constants";
 import {
@@ -22,6 +23,15 @@ export const config: BlockSettingsConfig = {
 		{
 			name: "Conditional",
 			children: [...buildShowField()],
+		},
+		{
+			name: "Loading",
+			children: [
+				{
+					description: "Show Loading",
+					render: ({ id }) => <ShowLoadingSettings id={id} />,
+				},
+			],
 		},
 		{
 			name: "Pre Process",
