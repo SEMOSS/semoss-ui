@@ -49,6 +49,7 @@ export enum ActionMessages {
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+	MODIFY_VARIABLE = "MODIFY_VARIABLE"
 }
 
 export type Actions =
@@ -78,7 +79,8 @@ export type Actions =
 	| RenameVariableAction
 	| EditVariableAction
 	| DeleteVariableAction
-	| SetSheetExecutionOrderAction;
+	| SetSheetExecutionOrderAction
+	| ModifyVariableAction;
 
 
 /**
@@ -358,4 +360,13 @@ export interface RunMarkdownCellAction extends Action {
 		cellId: string;
 		marked: boolean;
 	};
+}
+
+export interface ModifyVariableAction extends Action {
+	message: ActionMessages.MODIFY_VARIABLE;
+	payload: {
+		blockId: string;
+		variable: string;
+		value: unknown;
+	}
 }

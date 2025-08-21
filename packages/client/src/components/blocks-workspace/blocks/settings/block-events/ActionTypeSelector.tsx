@@ -34,6 +34,7 @@ export const ActionTypeSelector = ({
 						ActionMessages.DISPATCH_EVENT,
 						ActionMessages.DISPATCH_OUTPUTS_EVENT,
 						ActionMessages.DISPATCH_OPEN_EVENT,
+						ActionMessages.MODIFY_VARIABLE
 					].map((action, index) => (
 						<Select.Item key={index} value={action}>
 							{ACTIONS_DISPLAY[action]}

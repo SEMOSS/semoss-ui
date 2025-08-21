@@ -115,6 +115,7 @@ export const ListenerActionOverlay = observer(
 							queryId={queryId}
 							destinationType={destinationType}
 							pages={pages}
+							id={id}
 						/>
 					</Stack>
 				</Modal.Content>

@@ -3,6 +3,7 @@ import { BlockEventNameSelector } from "./BlockEventNameSelector";
 import { CellIdSelector } from "./CellIdSelector";
 import { QueryIdSelector } from "./QueryIdSelector";
 import { RedirectDestinationSelector } from "./RedirectDestinationSelector";
+import { ModifyVariableSelector } from "./ModifyVariableSelector";
 
 interface ActionFormFieldsProps {
 	message: ActionMessages;
@@ -13,6 +14,7 @@ interface ActionFormFieldsProps {
 	queryId: string;
 	destinationType: string;
 	pages: any[];
+	id: string;
 }
 
 export const ActionFormFields = ({
@@ -24,6 +26,7 @@ export const ActionFormFields = ({
 	queryId,
 	destinationType,
 	pages,
+	id
 }: ActionFormFieldsProps) => {
 	const renderFields = () => {
 		switch (message) {
@@ -58,6 +61,15 @@ export const ActionFormFields = ({
 						pages={pages}
 					/>
 				);
+
+			case ActionMessages.MODIFY_VARIABLE:
+				return (
+					<ModifyVariableSelector
+						id={id}
+						control={control}
+						setValue={setValue}
+					 />
+				)
 
 			case ActionMessages.DISPATCH_OUTPUTS_EVENT:
 				return null;
