@@ -443,9 +443,9 @@ export class StateStore {
 			 * --------------------------------------------------
 			 */
 			else if (ActionMessages.ADD_BLOCK === action.message) {
-				const { json, position, isCommunity } = action.payload;
+				const { json, position, isCommunity, communityBlockDependents } = action.payload;
 
-				return this.addBlock(json, position, isCommunity);
+				return this.addBlock(json, position, isCommunity, communityBlockDependents);
 			} else if (ActionMessages.MOVE_BLOCK === action.message) {
 				const { id, position } = action.payload;
 
@@ -868,12 +868,12 @@ export class StateStore {
 		let blockNum = 1;
 		while (
 			this._store.blocks[
-				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
+				`${widget}--${blockNum}`
 			]
 		) {
 			blockNum++;
 		}
-		return `${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`;
+		return `${widget}--${blockNum}`;
 	}
 
 	/**
@@ -1308,12 +1308,13 @@ export class StateStore {
 		json: BlockJSON,
 		position?: AddBlockAction["payload"]["position"],
 		isCommunity?: boolean,
+		communityBlockDependents?: Record<string, Record<string, QueryStateConfig|VariableWithId>>,
 	): string => {
 		// if it is a community block, we need to set up the dependencies
 		let variableContainer = [];
 		if (isCommunity) {
 			const { newJson, variablesList } =
-				this.buildCommunityBlockPreDeps(json);
+				this.buildCommunityBlockPreDeps(json, communityBlockDependents);
 			json = newJson;
 			variableContainer = variablesList;
 		}
@@ -2143,15 +2144,15 @@ export class StateStore {
 	 * @param json - the community block JSON
 	 * @returns an object with the updated community block JSON and the list of variables
 	 */
-	private buildCommunityBlockPreDeps = (json) => {
+	private buildCommunityBlockPreDeps = (json, communityBlockDependents) => {
 		let newJson = json;
 		let variablesList = [];
-		if (json["queries"] || json["variables"]) {
+		if (communityBlockDependents["queries"] || communityBlockDependents["variables"]) {
 			const { placeholderJson, variableStack } =
 				this.dispatchDependencyQueriesAndVars(
 					json,
-					json["queries"],
-					json["variables"],
+					communityBlockDependents["queries"],
+					communityBlockDependents["variables"],
 				);
 			newJson = placeholderJson;
 			variablesList = variableStack;
@@ -2189,7 +2190,7 @@ export class StateStore {
 				 * Create a new query object with the queryId replaced with the newId
 				 * if the queryId already exists in the store
 				 */
-				const newQueryId = `com_${key}_${Math.floor(Math.random() * 1000)}`;
+				const newQueryId = `${key}_${Math.floor(Math.random() * 1000)}`;
 				const newQuery = {
 					queryId: newQueryId,
 					config: value as QueryStateConfig,
@@ -2214,7 +2215,7 @@ export class StateStore {
 					 * Create a new variable object with the to property replaced with the newId
 					 * if the to property already exists in the store
 					 */
-					const newVariableId = `com_${key}_${Math.floor(Math.random() * 1000)}`;
+					const newVariableId = `${key}_${Math.floor(Math.random() * 1000)}`;
 					const newVariable = {
 						...value,
 						id: newVariableId,

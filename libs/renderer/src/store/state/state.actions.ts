@@ -171,6 +171,10 @@ export interface AddBlockAction extends Action {
 					sibling: string;
 			  };
 		isCommunity?: boolean; // Optional flag to indicate if the block is community-based
+		communityBlockDependents?: {
+			queries?: Record<string, QueryStateConfig>;
+			variables?: Record<string, VariableWithId>;
+		};
 	};
 }
 

@@ -303,19 +303,18 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 				state.queries,
 				state.variables,
 			);
-			newClientBlock = {
-				...newClientBlock,
-				queries: result.queries,
-				variables: result.variables,
-			} as typeof newClientBlock & { queries: Dict; variables: Dict };
 
 			const response = await monolithStore.runQuery<[true]>(
-				`AddBlock(name=["${data.name}"], section=["${
-					data.section
-				}"], json=["<encode>${JSON.stringify(
-					newClientBlock,
-				)}</encode>"]);`,
-			);
+                `AddBlock(name=["${data.name}"], section=["${
+                data.section
+                }"], json=["<encode>${JSON.stringify(
+                newClientBlock
+                )}</encode>"], queries=["<encode>${JSON.stringify(
+                result.queries
+                )}</encode>"], variable=["<encode>${JSON.stringify(
+                result.variables
+                )}</encode>"]);`
+            );
 			const { output, operationType } = response.pixelReturn[0];
 
 			if (operationType.indexOf("ERROR") === -1) {

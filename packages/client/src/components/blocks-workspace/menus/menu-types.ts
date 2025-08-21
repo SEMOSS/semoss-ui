@@ -1,4 +1,8 @@
-import type { BlockJSON } from "@semoss/renderer";
+import type {
+	BlockJSON,
+	QueryStateConfig,
+	VariableWithId,
+} from "@semoss/renderer";
 
 export interface DesignerMenuItem {
 	/** Section that the item belongs to */
@@ -49,6 +53,14 @@ export interface DesignerMenuItem {
 	 * Recent changes
 	 */
 	recentChanges?: string;
+	/**
+	 * Dependent queries if its a community block
+	 */
+	queries?: Record<string, QueryStateConfig>;
+	/**
+	 * Dependent variables if its a community block
+	 */
+	variable?: Record<string, VariableWithId>;
 }
 
 export interface FilterCategory {
