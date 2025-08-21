@@ -1,8 +1,8 @@
 // InputForm
 
-import { ExpandLess, ExpandMore, Help } from "@mui/icons-material";
+import { ExpandLess, ExpandMore, } from "@mui/icons-material";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Controller, Form, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -15,7 +15,6 @@ import {
 	Stack,
 	styled,
 	TextField,
-	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
@@ -27,7 +26,7 @@ const StyledFlexEnd = styled("div")(({ theme }) => ({
 	gap: theme.spacing(1),
 }));
 
-const StyledProperty = styled("div")(({ theme }) => ({
+const _StyledProperty = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	flexDirection: "column",
@@ -107,6 +106,7 @@ export const ImportForm = (props) => {
 			return acc;
 		}, {}),
 	});
+	const [focusedField, setFocusedField] = useState("");
 
 	/** Used to Trigger useEffect anytime these vals change */
 	const fieldsToWatch = useMemo(() => {
@@ -238,7 +238,7 @@ export const ImportForm = (props) => {
 				// if they do match the user has not changed the initScript or they manually changed it back
 				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
 				const isMatched =
-					initScriptValueFromCallback == initScriptValueFromTextField;
+					initScriptValueFromCallback === initScriptValueFromTextField;
 				setIsDynamicInputChangedByUser(!isMatched);
 			}, 0);
 		}
@@ -250,7 +250,7 @@ export const ImportForm = (props) => {
 	 * May be combinable with another useEffect
 	 */
 	useEffect(() => {
-		defaultFields.forEach((val, i) => {
+		defaultFields.forEach((val, _i) => {
 			if (val.updateCallback) {
 				setUpdateFieldName(val.fieldName);
 				setInitScriptCallback(
@@ -718,20 +718,22 @@ export const ImportForm = (props) => {
 				{defaultFields.map((val, i) => {
 					if (!val.hidden) {
 						return (
-							<StyledKeyValue key={i}>
+							<StyledKeyValue key={`${val.fieldName}-${val.label}-${i}`}>
 								<Controller
 									name={val.fieldName}
 									control={control}
 									rules={{
 										required: val.rules.required,
 										validate: {
-											...(val.rules.custom && {
-												checkField: async (fieldVal) =>
-													validateFormField(
+											...(val.rules?.custom ? {
+												checkField: async (fieldVal) => {
+													if(focusedField !== val.fieldName) return;
+													return validateFormField(
 														val,
 														fieldVal,
-													),
-											}),
+													);
+												}
+											} : {})
 										},
 										pattern: {
 											...(val.rules.pattern && {
@@ -768,6 +770,12 @@ export const ImportForm = (props) => {
 														field.onChange(value);
 														checkForDynamicFieldChange();
 													}}
+													onFocus={() => {
+														setFocusedField(val.fieldName);
+													}}
+													onBlur={() => {
+														setFocusedField("");
+													}}
 													// InputProps={{
 													//     startAdornment:
 													//         val.helperText ? (
@@ -788,7 +796,7 @@ export const ImportForm = (props) => {
 													// }}
 													helperText={
 														invalid
-															? error?.type ==
+															? error?.type ===
 																"checkField"
 																? val.rules
 																		.custom
@@ -827,6 +835,12 @@ export const ImportForm = (props) => {
 													inputProps={{
 														"data-testid": `importForm-textField-${val.fieldName}`,
 													}}
+													onFocus={() => {
+														setFocusedField(val.fieldName);
+													}}
+													onBlur={() => {
+														setFocusedField("");
+													}}
 													helperText={val.helperText}
 												></TextField>
 											);
@@ -853,6 +867,14 @@ export const ImportForm = (props) => {
 															value.target.value,
 														);
 													}}
+													SelectProps={{
+															onFocus: ()=>{
+																setFocusedField(val.fieldName);
+															},
+															onBlur: () => {
+																setFocusedField("");
+															}
+													}}
 													InputProps={{
 														"data-testid": `importForm-selectField-${val.fieldName}`,
 													}}
@@ -862,7 +884,7 @@ export const ImportForm = (props) => {
 														(opt, i) => {
 															return (
 																<Menu.Item
-																	key={i}
+																	key={`${opt.value}-${i}`}
 																	value={
 																		opt.value
 																	}
@@ -904,6 +926,12 @@ export const ImportForm = (props) => {
 													inputProps={{
 														"data-testid": `importForm-textField-${val.fieldName}`,
 													}}
+													onFocus={() => {
+														setFocusedField(val.fieldName);
+													}}
+													onBlur={() => {
+														setFocusedField("");
+													}}
 												></TextField>
 											);
 										} else if (
@@ -927,6 +955,7 @@ export const ImportForm = (props) => {
 															field.onChange(
 																newValues,
 															);
+															setFocusedField(val.fieldName);
 														}}
 													/>
 												</StyledDropzoneField>
@@ -962,7 +991,7 @@ export const ImportForm = (props) => {
 							advancedFields.map((val, i) => {
 								if (!val.hidden) {
 									return (
-										<StyledKeyValue key={i}>
+										<StyledKeyValue key={`${val.fieldName}-${i}`}>
 											<Controller
 												name={val.fieldName}
 												control={control}
@@ -971,7 +1000,7 @@ export const ImportForm = (props) => {
 													field,
 													fieldState,
 												}) => {
-													const hasError =
+													const _hasError =
 														fieldState.error;
 													if (
 														val.options
@@ -1165,7 +1194,7 @@ export const ImportForm = (props) => {
 																		return (
 																			<Menu.Item
 																				key={
-																					i
+																					`${opt.value}-${i}`
 																				}
 																				value={
 																					opt.value
