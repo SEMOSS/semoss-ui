@@ -1,5 +1,6 @@
 import { FormatListBulleted } from "@mui/icons-material";
 import { QueryInputSettings } from "../../settings";
+import { ShowLoadingSettings } from "../../settings/shared/ShowLoadingSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
@@ -41,6 +42,15 @@ export const config: BlockSettingsConfig = {
 							path="isStreaming"
 						/>
 					),
+				},
+			],
+		},
+		{
+			name: "Loading",
+			children: [
+				{
+					description: "Show Loading",
+					render: ({ id }) => <ShowLoadingSettings id={id} />,
 				},
 			],
 		},
