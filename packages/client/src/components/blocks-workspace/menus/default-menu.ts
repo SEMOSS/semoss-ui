@@ -53,7 +53,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				showExpandIcon: false,
 				activeTab: 1,
 				show: "true",
-				tabLabels: ["Tab 1", "Tab 2"]
+				tabLabels: ["Tab 1", "Tab 2"],
 			},
 			listeners: {
 				preProcess: {
@@ -63,7 +63,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				onChange: {
 					type: "sync",
 					order: [],
-				}
+				},
 			},
 			slots: {
 				"1": [],
@@ -118,14 +118,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				contentBgColor: "",
 				showExpandIcon: false,
 				show: "true",
-				// -------------------------------------------
-				// John B:
-				// We may need to track styles differently.
-				// Can handle this in a migration function
-				// accordionStyles:
-				// accordionHeaderStyles:
-				// accordionContentStyles:
-				// -------------------------------------------
 			},
 			listeners: {
 				preProcess: {
@@ -597,6 +589,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					flexWrap: "wrap",
 				},
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 				boxShadowParts: {
 					offsetX: "",
 					offsetY: "",
@@ -912,6 +906,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				markdown: "**Hello world**",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -956,6 +952,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h1",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -980,6 +978,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h2",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1004,6 +1004,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h3",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1028,6 +1030,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h4",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1052,6 +1056,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h5",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1076,6 +1082,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h6",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1100,6 +1108,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "p",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -2701,6 +2711,8 @@ export const CLIENT_BLOCKS_MENU = [
 					gap: "px",
 					flexWrap: "wrap",
 				},
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {},
 			slots: {
@@ -2715,6 +2727,8 @@ export const CLIENT_BLOCKS_MENU = [
 							},
 							text: "Contact Information",
 							variant: "p",
+							loading: false,
+							loadType: "Skeleton",
 						},
 						listeners: {},
 						slots: {},
@@ -2730,6 +2744,8 @@ export const CLIENT_BLOCKS_MENU = [
 								flexWrap: "wrap",
 								border: "2px dotted #4a4a4a",
 							},
+							loading: false,
+							loadType: "Skeleton",
 						},
 						listeners: {},
 						slots: {
@@ -2747,6 +2763,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -2763,6 +2781,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2810,6 +2830,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2861,6 +2883,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -2877,6 +2901,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2924,6 +2950,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2975,6 +3003,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -3039,6 +3069,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3091,6 +3123,8 @@ export const CLIENT_BLOCKS_MENU = [
 											justifyContent: "left",
 											alignItems: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -3106,6 +3140,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "32%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3152,6 +3188,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "32%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3199,6 +3237,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "33%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3726,7 +3766,8 @@ export const CLIENT_BLOCKS_MENU = [
 					flexWrap: "wrap",
 					border: "4px solid ",
 				},
-				route: "container--6732",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {},
 			slots: {
@@ -3741,6 +3782,8 @@ export const CLIENT_BLOCKS_MENU = [
 							},
 							text: "Grouped Component",
 							variant: "h1",
+							loading: false,
+							loadType: "Skeleton",
 						},
 						listeners: {},
 						slots: {},
