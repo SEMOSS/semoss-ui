@@ -2,6 +2,7 @@ import { config as AccordionSettingsConfig } from "./block-settings/accordion-bl
 import { config as AudioSettingsConfig } from "./block-settings/audio-block";
 import { config as AudioInputSettingsConfig } from "./block-settings/audio-input-block";
 import { config as ButtonSettingsConfig } from "./block-settings/button-block";
+import { config as CalendarViewSettingsConfig } from "./block-settings/calendarview-block";
 import { config as CheckboxSettingsConfig } from "./block-settings/checkbox-block";
 import { config as ChipSettingsConfig } from "./block-settings/chip-block";
 import { config as ContainerSettingsConfig } from "./block-settings/container-block";
@@ -46,6 +47,7 @@ export const BlockSettingsRegistry = {
 	["audio-player"]: AudioSettingsConfig,
 	["audio-input"]: AudioInputSettingsConfig,
 	["button"]: ButtonSettingsConfig,
+	["calendarviewtext"]: CalendarViewSettingsConfig,
 	["checkbox"]: CheckboxSettingsConfig,
 	["chip"]: ChipSettingsConfig,
 	["container"]: ContainerSettingsConfig,

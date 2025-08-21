@@ -7,6 +7,7 @@
 export { BorderSettings } from "./BorderSettings";
 export { ChipSettings } from "./ChipSettings";
 export { ContainerLayoutSettings } from "./ContainerLayoutSettings";
+export { CalendarViewSettings } from './CalendarViewSettings';
 export * from "./data-grid";
 export { FontSizeSettings } from "./FontSizeSettings";
 export { GridSettings } from "./grid";
