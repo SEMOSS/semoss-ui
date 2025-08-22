@@ -68,6 +68,22 @@ export const config: BlockSettingsConfig = {
 						/>
 					),
 				},
+				{
+					description: "Login Type",
+					render: ({ id }) => (
+						<SelectInputSettings
+							id={id}
+							label="Login Type"
+							path="loginType"
+							options={[
+								{
+									value: "google",
+									display: "Google",
+								},
+							]}
+						/>
+					),
+				},
 			],
 		},
 		{

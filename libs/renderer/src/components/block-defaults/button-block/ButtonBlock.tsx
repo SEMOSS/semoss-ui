@@ -66,9 +66,9 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 		}
 	}, []);
 
-	const Login = async () => {
+	const Login = async (provider) => {
 		try {
-			const response = await oauth("google");
+			const response = await oauth(provider);
 			if (response.name) {
 				notification.add({
 					color: "success",
@@ -106,7 +106,7 @@ export const ButtonBlock: BlockComponent = observer(({ id }) => {
 				}}
 				onClick={() => {
 					if (data.type === "login") {
-						Login();
+						Login(data.label);
 					} else {
 						listeners.onClick();
 					}
