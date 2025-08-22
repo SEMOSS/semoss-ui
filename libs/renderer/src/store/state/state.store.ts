@@ -1226,59 +1226,6 @@ export class StateStore {
 		this._store.version = state.version ? state.version : STATE_VERSION;
 	};
 
-	private buildDependencyGraph = (json, nodes = {}, edges = []) => {
-		if (typeof json === "object" && json !== null) {
-			for (const [key, value] of Object.entries(json)) {
-				// If the key is 'id', treat it as a node
-				if (key === "id" && typeof value === "string") {
-					if (!nodes[value]) {
-						nodes[value] = {
-							id: value,
-							data: { label: value },
-							position: {
-								x: Math.random() * 400,
-								y: Math.random() * 400,
-							},
-						};
-					}
-				}
-				// If value is a string, look for dependencies
-				if (typeof value === "string") {
-					const deps = this.extractDependenciesFromString(value);
-					if (json.id && deps.length) {
-						deps.forEach((dep) => {
-							if (!nodes[dep]) {
-								nodes[dep] = {
-									id: dep,
-									data: { label: dep },
-									position: {
-										x: Math.random() * 400,
-										y: Math.random() * 400,
-									},
-								};
-							}
-							edges.push({
-								id: `e${json.id}-${dep}`,
-								source: json.id,
-								target: dep,
-							});
-						});
-					}
-				}
-				// Recurse into objects/arrays
-				if (typeof value === "object") {
-					this.buildDependencyGraph(value, nodes, edges);
-				}
-			}
-		} else if (Array.isArray(json)) {
-			json.forEach((item) =>
-				this.buildDependencyGraph(item, nodes, edges),
-			);
-		}
-
-		return { nodes: Object.values(nodes), edges };
-	};
-
 	/**
 	 * Create a block and add it to the tree
 	 * @param json - json of the block that we are adding
