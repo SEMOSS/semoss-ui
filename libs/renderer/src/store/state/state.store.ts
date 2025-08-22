@@ -551,7 +551,7 @@ export class StateStore {
 
 				console.log('parsed', parsed)
 
-				// this.modifyVariable(variable, value)
+				this.modifyVariable(variable, parsed)
 			}
 		} catch (e) {
 			console.error(e);
@@ -599,6 +599,17 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
+			}  else if (ActionMessages.MODIFY_VARIABLE === action.message) {
+				const { blockId, variable, value } = action.payload;
+				console.log("blockId", blockId)
+				console.log("variable", variable)
+				console.log("value", value)
+
+				const parsed = this.parseVariable(value as string, blockId)
+
+				console.log('parsed', parsed)
+
+				this.modifyVariable(variable, parsed)
 			}
 		} catch (e) {
 			console.error(e);
@@ -2085,6 +2096,10 @@ export class StateStore {
 
 		return token;
 	};
+
+	private modifyVariable = (id: string, value: unknown) => {
+		this._store.variables[id].value = value
+	}
 
 	/**
 	 * Renames variable that can be referenced

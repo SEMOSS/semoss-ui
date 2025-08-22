@@ -16,7 +16,7 @@ export const ModifyVariableSelector = ({
 	useEffect(() => {
 		setValue('payload.blockId', id)
 	}, [id])
-	
+
 	return (
 		<>
 			Send hidden block id with event so it can parse iterator
@@ -32,7 +32,7 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{["variable 1", "Internal"].map((type, index) => (
+						{["row-id", "Internal"].map((type, index) => (
 							<Select.Item key={`${type}-${index}`} value={type}>
 								{type}
 							</Select.Item>
