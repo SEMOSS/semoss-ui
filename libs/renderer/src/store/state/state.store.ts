@@ -54,9 +54,6 @@ interface StateStoreInterface {
 
 	/** Order of how we consume app as API */
 	executionOrder: string[];
-
-	/** Graph to track nodes and edges based on {{}} */
-	dependencyGraph: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -71,9 +68,6 @@ export class StateStoreConfig {
 
 	/** Cells registered to the insight */
 	cellRegistry: CellRegistry;
-
-	/** initial params for our variables can come from query params */
-	initialParams?: Record<string, unknown>;
 }
 
 /**
@@ -90,7 +84,6 @@ export class StateStore {
 		cellRegistry: {},
 		variables: {},
 		executionOrder: [],
-		dependencyGraph: {},
 	};
 
 	/**
@@ -122,7 +115,7 @@ export class StateStore {
 		makeAutoObservable(this);
 
 		// set the initial state after reactive to invoke it
-		this.setState(config.state, config.initialParams);
+		this.setState(config.state);
 	}
 
 	/**
@@ -1128,21 +1121,19 @@ export class StateStore {
 	 */
 	private notifyToolExecution = (response: string) => {
 		if (Env.TOOL) {
-			if (window.parent) {
-				window.parent.postMessage(
-					{
-						type: "SMSS_EXEC_TOOL",
-						tool: {
-							type: "MCP",
-							message: Env.TOOL.message,
-							id: Env.TOOL.id,
-							name: Env.TOOL.name,
-							response: response,
-						},
+			window.parent?.postMessage(
+				{
+					type: "SMSS_EXEC_TOOL",
+					tool: {
+						type: "MCP",
+						message: Env.TOOL.message,
+						id: Env.TOOL.id,
+						name: Env.TOOL.name,
+						response: response,
 					},
-					"*",
-				);
-			}
+				},
+				"*",
+			);
 		}
 	};
 
@@ -1154,10 +1145,7 @@ export class StateStore {
 	 *
 	 * @param state - pixel to execute
 	 */
-	private setState = (
-		state: SerializedState,
-		initialParams?: Record<string, unknown>,
-	) => {
+	private setState = (state: SerializedState) => {
 		// store the block information
 		this._store.blocks = state.blocks;
 
@@ -1193,34 +1181,6 @@ export class StateStore {
 		});
 
 		this._store.executionOrder = order;
-
-		// Replace initial param values provided from URL
-		if (initialParams) {
-			Object.entries(initialParams).forEach((keyValue) => {
-				const key = keyValue[0];
-				const value = keyValue[1];
-
-				const variable = this._store.variables[key];
-
-				if (variable) {
-					// retrieve the "to" value
-					const toValue = variable.to;
-					if (variable.type === "block") {
-						// Look into blocks section
-						if (this._store.blocks[toValue]) {
-							this._store.blocks[toValue].data.value = value;
-						}
-					} else if (
-						variable.type === "cell" ||
-						variable.type === "query"
-					) {
-						// TODO: Handle query and cell types do we just swap output?
-					} else {
-						this._store.variables[key]["value"] = value;
-					}
-				}
-			});
-		}
 
 		// store the version or the one we currently are on
 		this._store.version = state.version ? state.version : STATE_VERSION;
