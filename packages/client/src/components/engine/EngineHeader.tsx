@@ -222,22 +222,19 @@ export const EngineHeader: React.FC = () => {
 				</StyledInfoLeft>
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
-						{active.metadata?.database_created_by ? (
-								<Typography
-									variant="body2"
-									color="disabled"
-								>
-									{`Published by ${active.metadata.database_created_by}`}
-								</Typography>
+						{active.metadata?.PERMISSIONGRANTEDBY ? (
+							<Typography variant={"caption"} color="disabled">
+								{`Published by ${active.metadata.PERMISSIONGRANTEDBY}`}
+							</Typography>
 						) : (
-							
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									No updates since creation
-								</Typography>
-							
+							<Typography variant={"caption"} color="disabled">
+								{`Created by ${active.metadata.database_created_by}`}
+							</Typography>
+						)}
+						{active.metadata?.DATEADDED && (
+							<Typography variant={"caption"} color="disabled">
+								{`on ${active.metadata.DATEADDED}`}
+							</Typography>
 						)}
 					</Stack>
 				</StyledInfoRight>
