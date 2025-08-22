@@ -213,3 +213,18 @@ export const Dendrogram = [
 		aggregate: false,
 	},
 ];
+
+export const Graph = [
+	{
+		name: "Start",
+		multiLabel: true,
+		label: "start",
+		aggregate: false,
+	},
+	{
+		name: "End",
+		multiLabel: true,
+		label: "end",
+		aggregate: false,
+	},
+];

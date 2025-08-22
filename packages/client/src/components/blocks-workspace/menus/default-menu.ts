@@ -2230,6 +2230,149 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	},
 	{
 		section: SECTION_CHARTS,
+		name: "Network Graph Chart",
+		helperText: "Show relationships between entities",
+		activeImage: BLOCK_IMAGES["NETWORK_GRAPH_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["NETWORK_GRAPH_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-network-chart",
+				frame: {
+					name: "",
+				},
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				option: {
+					color: [
+						"#ff6f61",
+						"#6b5b95",
+						"#88b04b",
+						"#f7cac9",
+						"#92a8d1",
+						"#034f84",
+						"#f7786b",
+						"#deeaee",
+					],
+					title: {
+						text: "",
+						left: "center",
+						show: true,
+						textStyle: {
+							fontSize: 18,
+							color: "#ff6f61",
+							fontWeight: "normal",
+						},
+					},
+					tooltip: {
+						trigger: "item",
+						show: false,
+					},
+					legend: {
+						show: false,
+						orient: "vertical",
+						left: "left",
+						top: "top",
+						textStyle: {
+							fontSize: 10,
+							color: "#000000",
+						},
+					},
+					series: [
+						{
+							type: "graph",
+							layout: "force",
+							label: {
+								show: true,
+								position: "top",
+								fontSize: 10,
+								color: "#000000",
+								rotate: 0,
+								distance: 5,
+							},
+							data: [
+								{ id: 1, name: "Node 1" },
+								{ id: 2, name: "Node 2" },
+								{ id: 3, name: "Node 3" },
+								{ id: 4, name: "Node 4" },
+								{ id: 5, name: "Node 5" },
+							],
+							links: [
+								{ source: 1, target: 2 },
+								{ source: 1, target: 3 },
+								{ source: 2, target: 4 },
+								{ source: 3, target: 5 },
+							],
+							categories: [
+								{ name: "Start" }, // category 0
+								{ name: "End" }, // category 1
+							],
+							emphasis: {
+								itemStyle: {
+									shadowBlur: 10,
+									shadowOffsetX: 0,
+									shadowColor: "rgba(0.5, 0, 0, 0.5)",
+								},
+							},
+						},
+					],
+					reset: {
+						title: {
+							text: "",
+							left: "center",
+							show: true,
+							textStyle: {
+								fontSize: 18,
+								color: "#ff6f61",
+								fontWeight: "normal",
+								fontFamily: "",
+							},
+						},
+						label: {
+							show: true,
+							position: "outside",
+							fontSize: 10,
+							color: "#000000",
+							rotate: 0,
+							fontFamily: "",
+							distance: 5,
+						},
+					},
+				},
+
+				specJson: JSON.stringify(
+					{
+						$schema: "",
+						title: "E Chart",
+						width: 300,
+						height: 200,
+						data: {},
+						mark: "graph",
+						encoding: {
+							x: { field: "a", type: "ordinal" },
+							y: { field: "b", type: "quantitative" },
+						},
+					},
+					null,
+					2,
+				),
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
 		name: "Vega",
 		helperText: "Paste JSON to make a custom chart",
 		activeImage: BLOCK_IMAGES["VEGA_ACTIVE"],

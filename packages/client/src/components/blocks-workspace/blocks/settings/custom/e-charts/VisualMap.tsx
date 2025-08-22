@@ -2,7 +2,6 @@ import { Search } from "@mui/icons-material";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import { observer } from "mobx-react-lite";
 import { useEffect, useRef, useState } from "react";
-import type { BlockDef } from "@semoss/renderer";
 import {
 	IconButton,
 	InputAdornment,
@@ -12,8 +11,13 @@ import {
 } from "@semoss/ui";
 import { VisualMapConstant } from "./VisualMapConstant";
 
+interface VisualMapProps {
+	selectedItem: (item) => void;
+	handleClose: () => void;
+}
+
 export const VisualMap = observer(
-	<D extends BlockDef = BlockDef>({ selectedItem, handleClose }) => {
+	({ selectedItem, handleClose }: VisualMapProps) => {
 		const StyledMain = styled("div")(() => ({
 			width: "100%",
 			height: "100%",
@@ -36,6 +40,12 @@ export const VisualMap = observer(
 			display: "block",
 			wordWrap: "break-word",
 			whiteSpace: "normal",
+		}));
+
+		const StyledVisualMapValueSection = styled("div")(() => ({
+			display: "flex",
+			alignItems: "center",
+			marginTop: "15px",
 		}));
 
 		const [search, setSearch] = useState("");
@@ -75,7 +85,7 @@ export const VisualMap = observer(
 			setFilteredData(filtered);
 		};
 
-		function handleSelectItem(item: any) {
+		function handleSelectItem(item) {
 			selectedItem(item);
 		}
 
@@ -143,13 +153,10 @@ export const VisualMap = observer(
 					{Object.entries(filteredData).map(([key, value]) => (
 						<Stack key={key} paddingTop={2} width={"85%"}>
 							<StyledSpanHeader>{key}</StyledSpanHeader>
-							{value?.map((item, index) => (
-								<div
-									key={index}
+							{value?.map((item) => (
+								<StyledVisualMapValueSection
+									key={item.name || item.label}
 									style={{
-										display: "flex",
-										alignItems: "center",
-										marginTop: "15px",
 										cursor: item?.option
 											? "pointer"
 											: "default",
@@ -183,7 +190,7 @@ export const VisualMap = observer(
 									>
 										{item.label}
 									</span>
-								</div>
+								</StyledVisualMapValueSection>
 							))}
 						</Stack>
 					))}

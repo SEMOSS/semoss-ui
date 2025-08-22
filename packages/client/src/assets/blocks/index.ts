@@ -59,8 +59,14 @@ export { default as INPUT_ACTIVE } from "./Input_Active.png";
 export { default as INPUT_HOVER } from "./Input_Hover.png";
 export { default as ITERATOR_ACTIVE } from "./Iterator_Active.png";
 export { default as ITERATOR_HOVER } from "./Iterator_Hover.png";
-export { default as LINE_CHART_ACTIVE } from "./Line_Chart_Active.png";
-export { default as LINE_CHART_HOVER } from "./Line_Chart_Hover.png";
+export {
+	default as LINE_CHART_ACTIVE,
+	default as NETWORK_GRAPH_ACTIVE,
+} from "./Line_Chart_Active.png";
+export {
+	default as LINE_CHART_HOVER,
+	default as NETWORK_GRAPH_HOVER,
+} from "./Line_Chart_Hover.png";
 export { default as LINK_ACTIVE } from "./Link_Active.png";
 export { default as LINK_HOVER } from "./Link_Hover.png";
 export { default as LOGS_ACTIVE } from "./Logs_Active.png";

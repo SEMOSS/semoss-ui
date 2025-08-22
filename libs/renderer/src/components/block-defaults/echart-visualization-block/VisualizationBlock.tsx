@@ -1,15 +1,15 @@
 import { styled } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useBlock, useBlocks } from "../../../hooks";
+import { useEffect, useMemo, useRef } from "react";
+import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import type { PathValue } from "../../../types";
-import { BAR_CHART_DATA } from "./Visualization.constants";
 import { Bar } from "./variant/bar-chart/Bar";
 import { Dendrogram } from "./variant/dendrogram/Dendrogram";
 import { Gantt } from "./variant/Gantt/Gantt";
 import { Line } from "./variant/line-chart/Line";
-import { Map } from "./variant/map-chart/Map";
+import { Map as MapChart } from "./variant/map-chart/Map";
+import { Graph } from "./variant/network-graph-chart/Graph";
 import { Pie } from "./variant/pie-chart/Pie";
 import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { StackChart } from "./variant/stack-chart/StackChart";
@@ -26,7 +26,7 @@ const StyledNoDataContainer = styled("div", {
 
 const StyledDataContainer = styled("div", {
 	shouldForwardProp: (prop) => prop !== "error",
-})<{ error?: boolean }>(({ error = false, theme }) => ({
+})<{ error?: boolean }>(() => ({
 	minHeight: "50%",
 	minWidth: "50%",
 }));
@@ -61,7 +61,7 @@ export interface EchartVisualizationBlockDef {
 		};
 		variation: undefined | string;
 		columns: VisualizationColumns[];
-		aggregate: Record<string, any>;
+		aggregate: Record<string, unknown>;
 		contextMenu: {
 			hideUnfilter: boolean;
 			hideFilter: boolean;
@@ -86,7 +86,6 @@ export const VisualizationBlock: BlockComponent = observer(
 	<D extends BlockDef = BlockDef>({ id }) => {
 		const { data, setData, attrs, listeners } =
 			useBlock<EchartVisualizationBlockDef>(id);
-		const { state } = useBlocks();
 
 		const elementRef = useRef<HTMLDivElement>(null);
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -102,7 +101,7 @@ export const VisualizationBlock: BlockComponent = observer(
 		 * @param path
 		 * @description update chart json when data is changed
 		 */
-		function updateChartJson(data: any, path: any) {
+		function updateChartJson(data, _path) {
 			const parsedData =
 				typeof data === "string" ? JSON.parse(data) : data;
 			if (timeoutRef.current) {
@@ -113,7 +112,8 @@ export const VisualizationBlock: BlockComponent = observer(
 				try {
 					setData(
 						"option",
-						parsedData as PathValue<D["data"], typeof path>,
+						parsedData as PathValue<D["data"], typeof _path>,
+						true,
 					);
 				} catch (e) {
 					console.log(e);
@@ -168,7 +168,7 @@ export const VisualizationBlock: BlockComponent = observer(
 							<ScatterPlotBlock id={id} />
 						)}
 						{data.variation === "echart-world-map-chart" && (
-							<Map id={id}></Map>
+							<MapChart id={id}></MapChart>
 						)}
 						{data.variation === "echart-line-graph" && (
 							<Line id={id} updateJson={updateChartJson} />
@@ -182,9 +182,12 @@ export const VisualizationBlock: BlockComponent = observer(
 						{data.variation === "echart-dendrogram-chart" && (
 							<Dendrogram id={id} updateJson={updateChartJson} />
 						)}
+						{data.variation === "echart-network-chart" && (
+							<Graph id={id} updateJson={updateChartJson} />
+						)}
 					</StyledNoDataContainer>
 				);
-			} catch (e) {
+			} catch {
 				return (
 					<StyledNoDataContainer error {...attrs}>
 						There was an issue parsing your JSON.
@@ -204,7 +207,7 @@ export const VisualizationBlock: BlockComponent = observer(
 					<ScatterPlotBlock id={id} />
 				)}
 				{data.variation === "echart-world-map-chart" && (
-					<Map id={id}></Map>
+					<MapChart id={id}></MapChart>
 				)}
 				{data.variation === "echart-line-graph" && (
 					<Line id={id} updateJson={updateChartJson} />
@@ -217,6 +220,9 @@ export const VisualizationBlock: BlockComponent = observer(
 				)}
 				{data.variation === "echart-dendrogram-chart" && (
 					<Dendrogram id={id} updateJson={updateChartJson} />
+				)}
+				{data.variation === "echart-network-chart" && (
+					<Graph id={id} updateJson={updateChartJson} />
 				)}
 			</StyledDataContainer>
 		);
