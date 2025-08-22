@@ -1,10 +1,10 @@
 import {
 	AccountCircleRounded,
-	Close as CloseIcon,
 	Functions as FunctionsIcon,
 	GridView as GridViewIcon,
 	Home as HomeIcon,
 	Inventory2Outlined,
+	MenuOpenRounded,
 	Settings as SettingsIcon,
 	TokenRounded,
 } from "@mui/icons-material";
@@ -170,6 +170,10 @@ export const Sidebar: React.FC = observer(() => {
 	]);
 
 	function closeSidebar() {
+		if (!page.sidebar.pinned) {
+			page.pinSidebar();
+			return;
+		}
 		page.closeSidebar();
 	}
 
@@ -205,7 +209,7 @@ export const Sidebar: React.FC = observer(() => {
 				</StyledNavHeaderLink>
 
 				<StyledCloseIconButton size="small" onClick={closeSidebar}>
-					<CloseIcon fontSize="medium" />
+					<MenuOpenRounded fontSize="medium" />
 				</StyledCloseIconButton>
 			</StyledNavHeader>
 			<Divider light />
