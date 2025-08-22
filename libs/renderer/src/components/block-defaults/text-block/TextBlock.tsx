@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import React, { type CSSProperties, useEffect } from "react";
+import { Skeleton } from "@semoss/ui";
 import { useBlock, useBlocks, useTypeWriter } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { showBlock } from "../../blocks/RendererEngine";
@@ -12,6 +13,8 @@ export interface TextBlockDef extends BlockDef<"text"> {
 		variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
 		isStreaming: boolean;
 		show: string;
+		loading: boolean | string;
+		loadType: string;
 	};
 	slots: never;
 	listeners: {
@@ -39,6 +42,28 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 			listeners.preProcess();
 		}
 	}, []);
+
+	const isLoading =
+		Object.hasOwn(data, "loading") &&
+		data.loading?.toString().toLowerCase() === "true";
+
+	if (isLoading && data.loadType === "None (show nothing)") {
+		return <div {...attrs} />;
+	}
+
+	if (isLoading && data.loadType === "Skeleton") {
+		return (
+			<div
+				style={{
+					width: "auto",
+					height: "auto",
+				}}
+				{...attrs}
+			>
+				<Skeleton width={"auto"} height={"auto"} />
+			</div>
+		);
+	}
 
 	// TODO: Why?
 	return showBlock(block, state)
