@@ -85,21 +85,19 @@ const customRender = (
 	ui: React.ReactElement,
 	options?: CustomRenderOptions,
 ): ReturnType<typeof render> => {
-	const { blocks } = options || {}; // Destructure parameters from options
-	const { queryConfig } = options || {};
-	const { id: renderEngineId } = ui.props; // Destructure ui block props and get its id prop to be used in renderEngine
-
-	return render(ui, {
-		wrapper: (props) => (
-			<MockProvider
-				{...props}
-				blocks={blocks}
-				queryConfig={queryConfig}
-				renderEngineId={renderEngineId}
-			/>
-		),
-		...options,
-	});
+    const { blocks } = options || {}; // Destructure parameters from options
+    const { queryConfig } = options || {};
+    const {id : renderEngineId} = ui.props // Destructure ui block props and get its id prop to be used in renderEngine
+    return render(ui, {
+        wrapper: (props) => (
+            <MockProvider
+                {...props}
+                blocks={blocks}
+                queryConfig={queryConfig}
+            	renderEngineId={renderEngineId} />
+        ),
+        ...options,
+    });
 };
 
 interface CustomHookRenderOptions<TProps> extends RenderHookOptions<TProps> {
