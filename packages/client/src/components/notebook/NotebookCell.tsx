@@ -184,6 +184,32 @@ const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
 	height: theme.spacing(5),
 }));
 
+const StyledPlayArrowRounded = styled(PlayArrowRounded)(() => ({
+	padding: "2px",
+}));
+
+const StyledArrowDownward = styled(ArrowDownward)(() => ({
+	marginTop: "10px",
+	marginLeft: "15px",
+	position: "absolute",
+	width: "10px",
+}));
+
+const StyledArrowUpward = styled(ArrowUpward)(() => ({
+	marginTop: "10px",
+	marginLeft: "15px",
+	position: "absolute",
+	width: "10px",
+}));
+
+const StyledContentCopy = styled(ContentCopy)(() => ({
+	padding: "2px",
+}));
+
+const StyledLibraryAdd = styled(LibraryAdd)(() => ({
+	padding: "2px",
+}));
+
 const StyledMenu = styled((props: MenuProps) => (
 	<Menu
 		anchorOrigin={{
@@ -472,17 +498,15 @@ export const NotebookCell = observer(
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
 				const allCells = query.list;
-				allCells
-					.slice(0, currentCellIndex)
-					.forEach((currCellId) => {
-						state.dispatch({
-							message: ActionMessages.RUN_CELL,
-							payload: {
-								queryId: cell.query.id,
-								cellId: currCellId,
-							},
-						});
+				allCells.slice(0, currentCellIndex).forEach((currCellId) => {
+					state.dispatch({
+						message: ActionMessages.RUN_CELL,
+						payload: {
+							queryId: cell.query.id,
+							cellId: currCellId,
+						},
 					});
+				});
 			} catch (e) {
 				console.error(e);
 			}
@@ -514,8 +538,6 @@ export const NotebookCell = observer(
 				}}
 			>
 				<StyledRow direction="row" width="100%" spacing={1}>
-					{/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
-
 					<StyledStackTwo
 						onClick={() => {
 							copyTextToClipboard(
@@ -543,22 +565,8 @@ export const NotebookCell = observer(
 									}}
 								>
 									<StyledButtonLabel>
-										<PlayArrowRounded
-											fontSize="medium"
-											sx={{
-												padding: "2px",
-											}}
-										/>
-										<ArrowDownward
-											fontSize="small"
-											// styles only applying correctly with sx could not use styled
-											sx={{
-												marginTop: "10px",
-												marginLeft: "15px",
-												position: "absolute",
-												width: "10px",
-											}}
-										/>
+										<StyledPlayArrowRounded fontSize="medium" />
+										<StyledArrowDownward fontSize="small" />
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 								<StyledButtonGroupButton
@@ -572,22 +580,8 @@ export const NotebookCell = observer(
 									}}
 								>
 									<StyledButtonLabel>
-										<PlayArrowRounded
-											fontSize="medium"
-											sx={{
-												padding: "2px",
-											}}
-										/>
-										<ArrowUpward
-											fontSize="small"
-											// styles only applying correctly with sx
-											sx={{
-												marginTop: "10px",
-												marginLeft: "15px",
-												position: "absolute",
-												width: "10px",
-											}}
-										/>
+										<StyledPlayArrowRounded fontSize="medium" />
+										<StyledArrowUpward fontSize="small" />
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 								<StyledButtonGroupButton
@@ -622,12 +616,7 @@ export const NotebookCell = observer(
 										}}
 									>
 										<StyledButtonLabel>
-											<ContentCopy
-												fontSize="small"
-												sx={{
-													padding: "2px",
-												}}
-											/>
+											<StyledContentCopy fontSize="small" />
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
 								) : (
@@ -642,12 +631,7 @@ export const NotebookCell = observer(
 										}}
 									>
 										<StyledButtonLabel>
-											<LibraryAdd
-												fontSize="medium"
-												sx={{
-													padding: "2px",
-												}}
-											/>
+											<StyledLibraryAdd fontSize="medium" />
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
 								)}
@@ -793,11 +777,11 @@ export const NotebookCell = observer(
 							<StyledCardInput>{rendered}</StyledCardInput>
 						</StyledCardContent>
 						{cell.parameters.type !== "markdown" && (
-							<>
+							<div>
 								{cell.widget === "code" ? (
-									<>
+									<div>
 										{cell.messages.length > 0 && (
-											<>
+											<div>
 												{(notebook?.selectedCell?.id ??
 													"") === cell.id && (
 													<Divider />
@@ -819,7 +803,7 @@ export const NotebookCell = observer(
 															{getExecutionLabel()}
 														</Stack>
 														{outputExpanded && (
-															<>
+															<div>
 																<NotebookCellConsole
 																	messages={
 																		cell.messages
@@ -829,13 +813,10 @@ export const NotebookCell = observer(
 																	? cell.operation.map(
 																			(
 																				o,
-																				oIdx,
 																			) => {
 																				return (
 																					<Operation
-																						key={
-																							oIdx
-																						}
+																						key={`cell-operation--${cell.id}--${o}`}
 																						operation={
 																							o
 																						}
@@ -847,15 +828,15 @@ export const NotebookCell = observer(
 																			},
 																		)
 																	: null}
-															</>
+															</div>
 														)}
 													</Stack>
 												</StyledCardActions>
-											</>
+											</div>
 										)}
 										{cell.isExecuted &&
 											!cell.messages.length && (
-												<>
+												<div>
 													{(notebook?.selectedCell
 														?.id ?? "") ===
 														cell.id && <Divider />}
@@ -886,13 +867,10 @@ export const NotebookCell = observer(
 																		? cell.operation.map(
 																				(
 																					o,
-																					oIdx,
 																				) => {
 																					return (
 																						<Operation
-																							key={
-																								oIdx
-																							}
+																							key={`cell-operation--${cell.id}--${o}`}
 																							operation={
 																								o
 																							}
@@ -908,13 +886,13 @@ export const NotebookCell = observer(
 															)}
 														</Stack>
 													</StyledCardActions>
-												</>
+												</div>
 											)}
-									</>
+									</div>
 								) : (
-									<>
+									<div>
 										{cell.isExecuted && (
-											<>
+											<div>
 												{(notebook?.selectedCell?.id ??
 													"") === cell.id && (
 													<Divider />
@@ -946,13 +924,10 @@ export const NotebookCell = observer(
 																	? cell.operation.map(
 																			(
 																				o,
-																				oIdx,
 																			) => {
 																				return (
 																					<Operation
-																						key={
-																							oIdx
-																						}
+																						key={`cell-operation--${cell.id}--${o}`}
 																						operation={
 																							o
 																						}
@@ -968,11 +943,11 @@ export const NotebookCell = observer(
 														)}
 													</Stack>
 												</StyledCardActions>
-											</>
+											</div>
 										)}
-									</>
+									</div>
 								)}
-							</>
+							</div>
 						)}
 					</StyledCard>
 				</StyledRow>
