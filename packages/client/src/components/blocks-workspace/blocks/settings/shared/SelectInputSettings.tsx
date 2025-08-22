@@ -11,9 +11,9 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	createFilterOptions,
-	MenuItem,
+	Menu,
 	Select,
 	TextField,
 } from "@semoss/ui";
@@ -166,9 +166,10 @@ export const SelectInputSettings = observer(
 		return (
 			<BaseSettingSection label={label} description={tooltip}>
 				{allowCustomInput ? (
-					<AutocompleteTwo
+					<Autocomplete
 						fullWidth
 						size="small"
+                        multiple={false}
 						value={value}
 						onChange={(_, newValue) => {
 							onChange(newValue.replace("Custom: ", ""));
@@ -227,15 +228,15 @@ export const SelectInputSettings = observer(
 						}}
 					>
 						{allowUnset ? (
-							<MenuItem value={""}>
+							<Menu.Item value={""}>
 								<em>None</em>
-							</MenuItem>
+							</Menu.Item>
 						) : null}
 						{Array.from(options, (option, i) => {
 							return (
-								<MenuItem key={i} value={option.value}>
+								<Menu.Item key={i} value={option.value}>
 									{option.display}
-								</MenuItem>
+								</Menu.Item>
 							);
 						})}
 					</Select>

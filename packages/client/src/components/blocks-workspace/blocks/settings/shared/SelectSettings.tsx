@@ -9,7 +9,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { AutocompleteTwo, TextField } from "@semoss/ui";
+import { Autocomplete, TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../BaseSettingSection";
 
@@ -33,6 +33,12 @@ interface SelectSettingsProps<D extends BlockDef = BlockDef> {
 	 * Options
 	 */
 	options: string[];
+
+	// TODO: ARRAY of options
+	/**
+	 * Multiple options
+	 */
+	multiple: boolean;
 }
 
 export const SelectSettings = observer(
@@ -41,6 +47,7 @@ export const SelectSettings = observer(
 		label = "",
 		path,
 		options,
+		multiple = true,
 	}: SelectSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
 		const { state } = useBlocks();
@@ -98,9 +105,9 @@ export const SelectSettings = observer(
 
 		return (
 			<BaseSettingSection label={label}>
-				<AutocompleteTwo
+				<Autocomplete
 					fullWidth
-					multiple
+					multiple={multiple}
 					value={value}
 					options={options}
 					getOptionLabel={(option) => option}

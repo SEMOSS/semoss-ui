@@ -8,7 +8,7 @@ import { observer } from "mobx-react-lite";
 import { createElement, useMemo, useState } from "react";
 import { INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
-	AlertTitle,
+	Alert,
 	Collapse,
 	IconButton,
 	Stack,
@@ -88,7 +88,7 @@ const StyledMultiBlockMessage = styled("div")(({ theme }) => ({
 	padding: "8px 0px",
 	flex: "1 0 0",
 }));
-const StyledAlertTitle = styled(AlertTitle)(({ theme }) => ({
+const StyledAlertTitle = styled(Alert.Title)(({ theme }) => ({
 	alignSelf: "stretch",
 	color: "#666",
 	fontFamily: "Inter",

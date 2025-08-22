@@ -5,7 +5,7 @@ import {
 	type EchartVisualizationBlockDef,
 	getValueByPath,
 } from "@semoss/renderer";
-import { Button, MenuItem, Select, styled, Typography } from "@semoss/ui";
+import { Button, Menu, Select, styled, Typography } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
 const StyledMainContainer = styled("div")<{
@@ -111,8 +111,8 @@ export const ChangeOrientation = observer(({ id }: ChangeOrientationProps) => {
 					}}
 					size="medium"
 				>
-					<MenuItem value="LR">Horizontal</MenuItem>
-					<MenuItem value="TB">Vertical</MenuItem>
+					<Menu.Item value="LR">Horizontal</Menu.Item>
+					<Menu.Item value="TB">Vertical</Menu.Item>
 				</Select>
 			</StyledSubSection>
 			<StyledSubSection
