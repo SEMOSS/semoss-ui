@@ -1,5 +1,7 @@
-import { useLocation } from "react-router-dom";
-import { styled } from "@semoss/ui";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { styled, useNotification } from "@semoss/ui";
+import { getGroupType } from "@/api/teams";
 import {
 	TeamEnginesTable,
 	TeamMembersTable,
@@ -27,35 +29,59 @@ const StyledContent = styled("div")(({ theme }) => ({
 }));
 
 export const TeamSettingsDetailPage = () => {
-	const { state } = useLocation();
+	// pull :id from the url
+	const { id: rawId } = useParams<{ id: string }>();
+	const id = rawId ? decodeURIComponent(rawId) : undefined;
+	const [type, setType] = useState<string | undefined>();
+	const notification = useNotification();
 
-	/**
-	 * TODO: Likely want to send with :id from url
-	 * And pull info from database
-	 */
-	const type = state.type;
-	const id = state.name;
+	// Fetch type when id changes
+	useEffect(() => {
+		if (!id) {
+			setType(undefined);
+			return;
+		}
+		let cancelled = false;
+		(async () => {
+			try {
+				const fetchedType = await getGroupType(id);
+				if (!cancelled) setType(fetchedType);
+			} catch (_) {
+				if (!cancelled) {
+					notification.add({
+						color: "error",
+						message: "Failed to load team type",
+					});
+				}
+			}
+		})();
+		return () => {
+			cancelled = true;
+		};
+	}, [id]);
 
 	return (
 		<StyledContainer>
 			<StyledContent>
-				{type === "CUSTOM" ? (
-					<TeamMembersTable groupId={id} name="MEMBERS" />
-				) : (
-					<TeamMembersProviderBanner type={type} />
+				{type && (
+					<>
+						{type === "CUSTOM" ? (
+							<TeamMembersTable groupId={id} name="MEMBERS" />
+						) : (
+							<TeamMembersProviderBanner type={type} />
+						)}
+						<TeamProjectsTable
+							groupId={id}
+							groupType={type}
+							name="PROJECTS"
+						/>
+						<TeamEnginesTable
+							groupId={id}
+							groupType={type}
+							name="ENGINES"
+						/>
+					</>
 				)}
-
-				<TeamProjectsTable
-					groupId={id}
-					groupType={type}
-					name="PROJECTS"
-				/>
-
-				<TeamEnginesTable
-					groupId={id}
-					groupType={type}
-					name="ENGINES"
-				/>
 			</StyledContent>
 		</StyledContainer>
 	);
