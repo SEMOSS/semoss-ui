@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useBlocks } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import {
-	Box,
 	Button,
 	IconButton,
 	Modal,
@@ -17,8 +16,8 @@ import { ModelBrain } from "@/assets/img/ModelBrain";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
-import { LLMSelectOverlay } from "../llms";
 import type { FileSavedEventDetail } from "@/types/types";
+import { LLMSelectOverlay } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
 	const { state } = useBlocks();
@@ -132,8 +131,8 @@ export const BlocksWorkspaceActions = observer(() => {
 		// remove the visual from the json
 		Object.keys(json?.blocks).forEach((key) => {
 			if (key.startsWith("e-chart")) {
-				if (json?.blocks[key]?.data?.option?.["visual"]) {
-					json.blocks[key].data.option["visual"] = false;
+				if (json?.blocks[key]?.data?.option?.visual) {
+					json.blocks[key].data.option.visual = false;
 				}
 			}
 		});
@@ -157,13 +156,16 @@ export const BlocksWorkspaceActions = observer(() => {
 			});
 
 			// Dispatch custom event to notify VersionsTable of the save
-			const event: CustomEvent<FileSavedEventDetail> = new CustomEvent('fileSaved', {
-				detail: {
-					appId: workspace.appId,
-					path: 'blocks.json', // Indicate this is a blocks save
-					type: 'blocks'
-				}
-			});
+			const event: CustomEvent<FileSavedEventDetail> = new CustomEvent(
+				"fileSaved",
+				{
+					detail: {
+						appId: workspace.appId,
+						path: "blocks.json", // Indicate this is a blocks save
+						type: "blocks",
+					},
+				},
+			);
 			window.dispatchEvent(event);
 		} catch (e) {
 			console.error(e);
@@ -311,66 +313,42 @@ export const BlocksWorkspaceActions = observer(() => {
 				onClose={() => setModalOpen(false)}
 				aria-labelledby="commit-modal-title"
 				aria-describedby="commit-modal-description"
+				fullWidth
 			>
-				<Box
-					sx={{
-						position: "absolute",
-						top: "50%",
-						left: "50%",
-						transform: "translate(-50%, -50%)",
-						bgcolor: "background.paper",
-						boxShadow: 24,
-						p: 5,
-						width: "90vw",
-						maxWidth: 600,
-						minWidth: 300,
-						height: "auto",
-						maxHeight: "80vh",
-						borderRadius: 3,
-						display: "flex",
-						flexDirection: "column",
-						gap: 3,
-						alignItems: "center",
-						overflow: "auto",
-					}}
-				>
-					<h2
-						id="commit-modal-title"
-						style={{
-							margin: 0,
-							fontWeight: 700,
-							fontSize: "2rem",
-							textAlign: "center",
-						}}
+				<Modal.Title>Enter Commit Message</Modal.Title>
+				<Modal.Content>
+					<Stack spacing={2}>
+						<TextField
+							autoFocus
+							fullWidth
+							multiline
+							minRows={1}
+							maxRows={5}
+							label="Commit Message"
+							value={commitMsg}
+							onChange={(e) => setCommitMsg(e.target.value)}
+						/>
+					</Stack>
+				</Modal.Content>
+				<Modal.Actions>
+					<Stack
+						flex={1}
+						direction="row"
+						justifyContent="end"
+						alignItems="center"
+						spacing={1}
+						padding={2}
 					>
-						Enter Commit Message
-					</h2>
-					<TextField
-						autoFocus
-						fullWidth
-						multiline
-						minRows={1}
-						maxRows={5}
-						label="Commit Message"
-						value={commitMsg}
-						onChange={(e) => setCommitMsg(e.target.value)}
-						sx={{ mt: 2, fontSize: "1.1rem" }}
-					/>
-					<Button
-						variant="contained"
-						color="primary"
-						disabled={!commitMsg.trim()}
-						onClick={handleModalSave}
-						sx={{
-							mt: 2,
-							width: "20%",
-							fontSize: "1.1rem",
-							alignSelf: "center",
-						}}
-					>
-						Save
-					</Button>
-				</Box>
+						<Button
+							variant="contained"
+							color="primary"
+							disabled={!commitMsg.trim()}
+							onClick={handleModalSave}
+						>
+							Save
+						</Button>
+					</Stack>
+				</Modal.Actions>
 			</Modal>
 		</>
 	);
