@@ -1,28 +1,5 @@
-/**
- * EngineIdsModal Component
- *
- * A modal component for displaying engine ID discovery results when saving an app.
- * Allows users to:
- * - View successfully discovered engines
- * - Handle failed engine discoveries with replacement options
- * - Manage engine replacements for inaccessible engines
- * - Select engines for batch operations
- *
- * @component
- * @param {boolean} open - Controls modal visibility
- * @param {string[]} successIds - Array of successfully discovered engine IDs
- * @param {string[]} failedIds - Array of failed engine IDs
- * @param {Function} onClose - Callback for closing the modal
- * @param {Function} onEngineReplacement - Optional callback for handling engine replacements
- * @param {string} appId - The application ID
- * @param {boolean} isUploadProjectApp - Whether this is an upload project app
- * @param {Record} engineInfo - Detailed information about engines including files and instances
- * @param {Record} discoveryResults - Results from engine discovery process
- */
-
 import Close from "@mui/icons-material/Close";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
 	Button,
 	FormControl,
@@ -39,15 +16,258 @@ import {
 	useMyEnginesPixel,
 } from "@/pixel/projects";
 import type {
+	EngineCardProps,
 	EngineIdsModalProps,
 	ReplaceEnginesOutput,
 } from "./save-app.types";
 
-// No styled components needed - using sx props instead
+const EngineCard: React.FC<EngineCardProps> = ({
+	name,
+	id,
+	fileList = [],
+	instanceList = [],
+	showFiles = false,
+	openFilesId,
+	setOpenFilesId,
+	fileListRef,
+	showReplacement = false,
+	replacementValue = "",
+	onReplacementChange,
+	availableEngines,
+	showReplacementPlaceholder = false,
+	confirmationReplacement = "",
+	confirmation = false,
+}) => (
+	<Stack
+		spacing={1.5}
+		sx={{
+			backgroundColor: "#fafbfc",
+			p: 1,
+			borderRadius: 2,
+			border: "1px solid #e0e0e0",
+			boxShadow: 0,
+			mb: 1,
+		}}
+	>
+		{/* Engine Name */}
+		{name && (
+			<Stack direction="row" alignItems="center" spacing={1}>
+				<Typography
+					variant="subtitle2"
+					sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#222" }}
+				>
+					{name}
+				</Typography>
+			</Stack>
+		)}
+		{/* Engine ID */}
+		<Stack direction="row" alignItems="center" spacing={0.2}>
+			<Typography
+				variant="subtitle2"
+				sx={{ fontWeight: 500, fontSize: "0.98rem", color: "#222" }}
+			>
+				Engine ID:
+			</Typography>
+			<Typography
+				variant="body2"
+				sx={{
+					fontFamily: "monospace",
+					wordBreak: "break-all",
+					flex: 1,
+					fontSize: "0.98rem",
+					color: "#444",
+				}}
+			>
+				{id}
+			</Typography>
+		</Stack>
+		{/* Replacement Engine (dropdown or confirmation) */}
+		{showReplacement && !confirmation && (
+			<Stack direction="row" alignItems="center" spacing={0.2}>
+				<Typography
+					variant="subtitle2"
+					sx={{ fontWeight: 500, fontSize: "0.98rem", color: "#222" }}
+				>
+					Replacement Engine:
+				</Typography>
+				<FormControl size="small" sx={{ minWidth: 200, flex: 1 }}>
+					<Select
+						value={replacementValue || ""}
+						onChange={(e) =>
+							onReplacementChange?.(id, e.target.value as string)
+						}
+						sx={{
+							"& .MuiSelect-select": {
+								py: 1,
+								fontSize: "0.98rem",
+							},
+						}}
+					>
+						{availableEngines?.data?.map((engine) => (
+							<MenuItem
+								key={engine.database_id || engine.app_id}
+								value={engine.database_id || engine.app_id}
+								sx={{ fontSize: "0.98rem" }}
+							>
+								{engine.database_name || engine.app_name}{" "}
+								<Typography
+									component="span"
+									variant="body2"
+									sx={{
+										color: "#666",
+										fontSize: "0.85rem",
+										display: "inline",
+									}}
+								>
+									({engine.database_type || engine.app_type})
+								</Typography>
+							</MenuItem>
+						))}
+					</Select>
+					{showReplacementPlaceholder && !replacementValue && (
+						<Typography
+							component="span"
+							variant="body2"
+							sx={{
+								position: "absolute",
+								left: 16,
+								top: 8,
+								color: "#999",
+								fontStyle: "italic",
+								pointerEvents: "none",
+								fontSize: "0.98rem",
+							}}
+						>
+							Select replacement engine
+						</Typography>
+					)}
+				</FormControl>
+			</Stack>
+		)}
+		{confirmation && confirmationReplacement && (
+			<Stack direction="row" alignItems="center" spacing={0.2}>
+				<Typography
+					variant="subtitle2"
+					sx={{ fontWeight: 500, fontSize: "0.98rem", color: "#222" }}
+				>
+					Replaced With:
+				</Typography>
+				<Typography
+					variant="body2"
+					sx={{
+						fontFamily: "monospace",
+						wordBreak: "break-all",
+						flex: 1,
+						fontSize: "0.98rem",
+						color: "success.main",
+						fontWeight: 500,
+					}}
+				>
+					{confirmationReplacement}
+				</Typography>
+			</Stack>
+		)}
+		{/* Files Containing Engine ID (count) and See Files button */}
+		{fileList.length > 0 && !confirmation && (
+			<Stack direction="row" alignItems="center" spacing={0.2}>
+				<Typography
+					variant="subtitle2"
+					sx={{ fontWeight: 500, fontSize: "0.98rem", color: "#222" }}
+				>
+					Files Containing Engine ID:
+				</Typography>
+				<Typography
+					variant="body2"
+					sx={{ fontWeight: 500, fontSize: "0.98rem", color: "#444" }}
+				>
+					{fileList.length}
+				</Typography>
+				{setOpenFilesId && openFilesId !== undefined && (
+					<Button
+						variant="text"
+						size="small"
+						onClick={() =>
+							setOpenFilesId(openFilesId === id ? null : id)
+						}
+					>
+						See Files
+					</Button>
+				)}
+			</Stack>
+		)}
+		{/* File Name and Occurrence List (expandable) */}
+		{showFiles && openFilesId === id && fileList.length > 0 && (
+			<div ref={fileListRef}>
+				<Stack
+					spacing={0.7}
+					sx={{
+						mt: 1,
+						ml: 0,
+						p: 1.2,
+						border: "1px solid #e0e0e0",
+						borderRadius: 2,
+						backgroundColor: "#f5f6fa",
+					}}
+				>
+					<Stack
+						direction="row"
+						spacing={2}
+						sx={{
+							fontWeight: 600,
+							color: "#888",
+							fontSize: "0.97rem",
+						}}
+					>
+						<Typography variant="caption" sx={{ minWidth: 170 }}>
+							File Name
+						</Typography>
+						<Typography variant="caption" sx={{ minWidth: 90 }}>
+							Occurrence
+						</Typography>
+					</Stack>
+					{fileList.map((file, idx) => (
+						<Stack
+							key={file}
+							direction="row"
+							spacing={0.2}
+							alignItems="center"
+						>
+							<Typography
+								variant="body2"
+								sx={{
+									minWidth: 170,
+									fontFamily: "monospace",
+									fontSize: "0.97rem",
+									color: "#444",
+								}}
+							>
+								{file}
+							</Typography>
+							<Typography
+								variant="body2"
+								sx={{
+									minWidth: 90,
+									fontSize: "0.97rem",
+									color: "#444",
+								}}
+							>
+								{Array.isArray(instanceList) &&
+								instanceList[idx] !== undefined
+									? instanceList[idx]
+									: "-"}
+							</Typography>
+						</Stack>
+					))}
+				</Stack>
+			</div>
+		)}
+	</Stack>
+);
 
 /**
- * Modal component for displaying and managing engine ID discovery results
- * Allows users to view accessible engines and replace inaccessible ones
+ * EngineIdsModal
+ * Modal for displaying discovered engine IDs, handling inaccessible engines, and managing replacements.
+ * Shows accessible and inaccessible engines, allows replacement selection, and confirms changes.
  */
 const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 	open,
@@ -59,7 +279,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 	isUploadProjectApp: _isUploadProjectApp,
 	engineInfo,
 }) => {
-	// STATE MANAGEMENT
+	// --- State Management ---
 	const [engineReplacements, setEngineReplacements] = useState<
 		Record<string, string>
 	>({});
@@ -75,11 +295,28 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			{ replacement: string; files: string[]; engineName: string }
 		>
 	>({});
+	const [openFilesId, setOpenFilesId] = useState<string | null>(null);
+	const fileListRef = React.useRef<HTMLDivElement | null>(null);
 
-	// Fetch available engines that user has access to
+	// --- Click-away handler for file list (closes file list when clicking outside) ---
+	useEffect(() => {
+		if (!openFilesId) return;
+		function handleClick(event: MouseEvent) {
+			if (
+				fileListRef.current &&
+				!fileListRef.current.contains(event.target as Node)
+			) {
+				setOpenFilesId(null);
+			}
+		}
+		document.addEventListener("mousedown", handleClick);
+		return () => document.removeEventListener("mousedown", handleClick);
+	}, [openFilesId]);
+
+	// --- Fetch available engines user can select as replacements ---
 	const availableEngines = useMyEnginesPixel();
 
-	//	Initialize replacement state when modal opens
+	// --- Initialize replacement state when modal opens ---
 	useEffect(() => {
 		if (open && failedIds.length > 0) {
 			const initialReplacements: Record<string, string> = {};
@@ -90,13 +327,12 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		}
 	}, [open, failedIds]);
 
-	//	Sync modal visibility state
+	// --- Sync modal visibility with parent state ---
 	useEffect(() => {
 		setShowDiscovery(open);
 	}, [open]);
 
-	//	Handle engine replacement selection
-
+	// --- Handle replacement engine selection for an inaccessible engine ---
 	const handleEngineReplacementChange = (
 		failedEngineId: string,
 		replacementEngineId: string,
@@ -107,9 +343,8 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		}));
 	};
 
-	//	Save engine replacements and show confirmation
+	// --- Save engine replacements, show confirmation modal, and handle errors ---
 	const handleSaveReplacements = async () => {
-		// Only include replacements that have been selected
 		const validReplacements = Object.entries(engineReplacements)
 			.filter(([, replacement]) => replacement !== "")
 			.reduce(
@@ -120,12 +355,10 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 				{} as Record<string, string>,
 			);
 
-		// Format map as required
 		const response = await replaceInaccessibleEnginesPixel(
 			appId,
 			validReplacements,
 		);
-
 		const pixel = response?.pixelReturn?.[0];
 		const output = pixel?.output as ReplaceEnginesOutput;
 		const operationType = pixel?.operationType || [];
@@ -135,7 +368,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		const successKeys = Object.keys(successObj);
 		const failedKeys = Object.keys(failedObj);
 
-		// Error if operationType includes 'ERROR' or output is a string (not object), or errorObj exists
 		if (
 			(Array.isArray(operationType) && operationType.includes("ERROR")) ||
 			typeof output === "string" ||
@@ -147,10 +379,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			} else if (typeof errorObj === "string") {
 				errorMsg = errorObj;
 			}
-			notification.add({
-				color: "error",
-				message: errorMsg,
-			});
+			notification.add({ color: "error", message: errorMsg });
 			return;
 		}
 
@@ -171,7 +400,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 			setShowDiscovery(false);
 			setShowConfirmation(true);
 
-			// Show notification for any failed engine replacements
 			if (
 				failedObj &&
 				typeof failedObj === "object" &&
@@ -193,8 +421,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		}
 	};
 
-	//	Handle confirmation modal close
-
+	// --- Handle closing the confirmation modal ---
 	const handleConfirmationClose = () => {
 		setShowConfirmation(false);
 		if (onEngineReplacement) {
@@ -204,8 +431,7 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		onClose();
 	};
 
-	//	Check if there are valid replacements selected
-
+	// --- Check if at least one valid replacement is selected ---
 	const hasValidReplacements =
 		failedIds.length > 0 &&
 		failedIds.some(
@@ -218,11 +444,22 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 				open={showDiscovery}
 				maxWidth={false}
 				sx={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					minHeight: "100vh",
 					"& .MuiDialog-paper": {
-						width: "95vw",
-						maxWidth: 1000,
+						width: 600,
+						maxWidth: "95vw",
 						minWidth: 320,
-						maxHeight: "90vh",
+						height: 540,
+						maxHeight: "95vh",
+						borderRadius: 3,
+						boxShadow: 8,
+						p: 0,
+						display: "flex",
+						flexDirection: "column",
+						justifyContent: "flex-start",
 					},
 				}}
 			>
@@ -231,12 +468,16 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 						direction="row"
 						justifyContent="space-between"
 						alignItems="center"
-						sx={{ p: 1 }}
 					>
 						<Typography
 							variant="h6"
-							align="center"
-							sx={{ flex: 1, fontWeight: 600 }}
+							align="left"
+							sx={{
+								fontWeight: 600,
+								fontSize: "1.25rem",
+								color: "#222",
+								letterSpacing: 0,
+							}}
 						>
 							Engine IDs Discovery
 						</Typography>
@@ -245,19 +486,22 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 						</IconButton>
 					</Stack>
 				</Modal.Title>
-				<Modal.Content sx={{ p: 3 }}>
-					<Stack spacing={3} sx={{ width: "100%" }}>
+				<Modal.Content sx={{ p: 0 }}>
+					<Stack spacing={2.1} sx={{ width: "100%", p: 3, pt: 0 }}>
 						<Typography
-							variant="h6"
-							align="center"
+							variant="body1"
+							align="left"
 							sx={{
-								color: "text.secondary",
-								mt: -1,
+								color: "#555",
+								fontSize: "1rem",
+								mb: 0.5,
+								mt: 0,
 							}}
 						>
 							The following engine IDs were detected in your
 							application:
 						</Typography>
+						{/* Accessible Engines Section */}
 						<Stack spacing={1.5} sx={{ width: "100%" }}>
 							<Stack
 								direction="row"
@@ -265,10 +509,11 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								spacing={1}
 							>
 								<Typography
-									variant="h6"
+									variant="subtitle1"
 									sx={{
-										color: "success.main",
+										color: "#1a7f37",
 										fontWeight: 600,
+										fontSize: "1.05rem",
 									}}
 								>
 									Accessible Engines
@@ -276,133 +521,33 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								<Typography
 									variant="body2"
 									sx={{
-										color: "text.secondary",
+										color: "#888",
 										fontWeight: 500,
+										fontSize: "1rem",
 									}}
 								>
 									({successIds.length})
 								</Typography>
 							</Stack>
-							<Stack spacing={1} sx={{ pl: 1, width: "100%" }}>
+							<Stack spacing={1.5} sx={{ pl: 0, width: "100%" }}>
 								{successIds.length > 0 ? (
-									successIds.map((id, index) => (
-										<Stack
+									successIds.map((id) => (
+										<EngineCard
 											key={id}
-											direction="row"
-											alignItems="center"
-											spacing={2}
-											sx={{
-												backgroundColor:
-													"background.paper",
-												p: 1.5,
-												borderRadius: 1,
-												border: 1,
-												borderColor: "divider",
-											}}
-										>
-											<Typography
-												variant="body2"
-												sx={{
-													backgroundColor: "grey.100",
-													color: "text.secondary",
-													px: 1.5,
-													py: 0.5,
-													borderRadius: 1,
-													minWidth: 24,
-													textAlign: "center",
-													fontWeight: 500,
-													fontSize: "0.875rem",
-												}}
-											>
-												{index + 1}
-											</Typography>
-											<Typography
-												variant="body2"
-												sx={{
-													wordBreak: "break-all",
-													fontFamily: "monospace",
-													color: "inherit",
-												}}
-											>
-												{id}
-												{engineInfo?.[id] && (
-													<span
-														style={{
-															color: "#1976d2",
-															fontWeight: 500,
-															marginLeft: 12,
-														}}
-													>
-														({engineInfo[id].name})
-													</span>
-												)}
-											</Typography>
-											{engineInfo?.[id]?.files?.length >
-												0 && (
-												<Stack
-													direction="row"
-													spacing={2}
-													sx={{ mt: 0.5 }}
-												>
-													{engineInfo[id].files.map(
-														(file, idx) => (
-															<Stack
-																key={`success-${id}-${file}`}
-																direction="row"
-																spacing={1}
-																alignItems="center"
-															>
-																<Typography
-																	variant="caption"
-																	sx={{
-																		backgroundColor:
-																			"grey.100",
-																		color: "text.secondary",
-																		px: 1,
-																		py: 0.5,
-																		borderRadius: 1,
-																		fontSize:
-																			"0.8rem",
-																		fontWeight: 500,
-																	}}
-																>
-																	{file}
-																</Typography>
-																{engineInfo[id]
-																	.instances?.[
-																	idx
-																] !==
-																	undefined && (
-																	<Typography
-																		variant="caption"
-																		sx={{
-																			backgroundColor:
-																				"grey.200",
-																			color: "primary.main",
-																			px: 1,
-																			py: 0.5,
-																			borderRadius: 1,
-																			fontSize:
-																				"0.8rem",
-																			fontWeight: 500,
-																		}}
-																	>
-																		{
-																			engineInfo[
-																				id
-																			]
-																				.instances[
-																				idx
-																			]
-																		}
-																	</Typography>
-																)}
-															</Stack>
-														),
-													)}
-												</Stack>
-											)}
-										</Stack>
+											name={engineInfo?.[id]?.name}
+											id={id}
+											fileList={
+												engineInfo?.[id]?.files || []
+											}
+											instanceList={
+												engineInfo?.[id]?.instances ||
+												[]
+											}
+											showFiles={true}
+											openFilesId={openFilesId}
+											setOpenFilesId={setOpenFilesId}
+											fileListRef={fileListRef}
+										/>
 									))
 								) : (
 									<Typography
@@ -419,7 +564,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								)}
 							</Stack>
 						</Stack>
-
 						{/* Inaccessible Engines Section */}
 						<Stack spacing={1.5} sx={{ width: "100%" }}>
 							<Stack
@@ -428,10 +572,11 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								spacing={1}
 							>
 								<Typography
-									variant="h6"
+									variant="subtitle1"
 									sx={{
-										color: "error.main",
+										color: "#d32f2f",
 										fontWeight: 600,
+										fontSize: "1.05rem",
 									}}
 								>
 									Inaccessible Engines
@@ -439,231 +584,42 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								<Typography
 									variant="body2"
 									sx={{
-										color: "text.secondary",
+										color: "#888",
 										fontWeight: 500,
+										fontSize: "1rem",
 									}}
 								>
 									({failedIds.length})
 								</Typography>
 							</Stack>
-
-							{/* Engine Selection List */}
-							<Stack spacing={1.5} sx={{ pl: 1, width: "100%" }}>
+							<Stack spacing={1.5} sx={{ pl: 0, width: "100%" }}>
 								{failedIds.length > 0 ? (
-									failedIds.map((id, index) => (
-										<Stack
+									failedIds.map((id) => (
+										<EngineCard
 											key={id}
-											direction="row"
-											alignItems="center"
-											spacing={3}
-											sx={{
-												backgroundColor:
-													"background.paper",
-												p: 1.5,
-												borderRadius: 1,
-												border: 1,
-												borderColor: "divider",
-											}}
-										>
-											<Stack
-												direction="row"
-												alignItems="center"
-												spacing={1.5}
-												sx={{
-													flex: "1 1 auto",
-													minWidth: 0,
-												}}
-											>
-												<Typography
-													variant="body2"
-													sx={{
-														backgroundColor:
-															"grey.100",
-														color: "text.secondary",
-														px: 1.5,
-														py: 0.5,
-														borderRadius: 1,
-														minWidth: 24,
-														textAlign: "center",
-														fontWeight: 500,
-														fontSize: "0.875rem",
-													}}
-												>
-													{index + 1}
-												</Typography>
-												<Typography
-													variant="body2"
-													sx={{
-														wordBreak: "break-all",
-														fontFamily: "monospace",
-														px: 1.5,
-														py: 0.5,
-														borderRadius: 0.5,
-														fontSize: "0.8rem",
-														overflow: "hidden",
-														textOverflow:
-															"ellipsis",
-													}}
-												>
-													{id}
-												</Typography>
-												{engineInfo?.[id]?.files
-													?.length > 0 && (
-													<Stack
-														direction="row"
-														spacing={2}
-														sx={{ mt: 0.5 }}
-													>
-														{engineInfo[
-															id
-														].files.map(
-															(file, idx) => (
-																<Stack
-																	key={`failed-${id}-${file}`}
-																	direction="row"
-																	spacing={1}
-																	alignItems="center"
-																>
-																	<Typography
-																		variant="caption"
-																		sx={{
-																			backgroundColor:
-																				"grey.100",
-																			color: "text.secondary",
-																			px: 1,
-																			py: 0.5,
-																			borderRadius: 1,
-																			fontSize:
-																				"0.8rem",
-																			fontWeight: 500,
-																		}}
-																	>
-																		{file}
-																	</Typography>
-																	{engineInfo[
-																		id
-																	]
-																		.instances?.[
-																		idx
-																	] !==
-																		undefined && (
-																		<Typography
-																			variant="caption"
-																			sx={{
-																				backgroundColor:
-																					"grey.200",
-																				color: "primary.main",
-																				px: 1,
-																				py: 0.5,
-																				borderRadius: 1,
-																				fontSize:
-																					"0.8rem",
-																				fontWeight: 500,
-																			}}
-																		>
-																			{
-																				engineInfo[
-																					id
-																				]
-																					.instances[
-																					idx
-																				]
-																			}
-																		</Typography>
-																	)}
-																</Stack>
-															),
-														)}
-													</Stack>
-												)}
-											</Stack>
-											<Stack sx={{ flex: "0 0 400px" }}>
-												<FormControl
-													fullWidth
-													size="small"
-													sx={{ minWidth: 200 }}
-												>
-													<Select
-														value={
-															engineReplacements[
-																id
-															] || ""
-														}
-														onChange={(e) =>
-															handleEngineReplacementChange(
-																id,
-																e.target
-																	.value as string,
-															)
-														}
-														sx={{
-															"& .MuiSelect-select":
-																{
-																	py: 1,
-																	fontSize:
-																		"0.875rem",
-																},
-														}}
-													>
-														{availableEngines.data?.map(
-															(engine) => (
-																<MenuItem
-																	key={
-																		engine.database_id ||
-																		engine.app_id
-																	}
-																	value={
-																		engine.database_id ||
-																		engine.app_id
-																	}
-																	sx={{
-																		fontSize:
-																			"0.875rem",
-																	}}
-																>
-																	{engine.database_name ||
-																		engine.app_name}{" "}
-																	<span
-																		style={{
-																			color: "#666",
-																			fontSize:
-																				"0.8rem",
-																		}}
-																	>
-																		(
-																		{engine.database_type ||
-																			engine.app_type}
-																		)
-																	</span>
-																</MenuItem>
-															),
-														)}
-													</Select>
-													{!engineReplacements[
-														id
-													] && (
-														<span
-															style={{
-																position:
-																	"absolute",
-																left: 16,
-																top: 8,
-																color: "#999",
-																fontStyle:
-																	"italic",
-																pointerEvents:
-																	"none",
-																fontSize:
-																	"0.875rem",
-															}}
-														>
-															Select replacement
-															engine
-														</span>
-													)}
-												</FormControl>
-											</Stack>
-										</Stack>
+											name={engineInfo?.[id]?.name}
+											id={id}
+											fileList={
+												engineInfo?.[id]?.files || []
+											}
+											instanceList={
+												engineInfo?.[id]?.instances ||
+												[]
+											}
+											showFiles={true}
+											openFilesId={openFilesId}
+											setOpenFilesId={setOpenFilesId}
+											fileListRef={fileListRef}
+											showReplacement={true}
+											replacementValue={
+												engineReplacements[id]
+											}
+											onReplacementChange={
+												handleEngineReplacementChange
+											}
+											availableEngines={availableEngines}
+											showReplacementPlaceholder={true}
+										/>
 									))
 								) : (
 									<Typography
@@ -680,7 +636,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								)}
 							</Stack>
 						</Stack>
-
 						{/* Loading state for engines */}
 						{availableEngines.status === "LOADING" && (
 							<Stack
@@ -702,7 +657,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 								</Typography>
 							</Stack>
 						)}
-
 						{/* Error state for engines */}
 						{availableEngines.status === "ERROR" && (
 							<Stack
@@ -737,54 +691,56 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 				</Modal.Content>
 				<Modal.Actions>
 					<Stack
+						flex={1}
 						direction="row"
-						justifyContent="center"
-						spacing={2}
-						sx={{ width: "100%", p: 2 }}
+						justifyContent="end"
+						alignItems="center"
+						spacing={1}
+						padding={2}
 					>
+						<Button variant="text" onClick={onClose}>
+							{failedIds.length > 0 ? "Cancel" : "OK"}
+						</Button>
 						{failedIds.length > 0 && (
 							<Button
 								variant="contained"
-								color="primary"
 								onClick={handleSaveReplacements}
 								disabled={!hasValidReplacements}
-								sx={{
-									minWidth: 150,
-									py: 1.5,
-								}}
 							>
 								Save Replacements
 							</Button>
 						)}
-						<Button
-							variant="outlined"
-							onClick={onClose}
-							sx={{
-								minWidth: 100,
-								py: 1.5,
-							}}
-						>
-							{failedIds.length > 0 ? "Cancel" : "OK"}
-						</Button>
 					</Stack>
 				</Modal.Actions>
 			</Modal>
 			<Modal
 				open={showConfirmation}
-				fullWidth
 				maxWidth={false}
 				sx={{
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					minHeight: "100vh",
 					"& .MuiDialog-paper": {
-						width: "80vw",
-						maxWidth: 1000,
+						width: 600,
+						maxWidth: "95vw",
 						minWidth: 320,
+						minHeight: 220,
+						height: "auto",
+						maxHeight: 540,
+						borderRadius: 3,
+						boxShadow: 8,
+						p: 0,
+						display: "flex",
+						flexDirection: "column",
+						justifyContent: "flex-start",
 					},
 				}}
 			>
 				<Modal.Title>
 					<Typography
 						variant="h6"
-						align="center"
+						align="left"
 						sx={{ flex: 1, fontWeight: 600 }}
 					>
 						Engine Replacement Confirmation
@@ -794,136 +750,32 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 					<Typography variant="body1" sx={{ mb: 2, color: "#555" }}>
 						The following engine IDs have been replaced:
 					</Typography>
-					<Stack spacing={1.5} sx={{ pl: 1, width: "100%" }}>
+					<Stack spacing={1.5} sx={{ pl: 0, width: "100%" }}>
 						{Object.entries(replacementDetails).map(
-							([failed, detail], index) => (
-								<Stack
+							([failed, detail]) => (
+								<EngineCard
 									key={failed}
-									direction="row"
-									alignItems="center"
-									spacing={3}
-									sx={{
-										backgroundColor: "background.paper",
-										p: 1.5,
-										borderRadius: 1,
-										border: 1,
-										borderColor: "divider",
-									}}
-								>
-									<Stack
-										direction="row"
-										alignItems="center"
-										spacing={1.5}
-										sx={{
-											flex: "1 1 auto",
-											minWidth: 0,
-										}}
-									>
-										<Typography
-											variant="body2"
-											sx={{
-												backgroundColor: "grey.100",
-												color: "text.secondary",
-												px: 1.5,
-												py: 0.5,
-												borderRadius: 1,
-												minWidth: 24,
-												textAlign: "center",
-												fontWeight: 500,
-												fontSize: "0.875rem",
-											}}
-										>
-											{index + 1}
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												wordBreak: "break-all",
-												fontFamily: "monospace",
-												fontWeight: 500,
-											}}
-										>
-											{failed}
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												color: "text.secondary",
-												fontWeight: "bold",
-											}}
-										>
-											&rarr;
-										</Typography>
-										<Typography
-											variant="body2"
-											sx={{
-												wordBreak: "break-all",
-												fontFamily: "monospace",
-												color: "success.main",
-												fontWeight: 500,
-											}}
-										>
-											{detail.replacement}
-										</Typography>
-										<span
-											style={{
-												color: "#1976d2",
-												fontWeight: 500,
-												marginLeft: 12,
-											}}
-										>
-											( {detail.engineName} )
-										</span>
-										{detail.files &&
-											detail.files.length > 0 && (
-												<Stack
-													direction="row"
-													spacing={1}
-													sx={{ mt: 0.5 }}
-												>
-													{detail.files.map(
-														(file) => (
-															<Typography
-																key={file}
-																variant="caption"
-																sx={{
-																	backgroundColor:
-																		"grey.100",
-																	color: "text.secondary",
-																	px: 1,
-																	py: 0.5,
-																	borderRadius: 1,
-																	fontSize:
-																		"0.8rem",
-																	fontWeight: 500,
-																}}
-															>
-																{file}
-															</Typography>
-														),
-													)}
-												</Stack>
-											)}
-									</Stack>
-								</Stack>
+									name={detail.engineName}
+									id={failed}
+									confirmation={true}
+									confirmationReplacement={detail.replacement}
+								/>
 							),
 						)}
 					</Stack>
 				</Modal.Content>
 				<Modal.Actions>
 					<Stack
+						flex={1}
 						direction="row"
-						justifyContent="center"
-						sx={{ width: "100%", p: 2 }}
+						justifyContent="end"
+						alignItems="center"
+						spacing={1}
+						padding={2}
 					>
 						<Button
 							variant="contained"
-							color="primary"
 							onClick={handleConfirmationClose}
-							sx={{
-								minWidth: 150,
-								py: 1.5,
-							}}
 						>
 							OK
 						</Button>

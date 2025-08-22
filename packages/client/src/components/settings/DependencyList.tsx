@@ -161,6 +161,11 @@ export const DependencyList = ({ id }: DependencyListProps) => {
 					<Button
 						variant="contained"
 						onClick={openDependencyAddMembersModal}
+						disabled={
+							getProjectDependencies.status === "SUCCESS" &&
+							Array.isArray(getProjectDependencies.data) &&
+							getProjectDependencies.data.length === 0
+						}
 					>
 						<StyledCenteredBox>
 							<Add />
