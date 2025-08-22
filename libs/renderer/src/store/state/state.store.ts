@@ -430,19 +430,18 @@ export class StateStore {
 				const { id, alias } = action.payload;
 
 				return this.renameVariable(id, alias);
-			}  else if (
+			} else if (
 				ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
 			) {
 				const { list } = action.payload;
 
 				return this.setExecutionOrder(list);
-			}
+			} else if (ActionMessages.ADD_BLOCK === action.message) {
 			/**
 			 * --------------------------------------------------
 			 * Blocks
 			 * --------------------------------------------------
 			 */
-			else if (ActionMessages.ADD_BLOCK === action.message) {
 				const { json, position, isCommunity } = action.payload;
 
 				return this.addBlock(json, position, isCommunity);
@@ -467,23 +466,21 @@ export class StateStore {
 
 				this.setListener(id, listener, actions, type);
 			} else if (ActionMessages.ADD_DYNAMIC_SLOT === action.message) {
-				const { id } = action.payload
+				const { id } = action.payload;
 
-				this.addDynamicSlot(id)
+				this.addDynamicSlot(id);
 			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT === action.message) {
+				console.log(action.payload);
+				const { id, indexToRemove } = action.payload;
 
-				console.log(action.payload)
-				const { id, indexToRemove } = action.payload
-
-				const i = JSON.stringify(indexToRemove)
-				this.removeDynamicSlot(id, i)
-			}
+				const i = JSON.stringify(indexToRemove);
+				this.removeDynamicSlot(id, i);
+			} else if (ActionMessages.NEW_QUERY === action.message) {
 			/**
 			 * --------------------------------------------------
 			 * Notebooks
 			 * --------------------------------------------------
 			 */
-			else if (ActionMessages.NEW_QUERY === action.message) {
 				const { queryId, config, isCommunity } = action.payload;
 
 				this.newQuery(queryId, config, isCommunity);
@@ -511,13 +508,12 @@ export class StateStore {
 				const { queryId, cellId, path, value } = action.payload;
 
 				this.updateCell(queryId, cellId, path, value);
-			} 
+			} else if (ActionMessages.RUN_QUERY === action.message) {
 			/**
 			 * --------------------------------------------------
 			 * Events
 			 * --------------------------------------------------
 			 */
-			else if (ActionMessages.RUN_QUERY === action.message) {
 				const { queryId } = action.payload;
 
 				return this.runQuery(queryId);
@@ -543,15 +539,15 @@ export class StateStore {
 				this.dispatchOpenEvent(destinationType, destination);
 			} else if (ActionMessages.MODIFY_VARIABLE === action.message) {
 				const { blockId, variable, value } = action.payload;
-				console.log("blockId", blockId)
-				console.log("variable", variable)
-				console.log("value", value)
+				console.log("blockId", blockId);
+				console.log("variable", variable);
+				console.log("value", value);
 
-				const parsed = this.parseVariable(value as string, blockId)
+				const parsed = this.parseVariable(value as string, blockId);
 
-				console.log('parsed', parsed)
+				console.log("parsed", parsed);
 
-				this.modifyVariable(variable, parsed)
+				this.modifyVariable(variable, parsed);
 			}
 		} catch (e) {
 			console.error(e);
@@ -599,17 +595,13 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
-			}  else if (ActionMessages.MODIFY_VARIABLE === action.message) {
+			} else if (ActionMessages.MODIFY_VARIABLE === action.message) {
 				const { blockId, variable, value } = action.payload;
-				console.log("blockId", blockId)
-				console.log("variable", variable)
-				console.log("value", value)
 
-				const parsed = this.parseVariable(value as string, blockId)
+				// parse the value and assign
+				const parsed = this.parseVariable(value as string, blockId);
 
-				console.log('parsed', parsed)
-
-				this.modifyVariable(variable, parsed)
+				this.modifyVariable(variable, parsed);
 			}
 		} catch (e) {
 			console.error(e);
@@ -1593,29 +1585,27 @@ export class StateStore {
 	 * @param listener - listener to add to the block
 	 * @param actions - actions to add to the block
 	 */
-	private addDynamicSlot = (
-		id: string
-	): void => {
+	private addDynamicSlot = (id: string): void => {
 		const block = this._store.blocks[id];
- 		if (!block || !block.slots) {
- 			return;
- 		}
+		if (!block || !block.slots) {
+			return;
+		}
 
- 		// Find the next available slot number
- 		const slotNames = Object.keys(block.slots)
- 			.filter(name => !isNaN(Number(name)))
- 			.map(name => Number(name))
- 			.sort((a, b) => a - b);
+		// Find the next available slot number
+		const slotNames = Object.keys(block.slots)
+			.filter((name) => !isNaN(Number(name)))
+			.map((name) => Number(name))
+			.sort((a, b) => a - b);
 
- 		const nextSlotNumber = slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
- 		const newSlotName = nextSlotNumber.toString();
+		const nextSlotNumber =
+			slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
+		const newSlotName = nextSlotNumber.toString();
 
- 		// Add the new slot
- 		block.slots[newSlotName] = {
- 			name: newSlotName,
- 			children: []
- 		};
-
+		// Add the new slot
+		block.slots[newSlotName] = {
+			name: newSlotName,
+			children: [],
+		};
 	};
 
 	/**
@@ -1624,50 +1614,48 @@ export class StateStore {
 	 * @param listener - listener to add to the block
 	 * @param actions - actions to add to the block
 	 */
-	private removeDynamicSlot = (
-		id: string,
-		indexToRemove: string,
-	): void => {
-		console.log(this._store.blocks[id].slots)
-		console.log(indexToRemove)
+	private removeDynamicSlot = (id: string, indexToRemove: string): void => {
+		console.log(this._store.blocks[id].slots);
+		console.log(indexToRemove);
 		const block = this._store.blocks[id];
 
 		if (!block || !block.slots) {
- 			return;
+			return;
 		}
 
 		// Convert slot names to array and sort them numerically
- 		const slotNames = Object.keys(block.slots)
- 			.filter(name => !isNaN(Number(name)))
- 			.map(name => Number(name))
- 			.sort((a, b) => a - b);
+		const slotNames = Object.keys(block.slots)
+			.filter((name) => !isNaN(Number(name)))
+			.map((name) => Number(name))
+			.sort((a, b) => a - b);
 
-		console.log('slotnames', slotNames)
+		console.log("slotnames", slotNames);
 
- 		// Find the slot name at the specified index
- 		const slotNameToRemove = slotNames[indexToRemove];
- 		if (slotNameToRemove === undefined) {
- 			return;
- 		}
+		// Find the slot name at the specified index
+		const slotNameToRemove = slotNames[indexToRemove];
+		if (slotNameToRemove === undefined) {
+			return;
+		}
 
+		console.log("nameToRemove", slotNameToRemove);
+		debugger;
 
-		console.log('nameToRemove',slotNameToRemove)
-		debugger
-	
-		console.log("before Delete",block.slots)
- 		// Remove the slot at the specified index
- 		delete block.slots[slotNameToRemove];
+		console.log("before Delete", block.slots);
+		// Remove the slot at the specified index
+		delete block.slots[slotNameToRemove];
 
-		console.log("after deleet", block.slots)
-	
- 		// Shift all subsequent slots down by one
- 		const slotsToShift = slotNames.filter(name => name > slotNameToRemove);
- 		slotsToShift.forEach(oldSlotName => {
- 			const newSlotName = oldSlotName - 1;
- 			block.slots[newSlotName] = block.slots[oldSlotName];
- 			block.slots[newSlotName].name = newSlotName.toString();
- 			delete block.slots[oldSlotName];
- 		});
+		console.log("after deleet", block.slots);
+
+		// Shift all subsequent slots down by one
+		const slotsToShift = slotNames.filter(
+			(name) => name > slotNameToRemove,
+		);
+		slotsToShift.forEach((oldSlotName) => {
+			const newSlotName = oldSlotName - 1;
+			block.slots[newSlotName] = block.slots[oldSlotName];
+			block.slots[newSlotName].name = newSlotName.toString();
+			delete block.slots[oldSlotName];
+		});
 	};
 
 	/**
@@ -2098,8 +2086,8 @@ export class StateStore {
 	};
 
 	private modifyVariable = (id: string, value: unknown) => {
-		this._store.variables[id].value = value
-	}
+		this._store.variables[id].value = value;
+	};
 
 	/**
 	 * Renames variable that can be referenced

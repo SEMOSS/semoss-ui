@@ -1,6 +1,6 @@
+import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { Select, TextField } from "@semoss/ui";
-import { useEffect } from "react";
 
 interface ModifyVariableSelectorProps {
 	id: string;
@@ -13,9 +13,11 @@ export const ModifyVariableSelector = ({
 	control,
 	setValue,
 }: ModifyVariableSelectorProps) => {
+	// TODO: FIX this blockId assign, inconsistent behavior
+
 	useEffect(() => {
-		setValue('payload.blockId', id)
-	}, [id])
+		setValue("payload.blockId", id);
+	}, [id]);
 
 	return (
 		<>
@@ -40,20 +42,20 @@ export const ModifyVariableSelector = ({
 					</Select>
 				)}
 			/>
-				<Controller
-					name="payload.value"
-					control={control}
-					render={({ field }) => (
-						<>
-							<TextField 
-								label={"Update Value"}
-								onChange={(value) => {
-									field.onChange(value);
-								}}
-							/>
-						</>
-					)}
-				/>
+			<Controller
+				name="payload.value"
+				control={control}
+				render={({ field }) => (
+					<>
+						<TextField
+							label={"Update Value"}
+							onChange={(value) => {
+								field.onChange(value);
+							}}
+						/>
+					</>
+				)}
+			/>
 		</>
 	);
 };

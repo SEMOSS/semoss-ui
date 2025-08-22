@@ -102,6 +102,20 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 							slots: {},
 						};
 
+						// Iterate through all listeners
+						// for (const listener in blockJson.listeners) {
+						// 	if (blockJson.listeners[listener].order) {
+						// 		 // Iterate through the order array of messages
+						// 		blockJson.listeners[listener].order.forEach((message: any) => {
+						// 			// Check for the "MODIFY_VARIABLE" message
+						// 			if (message.message === "MODIFY_VARIABLE") {
+						// 				// Update the blockId in the payload
+						// 				message.payload.blockId = id;
+						// 			}
+						// 		});
+						// 	}
+						// }
+
 						// generate the slots
 						for (const slot in block.slots) {
 							if (block.slots[slot]) {
@@ -130,6 +144,32 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 							position: position,
 						},
 					});
+
+					// TODO:
+					// Go through new block and fix listenerers for the block
+					// as well as all slots of the block along with their slots (recursive)
+					// console.log("new block id", newBlockId)
+					// const newBlock = state.getBlock(newBlockId as string)
+					// console.log("NEW_BLOCK", newBlock)
+
+					// for (const listener in newBlock.listeners) {
+					// 	if (newBlock.listeners[listener].order) {
+
+					// 		// TODO: You will have to do a state.dispatch(newBlockId, SET_LISTENER)
+					// 		newBlock.listeners[listener].order.map((message: any) => {
+					// 			// Check for the "MODIFY_VARIABLE" message
+					// 			if (message.message === "MODIFY_VARIABLE") {
+					// 				// Update the blockId in the payload
+					// 				message.payload.blockId = id;
+					// 			}
+					// 		});
+					// 	}
+					// }
+
+					// // TODO: This will need to be recursive
+					// newBlocks.slots.forEach((blockId) => {
+					// 	// TODO: You will have to do a state.dispatch(newBlockId, SET_LISTENER)
+					// })
 
 					newIds.push(newBlockId);
 				});
