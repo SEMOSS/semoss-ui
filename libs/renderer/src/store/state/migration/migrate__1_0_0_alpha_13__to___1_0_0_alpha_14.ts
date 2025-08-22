@@ -7,13 +7,21 @@ const migrate__1_0_0_alpha_13__to_1_0_0_alpha_14: Migration = {
 	async run(state: MigrationState): Promise<MigrationState> {
 		const newState: MigrationState = { ...state };
 
-		Object.entries(newState.variables).forEach(([_, variable]) => {
-			if (Object.hasOwn(variable, "isInput")) {
-				delete variable.isInput;
+		Object.entries(newState.blocks).forEach((keyValue) => {
+			const block = keyValue[1];
+			if (block.widget === "container") {
+				block.data.loading = false;
+				block.data.loadType = "Skeleton";
 			}
 
-			if (Object.hasOwn(variable, "isOutput")) {
-				delete variable.isOutput;
+			if (block.widget === "text") {
+				block.data.loading = false;
+				block.data.loadType = "Skeleton";
+			}
+
+			if (block.widget === "markdown") {
+				block.data.loading = false;
+				block.data.loadType = "Skeleton";
 			}
 		});
 
