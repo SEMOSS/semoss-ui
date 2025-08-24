@@ -6,6 +6,13 @@ const CSRF = {
 	token: "",
 };
 
+export function resetCsrfToken(): void {
+	CSRF.token = "";
+	csrfToken = null;
+	csrfPromise = null;
+	// CSRF token has been reset
+}
+
 /**
  * Centralized CSRF token fetcher.
  * Ensures token is fetched once and cached.

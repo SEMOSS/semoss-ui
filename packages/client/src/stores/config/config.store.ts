@@ -4,6 +4,7 @@ import {
 	Env,
 	fetchCsrfTokenIfNeeded,
 	getCsrfToken,
+	resetCsrfToken,
 	runPixel,
 } from "@semoss/sdk/react";
 import type { AppMetadata } from "@/components/app";
@@ -762,10 +763,27 @@ export class ConfigStore {
 
 				this._store.status = "MISSING AUTHENTICATION";
 			});
+
+			// Reset CSRF token and re-initialize config
+			await this.resetAfterLogout();
 		} catch (error) {
 			console.error(error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Reset CSRF token and re-initialize config after logout
+	 */
+	async resetAfterLogout(): Promise<void> {
+		// Reset CSRF token
+		resetCsrfToken();
+
+		// Reset config CSRF flag
+		this.store.config.csrf = false;
+
+		// Re-fetch config to get new CSRF token
+		await this.setConfig();
 	}
 
 	/**

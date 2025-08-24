@@ -12,7 +12,6 @@ Env.update({
 
 const CSRF = {
 	isEnabled: false,
-	token: "",
 };
 
 // add interceptors
@@ -45,13 +44,12 @@ axios.interceptors.request.use(
 		// Check the CSRF before login or after the configStore is set, then add the token
 		if (CSRF.isEnabled || _store.configStore.store.config.csrf) {
 			if (config.method === "post") {
-				if (!CSRF.token) {
-					// fetch the CSRF token if it is not set, use getCsrfToken() or fetchCsrfTokenIfNeeded()
-					CSRF.token =
-						getCsrfToken() || (await fetchCsrfTokenIfNeeded());
+				// Use the centralized CSRF token from base.ts
+				const token =
+					getCsrfToken() || (await fetchCsrfTokenIfNeeded());
+				if (token) {
+					config.headers["X-CSRF-Token"] = token;
 				}
-
-				config.headers["X-CSRF-Token"] = CSRF.token;
 			}
 		}
 		return config;
