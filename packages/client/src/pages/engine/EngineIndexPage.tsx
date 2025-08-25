@@ -16,8 +16,9 @@ import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
 import { ENGINE_TYPES } from "@/types";
-import { removeUnderscores } from "@/utility";
+import { formatToDataTestId, removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
+import { formatPostcssSourceMap } from "vite";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -501,7 +502,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									aria-label={`Navigate to import ${
 										route ? route.name : "Engine"
 									}`}
-									data-testid={"engine-catalog-add-btn"}
+									data-testid={formatToDataTestId(`engineIndex-add-${route ? route.name : "Engine"}-btn`)}
 								>
 									Add {route ? route.name : "Engine"}
 								</Button>
@@ -524,6 +525,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 					size="small"
 					label="Search"
 					value={inputValue}
+					data-testid={`engineIndexPage-searchBar-${route.name}`}
 					onChange={(e) => handleInputChange(e.target.value)}
 				/>
 				<StyledContainer>
@@ -559,12 +561,14 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							>
 								<StyledToggleTabsGroupItem
 									value="Mine"
+									data-testid={formatToDataTestId(`engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`)}
 									label={`My ${
 										route ? `${route.name}s` : "Engines"
 									}`}
 								/>
 								<StyledToggleTabsGroupItem
 									value="Discoverable"
+									data-testid={formatToDataTestId(`engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`)}
 									label={`Discoverable ${
 										route ? `${route.name}s` : "Engines"
 									}`}

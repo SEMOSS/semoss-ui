@@ -371,6 +371,7 @@ const _FileDropzone = <Multiple extends boolean>(
 					<StyledIconButton
 						size="small"
 						onClick={() => inputRef.current?.click()}
+						data-testid={`fileDropZone-iconBrowse-btn`}
 						disabled={disabled}
 					>
 						<OpenInBrowserOutlined color="primary" />
@@ -380,6 +381,7 @@ const _FileDropzone = <Multiple extends boolean>(
 						variant="text"
 						color="primary"
 						onClick={() => inputRef.current?.click()}
+						data-testid={`fileDropZone-browse-btn`}
 						disabled={disabled}
 					>
 						Browse
@@ -398,7 +400,7 @@ const _FileDropzone = <Multiple extends boolean>(
 					/>
 				</StyledContentContainer>
 			</StyledDropzone>
-			<StyledFileListContainer>{renderFiles()}</StyledFileListContainer>
+			<StyledFileListContainer data-testid={'fileDropZone-files-list'}>{renderFiles()}</StyledFileListContainer>
 		</StyledContainer>
 	);
 };

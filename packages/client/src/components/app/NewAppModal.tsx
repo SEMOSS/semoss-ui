@@ -270,6 +270,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 											field.onChange(value)
 										}
 										rows={3}
+										data-testid={"newAppModal-description-txt"}
 									/>
 								);
 							}}
@@ -294,6 +295,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 												{...params}
 												variant="outlined"
 												placeholder='Press "Enter" to add tag'
+												data-testid={"newAppModal-tag-txt"}
 											/>
 										)}
 									/>
@@ -325,6 +327,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 												field.onChange(value[0]);
 											}
 										}}
+										data-testid={"newAppModal-file-txt"}
 									/>
 								);
 							}}
@@ -342,6 +345,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 							type="button"
 							disabled={isLoading}
 							onClick={() => onClose()}
+							data-testid={"newAppModal-cancel-btn"}
 						>
 							Cancel
 						</Button>
@@ -349,6 +353,7 @@ export const NewAppModal = (props: NewAppModalProps) => {
 							type="submit"
 							variant={"contained"}
 							disabled={isLoading || !isFormValid}
+							data-testid={"newAppModal-create-btn"}
 						>
 							Create
 						</Button>

@@ -20,6 +20,7 @@ import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
+import { formatToDataTestId } from "@/utility";
 
 type LayoutType = React.ElementRef<typeof Layout>;
 
@@ -337,6 +338,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												<StyledLetTabImage
 													src={iconSrc}
 													alt={tabNode.getName()}
+													data-testId={formatToDataTestId(`workspace-${tabNode.getName()}`)}
 												/>
 											);
 										}

@@ -691,6 +691,7 @@ export const MembersTable = (props: MembersTableProps) => {
 									placeholder="Search Members"
 									size="small"
 									value={search}
+									data-testid={`membersTables-searchMembers-searchBar}`}
 									onChange={(e) => {
 										setSearch(e.target.value);
 									}}
@@ -733,6 +734,7 @@ export const MembersTable = (props: MembersTableProps) => {
 											userPermission === "Read-Only"
 										}
 										variant={"contained"}
+										data-testid={`membersTables-addMembers-btn}`}
 										onClick={() => {
 											openAddMembersModal();
 										}}
@@ -1223,6 +1225,7 @@ export const MembersTable = (props: MembersTableProps) => {
 												setAddModalUser(null);
 												openAddMembersModal();
 											}}
+											data-testid={`membersTables-addMembers-btn`}
 										>
 											Add Members
 										</Button>

@@ -557,7 +557,7 @@ export const AppDetailPage = () => {
 										}
 										variant="outlined"
 										onClick={() => exportApp()}
-										data-testid={"app-detail-export-btn"}
+										data-testid={"appDetail-export-btn"}
 									>
 										Export
 									</Button>
@@ -569,7 +569,7 @@ export const AppDetailPage = () => {
 											setIsChangeAccessModalOpen(true)
 										}
 										sx={{ fontWeight: "bold" }}
-										data-testid={"app-detail-access-btn"}
+										data-testid={"appDetail-access-btn"}
 									>
 										{permission === "discoverable" ? (
 											<>Request Access</>
@@ -582,7 +582,7 @@ export const AppDetailPage = () => {
 								<Button
 									variant="contained"
 									onClick={() => navigate(`/app/${appId}`)}
-									data-testid={"app-detail-open-btn"}
+									data-testid={"appDetail-open-btn"}
 								>
 									Open
 								</Button>
@@ -591,7 +591,7 @@ export const AppDetailPage = () => {
 									onClick={(event) =>
 										setMoreVertAnchorEl(event.currentTarget)
 									}
-									data-testid={"app-detail-more-btn"}
+									data-testid={"appDetail-more-btn"}
 								>
 									<MoreVert />
 								</IconButton>
@@ -768,7 +768,7 @@ export const AppDetailPage = () => {
 													top: "-0.4rem",
 												}}
 												data-testid={
-													"app-detail-edit-btn"
+													"appDetail-edit-btn"
 												}
 											>
 												<Edit />

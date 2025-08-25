@@ -16,6 +16,7 @@ import {
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
+import { formatToDataTestId } from "@/utility";
 
 const StyledAlert = styled(Alert, {
 	shouldForwardProp: (prop) => prop !== "setBounds",
@@ -392,6 +393,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										"public",
 									)
 								}
+								data-testid={formatToDataTestId(`settingsTiles-make-${name}-public-private-switch`)}
 								onChange={() => {
 									changeGlobal();
 								}}
@@ -426,6 +428,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												"discoverable",
 											)
 										}
+										data-testid={formatToDataTestId(`settingsTiles-${name}-makeDiscoverable-switch`)}
 										checked={discoverable}
 										onChange={() => {
 											changeDiscoverable();
@@ -454,6 +457,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							setBounds={direction === "column"}
 							sx={{ width: "100%" }}
 							icon={false}
+							data-testid={formatToDataTestId(`settingsTiles-${name}-makeDiscoverable-switch`)}
 							action={
 								<Switch
 									title={
@@ -468,6 +472,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											"discoverable",
 										)
 									}
+									data-testid={formatToDataTestId(`settingsTiles-${name}-makeDiscoverable-switch`)}
 									checked={discoverable}
 									onChange={() => {
 										changeDiscoverable();
@@ -505,6 +510,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										"delete",
 									)
 								}
+								data-testid={formatToDataTestId(`settingsTiles-${name}-delete-btn`)}
 								onClick={() => setDeleteModal(true)}
 							>
 								Delete
@@ -531,6 +537,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<Button
 								color={"error"}
 								variant={"contained"}
+								data-testid={formatToDataTestId(`settingsTiles-${name}-confirmDelete-btn`)}
 								onClick={() => deleteWorkflow()}
 							>
 								Delete
@@ -603,6 +610,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								onChange={() => {
 									changeGlobal();
 								}}
+								data-testid={formatToDataTestId(`settingsTiles-make-${name}-public-private-switch`)}
 							></Switch>
 						}
 					>
@@ -637,6 +645,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												? `Make ${name} non-discoverable`
 												: `Make ${name} discoverable`
 										}
+										data-testid={formatToDataTestId(`settingsTiles-${name}-makeDiscoverable-switch`)}
 										checked={discoverable}
 										onChange={() => {
 											changeDiscoverable();
@@ -680,6 +689,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											? `Make ${name} non-discoverable`
 											: `Make ${name} discoverable`
 									}
+									data-testid={formatToDataTestId(`settingsTiles-${name}-makeDiscoverable-switch`)}
 									checked={discoverable}
 									onChange={() => {
 										changeDiscoverable();
@@ -714,6 +724,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									variant="contained"
 									color="error"
 									onClick={() => setDeleteModal(true)}
+									data-testid={formatToDataTestId(`settingsTiles-${name}-delete-btn`)}
 									disabled={
 										!configStore.isEngineOperationAvailable(
 											type,
@@ -739,12 +750,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								permanentely delete this {name}.
 							</Modal.Content>
 							<Modal.Actions>
-								<Button onClick={() => setDeleteModal(false)}>
+								<Button data-testid={formatToDataTestId(`settingsTiles-${name}-confirmCancel-btn`)} onClick={() => setDeleteModal(false)}>
 									Cancel
 								</Button>
 								<Button
 									color={"error"}
 									variant={"contained"}
+									data-testid={formatToDataTestId(`settingsTiles-${name}-confirmDelete-btn`)}
 									onClick={() => deleteWorkflow()}
 								>
 									Delete
