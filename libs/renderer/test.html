@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Semoss Renderer Demo</title>
+    
+    <script id="semoss-env" type="application/json">{"APP": "49d79f08-a8b4-4e9c-a331-6a2c1dc98826","MODULE": "/monolith"}</script>
+    <style>html {font-family: sans-serif; padding: 30px;}</style>
+
+    <!-- Load React and ReactDOM first -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+   
+    <!-- Load peer dependencies -->
+    <script src="https://unpkg.com/mobx@6/dist/mobx.umd.js"></script>
+    <script src="https://unpkg.com/mobx-react-lite@3/dist/mobx-react-lite.umd.js"></script>
+   
+    <!-- Load your renderer package -->
+    <script src="https://unpkg.com/@semoss/renderer@latest/dist/index.umd.js"></script>
+</head>
+<body>
+    <div id="root"></div>
+   
+    <script>
+        // Access the renderer from the global SemossRenderer object
+        const { Renderer } = window.SemossRenderer;
+       
+        // Your blocks configuration
+        const BLOCKS = {
+            "queries": {},
+            "blocks": {
+                "page-1": {
+                    "slots": {
+                        "content": {
+                            "children": ["text--1967"],
+                            "name": "content"
+                        }
+                    },
+                    "widget": "page",
+                    "data": {
+                        "route": "",
+                        "style": {
+                            "padding": "24px",
+                            "fontFamily": "roboto",
+                            "flexDirection": "column",
+                            "display": "flex",
+                            "gap": "8px"
+                        }
+                    },
+                    "listeners": {},
+                    "id": "page-1"
+                },
+                "text--1967": {
+                    "id": "text--1967",
+                    "widget": "text",
+                    "parent": {
+                        "id": "page-1",
+                        "slot": "content"
+                    },
+                    "data": {
+                        "style": {
+                            "padding": "4px",
+                            "whiteSpace": "pre-line",
+                            "textOverflow": "ellipsis"
+                        },
+                        "text": "Hello from Semoss Renderer!",
+                        "variant": "h1",
+                        "route": "text--1967"
+                    },
+                    "listeners": {},
+                    "slots": {}
+                }
+            },
+            "variables": {},
+            "executionOrder": [],
+            "version": "1.0.0-alpha.4"
+        };
+       
+        // Render your app
+        ReactDOM.render(
+            React.createElement(Renderer, { state: BLOCKS }),
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
