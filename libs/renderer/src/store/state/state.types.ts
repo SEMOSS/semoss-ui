@@ -56,6 +56,7 @@ export type Variable =
 			value?: any;
 			isInput?: boolean;
 			isOutput?: boolean;
+			rename?: string; // Optional rename field for variables
 	  }
 	| {
 			to: string;
@@ -63,6 +64,7 @@ export type Variable =
 			cellId: string;
 			isInput?: boolean;
 			isOutput?: boolean;
+			rename?: string;
 	  };
 
 export type VariableWithId =
@@ -73,6 +75,7 @@ export type VariableWithId =
 			isInput?: boolean;
 			isOutput?: boolean;
 			cellId?: string;
+			rename?: string; // Optional rename field for variables
 	  } & { id: string })
 	| ({
 			type: "cell";
@@ -80,6 +83,7 @@ export type VariableWithId =
 			cellId: string;
 			isInput?: boolean;
 			isOutput?: boolean;
+			rename?: string; // Optional rename field for variables
 	  } & { id: string });
 
 /**

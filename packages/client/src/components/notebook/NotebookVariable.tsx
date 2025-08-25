@@ -1,6 +1,6 @@
 import { ContentCopy, Delete, Edit, MoreVert } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
 import {
 	Icon,
@@ -128,7 +128,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 
 	const [openRenameAlias, setOpenRenameAlias] = useState(false);
 	const [anchorEl, setAnchorEl] = useState(null);
-	const [newTokenAlias, setNewTokenAlias] = useState(id);
+	const [newTokenAlias, setNewTokenAlias] = useState(variable.rename ? variable.rename : id);
 	const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
 		null,
 	);
@@ -180,12 +180,11 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		}
 	}, [variable.type, engines, id]);
 
+
 	return (
 		<StyledListItem
 			key={id}
-			secondaryAction={
-				<>
-					<Stack
+			secondaryAction={<Stack
 						direction="row"
 						spacing={1}
 						alignItems="center"
@@ -258,9 +257,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 								</Stack>
 							</Menu.Item>
 						</Menu>
-					</Stack>
-				</>
-			}
+					</Stack>}
 		>
 			<StyledListItemText
 				disableTypography
@@ -300,7 +297,12 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 											variant="body1"
 											fontWeight="medium"
 										>
-											{id}
+											{variable.type === 'block'
+                                                ? variable.rename &&
+                                                  variable.rename !== ''
+                                                    ? variable.rename
+                                                    : id
+                                                : id}
 										</Typography>
 										<StyledCapitalizedTypography variant="body2">
 											{getVariableTypeDisplay}
@@ -311,7 +313,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 										<StyledTextField
 											className="notebook-variable__alias-name-text-field"
 											inputRef={(input) =>
-												input && input.focus()
+												input?.focus()
 											}
 											focused={true}
 											fullWidth
@@ -325,7 +327,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												</em>
 											}
 											onChange={(e) => {
-												setNewTokenAlias(
+												setNewTokenAlias(													
 													e.target.value,
 												);
 											}}
@@ -340,6 +342,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 															payload: {
 																id: id,
 																alias: newTokenAlias,
+																rename: newTokenAlias,
 															},
 														});
 
@@ -355,13 +358,14 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 													setNewTokenAlias(
 														success
 															? newTokenAlias
-															: id,
+															: variable.rename
+															? variable.rename: id,
 													);
 												}
 											}}
 											onBlur={() => {
 												setOpenRenameAlias(false);
-												setNewTokenAlias(id);
+												setNewTokenAlias(variable.rename? variable.rename : id);
 											}}
 											InputProps={{
 												disableUnderline: true,

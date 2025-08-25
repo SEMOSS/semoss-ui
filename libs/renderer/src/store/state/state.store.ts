@@ -342,7 +342,12 @@ export class StateStore {
 		Object.entries(this._store.variables).forEach((keyValue) => {
 			const variable = keyValue[1];
 
-			if (variable.to === pointer && !cellId && !variable.cellId) {
+			if(variable.type === "block" && variable.to === pointer){ {
+                alias = variable.rename?? keyValue[0];
+                        }
+					}
+
+			else if (variable.to === pointer && !cellId && !variable.cellId) {
 				alias = keyValue[0];
 			} else if (variable.to === pointer && variable.cellId === cellId) {
 				alias = keyValue[0];
@@ -395,7 +400,7 @@ export class StateStore {
 
 				this.setState(state);
 			} else if (ActionMessages.ADD_VARIABLE === action.message) {
-				const { id, to, type, cellId, value, isInput, isOutput } =
+				const { id, to, type, cellId, value, isInput, isOutput,rename } =
 					action.payload;
 
 				return this.addVariable(
@@ -406,6 +411,7 @@ export class StateStore {
 					value,
 					isInput,
 					isOutput,
+					rename
 				);
 			} else if (ActionMessages.EDIT_VARIABLE === action.message) {
 				const { id, from, to } = action.payload;
@@ -417,6 +423,7 @@ export class StateStore {
 				if (to.to) newVariable["to"] = to.to;
 				if (to.cellId) newVariable["cellId"] = to.cellId;
 				if (to.value) newVariable["value"] = to.value;
+				if(to.rename) newVariable["rename"] = to.rename;
 
 				newVariable["isInput"] = to.isInput ? to.isInput : false;
 				newVariable["isOutput"] = to.isOutput ? to.isOutput : false;
@@ -427,9 +434,9 @@ export class StateStore {
 
 				this.deleteVariable(id);
 			} else if (ActionMessages.RENAME_VARIABLE === action.message) {
-				const { id, alias } = action.payload;
+				const { id, alias,rename } = action.payload;
 
-				return this.renameVariable(id, alias);
+				return this.renameVariable(id, alias,rename);
 			}  else if (
 				ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
 			) {
@@ -2035,6 +2042,19 @@ export class StateStore {
 			"*",
 		); // --> Cross Origin Communications
 	};
+	private conflictExists(id: string, rename?: string): boolean {
+    return Object.entries(this._store.variables).some(
+        ([key, variable]: [string, any]) => {
+            if (rename) {
+                // Case A: rename provided → check against both id and rename
+                return variable.rename === rename || key === rename;
+            } else {
+                // Case B: rename not provided → check id against variable.rename
+                return variable.rename === id;
+            }
+        }
+    );
+}
 
 	// -----------------------------------
 	// REVIEW VARIABLE AND DEPENDENCY CODE
@@ -2053,6 +2073,7 @@ export class StateStore {
 		value?,
 		isInput?,
 		isOutput?,
+		rename?,
 	) => {
 		if (id.includes(".")) {
 			return false;
@@ -2062,6 +2083,10 @@ export class StateStore {
 			return false;
 		}
 
+    if (this.conflictExists(id, rename)) {
+        return false;
+    }
+
 		const token = { type };
 
 		if (to) token["to"] = to;
@@ -2069,6 +2094,7 @@ export class StateStore {
 		if (isInput) token["isInput"] = isInput;
 		if (isOutput) token["isOutput"] = isOutput;
 		if (value) token["value"] = value;
+		if(rename) token["rename"] = rename;
 
 		this._store.variables[id] = token as Variable;
 
@@ -2080,15 +2106,23 @@ export class StateStore {
 	 * @param old - points to old id
 	 * @param id - new id for variable
 	 */
-	private renameVariable = (old: string, id: string): boolean => {
+	private renameVariable = (old: string, id: string, rename: string): boolean => {
 		if (id.includes(".")) {
 			return false;
 		}
 
 		if (this._store.variables[id]) {
 			return false;
-		} else {
+		} 
+
+    if (this.conflictExists(id, rename)) {
+        return false;
+    }
+		else {
 			this._store.variables[id] = this._store.variables[old];
+			if(this._store.variables[id].type === "block") {
+				this._store.variables[id].rename = rename;
+			}
 
 			delete this._store.variables[old];
 

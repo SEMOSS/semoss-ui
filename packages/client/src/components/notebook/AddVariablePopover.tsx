@@ -202,7 +202,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			return inputBlocks.map((block) => {
 				return (
 					<Select.Item key={block.id} value={block.id}>
-						<Typography variant="caption">{block.id}</Typography>
+						<Typography variant="caption">{block.data.id ? (block.data.id) as string : block.id}</Typography>
 					</Select.Item>
 				);
 			});
@@ -583,7 +583,13 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 
 	useEffect(() => {
 		if (variable?.id) {
-			setVariableName(variable.id);
+			setVariableName(
+                variable.type === 'block'
+                    ? variable.rename && variable.rename !== ''
+                        ? variable.rename
+                        : variable.id
+                    : variable.id,
+            );
 			setVariableType(variable.type);
 			setIsInput(variable.isInput);
 			setIsOutput(variable.isOutput);
@@ -752,7 +758,25 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 															),
 															isInput: isInput,
 															isOutput: isOutput,
-														}
+														}:
+														 variable.type === 'block'
+                                                    ? {
+                                                          to: variablePointer,
+                                                          type: variableType,
+                                                          value: engine
+                                                              ? engine.app_id
+                                                              : variableType ===
+                                                                    'array' ||
+                                                                variableType ===
+                                                                    'JSON'
+                                                              ? JSON.parse(
+                                                                    variableInputValue,
+                                                                )
+                                                              : variableInputValue,
+                                                          isInput: isInput,
+                                                          isOutput: isOutput,
+                                                          rename: variableName,
+                                                      }
 													: {
 															to: variablePointer,
 															type: variableType,
