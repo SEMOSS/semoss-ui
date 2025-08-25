@@ -213,18 +213,17 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 
 	// render the data. It is wrapped in a computed, so it's cached
 	const data = computed(() => {
-		return copy(block.data, (instance) => {
-			if (typeof instance === "string") {
-				// try to extract the variable
-				return state.parseVariable(
-					instance,
-					block.widget !== "iteration" ? block.id : null,
-				);
-			}
+    return copy(block.data, (instance) => {
+      if (typeof instance === "string") {
+        return state.flattenVariable(
+          instance,
+          block.widget !== "iteration" ? block.id : null
+        );
+      }
 
-			return instance;
-		});
-	}).get();
+      return instance;
+    });
+  }).get();
 
 	return {
 		data: data,

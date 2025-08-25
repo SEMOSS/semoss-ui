@@ -679,86 +679,86 @@ export class StateStore {
 		}
 
 		// remove the brackets
-		cleaned = cleaned.replace(/{{|}}/g, "");
-		let combinedValues = "";
-		// split by space to get the variables
-		cleaned
-			.split(" ")
-			.filter((item) => item?.length > 0)
-			.forEach((path: string) => {
-				const pointer = Array.isArray(path) ? path[0] : null;
-				// Special syntax to parse by cell order
-				const isNumber = !isNaN(parseFloat(path[1]));
-				if (isNumber) {
-					let q;
+		cleaned = cleaned.slice(2, -2);
 
-					// TODO: Problem we want to reference cells by a special syntax
-					// I don't want to change ids to be numbered for cells,
-					// i think we are good with our id generation
-					if (this._store.variables[pointer]) {
-						const variable = this._store.variables[path[0]];
-						if (variable.type === "query") {
-							q = this._store.queries[variable.to];
-						}
-					} else if (this._store.queries[pointer]) {
-						q = this._store.queries[pointer];
-					}
+		// get the keys in the path
+		const path = cleaned.split(".");
+		const pointer = path[0];
 
-					if (q) {
-						try {
-							const c = q.cellList[parseFloat(path) - 1];
-							const key = path;
+		// Special syntax to parse by cell order
+		const isNumber = !isNaN(parseFloat(path[1]));
 
-							if (key in c._exposed) {
-								combinedValues += ` ${getValueByPath(
-									c._exposed,
-									path,
-								)}`;
-							}
-						} catch (e) {
-							if (expression) {
-								combinedValues += ` ${expression}`;
-							}
-						}
-					}
+		if (isNumber) {
+			let q;
+
+			// TODO: Problem we want to reference cells by a special syntax
+			// I don't want to change ids to be numbered for cells,
+			// i think we are good with our id generation
+			if (this._store.variables[pointer]) {
+				const variable = this._store.variables[path[0]];
+				if (variable.type === "query") {
+					q = this._store.queries[variable.to];
 				}
+			} else if (this._store.queries[pointer]) {
+				q = this._store.queries[pointer];
+			}
 
-				let variable = this._store.variables?.[path];
-				let fullPath: null | string[] = null;
+			if (q) {
+				try {
+					const c = q.cellList[parseFloat(path[1]) - 1];
+					const p = path;
+					p.splice(0, 2);
+
+					if (p.length === 0) {
+						return c.output;
+					} else {
+						const key = p[0];
+
+						if (key in c._exposed) {
+							// get the search path
+							const s = p.join(".");
+
+							return getValueByPath(c._exposed, s);
+						}
+					}
+				} catch (e) {
+					console.error(e);
+					return expression;
+				}
+			}
+		}
+
+		if (this._store.variables[path[0]]) {
+			// We should be able to interpret by varaible name as we do below
+			const variable = this._store.variables[path[0]];
+			const value = this.getVariable(
+				variable.to,
+				variable.type,
+				path,
+				variable.cellId,
+				variable.type !== "cell" && variable.value
+					? variable.value
+					: null,
+			);
+
+			// TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
+			if (value !== undefined && value !== null) {
+				// RECURSIVE: If value is another {{var}}, resolve again
 				if (
-					!variable &&
-					typeof path === "string" &&
-					path.trim().match(/\./)
+					typeof value === "string" &&
+					value.trim().match(/^{{.*}}$/)
 				) {
-					fullPath = path.split(".");
-					variable = this._store.variables?.[fullPath[0]];
+					return this.parseVariable(value, id, _depth + 1, _seen);
 				}
-				if (variable) {
-					const value = this.getVariable(
-						variable.to,
-						variable.type,
-						fullPath ? fullPath : [path],
-						variable.cellId,
-						variable.type !== "cell" && variable.value
-							? variable.value
-							: null,
-					);
+				return value;
+			}
 
-					// TODO: Check this, protects for false values
-					// (query.isLoading tied to a block.label **bad use-case)
-					if (value !== undefined && value !== null) {
-						const newValue =
-							typeof value === "object"
-								? JSON.stringify(value)
-								: value;
-						combinedValues += ` ${newValue ?? ""}`;
-					}
-				} else {
-					combinedValues += ` ${path}`;
-				}
-			});
+			if (value === undefined) {
+				return value;
+			}
+		}
 
-		return combinedValues || expression;
+		return expression;
 	};
 
 	/**
@@ -766,10 +766,10 @@ export class StateStore {
 	 * @param expression - expression to flatten
 	 * @returns the flatten parameter
 	 */
-	flattenVariable = (expression: string): string => {
+	flattenVariable = (expression: string, id?: string): string => {
 		return expression.replace(/{{(.*?)}}/g, (match) => {
 			// try to extract the variable
-			const v = this.parseVariable(match);
+			const v = this.parseVariable(match, id);
 
 			// if it is not a string, convert to a string
 			if (typeof v !== "string") {
