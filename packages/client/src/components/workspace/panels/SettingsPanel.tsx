@@ -1,12 +1,11 @@
 import { GetAppRounded } from "@mui/icons-material";
-import { useEffect, useState } from "react";
+import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router-dom";
 import {
 	Container,
 	IconButton,
 	Stack,
 	styled,
-	ToggleTabsGroup,
 	Tooltip,
 	useNotification,
 } from "@semoss/ui";
@@ -41,13 +40,13 @@ const StyledContent = styled("div")(({ theme }) => ({
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
 
-export const SettingsPanel = () => {
+export const SettingsPanel = observer(({ value }:{ value: string }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { workspace } = useWorkspace();
 	const navigate = useNavigate();
+	const view = value;
 
-	const [view, setView] = useState<VIEW>("CURRENT");
 
 	/**
 	 * Method that is called to export the app
@@ -127,7 +126,7 @@ export const SettingsPanel = () => {
 								</div>
 							</Stack>
 						) : null}
-						{workspace.role === "OWNER" ? (
+						{workspace.role === "OWNER" && view === "CURRENT" ? (
 							<SettingsTiles
 								type={"APP"}
 								id={workspace.appId}
@@ -149,7 +148,7 @@ export const SettingsPanel = () => {
 							/>
 						) : null}
 						<StyledContent>
-							<ToggleTabsGroup
+							{/* <ToggleTabsGroup
 								value={view}
 								onChange={(e, v) => setView(v as VIEW)}
 							>
@@ -167,7 +166,7 @@ export const SettingsPanel = () => {
 									disabled={workspace.role === "READ_ONLY"}
 									value={"APP"}
 								/>
-							</ToggleTabsGroup>
+							</ToggleTabsGroup> */}
 							{view === "CURRENT" && (
 								<MembersTable
 									type={"APP"}
@@ -190,4 +189,4 @@ export const SettingsPanel = () => {
 			</SettingsContext.Provider>
 		</Panel>
 	);
-};
+});

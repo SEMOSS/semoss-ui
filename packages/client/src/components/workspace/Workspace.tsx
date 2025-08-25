@@ -232,7 +232,8 @@ export const Workspace = observer((props: WorkspaceProps) => {
 			.getBorderSet()
 			.getBorders()
 			.forEach((border) => {
-				border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				// border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				border.setSelected(action.data.tabNode === "block-settings" && mainTabsetWeight === 0 ? 1 : border.getSelected());
 			});
 
 		if (isSettingsTab || mainTabsetWeight === 0) {
@@ -329,7 +330,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												tabNode.getName(),
 										);
 										const isSelected = tabNode.isSelected();
-										if (item && item.icon) {
+										if (item?.icon) {
 											const iconSrc = isSelected
 												? item.icon.active
 												: item.icon.default;
