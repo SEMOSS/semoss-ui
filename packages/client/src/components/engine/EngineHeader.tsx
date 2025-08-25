@@ -134,7 +134,18 @@ export const EngineHeader: React.FC = () => {
                                         )
                                     }
                                     variant="outlined"
-                                    onClick={() => setOpenExportModal(true)}
+                                    onClick={() => {
+                                        const engineType =
+                                            active.metadata.database_subtype;
+                                        if (
+                                            engineType === 'H2_DB' ||
+                                            engineType === 'MYSQL'
+                                        ) {
+                                            setOpenExportModal(true);
+                                        } else {
+                                            exportDB(false);
+                                        }
+                                    }}
                                 >
                                     Export
                                 </Button>
