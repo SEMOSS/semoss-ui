@@ -1,4 +1,7 @@
-import React, { useState } from 'react';
+import { ContentCopyOutlined, SimCardDownload } from "@mui/icons-material";
+import type React from "react";
+import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
     styled,
     Breadcrumbs,
@@ -12,48 +15,47 @@ import {
     CircularProgress,
     Modal,
 } from '@semoss/ui';
-
 import { useRootStore, useEngine } from '@/hooks';
 import { EngineAccessButton, EditEngineDetails } from '.';
 import { Link } from 'react-router-dom';
 import { SimCardDownload, ContentCopyOutlined } from '@mui/icons-material';
 
 const StyledName = styled(Stack)(({ theme }) => ({
-    width: '100%',
-    paddingTop: theme.spacing(1),
-    paddingBottom: theme.spacing(1),
+	width: "100%",
+	paddingTop: theme.spacing(1),
+	paddingBottom: theme.spacing(1),
 }));
 
-const StyledInfo = styled('div')(({ theme }) => ({
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: theme.spacing(4),
-    overflow: 'hidden',
+const StyledInfo = styled("div")(({ theme }) => ({
+	display: "flex",
+	justifyContent: "space-between",
+	marginBottom: theme.spacing(4),
+	overflow: "hidden",
 }));
 
-const StyledInfoLeft = styled('div')(({ theme }) => ({
-    flex: 1,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: theme.spacing(1),
+const StyledInfoLeft = styled("div")(({ theme }) => ({
+	flex: 1,
+	display: "flex",
+	flexDirection: "column",
+	justifyContent: "space-between",
+	gap: theme.spacing(1),
 }));
 
-const StyledInfoRight = styled('div')(({ theme }) => ({
-    display: 'flex',
-    flexDirection: 'column',
-    gap: theme.spacing(1),
-    width: '288px',
+const StyledInfoRight = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+	width: "288px",
 }));
 
 const StyledInfoDescription = styled(Typography)(({ theme }) => ({
-    minHeight: '80px',
-    maxWidth: '699px',
-    maxHeight: '174px',
-    color: theme.palette.text.secondary,
-    textOverflow: 'ellipsis',
-    overflow: 'hidden',
-    whiteSpace: 'normal',
+	minHeight: "80px",
+	maxWidth: "699px",
+	maxHeight: "174px",
+	color: theme.palette.text.secondary,
+	textOverflow: "ellipsis",
+	overflow: "hidden",
+	whiteSpace: "normal",
 }));
 
 /**

@@ -1,53 +1,74 @@
-import { CSSProperties, useEffect } from "react";
 import { observer } from "mobx-react-lite";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import { type CSSProperties, useEffect } from "react";
+import { Markdown, Skeleton } from "@semoss/ui";
 import { useBlock, useTypeWriter } from "../../../hooks";
-import { BlockDef, BlockComponent, ListenerActions } from "../../../store";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 export interface MarkdownBlockDef extends BlockDef<"markdown"> {
-    widget: "markdown";
-    data: {
-        style: CSSProperties;
-        markdown: string;
-        isStreaming: boolean;
-        show: string;
-    };
-    slots: never;
-    listeners: {
-        preProcess: {
-            type: "sync" | "async";
-            order: ListenerActions[];
-        };
-    };
+	widget: "markdown";
+	data: {
+		style: CSSProperties;
+		markdown: string;
+		isStreaming: boolean;
+		show: string;
+		loading: boolean | string;
+		loadType: string;
+	};
+	slots: never;
+	listeners: {
+		preProcess: {
+			type: "sync" | "async";
+			order: ListenerActions[];
+		};
+	};
 }
 
 export const MarkdownBlock: BlockComponent = observer(({ id }) => {
-    const { attrs, data, listeners } = useBlock<MarkdownBlockDef>(id);
-    const markdownTxt =
-        typeof data.markdown == "string"
-            ? data.markdown
-            : JSON.stringify(data.markdown);
-    let displayTxt = useTypeWriter(data.isStreaming ? markdownTxt : "");
+	const { attrs, data, listeners } = useBlock<MarkdownBlockDef>(id);
+	const markdownTxt =
+		typeof data.markdown == "string"
+			? data.markdown
+			: JSON.stringify(data.markdown);
+	let displayTxt = useTypeWriter(data.isStreaming ? markdownTxt : "");
 
-    if (!data.isStreaming) displayTxt = markdownTxt;
+	if (!data.isStreaming) displayTxt = markdownTxt;
 
-    useEffect(() => {
-        if (listeners.preProcess) {
-            listeners.preProcess();
-        }
-    }, []);
+	useEffect(() => {
+		if (listeners.preProcess) {
+			listeners.preProcess();
+		}
+	}, []);
 
-    return (
-        <div
-            style={{
-                ...data.style,
-            }}
-            {...attrs}
-        >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {displayTxt}
-            </ReactMarkdown>
-        </div>
-    );
+	const isLoading =
+		Object.hasOwn(data, "loading") &&
+		data.loading?.toString().toLowerCase() === "true";
+
+	if (isLoading && data.loadType === "None (show nothing)") {
+		return <div {...attrs} />;
+	}
+
+	if (isLoading && data.loadType === "Skeleton") {
+		return (
+			<div
+				style={{
+					width: "auto",
+					height: "auto",
+				}}
+				{...attrs}
+			>
+				<Skeleton width={"auto"} height={"auto"} />
+			</div>
+		);
+	}
+
+	return (
+		<div
+			style={{
+				...data.style,
+			}}
+			{...attrs}
+		>
+			<Markdown>{displayTxt}</Markdown>
+		</div>
+	);
 });

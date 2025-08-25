@@ -1,22 +1,18 @@
-import { BlockConfig } from "../../../store";
-import {
-    VegaVisualizationBlockDef,
-    VegaVisualizationBlock,
-} from "./VegaVisualizationBlock";
-import { Insights } from "@mui/icons-material";
+import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_CHART } from "../block-defaults.constants";
-import { VegaVisualizationBlockMenu } from "./VegaVisualizationBlockMenu";
+import {
+	VegaVisualizationBlock,
+	type VegaVisualizationBlockDef,
+} from "./VegaVisualizationBlock";
 
 export const config: BlockConfig<VegaVisualizationBlockDef> = {
-    widget: "vega",
-    type: BLOCK_TYPE_CHART,
-    data: {
-        specJson: "",
-        variation: undefined,
-    },
-    listeners: {},
-    slots: {},
-    render: VegaVisualizationBlock,
-    icon: Insights,
-    menu: VegaVisualizationBlockMenu,
+	widget: "vega",
+	type: BLOCK_TYPE_CHART,
+	data: {
+		specJson: "",
+		variation: undefined,
+	},
+	listeners: {},
+	slots: {},
+	render: VegaVisualizationBlock,
 };
