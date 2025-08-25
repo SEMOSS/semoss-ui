@@ -1,26 +1,33 @@
 {
     "name": "@semoss/renderer",
-    "version": "1.0.0-beta.1",
-    "description": "",
+    "description": "Semoss Renderer - React library that allows you to build custom ui's through ui building blocks",
+    "version": "1.0.0-alpha.21",
     "type": "module",
     "main": "./dist/index.mjs",
     "module": "./dist/index.mjs",
     "types": "./dist/types/index.d.ts",
+    "unpkg": "",
+    "jsDeliver": "",
     "exports": {
         ".": {
             "types": "./dist/types/index.d.ts",
+            "import": "./dist/index.mjs",
+            "require": "./dist/index.cjs",
             "default": "./dist/index.mjs"
-        }
+        },
+        "./package.json": "./package.json"
     },
     "scripts": {
         "dev": "rollup -w -c",
         "build": "rollup -c --environment NODE_ENV:production",
         "build:dev": "rollup -c",
+        "build:umd": "rollup -c rollup.config.umd.js",
         "test": "vitest run",
         "test:watch": "vitest --watch"
     },
     "keywords": [],
-    "author": "",
+    "author": "Semoss Team",
+    "bugs": "https://github.com/SEMOSS/semoss-ui/issues",
     "license": "ISC",
     "dependencies": {
         "@mui/x-data-grid": "^7.28.3",

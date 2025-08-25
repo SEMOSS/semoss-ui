@@ -24,23 +24,24 @@ const stripUseClient = () => ({
 });
 
 export default defineConfig({
-	input: {
-		index: "src/index.ts",
+	input: "src/index.ts",
+	output: {
+		file: "dist/index.umd.js",
+		format: "umd",
+		name: "SemossRenderer",
+		sourcemap: isProduction,
+		globals: {
+			react: "React",
+			"react-dom": "ReactDOM",
+			mobx: "mobx",
+			"mobx-react-lite": "mobxReactLite",
+			"@emotion/react": "emotionReact",
+			"@emotion/styled": "emotionStyled",
+			"@mui/material": "muiMaterial",
+			"@mui/icons-material": "muiIconsMaterial",
+			"react-router-dom": "reactRouterDom",
+		},
 	},
-	output: [
-		{
-			dir: "dist",
-			format: "esm",
-			sourcemap: isProduction,
-			entryFileNames: "[name].mjs",
-		},
-		{
-			dir: "dist",
-			format: "cjs",
-			sourcemap: isProduction,
-			entryFileNames: "[name].js",
-		},
-	],
 	plugins: [
 		del({ targets: "dist" }),
 		stripUseClient(),
@@ -66,7 +67,4 @@ export default defineConfig({
 		"react-dom",
 		"react-router-dom",
 	],
-	watch: {
-		clearScreen: false,
-	},
 });
