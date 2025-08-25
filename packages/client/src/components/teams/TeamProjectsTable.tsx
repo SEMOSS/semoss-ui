@@ -836,6 +836,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	projectid:
 																		project.projectid,
 																	type: project.type,
+																	project_type: project.type,
 																	permission:
 																		e.target
 																			.value,
