@@ -17,6 +17,7 @@ import { SettingsLayout } from "./SettingsLayout";
 import { SETTINGS_ROUTES } from "./settings.constants";
 import { TeamSettingsDetailPage } from "./TeamSettingsDetailPage";
 import { TeamsSettingsPage } from "./TeamsSettingsPage";
+import { RDFMapPage } from "./RDFMapPage";
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
@@ -32,6 +33,7 @@ const SETTINGS_COMPONETS = {
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:id": TeamSettingsDetailPage,
+	"view-rdf-map": RDFMapPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

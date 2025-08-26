@@ -105,6 +105,7 @@ const IconMapper = {
 	"My Profile": <PersonRounded />,
 	Theming: <PaintRounded />,
 	Jobs: <Jobs />,
+	"View RDF Map": <Folder />,
 };
 
 export const SettingsIndexPage = () => {
