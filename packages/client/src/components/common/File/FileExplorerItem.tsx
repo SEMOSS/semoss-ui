@@ -73,132 +73,141 @@ interface FileExplorerItemProps {
 		event: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => void;
+
+	/** Text to filter files and folders */
+	searchText?: string;
+	/** Whether the item is rendered as part of search results */
+    fromSearch?: boolean;
+
+    children?: React.ReactNode;
 }
 
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
-	const {
-		type,
-		space,
-		path,
-		name,
-		isDirectory,
-		expanded,
-		selected,
-		onDragStart = () => null,
-		onDragEnd = () => null,
-		onTrashClick = () => null,
-	} = props;
-	const [isHovered, setIsHovered] = useState(false);
-	const [isDragging, setIsDragging] = useState(false);
+    const {
+        type,
+        space,
+        path,
+        name,
+        isDirectory,
+        expanded,
+        selected,
+        onDragStart = () => null,
+        onDragEnd = () => null,
+        onTrashClick = () => null,
+		searchText = '',
+        fromSearch = false,
+    } = props;
+    const [isHovered, setIsHovered] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
 
-	const isOpen = expanded.indexOf(path) > -1;
+    const isOpen = expanded.indexOf(path) > -1;
 
-	const getAssets = usePixel<
-		{
-			lastModified: string;
-			name: string;
-			path: string;
-			type: "directory" | "file";
-		}[]
-	>(
-		isDirectory && isOpen
-			? type === "app"
-				? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-				: ""
-			: "",
-	);
+    const getAssets = usePixel<
+        {
+            lastModified: string;
+            name: string;
+            path: string;
+            type: 'directory' | 'file';
+        }[]
+    >(
+        !fromSearch && isDirectory && isOpen
+            ? type === 'app'
+                ? searchText.length > 0
+                    ? `SearchAppAssets ( project = "${space}" , filePath=["${path}"],search="${searchText}",options=[])`
+                    : `BrowseAsset(filePath=["${path}"], space=["${space}"])`
+                : ''
+            : ''
+    );
 
-	const nodeRef = useCallback((ele) => {
-		ele?.addEventListener("focusin", (e) => {
-			e.stopImmediatePropagation();
-		});
-	}, []);
+    const nodeRef = useCallback((ele) => {
+        ele?.addEventListener('focusin', (e) => {
+            e.stopImmediatePropagation();
+        });
+    }, []);
 
-	return (
-		<StyledNode
-			ref={nodeRef}
-			key={path}
-			nodeId={path}
-			title={name}
-			label={
-				<StyledLabel
-					draggable={true}
-					onMouseEnter={() => setIsHovered(true)}
-					onMouseLeave={() => setIsHovered(false)}
-					isDragging={isDragging}
-					onDragStart={(e) => {
-						setIsDragging(true);
+    return (
+        <StyledNode
+            ref={nodeRef}
+            key={path}
+            nodeId={path}
+            title={name}
+            label={
+                <StyledLabel
+                    draggable={true}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    isDragging={isDragging}
+                    onDragStart={(e) => {
+                        setIsDragging(true);
 
-						// trigger the callback
-						onDragStart(e, path);
-					}}
-					onDragEnd={(e) => {
-						setIsDragging(false);
+                        // trigger the callback
+                        onDragStart(e, path);
+                    }}
+                    onDragEnd={(e) => {
+                        setIsDragging(false);
 
-						// trigger the callback
-						onDragEnd(e, path);
-					}}
-				>
-					<Icon color={"disabled"} fontSize="small">
-						{isDirectory ? (
-							<TopicOutlined fontSize="inherit" />
-						) : (
-							<DescriptionOutlined fontSize="inherit" />
-						)}
-					</Icon>
-					<StyledTypography variant="body2">{name}</StyledTypography>
-					{isHovered ? (
-						<IconButton
-							title={`Delete ${name}`}
-							onClick={(e) => {
-								// don't allow it to propagate
-								e.stopPropagation();
+                        // trigger the callback
+                        onDragEnd(e, path);
+                    }}
+                >
+                    <Icon color={'disabled'} fontSize="small">
+                        {isDirectory ? (
+                            <TopicOutlined fontSize="inherit" />
+                        ) : (
+                            <DescriptionOutlined fontSize="inherit" />
+                        )}
+                    </Icon>
+                    <StyledTypography variant="body2">{name}</StyledTypography>
+                    {isHovered ? (
+                        <IconButton
+                            title={`Delete ${name}`}
+                            onClick={(e) => {
+                                // don't allow it to propagate
+                                e.stopPropagation();
 
-								// trigger
-								onTrashClick(e, path);
-							}}
-							size="small"
-							color={"default"}
-						>
-							<DeleteOutline fontSize="inherit" />
-						</IconButton>
-					) : null}
-				</StyledLabel>
-			}
-		>
-			{isDirectory ? (
-				<>
-					{getAssets.status === "INITIAL" ||
-					getAssets.status === "LOADING" ? (
-						<Icon color="disabled">
-							<CircularProgress color="inherit" size={"small"} />
-						</Icon>
-					) : null}
-					{getAssets.status === "SUCCESS"
-						? getAssets.data.map((n) => {
-								return (
-									<FileExplorerItem
-										key={n.path}
-										type={type}
-										space={space}
-										isDirectory={n.type === "directory"}
-										name={n.name}
-										path={n.path}
-										lastModified={n.lastModified}
-										expanded={expanded}
-										selected={selected}
-										onTrashClick={(e, path) => {
+                                // trigger
+                                onTrashClick(e, path);
+                            }}
+                            size="small"
+                            color={'default'}
+                        >
+                            <DeleteOutline fontSize="inherit" />
+                        </IconButton>
+                    ) : null}
+                </StyledLabel>
+            }
+        >
+            {isDirectory && !fromSearch ? (
+                <>
+                    {getAssets.status === 'INITIAL' || getAssets.status === 'LOADING' ? (
+                        <Icon color="disabled">
+                            <CircularProgress color="inherit" size={'small'} />
+                        </Icon>
+                    ) : null}
+                    {getAssets.status === 'SUCCESS'
+                        ? getAssets.data.map((n) => (
+                              <FileExplorerItem
+                                  key={n.path}
+                                  type={type}
+                                  space={space}
+                                  isDirectory={n.type === 'directory'}
+                                  name={n.name}
+                                  path={n.path}
+                                  lastModified={n.lastModified}
+                                  expanded={expanded}
+                                  selected={selected}
+                                  onTrashClick={(e, path) => {
 											onTrashClick(e, path);
 										}}
 										onDragStart={(e, path) => {
 											onDragStart(e, path);
 										}}
-									/>
-								);
-							})
-						: null}
-				</>
-			) : null}
-		</StyledNode>
-	);
+                                  searchText={searchText}
+                              />
+                          ))
+                        : null}
+                </>
+            ) : props.children}
+        </StyledNode>
+    );
 };

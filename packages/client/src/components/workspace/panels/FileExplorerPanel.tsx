@@ -92,26 +92,27 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	// files to add
 	const [selectedPath, setSelectedPath] = useState<string>("");
 	const [fileUploadPath, setFileUploadPath] = useState<string>("");
+	const [searchText, setSearchText] = useState('');
 
 	// temporary fix for dead refresh button should be removed
 	const [counter, setCounter] = useState(0);
 
 	// set the uploadPath based on the selected item
 	useEffect(() => {
-		let path = "version/assets/";
+  if (!selectedPath) {
+    setFileUploadPath('version/assets/');
+    return;
+  }
 
-		// if selected, get the directory
-		if (selectedPath) {
-			if (selectedPath.slice(-1) === "/") {
-				path = selectedPath;
-			} else {
-				// try to remove the file name and get the directory
-				path = selectedPath.split("/").slice(0, -1).join("/");
-			}
-		}
+  // Use as-is if it's a folder
+  const isDirectory = selectedPath.split('/').pop()?.indexOf('.') === -1;
 
-		setFileUploadPath(path);
-	}, [selectedPath]);
+  const uploadPath = isDirectory
+    ? selectedPath
+    : selectedPath.split('/').slice(0, -1).join('/');
+
+  setFileUploadPath(uploadPath);
+}, [selectedPath]);
 
 	/**
 	 * Refresh the files
@@ -120,6 +121,9 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		// increment the counter
 		setCounter(counter + 1);
 	};
+
+	const normalizePath = (path: string) =>
+    path.startsWith("/") ? path.slice(1) : path;
 
 	const handleToggleExpand = (path: string) => {
 		setExpandedPaths((prev) =>
@@ -274,7 +278,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		}
 
 		// set the path
-		setSelectedPath(path);
+		setSelectedPath(normalizePath(path));
 	};
 
 	/**
@@ -538,38 +542,20 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 							<StyledTitleSpan>{title}</StyledTitleSpan>
 						</StyledTitle>
 						{/* TODO: Implement Search functionality and remove the comments */}
-						{/* <StyledTextField
+						<StyledTextField
                             placeholder="Search"
                             size="small"
                             fullWidth
-                            // value={search}
-                            // onChange={(e) => setSearch(e.target.value)}
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
                             InputProps={{
                                 startAdornment: (
                                     <InputAdornment position="start">
                                         <Search />
                                     </InputAdornment>
                                 ),
-                                // endAdornment: (
-                                //     <InputAdornment position="end">
-                                //         <IconButton
-                                //             size="small"
-                                //             onClick={(e) =>
-                                //                 setMenuAnchorEl(e.currentTarget)
-                                //             }
-                                //         >
-                                //             <Badge
-                                //                 variant="dot"
-                                //                 invisible={!anyEnabledFilter}
-                                //                 color="primary"
-                                //             >
-                                //                 <Tune />
-                                //             </Badge>
-                                //         </IconButton>
-                                //     </InputAdornment>
-                                // ),
                             }}
-                        /> */}
+                        />
 						<Stack
 							direction={"row"}
 							alignItems={"center"}
@@ -669,6 +655,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				}}
 				expandedPaths={expandedPaths}
 				onToggleExpand={handleToggleExpand}
+				searchText={searchText}
 			/>
 		</Panel>
 	);
