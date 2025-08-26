@@ -1,135 +1,134 @@
-import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import {
-	ActionMessages,
-	type BlockDef,
-	type ListenerActions,
-} from "@semoss/renderer";
-import { Button, Modal, Stack, styled } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
-import {
-	ActionFormFields,
-	ActionTypeSelector,
-	getDefaultFormValues,
-	useEventActionData,
-	validateForm,
-} from "./block-events";
+import { useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
+import { useForm } from 'react-hook-form';
 
-const StyledSpacer = styled("div")(() => ({
-	flex: 1,
+import { styled, Stack, Modal, Button } from '@semoss/ui';
+import { ActionMessages, BlockDef, ListenerActions } from '@semoss/renderer';
+
+import { useBlockSettings } from '@/hooks';
+import {
+    ActionTypeSelector,
+    ActionFormFields,
+    useEventActionData,
+    getDefaultFormValues,
+    validateForm,
+} from './block-events';
+
+const StyledSpacer = styled('div')(() => ({
+    flex: 1,
 }));
 
 interface ActionOverlayProps<D extends BlockDef = BlockDef> {
-	id: string;
-	type: "sync" | "async";
-	listener: Extract<keyof D["listeners"], string>;
-	actionIdx: number;
-	onClose: () => void;
+    id: string;
+    type: 'sync' | 'async';
+    listener: Extract<keyof D['listeners'], string>;
+    actionIdx: number;
+    onClose: () => void;
 }
 
 type ListenerActionForm = ListenerActions;
 
 export const ListenerActionOverlay = observer(
-	<D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
-		const { id, type, listener, actionIdx = -1, onClose } = props;
-		const { listeners, setListener } = useBlockSettings(id);
+    <D extends BlockDef = BlockDef>(props: ActionOverlayProps<D>) => {
+        const { id, type, listener, actionIdx = -1, onClose } = props;
+        const { listeners, setListener } = useBlockSettings(id);
 
-		const isNewAction = actionIdx === -1;
-		const existingAction =
-			actionIdx !== -1 ? listeners[listener].order[actionIdx] : null;
+        const isNewAction = actionIdx === -1;
+        const existingAction =
+            actionIdx !== -1 ? listeners[listener].order[actionIdx] : null;
 
-		// Form setup
-		const defaultValues = existingAction
-			? getDefaultFormValues(existingAction.message)
-			: getDefaultFormValues(ActionMessages.RUN_QUERY);
+        // Form setup
+        const defaultValues = existingAction
+            ? getDefaultFormValues(existingAction.message)
+            : getDefaultFormValues(ActionMessages.RUN_QUERY);
 
-		const { control, handleSubmit, reset, watch, setValue } =
-			useForm<ListenerActionForm>({
-				defaultValues,
-			});
+        const { control, handleSubmit, reset, watch, setValue } =
+            useForm<ListenerActionForm>({
+                defaultValues,
+            });
 
-		const message = watch("message");
-		const payload = watch("payload");
-		const queryId = watch("payload.queryId");
-		const destinationType = watch("payload.destinationType");
-		const _text = watch("payload.text");
+        const message = watch('message');
+        const payload = watch('payload');
+        const queryId = watch('payload.queryId');
+        const destinationType = watch('payload.destinationType');
+        const text = watch('payload.text');
 
-		// Data fetching
-		const { queries, cells, pages } = useEventActionData(queryId);
 
-		// Form validation
-		const isFormValid = validateForm(message, payload);
+        // Data fetching
+        const { queries, cells, pages } = useEventActionData(queryId);
 
-		// Reset form when action index changes
-		useEffect(() => {
-			const formData =
-				existingAction ||
-				getDefaultFormValues(ActionMessages.RUN_QUERY);
-			reset(formData);
-		}, [actionIdx, existingAction, reset]);
+        // Form validation
+        const isFormValid = validateForm(message, payload);
 
-		// Reset payload when message type changes
-		useEffect(() => {
-			if (existingAction?.message !== message) {
-				const newDefaults = getDefaultFormValues(message);
-				setValue("payload", newDefaults.payload);
-			}
-		}, [message, existingAction, setValue]);
+        // Reset form when action index changes
+        useEffect(() => {
+            const formData =
+                existingAction ||
+                getDefaultFormValues(ActionMessages.RUN_QUERY);
+            reset(formData);
+        }, [actionIdx, existingAction, reset]);
 
-		const handleFormSubmit = handleSubmit(
-			(formData: ListenerActionForm) => {
-				const updatedActions = listeners[listener].order
-					? [...listeners[listener].order]
-					: [];
+        // Reset payload when message type changes
+        useEffect(() => {
+            if (existingAction?.message !== message) {
+                const newDefaults = getDefaultFormValues(message);
+                setValue('payload', newDefaults.payload);
+            }
+        }, [message, existingAction, setValue]);
 
-				if (isNewAction) {
-					updatedActions.push(formData);
-				} else {
-					updatedActions[actionIdx] = formData;
-				}
+        const handleFormSubmit = handleSubmit(
+            (formData: ListenerActionForm) => {
+                const updatedActions = listeners[listener].order
+                    ? [...listeners[listener].order]
+                    : [];
 
-				setListener(listener, updatedActions, type);
-				onClose();
-			},
-		);
+                if (isNewAction) {
+                    updatedActions.push(formData);
+                } else {
+                    updatedActions[actionIdx] = formData;
+                }
 
-		return (
-			<>
-				<Modal.Title>
-					{`${isNewAction ? "Add" : "Edit"} ${listener}`}
-				</Modal.Title>
+                setListener(listener, updatedActions, type);
+                onClose();
+            },
+        );
 
-				<Modal.Content>
-					<Stack padding={2}>
-						<ActionTypeSelector
-							control={control}
-							setValue={setValue}
-						/>
+        return (
+            <>
+                <Modal.Title>
+                    {`${isNewAction ? 'Add' : 'Edit'} ${listener}`}
+                </Modal.Title>
 
-						<ActionFormFields
-							message={message}
-							control={control}
-							setValue={setValue}
-							queries={queries}
-							cells={cells}
-							queryId={queryId}
-							destinationType={destinationType}
-							pages={pages}
-						/>
-					</Stack>
-				</Modal.Content>
+                <Modal.Content>
+                    <Stack padding={2}>
+                        <ActionTypeSelector
+                            control={control}
+                            setValue={setValue}
+                        />
 
-				<Modal.Actions>
-					<StyledSpacer />
-					<Button type="button" variant="text" onClick={onClose}>
-						Cancel
-					</Button>
-					<Button onClick={handleFormSubmit} disabled={!isFormValid}>
-						Save
-					</Button>
-				</Modal.Actions>
-			</>
-		);
-	},
+                        <ActionFormFields
+                            message={message}
+                            control={control}
+                            setValue={setValue}
+                            queries={queries}
+                            cells={cells}
+                            queryId={queryId}
+                            destinationType={destinationType}
+                            pages={pages}
+                        />
+                    </Stack>
+                </Modal.Content>
+
+                <Modal.Actions>
+                    <StyledSpacer />
+                    <Button type="button" variant="text" onClick={onClose}>
+                        Cancel
+                    </Button>
+                    <Button onClick={handleFormSubmit} disabled={!isFormValid}>
+                        Save
+                    </Button>
+                </Modal.Actions>
+            </>
+        );
+    },
 );

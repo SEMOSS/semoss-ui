@@ -1,6 +1,6 @@
-import type { CellStateConfig } from "./cell.state";
-import type { QueryStateConfig } from "./query.state";
-import type {
+import { CellStateConfig } from "./cell.state";
+import { QueryStateConfig } from "./query.state";
+import {
 	BlockJSON,
 	ListenerActions,
 	SerializedState,
@@ -9,29 +9,13 @@ import type {
 } from "./state.types";
 
 export enum ActionMessages {
-	/**
-	 * All
-	 */
 	SET_STATE = "SET_STATE",
-	ADD_VARIABLE = "ADD_VARIABLE",
-	RENAME_VARIABLE = "RENAME_VARIABLE",
-	EDIT_VARIABLE = "EDIT_VARIABLE",
-	DELETE_VARIABLE = "DELETE_VARIABLE",
-	SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
-	/**
-	 * Blocks
-	 */
 	ADD_BLOCK = "ADD_BLOCK",
 	MOVE_BLOCK = "MOVE_BLOCK",
 	REMOVE_BLOCK = "REMOVE_BLOCK",
 	SET_BLOCK_DATA = "SET_BLOCK_DATA",
 	DELETE_BLOCK_DATA = "DELETE_BLOCK_DATA",
 	SET_LISTENER = "SET_LISTENER",
-	ADD_DYNAMIC_SLOT = "ADD_DYNAMIC_SLOT",
-	REMOVE_DYNAMIC_SLOT = "REMOVE_DYNAMIC_SLOT",
-	/**
-	 * Notebook
-	 */
 	SET_QUERY = "SET_QUERY",
 	NEW_QUERY = "NEW_QUERY",
 	NEW_CELL = "NEW_CELL",
@@ -40,6 +24,11 @@ export enum ActionMessages {
 	DELETE_CELL = "DELETE_CELL",
 	UPDATE_QUERY = "UPDATE_QUERY",
 	UPDATE_CELL = "UPDATE_CELL",
+	ADD_VARIABLE = "ADD_VARIABLE",
+	RENAME_VARIABLE = "RENAME_VARIABLE",
+	EDIT_VARIABLE = "EDIT_VARIABLE",
+	DELETE_VARIABLE = "DELETE_VARIABLE",
+	SET_SHEET_EXECUTION_ORDER = "SET_SHEET_EXECUTION_ORDER",
 	/**
 	 * Events
 	 */
@@ -48,8 +37,8 @@ export enum ActionMessages {
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	COPY_TO_CLIPBOARD = "COPY_TO_CLIPBOARD",
-	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
+	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 }
 
 export type Actions =
@@ -69,8 +58,6 @@ export type Actions =
 	| DeleteCellAction
 	| UpdateCellAction
 	| RunCellAction
-	| RemoveDynamicSlotAction
-	| AddDynamicSlotAction
 	| RunMarkdownCellAction
 	| DispatchEventAction
 	| DispatchOutputsEventAction
@@ -82,9 +69,6 @@ export type Actions =
 	| SetSheetExecutionOrderAction
 	| CopyToClipboardAction;
 
-/**
- * All
- */
 export interface Action {
 	message: string;
 	payload: Record<string, unknown>;
@@ -97,67 +81,26 @@ export interface SetStateAction extends Action {
 	};
 }
 
-export interface AddVariableAction extends Action {
-	message: ActionMessages.ADD_VARIABLE;
-	payload: {
-		id: string;
-		type: VariableType;
-		to?: string;
-		cellId?: string;
-		value?: string;
-		isInput?: boolean;
-		isOutput?: boolean;
-	};
-}
-
-export interface EditVariableAction extends Action {
-	message: ActionMessages.EDIT_VARIABLE;
-	payload: {
-		id: string;
-		from: VariableWithId;
-		to: {
-			type: VariableType;
-			to?: string;
-			cellId?: string;
-			value?: string;
-			isInput?: boolean;
-			isOutput?: boolean;
-		};
-	};
-}
-
-export interface RenameVariableAction extends Action {
-	message: ActionMessages.RENAME_VARIABLE;
-	payload: {
-		id: string;
-		alias: string;
-	};
+export interface DispatchOutputsEventAction extends Action {
+	message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
+	payload: {};
 }
 
 export interface CopyToClipboardAction extends Action {
-	message: ActionMessages.COPY_TO_CLIPBOARD;
+    message: ActionMessages.COPY_TO_CLIPBOARD;
+    payload: {
+        text: string;
+    };
+}
+
+export interface DispatchOpenEventAction extends Action {
+	message: ActionMessages.DISPATCH_OPEN_EVENT;
 	payload: {
-		text: string;
+		destinationType: string;
+		destination: string;
 	};
 }
 
-export interface DeleteVariableAction extends Action {
-	message: ActionMessages.DELETE_VARIABLE;
-	payload: {
-		id: string;
-	};
-}
-
-export interface SetSheetExecutionOrderAction extends Action {
-	message: ActionMessages.SET_SHEET_EXECUTION_ORDER;
-	payload: {
-		list: string[];
-	};
-}
-
-/**
- * Blocks
- */
 export interface AddBlockAction extends Action {
 	message: ActionMessages.ADD_BLOCK;
 	payload: {
@@ -238,25 +181,6 @@ export interface SetListenerAction extends Action {
 	};
 }
 
-export interface AddDynamicSlotAction extends Action {
-	message: ActionMessages.ADD_DYNAMIC_SLOT;
-	payload: {
-		id: string;
-	};
-}
-
-export interface RemoveDynamicSlotAction extends Action {
-	message: ActionMessages.REMOVE_DYNAMIC_SLOT;
-	payload: {
-		id: string;
-		indexToRemove: number;
-	};
-}
-
-/**
- * Notebook
- */
-
 export interface NewQueryAction extends Action {
 	message: ActionMessages.NEW_QUERY;
 	payload: {
@@ -279,6 +203,30 @@ export interface UpdateQueryAction extends Action {
 		queryId: string;
 		path: string | null;
 		value: unknown;
+	};
+}
+
+export interface RunQueryAction extends Action {
+	message: ActionMessages.RUN_QUERY;
+	payload: {
+		queryId: string;
+	};
+}
+
+export interface RunCellAction extends Action {
+	message: ActionMessages.RUN_CELL;
+	payload: {
+		queryId: string;
+		cellId: string;
+	};
+}
+
+export interface RunMarkdownCellAction extends Action {
+	message: ActionMessages.RUN_MARKDOWN_CELL;
+	payload: {
+		queryId: string;
+		cellId: string;
+		marked: boolean;
 	};
 }
 
@@ -318,22 +266,6 @@ export interface UpdateCellAction extends Action {
 	};
 }
 
-/**
- * Events
- */
-export interface DispatchOutputsEventAction extends Action {
-	message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
-	payload: {};
-}
-
-export interface DispatchOpenEventAction extends Action {
-	message: ActionMessages.DISPATCH_OPEN_EVENT;
-	payload: {
-		destinationType: string;
-		destination: string;
-	};
-}
-
 export interface DispatchEventAction extends Action {
 	message: ActionMessages.DISPATCH_EVENT;
 	payload: {
@@ -342,26 +274,53 @@ export interface DispatchEventAction extends Action {
 	};
 }
 
-export interface RunQueryAction extends Action {
-	message: ActionMessages.RUN_QUERY;
+export interface AddVariableAction extends Action {
+	message: ActionMessages.ADD_VARIABLE;
 	payload: {
-		queryId: string;
+		id: string;
+		type: VariableType;
+		to?: string;
+		cellId?: string;
+		value?: string;
+		isInput?: boolean;
+		isOutput?: boolean;
 	};
 }
 
-export interface RunCellAction extends Action {
-	message: ActionMessages.RUN_CELL;
+export interface EditVariableAction extends Action {
+	message: ActionMessages.EDIT_VARIABLE;
 	payload: {
-		queryId: string;
-		cellId: string;
+		id: string;
+		from: VariableWithId;
+		to: {
+			type: VariableType;
+			to?: string;
+			cellId?: string;
+			value?: string;
+			isInput?: boolean;
+			isOutput?: boolean;
+		};
 	};
 }
 
-export interface RunMarkdownCellAction extends Action {
-	message: ActionMessages.RUN_MARKDOWN_CELL;
+export interface RenameVariableAction extends Action {
+	message: ActionMessages.RENAME_VARIABLE;
 	payload: {
-		queryId: string;
-		cellId: string;
-		marked: boolean;
+		id: string;
+		alias: string;
+	};
+}
+
+export interface DeleteVariableAction extends Action {
+	message: ActionMessages.DELETE_VARIABLE;
+	payload: {
+		id: string;
+	};
+}
+
+export interface SetSheetExecutionOrderAction extends Action {
+	message: ActionMessages.SET_SHEET_EXECUTION_ORDER;
+	payload: {
+		list: string[];
 	};
 }

@@ -1,4 +1,4 @@
-import { ActionMessages, type ListenerActions } from "@semoss/renderer";
+import { ActionMessages, ListenerActions } from "@semoss/renderer";
 
 export const getDefaultFormValues = (
 	message: ActionMessages,
@@ -26,7 +26,7 @@ export const getDefaultFormValues = (
 		},
 		[ActionMessages.COPY_TO_CLIPBOARD]: {
 			message: ActionMessages.COPY_TO_CLIPBOARD,
-			payload: { text: "" },
+			payload: { destinationType: "", destination: "" },
 		},
 	};
 
@@ -35,27 +35,19 @@ export const getDefaultFormValues = (
 
 export const validateForm = (
 	message: ActionMessages,
-	payload: Record<string, any>,
+	payload: any,
 ): boolean => {
 	switch (message) {
 		case ActionMessages.RUN_QUERY:
-			return !!(payload as { queryId: string }).queryId;
+			return !!payload.queryId;
 		case ActionMessages.RUN_CELL:
-			return (
-				!!(payload as { queryId: string; cellId: string }).queryId &&
-				!!(payload as { queryId: string; cellId: string }).cellId
-			);
+			return !!payload.queryId && !!payload.cellId;
 		case ActionMessages.DISPATCH_EVENT:
-			return !!(payload as { name: string }).name;
+			return !!payload.name;
 		case ActionMessages.DISPATCH_OPEN_EVENT:
-			return (
-				!!(payload as { destinationType: string; destination: string })
-					.destinationType &&
-				!!(payload as { destinationType: string; destination: string })
-					.destination
-			);
+			return !!payload.destinationType && !!payload.destination;
 		case ActionMessages.COPY_TO_CLIPBOARD:
-			return !!(payload as { text: string }).text;
+			return !!payload.text;
 		case ActionMessages.DISPATCH_OUTPUTS_EVENT:
 			return true;
 		default:

@@ -9,10 +9,10 @@ const StyledTreeView = styled(TreeView)(({ theme }) => ({
 	width: "100%",
 	maxHeight: "100%",
 	gap: theme.spacing(3),
-	overflow: "auto",
 	".MuiTreeItem-content": {
 		padding: theme.spacing(0.5),
 	},
+	overflow: "auto",
 }));
 
 interface FileExplorerProps {
@@ -166,6 +166,11 @@ export const FileExplorer = (props: FileExplorerProps) => {
 		// set the selected values
 		setSelected(selected);
 	};
+
+	/**
+	 * Triggered when a item is toggled
+	 * @param expanded - newly expanded values
+	 */
 
 	if (!initLoadComplete) {
 		return (
