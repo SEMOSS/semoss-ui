@@ -40,6 +40,7 @@ const StyledAxisDiv = styled("div")<{
 	padding: "8px 16px",
 	alignItems: "center",
 	gap: gap ?? undefined,
+	marginTop: "8px",
 }));
 
 const StyledAxis = styled("div")<{
@@ -195,11 +196,7 @@ export const NetworkValueLabel = observer(
 		}
 		return (
 			<StyledAxis>
-				<StyledAxisDiv
-					display="flex"
-					gap="8px"
-					style={{ marginTop: "8px" }}
-				>
+				<StyledAxisDiv display="flex" gap="8px">
 					<Switch
 						size="small"
 						checked={showValueLabel}

@@ -42,11 +42,44 @@ export const VisualMap = observer(
 			whiteSpace: "normal",
 		}));
 
-		const StyledVisualMapValueSection = styled("div")(() => ({
+		const StyledVisualSpan = styled("span")(() => ({
+			color: "#0471F0",
+			display: "block",
+		}));
+
+		const StyledCloseOutlinedIcon = styled(CloseOutlinedIcon)(() => ({
+			position: "absolute",
+			marginLeft: "84%",
+			zIndex: 10,
+		}));
+
+		const Styledhr = styled("hr")(() => ({
+			marginTop: "20px",
+			border: "1px solid #E0E0E0",
+		}));
+
+		const StyledVisualMapValueSection = styled("div")(
+			({ cursor }: { cursor: boolean }) => ({
+				display: "flex",
+				alignItems: "center",
+				marginTop: "15px",
+				cursor: cursor ? "pointer" : "default",
+			}),
+		);
+
+		const StyledVisualMapValueSectionIcon = styled("div")(() => ({
 			display: "flex",
 			alignItems: "center",
-			marginTop: "15px",
 		}));
+
+		const StyledVisualMapValueSectionSpan = styled("span")(
+			({ type, item }: { type: string; item: boolean }) => ({
+				marginLeft: type === "img" ? "30px" : "38px",
+				color: item ? "#000000" : "#808080",
+				display: "flex",
+				alignItems: "center",
+			}),
+		);
 
 		const [search, setSearch] = useState("");
 		const [filteredData, setFilteredData] = useState(VisualMapConstant);
@@ -92,21 +125,9 @@ export const VisualMap = observer(
 		return (
 			<StyledMain>
 				<StyledVisualMapSection>
-					<span
-						style={{
-							color: "#0471F0",
-							display: "block",
-						}}
-					>
-						Select Visual
-					</span>
-					<CloseOutlinedIcon
+					<StyledVisualSpan>Select Visual</StyledVisualSpan>
+					<StyledCloseOutlinedIcon
 						sx={{ color: "#808080" }}
-						style={{
-							position: "absolute",
-							marginLeft: "84%",
-							zIndex: 10,
-						}}
 						onClick={() => {
 							handleClose();
 						}}
@@ -115,9 +136,7 @@ export const VisualMap = observer(
 						Select a chart type for your data visualization
 					</StyledSpanHeader>
 				</StyledVisualMapSection>
-				<hr
-					style={{ marginTop: "20px", border: "1px solid #E0E0E0" }}
-				/>
+				<Styledhr />
 				<StyledVisualMapSection>
 					<Stack paddingTop={2} width={"85%"}>
 						<TextField
@@ -139,12 +158,7 @@ export const VisualMap = observer(
 								),
 								endAdornment: (
 									<InputAdornment position="end">
-										<IconButton
-											size="small"
-											// onClick={(e) =>
-											//     setMenuAnchorEl(e.currentTarget)
-											// }
-										></IconButton>
+										<IconButton size="small"></IconButton>
 									</InputAdornment>
 								),
 							}}
@@ -156,40 +170,28 @@ export const VisualMap = observer(
 							{value?.map((item) => (
 								<StyledVisualMapValueSection
 									key={item.name || item.label}
-									style={{
-										cursor: item?.option
-											? "pointer"
-											: "default",
-									}}
+									cursor={
+										Object.hasOwn(item, "option") &&
+										Object.keys(item.option).length > 0
+									}
 									onClick={() => {
 										if (item?.option) {
 											handleSelectItem(item);
 										}
 									}}
 								>
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-										}}
-									>
+									<StyledVisualMapValueSectionIcon>
 										{item.icon}
-									</div>
-									<span
-										style={{
-											marginLeft:
-												item.icon?.type === "img"
-													? "30px"
-													: "38px",
-											display: "flex",
-											alignItems: "center",
-											color: item?.option
-												? "#000000"
-												: "#808080",
-										}}
+									</StyledVisualMapValueSectionIcon>
+									<StyledVisualMapValueSectionSpan
+										type={item.icon?.type}
+										item={
+											Object.hasOwn(item, "option") &&
+											Object.keys(item.option).length > 0
+										}
 									>
 										{item.label}
-									</span>
+									</StyledVisualMapValueSectionSpan>
 								</StyledVisualMapValueSection>
 							))}
 						</Stack>

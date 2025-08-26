@@ -54,6 +54,50 @@ const StyledSubSection = styled("div")(() => ({
 	},
 }));
 
+const StyledDraggable = styled("div")(
+	({
+		snapshotBackground,
+		snapshotBoxshadow,
+	}: {
+		snapshotBackground: boolean;
+		snapshotBoxshadow: boolean;
+	}) => ({
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: "12px",
+		padding: "8px",
+		background: snapshotBackground ? "#f0f0f0" : "#fff",
+		marginBottom: "8px",
+		marginTop: "2px",
+		borderRadius: "4px",
+		maxWidth: "100%",
+		boxShadow: snapshotBoxshadow ? "0 2px 5px rgba(0, 0, 0, 0.2)" : "none",
+	}),
+);
+
+const StyledDraggableIcons = styled("div")(() => ({
+	flex: "0 0 auto",
+	display: "flex",
+	alignItems: "center",
+}));
+
+const StyledDraggableTooltip = styled("div")(() => ({
+	flex: "1 1 auto",
+	display: "flex",
+	alignItems: "center",
+}));
+
+const StyledAddColumn = styled("div")(() => ({
+	flex: "1 1 auto",
+	display: "flex",
+	justifyContent: "flex-end",
+}));
+
+const StyledDraggableTooltipSpan = styled("span")(() => ({
+	lineHeight: "1.5",
+}));
+
 const StyledLabelIcon = styled("img")(() => ({
 	marginRight: "2px",
 }));
@@ -90,6 +134,14 @@ interface DraggedColumn {
 
 interface DraggedColumnData {
 	[key: string]: DraggedColumn;
+}
+
+interface SelectedItem {
+	icon: unknown;
+	label: string;
+	name: string;
+	option: EchartVisualizationBlockDef;
+	title: string;
 }
 //data tab left section to show the data tab and the drag area for the selected columns
 export const FrameOperations = observer(
@@ -143,11 +195,6 @@ export const FrameOperations = observer(
 		useEffect(() => {
 			const filteredColumnsString = JSON.stringify(filteredColumns);
 			const columnsSelectorString = JSON.stringify(columnsSelector);
-			console.log(
-				filteredColumnsString,
-				columnsSelectorString,
-				"string comparision",
-			);
 			if (
 				columnsSelector.length > 0 &&
 				filteredColumnsString !== columnsSelectorString
@@ -155,10 +202,6 @@ export const FrameOperations = observer(
 				setFilteredColumns(columnsSelector);
 			}
 		}, [columnsSelector]);
-		//to be removed in the later part, when chart's data section is working fine
-		useEffect(() => {
-			console.log("what is this");
-		}, [storedColumns]);
 
 		useEffect(() => {
 			setDroppedColumns({});
@@ -651,18 +694,6 @@ export const FrameOperations = observer(
 										][item]?.["name"] === col.name,
 								)
 								.map((col) => col.dataType) || [];
-						console.log(
-							parsedJson["customSettings"]["columnDetails"][
-								item
-							]?.["name"],
-							columnsSelector.find(
-								(col) =>
-									parsedJson["customSettings"][
-										"columnDetails"
-									][item]?.["name"] === col.name,
-							)?.selector,
-							"selectorData",
-						);
 						selectorList[item] =
 							columnsSelector.find(
 								(col) =>
@@ -704,7 +735,6 @@ export const FrameOperations = observer(
 
 		// get the dropped columns data for the chart is selected or block is changed
 		function getDraggedColumns(tempStoredColumns, chart) {
-			console.log(chart);
 			const droppedColumnsList = { ...droppedColumns };
 
 			tempStoredColumns.forEach((item, index) => {
@@ -726,7 +756,6 @@ export const FrameOperations = observer(
 				(item) => item?.values && item?.values.length > 0,
 			);
 			if (hasValues) {
-				// console.log("selected column to set with ", columnsValue);
 				setSelectedColumn(columnsValue);
 				handleStoreData(columnsValue);
 			}
@@ -1448,7 +1477,6 @@ export const FrameOperations = observer(
 					columnsObj,
 					columnsToSet,
 				);
-				console.log(tooltip, columnsToSet, "tooltipIndexToSetTest");
 				const tooltipIndexToSet = tooltip.reduce((acc, item) => {
 					columnsToSet.forEach((colSetItem, colSetIndex) => {
 						if (colSetItem.includes(item)) {
@@ -1600,11 +1628,6 @@ export const FrameOperations = observer(
 					name: name,
 					category: tempValue["start"]["name"].includes(name) ? 0 : 1,
 				}));
-				console.log(
-					"Data inside the formattedColumns function:",
-					data,
-					nodeNames,
-				);
 				const datalinks = tempValue["start"]["name"].flatMap((start) =>
 					tempValue["end"]["name"].map((end) => ({
 						source: start,
@@ -1866,7 +1889,7 @@ export const FrameOperations = observer(
 			dispatchData(tempValue);
 			setData("option", tempValue);
 		};
-		const handleSelectedItem = (item) => {
+		const handleSelectedItem = (item: SelectedItem) => {
 			selectedItem(item);
 			setSelectedColumn([]);
 		};
@@ -1918,42 +1941,23 @@ export const FrameOperations = observer(
 											index={index}
 										>
 											{(provided, snapshot) => (
-												<div
+												<StyledDraggable
 													ref={provided.innerRef}
 													{...provided.draggableProps}
 													{...provided.dragHandleProps}
+													snapshotBackground={
+														snapshot.isDragging
+													}
+													snapshotBoxshadow={
+														snapshot.isDragging
+													}
 													style={{
-														display: "flex",
-														alignItems: "center",
-														justifyContent:
-															"space-between",
-														gap: "12px",
-														padding: "8px",
-														marginBottom: "8px",
-														marginTop: "2px",
-														background:
-															snapshot.isDragging
-																? "#f0f0f0"
-																: "#fff",
-														borderRadius: "4px",
-														maxWidth: "100%",
-														boxShadow:
-															snapshot.isDragging
-																? "0 2px 5px rgba(0,0,0,0.2)"
-																: "none",
 														...provided
 															.draggableProps
 															.style,
 													}}
 												>
-													<div
-														style={{
-															flex: "0 0 auto",
-															display: "flex",
-															alignItems:
-																"center",
-														}}
-													>
+													<StyledDraggableIcons>
 														{col.dataType ===
 														"STRING" ? (
 															<StyledLabelIcon
@@ -1968,52 +1972,28 @@ export const FrameOperations = observer(
 																)}
 															/>
 														)}
-													</div>
-													<div
-														style={{
-															flex: "1 1 auto",
-															display: "flex",
-															alignItems:
-																"center",
-														}}
-													>
+													</StyledDraggableIcons>
+													<StyledDraggableTooltip>
 														{col.name.length > 7 ? (
 															<Tooltip
 																title={col.name}
 															>
-																<span
-																	style={{
-																		lineHeight:
-																			"1.5",
-																	}}
-																>
+																<StyledDraggableTooltipSpan>
 																	{col.name.slice(
 																		0,
 																		7,
 																	)}
 																	...
-																</span>
+																</StyledDraggableTooltipSpan>
 															</Tooltip>
 														) : (
-															<span
-																style={{
-																	lineHeight:
-																		"1.5",
-																}}
-															>
+															<StyledDraggableTooltipSpan>
 																{col.name}
-															</span>
+															</StyledDraggableTooltipSpan>
 														)}
-													</div>
+													</StyledDraggableTooltip>
 													{isAdd && (
-														<div
-															style={{
-																flex: "1 1 auto",
-																display: "flex",
-																justifyContent:
-																	"flex-end",
-															}}
-														>
+														<StyledAddColumn>
 															<Checkbox
 																onChange={(
 																	e,
@@ -2110,9 +2090,9 @@ export const FrameOperations = observer(
 																	);
 																}}
 															/>
-														</div>
+														</StyledAddColumn>
 													)}
-												</div>
+												</StyledDraggable>
 											)}
 										</Draggable>
 									))}

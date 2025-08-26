@@ -2066,10 +2066,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						splitLine: {
 							show: false,
 						},
+						axisLabel: {
+							rotate: 45,
+						},
 					},
 					yAxis: {
 						type: "category",
 						data: ["Task A", "Task B", "Task C"],
+						axisLabel: {
+							rotate: 45,
+						},
 					},
 					series: [
 						{
