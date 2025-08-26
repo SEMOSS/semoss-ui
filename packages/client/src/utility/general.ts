@@ -230,5 +230,5 @@ export const permissionPriorityMapper = (permission: string | number) => {
 };
 
 export const formatToDataTestId = (text: string) => {
-  return text.replaceAll(/\(\)/g, "").replaceAll(' ', '-');
-}; 
+	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
+};

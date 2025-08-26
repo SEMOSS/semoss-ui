@@ -10,8 +10,8 @@ import {
 } from "@semoss/renderer";
 import { TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-import { BaseSettingSection } from "../BaseSettingSection";
 import { formatToDataTestId } from "@/utility";
+import { BaseSettingSection } from "../BaseSettingSection";
 
 interface InputSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -169,7 +169,9 @@ export const InputSettings = observer(
 					size="small"
 					variant="outlined"
 					autoComplete="off"
-					data-testid={formatToDataTestId(`inputSettings-${label}-${id}-txt`)}
+					data-testid={formatToDataTestId(
+						`inputSettings-${label}-${id}-txt`,
+					)}
 				/>
 			</BaseSettingSection>
 		);

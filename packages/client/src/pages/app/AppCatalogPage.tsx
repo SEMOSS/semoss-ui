@@ -327,7 +327,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									navigate("/app/new");
 								}}
 								aria-label={`Open the App Model`}
-								data-testid={"appCatalogPage-create-new-app-btn"}
+								data-testid={
+									"appCatalogPage-create-new-app-btn"
+								}
 							>
 								Create New App
 							</Button>

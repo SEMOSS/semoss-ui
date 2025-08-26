@@ -17,10 +17,10 @@ import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
 import { WorkspaceContext } from "@/contexts";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
 import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
+import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
-import { formatToDataTestId } from "@/utility";
 
 type LayoutType = React.ElementRef<typeof Layout>;
 
@@ -338,7 +338,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												<StyledLetTabImage
 													src={iconSrc}
 													alt={tabNode.getName()}
-													data-testId={formatToDataTestId(`workspace-${tabNode.getName()}`)}
+													data-testId={formatToDataTestId(
+														`workspace-${tabNode.getName()}`,
+													)}
 												/>
 											);
 										}

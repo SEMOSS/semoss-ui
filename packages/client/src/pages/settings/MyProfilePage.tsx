@@ -533,9 +533,7 @@ export const MyProfilePage = () => {
 											userInfoReset();
 										}}
 										disabled={!admin}
-										data-testid={
-											"myProfilePage-reset-btn"
-										}
+										data-testid={"myProfilePage-reset-btn"}
 									>
 										Reset
 									</Button>
@@ -783,7 +781,9 @@ export const MyProfilePage = () => {
 													field.onChange(value)
 												}
 												inputProps={{ maxLength: 255 }}
-												data-testid={"myProfilePage-generate-key-name-txt"}
+												data-testid={
+													"myProfilePage-generate-key-name-txt"
+												}
 											></TextField>
 										);
 									}}
@@ -807,7 +807,9 @@ export const MyProfilePage = () => {
 													field.onChange(value)
 												}
 												inputProps={{ maxLength: 500 }}
-												data-testid={"myProfilePage-generate-key-description-txt"}
+												data-testid={
+													"myProfilePage-generate-key-description-txt"
+												}
 											></TextField>
 										);
 									}}

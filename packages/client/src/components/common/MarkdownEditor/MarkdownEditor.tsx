@@ -72,8 +72,14 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
 					setView(val);
 				}}
 			>
-				<ToggleTabsGroup.Item label="Edit" data-testid={`markdownEditor-Edit-toggle`}></ToggleTabsGroup.Item>
-				<ToggleTabsGroup.Item label="View" data-testid={`markdownEditor-View-toggle`}></ToggleTabsGroup.Item>
+				<ToggleTabsGroup.Item
+					label="Edit"
+					data-testid={`markdownEditor-Edit-toggle`}
+				></ToggleTabsGroup.Item>
+				<ToggleTabsGroup.Item
+					label="View"
+					data-testid={`markdownEditor-View-toggle`}
+				></ToggleTabsGroup.Item>
 			</ToggleTabsGroup>
 			<StyledTabPanel>
 				{view === 0 ? (

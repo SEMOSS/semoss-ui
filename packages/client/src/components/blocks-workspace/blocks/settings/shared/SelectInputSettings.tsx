@@ -18,8 +18,8 @@ import {
 	TextField,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-import { BaseSettingSection } from "../BaseSettingSection";
 import { formatToDataTestId } from "@/utility";
+import { BaseSettingSection } from "../BaseSettingSection";
 
 /**
  * Used for discrete selection options tied to values, ex S/M/L
@@ -215,7 +215,9 @@ export const SelectInputSettings = observer(
 							);
 						}}
 						freeSolo
-						data-testid={formatToDataTestId(`selectInputSettings-${label}-${id}-txt`)}
+						data-testid={formatToDataTestId(
+							`selectInputSettings-${label}-${id}-txt`,
+						)}
 						renderInput={(params) => <TextField {...params} />}
 					/>
 				) : (
@@ -224,7 +226,9 @@ export const SelectInputSettings = observer(
 						size="small"
 						value={value}
 						InputProps={{
-							"data-testid":formatToDataTestId(`selectInputSettings-${label}-${id}-select`)
+							"data-testid": formatToDataTestId(
+								`selectInputSettings-${label}-${id}-select`,
+							),
 						}}
 						onChange={(e) => {
 							// sync the data on change

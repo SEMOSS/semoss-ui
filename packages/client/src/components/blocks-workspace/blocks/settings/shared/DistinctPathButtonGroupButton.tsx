@@ -138,7 +138,9 @@ export const DistinctPathButtonGroupButton = observer(
 				onClick={onClick}
 				title={title}
 				disabled={isDisabled}
-				data-testid={formatToDataTestId(`distinctPathButtonGroupButton-${title}-btn`)}
+				data-testid={formatToDataTestId(
+					`distinctPathButtonGroupButton-${title}-btn`,
+				)}
 			>
 				<ButtonIcon />
 			</IconButton>

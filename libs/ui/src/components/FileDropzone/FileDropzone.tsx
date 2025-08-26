@@ -400,7 +400,9 @@ const _FileDropzone = <Multiple extends boolean>(
 					/>
 				</StyledContentContainer>
 			</StyledDropzone>
-			<StyledFileListContainer data-testid={'fileDropZone-files-list'}>{renderFiles()}</StyledFileListContainer>
+			<StyledFileListContainer data-testid={"fileDropZone-files-list"}>
+				{renderFiles()}
+			</StyledFileListContainer>
 		</StyledContainer>
 	);
 };

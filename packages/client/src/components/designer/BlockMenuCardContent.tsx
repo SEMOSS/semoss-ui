@@ -25,7 +25,9 @@ export const BlockCardContent = (props: BlockCardContentProps) => {
 			height="106px"
 			alignItems="center"
 			justifyContent="center"
-			data-testId={formatToDataTestId(`blockMenuCardContent-card-${name}`)}
+			data-testId={formatToDataTestId(
+				`blockMenuCardContent-card-${name}`,
+			)}
 		>
 			{image ? (
 				<img draggable={false} src={image} width="100%" height="100%" />

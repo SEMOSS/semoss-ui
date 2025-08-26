@@ -403,7 +403,9 @@ export const EngineMetadataPage = observer(() => {
 												?.logicalNames?.[property.id] ||
 											[];
 										return (
-											<Table.Row key={`${property}--${idx}`}>
+											<Table.Row
+												key={`${property}--${idx}`}
+											>
 												<Table.Cell>
 													<IconButton disabled>
 														<Create />

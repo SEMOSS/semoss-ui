@@ -270,7 +270,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
 											field.onChange(value)
 										}
 										rows={3}
-										data-testid={"newAppModal-description-txt"}
+										data-testid={
+											"newAppModal-description-txt"
+										}
 									/>
 								);
 							}}
@@ -295,7 +297,9 @@ export const NewAppModal = (props: NewAppModalProps) => {
 												{...params}
 												variant="outlined"
 												placeholder='Press "Enter" to add tag'
-												data-testid={"newAppModal-tag-txt"}
+												data-testid={
+													"newAppModal-tag-txt"
+												}
 											/>
 										)}
 									/>

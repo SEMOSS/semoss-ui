@@ -457,7 +457,12 @@ export const Filterbox = (props: FilterboxProps) => {
 																	<List.ItemText
 																		disableTypography
 																		primary={
-																			<Typography variant="body1" data-testid={formatToDataTestId(`filterbox-${filterOption.value}-filterBtn`)}>
+																			<Typography
+																				variant="body1"
+																				data-testid={formatToDataTestId(
+																					`filterbox-${filterOption.value}-filterBtn`,
+																				)}
+																			>
 																				{
 																					filterOption.value
 																				}

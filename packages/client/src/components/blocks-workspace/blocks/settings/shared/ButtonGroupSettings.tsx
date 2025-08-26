@@ -10,8 +10,8 @@ import {
 } from "@semoss/renderer";
 import { ButtonGroup, IconButton } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-import { BaseSettingSection } from "../BaseSettingSection";
 import { formatToDataTestId } from "@/utility";
+import { BaseSettingSection } from "../BaseSettingSection";
 
 /**
  * Used when buttons are thematically be grouped together and point to the same
@@ -122,7 +122,9 @@ export const ButtonGroupSettings = observer(
 								size="small"
 								onClick={() => onChange(option.value)}
 								title={option.title}
-								data-testid={formatToDataTestId(`buttonGroupSettings-${label}-${option.value}-btn`)}
+								data-testid={formatToDataTestId(
+									`buttonGroupSettings-${label}-${option.value}-btn`,
+								)}
 							>
 								<option.icon />
 							</IconButton>

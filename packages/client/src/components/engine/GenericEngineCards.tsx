@@ -28,8 +28,8 @@ import {
 import BRAIN from "@/assets/img/BRAIN.png";
 import GOOGLE from "@/assets/img/google.png";
 import { ENGINE_IMAGES } from "@/pages/import";
-import { TruncatedText } from "../../../../../libs/ui/src/components/TruncatedText";
 import { formatToDataTestId } from "@/utility";
+import { TruncatedText } from "../../../../../libs/ui/src/components/TruncatedText";
 
 const StyledCardImg = styled("img")({
 	display: "flex",
@@ -374,7 +374,12 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 	};
 
 	return (
-		<StyledLandscapeCard onClick={() => onClick(id)} data-testId={formatToDataTestId(`genericEngineCards-${type}-${name}`)}>
+		<StyledLandscapeCard
+			onClick={() => onClick(id)}
+			data-testId={formatToDataTestId(
+				`genericEngineCards-${type}-${name}`,
+			)}
+		>
 			<StyledLandscapeCardHeader>
 				<StyledLandscapeCardImg
 					src="img"
