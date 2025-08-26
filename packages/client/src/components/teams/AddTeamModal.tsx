@@ -228,7 +228,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 				);
-				if (response.status === 200 && !response.data) {
+				if (response.status === 200 && response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
