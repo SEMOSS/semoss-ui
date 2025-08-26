@@ -645,7 +645,7 @@ export const FileTable = (props: FileTableProps) => {
 												}}
 												size="small"
 												fullWidth
-												label="Select a Split Options"
+												label="Split Options"
 												value={selectedSplitOptions}
 												onChange={(e) =>
 													setSelectedSplitOptions(

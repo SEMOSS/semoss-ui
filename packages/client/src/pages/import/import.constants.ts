@@ -6760,7 +6760,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -7126,7 +7126,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -7413,7 +7413,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -7710,7 +7710,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -7986,7 +7986,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -8297,7 +8297,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -8658,7 +8658,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
@@ -9209,7 +9209,7 @@ export const CONNECTION_OPTIONS = {
 					},
 					{
 						fieldName: "SPLITTING_OPTIONS",
-						label: "Splitting Options",
+						label: "Split Options",
 						defaultValue: "Tokens",
 						options: {
 							component: "select",
