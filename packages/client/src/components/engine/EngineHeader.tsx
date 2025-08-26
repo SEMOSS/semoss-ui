@@ -158,8 +158,7 @@ export const EngineHeader: React.FC = () => {
                                         const engineType =
                                             active.metadata.database_subtype;
                                         if (
-                                            engineType === 'H2_DB' ||
-                                            engineType === 'MYSQL'
+                                            engineType === 'H2_DB'
                                         ) {
                                             setOpenExportModal(true);
                                         } else {
