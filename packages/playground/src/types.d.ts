@@ -9,6 +9,7 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
+	tag?: string | string[];
 }
 
 /**
@@ -34,9 +35,6 @@ export interface Knowledge {
 }
 
 export interface Tool {
-	/** Type of the tool */
-	type: "APP" | "FUNCTION" | "DATABASE";
-
 	/** Id of the tool */
 	id: string;
 
