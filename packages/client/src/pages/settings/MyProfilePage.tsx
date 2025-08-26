@@ -234,11 +234,13 @@ export const MyProfilePage = () => {
 				email: email,
 				username: id,
 				name: data.NAME,
+				type: configStore.store.config.nativeRegistration ? "NATIVE" : "CUSTOM",
+				admin: configStore.store.user?.admin || false,
 			};
-
-			userObj.newId = data.USERID !== nativeLogin ? ( data.USERID) : null;
-			userObj.newUsername =data.USERNAME !== id ? ( data.USERNAME) : null;
-			userObj.newEmail = data.EMAIL !== email ? (data.EMAIL) : null;
+			
+			userObj.id = data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername =data.USERNAME !== id ? data.USERNAME : null;
+			userObj.newEmail = data.EMAIL !== email ? data.EMAIL : null;
 
 			const response = await editMemberInfo(true, userObj);
 
