@@ -4,16 +4,13 @@ import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
-	Backdrop,
 	Box,
 	Button,
-	CircularProgress,
 	Grid,
 	IconButton,
 	Menu,
-	MenuItemTwo,
+	MenuItem,
 	Search,
-	Stack,
 	styled,
 	Typography,
 } from "@semoss/ui";
@@ -67,11 +64,6 @@ const StyledSearchbar = styled(Search)({
 	width: "80%",
 });
 
-const StyledBackdrop = styled(Backdrop)({
-	backgroundColor: "rgba(255, 255, 255, 0.5)",
-	zIndex: 1501,
-});
-
 const initialState = {
 	favoritedDbs: [],
 	teams: [],
@@ -99,11 +91,8 @@ const reducer = (state, action) => {
 	return state;
 };
 
-const StyledGrid = styled("div")({
-	display: "grid",
+const TeamsList = styled("div")({
 	width: "100%",
-	gridTemplateColumns: "repeat(4, 1fr)",
-	gap: "24px",
 });
 
 export const TeamsSettingsPage = observer(() => {
@@ -119,11 +108,8 @@ export const TeamsSettingsPage = observer(() => {
 
 	const [search, setSearch] = useState("");
 
-	// To focus when getting new results
 	const searchbarRef = useRef(null);
 
-	/*
-	 **/
 	useEffect(() => {
 		monolithStore.getTeams(true).then((data) => {
 			dispatch({
@@ -185,42 +171,49 @@ export const TeamsSettingsPage = observer(() => {
 	};
 
 	return (
-		<>
-			<StyledContainer>
-				<StyledSearchbarContainer>
-					<Box>
-						<Typography variant="h5">Teams</Typography>
-					</Box>
-					<StyledSearchbarDiv>
-						<StyledSearchbar
-							value={search}
-							onChange={(e) => {
-								setSearch(e.target.value);
-							}}
-							size="small"
-							ref={searchbarRef}
-						/>
-						<StyledAddButton
-							variant="contained"
-							startIcon={<Add />}
-							onClick={() => setAddModal(true)}
-							data-testid={"teamsSettingsPage-add-btn"}
-						>
-							Add New
-						</StyledAddButton>
-					</StyledSearchbarDiv>
-				</StyledSearchbarContainer>
-				{/* <Grid container spacing={3}> */}
-				<div
-					style={{
+		<StyledContainer>
+			<StyledSearchbarContainer>
+				<Typography
+					variant="h5"
+					sx={{
+						fontSize: "24px",
+						fontWeight: 500,
+						fontFamily: "Inter",
+					}}
+				>
+					Teams
+				</Typography>
+				<StyledSearchbarDiv>
+					<StyledSearchbar
+						value={search}
+						onChange={(e) => {
+							setSearch(e.target.value);
+						}}
+						size="small"
+						ref={searchbarRef}
+					/>
+					<StyledAddButton
+						variant="contained"
+						startIcon={<Add />}
+						onClick={() => setAddModal(true)}
+						data-testid={"teamsSettings-add-btn"}
+					>
+						Add Team
+					</StyledAddButton>
+				</StyledSearchbarDiv>
+			</StyledSearchbarContainer>
+
+			<TeamsList>
+				<Box
+					sx={{
 						display: "flex",
 						justifyContent: "flex-end",
-						width: "100%",
+						mb: 2,
 					}}
 				>
 					<IconButton
 						onClick={handleMenuClick}
-						data-testid={"teamsSettingsPage-sort-btn"}
+						data-testid={"teamsSettings-sort-btn"}
 					>
 						<Typography
 							sx={{ color: "#212121", borderRadius: "0px" }}
@@ -230,82 +223,104 @@ export const TeamsSettingsPage = observer(() => {
 						</Typography>
 						<ExpandMore />
 					</IconButton>
-				</div>
+				</Box>
+
 				<Menu
 					anchorEl={anchorEl}
 					open={Boolean(anchorEl)}
 					onClose={handleMenuClose}
+					anchorOrigin={{
+						vertical: "bottom",
+						horizontal: "right",
+					}}
+					transformOrigin={{
+						vertical: "top",
+						horizontal: "left",
+					}}
+					sx={{
+						"& .MuiList-root": {
+							width: "218px",
+							margin: "0px",
+						},
+						"& .MuiPaper-root": {
+							borderRadius: "4px",
+						},
+					}}
 				>
-					<MenuItemTwo
+					<MenuItem
 						onClick={() => handleSort("asc")}
 						sx={{
 							backgroundColor: isAsc() ? "#EBF3F8" : "inherit",
 						}}
 					>
 						A<ArrowForward fontSize="small" />Z
-					</MenuItemTwo>
-					<MenuItemTwo
+					</MenuItem>
+					<MenuItem
 						onClick={() => handleSort("desc")}
 						sx={{
 							backgroundColor: isDesc() ? "#EBF3F8" : "inherit",
 						}}
 					>
 						Z<ArrowBack fontSize="small" />A
-					</MenuItemTwo>
+					</MenuItem>
 				</Menu>
-				{/* <Grid container spacing={3}>  */}
-				<StyledGrid>
-					{filteredTeams.length
-						? filteredTeams.map((team, i) => {
-								return (
-									<div key={i}>
-										<TeamTileCard
-											id={team.id}
-											type={team.type}
-											description={team.description}
-											dispatch={dispatch}
-											teams={teams}
-											onClick={() => {
-												navigate(
-													`${team.id
-														.toLowerCase()
-														.replace(/['"]+/g, "")
-														.replace(/\s/g, "-")}`,
-													{
-														state: {
-															name: team.id,
-															type: team.type,
-														},
-													},
-												);
-											}}
-										/>
-									</div>
-								);
-							})
-						: null}
-				</StyledGrid>
 
-				<AddTeamModal
-					open={addModal}
-					onClose={(team) => {
-						if (team) {
-							const obj = {
-								id: team.id,
-								type: team.type,
-								description: team.description,
-							};
+				<Grid container spacing={3}>
+					{filteredTeams.map((team, i) => (
+						<Grid
+							item
+							key={team.id || i}
+							sm={12}
+							md={6}
+							lg={4}
+							xl={3}
+						>
+							<TeamTileCard
+								key={team.id || i}
+								id={team.id}
+								type={team.type}
+								description={team.description}
+								dispatch={dispatch}
+								teams={teams}
+								onClick={() => {
+									navigate(
+										team.id
+											.toLowerCase()
+											.replace(/['"]+/g, "")
+											.replace(/\s/g, "-"),
+										{
+											state: {
+												name: team.id,
+												type: team.type,
+											},
+										},
+									);
+								}}
+							/>
+						</Grid>
+					))}
+				</Grid>
+			</TeamsList>
 
-							dispatch({
-								type: "field",
-								field: "teams",
-								value: [...teams, obj],
-							});
-						}
-						setAddModal(false);
-					}}
-				/>
-			</StyledContainer>
-		</>
+			<AddTeamModal
+				open={addModal}
+				onClose={(team) => {
+					if (team) {
+						const obj = {
+							id: team.id,
+							type: team.type,
+							description: team.description,
+						};
+
+						dispatch({
+							type: "field",
+							field: "teams",
+							value: [...teams, obj],
+						});
+					}
+					setAddModal(false);
+				}}
+			/>
+		</StyledContainer>
 	);
 });

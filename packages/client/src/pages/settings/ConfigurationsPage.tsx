@@ -430,7 +430,7 @@ const SocialProperty = (props) => {
 		monolithStore.modifyLoginProperties(fieldName, values).then(() => {
 			notification.add({
 				color: "success",
-				message: `Succesfully modified ${fieldName} properties`,
+				message: `Successfully modified ${fieldName} properties`,
 			});
 		});
 	};

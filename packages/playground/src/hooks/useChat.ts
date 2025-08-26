@@ -2,8 +2,8 @@ import { useContext } from "react";
 import { ChatContext } from "@/contexts";
 
 /**
- * Access the current ChatStore
- * @returns the ChatStore
+ * Access the current chat store
+ * @returns the chat store
  */
 export const useChat = () => {
 	const context = useContext(ChatContext);
