@@ -64,9 +64,9 @@ export const editTeam = async (
 	url += "group/editGroupDetails";
 
 	postData = {
-		groupId: encodeURIComponent(previousTeamName),
-		newGroupId: encodeURIComponent(groupId),
-		newDescription: encodeURIComponent(description),
+		groupId: previousTeamName,
+		newGroupId: groupId,
+		newDescription: description,
 		type: encodeURIComponent(previousType),
 		newType: encodeURIComponent(type),
 	};
