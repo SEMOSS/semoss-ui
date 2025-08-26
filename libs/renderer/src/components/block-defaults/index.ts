@@ -95,6 +95,7 @@ import {
 	config as SwitchBlockConfig,
 	type SwitchBlockDef,
 } from "./switch-block";
+import { config as TabBlockConfig, type TabBlockDef } from "./tab-block";
 import { config as TextBlockConfig, type TextBlockDef } from "./text-block";
 import { config as ThemeBlockConfig, type ThemeBlockDef } from "./theme-block";
 import {
@@ -117,8 +118,6 @@ import {
 	config as VisualizationFilterBlockConfig,
 	type VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
-
-import { config as TabBlockConfig, type TabBlockDef } from './tab-block'
 
 export type DefaultBlockDefinitions =
 	| AccordionBlockDef
@@ -162,7 +161,7 @@ export type DefaultBlockDefinitions =
 	| TimePickerBlockDef
 	| VisualizationFilterBlockDef
 	| GridDynamicFrameBlockDef
-	|TabBlockDef;
+	| TabBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -247,5 +246,5 @@ export {
 	FlipCardBlockConfig,
 	VisualizationFilterBlockConfig,
 	GridDynamicFrameBlockConfig,
-	TabBlockConfig
+	TabBlockConfig,
 };

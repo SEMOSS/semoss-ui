@@ -1,5 +1,5 @@
 import { Env, InsightProvider } from "@semoss/sdk/react";
-import { Notification, styled, ThemeProvider } from "@semoss/ui";
+import { LoadingScreen, Notification, styled, ThemeProvider } from "@semoss/ui";
 import { Router } from "@/pages";
 
 // use the environment variable to set the module
@@ -18,9 +18,11 @@ export const App = () => {
 		<InsightProvider>
 			<ThemeProvider>
 				<Notification>
-					<StyledMain>
-						<Router />
-					</StyledMain>
+					<LoadingScreen>
+						<StyledMain>
+							<Router />
+						</StyledMain>
+					</LoadingScreen>
 				</Notification>
 			</ThemeProvider>
 		</InsightProvider>
