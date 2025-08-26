@@ -1,12 +1,16 @@
-import { ChangeEvent } from "react";
-import { Controller } from "react-hook-form";
+import type { ChangeEvent } from "react";
+import {
+	type Control,
+	Controller,
+	type UseFormSetValue,
+} from "react-hook-form";
 import { ACTIONS_DISPLAY, ActionMessages } from "@semoss/renderer";
 import { Select } from "@semoss/ui";
 import { getDefaultFormValues } from "./utils";
 
 interface ActionTypeSelectorProps {
-	control: any;
-	setValue: any;
+	control: Control<any>;
+	setValue: UseFormSetValue<any>;
 }
 
 export const ActionTypeSelector = ({
@@ -34,7 +38,7 @@ export const ActionTypeSelector = ({
 						ActionMessages.DISPATCH_EVENT,
 						ActionMessages.DISPATCH_OUTPUTS_EVENT,
 						ActionMessages.DISPATCH_OPEN_EVENT,
-						ActionMessages.COPY_TO_CLIPBOARD
+						ActionMessages.COPY_TO_CLIPBOARD,
 					].map((action, index) => (
 						<Select.Item key={index} value={action}>
 							{ACTIONS_DISPLAY[action]}

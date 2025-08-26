@@ -7,9 +7,16 @@ import {
 	Refresh,
 } from "@mui/icons-material";
 import Typography from "@mui/material/Typography";
-import { Actions, DockLocation, Layout, TabNode } from "flexlayout-react";
+import { Actions, DockLocation, type Layout, TabNode } from "flexlayout-react";
 import { useEffect, useRef, useState } from "react";
-import { IconButton, Stack, Tooltip, useNotification } from "@semoss/ui";
+import {
+	IconButton,
+	Stack,
+	styled,
+	TextField,
+	Tooltip,
+	useNotification,
+} from "@semoss/ui";
 import {
 	AddFileOverlay,
 	CreateFileOverlay,
@@ -25,6 +32,51 @@ interface FileExplorerPanelProps {
 	/** Current layoutobject */
 	layout: Layout;
 }
+
+const _StyledTitle = styled("div")(({ theme }) => ({
+	borderRadius: "16px",
+	background: " #EBF4FE",
+	width: "fit-content",
+	marginTop: "4px",
+	paddingRight: theme.spacing(2),
+	paddingLeft: theme.spacing(2),
+	marginBottom: "8px",
+
+	backgroundColor: theme.palette.primary.selected,
+	color: theme.palette.info.dark,
+}));
+
+const _StyledFileSpan = styled("span")(({ theme }) => ({
+	color: "var(--Text-Primary, #212121)",
+	fontFeatureSettings: "'liga' off, 'clig' off",
+	fontFamily: "Inter",
+	fontSize: "16px",
+	fontStyle: "normal",
+	fontWeight: 400,
+	lineHeight: "150%", // or '24px' if you prefer fixed px value
+	letterSpacing: "0.15px",
+}));
+
+const _StyledTitleSpan = styled("span")(({ theme }) => ({
+	color: "var(--Primary-Dark, #1260DD)",
+	fontFeatureSettings: "'liga' off, 'clig' off",
+	fontSize: "13px",
+	fontFamily: "Inter",
+	fontWeight: 400,
+	fontStyle: "normal",
+	letterSpacing: "0.16px",
+	lineHeight: "18px",
+	marginBottom: "8px",
+	marginTop: "8px",
+}));
+
+const _StyledTextField = styled(TextField)(({ theme }) => ({
+	paddingRight: "16px",
+	paddingLeft: "16px",
+	marginTop: "8px",
+	width: "100%",
+	borderRadius: "8px",
+}));
 
 export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 	const { layout } = props;

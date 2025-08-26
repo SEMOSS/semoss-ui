@@ -353,16 +353,28 @@ export const FileExplorerItem = forwardRef<
 			: "",
 	);
 
+	// Optimized: Combined force expand logic with children data check
 	useEffect(() => {
-		if (forceOpen && isDirectory && !isOpen) {
+		if (
+			forceOpen &&
+			isDirectory &&
+			!isOpen &&
+			getChildrenAssets.status === "SUCCESS"
+		) {
 			const childrenPaths =
-				isDirectory && getChildrenAssets.status === "SUCCESS"
-					? getChildrenAssets.data.map((n) => n.path)
-					: [];
+				getChildrenAssets.data?.map((n) => n.path) || [];
 			onExpand(path, childrenPaths);
 			setForceOpen(false);
 		}
-	}, [forceOpen, isDirectory, isOpen, path, onExpand]);
+	}, [
+		forceOpen,
+		isDirectory,
+		isOpen,
+		path,
+		onExpand,
+		getChildrenAssets.status,
+		getChildrenAssets.data,
+	]);
 
 	// Expose method for parent: expand + wait for load children
 	useImperativeHandle(ref, () => ({
@@ -379,34 +391,35 @@ export const FileExplorerItem = forwardRef<
 		null | "delete" | "duplicate"
 	>(null);
 
-	// creating the helper function to handle delete/duplicate, when you auto-expand a directory, we need to wait for the children to load before deleting/duplicating
-	useEffect(() => {
-		if (
-			pendingAction &&
-			getAssets.status === "SUCCESS" &&
-			Array.isArray(getAssets.data)
-		) {
-			const childrenPaths = getAssets.data.map((n) => n.path);
-
-			if (pendingAction === "delete") {
-				onDeleteRequest(path, isDirectory, childrenPaths);
-			} else if (pendingAction === "duplicate") {
-				onDuplicateRequest(path, isDirectory, childrenPaths);
-			}
-
-			setPendingAction(null); // reset
-		}
-	}, [pendingAction, getAssets.status, getAssets.data, path, isDirectory]);
-
-	// If the assets/files are loaded, we can trigger the onFilesLoaded callback
+	// Optimized: Combined pending action and files loaded logic into single useEffect
 	useEffect(() => {
 		if (getAssets.status === "SUCCESS" && Array.isArray(getAssets.data)) {
+			const childrenPaths = getAssets.data.map((n) => n.path);
 			const filePaths = getAssets.data
 				.filter((item) => item.type !== "directory")
 				.map((item) => item.path);
+
+			// Handle pending actions (delete/duplicate)
+			if (pendingAction) {
+				if (pendingAction === "delete") {
+					onDeleteRequest(path, isDirectory, childrenPaths);
+				} else if (pendingAction === "duplicate") {
+					onDuplicateRequest(path, isDirectory, childrenPaths);
+				}
+				setPendingAction(null);
+			}
+
+			// Trigger files loaded callback
 			onFilesLoaded(path, filePaths);
 		}
-	}, [getAssets.status, getAssets.data, path, onFilesLoaded]);
+	}, [
+		getAssets.status,
+		getAssets.data,
+		pendingAction,
+		path,
+		isDirectory,
+		onFilesLoaded,
+	]);
 
 	const nodeRef = useCallback((ele) => {
 		ele?.addEventListener("focusin", (e) => {
@@ -565,21 +578,7 @@ export const FileExplorerItem = forwardRef<
 													[],
 												);
 											}
-											// const childrenPaths =
-											//     isDirectory &&
-											//     getAssets.status ===
-											//         'SUCCESS'
-											//         ? getAssets.data.map(
-											//               (n) => n.path,
-											//           )
-											//         : [];
-											// onDuplicateRequest(
-											//     path,
-											//     isDirectory,
-											//     childrenPaths,
-											// );
 										}}
-										// onDelete={() => onTrashClick(undefined as any, path)}
 										onDelete={() => {
 											if (isDirectory) {
 												const childrenPaths =
@@ -599,19 +598,6 @@ export const FileExplorerItem = forwardRef<
 													[],
 												);
 											}
-											// const childrenPaths =
-											//     isDirectory &&
-											//     getAssets.status ===
-											//         'SUCCESS'
-											//         ? getAssets.data.map(
-											//               (n) => n.path,
-											//           )
-											//         : []; // if it is a directory, we need to checked all children paths return the children paths
-											// onDeleteRequest(
-											//     path,
-											//     isDirectory,
-											//     childrenPaths,
-											// );
 										}}
 									/>
 								</>
@@ -686,8 +672,9 @@ export const FileExplorerItem = forwardRef<
 				</>
 			) : null}
 
-			{/* Directory delete/duplicate buttons - only for directories */}
+			{/* Directory/file delete/duplicate buttons */}
 			{deleteMode &&
+				checkedPaths.size > 0 &&
 				((deleteRootPath === path && isDirectory) ||
 					(checkedPaths.has(path) &&
 						!isDirectory &&
@@ -704,7 +691,11 @@ export const FileExplorerItem = forwardRef<
 								padding: "8px 16px",
 							}}
 						>
-							<Button onClick={onCancelDeleteMode} variant="text">
+							<Button
+								onClick={onCancelDeleteMode}
+								variant="text"
+								title="Cancel"
+							>
 								Cancel
 							</Button>
 							<Button
@@ -713,6 +704,7 @@ export const FileExplorerItem = forwardRef<
 								}
 								variant="contained"
 								color={"error"}
+								title="Delete"
 							>
 								Delete
 							</Button>
@@ -721,6 +713,7 @@ export const FileExplorerItem = forwardRef<
 				)}
 
 			{duplicateMode &&
+				checkedPaths.size > 0 &&
 				((duplicateRootPath === path && isDirectory) ||
 					(checkedPaths.has(path) &&
 						!isDirectory &&
@@ -740,6 +733,7 @@ export const FileExplorerItem = forwardRef<
 							<Button
 								onClick={onCancelDuplicateMode}
 								variant="text"
+								title="Cancel"
 							>
 								Cancel
 							</Button>
@@ -751,15 +745,7 @@ export const FileExplorerItem = forwardRef<
 									)
 								}
 								variant="contained"
-								style={{
-									color: "white",
-									textTransform: "none",
-									fontWeight: "bold",
-									fontSize: "14px",
-									border: "none",
-									borderRadius: "12px",
-									backgroundColor: "primary",
-								}}
+								title="Duplicate"
 							>
 								Duplicate
 							</Button>
