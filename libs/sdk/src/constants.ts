@@ -1,14 +1,14 @@
 export const DATA_FRAME_TYPES = {
-    PY: {
-        display: "Python",
-        value: "PY",
-    },
-    GRID: {
-        display: "Grid",
-        value: "GRID",
-    },
-    NATIVE: {
-        display: "Native",
-        value: "NATIVE",
-    },
+	PY: {
+		display: "Python",
+		value: "PY",
+	},
+	GRID: {
+		display: "Grid",
+		value: "GRID",
+	},
+	NATIVE: {
+		display: "Native",
+		value: "NATIVE",
+	},
 };

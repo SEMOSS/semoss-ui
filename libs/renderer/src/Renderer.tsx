@@ -9,7 +9,7 @@ import { Blocks, RendererEngine } from "./components/blocks";
 import { DefaultCells } from "./components/cell-defaults";
 import {
 	MigrationManager,
-	SerializedState,
+	type SerializedState,
 	STATE_VERSION,
 	StateStore,
 } from "./store/state";
