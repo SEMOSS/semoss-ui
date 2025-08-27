@@ -633,17 +633,23 @@ paramValues=[${JSON.stringify({
 	 * @param message - the original agent message
 `	 * @param toolId - id of the tool
 	 * @param toolName - func of the tool to run
-	 * @param response - response
+	 * @param toolResponse - response of the tool
 	 */
 	saveTool = async (
 		message: ResponseMessageStore,
 		toolId: string,
 		toolName: string,
-		executionResponse: string,
+		toolResponse: string,
 	): Promise<void> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
+
+			// save the response
+			const tool = message.tools.find((tool) => tool.id === toolId);
+			if (tool) {
+				tool.response = toolResponse;
+			}
 
 			// wait for the pixel to run
 			const response = await this.runPixel<
@@ -658,7 +664,7 @@ engine=["${this._store.modelId}"],
 roomId = ["${this._store.roomId}"], 
 toolId = ["${toolId}"],
 toolName=["${toolName}"],
-tool_execution_response=["${executionResponse}"]
+tool_execution_response=["${toolResponse}"]
 );`,
 			);
 
@@ -799,17 +805,7 @@ tool_execution_response=["${executionResponse}"]
 				pixelMessage.inputUIPrompt,
 			);
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-			return new ResponseMessageStore(
-				pixelMessage.messageId,
-				"",
-				pixelMessage.tool_responses.map((t) => ({
-					id: t.id,
-					_meta: t._meta,
-					title: t.title,
-					name: t.name,
-					parameters: t.arguments,
-				})),
-			);
+			return new ResponseMessageStore(pixelMessage.messageId, "", []);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			return new ResponseMessageStore(
 				pixelMessage.messageId,
@@ -826,6 +822,7 @@ tool_execution_response=["${executionResponse}"]
 					title: t.title,
 					name: t.name,
 					parameters: t.arguments,
+					response: "",
 				})),
 			);
 		}
