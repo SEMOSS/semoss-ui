@@ -16,3 +16,12 @@ export type Role =
 	| "READ_ONLY"
 	| "DISCOVERABLE"
 	| "EDITOR";
+
+export interface LLMResponse {
+	messageId: string;
+	messageType: string;
+	numberOfTokensInPrompt: number;
+	response: string;
+	numberOfTokensInResponse: number;
+	roomId: string;
+}

@@ -2,6 +2,7 @@ import { ContentCopy, Delete, Edit, MoreVert } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import React, { useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
+import { isValidPythonVariableName } from "@semoss/sdk";
 import {
 	Icon,
 	IconButton,
@@ -332,6 +333,19 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 											onKeyDown={async (e) => {
 												if (e.key === "Enter") {
 													setOpenRenameAlias(false);
+
+													const isValidSyntax =
+														isValidPythonVariableName(
+															newTokenAlias,
+														);
+
+													if (!isValidSyntax) {
+														notification.add({
+															color: "error",
+															message: `Unable to rename ${id} to ${newTokenAlias}, due to syntax or a duplicated alias`,
+														});
+														return;
+													}
 
 													const success =
 														await state.dispatch({

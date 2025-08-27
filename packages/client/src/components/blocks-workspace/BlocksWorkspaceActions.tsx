@@ -1,7 +1,7 @@
 import { PreviewRounded, SaveRounded, ShareRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { useBlocks } from "@semoss/renderer";
+import { useBlocks, Variable } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
 import { IconButton, Stack, Tooltip, useNotification } from "@semoss/ui";
 import { ModelBrain } from "@/assets/img/ModelBrain";
@@ -110,14 +110,34 @@ export const BlocksWorkspaceActions = observer(() => {
 	/**
 	 * Save the current app
 	 */
-	const saveApp = async () => {
+	const saveAppOg = async () => {
 		// turn on loading
 		workspace.setLoading(true);
 
 		// convert the state to json
 		const json = state.toJSON();
 
-		// remove the visual from the json
+		const suggestedChanges = await state.processRename();
+
+		const stringified = JSON.stringify(json);
+
+		// Go through whole json and replace
+
+		Object.entries(suggestedChanges).forEach(
+			([key, value]: [string, string]) => {
+				stringified.replaceAll(/{{(.*?)}}/g, (match) => {
+					const pattern = RegExp(key, "g");
+
+					return match.replace(pattern, value as string);
+				});
+			},
+		);
+
+		const updated = JSON.parse(stringified);
+
+		debugger;
+
+		// TODO: remove the visual from the json or save it with it
 		Object.keys(json?.blocks).forEach((key) => {
 			if (key.startsWith("e-chart")) {
 				if (json?.blocks[key]?.data?.option?.["visual"]) {
@@ -125,6 +145,7 @@ export const BlocksWorkspaceActions = observer(() => {
 				}
 			}
 		});
+
 		try {
 			// save the json
 			const { errors } = await monolithStore.runQuery<[true]>(
@@ -132,6 +153,107 @@ export const BlocksWorkspaceActions = observer(() => {
 					workspace.appId
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
 			);
+
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
+
+			notification.add({
+				color: "success",
+				message:
+					"Save successful! Make sure to double-check your changes for correctness",
+			});
+		} catch (e) {
+			console.error(e);
+
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			// turn of loading
+			workspace.setLoading(false);
+		}
+	};
+
+	/**
+	 * Save the current app
+	 */
+	const saveApp = async () => {
+		// turn on loading
+		workspace.setLoading(true);
+
+		// convert the state to json
+		const json = state.toJSON();
+
+		let updatedJson = json;
+
+		// John Start ---------------------------------------------
+
+		// TODO: PICK BACK UP ON THIS
+		// BELOW RENAMES VARIABLES FINE IN PYTHON SYTAX
+
+		const suggestedChanges = await state.processRename();
+		suggestedChanges;
+		debugger;
+		let stringified = JSON.stringify(json);
+
+		// Go through whole json and replace
+		for (const [key, value] of Object.entries(suggestedChanges)) {
+			// The regex pattern matches the old variable name with an optional . and any characters after it.
+			const pattern = new RegExp(`{{${key}(.*?)}}`, "g");
+			stringified = stringified.replaceAll(pattern, `{{${value}$1}}`);
+		}
+
+		updatedJson = JSON.parse(stringified);
+
+		Object.entries(suggestedChanges).forEach(
+			([key, value]: [string, string]) => {
+				updatedJson.variables[value] = updatedJson.variables[key];
+
+				delete updatedJson.variables[key];
+			},
+		);
+
+		debugger;
+		console.log(updatedJson);
+
+		// return
+
+		// TODO: Check if it replaced notebook cell variable names correctly
+
+		// return
+
+		// John End ------------------------------------------------
+
+		// TODO: remove the visual from the json or save it with it
+		Object.keys(updatedJson?.blocks).forEach((key) => {
+			if (key.startsWith("e-chart")) {
+				if (updatedJson?.blocks[key]?.data?.option?.["visual"]) {
+					updatedJson.blocks[key].data.option["visual"] = false;
+				}
+			}
+		});
+
+		try {
+			// save the json
+			const { errors } = await monolithStore.runQuery<[true]>(
+				`SaveAppBlocksJson(project=["${
+					workspace.appId
+				}"], json=["<encode>${JSON.stringify(updatedJson)}</encode>"]);`,
+			);
+
+			// save the json
+			const saveMCP = true;
+			if (saveMCP) {
+				const r = await monolithStore.runQuery<[true]>(
+					`MakePythonMCP(project=["${
+						workspace.appId
+					}"], model=["9adae906-f585-4a8a-b932-4e7237f81b8d"])`,
+				);
+
+				debugger;
+			}
 
 			if (errors.length > 0) {
 				throw new Error(errors.join(""));

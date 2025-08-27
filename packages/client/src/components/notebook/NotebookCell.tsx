@@ -358,10 +358,10 @@ export const NotebookCell = observer(
 		/**
 		 * Create a duplicate cell
 		 */
-		const duplicateCell = () => {
+		const duplicateCell = async () => {
 			try {
 				// copy and add the step to the end
-				const newCellId = state.dispatch({
+				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
 						queryId: queryId,
@@ -373,7 +373,7 @@ export const NotebookCell = observer(
 							},
 						},
 					},
-				}) as string;
+				})) as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,

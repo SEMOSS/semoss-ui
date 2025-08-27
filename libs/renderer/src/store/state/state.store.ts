@@ -1,5 +1,11 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
-import { download, Env, runPixel } from "@semoss/sdk/react";
+import {
+	createValidPythonVariableName,
+	download,
+	Env,
+	type LLMResponse,
+	runPixel,
+} from "@semoss/sdk/react";
 import {
 	cancellablePromise,
 	getValueByPath,
@@ -764,6 +770,96 @@ export class StateStore {
 			this.notifyToolExecution(output as string);
 		}
 	};
+
+	/**
+	 * User presses save:
+	 * * We get LLM to suggest renaming variables:
+	 * * Maybe after we save: Make MCP
+	 * * Assist user with rename before they save
+	 * * Notify them of key changes
+	 * text_input_1 --> symptom1
+	 * * Get user to confirm
+	 */
+	async processRename(): Promise<boolean | unknown> {
+		/**
+		 * { previous_variable_name: suggested_variable_name, ..others }
+		 */
+		const keyHashmap = {};
+
+		console.log("state", this._store);
+
+		const promises = Object.entries(this._store.variables).map(
+			async ([key, value]: [string, Variable]) => {
+				console.log(`${key} value: `, value);
+
+				let prompt;
+
+				// Change prompts per variable
+
+				// PROMPTS START -------------------------------------------------
+				if (value.type === "block") {
+					prompt = `
+                I have this data structure:
+
+                ${JSON.stringify({
+					widget: this._store.blocks[value.to].widget,
+					data: this._store.blocks[value.to].data,
+				})}
+
+                Based on this data structure would be a good variableName?
+
+                Rules:
+                - Please only return the ""variableName""
+                - and ensure it is valid python variable naming format.
+            `;
+				} else if (value.type === "cell") {
+					prompt = `
+                I have this snippet of code:
+
+                ${JSON.stringify(
+					this._store.queries[value.to].cells[value.cellId].parameters
+						.code,
+				)}
+
+                I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
+
+                Rules for response:
+                - Please only return the ""variable_name""
+                - and ensure it is valid python variable naming syntax.
+				- Should not be longer than 10 characters
+            `;
+				} else {
+					// Notebooks
+
+					// TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
+					return;
+				}
+
+				// PROMPTS END -------------------------------------------------
+
+				// Get variable name suggestions from LLM
+				const resp = await runPixel(
+					`LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
+				);
+
+				console.log("-----------------------");
+				console.log(`Variable name suggestions for ${key}`, resp);
+				console.log("-----------------------");
+
+				const output = resp.pixelReturn[0].output as LLMResponse;
+
+				if (output.response) {
+					keyHashmap[key] = output.response;
+				}
+			},
+		);
+
+		await Promise.all(promises);
+
+		console.log("keyHashmap", keyHashmap);
+
+		return keyHashmap;
+	}
 
 	/**
 	 * Serialize to JSON
@@ -1888,18 +1984,21 @@ export class StateStore {
 	 * @param to - points to
 	 * @param type - type of variable
 	 */
-	private addVariable = (
+	private addVariable = async (
 		id: string,
 		to: string,
 		type: VariableType,
 		cellId?: string,
 		value?: unknown,
 	) => {
-		if (id.includes(".")) {
-			return false;
-		}
+		console.log("before make it python", id);
+		const uniqId = await createValidPythonVariableName(
+			id,
+			Object.keys(this._store.variables),
+		);
 
-		if (this._store.variables[id]) {
+		console.log("after make it python", uniqId);
+		if (id.includes(".") || !uniqId) {
 			return false;
 		}
 
@@ -1915,7 +2014,7 @@ export class StateStore {
 			token["value"] = value;
 		}
 
-		this._store.variables[id] = token as Variable;
+		this._store.variables[uniqId] = token as Variable;
 
 		return token;
 	};

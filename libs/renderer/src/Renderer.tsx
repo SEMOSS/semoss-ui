@@ -26,6 +26,9 @@ export interface RendererProps {
 	/** State to render */
 	state?: SerializedState;
 
+	/** AI Generation */
+	aiGenerationModel?: string;
+
 	/**
 	 * TODO: REMOVE
 	 * Do we want to see load screen. Ex: preview on tooltip
@@ -37,7 +40,7 @@ export interface RendererProps {
  * Render a block app
  */
 export const Renderer = observer((props: RendererProps) => {
-	const { appId, insightId, state, preview } = props;
+	const { appId, insightId, state, preview, aiGenerationModel } = props;
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [stateStore, setStateStore] = useState<StateStore | null>();
@@ -137,6 +140,7 @@ export const Renderer = observer((props: RendererProps) => {
 					insightId: insightId,
 					state: s,
 					cellRegistry: DefaultCells,
+					aiGenerationModel: aiGenerationModel;
 				});
 
 				// set it
