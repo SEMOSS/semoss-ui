@@ -6,7 +6,6 @@ import {
 	ThumbUpAltOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
 import {
 	Button,
 	Chip,
@@ -18,7 +17,11 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import {
+	InputMessageStore,
+	type ResponseMessageStore,
+	type RoomStore,
+} from "@/stores";
 import { ResponseMessageTool } from "./ResponseMessageTool";
 
 const StyledAgentResponse = styled(Stack)(({ theme }) => ({
@@ -44,22 +47,13 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
-		const { system } = useInsight();
-
 		const notification = useNotification();
 
-		const loginType = Object.keys(system.config.logins)[0];
-		const userName: string =
-			typeof system.config.logins[loginType] === "string"
-				? (system.config.logins[loginType] as unknown as string)
-				: "";
-
-		const _initials: string = userName
-			.match(/(\b\S)?/g)
-			.join("")
-			.match(/(^\S|\S$)?/g)
-			.join("")
-			.toUpperCase();
+		// get the parent input message
+		let inputMessage: InputMessageStore | null = null;
+		if (message.parent instanceof InputMessageStore) {
+			inputMessage = message.parent;
+		}
 
 		/**
 		 * Copy the text
@@ -107,6 +101,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 */
 		const rewriteMessage = async () => {
 			try {
+				if (!inputMessage) {
+					return;
+				}
+
 				await room.rewriteMessage(message);
 
 				notification.add({
@@ -154,42 +152,48 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 							justifyContent={"space-between"}
 						>
 							<Stack direction={"row"} alignItems={"center"}>
-								<Button
-									variant="text"
-									size="small"
-									color="inherit"
-									onClick={() => rewriteMessage()}
-								>
-									Rewrite
-								</Button>
-								{message.siblings.length > 1 && (
+								{inputMessage && (
+									<Button
+										variant="text"
+										size="small"
+										color="inherit"
+										onClick={() => rewriteMessage()}
+									>
+										Rewrite
+									</Button>
+								)}
+								{inputMessage?.siblings.length > 1 && (
 									<>
 										<IconButton
 											size="small"
-											disabled={!message.previousSibling}
+											disabled={
+												!inputMessage.previousSibling
+											}
 											onClick={() => {
-												if (!message.previousSibling) {
+												if (
+													!inputMessage.previousSibling
+												) {
 													return;
 												}
 
-												message.previousSibling.activateMessage();
+												inputMessage.previousSibling.activateMessage();
 											}}
 										>
 											<ChevronLeftOutlined fontSize="small" />
 										</IconButton>
 										<Typography variant="caption">
-											{message.position + 1}/
-											{message.siblings.length}
+											{inputMessage.position + 1}/
+											{inputMessage.siblings.length}
 										</Typography>
 										<IconButton
 											size="small"
-											disabled={!message.nextSibling}
+											disabled={!inputMessage.nextSibling}
 											onClick={() => {
-												if (!message.nextSibling) {
+												if (!inputMessage.nextSibling) {
 													return;
 												}
 
-												message.nextSibling.activateMessage();
+												inputMessage.nextSibling.activateMessage();
 											}}
 										>
 											<ChevronRightOutlined fontSize="small" />
