@@ -1,1 +1,1 @@
-export * from "./TabBlockArraySettings"
+export * from "./TabBlockArraySettings";

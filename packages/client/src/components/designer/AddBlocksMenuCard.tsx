@@ -4,7 +4,7 @@ import {
 	ReportRounded,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
 	Box,
@@ -97,14 +97,13 @@ export interface AddBlocksMenuItemProps {
  * Individaul block that can be dragged onto the UI
  */
 export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
-	const { item, isCommunity, handleOnTrashClick, handleOnEditClick } = props;
+	const { item, isCommunity, handleOnTrashClick } = props;
 	const { state } = useBlocks();
 	const { designer } = useDesigner();
 	const notification = useNotification();
 	const { configStore } = useRootStore();
 
-	const ref = useRef(null);
-	const [imageSrc, setImageSrc] = useState(null);
+	const [imageSrc, _setImageSrc] = useState(null);
 
 	// track if it is this one that is dragging
 	const [local, setLocal] = useState(false);
@@ -287,7 +286,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					id: id,
 					type: "block",
 					to: id,
-					isInput: true,
 				},
 			});
 		}
@@ -348,24 +346,18 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				>
 					{item.name}
 					{item.recentChanges && (
-						<Tooltip
-							title={item.recentChanges}
-							children={
-								<Icon color={"info"} fontSize="small">
-									<InfoOutlined />
-								</Icon>
-							}
-						/>
+						<Tooltip title={item.recentChanges}>
+							<Icon color={"info"} fontSize="small">
+								<InfoOutlined />
+							</Icon>
+						</Tooltip>
 					)}
 					{item.isBeta && (
-						<Tooltip
-							title={"This block is currently in beta"}
-							children={
-								<Icon color={"warning"} fontSize="small">
-									<ReportRounded />
-								</Icon>
-							}
-						/>
+						<Tooltip title={"This block is currently in beta"}>
+							<Icon color={"warning"} fontSize="small">
+								<ReportRounded />
+							</Icon>
+						</Tooltip>
 					)}
 				</Stack>
 			</StyledTypography>
@@ -374,6 +366,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				onMouseLeave={() => setHovered(false)}
 				onMouseDown={handleMouseDown}
 			>
+				{/* TODO: FIX */}
 				{hovered && isCommunity && configStore.store.user.admin && (
 					<StyledContainer>
 						<StyleButtonGroup>
