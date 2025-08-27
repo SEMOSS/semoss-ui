@@ -6,7 +6,7 @@ import Listr from "listr";
 import { File } from "node:buffer";
 import * as fs from "node:fs";
 import * as path from "node:path";
-import { Env, Insight } from "@semoss/sdk/react";
+import { Env, Insight, upload } from "@semoss/sdk";
 import { DEFAULT_CONFIG } from "../constants.js";
 import type { Config } from "../types.js";
 
@@ -143,7 +143,7 @@ deploy (./src/commands/deploy.ts)
 					await Promise.all(
 						paths.map((p) => {
 							return new Promise((resolve) => {
-								fs.stat(p, (err, stats) => {
+								fs.stat(p, (_err, stats) => {
 									// add the non director
 									try {
 										if (!stats.isDirectory()) {
@@ -185,22 +185,23 @@ deploy (./src/commands/deploy.ts)
 					// Construct a file
 					const file = new File([context.package], name);
 
-					// upload to the insight
-					const upload = await insight.actions.upload(
-						//@ts-expect-error Expect TS error since node != browser
+					// upload to the app
+					const uploaded = await upload(
+						//@ts-expect-error ignore
 						file,
+						null,
+						Env.APP,
 						path,
-						"app",
 					);
 
 					// unzip the file in the new project
 					await insight.actions.run(
-						`UnzipFile(filePath=["${path}${upload[0].fileName}"], space=["${Env.APP}"])`,
+						`UnzipFile(filePath=["${path}${uploaded[0].fileName}"], space=["${Env.APP}"])`,
 					);
 
 					// delete in the background
 					insight.actions.run(
-						`DeleteAsset(filePath=["${path}${upload[0].fileName}"], space=["${Env.APP}"])`,
+						`DeleteAsset(filePath=["${path}${uploaded[0].fileName}"], space=["${Env.APP}"])`,
 					);
 
 					return true;

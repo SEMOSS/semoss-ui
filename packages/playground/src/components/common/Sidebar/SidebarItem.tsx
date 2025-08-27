@@ -14,7 +14,7 @@ import {
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
 
-const StyledLink = styled(Link)(({ theme }) => ({
+const StyledLink = styled(Link)(() => ({
 	color: "inherit",
 	textDecoration: "none",
 	cursor: "pointer",
@@ -31,7 +31,7 @@ const StyledListItemButton = styled(List.ItemButton, {
 const StyledListItemIcon = styled(List.Icon)(() => ({
 	width: "28px",
 	minWidth: "auto",
-}));
+})) as unknown as typeof List.Icon;
 
 const StyledChatBubbleOutlineOutlined = styled(ChatBubbleOutlineOutlined)(
 	({ theme }) => ({
@@ -66,8 +66,8 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 
 	// set the name of the room
 	let name = "Untitled";
-	if (room.metadata && room.metadata.name) {
-		name = room.metadata.name;
+	if (room.metadata?.name) {
+		name = room.metadata?.name;
 	}
 
 	return (
@@ -95,7 +95,7 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 					</StyledListItemIcon>
 				)}
 				<StyledListItemIcon
-					id="settings-control"
+					id={"settings-control"}
 					aria-controls={
 						isSettingsMenuOpen ? "settings-menu" : undefined
 					}
@@ -103,13 +103,17 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 					aria-expanded={isSettingsMenuOpen ? "true" : undefined}
 					aria-haspopup="true"
 					onClick={(e) => {
+						// cancel the event
+						e.preventDefault();
+
+						// open the menu
 						setChatMenu(e.currentTarget);
 					}}
 				>
 					<StyledMoreVertOutlined />
 				</StyledListItemIcon>
 				<Menu
-					id="settings-menu"
+					id={"settings-menu"}
 					// MenuListProps={{
 					//     'aria-labelledby': 'long-button',
 					// }}
@@ -123,8 +127,8 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 						disabled={!!room}
 						onClick={(e) => {
 							try {
-								// stop the event propagation
-								e.stopPropagation();
+								// cancel the event
+								e.preventDefault();
 
 								room.downloadHistory();
 
@@ -143,8 +147,8 @@ export const SidebarItem = observer((props: SidebarItemProps) => {
 					<Menu.Item
 						onClick={(e) => {
 							try {
-								// stop the event propagation
-								e.stopPropagation();
+								// cancel the event
+								e.preventDefault();
 
 								// close it
 								chat.closeRoom(roomId);

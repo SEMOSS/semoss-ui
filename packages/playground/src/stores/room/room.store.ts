@@ -1,13 +1,18 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { download, runPixel, upload } from "@semoss/sdk/react";
+import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import type { Knowledge, PixelMessage, Tool } from "@/types";
-import { ChatMessage } from "./chat.message";
+import {
+	type AbstractMessageStore,
+	InputMessageStore,
+	ResponseMessageStore,
+	RootMessageStore,
+} from "../message";
 
-const ROOT_MESSAGE_ID = "ROOT";
 const TEMP_MESSAGE_ID = "TEMP";
 
-interface ChatRoomInterface {
+interface RoomStoreInterface {
 	/**
 	 * ID of the room
 	 */
@@ -46,7 +51,7 @@ interface ChatRoomInterface {
 	/**
 	 * Root message
 	 */
-	root: ChatMessage;
+	root: RootMessageStore;
 
 	/*
 	 * Options that is passed to the model
@@ -81,16 +86,6 @@ interface ChatRoomInterface {
 		 * Whether to auto execute functions or not
 		 */
 		autoExecute: boolean;
-
-		/*
-		 * Whether to show UI artifacts or not
-		 */
-		showUi: boolean;
-
-		/*
-		 * Whether to tell LLM to show thought process in steps
-		 */
-		chainOfThought: boolean;
 	};
 
 	/**
@@ -100,27 +95,27 @@ interface ChatRoomInterface {
 		/** Track if the sidebar is open */
 		isOpen: boolean;
 
-		/** Options to pass into the sidbear */
-		options:
-			| {
-					type: "CONTROLS";
-			  }
-			| {
-					type: "APP";
-					messageId: string;
-					toolName: string;
-					toolId: string;
-					toolParameters: Record<string, unknown>;
-			  };
+		/** type of sidebar to open */
+		type: "OPTIONS" | "ARTIFACTS";
+	};
+
+	/**
+	 * Artifact information
+	 **/
+	artifact: {
+		/**
+		 * FlexLayout model
+		 */
+		model: FlexLayout.Model | null;
 	};
 }
 
 /**
- * Internal state management of the builder object
+ * Manage the room
  */
-export class ChatRoom {
+export class RoomStore {
 	private _insightID = "new";
-	private _store: ChatRoomInterface = {
+	private _store: RoomStoreInterface = {
 		roomId: "",
 		isInitialized: false,
 		isLoading: false,
@@ -129,7 +124,7 @@ export class ChatRoom {
 			dateCreated: "",
 		},
 		modelId: "",
-		root: new ChatMessage(ROOT_MESSAGE_ID),
+		root: new RootMessageStore(),
 		options: {
 			instructions: "",
 			knowledge: null,
@@ -137,12 +132,21 @@ export class ChatRoom {
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 			autoExecute: false,
-			showUi: false,
-			chainOfThought: false,
 		},
 		sidebar: {
 			isOpen: false,
-			options: { type: "CONTROLS" },
+			type: "OPTIONS",
+		},
+		artifact: {
+			model: FlexLayout.Model.fromJson({
+				global: {},
+				borders: [],
+				layout: {
+					type: "row",
+					weight: 0,
+					children: [],
+				},
+			}),
 		},
 	};
 
@@ -193,23 +197,29 @@ export class ChatRoom {
 	}
 
 	/**
-	 * Get the history of the room based on the active children
+	 * Get a message by id the model
+	 * @param messageId - model to use in the room
 	 */
-	get history() {
-		let current = this._store.root;
+	getMessage = (messageId: string) => {
+		const queue: AbstractMessageStore[] = [this._store.root];
+		while (queue.length > 0) {
+			const current = queue.shift();
 
-		const history: ChatMessage[] = [];
-		while (current) {
-			if (current.activeChild) {
-				// save it
-				history.push(current.activeChild);
+			if (current.id === messageId) {
+				return current;
 			}
 
-			// move forward
-			current = current.activeChild;
+			queue.push(...current.children);
 		}
 
-		return history;
+		return null;
+	};
+
+	/**
+	 * Get the history of the room based on the active children
+	 */
+	get history(): (InputMessageStore | ResponseMessageStore)[] {
+		return this._store.root.history || [];
 	}
 
 	/**
@@ -231,10 +241,17 @@ export class ChatRoom {
 	}
 
 	/**
-	 * Get the sidbar information
+	 * Get the sidebar information
 	 */
 	get sidebar() {
 		return this._store.sidebar;
+	}
+
+	/**
+	 * Get the artifact information
+	 */
+	get artifact() {
+		return this._store.artifact;
 	}
 
 	/** Setters */
@@ -250,7 +267,7 @@ export class ChatRoom {
 	 * Set options
 	 * @param options - options
 	 */
-	setOptions = (options: Partial<ChatRoomInterface["options"]>) => {
+	setOptions = (options: Partial<RoomStoreInterface["options"]>) => {
 		this._store.options = {
 			...this._store.options,
 			...options,
@@ -261,14 +278,13 @@ export class ChatRoom {
 	 * Set the mdetadata
 	 * @param metadata - metadata
 	 */
-	setMetadata = (metadata: Partial<ChatRoomInterface["metadata"]>) => {
+	setMetadata = (metadata: Partial<RoomStoreInterface["metadata"]>) => {
 		this._store.metadata = {
 			...this._store.metadata,
 			...metadata,
 		};
 	};
 	/** Actions */
-
 	/**
 	 * Initialize the room and load messages if they are there
 	 */
@@ -287,25 +303,32 @@ export class ChatRoom {
 				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
 			);
 
-			const { output, operationType } = response.pixelReturn[0];
-
 			// throw errors
-			if (operationType.indexOf("ERROR") > -1) {
-				throw new Error(output as unknown as string);
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
 			}
 
-			const root = new ChatMessage(ROOT_MESSAGE_ID);
-			const messages: Record<string, ChatMessage> = {};
+			const { output } = response.pixelReturn[0];
+
+			const root = new RootMessageStore();
+			const messages: Record<
+				string,
+				{
+					parentMessageId: string;
+					message: InputMessageStore | ResponseMessageStore;
+				}
+			> = {};
 
 			// store the last model
 			let activeModelId = this._store.modelId;
 			let activeOptions: Pick<
-				ChatRoomInterface["options"],
+				RoomStoreInterface["options"],
 				"tokenLength" | "temperature"
 			> = {
 				...this._store.options,
 			};
 
+			// This is done as seperate loops because of INPUT_TOOL_EXEC
 			for (const pixelMessage of output) {
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
@@ -316,18 +339,25 @@ export class ChatRoom {
 					};
 				}
 
-				// create a message
-				const message = this.createChatMessage(pixelMessage);
+				// create the message
+				const message = this.createMessage(pixelMessage);
 
 				// store it
-				messages[message.id] = message;
+				messages[message.id] = {
+					parentMessageId: pixelMessage.parentMessageId || "",
+					message: message,
+				};
+			}
 
-				// link to parent
-				const parentMessage = messages[pixelMessage.parentMessageId];
-				if (parentMessage) {
-					parentMessage.addChild(message);
+			// link the messages
+			for (const mId in messages) {
+				const m = messages[mId];
+
+				const parent = messages[m.parentMessageId];
+				if (parent) {
+					parent.message.addChild(m.message);
 				} else {
-					root.addChild(message);
+					root.addChild(m.message);
 				}
 			}
 
@@ -355,7 +385,7 @@ export class ChatRoom {
 	askModel = async (
 		prompt: string,
 		files: File[],
-		options?: Partial<ChatRoomInterface["options"]>,
+		options?: Partial<RoomStoreInterface["options"]>,
 	): Promise<void> => {
 		try {
 			if (!this._store.modelId) {
@@ -377,7 +407,7 @@ export class ChatRoom {
 			const parentMessageId = this.tail.id;
 
 			// create the input message
-			const inputMessage = this.createChatMessage({
+			const inputMessage = this.createMessage({
 				messageId: TEMP_MESSAGE_ID,
 				type: "INPUT_TEXT",
 				visible: true,
@@ -430,27 +460,130 @@ command=["<encode>${prompt}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${files.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
 ${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
-${parentMessageId !== ROOT_MESSAGE_ID ? `parentMessageId=["${parentMessageId}"],` : ""}
+${parentMessageId ? `parentMessageId=["${parentMessageId}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
 				})}]
 );`,
 			);
-			const { output, operationType } = response.pixelReturn[0];
+
 			// throw errors
-			if (operationType.indexOf("ERROR") > -1) {
-				throw new Error(output as unknown as string);
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
 			}
+
+			const { output } = response.pixelReturn[0];
 
 			// update the input's id
 			inputMessage.updateId(output.inputMessage.messageId);
 
 			// create the response and link to the input
-			const responseMessage = this.createChatMessage(
-				output.responseMessage,
-			);
+			const responseMessage = this.createMessage(output.responseMessage);
 			inputMessage.addChild(responseMessage);
+
+			// auto execute if enabled
+			if (this._store.options.autoExecute) {
+				if (!(responseMessage instanceof ResponseMessageStore)) {
+					return;
+				}
+
+				// loop through the response and execute the tool
+				// save the response
+				for (const tool of responseMessage.tools) {
+					await this.runTool(
+						responseMessage,
+						tool._meta.map.SMSS_PROJECT_ID,
+						tool.id,
+						tool.name,
+						tool.parameters,
+					);
+				}
+			}
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
+	};
+
+	// TODO: Optimize
+	/**
+	 * Rewrite a message and generate a new sibling
+	 * @param message - the original agent message
+	 */
+	rewriteMessage = async (message: ResponseMessageStore): Promise<void> => {
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// get the parent message
+			const parentMessage = message.parent;
+
+			// build the context if it is there
+			let context = "";
+			if (this._store.options?.instructions) {
+				context = this._store.options?.instructions;
+			}
+
+			// get a list of tool ids
+			const tools: string[] = this._store.options.tools.map(
+				(t) => t.id,
+				[],
+			);
+
+			// wait for the pixel to run
+			const response = await this.runPixel<
+				[
+					{
+						inputMessage: PixelMessage;
+						responseMessage: PixelMessage;
+					},
+				]
+			>(
+				`AskPlayground(
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+command=["<encode>${prompt}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+
+${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
+${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
+paramValues=[${JSON.stringify({
+					max_new_tokens: this._store.options.tokenLength,
+					temperature: this._store.options.temperature,
+				})}]
+);`,
+			);
+
+			// throw errors
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
+			}
+
+			const { output } = response.pixelReturn[0];
+
+			// create the response and link to the input
+			const responseMessage = this.createMessage(output.responseMessage);
+			parentMessage.addChild(responseMessage);
+
+			// auto execute if enabled
+			if (this._store.options.autoExecute) {
+				if (!(responseMessage instanceof ResponseMessageStore)) {
+					return;
+				}
+
+				// loop through the response and execute the tool
+				// save the response
+				for (const tool of responseMessage.tools) {
+					await this.runTool(
+						responseMessage,
+						tool._meta.map.SMSS_PROJECT_ID,
+						tool.id,
+						tool.name,
+						tool.parameters,
+					);
+				}
+			}
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -458,32 +591,99 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a tool response
-	 * @param id - id of the tool
-	 * @param func - func of the tool to run
-	 * @param parameters - parameters to pass in
+	 * Run a tool
+	 * @param message - the original agent message
+	 * @param appId - id of the app
+`	 * @param toolId - id of the tool
+	 * @param toolName - func of the tool to run
+	 * @param toolParameters - parameters to pass to the tool
 	 */
 	runTool = async (
-		id: string,
-		func: string,
-		parameters: Record<string, unknown>,
+		message: ResponseMessageStore,
+		appId: string,
+		toolId: string,
+		toolName: string,
+		toolParameters: Record<string, unknown>,
 	): Promise<void> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
 
 			// wait for the pixel to run
-			const response = await this.runPixel<[{ response: string }]>(
-				`RunMCPTool(project = [ "${id}" ], function=[ "${func}" ], paramValues=[ ${JSON.stringify(parameters)} ]);`,
+			const response = await this.runPixel<[string]>(
+				`RunMCPTool(project = [ "${appId}" ], function=[ "${toolName}" ], paramValues=[ ${JSON.stringify(toolParameters)} ]);`,
 			);
 
-			const { output, operationType } = response.pixelReturn[0];
 			// throw errors
-			if (operationType.indexOf("ERROR") > -1) {
-				throw new Error(output as unknown as string);
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
 			}
 
-			console.log(output);
+			const { output } = response.pixelReturn[0];
+
+			this.saveTool(message, toolId, toolName, output);
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Save a tool response
+	 * @param message - the original agent message
+`	 * @param toolId - id of the tool
+	 * @param toolName - func of the tool to run
+	 * @param toolResponse - response of the tool
+	 */
+	saveTool = async (
+		message: ResponseMessageStore,
+		toolId: string,
+		toolName: string,
+		toolResponse: string,
+	): Promise<void> => {
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// save the response
+			const tool = message.tools.find((tool) => tool.id === toolId);
+			if (tool) {
+				tool.response = toolResponse;
+			}
+
+			// wait for the pixel to run
+			const response = await this.runPixel<
+				[
+					{
+						responseMessage: PixelMessage | string;
+					},
+				]
+			>(
+				`AddPlaygroundToolExecution(
+engine=["${this._store.modelId}"],
+roomId = ["${this._store.roomId}"], 
+toolId = ["${toolId}"],
+toolName=["${toolName}"],
+tool_execution_response=["${toolResponse}"]
+);`,
+			);
+
+			// throw errors
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
+			}
+
+			const { output } = response.pixelReturn[0];
+
+			// don't create a new message if it is a string. More tools need to be executed
+			if (typeof output.responseMessage === "string") {
+				return;
+			}
+
+			// create the response and link to the input
+			const responseMessage = this.createMessage(output.responseMessage);
+
+			message.addChild(responseMessage);
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -497,7 +697,7 @@ paramValues=[${JSON.stringify({
 	 * @param comment
 	 */
 	recordFeedback = async (
-		message: ChatMessage,
+		message: ResponseMessageStore,
 		rating: boolean,
 		comment = "",
 	): Promise<void> => {
@@ -508,16 +708,15 @@ paramValues=[${JSON.stringify({
 			);
 
 			// throw errors
-			const { output, operationType } = response.pixelReturn[0];
-			if (operationType.indexOf("ERROR") > -1) {
-				throw new Error(output as unknown as string);
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
 			}
 
 			// save the feedback to the message's state
-			message.saveRating({
+			message.rating = {
 				positive: rating,
 				comment: comment,
-			});
+			};
 		} finally {
 			// noop
 		}
@@ -535,8 +734,12 @@ paramValues=[${JSON.stringify({
 			// convert the content to html
 			const html = this.history
 				.map((message) => {
-					if (message.content.type === "TEXT") {
-						return `<div>${message.content.text}</div>`;
+					if (message.type === "RESPONSE") {
+						return `<div>Response: ${message.text}</div>`;
+					}
+
+					if (message.type === "INPUT") {
+						return `<div>Input: ${message.text}</div>`;
 					}
 
 					return "";
@@ -564,10 +767,10 @@ paramValues=[${JSON.stringify({
 	 * @param options - options to pass in
 	 */
 	openSidebar = async (
-		options: ChatRoomInterface["sidebar"]["options"],
+		type: RoomStoreInterface["sidebar"]["type"],
 	): Promise<void> => {
 		this._store.sidebar.isOpen = true;
-		this._store.sidebar.options = options;
+		this._store.sidebar.type = type;
 	};
 
 	/**
@@ -589,50 +792,40 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Create a ChatMessage from a pixelMessage
+	 * Create an AgentMessage or UserMessage from a pixelMessage
 	 * @param pixelMessage - message from backend that needs to be converted
 	 */
-	private createChatMessage = (pixelMessage: PixelMessage): ChatMessage => {
-		// create a message
-		const message = new ChatMessage(pixelMessage.messageId);
-
+	private createMessage = (
+		pixelMessage: PixelMessage,
+	): ResponseMessageStore | InputMessageStore => {
 		// set data based on type
 		if (pixelMessage.type === "INPUT_TEXT") {
-			message.updateType("USER");
-			message.updateContent({
-				type: "TEXT",
-				text: pixelMessage.inputUIPrompt,
-			});
+			return new InputMessageStore(
+				pixelMessage.messageId,
+				pixelMessage.inputUIPrompt,
+			);
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-			message.updateType("AGENT");
-			// message.updateContent({
-			// 	type: "APP",
-			// 	name: pixelMessage.toolResponse.name,
-			// 	id: pixelMessage.toolResponse.arguments.id,
-			// 	map: pixelMessage.toolResponse.arguments.map,
-			// });
+			return new ResponseMessageStore(pixelMessage.messageId, "", []);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
-			message.updateType("AGENT");
-			message.updateContent({
-				type: "TEXT",
-				text: pixelMessage.content,
-			});
+			return new ResponseMessageStore(
+				pixelMessage.messageId,
+				pixelMessage.content,
+				[],
+			);
 		} else if (pixelMessage.type === "RESPONSE_TOOL") {
-			message.updateType("AGENT");
-			message.updateContent({
-				type: "APP",
-				name: pixelMessage.toolResponse.name,
-				id: pixelMessage.toolResponse.arguments.id,
-				map: pixelMessage.toolResponse.arguments.map,
-			});
+			return new ResponseMessageStore(
+				pixelMessage.messageId,
+				"",
+				pixelMessage.tool_responses.map((t) => ({
+					id: t.id,
+					_meta: t._meta,
+					title: t.title,
+					name: t.name,
+					parameters: t.arguments,
+					response: "",
+				})),
+			);
 		}
-
-		// update sources if it exists
-		if (pixelMessage.ornaments && pixelMessage.ornaments.chunks) {
-			message.updateSources(pixelMessage.ornaments.chunks as string[]);
-		}
-
-		return message;
 	};
 
 	/**
@@ -672,56 +865,4 @@ paramValues=[${JSON.stringify({
 		// get the response
 		return await upload(files, this._insightID, "", path);
 	};
-
-	// /**
-	//  * Search the VectorDatabase and get results from it based on the question
-	//  * @param id
-	//  * @param question
-	//  * @returns
-	//  */
-	// private askVectorCatalog = async (id: string, question: string) => {
-	// 	const pixel = `VectorDatabaseQuery(engine=["${id}"] , command=["<encode>${question}</encode>"], limit=[5])`;
-
-	// 	const response =
-	// 		await this.runPixel<
-	// 			[
-	// 				{
-	// 					Score: number;
-	// 					Source: string;
-	// 					Divider: string;
-	// 					Part: string;
-	// 					Content: string;
-	// 				}[],
-	// 			]
-	// 		>(pixel);
-
-	// 	const { output, operationType } = response.pixelReturn[0];
-
-	// 	// throw the error
-	// 	if (operationType.indexOf("ERROR") > -1) {
-	// 		throw new Error(output as unknown as string);
-	// 	}
-
-	// 	const results: {
-	// 		score: number;
-	// 		percent: string;
-	// 		source: string;
-	// 		content: string;
-	// 	}[] = [];
-
-	// 	for (let i = 0; i < output.length; i++) {
-	// 		if (!output[i].Content) {
-	// 			continue;
-	// 		}
-
-	// 		results.push({
-	// 			score: output[i].Score,
-	// 			percent: `${Math.round(output[i].Score * 10000) / 100}%`,
-	// 			source: output[i].Source,
-	// 			content: output[i].Content,
-	// 		});
-	// 	}
-
-	// 	return results;
-	// };
 }
