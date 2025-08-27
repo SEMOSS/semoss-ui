@@ -297,6 +297,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		}
 	};
 
+	// to limit the apps that are sent to filterbox for performance
+	let renderedAppIds = [];
+	if (inputValue) {
+		renderedAppIds.push(...apps.map((app) => app.project_id));
+		renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
+		if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
+	}
+
 	return (
 		<>
 			<NavbarLeft>
@@ -354,6 +362,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									) => {
 										setMetaFilters(filters);
 									}}
+									appIds={renderedAppIds}
 								/>
 							</div>
 						)}
@@ -365,6 +374,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 						>
 							<StyledToggleTabsGroup
 								value={mode}
+								// biome-ignore lint/correctness/noUnusedFunctionParameters: Event handler needs both parameters even if we don't use the event
 								onChange={(e: React.SyntheticEvent, val) => {
 									dispatch({
 										type: "field",
@@ -389,13 +399,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</StyledToggleTabsGroup>
 						</Stack>
 
-						{mode != "System" && favoritedApps.length > 0 ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								Bookmarked
 							</StyledSectionLabel>
 						) : null}
 
-						{mode != "System" && favoritedApps.length > 0 ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSection>
 								{favoritedApps.map((app) => {
 									return (
@@ -435,13 +445,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</StyledSection>
 						) : null}
 
-						{mode == "System" && (
+						{mode === "System" && (
 							<StyledSectionLabel variant="subtitle1">
 								All Apps
 							</StyledSectionLabel>
 						)}
 
-						{mode == "System" && (
+						{mode === "System" && (
 							<StyledSection>
 								{"bi".includes(search.toLowerCase()) && (
 									<AppTileCard
@@ -469,12 +479,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								)}
 							</StyledSection>
 						)}
-						{mode != "System" && getApps.status !== "SUCCESS" ? (
+						{mode !== "System" && getApps.status !== "SUCCESS" ? (
 							<StyledSection>
 								{Array.from({
 									length: SKELETON_CARD_COUNT,
 								}).map((_, i) => (
 									<AppTileCard
+										// biome-ignore lint/suspicious/noArrayIndexKey: This is a list of skeleton apps, and the index is the best key we have
 										key={`skeleton-${i}`}
 										app={TERMINAL_APP}
 										systemApp={false}
@@ -485,14 +496,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								))}
 							</StyledSection>
 						) : null}
-						{mode != "System" && apps.length > 0 ? (
+						{mode !== "System" && apps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								All Apps
 							</StyledSectionLabel>
 						) : null}
 
 						{/* do not show favorited apps in all apps view */}
-						{mode != "System" && apps.length > 0 ? (
+						{mode !== "System" && apps.length > 0 ? (
 							<StyledSection>
 								{apps
 									.filter(
@@ -503,10 +514,10 @@ export const AppCatalogPage = observer((): JSX.Element => {
 													app.project_id,
 											),
 									)
-									.map((app, i) => {
+									.map((app) => {
 										return (
 											<AppTileCard
-												key={i}
+												key={app.project_id}
 												app={app}
 												systemApp={false}
 												isDiscoverable={mode !== "Mine"}

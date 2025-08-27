@@ -1,5 +1,5 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Fragment, useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
 	Avatar,
@@ -65,6 +65,7 @@ export interface FilterboxProps {
 		| "BROWSETEMPLATES";
 	/** Filters to hold in state at parent */
 	onChange: (filters: unknown) => void;
+	appIds?: string[];
 }
 
 const initialState = {
@@ -86,7 +87,7 @@ const reducer = (state, action) => {
 };
 
 export const Filterbox = (props: FilterboxProps) => {
-	const { type, onChange } = props;
+	const { type, onChange, appIds } = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -163,10 +164,10 @@ export const Filterbox = (props: FilterboxProps) => {
 			? type === "APP"
 				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)}) ;`
+					)}${appIds.length > 0 ? `, projectIdList = ${JSON.stringify(appIds)}` : ""}) ;`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)} ) ;`
+					)}${appIds.length > 0 ? `, projectIdList = ${JSON.stringify(appIds)}` : ""}) ;`
 			: "",
 	);
 
@@ -235,7 +236,7 @@ export const Filterbox = (props: FilterboxProps) => {
 		});
 
 		setFilterOptions(updated);
-	}, [getCatalogFilters.status, getCatalogFilters.data]);
+	}, [getCatalogFilters.status, getCatalogFilters.data, appIds]);
 
 	/**
 	 *
@@ -344,7 +345,7 @@ export const Filterbox = (props: FilterboxProps) => {
 							const list = entries[1];
 							let shownListItems = 0; // for show more
 							return (
-								<div key={i}>
+								<div key={entries[0]}>
 									<List.Item
 										secondaryAction={
 											<List.ItemButton
@@ -382,10 +383,11 @@ export const Filterbox = (props: FilterboxProps) => {
 										/>
 									</List.Item>
 									<Collapse
+										// biome-ignore lint/suspicious/noArrayIndexKey: This is a list of filters, and the index is the best key we have
 										key={i}
 										in={showCollapsible[entries[0]]}
 									>
-										{list.map((filterOption, i) => {
+										{list.map((filterOption) => {
 											if (
 												shownListItems > 4 &&
 												!filterVisibility[entries[0]]
@@ -404,7 +406,9 @@ export const Filterbox = (props: FilterboxProps) => {
 													return (
 														<List.Item
 															disableGutters
-															key={i}
+															key={
+																filterOption.value
+															}
 														>
 															<List.ItemButton
 																disableGutters
@@ -482,15 +486,13 @@ export const Filterbox = (props: FilterboxProps) => {
 											}
 										})}
 										{shownListItems > 4 && (
-											<List.Item>
-												<div
-													onClick={() => {
-														const visibleFilters = {
-															...filterVisibility,
-														};
-														visibleFilters[
-															entries[0]
-														] = {
+											<List.Item
+												onClick={() => {
+													const visibleFilters = {
+														...filterVisibility,
+													};
+													visibleFilters[entries[0]] =
+														{
 															open:
 																!visibleFilters[
 																	entries[0]
@@ -502,11 +504,12 @@ export const Filterbox = (props: FilterboxProps) => {
 																entries[0]
 															].search,
 														};
-														setFilterVisibility(
-															visibleFilters,
-														);
-													}}
-												>
+													setFilterVisibility(
+														visibleFilters,
+													);
+												}}
+											>
+												<div>
 													<StyledShowMore
 														variant={"body1"}
 													>
