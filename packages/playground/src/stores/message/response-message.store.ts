@@ -35,6 +35,9 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		/** Parameters used in the tool */
 		parameters: Record<string, unknown>;
+
+		/** Response for the tool */
+		response: string;
 	}[];
 
 	/**

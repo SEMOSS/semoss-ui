@@ -1,6 +1,6 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Env, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton, styled } from "@semoss/ui";
@@ -52,6 +52,8 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 	const iframeRef = useRef<HTMLIFrameElement>(null);
 	const [isLoading, setIsLoading] = useState<boolean>(true);
 
+	console.log(isLoading);
+
 	// get the metadata
 	const getAppInfo = usePixel<{
 		project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
@@ -61,12 +63,11 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 		},
 	});
 
-	// Send parameters to iframe
-	useEffect(() => {
-		if (isLoading) {
-			return;
-		}
-
+	/**
+	 * Process iframe on load
+	 */
+	const handleOnLoad = () => {
+		// send the parameters
 		iframeRef.current?.contentWindow?.postMessage(
 			{
 				type: "SMSS_INIT_TOOL",
@@ -80,13 +81,10 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 			},
 			"*",
 		);
-	}, [
-		isLoading,
-		config?.tool?.message,
-		config?.tool?.id,
-		config?.tool?.name,
-		config?.tool?.parameters,
-	]);
+
+		// turn the loading screen off
+		setIsLoading(false);
+	};
 
 	const url = useMemo(() => {
 		// ignore if no tool
@@ -117,7 +115,7 @@ export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
 			<StyledIframe
 				ref={iframeRef}
 				src={url}
-				onLoad={() => setIsLoading(false)}
+				onLoad={() => handleOnLoad()}
 			/>
 		</StyledContent>
 	);

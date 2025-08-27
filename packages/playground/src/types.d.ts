@@ -104,28 +104,8 @@ interface InputTextPixelMessage extends AbstractPixelMessage {
 interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TOOL_EXEC";
 	visible: false;
-	tool_responses: {
-		/** tool execution id */
-		id: string;
-
-		/** meta data from the tool */
-		_meta: {
-			map: {
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
-			};
-		};
-
-		/**  Display of the tool **/
-		title: string;
-
-		/**  Name of function **/
-		name: string;
-
-		/** THIS IS A STRING, but ONLY in playground we parse as an app */
-		/** THIS IS THE FINAL STATE OF A TOOL (what was actually ran) */
-		arguments: Record<string, unknown>;
-	}[];
+	tool_call_id: string;
+	tool_name: string;
 }
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
