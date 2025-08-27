@@ -100,10 +100,16 @@ export interface CheckboxProps {
 }
 
 export const Checkbox = (props: CheckboxProps) => {
-	const { checkboxProps, label = "" } = props;
+	const { checkboxProps, label = "", ...otherProps } = props;
+
+	// If no label is provided, render just the checkbox without FormControlLabel
+	if (!label) {
+		return <MuiCheckbox {...otherProps} {...checkboxProps} />;
+	}
+
 	return (
 		<FormControlLabel
-			{...props}
+			{...otherProps}
 			label={label}
 			control={<MuiCheckbox {...checkboxProps} />}
 		/>

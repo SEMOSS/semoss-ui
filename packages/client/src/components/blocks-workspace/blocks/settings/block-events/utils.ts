@@ -20,6 +20,11 @@ export const getDefaultFormValues = (
 			message: ActionMessages.DISPATCH_OPEN_EVENT,
 			payload: { destinationType: "", destination: "" },
 		},
+		[ActionMessages.COPY_TO_CLIPBOARD]: {
+			message: ActionMessages.COPY_TO_CLIPBOARD,
+			// payload: { destinationType: "", destination: "" },
+			payload: { text: "" },
+		},
 	};
 
 	return formConfigs[message] || formConfigs[ActionMessages.RUN_QUERY];
@@ -39,6 +44,8 @@ export const validateForm = (
 			return !!payload.name;
 		case ActionMessages.DISPATCH_OPEN_EVENT:
 			return !!payload.destinationType && !!payload.destination;
+		case ActionMessages.COPY_TO_CLIPBOARD:
+			return !!payload.text;
 		default:
 			return false;
 	}

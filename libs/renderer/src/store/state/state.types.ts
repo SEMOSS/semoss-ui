@@ -2,6 +2,7 @@ import type React from "react";
 import type { CellState } from "./cell.state";
 import type { QueryStateConfig } from "./query.state";
 import type {
+	CopyToClipboardAction,
 	DispatchEventAction,
 	DispatchOpenEventAction,
 	RunCellAction,
@@ -249,6 +250,7 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
  * Listener Actions
  */
 export type ListenerActions =
+	| CopyToClipboardAction
 	| RunQueryAction
 	| DispatchEventAction
 	| RunCellAction
@@ -282,6 +284,11 @@ export type CellComponent<D extends CellDef = CellDef> =
 		isExpanded?: boolean;
 		/** Model to use for code help */
 		agentModelEngine?: string;
+		/**
+		 * Height of the cell
+		 * This is used to calculate the height of the cell in the view
+		 */
+		cellHeight?: number;
 	}>;
 
 /**

@@ -30,6 +30,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import ResizeIcon from "@/assets/img/ResizeIcon";
 import { useWorkspace } from "@/hooks";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
@@ -126,7 +127,9 @@ const StyledCard = styled(Card, {
 	};
 });
 
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+const StyledCardContent = styled(Card.Content, {
+	shouldForwardProp: (prop) => prop !== "cellHeight",
+})<{ cellHeight?: number }>(({ theme, cellHeight }) => ({
 	display: "flex",
 	flexDirection: "row",
 	alignItems: "start",
@@ -134,10 +137,35 @@ const StyledCardContent = styled(Card.Content)(({ theme }) => ({
 	margin: "0",
 	padding: theme.spacing(2),
 	backgroundColor: theme.palette.background.default,
+	position: "relative",
+	minHeight: 80,
+	height: cellHeight ? cellHeight : "auto",
+	overflow: "hidden", // Ensures children don't overflow
+	borderRadius: theme.shape.borderRadius,
+}));
+
+const StyledResizeHandle = styled("div")(({ theme }) => ({
+	position: "absolute",
+	right: 2,
+	bottom: 2,
+	width: 20,
+	height: 20,
+	cursor: "nwse-resize",
+	// background: theme.palette.action.hover,
+	// borderRadius: 4,
+	zIndex: 10,
+	// border: `1px solid ${theme.palette.divider}`,
+	display: "flex",
+	alignItems: "flex-end",
+	justifyContent: "flex-end",
+	padding: 2,
 }));
 
 const StyledCardInput = styled("div")(() => ({
 	width: "98%",
+	height: "100%", // Add this to ensure the input takes full height
+	display: "flex",
+	flexDirection: "column",
 }));
 
 const StyledCardActions = styled(Card.Actions)(({ theme }) => ({
@@ -296,11 +324,51 @@ export const NotebookCell = observer(
 		const targetContentCollapseRef = useRef(null);
 		const targetActionsCollapseRef = useRef(null);
 
+		const [cellHeight, setCellHeight] = useState<number | undefined>(
+			undefined,
+		);
+		const isResizing = useRef(false);
+		const startY = useRef(0);
+		const startHeight = useRef(0);
+
 		// get the cell
 		const query = state.getQuery(queryId);
 		const cell = query.getCell(cellId);
 
 		const variableName = state.getAlias(queryId, cellId);
+
+		// --- Resizable cell handlers ---
+		const onMouseDownResize = (e: React.MouseEvent) => {
+			e.preventDefault();
+			isResizing.current = true;
+			startY.current = e.clientY;
+			startHeight.current = cardContentRef.current
+				? cardContentRef.current.offsetHeight
+				: 0;
+			document.body.style.cursor = "nwse-resize";
+		};
+
+		useEffect(() => {
+			const onMouseMove = (e: MouseEvent) => {
+				if (isResizing.current && cardContentRef.current) {
+					const delta = e.clientY - startY.current;
+					const newHeight = Math.max(startHeight.current + delta, 80);
+					setCellHeight(newHeight);
+				}
+			};
+			const onMouseUp = () => {
+				if (isResizing.current) {
+					isResizing.current = false;
+					document.body.style.cursor = "";
+				}
+			};
+			window.addEventListener("mousemove", onMouseMove);
+			window.addEventListener("mouseup", onMouseUp);
+			return () => {
+				window.removeEventListener("mousemove", onMouseMove);
+				window.removeEventListener("mouseup", onMouseUp);
+			};
+		}, []);
 
 		useEffect(() => {
 			if (cardContentRef.current) {
@@ -422,11 +490,13 @@ export const NotebookCell = observer(
 				cell: cell,
 				isExpanded: contentExpanded,
 				agentModelEngine: workspace.agentModelEngine,
+				cellHeight: cellHeight,
 			});
 		}, [
 			cell.component ? cell.component : null,
 			contentExpanded,
 			workspace.agentModelEngine,
+			cellHeight,
 		]);
 
 		const getExecutionTimeString = (
@@ -745,6 +815,7 @@ export const NotebookCell = observer(
 						<StyledCardContent
 							id={`notebook-cell-${queryId}-${cellId}-card-content`}
 							ref={cardContentRef}
+							cellHeight={cellHeight}
 						>
 							<StyledRunIconButton
 								title="Run cell"
@@ -775,6 +846,14 @@ export const NotebookCell = observer(
 								)}
 							</StyledRunIconButton>
 							<StyledCardInput>{rendered}</StyledCardInput>
+							<StyledResizeHandle
+								onMouseDown={onMouseDownResize}
+								aria-label="Resize cell"
+								title="Drag to resize cell"
+								tabIndex={0}
+							>
+								<ResizeIcon />
+							</StyledResizeHandle>
 						</StyledCardContent>
 						{cell.parameters.type !== "markdown" && (
 							<div>
