@@ -1,7 +1,9 @@
+import FilteredIcon from "@/assets/img/FilteredIcon.png";
+import { useAPI, useRootStore, useSettings } from "@/hooks";
+import type { ALL_TYPES } from "@/types";
+import { permissionPriorityMapper } from "@/utility/general";
 import { Add, Delete, Edit } from "@mui/icons-material";
 import SearchIcon from "@mui/icons-material/Search";
-import type { AxiosResponse } from "axios";
-import { useEffect, useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
   Avatar,
@@ -19,12 +21,11 @@ import {
   Typography,
   useNotification,
 } from "@semoss/ui";
-import FilteredIcon from "@/assets/img/FilteredIcon.png";
-import { useAPI, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
-import { permissionPriorityMapper } from "@/utility/general";
+import type { AxiosResponse } from "axios";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MembersAddOverlay } from "./MembersAddOverlay";
 import { MembersDeleteOverlay } from "./MembersDeleteOverlay";
+import { PendingMembersTable } from "./PendingMembersTable";
 import type {
   SETTINGS_PROVISIONED_USER,
   SETTINGS_ROLE,
@@ -668,8 +669,9 @@ export const MembersTable = (props: MembersTableProps) => {
   return (
     <StyledMemberContent>
       <StyledMemberInnerContent>
+        <PendingMembersTable type={type} id={id} />
         <StyledTableContainer>
-          <StyledTableTitleContainer>
+          <StyledTableTitleContainer>            
             <StyledTableTitleDiv>
               <Typography variant={"h6"}>Permissions</Typography>
             </StyledTableTitleDiv>
@@ -788,7 +790,7 @@ export const MembersTable = (props: MembersTableProps) => {
               </StyledMemberTable>
             </StyledMemberLoading>
           ) : (
-            <Box>
+            <Box>              
               {hasMembers ? (
                 <>
                   <StyledMemberTable>

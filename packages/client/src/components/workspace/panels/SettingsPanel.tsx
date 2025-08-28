@@ -1,6 +1,11 @@
+import { AppSettings } from "@/components/app";
+import {
+	MembersTable,
+	SettingsTiles
+} from "@/components/settings";
+import { SettingsContext } from "@/contexts";
+import { useRootStore, useWorkspace } from "@/hooks";
 import { GetAppRounded } from "@mui/icons-material";
-import { observer } from "mobx-react-lite";
-import { useNavigate } from "react-router-dom";
 import {
 	Container,
 	IconButton,
@@ -9,14 +14,8 @@ import {
 	Tooltip,
 	useNotification,
 } from "@semoss/ui";
-import { AppSettings } from "@/components/app";
-import {
-	MembersTable,
-	PendingMembersTable,
-	SettingsTiles,
-} from "@/components/settings";
-import { SettingsContext } from "@/contexts";
-import { useRootStore, useWorkspace } from "@/hooks";
+import { observer } from "mobx-react-lite";
+import { useNavigate } from "react-router-dom";
 import { Panel } from "./Panel";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -105,8 +104,8 @@ export const SettingsPanel = observer(({ value }:{ value: string }) => {
 					}}
 				>
 					<StyledContainer>
-						{workspace.role === "EDITOR" ||
-						workspace.role === "OWNER" ? (
+						{view !== "GENERAL" && (workspace.role === "EDITOR" ||
+						workspace.role === "OWNER") ? (
 							<Stack
 								sx={{ width: "100%" }}
 								justifyContent={"flex-end"}
@@ -126,7 +125,7 @@ export const SettingsPanel = observer(({ value }:{ value: string }) => {
 								</div>
 							</Stack>
 						) : null}
-						{workspace.role === "OWNER" && view === "CURRENT" ? (
+						{/* {workspace.role === "OWNER" && view === "CURRENT" ? (
 							<SettingsTiles
 								type={"APP"}
 								id={workspace.appId}
@@ -146,7 +145,7 @@ export const SettingsPanel = observer(({ value }:{ value: string }) => {
 									}
 								}}
 							/>
-						) : null}
+						) : null} */}
 						<StyledContent>
 							{/* <ToggleTabsGroup
 								value={view}
@@ -174,15 +173,34 @@ export const SettingsPanel = observer(({ value }:{ value: string }) => {
 									onChange={() => console.log("TODO")}
 								/>
 							)}
-							{view === "PENDING" && (
+							{/* {view === "PENDING" && (
 								<PendingMembersTable
 									type={"APP"}
 									id={workspace.appId}
 								/>
-							)}
+							)} */}
 							{view === "APP" && (
 								<AppSettings id={workspace.appId} />
 							)}
+							{view === "GENERAL" && <SettingsTiles
+								type={"APP"}
+								id={workspace.appId}
+								name={workspace.metadata?.project_name || "app"}
+								direction="row"
+								onDelete={() => {
+									if (
+										location.pathname.startsWith(
+											"/settings/app/",
+										)
+									) {
+										// If in app settings
+										navigate("/settings/app");
+									} else {
+										// If in App Library
+										navigate("/");
+									}
+								}}
+							/>}
 						</StyledContent>
 					</StyledContainer>
 				</Container>

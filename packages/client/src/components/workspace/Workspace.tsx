@@ -1,8 +1,9 @@
+import { ClosePage } from "@/assets/img/ClosePage";
+import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
+import { WorkspaceContext } from "@/contexts";
+import { SIDEBAR_MENU } from "@/pages/import/import.constants";
+import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
 import { RestartAlt } from "@mui/icons-material";
-import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
 import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
 import {
 	Breadcrumbs,
@@ -12,11 +13,10 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { ClosePage } from "@/assets/img/ClosePage";
-import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
-import { WorkspaceContext } from "@/contexts";
-import { SIDEBAR_MENU } from "@/pages/import/import.constants";
-import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
+import { observer } from "mobx-react-lite";
+import type React from "react";
+import { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
@@ -24,350 +24,358 @@ import { WorkspaceOverlay } from "./WorkspaceOverlay";
 type LayoutType = React.ElementRef<typeof Layout>;
 
 const StyledMain = styled("div")(() => ({
-	position: "relative",
-	height: "100%",
-	width: "100%",
-	display: "flex",
-	flexDirection: "column",
-	overflow: "hidden",
+  position: "relative",
+  height: "100%",
+  width: "100%",
+  display: "flex",
+  flexDirection: "column",
+  overflow: "hidden",
 }));
 
 const StyledContent = styled("div")(({ theme }) => ({
-	position: "relative",
-	flex: "1",
-	height: "100%",
-	width: "100%",
-	overflow: "hidden",
-	marginTop: theme.spacing(1),
-	paddingTop: theme.spacing(1.5),
-	paddingLeft: theme.spacing(1.5),
-	paddingRight: theme.spacing(1.5),
-	paddingBottom: theme.spacing(1.5),
+  position: "relative",
+  flex: "1",
+  height: "100%",
+  width: "100%",
+  overflow: "hidden",
+  marginTop: theme.spacing(1),
+  paddingTop: theme.spacing(1.5),
+  paddingLeft: theme.spacing(1.5),
+  paddingRight: theme.spacing(1.5),
+  paddingBottom: theme.spacing(1.5),
 }));
 
 const StyledSpacer = styled("div")(({ theme }) => ({
-	position: "absolute",
-	top: 0,
-	left: theme.spacing(1.5),
-	right: theme.spacing(1.5),
-	bottom: theme.spacing(1.5),
-	overflow: "hidden",
+  position: "absolute",
+  top: 0,
+  left: theme.spacing(1.5),
+  right: theme.spacing(1.5),
+  bottom: theme.spacing(1.5),
+  overflow: "hidden",
 }));
 
 const StyledAppTypography = styled(Typography)(() => ({
-	color: "rgb(0, 0, 0)",
+  color: "rgb(0, 0, 0)",
 }));
 
 const StyledSemossImage = styled("img")(() => ({}));
 
 const StyledLetTabImage = styled("img")(() => ({
-	width: 50,
-	height: 40,
-	display: "block",
-	margin: "auto",
-	transition: "all 0.2s ease",
+  width: 50,
+  height: 40,
+  display: "block",
+  margin: "auto",
+  transition: "all 0.2s ease",
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({
-	color: "inherit",
-	textDecoration: "none",
-	cursor: "pointer",
-	":hover": {
-		bacakground: theme.palette.action.hover,
-	},
+  color: "inherit",
+  textDecoration: "none",
+  cursor: "pointer",
+  ":hover": {
+    bacakground: theme.palette.action.hover,
+  },
 }));
 
 const StyledActions = styled(Stack)(({ theme }) => ({
-	position: "absolute",
-	bottom: "8px",
-	left: "8px",
-	width: "32px", // from flexlayout
-	zIndex: 1,
+  position: "absolute",
+  bottom: "36px",
+  left: "8px",
+  width: "32px", // from flexlayout
+  zIndex: 1,
 }));
 
 const StyledNavLeft = styled(Stack)(({ theme }) => ({
-	minWidth: 0,
-	overflow: "hidden",
-	whiteSpace: "nowrap",
-	textOverflow: "ellipsis",
+  minWidth: 0,
+  overflow: "hidden",
+  whiteSpace: "nowrap",
+  textOverflow: "ellipsis",
 }));
 
 const StyledBreadcrumbs = styled(Breadcrumbs)(({ theme }) => ({
-	"& .MuiBreadcrumbs-ol": {
-		flexWrap: "nowrap",
-	},
+  "& .MuiBreadcrumbs-ol": {
+    flexWrap: "nowrap",
+  },
 }));
 
 type WorkspaceProps = {
-	/** Actions to render in the navbar */
-	navbarActions?: React.ReactNode;
+  /** Actions to render in the navbar */
+  navbarActions?: React.ReactNode;
 
-	/** Workspace to render */
-	workspace: WorkspaceStore;
+  /** Workspace to render */
+  workspace: WorkspaceStore;
 
-	/** Options to load into the workspace */
-	options: WorkspaceOptions;
+  /** Options to load into the workspace */
+  options: WorkspaceOptions;
 
-	/** Factor method */
-	factory: (node: TabNode, layout: LayoutType) => React.ReactNode;
+  /** Factor method */
+  factory: (node: TabNode, layout: LayoutType) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
-	const { navbarActions, workspace, options, factory = () => null } = props;
-	const layoutRef = useRef<LayoutType | null>(null);
-	const model = workspace.model;
+  const { navbarActions, workspace, options, factory = () => null } = props;
+  const layoutRef = useRef<LayoutType | null>(null);
+  const model = workspace.model;
 
-	// build the model from the layout
-	useEffect(() => {
-		const handler = (e: CustomEvent) => {
-			const { destinationType, destination } = e.detail;
-			if (destinationType === "App Page") {
-				const model = workspace.model;
+  // build the model from the layout
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const { destinationType, destination } = e.detail;
+      if (destinationType === "App Page") {
+        const model = workspace.model;
 
-				// get the model
-				if (!model) {
-					throw new Error("Missing model");
-				}
+        // get the model
+        if (!model) {
+          throw new Error("Missing model");
+        }
 
-				let selectedNode: TabNode | null = null;
+        let selectedNode: TabNode | null = null;
 
-				// visit the notes, and see if it exists
-				model.visitNodes((node) => {
-					// check if it is a tabNode
-					if (node instanceof TabNode) {
-						// it needs to be a notebook-viewer
-						const component = node.getComponent();
-						if (component !== "designer") {
-							return;
-						}
+        // visit the notes, and see if it exists
+        model.visitNodes((node) => {
+          // check if it is a tabNode
+          if (node instanceof TabNode) {
+            // it needs to be a notebook-viewer
+            const component = node.getComponent();
+            if (component !== "designer") {
+              return;
+            }
 
-						// path and space need to match
-						const config = node.getConfig();
-						if (config.id !== destination) {
-							return;
-						}
+            // path and space need to match
+            const config = node.getConfig();
+            if (config.id !== destination) {
+              return;
+            }
 
-						selectedNode = node;
-					}
-				});
+            selectedNode = node;
+          }
+        });
 
-				// create a new panel if there is no node
-				if (!selectedNode) {
-					// get the name
-					const name = destination;
+        // create a new panel if there is no node
+        if (!selectedNode) {
+          // get the name
+          const name = destination;
 
-					// where to add the node
-					const addId =
-						model.getActiveTabset()?.getId() ||
-						model.getRoot().getChildren()[0]?.getId() ||
-						"";
+          // where to add the node
+          const addId =
+            model.getActiveTabset()?.getId() ||
+            model.getRoot().getChildren()[0]?.getId() ||
+            "";
 
-					// create and select the panel
-					model.doAction(
-						Actions.addNode(
-							{
-								type: "tab",
-								name: name,
-								component: "designer",
-								config: {
-									id: destination,
-								},
-								enableClose: true,
-							},
-							addId,
-							DockLocation.CENTER,
-							-1,
-							true,
-						),
-					);
-				}
+          // create and select the panel
+          model.doAction(
+            Actions.addNode(
+              {
+                type: "tab",
+                name: name,
+                component: "designer",
+                config: {
+                  id: destination,
+                },
+                enableClose: true,
+              },
+              addId,
+              DockLocation.CENTER,
+              -1,
+              true
+            )
+          );
+        }
 
-				const selectedNodeId = selectedNode.getId();
-				model.doAction(Actions.selectTab(selectedNodeId));
-			}
-		};
-		window.addEventListener("OPEN_EVENT", handler as EventListener);
-		return () => {
-			window.removeEventListener("OPEN_EVENT", handler as EventListener);
-		};
-	}, []);
+        const selectedNodeId = selectedNode.getId();
+        model.doAction(Actions.selectTab(selectedNodeId));
+      }
+    };
+    window.addEventListener("OPEN_EVENT", handler as EventListener);
+    return () => {
+      window.removeEventListener("OPEN_EVENT", handler as EventListener);
+    };
+  }, []);
 
-	useEffect(() => {
-		// default options if not loaded from cache
-		const defaultOptions = JSON.parse(JSON.stringify(options));
+  useEffect(() => {
+    // default options if not loaded from cache
+    const defaultOptions = JSON.parse(JSON.stringify(options));
 
-		// set the workspace options
-		// try to load from cache
-		const isLoaded = workspace.loadFromCache();
-		if (!isLoaded) {
-			workspace.load(defaultOptions);
-		}
-	}, [options]);
+    // set the workspace options
+    // try to load from cache
+    const isLoaded = workspace.loadFromCache();
+    if (!isLoaded) {
+      workspace.load(defaultOptions);
+    }
+  }, [options]);
 
-	/**
-	 * reset the selected layout
-	 */
-	const resetWorkspace = () => {
-		try {
-			// copy the optoins
-			const layout = JSON.parse(JSON.stringify(options.layout));
+  /**
+   * reset the selected layout
+   */
+  const resetWorkspace = () => {
+    try {
+      // copy the optoins
+      const layout = JSON.parse(JSON.stringify(options.layout));
 
-			// update the layout
-			workspace.updateLayout(layout);
-		} catch (e) {
-			console.error(e);
-			throw new e();
-		}
-	};
+      // update the layout
+      workspace.updateLayout(layout);
+    } catch (e) {
+      console.error(e);
+      throw new e();
+    }
+  };
 
-	const updateModel = (action) => {
-		if (!model) return;
+  const updateModel = (action) => {
+    if (!model) return;
 
-		const isSettingsTab = action.data.tabNode === "settings";
-		const mainTabsetWeight = model
-			?.getNodeById("main-tabset")
-			?.getAttr("weight");
+    const isSettingsTab = action.data.tabNode === "settings";
+    const mainTabsetWeight = model
+      ?.getNodeById("main-tabset")
+      ?.getAttr("weight");
 
-		model
-			.getBorderSet()
-			.getBorders()
-			.forEach((border) => {
-				// border.setSelected(isSettingsTab ? -1 : border.getSelected());
-				border.setSelected(action.data.tabNode === "block-settings" && mainTabsetWeight === 0 ? 1 : border.getSelected());
-			});
+    model
+      .getBorderSet()
+      .getBorders()
+      .forEach((border) => {
+        // border.setSelected(isSettingsTab ? -1 : border.getSelected());
+        border.setSelected(
+          action.data.tabNode === "block-settings" && mainTabsetWeight === 0
+            ? 1
+            : border.getSelected()
+        );
+      });
 
-		if (isSettingsTab || mainTabsetWeight === 0) {
-			model.visitNodes((node) => {
-				if (node.getType() === "tabset") {
-					const newWeight =
-						(isSettingsTab && node.getId() === "settings-tabset") ||
-						(!isSettingsTab &&
-							mainTabsetWeight === 0 &&
-							node.getId() !== "settings-tabset")
-							? 100
-							: 0;
-					model.doAction(
-						Actions.updateNodeAttributes(node.getId(), {
-							weight: newWeight,
-						}),
-					);
-				}
-			});
-		}
-	};
+    if (isSettingsTab || mainTabsetWeight === 0) {
+      model.visitNodes((node) => {
+        if (node.getType() === "tabset") {
+          const newWeight =
+            (isSettingsTab && node.getId() === "settings-tabset") ||
+            (!isSettingsTab &&
+              mainTabsetWeight === 0 &&
+              node.getId() !== "settings-tabset")
+              ? 100
+              : 0;
+          model.doAction(
+            Actions.updateNodeAttributes(node.getId(), {
+              weight: newWeight,
+            })
+          );
+        }
+      });
+    }
+  };
 
-	return (
-		<WorkspaceContext.Provider
-			value={{
-				workspace: workspace,
-			}}
-		>
-			<NavbarLeft>
-				<NavbarHeader
-					logo={
-						<StyledSemossImage
-							src={SEMOSS_BLACK_LOGO}
-							alt="SEMOSS"
-						></StyledSemossImage>
-					}
-				/>
-				<StyledNavLeft>
-					<StyledBreadcrumbs separator=" /">
-						<StyledHeaderLogo to={"/app"}>
-							<Stack direction={"row"} alignItems={"center"}>
-								<StyledAppTypography variant={"subtitle1"}>
-									App Library
-								</StyledAppTypography>
-							</Stack>
-						</StyledHeaderLogo>
-						<StyledHeaderLogo
-							to={`/app/${workspace.metadata.project_id}/view`}
-						>
-							<StyledAppTypography variant={"subtitle1"}>
-								{workspace.metadata.project_name}
-							</StyledAppTypography>
-						</StyledHeaderLogo>
-						<StyledHeaderLogo to={""}>
-							<Typography
-								variant={"subtitle1"}
-								sx={{ display: "inline", mr: 0.5 }}
-							>
-								{workspace.metadata.project_name} - Editor
-							</Typography>
-						</StyledHeaderLogo>
-					</StyledBreadcrumbs>
-				</StyledNavLeft>
-			</NavbarLeft>
-			<NavbarRight>{navbarActions}</NavbarRight>
-			<WorkspaceOverlay />
-			<StyledMain>
-				<StyledContent>
-					<WorkspaceLoading />
-					<StyledSpacer>
-						{workspace.model ? (
-							<>
-								<Layout
-									ref={layoutRef}
-									model={workspace.model}
-									factory={(node) => {
-										return factory(node, layoutRef.current);
-									}}
-									icons={{
-										close: <ClosePage />,
-									}}
-									// onRenderTabSet={handleRenderTabSet}
-									onModelChange={() => {
-										workspace.saveToCache();
-									}}
-									onAction={(action) => {
-										updateModel(action);
-										return action;
-									}}
-									onRenderTab={(tabNode, renderValues) => {
-										const item = SIDEBAR_MENU.MENU.find(
-											(menuItem) =>
-												menuItem.name ===
-												tabNode.getName(),
-										);
-										const isSelected = tabNode.isSelected();
-										if (item?.icon) {
-											const iconSrc = isSelected
-												? item.icon.active
-												: item.icon.default;
-											renderValues.content = (
-												<StyledLetTabImage
-													src={iconSrc}
-													alt={tabNode.getName()}
-												/>
-											);
-										}
-										return renderValues;
-									}}
-								/>
-								<StyledActions
-									direction="column"
-									justifyContent={"center"}
-								>
-									<Tooltip title={"Reset workspace"}>
-										<IconButton
-											size={"small"}
-											color="default"
-											onClick={() => {
-												resetWorkspace();
-											}}
-										>
-											<RestartAlt fontSize="inherit" />
-										</IconButton>
-									</Tooltip>
-								</StyledActions>
-							</>
-						) : null}
-					</StyledSpacer>
-				</StyledContent>
-			</StyledMain>
-			<WorkspaceOverlay />
-		</WorkspaceContext.Provider>
-	);
+  return (
+    <WorkspaceContext.Provider
+      value={{
+        workspace: workspace,
+      }}
+    >
+      <NavbarLeft>
+        <NavbarHeader
+          logo={
+            <StyledSemossImage
+              src={SEMOSS_BLACK_LOGO}
+              alt="SEMOSS"
+            ></StyledSemossImage>
+          }
+        />
+        <StyledNavLeft>
+          <StyledBreadcrumbs separator=" /">
+            <StyledHeaderLogo to={"/app"}>
+              <Stack direction={"row"} alignItems={"center"}>
+                <StyledAppTypography variant={"subtitle1"}>
+                  App Library
+                </StyledAppTypography>
+              </Stack>
+            </StyledHeaderLogo>
+            <StyledHeaderLogo to={`/app/${workspace.metadata.project_id}/view`}>
+              <StyledAppTypography variant={"subtitle1"}>
+                {workspace.metadata.project_name}
+              </StyledAppTypography>
+            </StyledHeaderLogo>
+            <StyledHeaderLogo to={""}>
+              <Typography
+                variant={"subtitle1"}
+                sx={{ display: "inline", mr: 0.5 }}
+              >
+                {workspace.metadata.project_name} - Editor
+              </Typography>
+            </StyledHeaderLogo>
+          </StyledBreadcrumbs>
+        </StyledNavLeft>
+      </NavbarLeft>
+      <NavbarRight>{navbarActions}</NavbarRight>
+      <WorkspaceOverlay />
+      <StyledMain>
+        <StyledContent>
+          <WorkspaceLoading />
+          <StyledSpacer>
+            {workspace.model ? (
+              <>
+                <Layout
+                  ref={layoutRef}
+                  model={workspace.model}
+                  factory={(node) => {
+                    return factory(node, layoutRef.current);
+                  }}
+                  icons={{
+                    close: <ClosePage />,
+                  }}
+                  // onRenderTabSet={handleRenderTabSet}
+                  onModelChange={() => {
+                    workspace.saveToCache();
+                  }}
+                  onAction={(action) => {
+                    updateModel(action);
+                    return action;
+                  }}
+                  onRenderTab={(tabNode, renderValues) => {
+                    const item = SIDEBAR_MENU.MENU.find(
+                      (menuItem) => menuItem.name === tabNode.getName()
+                    );
+                    const isSelected = tabNode.isSelected();
+                    if (item?.icon?.component) {
+                      const Icon = item.icon.component;
+
+                      renderValues.content = (
+                        <IconButton size={"small"} color="default">
+                          <Icon
+                            color={isSelected ? "primary" : "inherit"}
+                            fontSize="medium"
+                          />
+                        </IconButton>
+                      );
+                    } else if (item?.icon) {
+                      const iconSrc = isSelected
+                        ? item.icon.active
+                        : item.icon.default;
+                      renderValues.content = (
+                        <StyledLetTabImage
+                          src={iconSrc}
+                          alt={tabNode.getName()}
+                        />
+                      );
+                    }
+                    return renderValues;
+                  }}
+                />
+                <StyledActions direction="column" justifyContent={"center"}>
+                  <Tooltip title={"Reset workspace"}>
+                    <IconButton
+                      size={"small"}
+                      color="default"
+                      onClick={() => {
+                        resetWorkspace();
+                      }}
+                    >
+                      <RestartAlt fontSize="inherit" />
+                    </IconButton>
+                  </Tooltip>
+                </StyledActions>
+              </>
+            ) : null}
+          </StyledSpacer>
+        </StyledContent>
+      </StyledMain>
+      <WorkspaceOverlay />
+    </WorkspaceContext.Provider>
+  );
 });
 
 // NOTES: WE HAVE TO FIX ALOT HERE.

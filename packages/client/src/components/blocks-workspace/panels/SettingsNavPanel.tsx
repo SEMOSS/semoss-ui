@@ -1,9 +1,10 @@
-import TopicOutlinedIcon from "@mui/icons-material/TopicOutlined";
-import { observer } from "mobx-react-lite";
-import { Actions, DockLocation, TabNode } from "flexlayout-react";
-import { List, styled } from "@semoss/ui";
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
+import { GridView as GridViewIcon } from "@mui/icons-material";
+import TopicOutlinedIcon from "@mui/icons-material/TopicOutlined";
+import { List, styled } from "@semoss/ui";
+import { Actions, DockLocation, TabNode } from "flexlayout-react";
+import { observer } from "mobx-react-lite";
 
 const StyledContainer = styled("div")(({ theme }) => ({
   display: "flex",
@@ -38,13 +39,13 @@ const StyledTitleSpan = styled("span")(({ theme }) => ({
   marginTop: "8px",
 }));
 
-const SETTINGS_OPTIONS: { label: string; value: SettingValues }[] = [
+const SETTINGS_OPTIONS: { label: string; value: SettingValues, icon?: JSX.Element }[] = [
   { label: "Members", value: "CURRENT" },
-  { label: "Pending Requests", value: "PENDING" },
-  { label: "Apps", value: "APP" },
+  { label: "Apps", value: "APP", icon: <GridViewIcon /> },
+  { label: "General", value: "GENERAL" },
 ];
 
-type SettingValues = "CURRENT" | "PENDING" | "APP";
+type SettingValues = "CURRENT" | "GENERAL" | "APP";
 
 export const SettingsNavPanel = observer(() => {
   const { workspace } = useWorkspace();
@@ -109,7 +110,7 @@ export const SettingsNavPanel = observer(() => {
               dense={true}
             >
               <List.Icon>
-                <TopicOutlinedIcon />
+                {item.icon ?? <TopicOutlinedIcon />}
               </List.Icon>
               <List.ItemText primary={item.label} />
             </List.ItemButton>

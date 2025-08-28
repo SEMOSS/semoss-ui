@@ -1,7 +1,9 @@
+import databaseIcon from "@/assets/img/databaseIcon.png";
+import { LoadingScreen } from "@/components/ui";
+import { usePixel, useRootStore, useSettings } from "@/hooks";
+import type { ALL_TYPES } from "@/types";
 import LockIcon from "@mui/icons-material/Lock";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import type { AxiosResponse } from "axios";
-import { useEffect, useState } from "react";
 import {
   Alert,
   Box,
@@ -10,16 +12,14 @@ import {
   Modal,
   Paper,
   Stack,
-  Switch,
   styled,
+  Switch,
   Tooltip,
   Typography,
   useNotification,
 } from "@semoss/ui";
-import databaseIcon from "@/assets/img/databaseIcon.png";
-import { LoadingScreen } from "@/components/ui";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
+import type { AxiosResponse } from "axios";
+import { useEffect, useState } from "react";
 
 const StyledAlert = styled(Alert, {
   shouldForwardProp: (prop) => prop !== "setBounds",
@@ -105,6 +105,7 @@ interface SettingsTilesProps {
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
   const { id, type, name, condensed, onDelete, direction = "column" } = props;
+  const typeName = type.toLowerCase();
 
   const { monolithStore, configStore } = useRootStore();
   const notification = useNotification();
@@ -411,7 +412,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         Non Discoverable
                       </Typography>
                       <Typography variant="body2">
-                        Users cannot request access to this database if private
+                        Users cannot request access to this {typeName} if private
                       </Typography>
                     </Box>
                   </StyledBlock>
@@ -457,7 +458,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       Non Discoverable
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this database if private
+                      Users cannot request access to this {typeName} if private
                     </Typography>
                   </Box>
                 </StyledBlock>
@@ -497,10 +498,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 {/* Text Stack on the right */}
                 <Box>
                   <Typography variant="body1" fontWeight="500">
-                    Delete Database
+                    Delete {typeName}
                   </Typography>
                   <Typography variant="body2">
-                    Users cannot request access to this database if private
+                    Users cannot request access to this {typeName} if private
                   </Typography>
                 </Box>
               </StyledBlock>
@@ -648,7 +649,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         Non Discoverable
                       </Typography>
                       <Typography variant="body2">
-                        Users cannot request access to this database if private
+                        Users cannot request access to this {typeName} if private
                       </Typography>
                     </Box>
                   </StyledBlock>
@@ -695,7 +696,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       Non Discoverable
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this database if private
+                      Users cannot request access to this {typeName} if private
                     </Typography>
                   </Box>
                 </StyledBlock>
@@ -737,10 +738,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                   {/* Text Stack on the right */}
                   <Box>
                     <Typography variant="body1" fontWeight="500">
-                      Delete Database
+                      Delete {typeName}
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this database if private
+                      Users cannot request access to this {typeName} if private
                     </Typography>
                   </Box>
                 </StyledBlock>

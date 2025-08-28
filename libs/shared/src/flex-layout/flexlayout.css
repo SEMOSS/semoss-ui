@@ -61,7 +61,14 @@
 
 .flexlayout__border_bottom {
     border-top: none;
-    padding-left: 34px;
+    /* padding-left: 4px; */
+    position: absolute;
+    bottom: 0;
+    min-width: 90px;
+}
+
+.flexlayout__border_bottom .flexlayout__border_button_bottom {
+   background: transparent;
 }
 
 /* 
