@@ -253,6 +253,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 					workspace.closeOverlay();
 				}}
 				uploadPath={fileUploadPath}
+				data-testid="add-file-overlay"
 			/>
 		));
 	};
@@ -282,6 +283,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				}}
 				uploadPath={fileUploadPath}
 				mode={mode}
+				data-testid="create-file-overlay"
 			/>
 		));
 	};
@@ -996,6 +998,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 										e.stopPropagation();
 										publishApp();
 									}}
+									data-testid="publish-button"
 								>
 									<PublishedWithChangesOutlined fontSize="inherit" />
 								</IconButton>
@@ -1008,6 +1011,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 										e.stopPropagation();
 										recompileApp();
 									}}
+									data-testid="recompile-button"
 								>
 									<CoffeeOutlined fontSize="inherit" />
 								</IconButton>
@@ -1022,6 +1026,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 										e.stopPropagation();
 										handleOpenAddFile();
 									}}
+									data-testid="upload-button"
 								>
 									<FileUpload fontSize="inherit" />
 								</IconButton>
@@ -1037,6 +1042,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 										e.stopPropagation();
 										handleOpenCreateFile("file");
 									}}
+									data-testid="create-file-button"
 								>
 									<NoteAddOutlined fontSize="inherit" />
 								</IconButton>
@@ -1051,6 +1057,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 										e.stopPropagation();
 										handleOpenCreateFile("directory");
 									}}
+									data-testid="create-folder-button"
 								>
 									<CreateNewFolderOutlined fontSize="inherit" />
 								</IconButton>
@@ -1071,9 +1078,6 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				</Typography>
 			)}
 			<FileExplorer
-				// ref={(el) => {
-				//     if (el) itemRefs.current[path] = el;
-				// }}
 				itemRefs={itemRefs}
 				key={counter}
 				type={EXPLORER_TYPE}

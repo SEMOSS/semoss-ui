@@ -456,6 +456,7 @@ export const FileExplorerItem = forwardRef<
 				>
 					{deleteMode && deletablePaths.has(path) && (
 						<Checkbox
+							data-testid="delete-checkbox"
 							checked={checkedPaths.has(path)}
 							onChange={() => onToggleChecked(path)}
 							checkboxProps={{
@@ -469,6 +470,7 @@ export const FileExplorerItem = forwardRef<
 					)}
 					{duplicateMode && duplicatablePaths.has(path) && (
 						<Checkbox
+							data-testid="duplicate-checkbox"
 							checked={checkedPaths.has(path)}
 							onChange={() => onToggleChecked(path)}
 							checkboxProps={{
@@ -492,6 +494,7 @@ export const FileExplorerItem = forwardRef<
 							<input
 								type="text"
 								value={editValue}
+								data-testid="rename-input"
 								style={{
 									flex: 1,
 									padding: "4px",
@@ -522,6 +525,7 @@ export const FileExplorerItem = forwardRef<
 									setIsEditing(false);
 								}}
 								sx={{ ml: 0.5 }}
+								data-testid="done-icon"
 							>
 								<DoneIcon fontSize="small" color="primary" />
 							</IconButton>
@@ -538,6 +542,7 @@ export const FileExplorerItem = forwardRef<
 										onClick={handleMenuOpen}
 										size="small"
 										color="default"
+										data-testid="more-icon"
 									>
 										<MoreVert fontSize="inherit" />
 									</IconButton>
@@ -565,19 +570,6 @@ export const FileExplorerItem = forwardRef<
 													[],
 												);
 											}
-											// const childrenPaths =
-											//     isDirectory &&
-											//     getAssets.status ===
-											//         'SUCCESS'
-											//         ? getAssets.data.map(
-											//               (n) => n.path,
-											//           )
-											//         : [];
-											// onDuplicateRequest(
-											//     path,
-											//     isDirectory,
-											//     childrenPaths,
-											// );
 										}}
 										// onDelete={() => onTrashClick(undefined as any, path)}
 										onDelete={() => {
@@ -599,19 +591,6 @@ export const FileExplorerItem = forwardRef<
 													[],
 												);
 											}
-											// const childrenPaths =
-											//     isDirectory &&
-											//     getAssets.status ===
-											//         'SUCCESS'
-											//         ? getAssets.data.map(
-											//               (n) => n.path,
-											//           )
-											//         : []; // if it is a directory, we need to checked all children paths return the children paths
-											// onDeleteRequest(
-											//     path,
-											//     isDirectory,
-											//     childrenPaths,
-											// );
 										}}
 									/>
 								</>
@@ -709,6 +688,7 @@ export const FileExplorerItem = forwardRef<
 								onClick={onCancelDeleteMode}
 								variant="text"
 								title="Cancel"
+								data-testid="cancel-delete-button"
 							>
 								Cancel
 							</Button>
@@ -719,6 +699,7 @@ export const FileExplorerItem = forwardRef<
 								variant="contained"
 								color={"error"}
 								title="Delete"
+								data-testid="delete-button"
 							>
 								Delete
 							</Button>
@@ -748,6 +729,7 @@ export const FileExplorerItem = forwardRef<
 								onClick={onCancelDuplicateMode}
 								variant="text"
 								title="Cancel"
+								data-testid="cancel-duplicate-button"
 							>
 								Cancel
 							</Button>
@@ -760,6 +742,7 @@ export const FileExplorerItem = forwardRef<
 								}
 								variant="contained"
 								title="Duplicate"
+								data-testid="duplicate-button"
 							>
 								Duplicate
 							</Button>
