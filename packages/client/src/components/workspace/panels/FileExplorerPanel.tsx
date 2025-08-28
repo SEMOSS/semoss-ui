@@ -4,7 +4,6 @@ import {
 	FileUpload,
 	NoteAddOutlined,
 	PublishedWithChangesOutlined,
-	Refresh,
 	Search,
 } from "@mui/icons-material";
 import { Actions, DockLocation, type Layout, TabNode } from "flexlayout-react";
@@ -48,7 +47,7 @@ const StyledTitle = styled("div")(({ theme }) => ({
 	color: theme.palette.info.dark,
 }));
 
-const StyledFileSpan = styled("span")(({ theme }) => ({
+const StyledFileSpan = styled("span")(() => ({
 	color: "var(--Text-Primary, #212121)",
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontFamily: "Inter",
@@ -59,7 +58,7 @@ const StyledFileSpan = styled("span")(({ theme }) => ({
 	letterSpacing: "0.15px",
 }));
 
-const StyledTitleSpan = styled("span")(({ theme }) => ({
+const StyledTitleSpan = styled("span")(() => ({
 	color: "var(--Primary-Dark, #1260DD)",
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontSize: "13px",
@@ -72,7 +71,7 @@ const StyledTitleSpan = styled("span")(({ theme }) => ({
 	marginTop: "8px",
 }));
 
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(() => ({
 	paddingRight: "16px",
 	paddingLeft: "16px",
 	marginTop: "8px",
@@ -530,9 +529,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 
 	return (
 		<Panel
-			actions={
-				<>
-					<Stack
+			actions={<Stack
 						direction={"column"}
 						spacing={0}
 						className="notebook-variables-menu"
@@ -635,9 +632,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 								</Tooltip>
 							</Stack>
 						</Stack>
-					</Stack>
-				</>
-			}
+					</Stack>}
 		>
 			<FileExplorer
 				key={counter}
@@ -647,7 +642,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				onSelect={(path) => {
 					handleOnSelect(path);
 				}}
-				onTrashClick={(e, path) => {
+				onTrashClick={(_e, path) => {
 					handleOnTrashClick(path);
 				}}
 				onDragStart={(e, path) => {

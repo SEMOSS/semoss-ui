@@ -14,7 +14,7 @@ import {
 } from "@semoss/ui";
 import { usePixel } from "@/hooks";
 
-const StyledNode = styled(TreeView.Item)(({ theme }) => ({
+const StyledNode = styled(TreeView.Item)(() => ({
 	".MuiCollapse-wrapperInner": {
 		height: "auto",
 		overflow: "none",

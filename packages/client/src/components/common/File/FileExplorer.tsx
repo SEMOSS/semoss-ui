@@ -45,6 +45,15 @@ interface FileExplorerProps {
 	searchText?: string;
 }
 
+interface FileNode {
+    name: string;
+    path: string;
+    originalPath: string;
+    type: "directory" | "file";
+    lastModified: string;
+    children: Record<string, FileNode>;
+}
+
 export const FileExplorer = (props: FileExplorerProps) => {
 	const {
 		type,
@@ -56,7 +65,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 		onTrashClick = () => null,
 		expandedPaths,
 		onToggleExpand,
-		 searchText = '',
+		searchText = '',
 	} = props;
 
     const { workspace } = useWorkspace();
@@ -93,8 +102,8 @@ export const FileExplorer = (props: FileExplorerProps) => {
 		setSelected(selected);
 	};
 
-    const buildFileTree = (files: typeof getAssets.data) => {
-        const root: any = {};
+    const buildFileTree = (files: typeof getAssets.data) : Record<string, FileNode> => {
+        const root: Record<string, FileNode> = {};
 
         for (const file of files) {
             const parts = file.path.split('/').filter(Boolean);
@@ -102,7 +111,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
 
             for (let i = 2; i < parts.length; i++) {
                 const part = parts[i];
-                const fullPath = '/' + parts.slice(0, i + 1).join('/');
+                const fullPath = `/${parts.slice(0, i + 1).join('/')}`;
 
                 if (!current[fullPath]) {
                     current[fullPath] = {
@@ -122,14 +131,14 @@ export const FileExplorer = (props: FileExplorerProps) => {
         return root;
     };
 
-    const extractAllDirectoryPaths = (tree: any): string[] => {
+    const extractAllDirectoryPaths = (tree: Record<string, FileNode>): string[] => {
         const result: string[] = [];
-        const recurse = (node: any) => {
+        const recurse = (node: Record<string, FileNode>) => {
             for (const entry of Object.values(node)) {
                 const e = entry as {
                     path: string;
                     type: string;
-                    children: Record<string, unknown>;
+                    children: Record<string, FileNode>;
                 };
 
                 if (e.type === 'directory') {
@@ -157,13 +166,14 @@ export const FileExplorer = (props: FileExplorerProps) => {
     }, [searchText, tree]);
 
     // Function to handle click event for search results
-    const handleSearchItemClick = (path: string, isDirectory: boolean) => {
+    const handleSearchItemClick = (e: React.MouseEvent<HTMLDivElement>, path: string, isDirectory: boolean) => {
+        e.stopPropagation();
       if (searchText.length > 0) {
         let finalPath = path;
 
         // If it's a directory, make sure path ends with "/"
         if (isDirectory && !finalPath.endsWith("/")) {
-          finalPath = finalPath + "/";
+          finalPath = `${finalPath}/`;
         }
 
         // Call your onSelect prop if present
@@ -173,27 +183,36 @@ export const FileExplorer = (props: FileExplorerProps) => {
       }
     };
 
-    const renderTree = (node: any) => {
-        return Object.entries(node).map(([path, entry]: any) => (
-            <div key={path} onClick={() => handleSearchItemClick(entry.path, entry.type === "directory")}>
-                <FileExplorerItem
-                    type={type}
-                    space={space}
-                    name={entry.name}
-                    path={entry.path}
-                    isDirectory={entry.type === 'directory'}
-                    lastModified={entry.lastModified}
-                    expanded={searchText.length > 0 ? localExpanded : expandedPaths}
-                    selected={selected}
-                    onDragStart={onDragStart}
-                    onDragEnd={onDragEnd}
-                    onTrashClick={onTrashClick}
-                    searchText={searchText}
-                    fromSearch={true}
-                >
-                    {renderTree(entry.children)}
-                </FileExplorerItem>
-            </div>
+    const renderTree = (node: Record<string, FileNode>) => {
+        return Object.entries(node).map(([path, entry]) => (
+          <div
+            role="treeitem"
+            tabIndex={0}
+            className="cursor-pointer"
+            key={path}
+            onKeyDown={() => {}}
+            onClick={(e) =>
+            handleSearchItemClick(e, entry.path, entry.type === "directory")
+            }
+          >
+            <FileExplorerItem
+              type={type}
+              space={space}
+              name={entry.name}
+              path={entry.path}
+              isDirectory={entry.type === "directory"}
+              lastModified={entry.lastModified}
+              expanded={searchText.length > 0 ? localExpanded : expandedPaths}
+              selected={selected}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onTrashClick={onTrashClick}
+              searchText={searchText}
+              fromSearch={true}
+            >
+              {renderTree(entry.children)}
+            </FileExplorerItem>
+          </div>
         ));
     };
 
@@ -208,7 +227,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
             multiSelect
             expanded={searchText.length > 0 ? localExpanded : expandedPaths}
             selected={selected}
-            onNodeToggle={(e, nodeIds) => {
+            onNodeToggle={(_e, nodeIds) => {
                 const lastToggled =
                     nodeIds.find((id) =>
                         searchText.length > 0
@@ -227,7 +246,7 @@ export const FileExplorer = (props: FileExplorerProps) => {
                     }
                 }
             }}
-            onNodeSelect={(e, v) => handleOnNodeSelect(v)}
+            onNodeSelect={(_e, v) => handleOnNodeSelect(v)}
             defaultCollapseIcon={
                 <Icon color={'disabled'}>
                     <ExpandMore />
