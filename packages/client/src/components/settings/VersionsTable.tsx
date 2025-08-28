@@ -1,7 +1,8 @@
 import Refresh from "@mui/icons-material/Refresh";
-import React, { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
 	Button,
+	Chip,
 	CircularProgress,
 	styled,
 	Table,
@@ -9,7 +10,12 @@ import {
 } from "@semoss/ui";
 import { Section } from "@/components/ui";
 import { useVersionsTable } from "@/hooks";
-import type { FileSavedEventDetail } from "@/types/types";
+import type {
+	CommitVersion,
+	FileSavedEventDetail,
+	VersionsTableProps,
+} from "@/types/types";
+import { AddTagModal } from "./AddTagModal";
 
 // Styled Components
 const StyledContainer = styled("div")(() => ({
@@ -53,9 +59,41 @@ const StyledLoadingRow = styled("div")(({ theme }) => ({
 	gap: theme.spacing(1),
 }));
 
-// VersionsTable component displays project commit history with restore functionality
+const StyledActionButtons = styled("div")(({ theme }) => ({
+	display: "flex",
+	gap: theme.spacing(1),
+	whiteSpace: "nowrap",
+}));
 
-export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
+const StyledCommitCell = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(0.5),
+}));
+
+const StyledTagsContainer = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexWrap: "wrap",
+	gap: theme.spacing(0.5),
+	marginTop: theme.spacing(0.5),
+}));
+
+const StyledDateCell = styled(Table.Cell)(() => ({
+	minWidth: "180px",
+	width: "180px",
+}));
+
+/**
+ * VersionsTable component displays project commit history with restore and tag management functionality.
+ *
+ * Features:
+ * - Display commit history with pagination
+ * - Restore functionality for reverting to previous commits
+ * - Tag management (add tags to commits)
+ * - Real-time tag display with hover effects
+ * - Automatic refresh on file save events
+ */
+export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 	const {
 		loading,
 		error,
@@ -69,7 +107,30 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 		handleRowsPerPageChange,
 		handleRefresh,
 		handleRestore,
+		getAllTags,
+		addTagToVersion,
 	} = useVersionsTable(id);
+
+	// State for Add Tag Modal
+	const [selectedVersion, setSelectedVersion] =
+		useState<CommitVersion | null>(null);
+	const [addTagModalOpen, setAddTagModalOpen] = useState(false);
+
+	const handleAddTag = (version: CommitVersion) => {
+		setSelectedVersion(version);
+		setAddTagModalOpen(true);
+	};
+
+	const handleCloseTagModal = () => {
+		setAddTagModalOpen(false);
+		setSelectedVersion(null);
+	};
+
+	const handleTagAdded = (newTag: string) => {
+		if (selectedVersion) {
+			addTagToVersion(selectedVersion.commitId, newTag);
+		}
+	};
 
 	// Listen for file save events to automatically refresh the versions table
 	useEffect(() => {
@@ -80,10 +141,13 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 			}
 		};
 
-		window.addEventListener('fileSaved', handleFileSaved as EventListener);
+		window.addEventListener("fileSaved", handleFileSaved as EventListener);
 
 		return () => {
-			window.removeEventListener('fileSaved', handleFileSaved as EventListener);
+			window.removeEventListener(
+				"fileSaved",
+				handleFileSaved as EventListener,
+			);
 		};
 	}, [id, handleRefresh]);
 
@@ -129,14 +193,32 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 								Commit Message
 							</Table.Cell>
 							<Table.Cell component="th">Author</Table.Cell>
-							<Table.Cell component="th">Date</Table.Cell>
+							<StyledDateCell component="th">Date</StyledDateCell>
 							<Table.Cell component="th">Action</Table.Cell>
 						</Table.Row>
 					</Table.Head>
 					<Table.Body>
 						{currentVersions.map((version) => (
 							<Table.Row key={version.commitId}>
-								<Table.Cell>{version.commitId}</Table.Cell>
+								<Table.Cell>
+									<StyledCommitCell>
+										<Typography variant="body2">
+											{version.commitId}
+										</Typography>
+										{version.tags &&
+											version.tags.length > 0 && (
+												<StyledTagsContainer>
+													{version.tags.map((tag) => (
+														<Chip
+															key={tag}
+															label={tag}
+															size="small"
+														/>
+													))}
+												</StyledTagsContainer>
+											)}
+									</StyledCommitCell>
+								</Table.Cell>
 								<Table.Cell>{version.commitMessage}</Table.Cell>
 								<Table.Cell>
 									<StyledAuthorContainer>
@@ -148,26 +230,48 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 										</StyledAuthorEmail>
 									</StyledAuthorContainer>
 								</Table.Cell>
-								<Table.Cell>{version.date}</Table.Cell>
+								<StyledDateCell>{version.date}</StyledDateCell>
 								<Table.Cell>
-									<Button
-										color="primary"
-										size="small"
-										variant="contained"
-										disabled={
-											restoreLoading === version.commitId
-										}
-										onClick={() => handleRestore(version)}
-									>
-										{restoreLoading === version.commitId ? (
-											<StyledLoadingRow>
-												<CircularProgress size={16} />
-												Restoring...
-											</StyledLoadingRow>
-										) : (
-											"Restore"
-										)}
-									</Button>
+									<StyledActionButtons>
+										<Button
+											color="primary"
+											size="small"
+											variant="contained"
+											disabled={
+												restoreLoading ===
+												version.commitId
+											}
+											onClick={() =>
+												handleRestore(version)
+											}
+										>
+											{restoreLoading ===
+											version.commitId ? (
+												<StyledLoadingRow>
+													<CircularProgress
+														size={16}
+													/>
+													Restoring...
+												</StyledLoadingRow>
+											) : (
+												"Restore"
+											)}
+										</Button>
+										<Button
+											color="primary"
+											size="small"
+											variant="contained"
+											onClick={() =>
+												handleAddTag(version)
+											}
+											disabled={
+												restoreLoading ===
+												version.commitId
+											}
+										>
+											Add Tag
+										</Button>
+									</StyledActionButtons>
 								</Table.Cell>
 							</Table.Row>
 						))}
@@ -187,6 +291,18 @@ export const VersionsTable: React.FC<{ id: string }> = ({ id }) => {
 					</Table.Footer>
 				</Table>
 			</Section>
+
+			{/* Add Tag Modal */}
+			{selectedVersion && (
+				<AddTagModal
+					open={addTagModalOpen}
+					onClose={handleCloseTagModal}
+					version={selectedVersion}
+					projectId={id}
+					existingTags={getAllTags()}
+					onTagAdded={handleTagAdded}
+				/>
+			)}
 		</StyledContainer>
 	);
 };

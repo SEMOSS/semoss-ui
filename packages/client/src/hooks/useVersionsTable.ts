@@ -27,6 +27,31 @@ export function useVersionsTable(id: string) {
 	// Constants
 	const BACKEND_FETCH_SIZE = 100; // Always fetch 100 from backend
 
+	// Get all existing tags for the project (for uniqueness validation)
+	const getAllTags = useCallback((): string[] => {
+		const tagSet = new Set<string>();
+		allVersions.forEach((version) => {
+			version.tags?.forEach((tag) => tagSet.add(tag));
+		});
+		return Array.from(tagSet);
+	}, [allVersions]);
+
+	// Add a tag to a specific version
+	const addTagToVersion = useCallback((commitId: string, newTag: string) => {
+		setAllVersions((prevVersions) =>
+			prevVersions.map((version) =>
+				version.commitId === commitId
+					? {
+							...version,
+							tags: version.tags
+								? [...version.tags, newTag]
+								: [newTag],
+						}
+					: version,
+			),
+		);
+	}, []);
+
 	// Fetch a batch of 100 records from backend
 	const fetchBatchFromBackend = useCallback(
 		async (batchNumber: number) => {
@@ -143,7 +168,7 @@ export function useVersionsTable(id: string) {
 	// Handle page change
 	const handlePageChange = useCallback(
 		async (
-			event: React.MouseEvent<HTMLButtonElement> | null,
+			_event: React.MouseEvent<HTMLButtonElement> | null,
 			newPage: number,
 		) => {
 			// Check if we need to load more data first
@@ -235,5 +260,9 @@ export function useVersionsTable(id: string) {
 		handleRowsPerPageChange,
 		handleRefresh,
 		handleRestore,
+
+		// Tag-related functions
+		getAllTags,
+		addTagToVersion,
 	};
 }

@@ -6,9 +6,16 @@ export type Role =
 	| "DISCOVERABLE"
 	| "EDITOR";
 
+export interface PixelCommandComponent {
+	id?: string;
+	value?: unknown;
+	type?: string;
+	[key: string]: unknown;
+}
+
 export interface PixelCommand {
 	type: string;
-	components: any[];
+	components: PixelCommandComponent[];
 	terminal?: boolean;
 	meta?: boolean;
 }
@@ -96,6 +103,7 @@ export interface CommitVersion {
 	};
 	date: string;
 	commitMessage: string;
+	tags?: string[]; // Array of tags for this commit
 }
 
 // Interface for file saved custom event detail
@@ -110,3 +118,45 @@ export interface FileSavedEvent extends CustomEvent<FileSavedEventDetail> {
 	type: "fileSaved";
 }
 
+// Enhanced error handling types
+export interface ApiError {
+	code: string;
+	message: string;
+	details?: string;
+}
+
+export interface ValidationError {
+	field: string;
+	message: string;
+	code: string;
+}
+
+// Enhanced tag validation
+export interface TagValidationResult {
+	isValid: boolean;
+	errors: ValidationError[];
+}
+
+// Enhanced API response structure
+export interface ApiResponse<T = unknown> {
+	success: boolean;
+	data?: T;
+	error?: ApiError;
+	operationType?: string[];
+}
+
+// Interface for VersionsTable component props
+export interface VersionsTableProps {
+	/** The unique identifier of the project/app */
+	id: string;
+}
+
+// Interface for AddTagModal component props
+export interface AddTagModalProps {
+	open: boolean;
+	onClose: () => void;
+	version: CommitVersion;
+	projectId: string;
+	existingTags: string[]; // All existing tags for this app to check uniqueness
+	onTagAdded: (tag: string) => void; // Callback when tag is successfully added
+}
