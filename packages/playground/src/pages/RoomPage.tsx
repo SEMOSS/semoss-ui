@@ -1,16 +1,16 @@
 import {
 	AccessTimeOutlined,
 	DownloadRounded,
-	TuneRounded,
+	MoreVertRounded,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
-	CircularProgress,
 	Container,
 	IconButton,
+	LoadingScreen,
 	Select,
 	Stack,
 	styled,
@@ -19,13 +19,14 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
+	OptionsMenu,
 	OptionsPicker,
-	RoomApp,
-	RoomControls,
+	RoomArtifact,
 	RoomInput,
 	RoomMessage,
 } from "@/components";
 import { useChat } from "@/hooks";
+import { ResponseMessageStore } from "@/stores/message/response-message.store";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 
@@ -42,7 +43,7 @@ const StyledContent = styled(Stack)(() => ({
 
 const StyledScroll = styled("div")(() => ({
 	display: "flex",
-	flexDirection: "column-reverse",
+	// flexDirection: "column-reverse",
 	flex: 1,
 	width: "100%",
 	overflowX: "hidden",
@@ -96,18 +97,57 @@ export const RoomPage = observer(() => {
 
 			navigate("/");
 		}
-	}, [room, notification.add, navigate]);
+	}, [room, notification.add]);
+
+	// create a listener to process messages from the room
+	useEffect(() => {
+		// ignore if there is no room
+		if (!room) {
+			return;
+		}
+
+		const handleMessage = async (
+			event: MessageEvent<{
+				type: "SMSS_EXEC_TOOL";
+				tool: {
+					type: "MCP";
+					message: string;
+					id: string;
+					name: string;
+					response: string;
+				};
+			}>,
+		) => {
+			try {
+				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
+					return;
+				}
+
+				const tool = event.data.tool;
+
+				const message = room.getMessage(tool.message);
+				if (
+					!message ||
+					message instanceof ResponseMessageStore !== true
+				) {
+					return;
+				}
+
+				room.saveTool(message, tool.id, tool.name, tool.response);
+			} catch {
+				// noop
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+
+		return () => {
+			window.removeEventListener("message", handleMessage);
+		};
+	}, [room]);
 
 	if (!room || !room.isInitialized) {
-		return (
-			<StyledPage
-				direction={"column"}
-				alignItems={"center"}
-				justifyContent={"center"}
-			>
-				<CircularProgress color={"primary"} />;
-			</StyledPage>
-		);
+		return <LoadingScreen.Trigger />;
 	}
 
 	return (
@@ -151,12 +191,12 @@ export const RoomPage = observer(() => {
 							<DownloadRounded fontSize="small" />
 						</IconButton>
 					</Tooltip>
-					<Tooltip title="Toggle Chat History">
+					<Tooltip title="Toggle Chat Controls">
 						<IconButton
 							size="small"
 							color={
 								room.sidebar.isOpen &&
-								room.sidebar.options.type === "CONTROLS"
+								room.sidebar.type === "OPTIONS"
 									? "primary"
 									: "default"
 							}
@@ -164,17 +204,15 @@ export const RoomPage = observer(() => {
 								// toggle open / closed based on the state
 								if (
 									room.sidebar.isOpen &&
-									room.sidebar.options.type === "CONTROLS"
+									room.sidebar.type === "OPTIONS"
 								) {
 									room.closeSidebar();
 								} else {
-									room.openSidebar({
-										type: "CONTROLS",
-									});
+									room.openSidebar("OPTIONS");
 								}
 							}}
 						>
-							<TuneRounded fontSize="small" />
+							<MoreVertRounded fontSize="small" />
 						</IconButton>
 					</Tooltip>
 				</Stack>
@@ -195,15 +233,13 @@ export const RoomPage = observer(() => {
 					<StyledScroll>
 						<Container maxWidth="md">
 							<Stack direction={"column"} spacing={3}>
-								{room.history.map((m, mIdx) => {
-									return (
-										<RoomMessage
-											room={room}
-											message={m}
-											key={mIdx}
-										/>
-									);
-								})}
+								{room.history.map((m) => (
+									<RoomMessage
+										key={m.id}
+										room={room}
+										message={m}
+									/>
+								))}
 							</Stack>
 						</Container>
 					</StyledScroll>
@@ -285,7 +321,7 @@ export const RoomPage = observer(() => {
 					<Resizable
 						defaultSize={{
 							width:
-								room.sidebar.options.type === "APP" ? 600 : 360,
+								room.sidebar.type === "ARTIFACTS" ? 600 : 360,
 							height: "100%",
 						}}
 						minWidth={280}
@@ -304,11 +340,19 @@ export const RoomPage = observer(() => {
 							paddingBottom: "8px",
 						}}
 					>
-						{room.sidebar.options.type === "CONTROLS" && (
-							<RoomControls room={room} />
+						{room.sidebar.type === "OPTIONS" && (
+							<OptionsMenu
+								options={room.options}
+								setOptions={(o) => {
+									room.setOptions(o);
+								}}
+								onClose={() => {
+									room.closeSidebar();
+								}}
+							/>
 						)}
-						{room.sidebar.options.type === "APP" && (
-							<RoomApp room={room} />
+						{room.sidebar.type === "ARTIFACTS" && (
+							<RoomArtifact room={room} />
 						)}
 					</Resizable>
 				)}

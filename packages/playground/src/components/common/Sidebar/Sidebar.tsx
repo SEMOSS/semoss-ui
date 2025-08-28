@@ -132,11 +132,6 @@ const StyledList = styled(List)(() => ({
 	padding: 0,
 }));
 
-const StyledListItem = styled(List.Item)(({ theme }) => ({
-	gap: theme.spacing(1),
-	padding: theme.spacing(1),
-}));
-
 const _StyledListItemButton = styled(List.ItemButton)(({ theme }) => ({
 	flexGrow: "0",
 	gap: theme.spacing(1),
@@ -148,7 +143,7 @@ const _StyledListItemIcon = styled(List.Icon)(() => ({
 	minWidth: "auto",
 }));
 
-const StyledLink = styled(Link)(({ theme }) => ({
+const StyledLink = styled(Link)(() => ({
 	color: "inherit",
 	textDecoration: "none",
 	cursor: "pointer",
@@ -286,20 +281,10 @@ export const Sidebar = observer(() => {
 							New Chat
 						</StyledButton>
 					</StyledLink>
+					<Typography variant="subtitle2">Chats</Typography>
 					<StyledList dense={true} aria-label="open chat rooms">
 						<Stack direction={"column"} spacing={2}>
-							<StyledListItem>
-								<List.ItemText>Today</List.ItemText>
-							</StyledListItem>
-							{chat.todayRooms.map((roomId) => {
-								return (
-									<SidebarItem key={roomId} roomId={roomId} />
-								);
-							})}
-							<StyledListItem>
-								<List.ItemText>Previous</List.ItemText>
-							</StyledListItem>
-							{chat.previousRooms.map((roomId) => {
+							{chat.order.map((roomId) => {
 								return (
 									<SidebarItem key={roomId} roomId={roomId} />
 								);
@@ -340,7 +325,7 @@ export const Sidebar = observer(() => {
 							</Typography>
 						</Stack>
 						<IconButton
-							id="settings-control"
+							id={"settings-control"}
 							aria-controls={
 								isSettingsMenuOpen ? "settings-menu" : undefined
 							}
@@ -356,7 +341,7 @@ export const Sidebar = observer(() => {
 							<StyledMoreVertOutlined />
 						</IconButton>
 						<Menu
-							id="settings-menu"
+							id={"settings-menu"}
 							// MenuListProps={{
 							//     'aria-labelledby': 'long-button',
 							// }}
