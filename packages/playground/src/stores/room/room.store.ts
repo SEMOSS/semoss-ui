@@ -670,7 +670,7 @@ roomId = ["${this._store.roomId}"],
 ${message.id ? `parentMessageId=["${message.id}"],` : ""}
 toolId = ["${toolId}"],
 toolName=["${toolName}"],
-tool_execution_response=["${toolResponse}"]
+toolExecutionResponse=["${toolResponse}"]
 );`,
 			);
 
