@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	CircularProgress,
@@ -9,6 +8,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { addGitTag } from "@/api";
 import { useWorkspace } from "@/hooks";
 import type { AddTagModalProps } from "@/types/types";
 
@@ -161,14 +161,14 @@ export const AddTagModal: React.FC<AddTagModalProps> = ({
 		setIsLoading(true);
 
 		try {
-			const response = await runPixel(
-				`GitAddTag(project='${projectId}', commitId='${version.commitId}', tags='${trimmedTagName}')`,
+			const response = await addGitTag(
+				projectId,
+				version.commitId,
+				trimmedTagName,
 				workspace.insightId,
 			);
 
-			const { operationType } = response.pixelReturn[0];
-
-			if (operationType.some((type: string) => type.includes("ERROR"))) {
+			if (response.hasError) {
 				notification.add({
 					color: "error",
 					message: `Failed to add tag "${trimmedTagName}"`,
