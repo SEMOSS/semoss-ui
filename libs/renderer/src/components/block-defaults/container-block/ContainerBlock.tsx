@@ -103,6 +103,7 @@ export const ContainerBlock: BlockComponent = observer(({ id }) => {
 			style={{
 				...data.style,
 				display: "flex",
+				overflow: "visible",
 				overflowWrap: "anywhere", // text that overflows container
 				boxShadow: buildBoxShadowFromParts(data.boxShadowParts),
 			}}
