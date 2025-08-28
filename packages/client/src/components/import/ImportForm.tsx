@@ -97,16 +97,16 @@ export const ImportForm = (props) => {
 		watch,
 		setValue,
 		getValues,
-		setFocus,
+		setError,
 		formState: { isValid },
 	} = useForm({
-		mode: "onSubmit",
+		mode: "onBlur",
 		defaultValues: defaultFields.reduce((acc, field) => {
 			acc[field.fieldName] = field.defaultValue || "";
 			return acc;
 		}, {}),
 	});
-	const [focusedField, setFocusedField] = useState("");
+	const _lastField = useRef({lastFocussedField: "", lastFocussedValue:""});
 
 	/** Used to Trigger useEffect anytime these vals change */
 	const fieldsToWatch = useMemo(() => {
@@ -677,7 +677,8 @@ export const ImportForm = (props) => {
 
 		//if the name already exists then the engine name is not valid
 		if (output.exists) {
-			setFocus(field.fieldName);
+			// setFocus(field.fieldName);
+			setError(field.fieldName, {message: field.rules.custom.message, type: 'checkField'});
 			return false;
 		}
 
@@ -727,11 +728,12 @@ export const ImportForm = (props) => {
 										validate: {
 											...(val.rules?.custom ? {
 												checkField: async (fieldVal) => {
-													if(focusedField !== val.fieldName) return;
-													return validateFormField(
-														val,
-														fieldVal,
-													);
+													if(_lastField.current.lastFocussedField === val.fieldName) {
+														return validateFormField(
+															val,
+															fieldVal,
+														);
+													}
 												}
 											} : {})
 										},
@@ -770,12 +772,6 @@ export const ImportForm = (props) => {
 														field.onChange(value);
 														checkForDynamicFieldChange();
 													}}
-													onFocus={() => {
-														setFocusedField(val.fieldName);
-													}}
-													onBlur={() => {
-														setFocusedField("");
-													}}
 													// InputProps={{
 													//     startAdornment:
 													//         val.helperText ? (
@@ -807,6 +803,13 @@ export const ImportForm = (props) => {
 													error={invalid}
 													inputProps={{
 														"data-testid": `importForm-textField-${val.fieldName}`,
+														onFocus: () =>{
+															_lastField.current = {
+																	..._lastField.current,
+																	lastFocussedField: val.fieldName,
+																	lastFocussedValue: field.value
+																};
+														}
 													}}
 													{...field}
 												></TextField>
@@ -836,10 +839,11 @@ export const ImportForm = (props) => {
 														"data-testid": `importForm-textField-${val.fieldName}`,
 													}}
 													onFocus={() => {
-														setFocusedField(val.fieldName);
-													}}
-													onBlur={() => {
-														setFocusedField("");
+														_lastField.current = {
+																..._lastField.current,
+																lastFocussedField: val.fieldName,
+																lastFocussedValue: field.value
+															};
 													}}
 													helperText={val.helperText}
 												></TextField>
@@ -868,12 +872,13 @@ export const ImportForm = (props) => {
 														);
 													}}
 													SelectProps={{
-															onFocus: ()=>{
-																setFocusedField(val.fieldName);
+															onFocus: () => {
+																_lastField.current = {
+																		..._lastField.current,
+																		lastFocussedField: val.fieldName,
+																		lastFocussedValue: field.value
+																	};
 															},
-															onBlur: () => {
-																setFocusedField("");
-															}
 													}}
 													InputProps={{
 														"data-testid": `importForm-selectField-${val.fieldName}`,
@@ -927,10 +932,11 @@ export const ImportForm = (props) => {
 														"data-testid": `importForm-textField-${val.fieldName}`,
 													}}
 													onFocus={() => {
-														setFocusedField(val.fieldName);
-													}}
-													onBlur={() => {
-														setFocusedField("");
+														_lastField.current = {
+																..._lastField.current,
+																lastFocussedField: val.fieldName,
+																lastFocussedValue: field.value
+															};
 													}}
 												></TextField>
 											);
@@ -955,7 +961,11 @@ export const ImportForm = (props) => {
 															field.onChange(
 																newValues,
 															);
-															setFocusedField(val.fieldName);
+															_lastField.current = {
+																..._lastField.current,
+																lastFocussedField: val.fieldName,
+																lastFocussedValue: field.value
+															};
 														}}
 													/>
 												</StyledDropzoneField>
