@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
 import type { Engine } from "@/types";
-import { ChatRoom } from "./chat.room";
+import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
@@ -21,7 +21,7 @@ interface ChatStoreInterface {
 	/**
 	 * Map of id to channel
 	 */
-	rooms: Record<string, ChatRoom>;
+	rooms: Record<string, RoomStore>;
 
 	/**
 	 * Order of the rooms
@@ -38,20 +38,10 @@ interface ChatStoreInterface {
 		/** The current model */
 		selected: string;
 	};
-
-	/**
-	 * Today's chats
-	 */
-	today: string[];
-
-	/**
-	 * Previous chats
-	 */
-	previousChats: string[];
 }
 
 /**
- * Internal state management of the builder object
+ * Manage the chat
  */
 export class ChatStore {
 	private _actions: Insight["actions"];
@@ -65,8 +55,6 @@ export class ChatStore {
 			options: [],
 			selected: "",
 		},
-		today: [],
-		previousChats: [],
 	};
 
 	constructor(actions: Insight["actions"]) {
@@ -112,7 +100,7 @@ export class ChatStore {
 	 *
 	 * @param roomId - message to get
 	 */
-	getRoom(roomId: string): ChatRoom | null {
+	getRoom(roomId: string): RoomStore | null {
 		return this._store.rooms[roomId];
 	}
 
@@ -121,24 +109,6 @@ export class ChatStore {
 	 */
 	get models() {
 		return this._store.models;
-	}
-
-	/**
-	 * Get available models from the backend
-	 */
-
-	/**
-	 * Get Today's chats
-	 */
-	get todayRooms() {
-		return this._store.today;
-	}
-
-	/**
-	 * Get Previous chats
-	 */
-	get previousRooms() {
-		return this._store.previousChats;
 	}
 
 	/**
@@ -167,9 +137,9 @@ export class ChatStore {
 	/**
 	 * Create a new room instance
 	 */
-	newRoom = (roomId: string): ChatRoom => {
+	newRoom = (roomId: string): RoomStore => {
 		// create a new room
-		const room = new ChatRoom(roomId);
+		const room = new RoomStore(roomId);
 
 		// store the room
 		this._store.rooms[roomId] = room;
@@ -183,7 +153,7 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	createRoom = async (modelId: string, name: string): Promise<ChatRoom> => {
+	createRoom = async (modelId: string, name: string): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -209,8 +179,6 @@ export class ChatStore {
 			// get the roomId
 			const roomId = output.roomId;
 
-			const today = new Date();
-
 			// register the room
 			const room = this.newRoom(roomId);
 
@@ -218,15 +186,12 @@ export class ChatStore {
 			room.setModel(modelId);
 			room.setMetadata({
 				name: name,
-				dateCreated: today.toDateString(),
+				dateCreated: new Date().toDateString(),
 			});
 
 			runInAction(() => {
 				// add to the front
 				this._store.order.unshift(roomId);
-
-				// add to today's chats front
-				this._store.today.unshift(roomId);
 			});
 
 			// return the room
@@ -247,18 +212,6 @@ export class ChatStore {
 			const idx = this._store.order.indexOf(roomId);
 			if (idx > -1) {
 				this._store.order.splice(idx, 1);
-			}
-
-			// remove from the today's chat room
-			const tIdx = this._store.today.indexOf(roomId);
-			if (this._store.today.indexOf(roomId) > -1) {
-				this._store.today.splice(tIdx, 1);
-			}
-
-			// remove from the previous chat room
-			const pIdx = this._store.previousChats.indexOf(roomId);
-			if (pIdx > -1) {
-				this._store.previousChats.splice(pIdx, 1);
 			}
 
 			// delete the room
@@ -330,8 +283,6 @@ export class ChatStore {
 
 			// get the info
 			const order = [];
-			const previousRooms = [];
-			const todayRooms = [];
 
 			// create room objects for each one. This will not instantiate it.
 			for (const r of output) {
@@ -348,30 +299,13 @@ export class ChatStore {
 					dateCreated: r.DATE_CREATED,
 				});
 
-				// parse current date
-				const today = new Date();
-				today.setHours(0, 0, 0, 0);
-
-				// parse room date
-				const roomDate = new Date(r.DATE_CREATED);
-				roomDate.setHours(0, 0, 0, 0);
-
-				// decide where to push - today's chats or previous chats
-				if (roomDate.getTime() === today.getTime()) {
-					todayRooms.push(r.ROOM_ID);
-				} else {
-					previousRooms.push(r.ROOM_ID);
-				}
-
 				// store the order
 				order.push(r.ROOM_ID);
 			}
 
 			runInAction(() => {
-				// clear the room info
+				// set the order
 				this._store.order = order;
-				this._store.previousChats = previousRooms;
-				this._store.today = todayRooms;
 			});
 		} finally {
 			this.setIsLoading(false);
