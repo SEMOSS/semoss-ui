@@ -62,7 +62,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 	 * Add Blocks at runtime
 	 */
 	useEffect(() => {
-		let list;
+		let list: string | [] = [];
 		if (typeof data.source === "string") {
 			try {
 				list = JSON.parse(data.source);
@@ -88,6 +88,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 					});
 				});
 
+				// biome-ignore lint/correctness/noUnusedFunctionParameters: though it is not used, to extract index we need it
 				list.forEach(async (j, i) => {
 					// Skip the first
 					if (i === 0) return;
@@ -101,20 +102,6 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 							listeners: toJS(block.listeners),
 							slots: {},
 						};
-
-						// Iterate through all listeners
-						// for (const listener in blockJson.listeners) {
-						// 	if (blockJson.listeners[listener].order) {
-						// 		 // Iterate through the order array of messages
-						// 		blockJson.listeners[listener].order.forEach((message: any) => {
-						// 			// Check for the "MODIFY_VARIABLE" message
-						// 			if (message.message === "MODIFY_VARIABLE") {
-						// 				// Update the blockId in the payload
-						// 				message.payload.blockId = id;
-						// 			}
-						// 		});
-						// 	}
-						// }
 
 						// generate the slots
 						for (const slot in block.slots) {
@@ -145,31 +132,54 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 						},
 					});
 
-					// TODO:
-					// Go through new block and fix listenerers for the block
-					// as well as all slots of the block along with their slots (recursive)
-					// console.log("new block id", newBlockId)
-					// const newBlock = state.getBlock(newBlockId as string)
-					// console.log("NEW_BLOCK", newBlock)
+					const fixListeners = (id: string) => {
+						const block = state.blocks[id];
 
-					// for (const listener in newBlock.listeners) {
-					// 	if (newBlock.listeners[listener].order) {
+						for (const listener in block.listeners) {
+							if (block.listeners[listener].order) {
+								// Iterate through the order array of messages
+								block.listeners[listener].order.forEach(
+									async (message: ListenerActions) => {
+										// Check for the "MODIFY_VARIABLE" message
+										if (
+											message.message ===
+											"MODIFY_VARIABLE"
+										) {
+											// Update the blockId in the payload
+											message.payload.blockId = id;
 
-					// 		// TODO: You will have to do a state.dispatch(newBlockId, SET_LISTENER)
-					// 		newBlock.listeners[listener].order.map((message: any) => {
-					// 			// Check for the "MODIFY_VARIABLE" message
-					// 			if (message.message === "MODIFY_VARIABLE") {
-					// 				// Update the blockId in the payload
-					// 				message.payload.blockId = id;
-					// 			}
-					// 		});
-					// 	}
-					// }
-
-					// // TODO: This will need to be recursive
-					// newBlocks.slots.forEach((blockId) => {
-					// 	// TODO: You will have to do a state.dispatch(newBlockId, SET_LISTENER)
-					// })
+											await state.dispatch({
+												message:
+													ActionMessages.SET_LISTENER,
+												payload: {
+													id: id,
+													listener: listener,
+													type: block.listeners[
+														listener
+													].type,
+													actions:
+														block.listeners[
+															listener
+														].order,
+												},
+											});
+										}
+									},
+								);
+							}
+						}
+						// Now do the same for all slots recursively
+						for (const slot in block.slots) {
+							if (block.slots[slot]) {
+								block.slots[slot].children.forEach(
+									(childId) => {
+										fixListeners(childId);
+									},
+								);
+							}
+						}
+					};
+					await fixListeners(newBlockId as string);
 
 					newIds.push(newBlockId);
 				});

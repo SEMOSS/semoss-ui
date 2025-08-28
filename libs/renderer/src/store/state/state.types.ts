@@ -5,6 +5,7 @@ import type {
 	DispatchEventAction,
 	DispatchOpenEventAction,
 	DispatchOutputsEventAction,
+	ModifyVariableAction,
 	RunCellAction,
 	RunQueryAction,
 } from "./state.actions";
@@ -53,7 +54,7 @@ export type Variable =
 			type: Exclude<VariableType, "cell">; // Exclude 'cell' from VariableType for this case
 			to?: string;
 			cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
-			value?: any;
+			value?: unknown;
 			isInput?: boolean;
 			isOutput?: boolean;
 	  }
@@ -69,7 +70,7 @@ export type VariableWithId =
 	| ({
 			type: Exclude<VariableType, "cell">;
 			to?: string;
-			value?: any;
+			value?: unknown;
 			isInput?: boolean;
 			isOutput?: boolean;
 			cellId?: string;
@@ -262,7 +263,8 @@ export type ListenerActions =
 	| DispatchEventAction
 	| DispatchOutputsEventAction
 	| RunCellAction
-	| DispatchOpenEventAction;
+	| DispatchOpenEventAction
+	| ModifyVariableAction;
 
 /**
  * Cell Definition
