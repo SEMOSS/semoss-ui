@@ -193,7 +193,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 				if (action === null) {
 					return;
 				}
-				await state.dispatchEventAction(action, actions.type);
+				await state.dispatch(action, actions.type);
 			}
 		};
 

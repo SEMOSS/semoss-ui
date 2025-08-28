@@ -1,4 +1,6 @@
 import { Add, Delete } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { useEffect, useState } from "react";
 import {
 	Box,
 	Button,
@@ -6,9 +8,7 @@ import {
 	Stack,
 	TextField,
 	Typography,
-} from "@mui/material";
-import { observer } from "mobx-react-lite";
-import { useEffect, useState } from "react";
+} from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 
 interface ArraySettingsProps {
