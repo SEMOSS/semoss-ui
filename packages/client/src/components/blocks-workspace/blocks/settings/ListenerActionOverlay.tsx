@@ -18,6 +18,7 @@ import {
 	useEventActionData,
 	validateForm,
 } from "./block-events";
+import { RunMCPSelector } from "./block-events/RunMCPSelector";
 
 const StyledSpacer = styled("div")(() => ({
 	flex: 1,
@@ -56,6 +57,7 @@ export const ListenerActionOverlay = observer(
 		const payload = watch("payload");
 		const queryId = watch("payload.queryId");
 		const destinationType = watch("payload.destinationType");
+		const name = watch("payload.name");
 
 		// Data fetching
 		const { queries, cells, pages } = useEventActionData(queryId);
@@ -130,6 +132,7 @@ export const ListenerActionOverlay = observer(
 										ActionMessages.RUN_CELL,
 										ActionMessages.DISPATCH_EVENT,
 										ActionMessages.DISPATCH_OPEN_EVENT,
+										ActionMessages.RUN_MCP_TOOL,
 									].map((action) => (
 										<Select.Item
 											key={action}
@@ -170,6 +173,14 @@ export const ListenerActionOverlay = observer(
 								setValue={setValue}
 								destinationType={destinationType}
 								pages={pages}
+							/>
+						)}
+
+						{message === ActionMessages.RUN_MCP_TOOL && (
+							<RunMCPSelector
+								control={control}
+								setValue={setValue}
+								name={name}
 							/>
 						)}
 					</Stack>

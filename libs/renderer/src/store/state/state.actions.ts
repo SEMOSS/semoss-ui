@@ -48,6 +48,7 @@ export enum ActionMessages {
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
+	RUN_MCP_TOOL = "RUN_MCP_TOOL",
 }
 
 export type Actions =
@@ -75,7 +76,8 @@ export type Actions =
 	| RenameVariableAction
 	| EditVariableAction
 	| DeleteVariableAction
-	| SetSheetExecutionOrderAction;
+	| SetSheetExecutionOrderAction
+	| RunMCPToolAction;
 
 /**
  * All
@@ -342,5 +344,15 @@ export interface RunCellAction extends Action {
 	payload: {
 		queryId: string;
 		cellId: string;
+	};
+}
+
+export interface RunMCPToolAction extends Action {
+	message: ActionMessages.RUN_MCP_TOOL;
+	payload: {
+		name: string;
+		parameters: {
+			[key: string]: unknown;
+		};
 	};
 }

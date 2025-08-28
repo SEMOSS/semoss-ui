@@ -306,3 +306,59 @@ export type CellConfig<D extends CellDef = CellDef> = {
 		parameters: D["parameters"],
 	) => string | string[];
 };
+
+export interface MCPToolConfig {
+	/**
+	 * proper python function name
+	 */
+	name: string;
+
+	/**
+	 * title of function without syntax
+	 */
+	title: string;
+
+	/**
+	 * description of function
+	 */
+	description: string;
+
+	/**
+	 * Schema for the inputs/parameters that get fed into tool calling
+	 */
+	inputSchema: {
+		/**
+		 * meta surrounding each param/input
+		 */
+		properties: {
+			[key: string]: {
+				/**
+				 * title of param, actual python
+				 */
+				title: string;
+				/**
+				 * description of param
+				 */
+				description: string;
+				/**
+				 * data type param expects
+				 */
+				type: string;
+			};
+		};
+		/**
+		 * required params to pass to the tool
+		 */
+		required: string[];
+
+		/**
+		 * BE - ask what this is for
+		 */
+		title: string;
+
+		/**
+		 * BE - ask what this is for
+		 */
+		type: string;
+	};
+}

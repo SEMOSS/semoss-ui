@@ -24,12 +24,12 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 		slots: {
 			content: {
 				name: "content",
-				children: ["container--1"],
+				children: ["container-1"],
 			},
 		},
 	},
-	"container--1": {
-		id: "container--1",
+	"container-1": {
+		id: "container-1",
 		widget: "container",
 		parent: {
 			id: "page-1",
@@ -54,15 +54,15 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 		slots: {
 			children: {
 				name: "children",
-				children: ["text--1"],
+				children: ["text-1"],
 			},
 		},
 	},
-	"text--1": {
-		id: "text--1",
+	"text-1": {
+		id: "text-1",
 		widget: "text",
 		parent: {
-			id: "container--1",
+			id: "container-1",
 			slot: "children",
 		},
 		data: {

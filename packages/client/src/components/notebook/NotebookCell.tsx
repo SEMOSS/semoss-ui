@@ -378,7 +378,7 @@ export const NotebookCell = observer(
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
 					payload: {
-						id: `${queryId}--${newCellId}`,
+						id: `${queryId}_${newCellId}`,
 						type: "cell",
 						to: queryId,
 						cellId: newCellId,

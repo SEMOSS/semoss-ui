@@ -140,7 +140,8 @@ export const Renderer = observer((props: RendererProps) => {
 					insightId: insightId,
 					state: s,
 					cellRegistry: DefaultCells,
-					aiGenerationModel: aiGenerationModel;
+					aiGenModelId: aiGenerationModel,
+					projectId: appId,
 				});
 
 				// set it

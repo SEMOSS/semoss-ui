@@ -186,37 +186,37 @@ export const BlocksWorkspaceActions = observer(() => {
 		// convert the state to json
 		const json = state.toJSON();
 
-		let updatedJson = json;
+		const updatedJson = json;
 
 		// John Start ---------------------------------------------
 
 		// TODO: PICK BACK UP ON THIS
-		// BELOW RENAMES VARIABLES FINE IN PYTHON SYTAX
+		// BELOW RENAMES VARIABLES FINE IN PYTHON SYNTAX
 
-		const suggestedChanges = await state.processRename();
-		suggestedChanges;
-		debugger;
-		let stringified = JSON.stringify(json);
+		// const suggestedChanges = await state.processRename();
+		// suggestedChanges;
+		// debugger;
+		// let stringified = JSON.stringify(json);
 
-		// Go through whole json and replace
-		for (const [key, value] of Object.entries(suggestedChanges)) {
-			// The regex pattern matches the old variable name with an optional . and any characters after it.
-			const pattern = new RegExp(`{{${key}(.*?)}}`, "g");
-			stringified = stringified.replaceAll(pattern, `{{${value}$1}}`);
-		}
+		// // Go through whole json and replace
+		// for (const [key, value] of Object.entries(suggestedChanges)) {
+		// 	// The regex pattern matches the old variable name with an optional . and any characters after it.
+		// 	const pattern = new RegExp(`{{${key}(.*?)}}`, "g");
+		// 	stringified = stringified.replaceAll(pattern, `{{${value}$1}}`);
+		// }
 
-		updatedJson = JSON.parse(stringified);
+		// updatedJson = JSON.parse(stringified);
 
-		Object.entries(suggestedChanges).forEach(
-			([key, value]: [string, string]) => {
-				updatedJson.variables[value] = updatedJson.variables[key];
+		// Object.entries(suggestedChanges).forEach(
+		// 	([key, value]: [string, string]) => {
+		// 		updatedJson.variables[value] = updatedJson.variables[key];
 
-				delete updatedJson.variables[key];
-			},
-		);
+		// 		delete updatedJson.variables[key];
+		// 	},
+		// );
 
-		debugger;
-		console.log(updatedJson);
+		// debugger;
+		// console.log(updatedJson);
 
 		// return
 
@@ -242,18 +242,6 @@ export const BlocksWorkspaceActions = observer(() => {
 					workspace.appId
 				}"], json=["<encode>${JSON.stringify(updatedJson)}</encode>"]);`,
 			);
-
-			// save the json
-			const saveMCP = true;
-			if (saveMCP) {
-				const r = await monolithStore.runQuery<[true]>(
-					`MakePythonMCP(project=["${
-						workspace.appId
-					}"], model=["9adae906-f585-4a8a-b932-4e7237f81b8d"])`,
-				);
-
-				debugger;
-			}
 
 			if (errors.length > 0) {
 				throw new Error(errors.join(""));

@@ -231,6 +231,8 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 					insightId: insightId,
 					state: state,
 					cellRegistry: DefaultCells,
+					projectId: workspace.appId,
+					aiGenModelId: "",
 				});
 
 				// set it

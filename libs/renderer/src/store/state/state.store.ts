@@ -27,6 +27,7 @@ import type {
 	CellRegistry,
 	Frame,
 	ListenerActions,
+	MCPToolConfig,
 	SerializedState,
 	Variable,
 	VariableType,
@@ -60,6 +61,15 @@ interface StateStoreInterface {
 
 	/** Order of how we consume app as API */
 	executionOrder: string[];
+
+	/** project id to associate */
+	projectId?: string;
+
+	/** Tool config used for block events */
+	tools?: MCPToolConfig[];
+
+	/** AI Gen model */
+	aiGenModelId: string;
 }
 
 export class StateStoreConfig {
@@ -74,6 +84,12 @@ export class StateStoreConfig {
 
 	/** Cells registered to the insight */
 	cellRegistry: CellRegistry;
+
+	/** project id to associate */
+	projectId?: string;
+
+	/** ai gen model id */
+	aiGenModelId?: string;
 }
 
 /**
@@ -90,6 +106,8 @@ export class StateStore {
 		cellRegistry: {},
 		variables: {},
 		executionOrder: [],
+		tools: [],
+		aiGenModelId: "",
 	};
 
 	/**
@@ -122,6 +140,45 @@ export class StateStore {
 
 		// set the initial state after reactive to invoke it
 		this.setState(config.state);
+
+		// Set the tools in order to enable tool calling with events
+		this._store.tools = [
+			{
+				name: "get_diagnosis",
+				title: "Get Diagnosis",
+				description:
+					"Generates a short (â‰¤20 character) provisional diagnosis based on two symptom descriptions using the SEMoss LLM API.\n\nArgs:\n    symptoms_1 (str): Symptom set or description, as a string.\n    symptoms_2 (str): Additional symptom set or description, as a string.\n\nReturns:\n    str: The LLM's suggested diagnosis as a short sentence.",
+				inputSchema: {
+					properties: {
+						symptoms_1: {
+							title: "Symptoms 1",
+							description:
+								"Symptom set or description, as a string.",
+							type: "string",
+						},
+						symptoms_2: {
+							title: "Symptoms 2",
+							description:
+								"Additional symptom set or description, as a string.",
+							type: "string",
+						},
+					},
+					required: ["symptoms_1", "symptoms_2"],
+					title: "get_diagnosis_Arguments",
+					type: "object",
+				},
+			},
+		];
+
+		// project id used for tool calling
+		if (config.projectId) {
+			this._store.projectId = config.projectId;
+		}
+
+		// model to use for ai generation
+		if (config.aiGenModelId) {
+			this._store.aiGenModelId = config.aiGenModelId;
+		}
 	}
 
 	/**
@@ -181,6 +238,13 @@ export class StateStore {
 	 */
 	get cellRegistry() {
 		return this._store.cellRegistry;
+	}
+
+	/**
+	 * gets mcp tools for playground execution
+	 */
+	get tools() {
+		return this._store.tools;
 	}
 
 	/**
@@ -544,6 +608,18 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
+			} else if (ActionMessages.RUN_MCP_TOOL === action.message) {
+				const { name, parameters } = action.payload;
+
+				// If callback is provided, run as async with promise
+				if (callbackMessage) {
+					return (async () => {
+						await this.runMCPTool(name, parameters);
+						return true;
+					})();
+				} else {
+					return this.runMCPTool(name, parameters);
+				}
 			}
 		} catch (e) {
 			console.error(e);
@@ -896,10 +972,10 @@ export class StateStore {
 	 */
 	private generatePageId(): string {
 		let pageNum = 2;
-		while (this._store.blocks[`page--${pageNum}`]) {
+		while (this._store.blocks[`page-${pageNum}`]) {
 			pageNum++;
 		}
-		return `page--${pageNum}`;
+		return `page-${pageNum}`;
 	}
 
 	/**
@@ -913,12 +989,12 @@ export class StateStore {
 		let blockNum = 1;
 		while (
 			this._store.blocks[
-				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
+				`${isCommunityBlock ? "com_" : ""}${widget}-${blockNum}`
 			]
 		) {
 			blockNum++;
 		}
-		return `${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`;
+		return `${isCommunityBlock ? "com_" : ""}${widget}-${blockNum}`;
 	}
 
 	/**
@@ -1113,6 +1189,29 @@ export class StateStore {
 			deps.push(match[1]);
 		}
 		return deps;
+	};
+
+	/**
+	 * Used for LLM calls to help
+	 * @param id
+	 */
+	setAIGenModel = (id) => {
+		this._store.aiGenModelId = id;
+	};
+
+	/**
+	 * Set Tools that are available for app
+	 */
+	setMCPTools = (tools: MCPToolConfig[]) => {
+		this._store.tools = tools;
+	};
+
+	/**
+	 * Set id of the app we are looking at
+	 * @param id
+	 */
+	setAppId = (id) => {
+		this._store.projectId = id;
 	};
 
 	/**
@@ -1653,7 +1752,7 @@ export class StateStore {
 				this.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
 					payload: {
-						id: `${queryId}--${cId}`,
+						id: `${queryId}_${cId}`,
 						type: "cell",
 						to: queryId,
 						cellId: cId,
@@ -1855,6 +1954,20 @@ export class StateStore {
 		s._update(path, value);
 	};
 
+	private runMCPTool = (
+		name: string,
+		parameters: Record<string, unknown>,
+	): void | Promise<boolean> => {
+		let pixel = `RunMCPTool(project="${this._store.projectId}", function="${name}", paramValues=[${JSON.stringify(parameters)}]);`;
+
+		pixel = this.flattenVariable(pixel);
+
+		console.log("pixel after flatten", pixel);
+		const resp = runPixel(pixel);
+
+		console.log(resp);
+	};
+
 	/**
 	 * Run the cell
 	 * @param queryId - id of the updated query
@@ -1965,7 +2078,6 @@ export class StateStore {
 
 					return;
 				}
-				4;
 			} else if (destinationType === "External") {
 				window.location.href = destination;
 			}

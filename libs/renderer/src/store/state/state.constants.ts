@@ -35,4 +35,5 @@ export const ACTIONS_DISPLAY = {
 	[ActionMessages.RUN_CELL]: "Run Cell",
 	[ActionMessages.DISPATCH_EVENT]: "Dispatch Event",
 	[ActionMessages.DISPATCH_OPEN_EVENT]: "Navigate",
+	[ActionMessages.RUN_MCP_TOOL]: "Run MCP Tool",
 };

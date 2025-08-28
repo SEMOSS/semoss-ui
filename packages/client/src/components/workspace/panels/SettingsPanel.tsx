@@ -10,6 +10,7 @@ import {
 	Tooltip,
 	useNotification,
 } from "@semoss/ui";
+import { PythonIcon } from "@/assets/icons";
 import { AppSettings } from "@/components/app";
 import {
 	MembersTable,
@@ -87,6 +88,40 @@ export const SettingsPanel = () => {
 		}
 	};
 
+	/**
+	 * Creates necessary file to enable tool calling for Playground
+	 */
+	const makePythonMCP = async () => {
+		// turn on loading
+		workspace.setLoading(true);
+
+		try {
+			const { errors } = await monolithStore.runQuery<[true]>(
+				`MakePythonMCP(project=["${
+					workspace.appId
+				}"], model=["9adae906-f585-4a8a-b932-4e7237f81b8d"])`,
+			);
+
+			if (errors.length > 0) {
+				throw new Error(errors.join(""));
+			}
+
+			notification.add({
+				color: "success",
+				message: "Successfully made app MCP compatible",
+			});
+		} catch (e) {
+			console.error(e);
+
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			workspace.setLoading(false);
+		}
+	};
+
 	return (
 		<Panel>
 			<SettingsContext.Provider
@@ -113,6 +148,18 @@ export const SettingsPanel = () => {
 								justifyContent={"flex-end"}
 								direction={"row"}
 							>
+								<div>
+									<Tooltip title={"Make MCP"}>
+										<IconButton
+											color="inherit"
+											onClick={() => {
+												makePythonMCP();
+											}}
+										>
+											<PythonIcon />
+										</IconButton>
+									</Tooltip>
+								</div>
 								<div>
 									<Tooltip title={"Export"}>
 										<IconButton

@@ -34,7 +34,7 @@ export const BLOCKS = {
             "slots": {
                 "content": {
                     "children": [
-                        "text--1967"
+                        "text-1967"
                     ],
                     "name": "content"
                 }
@@ -68,8 +68,8 @@ export const BLOCKS = {
             },
             "id": "page-1"
         },
-        "text--1967": {
-            "id": "text--1967",
+        "text-1967": {
+            "id": "text-1967",
             "widget": "text",
             "parent": {
                 "id": "page-1",
@@ -83,7 +83,7 @@ export const BLOCKS = {
                 },
                 "text": "Add Blocks",
                 "variant": "h1",
-                "route": "text--1967"
+                "route": "text-1967"
             },
             "listeners": {},
             "slots": {}

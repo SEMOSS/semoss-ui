@@ -20,6 +20,10 @@ export const getDefaultFormValues = (
 			message: ActionMessages.DISPATCH_OPEN_EVENT,
 			payload: { destinationType: "", destination: "" },
 		},
+		[ActionMessages.RUN_MCP_TOOL]: {
+			message: ActionMessages.RUN_MCP_TOOL,
+			payload: { name: "", parameters: {} },
+		},
 	};
 
 	return formConfigs[message] || formConfigs[ActionMessages.RUN_QUERY];
@@ -39,6 +43,8 @@ export const validateForm = (
 			return !!payload.name;
 		case ActionMessages.DISPATCH_OPEN_EVENT:
 			return !!payload.destinationType && !!payload.destination;
+		case ActionMessages.RUN_MCP_TOOL:
+			return !!payload.name;
 		default:
 			return false;
 	}
