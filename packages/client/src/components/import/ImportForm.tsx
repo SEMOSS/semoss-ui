@@ -798,6 +798,7 @@ export const ImportForm = (props) => {
 													}
 													label={val.label}
 													disabled={val.disabled}
+													data-testid={`field-${val.fieldName}`}
 													value={
 														field.value
 															? field.value
@@ -1000,6 +1001,7 @@ export const ImportForm = (props) => {
 														multiple={false}
 														value={field.value}
 														disabled={false}
+														data-testid={`importForm-filedropzone-${val.fieldName}`}
 														onChange={(
 															newValues,
 														) => {
@@ -1097,7 +1099,7 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-textField-${val.fieldName}`,
+																	"data-testid": `importForm-advancedtextField-${val.fieldName}`,
 																}}
 															></TextField>
 														);
@@ -1137,7 +1139,7 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-textField-${val.fieldName}`,
+																	"data-testid": `importForm-advancedtextField-${val.fieldName}`,
 																}}
 															></TextField>
 														);
@@ -1177,7 +1179,7 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-textField-${val.fieldName}`,
+																	"data-testid": `importForm-advancedtextField-${val.fieldName}`,
 																}}
 															></TextField>
 														);
@@ -1203,6 +1205,7 @@ export const ImportForm = (props) => {
 																		? field.value
 																		: false
 																}
+																data-testid={`importForm-advancedcheckbox-${val.fieldName}`}
 																onChange={(
 																	value,
 																) =>
@@ -1245,6 +1248,7 @@ export const ImportForm = (props) => {
 																helperText={
 																	val.helperText
 																}
+																data-testid={`importForm-advancedselect-${val.fieldName}`}
 															>
 																{val.options.options.map(
 																	(
@@ -1279,6 +1283,7 @@ export const ImportForm = (props) => {
 																	field.value
 																}
 																disabled={false}
+																data-testid={`importForm-advancedfileDropzone-${val.fieldName}`}
 																onChange={(
 																	newValues,
 																) => {
