@@ -353,6 +353,9 @@ export class CellState<D extends CellDef = CellDef> {
 			// convert the cells to the raw pixel
 			const raw: string | string[] = this.toPixel();
 
+			// TODO: Call tool instead RunMCPTool instead.
+			// I think MakePythonMCP needs to be called everytime someone saves
+
 			// Determine if multiple pixels need to be ran.
 			if (this._store.parameters.type === "markdown") {
 				// set the value

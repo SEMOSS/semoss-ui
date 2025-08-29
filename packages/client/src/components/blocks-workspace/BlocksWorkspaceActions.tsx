@@ -186,7 +186,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		// convert the state to json
 		const json = state.toJSON();
 
-		const updatedJson = json;
+		let updatedJson = json;
 
 		// John Start ---------------------------------------------
 
@@ -218,7 +218,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		// debugger;
 		// console.log(updatedJson);
 
-		// return
+		return
 
 		// TODO: Check if it replaced notebook cell variable names correctly
 

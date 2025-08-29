@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Controller } from "react-hook-form";
 import { useBlocks } from "@semoss/renderer";
-import { Select, TextField, Typography } from "@semoss/ui";
+import { Select, TextField, Typography, useNotification } from "@semoss/ui";
+import { runPixel } from "@semoss/sdk";
+import { useWorkspace } from "@/hooks";
+import { json } from "react-router-dom";
 
 interface RunMCPSelectorProps {
 	control: any;
@@ -14,19 +17,48 @@ export const RunMCPSelector = ({
 	setValue,
 	name,
 }: RunMCPSelectorProps) => {
-	const { state } = useBlocks();
 	const [tools, setTools] = useState([]);
+	const { workspace } = useWorkspace()
+	const notification = useNotification()
 
 	useEffect(() => {
-		setTools(state.tools);
+		getAppTools()		
 	}, []);
 
+	/**
+	 * Params in order for the tool to execute
+	 */
 	const params = useMemo(() => {
 		return tools.find((t) => t.name === name)?.inputSchema.required || [];
 	}, [name]);
 
-	console.log(params);
+	/**
+	 * Gets tools specific to the app
+	 */
+	const getAppTools = async () => {
 
+		try {
+			const {errors, pixelReturn} = await runPixel(`GetAppAssets(project="${workspace.appId}", filePath=["mcp/py_mcp.json"])`)
+
+			if(errors.length) {
+				throw new Error(errors.join(","))
+			}
+
+			const protocol = JSON.parse(pixelReturn[0].output as string)
+
+			if (!protocol.tools) {
+				throw new Error("No tools present in 'mcp/py_mcp.json'")
+			}
+
+			setTools(protocol.tools)
+		 } catch (e) {
+			notification.add({
+				color: "error",
+				message: e
+			})
+		 }
+	}
+	
 	return (
 		<>
 			<Controller

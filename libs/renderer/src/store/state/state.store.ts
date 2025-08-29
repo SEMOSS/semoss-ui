@@ -62,6 +62,8 @@ interface StateStoreInterface {
 	/** Order of how we consume app as API */
 	executionOrder: string[];
 
+	// JOHNS NEW MCP ---------------------------------------------------
+
 	/** project id to associate */
 	projectId?: string;
 
@@ -85,6 +87,8 @@ export class StateStoreConfig {
 	/** Cells registered to the insight */
 	cellRegistry: CellRegistry;
 
+	// JOHNS NEW MCP ---------------------------------------------------
+
 	/** project id to associate */
 	projectId?: string;
 
@@ -106,7 +110,6 @@ export class StateStore {
 		cellRegistry: {},
 		variables: {},
 		executionOrder: [],
-		tools: [],
 		aiGenModelId: "",
 	};
 
@@ -140,35 +143,6 @@ export class StateStore {
 
 		// set the initial state after reactive to invoke it
 		this.setState(config.state);
-
-		// Set the tools in order to enable tool calling with events
-		this._store.tools = [
-			{
-				name: "get_diagnosis",
-				title: "Get Diagnosis",
-				description:
-					"Generates a short (â‰¤20 character) provisional diagnosis based on two symptom descriptions using the SEMoss LLM API.\n\nArgs:\n    symptoms_1 (str): Symptom set or description, as a string.\n    symptoms_2 (str): Additional symptom set or description, as a string.\n\nReturns:\n    str: The LLM's suggested diagnosis as a short sentence.",
-				inputSchema: {
-					properties: {
-						symptoms_1: {
-							title: "Symptoms 1",
-							description:
-								"Symptom set or description, as a string.",
-							type: "string",
-						},
-						symptoms_2: {
-							title: "Symptoms 2",
-							description:
-								"Additional symptom set or description, as a string.",
-							type: "string",
-						},
-					},
-					required: ["symptoms_1", "symptoms_2"],
-					title: "get_diagnosis_Arguments",
-					type: "object",
-				},
-			},
-		];
 
 		// project id used for tool calling
 		if (config.projectId) {
@@ -238,13 +212,6 @@ export class StateStore {
 	 */
 	get cellRegistry() {
 		return this._store.cellRegistry;
-	}
-
-	/**
-	 * gets mcp tools for playground execution
-	 */
-	get tools() {
-		return this._store.tools;
 	}
 
 	/**
@@ -847,6 +814,87 @@ export class StateStore {
 		}
 	};
 
+	async suggestVariableNames(): Promise<boolean | unknown>{
+		/**
+		 * { previous_variable_name: suggested_variable_name, ..others }
+		 */
+		const keyHashmap = {};
+
+		console.log("state", this._store);
+
+		const promises = Object.entries(this._store.variables).map(
+			async ([key, value]: [string, Variable]) => {
+				console.log(`${key} value: `, value);
+
+				let prompt;
+
+				// Change prompts per variable
+
+				// PROMPTS START -------------------------------------------------
+				if (value.type === "block") {
+					prompt = `
+                I have this data structure:
+
+                ${JSON.stringify({
+					widget: this._store.blocks[value.to].widget,
+					data: this._store.blocks[value.to].data,
+				})}
+
+                Based on this data structure would be a good variableName?
+
+                Rules:
+                - Please only return the ""variableName""
+                - and ensure it is valid python variable naming format.
+            `;
+				} else if (value.type === "cell") {
+					prompt = `
+                I have this snippet of code:
+
+                ${JSON.stringify(
+					this._store.queries[value.to].cells[value.cellId].parameters
+						.code,
+				)}
+
+                I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
+
+                Rules for response:
+                - Please only return the ""variable_name""
+                - and ensure it is valid python variable naming syntax.
+				- Should not be longer than 10 characters
+            `;
+				} else {
+					// Notebooks
+
+					// TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
+					return;
+				}
+
+				// PROMPTS END -------------------------------------------------
+
+				// Get variable name suggestions from LLM
+				const resp = await runPixel(
+					`LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
+				);
+
+				console.log("-----------------------");
+				console.log(`Variable name suggestions for ${key}`, resp);
+				console.log("-----------------------");
+
+				const output = resp.pixelReturn[0].output as LLMResponse;
+
+				if (output.response) {
+					keyHashmap[key] = output.response;
+				}
+			},
+		);
+
+		await Promise.all(promises);
+
+		console.log("keyHashmap", keyHashmap);
+
+		return keyHashmap;
+	}
+
 	/**
 	 * User presses save:
 	 * * We get LLM to suggest renaming variables:
@@ -935,6 +983,29 @@ export class StateStore {
 		console.log("keyHashmap", keyHashmap);
 
 		return keyHashmap;
+	}
+
+	async changeVariableNames(suggestedChanges: Record<string, string>) {
+		let stringified = JSON.stringify(this.toJSON());
+
+		// Go through whole json and replace
+		for (const [key, value] of Object.entries(suggestedChanges)) {
+			// The regex pattern matches the old variable name with an optional . and any characters after it.
+			const pattern = new RegExp(`{{${key}(.*?)}}`, "g");
+			stringified = stringified.replaceAll(pattern, `{{${value}$1}}`);
+		}
+
+		const updated = JSON.parse(stringified);
+
+		Object.entries(suggestedChanges).forEach(
+			([key, value]: [string, string]) => {
+				updated.variables[value] = updated.variables[key];
+
+				delete updated.variables[key];
+			},
+		);
+
+		this.setState(updated)
 	}
 
 	/**
@@ -1955,18 +2026,27 @@ export class StateStore {
 	};
 
 	private runMCPTool = (
-		name: string,
-		parameters: Record<string, unknown>,
-	): void | Promise<boolean> => {
-		let pixel = `RunMCPTool(project="${this._store.projectId}", function="${name}", paramValues=[${JSON.stringify(parameters)}]);`;
+    name: string,
+    parameters: Record<string, unknown>,
+): void | Promise<boolean> => {
+    let pixel = `RunMCPTool(project="${this._store.projectId}", function="${name}", paramValues=[${JSON.stringify(parameters)}]);`;
+    pixel = this.flattenVariable(pixel);
+    console.log("pixel after flatten", pixel);
+   
+    const resp = runPixel(pixel);
+    console.log(resp);
+   
+    // Always wrap in Promise.resolve to handle both sync and async cases
+    return Promise.resolve(resp).then((result) => {
 
-		pixel = this.flattenVariable(pixel);
-
-		console.log("pixel after flatten", pixel);
-		const resp = runPixel(pixel);
-
-		console.log(resp);
-	};
+		console.log(result)
+        this.processSideEffects(result.pixelReturn[0].operationType, result.pixelReturn[0].output);
+        return true;
+    }).catch((error) => {
+        console.error("ERROR:", error);
+        throw error;
+    });
+};
 
 	/**
 	 * Run the cell

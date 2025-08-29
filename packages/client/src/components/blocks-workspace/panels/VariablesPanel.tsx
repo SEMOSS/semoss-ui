@@ -18,6 +18,8 @@ import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { usePixel } from "@/hooks";
 
+import { AutoFixHighRounded } from "@mui/icons-material";
+
 const StyledStack = styled(Stack)(() => ({
 	maxHeight: "100%",
 }));
@@ -276,6 +278,20 @@ export const VariablesPanel = observer(
 								<StyledMenuTitle variant="h6">
 									Variables
 								</StyledMenuTitle>
+								<Stack 								direction="row"
+>
+									<IconButton
+									title="Suggest variable names"
+									className="notebook-variable-menu__suggest-rename-button"
+									onClick={async (e) => {
+										const suggestedChanges = await state.processRename()
+
+										state.changeVariableNames(suggestedChanges)
+									}}
+								>
+									<AutoFixHighRounded />
+								</IconButton>
+
 								<IconButton
 									className="notebook-variable-menu__add-variable-button"
 									onClick={(e) => {
@@ -284,6 +300,7 @@ export const VariablesPanel = observer(
 								>
 									<Add />
 								</IconButton>
+								</Stack>
 							</Stack>
 						</Stack>
 
