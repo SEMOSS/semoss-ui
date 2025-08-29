@@ -29,8 +29,8 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
 	/** Slots */
 	slots: Block<D>["slots"];
 
-    /** Insight id */
-    insightId: string;
+	/** Insight id */
+	insightId: string;
 
 	/** Attributes to add to the block */
 	attrs: {
@@ -193,7 +193,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 				if (action === null) {
 					return;
 				}
-				await state.dispatchEventAction(action, actions.type);
+				await state.dispatch(action, actions.type);
 			}
 		};
 
@@ -230,7 +230,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 		data: data,
 		listeners: listeners,
 		slots: block.slots,
-        insightId: state.insightId,
+		insightId: state.insightId,
 		attrs: {
 			"data-block": block.id,
 		},

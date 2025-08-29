@@ -1,6 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
-import { CircularProgress, styled } from "@semoss/ui";
+import { LoadingScreen } from "@semoss/ui";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import { DiscoverPage } from "./DiscoverPage";
 import { LoginPage } from "./LoginPage";
@@ -8,26 +8,15 @@ import { MainLayout } from "./MainLayout";
 import { NewRoomPage } from "./NewRoomPage";
 import { RoomPage } from "./RoomPage";
 
-const StyledContainer = styled("div")(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	position: "absolute",
-	inset: "0",
-	height: "100%",
-	width: "100%",
-}));
-
+/**
+ * The main router for the application. It handles the routing logic and renders the appropriate components based on the current URL.
+ */
 export const Router = () => {
 	const { isInitialized, error } = useInsight();
 
 	// don't load anything if it is pending
 	if (!isInitialized) {
-		return (
-			<StyledContainer>
-				<CircularProgress />
-			</StyledContainer>
-		);
+		return <LoadingScreen.Trigger />;
 	}
 
 	if (error) {

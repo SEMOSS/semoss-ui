@@ -25,7 +25,7 @@ import {
 
 const ENABLE_ATTACHMENT = import.meta.env.VITE_ENABLE_ATTACHMENT === "true";
 
-const StyledContainer = styled(FormControl)(({ theme }) => ({
+const StyledContainer = styled(FormControl)(() => ({
 	position: "relative",
 	width: "100%",
 }));
@@ -50,7 +50,7 @@ const StyledInput = styled(TextField, {
 	},
 }));
 
-const StyledActions = styled(Stack)(({ theme }) => ({
+const StyledActions = styled(Stack)(() => ({
 	position: "absolute",
 	bottom: "8.5px",
 	left: "14px",
@@ -70,7 +70,7 @@ const StyledFileContainer = styled(Stack)(({ theme }) => ({
 	overflowY: "hidden",
 }));
 
-const StyledFile = styled(Stack)(({ theme }) => ({
+const StyledFile = styled(Stack)(() => ({
 	position: "relative",
 	height: "80px",
 	width: "80px",
@@ -95,7 +95,7 @@ const StyledFile = styled(Stack)(({ theme }) => ({
 	},
 }));
 
-const StyledFileClose = styled(IconButton)(({ theme }) => ({
+const StyledFileClose = styled(IconButton)(() => ({
 	position: "absolute",
 	top: "0",
 	right: "0",
@@ -185,7 +185,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								return transcript;
 							}
 
-							return prev + " " + transcript;
+							return `${prev} ${transcript}`;
 						});
 					}
 				};
@@ -463,6 +463,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						{files.map((f, fIdx) => {
 							return (
 								<Tooltip
+									// biome-ignore lint/suspicious/noArrayIndexKey: This is a list of files, and the index is the best key we have
 									key={fIdx}
 									title={f.name}
 									placement="bottom"

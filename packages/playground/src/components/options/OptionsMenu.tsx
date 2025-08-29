@@ -13,7 +13,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { KnowledgeOverlay, RightMenu, ToolsOverlay } from "@/components";
-import type { ChatRoom } from "@/stores";
+import type { RoomStore } from "@/stores";
 
 const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
@@ -25,10 +25,10 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 
 interface OptionsMenuProps {
 	/** Options for the room */
-	options: ChatRoom["options"];
+	options: RoomStore["options"];
 
 	/** Update options on change */
-	setOptions: (options: ChatRoom["options"]) => void;
+	setOptions: (options: RoomStore["options"]) => void;
 
 	/** Close the Menu */
 	onClose?: () => void;
@@ -41,22 +41,7 @@ export const OptionsMenu: React.FC<OptionsMenuProps> = observer((props) => {
 	const [isToolsOpen, setIsToolsOpen] = useState(false);
 
 	return (
-		<RightMenu
-			mode={"fixed"}
-			header={
-				<Typography
-					variant={"body1"}
-					fontWeight={"bold"}
-					noWrap={true}
-					sx={{
-						flex: 1,
-					}}
-				>
-					Chat Controls
-				</Typography>
-			}
-			onClose={() => onClose()}
-		>
+		<RightMenu header={"Chat Controls"} onClose={() => onClose()}>
 			<Stack direction={"column"} width={"100%"} spacing={1}>
 				<Typography variant="body1">Instructions</Typography>
 				<StyledTextField
@@ -223,7 +208,7 @@ export const OptionsMenu: React.FC<OptionsMenuProps> = observer((props) => {
 						control={
 							<Checkbox
 								checked={options.autoExecute}
-								onChange={(e, val) =>
+								onChange={(_e, _vall) =>
 									setOptions({
 										...options,
 										autoExecute: !options.autoExecute,
