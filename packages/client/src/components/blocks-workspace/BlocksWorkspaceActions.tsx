@@ -218,7 +218,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		// debugger;
 		// console.log(updatedJson);
 
-		return
+		// return
 
 		// TODO: Check if it replaced notebook cell variable names correctly
 

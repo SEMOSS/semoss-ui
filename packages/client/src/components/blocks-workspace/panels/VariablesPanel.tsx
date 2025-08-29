@@ -1,13 +1,16 @@
-import { Add, FilterListRounded } from "@mui/icons-material";
+import { Add, AutoFixHighOutlined, FilterListRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useBlocks, VARIABLE_TYPES } from "@semoss/renderer";
 import {
 	Box,
 	Button,
+	Checkbox,
 	Checklist,
 	IconButton,
 	List,
+	LoadingScreen,
+	Modal,
 	Popover,
 	Search,
 	Stack,
@@ -16,9 +19,7 @@ import {
 } from "@semoss/ui";
 import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
-import { usePixel } from "@/hooks";
-
-import { AutoFixHighRounded } from "@mui/icons-material";
+import { usePixel, useWorkspace } from "@/hooks";
 
 const StyledStack = styled(Stack)(() => ({
 	maxHeight: "100%",
@@ -94,6 +95,7 @@ export const VariablesPanel = observer(
 		const { title } = props;
 
 		const { state } = useBlocks();
+		const { workspace } = useWorkspace()
 
 		/**
 		 * State
@@ -142,6 +144,16 @@ export const VariablesPanel = observer(
 		});
 		const [filterWord, setFilterWord] = useState("");
 		const [selectedFilter, setSelectedFilter] = useState(VARIABLE_TYPES);
+
+		// New state for the rename modal
+		const [isRenameModalOpen, setIsRenameModalOpen] = useState(false);
+		const [suggestedChanges, setSuggestedChanges] = useState<
+			Record<string, string>
+		>({});
+		const [selectedChanges, setSelectedChanges] = useState<
+			Record<string, boolean>
+		>({});
+		const [isProcessing, setIsProcessing] = useState(false);
 
 		/**
 		 * API
@@ -209,6 +221,76 @@ export const VariablesPanel = observer(
 			Object.keys(state.variables).join(""),
 		]);
 
+		/**
+		 * Handle opening the rename modal and getting suggestions
+		 */
+		const handleOpenRenameModal = async () => {
+			workspace.setLoading(true);
+			try {
+				const changes = await (state as any).suggestVariableRenames();
+				if (typeof changes === "object" && changes !== null) {
+					const changesRecord = changes as Record<string, string>;
+					setSuggestedChanges(changesRecord);
+
+					// Initialize all changes as selected (true)
+					const initialSelection: Record<string, boolean> = {};
+					Object.keys(changesRecord).forEach((key) => {
+						initialSelection[key] = true;
+					});
+					setSelectedChanges(initialSelection);
+
+					setIsRenameModalOpen(true);
+				}
+			} catch (error) {
+				console.error("Error getting suggested changes:", error);
+			} finally {
+				workspace.setLoading(false);
+			}
+		};
+
+		/**
+		 * Handle applying the selected changes
+		 */
+		const handleApplyChanges = async () => {
+			workspace.setLoading(true);
+			try {
+				// Filter only the selected changes
+				const changesToApply: Record<string, string> = {};
+				Object.entries(suggestedChanges).forEach(
+					([oldName, newName]) => {
+						if (selectedChanges[oldName]) {
+							changesToApply[oldName] = newName;
+						}
+					},
+				);
+
+				if (Object.keys(changesToApply).length > 0) {
+					const success = await (state as any).applyVariableRenames(
+						changesToApply,
+					);
+					// if (success) {
+						setIsRenameModalOpen(false);
+						setSuggestedChanges({});
+						setSelectedChanges({});
+					// }
+				}
+			} catch (error) {
+				console.error("Error applying changes:", error);
+			} finally {
+				workspace.setLoading(false);
+			}
+		};
+
+		/**
+		 * Handle toggling a change selection
+		 */
+		const handleToggleChange = (oldName: string) => {
+			setSelectedChanges((prev) => ({
+				...prev,
+				[oldName]: !prev[oldName],
+			}));
+		};
+
 		return (
 			<Panel>
 				<StyledStack
@@ -274,32 +356,27 @@ export const VariablesPanel = observer(
 							<Stack
 								direction="row"
 								justifyContent="space-between"
+								alignItems="center"
 							>
 								<StyledMenuTitle variant="h6">
 									Variables
 								</StyledMenuTitle>
-								<Stack 								direction="row"
->
+								<Stack direction="row" spacing={1}>
 									<IconButton
-									title="Suggest variable names"
-									className="notebook-variable-menu__suggest-rename-button"
-									onClick={async (e) => {
-										const suggestedChanges = await state.processRename()
-
-										state.changeVariableNames(suggestedChanges)
-									}}
-								>
-									<AutoFixHighRounded />
-								</IconButton>
-
-								<IconButton
-									className="notebook-variable-menu__add-variable-button"
-									onClick={(e) => {
-										setPopoverAnchorEl(e.currentTarget);
-									}}
-								>
-									<Add />
-								</IconButton>
+										size="small"
+										onClick={handleOpenRenameModal}
+										disabled={isProcessing}
+									>
+										<AutoFixHighOutlined />
+									</IconButton>
+									<IconButton
+										className="notebook-variable-menu__add-variable-button"
+										onClick={(e) => {
+											setPopoverAnchorEl(e.currentTarget);
+										}}
+									>
+										<Add />
+									</IconButton>
 								</Stack>
 							</Stack>
 						</Stack>
@@ -332,6 +409,112 @@ export const VariablesPanel = observer(
 						)}
 					</StyledMenu>
 				</StyledStack>
+
+				{/* Rename Modal */}
+				<Modal
+					open={isRenameModalOpen}
+					onClose={() => setIsRenameModalOpen(false)}
+					aria-labelledby="rename-variables-modal"
+				>
+					<Box
+						sx={{
+							position: "absolute",
+							top: "50%",
+							left: "50%",
+							transform: "translate(-50%, -50%)",
+							width: 600,
+							maxHeight: "80vh",
+							bgcolor: "background.paper",
+							borderRadius: 2,
+							boxShadow: 24,
+							p: 4,
+							overflow: "auto",
+						}}
+					>
+						<Typography variant="h6" gutterBottom>
+							Suggested Variable Name Changes
+						</Typography>
+						<Typography
+							variant="body2"
+							color="text.secondary"
+							sx={{ mb: 3 }}
+						>
+							Review and select the variable name changes you'd
+							like to apply. All changes are selected by default.
+						</Typography>
+
+						<Stack spacing={2} sx={{ mb: 3 }}>
+							{Object.entries(suggestedChanges).map(
+								([oldName, newName]) => (
+									<Box
+										key={oldName}
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											p: 2,
+											border: "1px solid",
+											borderColor: "divider",
+											borderRadius: 1,
+											backgroundColor:
+												"background.default",
+										}}
+									>
+										<Checkbox
+											checked={
+												selectedChanges[oldName] ||
+												false
+											}
+											onChange={() =>
+												handleToggleChange(oldName)
+											}
+										/>
+										<Box sx={{ ml: 2, flex: 1 }}>
+											<Typography
+												variant="body2"
+												color="text.secondary"
+											>
+												{oldName}
+											</Typography>
+											<Typography
+												variant="body1"
+												sx={{ fontWeight: "bold" }}
+											>
+												→ {newName}
+											</Typography>
+										</Box>
+									</Box>
+								),
+							)}
+						</Stack>
+
+						<Stack
+							direction="row"
+							spacing={2}
+							justifyContent="flex-end"
+						>
+							<Button
+								onClick={() => setIsRenameModalOpen(false)}
+								disabled={isProcessing}
+							>
+								Cancel
+							</Button>
+							<Button
+								variant="contained"
+								onClick={handleApplyChanges}
+								disabled={
+									isProcessing ||
+									Object.keys(selectedChanges).filter(
+										(key) => selectedChanges[key],
+									).length === 0
+								}
+							>
+								{isProcessing
+									? "Applying..."
+									: "Apply Selected Changes"}
+							</Button>
+						</Stack>
+					</Box>
+				</Modal>
 			</Panel>
 		);
 	},

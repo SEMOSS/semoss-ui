@@ -62,8 +62,6 @@ interface StateStoreInterface {
 	/** Order of how we consume app as API */
 	executionOrder: string[];
 
-	// JOHNS NEW MCP ---------------------------------------------------
-
 	/** project id to associate */
 	projectId?: string;
 
@@ -87,8 +85,6 @@ export class StateStoreConfig {
 	/** Cells registered to the insight */
 	cellRegistry: CellRegistry;
 
-	// JOHNS NEW MCP ---------------------------------------------------
-
 	/** project id to associate */
 	projectId?: string;
 
@@ -110,6 +106,7 @@ export class StateStore {
 		cellRegistry: {},
 		variables: {},
 		executionOrder: [],
+		tools: [],
 		aiGenModelId: "",
 	};
 
@@ -143,6 +140,35 @@ export class StateStore {
 
 		// set the initial state after reactive to invoke it
 		this.setState(config.state);
+
+		// Set the tools in order to enable tool calling with events
+		this._store.tools = [
+			{
+				name: "get_diagnosis",
+				title: "Get Diagnosis",
+				description:
+					"Generates a short (â‰¤20 character) provisional diagnosis based on two symptom descriptions using the SEMoss LLM API.\n\nArgs:\n symptoms_1 (str): Symptom set or description, as a string.\n symptoms_2 (str): Additional symptom set or description, as a string.\n\nReturns:\n str: The LLM's suggested diagnosis as a short sentence.",
+				inputSchema: {
+					properties: {
+						symptoms_1: {
+							title: "Symptoms 1",
+							description:
+								"Symptom set or description, as a string.",
+							type: "string",
+						},
+						symptoms_2: {
+							title: "Symptoms 2",
+							description:
+								"Additional symptom set or description, as a string.",
+							type: "string",
+						},
+					},
+					required: ["symptoms_1", "symptoms_2"],
+					title: "get_diagnosis_Arguments",
+					type: "object",
+				},
+			},
+		];
 
 		// project id used for tool calling
 		if (config.projectId) {
@@ -212,6 +238,13 @@ export class StateStore {
 	 */
 	get cellRegistry() {
 		return this._store.cellRegistry;
+	}
+
+	/**
+	 * gets mcp tools for playground execution
+	 */
+	get tools() {
+		return this._store.tools;
 	}
 
 	/**
@@ -814,87 +847,6 @@ export class StateStore {
 		}
 	};
 
-	async suggestVariableNames(): Promise<boolean | unknown>{
-		/**
-		 * { previous_variable_name: suggested_variable_name, ..others }
-		 */
-		const keyHashmap = {};
-
-		console.log("state", this._store);
-
-		const promises = Object.entries(this._store.variables).map(
-			async ([key, value]: [string, Variable]) => {
-				console.log(`${key} value: `, value);
-
-				let prompt;
-
-				// Change prompts per variable
-
-				// PROMPTS START -------------------------------------------------
-				if (value.type === "block") {
-					prompt = `
-                I have this data structure:
-
-                ${JSON.stringify({
-					widget: this._store.blocks[value.to].widget,
-					data: this._store.blocks[value.to].data,
-				})}
-
-                Based on this data structure would be a good variableName?
-
-                Rules:
-                - Please only return the ""variableName""
-                - and ensure it is valid python variable naming format.
-            `;
-				} else if (value.type === "cell") {
-					prompt = `
-                I have this snippet of code:
-
-                ${JSON.stringify(
-					this._store.queries[value.to].cells[value.cellId].parameters
-						.code,
-				)}
-
-                I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
-
-                Rules for response:
-                - Please only return the ""variable_name""
-                - and ensure it is valid python variable naming syntax.
-				- Should not be longer than 10 characters
-            `;
-				} else {
-					// Notebooks
-
-					// TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
-					return;
-				}
-
-				// PROMPTS END -------------------------------------------------
-
-				// Get variable name suggestions from LLM
-				const resp = await runPixel(
-					`LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
-				);
-
-				console.log("-----------------------");
-				console.log(`Variable name suggestions for ${key}`, resp);
-				console.log("-----------------------");
-
-				const output = resp.pixelReturn[0].output as LLMResponse;
-
-				if (output.response) {
-					keyHashmap[key] = output.response;
-				}
-			},
-		);
-
-		await Promise.all(promises);
-
-		console.log("keyHashmap", keyHashmap);
-
-		return keyHashmap;
-	}
-
 	/**
 	 * User presses save:
 	 * * We get LLM to suggest renaming variables:
@@ -904,31 +856,47 @@ export class StateStore {
 	 * text_input_1 --> symptom1
 	 * * Get user to confirm
 	 */
-	async processRename(): Promise<boolean | unknown> {
-		/**
-		 * { previous_variable_name: suggested_variable_name, ..others }
-		 */
-		const keyHashmap = {};
+	async suggestVariableRenames(variableKey?: string): Promise<boolean | unknown> {
+       /**
+         * { previous_variable_name: suggested_variable_name, ..others }
+         */
+        const keyHashmap = {};
 
-		console.log("state", this._store);
+        console.log("state", this._store);
 
-		const promises = Object.entries(this._store.variables).map(
-			async ([key, value]: [string, Variable]) => {
-				console.log(`${key} value: `, value);
+        // Determine which variables to process
+        let variablesToProcess: [string, Variable][];
+        
+        if (variableKey) {
+            // Process only the specific variable
+            if (this._store.variables[variableKey]) {
+                variablesToProcess = [[variableKey, this._store.variables[variableKey]]];
+            } else {
+                console.warn(`Variable key "${variableKey}" not found`);
+                return keyHashmap;
+            }
+        } else {
+            // Process all variables (original behavior)
+            variablesToProcess = Object.entries(this._store.variables);
+        }
 
-				let prompt;
+        const promises = variablesToProcess.map(
+            async ([key, value]: [string, Variable]) => {
+                console.log(`${key} value: `, value);
 
-				// Change prompts per variable
+                let prompt;
 
-				// PROMPTS START -------------------------------------------------
-				if (value.type === "block") {
-					prompt = `
+                // Change prompts per variable
+
+                // PROMPTS START -------------------------------------------------
+                if (value.type === "block") {
+                    prompt = `
                 I have this data structure:
 
                 ${JSON.stringify({
-					widget: this._store.blocks[value.to].widget,
-					data: this._store.blocks[value.to].data,
-				})}
+                    widget: this._store.blocks[value.to].widget,
+                    data: this._store.blocks[value.to].data,
+                })}
 
                 Based on this data structure would be a good variableName?
 
@@ -936,76 +904,208 @@ export class StateStore {
                 - Please only return the ""variableName""
                 - and ensure it is valid python variable naming format.
             `;
-				} else if (value.type === "cell") {
-					prompt = `
+                } else if (value.type === "cell") {
+                    prompt = `
                 I have this snippet of code:
 
                 ${JSON.stringify(
-					this._store.queries[value.to].cells[value.cellId].parameters
-						.code,
-				)}
+                    this._store.queries[value.to].cells[value.cellId].parameters
+                        .code,
+                )}
 
                 I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
 
                 Rules for response:
                 - Please only return the ""variable_name""
                 - and ensure it is valid python variable naming syntax.
-				- Should not be longer than 10 characters
+                - Should not be longer than 10 characters
             `;
-				} else {
-					// Notebooks
+                } else {
+                    // Notebooks
 
-					// TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
-					return;
-				}
+                    // TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
+                    return;
+                }
 
-				// PROMPTS END -------------------------------------------------
+                // PROMPTS END -------------------------------------------------
 
-				// Get variable name suggestions from LLM
-				const resp = await runPixel(
-					`LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
-				);
+                // Get variable name suggestions from LLM
+                const resp = await runPixel(
+                    `LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
+                );
 
-				console.log("-----------------------");
-				console.log(`Variable name suggestions for ${key}`, resp);
-				console.log("-----------------------");
+                console.log("-----------------------");
+                console.log(`Variable name suggestions for ${key}`, resp);
+                console.log("-----------------------");
 
-				const output = resp.pixelReturn[0].output as LLMResponse;
+                const output = resp.pixelReturn[0].output as LLMResponse;
 
-				if (output.response) {
-					keyHashmap[key] = output.response;
-				}
-			},
-		);
+                if (output.response) {
+                    keyHashmap[key] = output.response;
+                }
+            },
+        );
 
-		await Promise.all(promises);
+        await Promise.all(promises);
 
-		console.log("keyHashmap", keyHashmap);
+        console.log("keyHashmap", keyHashmap);
 
-		return keyHashmap;
+        return keyHashmap;
 	}
 
-	async changeVariableNames(suggestedChanges: Record<string, string>) {
-		let stringified = JSON.stringify(this.toJSON());
+	/**
+	 * Apply the suggested variable name changes throughout the state store
+	 * This method handles the JSON manipulation to update all references
+	 * @param suggestedChanges - Object mapping old variable names to new suggested names
+	 * @returns boolean indicating success
+	 */
+	async applyVariableRenames(
+		suggestedChanges: Record<string, string>,
+	): Promise<boolean> {
+		try {
+			console.log("Applying variable renames:", suggestedChanges);
 
-		// Go through whole json and replace
-		for (const [key, value] of Object.entries(suggestedChanges)) {
-			// The regex pattern matches the old variable name with an optional . and any characters after it.
-			const pattern = new RegExp(`{{${key}(.*?)}}`, "g");
-			stringified = stringified.replaceAll(pattern, `{{${value}$1}}`);
+			// 1. Update variables object - rename the keys
+			Object.entries(suggestedChanges).forEach(([oldName, newName]) => {
+				if (this._store.variables[oldName]) {
+					// Copy the variable data to the new name
+					this._store.variables[newName] =
+						this._store.variables[oldName];
+					// Remove the old variable
+					delete this._store.variables[oldName];
+				}
+			});
+
+			// 2. Update all blocks data - replace variable references in strings
+			Object.values(this._store.blocks).forEach((block) => {
+				this.updateBlockVariableReferences(block, suggestedChanges);
+			});
+
+			// 3. Update all queries and cells - replace variable references
+			Object.values(this._store.queries).forEach((query) => {
+				this.updateQueryVariableReferences(query, suggestedChanges);
+			});
+
+			console.log("Variable renames applied successfully");
+			return true;
+		} catch (error) {
+			console.error("Error applying variable renames:", error);
+			return false;
+		}
+	}
+
+	/**
+	 * Update variable references within a block's data
+	 * @param block - The block to update
+	 * @param suggestedChanges - Mapping of old to new variable names
+	 */
+	private updateBlockVariableReferences(
+		block: Block,
+		suggestedChanges: Record<string, string>,
+	): void {
+		// Update the entire block data at once
+		const updatedData = this.updateObjectVariableReferences(
+			block.data,
+			suggestedChanges,
+		);
+		this.setBlockData(block.id, null, updatedData);
+
+		// Update listeners if they contain variable references
+		if (block.listeners) {
+			Object.entries(block.listeners).forEach(
+				([listenerName, listener]) => {
+					if (listener.order) {
+						const updatedOrder = listener.order.map((action) =>
+							this.updateObjectVariableReferences(
+								action,
+								suggestedChanges,
+							),
+						);
+						// Update the listener order
+						block.listeners[listenerName].order = updatedOrder;
+					}
+				},
+			);
+		}
+	}
+
+	/**
+	 * Update variable references within a query and its cells
+	 * @param query - The query to update
+	 * @param suggestedChanges - Mapping of old to new variable names
+	 */
+	private updateQueryVariableReferences(
+		query: QueryState,
+		suggestedChanges: Record<string, string>,
+	): void {
+		// Update query-level data - we can't directly update _exposed as it's a getter
+		// The _exposed data is computed from the internal store, so we need to update the store directly
+
+		// Update all cells in the query
+		Object.values(query.cells).forEach((cell) => {
+			if (cell.parameters) {
+				// Use the cell's _update method to update parameters
+				const updatedParameters = this.updateObjectVariableReferences(
+					cell.parameters,
+					suggestedChanges,
+				);
+				cell._update("parameters", updatedParameters);
+			}
+		});
+	}
+
+	/**
+	 * Recursively update variable references in any object
+	 * @param obj - The object to update
+	 * @param suggestedChanges - Mapping of old to new variable names
+	 * @returns Updated object
+	 */
+	private updateObjectVariableReferences(
+		obj: any,
+		suggestedChanges: Record<string, string>,
+	): any {
+		if (obj === null || obj === undefined) {
+			return obj;
 		}
 
-		const updated = JSON.parse(stringified);
+		// Handle strings - replace variable references
+		if (typeof obj === "string") {
+			let updatedString = obj;
 
-		Object.entries(suggestedChanges).forEach(
-			([key, value]: [string, string]) => {
-				updated.variables[value] = updated.variables[key];
+			// Replace all variable references in the format {{variableName}}
+			Object.entries(suggestedChanges).forEach(([oldName, newName]) => {
+				// The regex pattern matches the old variable name with an optional . and any characters after it
+				const pattern = new RegExp(`{{${oldName}([^}]*?)}}`, "g");
+				updatedString = updatedString.replaceAll(
+					pattern,
+					`{{${newName}$1}}`,
+				);
+			});
 
-				delete updated.variables[key];
-			},
-		);
+			return updatedString;
+		}
 
-		this.setState(updated)
+		// Handle arrays
+		if (Array.isArray(obj)) {
+			return obj.map((item) =>
+				this.updateObjectVariableReferences(item, suggestedChanges),
+			);
+		}
+
+		// Handle objects
+		if (typeof obj === "object") {
+			const updatedObj = {};
+			for (const [key, value] of Object.entries(obj)) {
+				updatedObj[key] = this.updateObjectVariableReferences(
+					value,
+					suggestedChanges,
+				);
+			}
+			return updatedObj;
+		}
+
+		// Return primitives as-is
+		return obj;
 	}
 
 	/**
@@ -2026,27 +2126,18 @@ export class StateStore {
 	};
 
 	private runMCPTool = (
-    name: string,
-    parameters: Record<string, unknown>,
-): void | Promise<boolean> => {
-    let pixel = `RunMCPTool(project="${this._store.projectId}", function="${name}", paramValues=[${JSON.stringify(parameters)}]);`;
-    pixel = this.flattenVariable(pixel);
-    console.log("pixel after flatten", pixel);
-   
-    const resp = runPixel(pixel);
-    console.log(resp);
-   
-    // Always wrap in Promise.resolve to handle both sync and async cases
-    return Promise.resolve(resp).then((result) => {
+		name: string,
+		parameters: Record<string, unknown>,
+	): void | Promise<boolean> => {
+		let pixel = `RunMCPTool(project="${this._store.projectId}", function="${name}", paramValues=[${JSON.stringify(parameters)}]);`;
 
-		console.log(result)
-        this.processSideEffects(result.pixelReturn[0].operationType, result.pixelReturn[0].output);
-        return true;
-    }).catch((error) => {
-        console.error("ERROR:", error);
-        throw error;
-    });
-};
+		pixel = this.flattenVariable(pixel);
+
+		console.log("pixel after flatten", pixel);
+		const resp = runPixel(pixel);
+
+		console.log(resp);
+	};
 
 	/**
 	 * Run the cell
