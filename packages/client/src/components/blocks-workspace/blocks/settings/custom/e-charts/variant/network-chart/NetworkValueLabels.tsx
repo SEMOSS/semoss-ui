@@ -33,7 +33,7 @@ const StyledAxisDiv = styled("div")<{
 	display?: string;
 	justifyContent?: string;
 	gap?: string;
-}>(({ theme, display, justifyContent, gap }) => ({
+}>(({ display, justifyContent, gap }) => ({
 	display: display ?? undefined,
 	justifyContent: justifyContent ?? undefined,
 	flexDirection: "row",
@@ -46,11 +46,12 @@ const StyledAxisDiv = styled("div")<{
 const StyledAxis = styled("div")<{
 	display?: string;
 	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
+}>(({ display, justifyContent }) => ({
 	display: display ?? undefined,
 	justifyContent: justifyContent ?? undefined,
 	flexDirection: "row",
 }));
+
 const StyledButtonWrapper = styled("div")({
 	display: "flex",
 	justifyContent: "flex-end",
@@ -71,12 +72,12 @@ const StyledAxisSpan = styled("span")<{
 	display?: string;
 	justifyContent?: string;
 	width?: string;
-}>(({ theme, display, justifyContent, width }) => ({
+}>(({ display, justifyContent, width }) => ({
 	display: display ?? undefined,
 	justifyContent: justifyContent ?? undefined,
 	width: width ?? undefined,
 }));
-const StyledTextField = styled(TextField)(({ theme }) => ({
+const StyledTextField = styled(TextField)(() => ({
 	width: "100%",
 }));
 const StyledSelect = styled(Select)(() => ({
@@ -89,7 +90,7 @@ export const NetworkValueLabel = observer(
 		const [showValueLabel, setShowValueLabel] = useState(true);
 		const [valueLabel, setvalueLabel] = useState({
 			position: "top",
-			size: 8,
+			fontSize: 8,
 			distance: 8,
 			family: "",
 			rotate: 0,
@@ -112,26 +113,30 @@ export const NetworkValueLabel = observer(
 				return JSON.stringify(v, null, 2);
 			});
 		}, [data, path]).get();
+
 		useEffect(() => {
 			setValue(computedValue);
 		}, [computedValue, data]);
+
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				reInitializeFeatures(data.option);
 			}
 		}, [id]);
+
 		useEffect(() => {
 			if (Object.hasOwn(data, "option")) {
 				retainLocalState(data.option);
 			}
 		}, [showValueLabel]);
+
 		//Retain the local state of the feature on toggle switch and on reset button
 		//With the local state we will be displaying the values in the fields
 		const retainLocalState = (options) => {
 			setvalueLabel((prev) => ({
 				...prev,
 				position: options.series[0].label.position,
-				size: options.series[0].label.fontSize,
+				fontSize: options.series[0].label.fontSize,
 				distance: options.series[0].label.distance,
 				family: options.series[0].label.fontFamily,
 				rotate: options.series[0].label.rotate,
@@ -141,45 +146,25 @@ export const NetworkValueLabel = observer(
 		const reInitializeFeatures = (options) => {
 			setShowValueLabel(options.series[0].label.show ?? true);
 		};
-		//Handle the change event for any Value Label input
-		function handleInputChange(title, inputValue) {
+
+		function handleShowLabel(inputValue) {
 			const option = JSON.parse(value);
-			if (title === "showValueLabel") {
-				option.series[0].label.show = inputValue;
-				setShowValueLabel(inputValue);
-			} else if (title === "labelPosition") {
-				option.series[0].label.position = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					position: inputValue,
-				}));
-			} else if (title === "labelRotate") {
-				option.series[0].label.rotate = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					rotate: inputValue,
-				}));
-			} else if (title === "labelSize") {
-				option.series[0].label.fontSize = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					size: inputValue,
-				}));
-			} else if (title === "labelLength") {
-				option.series[0].label.distance = Number(inputValue);
-				setvalueLabel((prev) => ({
-					...prev,
-					distance: inputValue,
-				}));
-			} else if (title === "labelFamily") {
-				option.series[0].label.fontFamily = inputValue;
-				setvalueLabel((prev) => ({
-					...prev,
-					family: inputValue,
-				}));
-			}
+			option.series[0].label.show = inputValue;
+			setShowValueLabel(inputValue);
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
+
+		//Handle the change event for any Value Label input
+		function handleInputChange(input, inputValue) {
+			const option = JSON.parse(value);
+			option.series[0].label[input] = inputValue;
+			setvalueLabel((prev) => ({
+				...prev,
+				[input]: inputValue,
+			}));
+			setData(path, option as PathValue<D["data"], typeof path>);
+		}
+
 		//Retain the local state of the feature on reset button
 		//The default values are set in the reset object in the option
 		function handleReset() {
@@ -201,10 +186,7 @@ export const NetworkValueLabel = observer(
 						size="small"
 						checked={showValueLabel}
 						onChange={(e: ChangeEvent<HTMLInputElement>) =>
-							handleInputChange(
-								"showValueLabel",
-								e.target.checked,
-							)
+							handleShowLabel(e.target.checked)
 						}
 						title="Show Value Label"
 					/>
@@ -227,10 +209,7 @@ export const NetworkValueLabel = observer(
 							name="position"
 							value={valueLabel?.position}
 							onChange={(e) =>
-								handleInputChange(
-									"labelPosition",
-									e.target.value,
-								)
+								handleInputChange("position", e.target.value)
 							}
 						>
 							<Select.Item key="-1" value="">
@@ -266,7 +245,7 @@ export const NetworkValueLabel = observer(
 							max={valueLabel.rotateLabelMaxValue}
 							valueLabelDisplay="on"
 							onChange={(_event, newValue) =>
-								handleInputChange("labelRotate", newValue)
+								handleInputChange("rotate", newValue)
 							}
 						/>
 						<StyledAxisSpan
@@ -291,9 +270,9 @@ export const NetworkValueLabel = observer(
 							size="small"
 							id="size"
 							name="size"
-							value={valueLabel?.size}
+							value={valueLabel?.fontSize}
 							onChange={(e) =>
-								handleInputChange("labelSize", e.target.value)
+								handleInputChange("fontSize", e.target.value)
 							}
 						/>
 					</StyledAxisColDiv>
@@ -312,7 +291,10 @@ export const NetworkValueLabel = observer(
 							name="length"
 							value={valueLabel?.distance}
 							onChange={(e) =>
-								handleInputChange("labelLength", e.target.value)
+								handleInputChange(
+									"distance",
+									Number(e.target.value),
+								)
 							}
 						/>
 					</StyledAxisColDiv>
@@ -332,7 +314,7 @@ export const NetworkValueLabel = observer(
 							name="fontFamily"
 							value={valueLabel?.family}
 							onChange={(e) =>
-								handleInputChange("labelFamily", e.target.value)
+								handleInputChange("fontFamily", e.target.value)
 							}
 						>
 							<Select.Item key="-1" value="">
