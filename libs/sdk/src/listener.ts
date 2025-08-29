@@ -8,8 +8,6 @@ import { Env } from "./env";
 	window?.addEventListener(
 		"message",
 		(event) => {
-			console.log("Message received:", event.data, event.origin);
-
 			try {
 				if (!event.data || event.data.type !== "SMSS_INIT_TOOL") {
 					return;
