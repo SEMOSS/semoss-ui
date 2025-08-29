@@ -170,8 +170,7 @@ export const Sidebar: React.FC = observer(() => {
 	]);
 
 	function closeSidebar() {
-		if (!page.sidebar.pinned) {
-			page.pinSidebar();
+		if (page.sidebar.pinned) {
 			return;
 		}
 		page.closeSidebar();
@@ -182,13 +181,11 @@ export const Sidebar: React.FC = observer(() => {
 			variant={page.sidebar.pinned ? "permanent" : "temporary"}
 			anchor="left"
 			open={page.sidebar.open}
-			onClose={closeSidebar}
+			onClose={() => {
+				closeSidebar;
+			}}
 			PaperProps={{
 				onMouseLeave: () => {
-					// closes if it is not pinned
-					if (page.sidebar.pinned) {
-						return;
-					}
 					closeSidebar();
 				},
 			}}
@@ -208,7 +205,18 @@ export const Sidebar: React.FC = observer(() => {
 					</Typography>
 				</StyledNavHeaderLink>
 
-				<StyledCloseIconButton size="small" onClick={closeSidebar}>
+				<StyledCloseIconButton
+					size="small"
+					onClick={() => {
+						if (page.sidebar.pinned) {
+							page.unpinSidebar();
+						} else {
+							page.pinSidebar();
+							return;
+						}
+						closeSidebar();
+					}}
+				>
 					<MenuOpenRounded fontSize="medium" />
 				</StyledCloseIconButton>
 			</StyledNavHeader>

@@ -16,10 +16,6 @@ export const getDefaultFormValues = (
 			message: ActionMessages.DISPATCH_EVENT,
 			payload: { name: "", detail: {} },
 		},
-		[ActionMessages.DISPATCH_OUTPUTS_EVENT]: {
-			message: ActionMessages.DISPATCH_OUTPUTS_EVENT,
-			payload: {},
-		},
 		[ActionMessages.DISPATCH_OPEN_EVENT]: {
 			message: ActionMessages.DISPATCH_OPEN_EVENT,
 			payload: { destinationType: "", destination: "" },
@@ -35,6 +31,7 @@ export const getDefaultFormValues = (
 
 export const validateForm = (
 	message: ActionMessages,
+	// biome-ignore lint/suspicious/noExplicitAny: TODO: Fix
 	payload: any,
 ): boolean => {
 	switch (message) {
@@ -46,10 +43,8 @@ export const validateForm = (
 			return !!payload.name;
 		case ActionMessages.DISPATCH_OPEN_EVENT:
 			return !!payload.destinationType && !!payload.destination;
-		case ActionMessages.DISPATCH_OUTPUTS_EVENT:
-			return true;
 		case ActionMessages.MODIFY_VARIABLE:
-			return !!payload.variable && !!payload.value
+			return !!payload.variable && !!payload.value;
 		default:
 			return false;
 	}

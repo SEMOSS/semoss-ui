@@ -4,7 +4,6 @@ import type { QueryStateConfig } from "./query.state";
 import type {
 	DispatchEventAction,
 	DispatchOpenEventAction,
-	DispatchOutputsEventAction,
 	ModifyVariableAction,
 	RunCellAction,
 	RunQueryAction,
@@ -54,33 +53,25 @@ export type Variable =
 			type: Exclude<VariableType, "cell">; // Exclude 'cell' from VariableType for this case
 			to?: string;
 			cellId?: never; // Explicitly setting it as never when 'type' is not 'cell'
-			value?: unknown;
-			isInput?: boolean;
-			isOutput?: boolean;
+			value?: any;
 	  }
 	| {
 			to: string;
 			type: "cell"; // Specific case when type is 'cell'
 			cellId: string;
-			isInput?: boolean;
-			isOutput?: boolean;
 	  };
 
 export type VariableWithId =
 	| ({
 			type: Exclude<VariableType, "cell">;
 			to?: string;
-			value?: unknown;
-			isInput?: boolean;
-			isOutput?: boolean;
+			value?: any;
 			cellId?: string;
 	  } & { id: string })
 	| ({
 			type: "cell";
 			to: string;
 			cellId: string;
-			isInput?: boolean;
-			isOutput?: boolean;
 	  } & { id: string });
 
 /**
@@ -261,7 +252,6 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
 export type ListenerActions =
 	| RunQueryAction
 	| DispatchEventAction
-	| DispatchOutputsEventAction
 	| RunCellAction
 	| DispatchOpenEventAction
 	| ModifyVariableAction;
