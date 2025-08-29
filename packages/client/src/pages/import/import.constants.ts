@@ -7481,6 +7481,9 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "NAME",
             label: "Catalog Name",
+            section: "general",
+            sectiondescription:
+              "Please provide the name, type, and model to uniquely identify, categorize, and configure your setup for optimal performance.",
             defaultValue: "",
             options: {
               component: "text-field",
@@ -7503,17 +7506,22 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "VECTOR_TYPE",
             label: "Type",
+            section: "general",
+            sectiondescription:
+              "Please provide the name, type, and model to uniquely identify, categorize, and configure your setup for optimal performance.",
             defaultValue: "FAISS",
             options: {
               component: "text-field",
             },
-            hidden: true,
-            disabled: true,
+            disabled: false,
             rules: { required: true },
           },
           {
             fieldName: "DESCRIPTION",
             label: "Description",
+            section: "general",
+            sectiondescription:
+              "Please provide the name, type, and model to uniquely identify, categorize, and configure your setup for optimal performance.",
             defaultValue: "",
             options: {
               component: "text-field",
@@ -7524,6 +7532,9 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "TAGS",
             label: "Tags",
+            section: "credentials",
+            sectiondescription:
+              "Enter the AWS region, variable name, access key, and secret key to securely configure and authenticate your AWS environment.",
             defaultValue: "",
             options: {
               component: "text-field",
@@ -7534,6 +7545,9 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "EMBEDDER_ENGINE_ID",
             label: "Embedder",
+            section: "credentials",
+            sectiondescription:
+              "Enter the AWS region, variable name, access key, and secret key to securely configure and authenticate your AWS environment.",
             defaultValue: "",
             options: {
               component: "select",
@@ -7549,17 +7563,22 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "INDEX_CLASSES",
             label: "Index Classes",
+            section: "credentials",
+            sectiondescription:
+              "Enter the AWS region, variable name, access key, and secret key to securely configure and authenticate your AWS environment.",
             defaultValue: "default",
             options: {
               component: "text-field",
             },
-            hidden: true,
             disabled: true,
             rules: { required: true },
           },
           {
             fieldName: "CHUNKING_STRATEGY",
             label: "Chunking Strategy",
+            section: "credentials",
+            sectiondescription:
+              "Enter the AWS region, variable name, access key, and secret key to securely configure and authenticate your AWS environment.",
             defaultValue: "ALL",
             options: {
               component: "select",
@@ -7593,6 +7612,9 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "CONTENT_LENGTH",
             label: "Content Length",
+            section: "settings",
+            sectiondescription:
+              "Configure the chat type, initialization script, token limits, input key, and preferences for conversation history and recording questions and responses to tailor the system's behavior to your needs.",
             defaultValue: "512",
             options: {
               component: "number",
@@ -7605,6 +7627,9 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "CONTENT_OVERLAP",
             label: "Content Overlap",
+            section: "settings",
+            sectiondescription:
+              "Configure the chat type, initialization script, token limits, input key, and preferences for conversation history and recording questions and responses to tailor the system's behavior to your needs.",
             defaultValue: "20",
             options: {
               component: "number",
@@ -7617,6 +7642,10 @@ export const CONNECTION_OPTIONS = {
           {
             fieldName: "KEEP_INPUT_OUTPUT",
             label: "Record Questions and Responses",
+            section: "settings",
+            sectiondescription:
+              "Configure the chat type, initialization script, token limits, input key, and preferences for conversation history and recording questions and responses to tailor the system's behavior to your needs.",
+
             defaultValue: "true",
             options: {
               component: "select",
@@ -7641,9 +7670,13 @@ export const CONNECTION_OPTIONS = {
             options: {
               component: "file-upload",
             },
-            disabled: true,
             secondary: true,
-            rules: {},
+            rules: {
+              required: {
+                value: true,
+                message: "Please upload file/files.",
+              },
+            },
           },
           {
             fieldName: "DISTANCE_METHOD",
@@ -9107,11 +9140,45 @@ export const CONNECTION_OPTIONS = {
       },
       {
         name: "CSV",
-        disable: true,
+        disable: false,
         icon: CSV,
         fields: [
           // baseUpload
           // PredictDataTypes
+          {
+            fieldName: "DataBaseName",
+            label: "Enter Database Name",
+            section: "general",
+            sectiondescription:"This name will be used to identify your database.",
+            defaultValue: null,
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: true },
+          },
+          {
+            fieldName: "DataBaseDescription",
+            label: "Enter Database Description",
+            section: "general",
+            defaultValue: null,
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: true },
+          },
+          {
+            fieldName: "DataBasetags",
+            label: "Enter Database Tags",
+            section: "general",
+            defaultValue: null,
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: true },
+          },
           {
             fieldName: "ZIP",
             label: "Zip File",

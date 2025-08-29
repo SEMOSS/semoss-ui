@@ -149,12 +149,13 @@ export const ImportConnectionPage = () => {
             );`;
 
           monolithStore.runQuery(secondaryPixel).then((response) => {
-            const secondaryPixelOutput = response.pixelReturn[0].output;
-            const opType = response.pixelReturn[0].operationType;
             setIsLoading(false);
             notification.add({
-              color: opType.indexOf("ERROR") > -1 ? "error" : "success",
-              message: secondaryPixelOutput,
+              color:
+                response.pixelReturn?.[0]?.operationType?.indexOf("ERROR") > -1
+                  ? "error"
+                  : "success",
+              message: "Failed to add embeddings to vector database",
             });
             navigate(`/engine/vector/${output.database_id}`);
             notification.add({
@@ -198,15 +199,13 @@ export const ImportConnectionPage = () => {
           configStore.store.insightID
         );
         pixel = `
-                    CreateRestFunctionEngine(function=["${
-                      values.name
-                    }"],functionDetails=[${JSON.stringify(values.fields)}],
+                    CreateRestFunctionEngine(function=["${values.name
+          }"],functionDetails=[${JSON.stringify(values.fields)}],
                     filePaths=["${upload[0].fileLocation}"]);`;
       } else {
         pixel = `
-                    CreateRestFunctionEngine(function=["${
-                      values.name
-                    }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
+                    CreateRestFunctionEngine(function=["${values.name
+          }"],functionDetails=[${JSON.stringify(values.fields)}]);`;
       }
 
       monolithStore.runQuery(pixel).then((response) => {

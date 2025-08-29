@@ -1,71 +1,77 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useNavigate } from "react-router-dom";
+import { Form, useNavigate } from "react-router-dom";
 import {
-  Box,
   Button,
   Checkbox,
   CircularProgress,
-  Divider,
   FileDropzone,
-  FormControl,
   FormControlLabel,
   Grid,
   IconButton,
-  MenuItem,
-  Radio,
+  Menu,
   RadioGroup,
   Select,
   Stack,
-  Switch,
   styled,
   TextField,
+  Typography,
   useNotification,
+  Divider,
 } from "@semoss/ui";
 import { useRootStore, useStepper } from "@/hooks";
+import { Radio } from "@mui/material";
+
+const StyledFlexEnd = styled("div")(({ theme }) => ({
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: theme.spacing(1),
+}));
+
+const StyledSubmitButton = styled(Button)({
+  textTransform: "capitalize",
+  minWidth: "128px",
+});
+
+const StyledNoSection = styled("div")(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: theme.spacing(1),
+  marginBottom: theme.spacing(2),
+}));
+
+const SectionContainer = styled(Grid)({
+  padding: "20px",
+});
+
+const SectionLeft = styled(Grid)(({ theme }) => ({
+  display: "flex",
+  flexDirection: "column",
+  justifyContent: "flex-start",
+  paddingRight: theme.spacing(2),
+  width: "40%",
+}));
+
+const SectionRight = styled(Grid)(() => ({
+  display: "flex",
+  flexDirection: "column",
+  gap: "16px",
+  width: "60%",
+}));
+
+const AdvancedHeader = styled("div")(({ theme }) => ({
+  display: "flex",
+  width: "100%",
+  justifyContent: "space-between",
+  alignItems: "center",
+  padding: theme.spacing(2, 0),
+}));
 
 const initialState = {
   defaultFields: [],
   advancedFields: [],
 };
-
-const StyledKeyValue = styled("div")(({ theme }) => ({
-  display: "flex",
-  flexDirection: "column",
-  gap: theme.spacing(2),
-  marginBottom: theme.spacing(2),
-}));
-
-const FormRow = styled(Box)({
-  display: "flex",
-  flexDirection: "row",
-});
-const FormLabelBlock = styled(Box)({
-  width: "35%",
-  display: "flex",
-  flexDirection: "column",
-});
-const FormInputBlock = styled(Box)({
-  width: "65%",
-});
-const FlexEndBox = styled(Box)({
-  display: "flex",
-  justifyContent: "flex-end",
-});
-const SectionTitle = styled(Box)(({ theme }) => ({
-  fontWeight: "bold",
-  ...theme.typography.h6,
-}));
-const SectionDescription = styled(Box)(({ theme }) => ({
-  ...theme.typography.body2,
-  color: theme.palette.text.secondary,
-  marginBottom: theme.spacing(2),
-}));
-
-const StyledFileUploadSection = styled("div")({
-  width: "100%",
-});
 
 const reducer = (state, action) => {
   switch (action.type) {
@@ -81,20 +87,39 @@ const reducer = (state, action) => {
 
 export const ImportForm = (props) => {
   const { submitFunc, fields } = props;
-  const { steps, setSteps } = useStepper();
-  const notification = useNotification();
-  const { monolithStore, configStore } = useRootStore();
-  const navigate = useNavigate();
-  const [state, dispatch] = useReducer(reducer, initialState);
-  const { defaultFields, advancedFields } = state;
+
   const [openAdvanced, setOpenAdvanced] = useState(false);
   const [formLoading, setFormLoading] = useState(false);
   const [initScriptCallback, setInitScriptCallback] = useState(null);
   const [updateFieldName, setUpdateFieldName] = useState("");
+  const [isDynamicInputChangedByUser, setIsDynamicInputChangedByUser] =
+    useState(false);
+
+  const [state, dispatch] = useReducer(reducer, initialState);
+  const { defaultFields, advancedFields } = state;
+  const { steps, setSteps } = useStepper();
+  const notification = useNotification();
+  const { monolithStore, configStore } = useRootStore();
+  const navigate = useNavigate();
   const watchedFieldRef = useRef({});
+
   //** Using onsubmit mode to stop field validation onChange -> limit pixel calls */
-  const { control, handleSubmit, reset, watch, setValue, getValues } =
-    useForm();
+  const {
+    control,
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    getValues,
+    setFocus,
+    formState: { isValid },
+  } = useForm({
+    mode: "onSubmit",
+    defaultValues: defaultFields.reduce((acc, field) => {
+      acc[field.fieldName] = field.defaultValue || "";
+      return acc;
+    }, {}),
+  });
 
   /** Used to Trigger useEffect anytime these vals change */
   const fieldsToWatch = useMemo(() => {
@@ -132,7 +157,7 @@ export const ImportForm = (props) => {
       }
     }
     return f2w;
-  }, [fields]);
+  }, []);
 
   /**
    * Set Form Fields State
@@ -168,7 +193,7 @@ export const ImportForm = (props) => {
       // 3. Set Reference of fields for next useEffect so we only call pixels that are affected
       setNewWatchedFieldReferences();
     }
-  }, [...fieldsToWatch.map((field) => watch(field)), dynamicFieldsToWatch]);
+  }, [...fieldsToWatch.map((field) => watch(field))]);
 
   /**
    * Anytime watched input fields defined in constants changes trigger this
@@ -180,6 +205,8 @@ export const ImportForm = (props) => {
    */
   useEffect(() => {
     if (!initScriptCallback) return;
+    if (isDynamicInputChangedByUser) return;
+
     const mappedValuesObject = dynamicFieldsToWatch.reduce(
       (acc, fieldName) => ({ ...acc, [fieldName]: getValues(fieldName) }),
       {}
@@ -200,6 +227,35 @@ export const ImportForm = (props) => {
    * It sets a flag that will stop dynamic update from running if the user has manually changed it
    * Allows the user to manually change the field back to re-enable dynamic updates
    */
+  const checkForDynamicFieldChange = () => {
+    // check to see if this form has a dynamically updated field
+    if (updateFieldName && initScriptCallback && dynamicFieldsToWatch) {
+      // setTimeout sets this to occur after field values are updated
+      setTimeout(() => {
+        // get values from all dynamic fields
+        const mappedValuesObject = dynamicFieldsToWatch.reduce(
+          (acc, fieldName) => ({
+            ...acc,
+            [fieldName]: getValues(fieldName),
+          }),
+          {}
+        );
+
+        // check if current value of initScript field matches what updateCallback would return
+        // if they do not match the user changed the initScript manually
+        const initScriptValueFromCallback = initScriptCallback(
+          mappedValuesObject
+        ).replace(/\s+/g, " ");
+        const initScriptValueFromTextField = getValues(updateFieldName);
+
+        // if they do match the user has not changed the initScript or they manually changed it back
+        // this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
+        const isMatched =
+          initScriptValueFromCallback == initScriptValueFromTextField;
+        setIsDynamicInputChangedByUser(!isMatched);
+      }, 0);
+    }
+  };
 
   /**
    * On init load of default values iterate and look for updateCallback
@@ -207,7 +263,7 @@ export const ImportForm = (props) => {
    * May be combinable with another useEffect
    */
   useEffect(() => {
-    defaultFields.forEach((val) => {
+    defaultFields.forEach((val, i) => {
       if (val.updateCallback) {
         setUpdateFieldName(val.fieldName);
         setInitScriptCallback(
@@ -590,6 +646,34 @@ export const ImportForm = (props) => {
    * @params form field and user input
    * @returns boolean
    */
+  const validateFormField = async (field, userInput): Promise<boolean> => {
+    //TODO: Validate Types.
+    //TODO: Update Syntax or rule name. This won't handle other pixels
+    const pixelToExecute = field.rules.custom.value.replace(
+      "[VALUE]",
+      userInput
+    );
+
+    const response = await monolithStore.runQuery(pixelToExecute);
+    const output = response.pixelReturn[0].output,
+      operationType = response.pixelReturn[0].operationType;
+
+    if (operationType.indexOf("ERROR") > -1) {
+      notification.add({
+        color: "error",
+        message: output,
+      });
+      return;
+    }
+
+    //if the name already exists then the engine name is not valid
+    if (output.exists) {
+      setFocus(field.fieldName);
+      return false;
+    }
+
+    return true;
+  };
   /**
    * @desc Checks if the field has display rules set
    * If it does, it will hide other fields based on the value of the field
@@ -597,526 +681,308 @@ export const ImportForm = (props) => {
    * @param value
    */
 
-  // Field-check logic
-  const hasOnlyUploadFields = (fields) =>
-    fields.every((f) =>
-      ["file-upload", "zip-upload"].includes(f.options?.component)
-    );
-  const hasMixedFields = (fields) =>
-    fields.some(
-      (f) => !["file-upload", "zip-upload"].includes(f.options?.component)
-    ) &&
-    fields.some((f) =>
-      ["file-upload", "zip-upload"].includes(f.options?.component)
-    );
-  const onlyUploads = hasOnlyUploadFields(defaultFields);
-  const mixedFields = hasMixedFields(defaultFields);
+  const checkForDisplayRulesSet = (field, value) => {
+    const selectedDefaultField = fields.find((f) => f.fieldName === field.name);
+    if (selectedDefaultField?.displayRules?.hideOtherFields) {
+      selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
+        const optionValue = fth.value;
+        fields.forEach((f) => {
+          if (f.fieldName === fth.fieldName) {
+            f.hidden = optionValue.includes(value);
+          }
+        });
+        dispatch({
+          type: "field",
+          field: "defaultFields",
+          value: fields,
+        });
+      });
+    }
+  };
 
+  /**
+   * Check if custom validation is needed
+   * @params form field and user input
+   * @returns boolean
+   */
+  /**
+   * @desc Checks if the field has display rules set
+   * If it does, it will hide other fields based on the value of the field
+   * @param field
+   * @param value
+   */
+
+  const getHelperText = (error, val) => {
+    if (!error) return val.helperText || "";
+    if (error.type === "checkField" && val.rules?.custom?.message) {
+      return val.rules.custom.message;
+    }
+    return error.message;
+  };
+
+  const renderControllerField = (
+    val,
+    control,
+    validateFormField,
+    checkForDynamicFieldChange,
+    checkForDisplayRulesSet
+  ) => (
+    <Controller
+      key={val.fieldName}
+      name={val.fieldName}
+      control={control}
+      rules={{
+        required: val.rules?.required,
+        pattern: val.rules?.pattern,
+        validate: val.rules?.custom && {
+          checkField: async (fieldVal) => validateFormField(val, fieldVal),
+        },
+      }}
+      render={({ field, fieldState: { error } }) => {
+        switch (val.options.component) {
+          case "text-field":
+            return (
+              <TextField
+                {...field}
+                fullWidth
+                label={val.label}
+                disabled={val.disabled}
+                required={val.rules?.required}
+                error={!!error}
+                helperText={getHelperText(error, val)}
+              />
+            );
+
+          case "password":
+            return (
+              <TextField
+                {...field}
+                type="password"
+                fullWidth
+                label={val.label}
+                disabled={val.disabled}
+                required={val.rules?.required}
+                error={!!error}
+                helperText={getHelperText(error, val)}
+              />
+            );
+
+          case "number":
+            return (
+              <TextField
+                {...field}
+                type="number"
+                fullWidth
+                label={val.label}
+                disabled={val.disabled}
+                required={val.rules?.required}
+                error={!!error}
+                helperText={getHelperText(error, val)}
+              />
+            );
+
+          case "select":
+            return (
+              <Select
+                {...field}
+                fullWidth
+                label={val.label}
+                disabled={val.disabled}
+                required={val.rules?.required}
+                error={!!error}
+                helperText={getHelperText(error, val)}
+                onChange={(e) => {
+                  field.onChange(e);
+                  checkForDisplayRulesSet(field, e.target.value);
+                }}
+              >
+                {val.options.options.map((opt, i) => (
+                  <Menu.Item key={i} value={opt.value}>
+                    {opt.display}
+                  </Menu.Item>
+                ))}
+              </Select>
+            );
+
+          case "radio":
+            return (
+              <RadioGroup
+                row
+                value={field.value || ""}
+                onChange={(e) => field.onChange(e.target.value)}
+              >
+                {val.options.options.map((opt, i) => (
+                  <FormControlLabel
+                    key={i}
+                    value={opt.value}
+                    control={<Radio />}
+                    label={opt.display}
+                  />
+                ))}
+                {error && (
+                  <Typography variant="caption" color="error">
+                    {getHelperText(error, val)}
+                  </Typography>
+                )}
+              </RadioGroup>
+            );
+
+          case "file-upload":
+            return (
+              <>
+                <FileDropzone
+                  multiple
+                  value={field.value || []}
+                  disabled={val.disabled}
+                  onChange={(v) => field.onChange(v)}
+                />
+                {error && (
+                  <Typography variant="body1" color="red">
+                    {getHelperText(error, val)}
+                  </Typography>
+                )}
+              </>
+            );
+          case "zip-upload":
+            return (
+              <>
+                <FileDropzone
+                  multiple
+                  value={field.value}
+                  disabled={val.disabled}
+                  onChange={(newValues) => field.onChange(newValues)}
+                />
+                {error && (
+                  <Typography variant="caption" color="error">
+                    {getHelperText(error, val)}
+                  </Typography>
+                )}
+              </>
+            );
+          case "checkbox":
+            return (
+              <>
+                <Checkbox
+                  required={val.rules.required}
+                  label={val.label}
+                  disabled={val.disabled}
+                  checked={field.value ? field.value : false}
+                  onChange={(value) => field.onChange(value)}
+                />
+                {error && (
+                  <Typography
+                    variant="body1"
+                    color="red"
+                    sx={{ mt: 0.5, display: "block" }}
+                  >
+                    {error.message}
+                  </Typography>
+                )}
+              </>
+            );
+
+          default:
+            return null;
+        }
+      }}
+    />
+  );
+
+  const SECTION_ORDER = ["general", "credentials", "settings"];
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
-      {(() => {
-        if (onlyUploads) {
-          // Upload-only mode
-          return (
-            <Grid container spacing={2}>
-              {defaultFields.map((f) => (
-                <Grid item xs={12} key={f.fieldName}>
-                  <Controller
-                    name={f.fieldName}
-                    control={control}
-                    rules={f.rules}
-                    render={({ field: fld }) => (
-                      <StyledFileUploadSection>
-                        <FileDropzone
-                          multiple
-                          value={fld.value || f.value}
-                          onChange={(v) => fld.onChange(v)}
-                        />
-                      </StyledFileUploadSection>
-                    )}
-                  />
-                </Grid>
-              ))}
-              <Grid item xs={12}>
-                <FlexEndBox>
-                  <Button
-                    disabled={formLoading}
-                    type="submit"
-                    variant="contained"
-                  >
-                    {formLoading ? <CircularProgress size="1.5em" /> : "Upload"}
-                  </Button>
-                </FlexEndBox>
-              </Grid>
-            </Grid>
+      <Stack>
+        {SECTION_ORDER.map((sectionKey) => {
+          const sectionFields = defaultFields.filter(
+            (f) => f.section?.toLowerCase() === sectionKey
           );
-        }
+          if (!sectionFields.length) return null;
 
-        if (mixedFields) {
+          const sectionDesc = sectionFields[0]?.sectiondescription || "";
+
           return (
-            <Stack spacing={4}>
-              {/* Hosting Mode */}
-              <FormRow>
-                <FormLabelBlock>
-                  <SectionTitle>Select Hosting Mode</SectionTitle>
-                  <SectionDescription>
-                    Choose between commercially hosted or locally hosted modes.
-                  </SectionDescription>
-                </FormLabelBlock>
-                <FormInputBlock
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    ml: 3,
-                  }}
-                >
-                  <Controller
-                    name="HOSTING_MODE"
-                    control={control}
-                    defaultValue=""
-                    render={({ field }) => (
-                      <RadioGroup row {...field}>
-                        <FormControlLabel
-                          value="commercial"
-                          control={<Radio label={""} />}
-                          label="Commercially Hosted"
-                        />
-                        <FormControlLabel
-                          value="local"
-                          control={<Radio label={""} />}
-                          label="Locally Hosted"
-                        />
-                      </RadioGroup>
-                    )}
-                  />
-                </FormInputBlock>
-              </FormRow>
-              <Divider />
-
-              {/* General Section */}
-              <FormRow>
-                <FormLabelBlock>
-                  <SectionTitle>General</SectionTitle>
-                  <SectionDescription>
-                    Provide name, type, and model to identify and configure.
-                  </SectionDescription>
-                </FormLabelBlock>
-                <FormInputBlock>
-                  <Grid container spacing={2}>
-                    {defaultFields.slice(0, 1).map((f) => (
-                      <Grid item xs={12} key={f.fieldName}>
-                        <Controller
-                          name={f.fieldName}
-                          control={control}
-                          rules={f.rules}
-                          render={({ field: fld, fieldState: fs }) =>
-                            f.options?.component === "select" ? (
-                              <FormControl fullWidth error={!!fs.error}>
-                                <Select
-                                  label={f.label}
-                                  value={fld.value || ""}
-                                  onChange={fld.onChange}
-                                  required={f.rules?.required}
-                                >
-                                  {(f.options.options || []).map((opt) => (
-                                    <MenuItem
-                                      key={opt.i}
-                                      value={opt[f.options.optionValue]}
-                                    >
-                                      {opt[f.options.optionDisplay]}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </FormControl>
-                            ) : (
-                              <TextField
-                                fullWidth
-                                label={f.label}
-                                value={fld.value || ""}
-                                onChange={fld.onChange}
-                                required={f.rules?.required}
-                                error={!!fs.error}
-                                helperText={fs.error?.message || f.helperText}
-                              />
-                            )
-                          }
-                        />
-                      </Grid>
-                    ))}
-                    {defaultFields.slice(1, 3).map((f) => (
-                      <Grid item xs={6} key={f.fieldName}>
-                        <Controller
-                          name={f.fieldName}
-                          control={control}
-                          rules={f.rules}
-                          render={({ field: fld, fieldState: fs }) =>
-                            f.options?.component === "select" ? (
-                              <FormControl fullWidth error={!!fs.error}>
-                                <Select
-                                  label={f.label}
-                                  value={fld.value || ""}
-                                  onChange={fld.onChange}
-                                  required={f.rules?.required}
-                                >
-                                  {(f.options.options || []).map((opt) => (
-                                    <MenuItem
-                                      key={opt.i}
-                                      value={opt[f.options.optionValue]}
-                                    >
-                                      {opt[f.options.optionDisplay]}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </FormControl>
-                            ) : (
-                              <TextField
-                                fullWidth
-                                label={f.label}
-                                value={fld.value || ""}
-                                onChange={fld.onChange}
-                                required={f.rules?.required}
-                                error={!!fs.error}
-                                helperText={fs.error?.message || f.helperText}
-                              />
-                            )
-                          }
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </FormInputBlock>
-              </FormRow>
-              <Divider />
-
-              {/* Credentials */}
-              <FormRow>
-                <FormLabelBlock>
-                  <SectionTitle>Credentials</SectionTitle>
-                  <SectionDescription>
-                    Enter AWS region, access keys, etc. securely.
-                  </SectionDescription>
-                </FormLabelBlock>
-                <FormInputBlock>
-                  <Grid container spacing={2}>
-                    {defaultFields.slice(3, 7).map((f, i) => (
-                      <Grid item xs={i < 2 ? 6 : 12} key={f.fieldName}>
-                        <Controller
-                          name={f.fieldName}
-                          control={control}
-                          rules={f.rules}
-                          render={({ field: fld, fieldState: fs }) =>
-                            f.options?.component === "select" ? (
-                              <FormControl
-                                fullWidth
-                                error={!!fs.error}
-                                required={f.rules?.required}
-                              >
-                                <Select
-                                  value={fld.value ?? ""}
-                                  onChange={fld.onChange}
-                                  label={f.label}
-                                  required={f.rules?.required}
-                                >
-                                  {(f.options.options || []).map((option) => (
-                                    <MenuItem
-                                      key={option.value}
-                                      value={option.value}
-                                    >
-                                      {option.display}
-                                    </MenuItem>
-                                  ))}
-                                </Select>
-                              </FormControl>
-                            ) : (
-                              <TextField
-                                fullWidth
-                                label={f.label}
-                                value={fld.value || ""}
-                                onChange={fld.onChange}
-                                required={f.rules?.required}
-                                error={!!fs.error}
-                                helperText={fs.error?.message || f.helperText}
-                              />
-                            )
-                          }
-                        />
-                      </Grid>
-                    ))}
-                  </Grid>
-                </FormInputBlock>
-              </FormRow>
-              <Divider />
-
-              {/* Settings */}
-              <FormRow>
-                <FormLabelBlock>
-                  <SectionTitle>Settings</SectionTitle>
-                  <SectionDescription>
-                    Configure chat type, tokens, history, etc.
-                  </SectionDescription>
-                </FormLabelBlock>
-                <FormInputBlock>
-                  <Grid container spacing={2}>
-                    {defaultFields
-                      .slice(7)
-                      .filter(
-                        (f) =>
-                          !["file-upload", "zip-upload"].includes(
-                            f.options?.component
-                          )
-                      )
-                      .map((f, i) => {
-                        const comp = f.options?.component;
-                        const isSwitch =
-                          comp === "switch" &&
-                          f.options.options?.some((o) =>
-                            ["true", "false"].includes(o.value)
-                          );
-                        const isTextArea = comp === "text-area";
-                        return (
-                          <Grid item xs={i < 2 ? 12 : 6} key={f.fieldName}>
-                            <Controller
-                              name={f.fieldName}
-                              control={control}
-                              rules={f.rules}
-                              render={({ field: fld, fieldState: fs }) =>
-                                isSwitch ? (
-                                  <FormControlLabel
-                                    sx={{
-                                      ml: 1,
-                                      gap: 3,
-                                    }}
-                                    control={
-                                      <Switch
-                                        size="small"
-                                        checked={f.value === "true"}
-                                        onChange={(
-                                          e: React.ChangeEvent<HTMLInputElement>
-                                        ) =>
-                                          f.onChange(
-                                            e.target.checked ? "true" : "false"
-                                          )
-                                        }
-                                      />
-                                    }
-                                    label={f.label}
-                                  />
-                                ) : isTextArea ? (
-                                  <TextField
-                                    fullWidth
-                                    multiline
-                                    minRows={4}
-                                    label={f.label}
-                                    value={fld.value || ""}
-                                    onChange={fld.onChange}
-                                    required={f.rules?.required}
-                                    error={!!fs.error}
-                                    helperText={
-                                      fs.error?.message || f.helperText
-                                    }
-                                  />
-                                ) : (
-                                  <TextField
-                                    fullWidth
-                                    label={f.label}
-                                    value={fld.value || ""}
-                                    onChange={fld.onChange}
-                                    required={f.rules?.required}
-                                    error={!!fs.error}
-                                    helperText={
-                                      fs.error?.message || f.helperText
-                                    }
-                                  />
-                                )
-                              }
-                            />
-                          </Grid>
-                        );
-                      })}
-                  </Grid>
-                </FormInputBlock>
-              </FormRow>
-
-              {/* Optional File Upload Under Settings */}
-              {defaultFields
-                .slice(7)
-                .some((f) =>
-                  ["file-upload", "zip-upload"].includes(f.options?.component)
-                ) && (
-                <>
-                  <Divider />
-                  <Grid container spacing={2}>
-                    {defaultFields
-                      .slice(7)
-                      .filter((f) =>
-                        ["file-upload", "zip-upload"].includes(
-                          f.options?.component
-                        )
-                      )
-                      .map((f) => (
-                        <Grid item xs={12} key={f.fieldName}>
-                          <SectionTitle sx={{ mt: 3 }}>{f.label}</SectionTitle>
-                          <Controller
-                            name={f.fieldName}
-                            control={control}
-                            rules={f.rules}
-                            render={({ field: fld }) => (
-                              <StyledFileUploadSection>
-                                <FileDropzone
-                                  multiple
-                                  value={fld.value || f.value}
-                                  onChange={(v) => fld.onChange(v)}
-                                />
-                              </StyledFileUploadSection>
-                            )}
-                          />
-                        </Grid>
-                      ))}
-                  </Grid>
-                </>
-              )}
-              <Divider />
-
-              {/* Advanced */}
-              {advancedFields.length > 0 && (
-                <>
-                  <FormRow>
-                    <SectionTitle>ADVANCED SETTINGS</SectionTitle>
-                    <Box sx={{ flex: 1 }} />
-                    <IconButton onClick={() => setOpenAdvanced(!openAdvanced)}>
-                      {openAdvanced ? <ExpandLess /> : <ExpandMore />}
-                    </IconButton>
-                  </FormRow>
-                  {openAdvanced &&
-                    advancedFields.map((val) =>
-                      !val.hidden ? (
-                        <StyledKeyValue key={val.fieldName}>
-                          <Controller
-                            name={val.fieldName}
-                            control={control}
-                            rules={val.rules}
-                            render={({ field: fld }) => {
-                              switch (val.options.component) {
-                                case "text-field":
-                                  return (
-                                    <TextField
-                                      fullWidth
-                                      required={val.rules?.required}
-                                      label={val.label}
-                                      value={fld.value || ""}
-                                      onChange={(e) =>
-                                        fld.onChange(e.target.value)
-                                      }
-                                      helperText={val.helperText}
-                                      inputProps={{
-                                        "data-testid": `importForm-textField-${val.fieldName}`,
-                                      }}
-                                    />
-                                  );
-                                case "password":
-                                  return (
-                                    <TextField
-                                      fullWidth
-                                      type="password"
-                                      required={val.rules?.required}
-                                      label={val.label}
-                                      value={fld.value || ""}
-                                      onChange={(e) =>
-                                        fld.onChange(e.target.value)
-                                      }
-                                      helperText={val.helperText}
-                                      inputProps={{
-                                        "data-testid": `importForm-textField-${val.fieldName}`,
-                                      }}
-                                    />
-                                  );
-                                case "number":
-                                  return (
-                                    <TextField
-                                      fullWidth
-                                      type="number"
-                                      required={val.rules?.required}
-                                      label={val.label}
-                                      value={fld.value || ""}
-                                      onChange={(e) =>
-                                        fld.onChange(e.target.value)
-                                      }
-                                      helperText={val.helperText}
-                                      inputProps={{
-                                        "data-testid": `importForm-textField-${val.fieldName}`,
-                                      }}
-                                    />
-                                  );
-                                case "checkbox":
-                                  return (
-                                    <Checkbox
-                                      required={val.rules?.required}
-                                      label={val.label}
-                                      disabled={val.disabled}
-                                      checked={fld.value ? fld.value : false}
-                                      onChange={(value) => fld.onChange(value)}
-                                    />
-                                  );
-                                case "select":
-                                  return (
-                                    <FormControl fullWidth>
-                                      <Select
-                                        label={val.label}
-                                        value={fld.value || ""}
-                                        onChange={(e) =>
-                                          fld.onChange(e.target.value)
-                                        }
-                                      >
-                                        {val.options.options.map((opt) => (
-                                          <MenuItem
-                                            key={opt.i}
-                                            value={opt.value}
-                                          >
-                                            {opt.display}
-                                          </MenuItem>
-                                        ))}
-                                      </Select>
-                                    </FormControl>
-                                  );
-                                case "zip-upload":
-                                  return (
-                                    <StyledFileUploadSection>
-                                      <FileDropzone
-                                        multiple
-                                        value={fld.value || ""}
-                                        onChange={(v) => fld.onChange(v)}
-                                      />
-                                    </StyledFileUploadSection>
-                                  );
-                                default:
-                                  return null;
-                              }
-                            }}
-                          />
-                        </StyledKeyValue>
-                      ) : null
-                    )}
-                </>
-              )}
-
-              <FlexEndBox>
-                <Button
-                  disabled={formLoading}
-                  type="submit"
-                  variant="contained"
-                >
-                  {formLoading ? (
-                    <CircularProgress size="1.5em" />
-                  ) : (
-                    `Create ${steps[0]?.data?.toLowerCase() || ""}`
+            <>
+              <SectionContainer container spacing={2} key={sectionKey}>
+                <SectionLeft>
+                  <Typography variant="h6" gutterBottom>
+                    {sectionKey.toUpperCase()}
+                  </Typography>
+                  <Typography variant="body2" color="textSecondary">
+                    {sectionDesc}
+                  </Typography>
+                </SectionLeft>
+                <SectionRight>
+                  {sectionFields.map((val) =>
+                    renderControllerField(
+                      val,
+                      control,
+                      validateFormField,
+                      checkForDynamicFieldChange,
+                      checkForDisplayRulesSet
+                    )
                   )}
-                </Button>
-              </FlexEndBox>
-            </Stack>
+                </SectionRight>
+              </SectionContainer>
+              <Divider />
+            </>
           );
-        }
-        return null;
-      })()}
+        })}
+        {defaultFields.filter((f) => !f.section).length > 0 && (
+          <>
+            <SectionContainer>
+              {defaultFields.filter((f) => !f.section).length > 0 && (
+                <SectionContainer>
+                  {defaultFields
+                    .filter((f) => !f.section)
+                    .map((val, i) => (
+                      <StyledNoSection key={i}>
+                        <Typography variant="body1">{val.label}</Typography>
+                        {renderControllerField(
+                          val,
+                          control,
+                          validateFormField,
+                          checkForDynamicFieldChange,
+                          checkForDisplayRulesSet
+                        )}
+                      </StyledNoSection>
+                    ))}
+                </SectionContainer>
+              )}
+            </SectionContainer>            
+          </>
+        )}
+        {advancedFields.length ? (
+          <>
+            <AdvancedHeader>
+              <Typography variant="body1">ADVANCED SETTINGS</Typography>
+              <IconButton onClick={() => setOpenAdvanced(!openAdvanced)}>
+                {openAdvanced ? <ExpandLess /> : <ExpandMore />}
+              </IconButton>
+            </AdvancedHeader>
+
+            {openAdvanced &&
+              advancedFields.map((val) =>
+                renderControllerField(
+                  val,
+                  control,
+                  validateFormField,
+                  checkForDynamicFieldChange,
+                  checkForDisplayRulesSet
+                )
+              )}
+          </>
+        ) : null}
+
+        <StyledFlexEnd>
+          <StyledSubmitButton type="submit" variant="contained">
+            {formLoading ? (
+              <CircularProgress size="1.5em" />
+            ) : (
+              `Create ${steps[0].data.toLowerCase()}`
+            )}
+          </StyledSubmitButton>
+        </StyledFlexEnd>
+      </Stack>
     </form>
   );
 };

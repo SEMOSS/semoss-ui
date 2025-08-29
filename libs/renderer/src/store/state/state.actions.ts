@@ -42,13 +42,12 @@ export enum ActionMessages {
 	UPDATE_CELL = "UPDATE_CELL",
 	/**
 	 * Events
-	*/
+	 */
 	RUN_CELL = "RUN_CELL",
 	RUN_QUERY = "RUN_QUERY",
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
-	RUN_MARKDOWN_CELL = "RUN_MARKDOWN_CELL",
 }
 
 export type Actions =
@@ -70,16 +69,13 @@ export type Actions =
 	| RunCellAction
 	| RemoveDynamicSlotAction
 	| AddDynamicSlotAction
-	| RunMarkdownCellAction
 	| DispatchEventAction
-	| DispatchOutputsEventAction
 	| DispatchOpenEventAction
 	| AddVariableAction
 	| RenameVariableAction
 	| EditVariableAction
 	| DeleteVariableAction
 	| SetSheetExecutionOrderAction;
-
 
 /**
  * All
@@ -95,7 +91,6 @@ export interface SetStateAction extends Action {
 		state?: SerializedState;
 	};
 }
-
 
 export interface AddVariableAction extends Action {
 	message: ActionMessages.ADD_VARIABLE;
@@ -311,7 +306,6 @@ export interface UpdateCellAction extends Action {
 	};
 }
 
-
 /**
  * Events
  */
@@ -348,14 +342,5 @@ export interface RunCellAction extends Action {
 	payload: {
 		queryId: string;
 		cellId: string;
-	};
-}
-
-export interface RunMarkdownCellAction extends Action {
-	message: ActionMessages.RUN_MARKDOWN_CELL;
-	payload: {
-		queryId: string;
-		cellId: string;
-		marked: boolean;
 	};
 }
