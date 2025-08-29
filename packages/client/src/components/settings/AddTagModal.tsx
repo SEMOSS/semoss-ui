@@ -63,6 +63,7 @@ export const AddTagModal: React.FC<AddTagModalProps> = ({
 
 	const [isLoading, setIsLoading] = useState(false);
 	const [tagName, setTagName] = useState("");
+	const [hasUserInteracted, setHasUserInteracted] = useState(false);
 
 	/**
 	 * Effect to reset form state when modal opens/closes
@@ -72,6 +73,7 @@ export const AddTagModal: React.FC<AddTagModalProps> = ({
 	useEffect(() => {
 		if (open) {
 			setTagName("");
+			setHasUserInteracted(false);
 		}
 	}, [open]);
 
@@ -99,7 +101,9 @@ export const AddTagModal: React.FC<AddTagModalProps> = ({
 			const errors: string[] = [];
 
 			if (!trimmed) {
-				return { isValid: false, errors: [] };
+				// Show required message for empty input
+				errors.push("Tag name is required");
+				return { isValid: false, errors };
 			}
 
 			// Length validation
@@ -138,10 +142,15 @@ export const AddTagModal: React.FC<AddTagModalProps> = ({
 	// Get current validation message for display
 	const getValidationMessage = useCallback(
 		(value: string): string => {
+			// Only show validation errors if user has interacted with the field
+			if (!hasUserInteracted && !value.trim()) {
+				return ""; // Don't show required message until user has tried to type
+			}
+
 			const { errors } = validateTag(value);
 			return errors[0] || ""; // Show first error only
 		},
-		[validateTag],
+		[validateTag, hasUserInteracted],
 	);
 
 	/**
@@ -221,7 +230,12 @@ export const AddTagModal: React.FC<AddTagModalProps> = ({
 						variant="outlined"
 						fullWidth
 						value={tagName}
-						onChange={(e) => setTagName(e.target.value)}
+						onChange={(e) => {
+							setTagName(e.target.value);
+							if (!hasUserInteracted) {
+								setHasUserInteracted(true);
+							}
+						}}
 						disabled={isLoading}
 						error={!!getValidationMessage(tagName)}
 						helperText={getValidationMessage(tagName) || " "} // Reserve space with non-breaking space

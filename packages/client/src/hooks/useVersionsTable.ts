@@ -192,6 +192,10 @@ export function useVersionsTable(id: string) {
 
 	// Handle refresh with current pagination settings
 	const handleRefresh = useCallback(() => {
+		// Reset pagination state on refresh
+		setHasMoreData(true);
+		setCurrentBatch(0);
+		setPage(0);
 		loadData(true);
 	}, [loadData]);
 

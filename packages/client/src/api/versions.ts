@@ -1,5 +1,6 @@
 import { runPixel } from "@semoss/sdk/react";
 import type { CommitVersion } from "@/types/types";
+import { buildSafePixelCommand } from "@/utility";
 
 /**
  * Check if a pixel response contains errors
@@ -34,6 +35,10 @@ const executePixelWithErrorHandling = async (
 
 /**
  * Add a tag to a specific commit in a Git project
+ *
+ * This function safely constructs the pixel command using parameter escaping
+ * to prevent command injection vulnerabilities.
+ *
  * @param projectId - ID of the project
  * @param commitId - ID of the commit to tag
  * @param tagName - Name of the tag to add
@@ -46,7 +51,14 @@ export const addGitTag = async (
 	tagName: string,
 	insightId: string,
 ) => {
-	const pixel = `GitAddTag(project='${projectId}', commitId='${commitId}', tags='${tagName}')`;
+	const pixel = buildSafePixelCommand(
+		"GitAddTag(project='{projectId}', commitId='{commitId}', tags='{tagName}')",
+		{
+			projectId,
+			commitId,
+			tagName,
+		},
+	);
 
 	const { response, hasError } = await executePixelWithErrorHandling(
 		pixel,
