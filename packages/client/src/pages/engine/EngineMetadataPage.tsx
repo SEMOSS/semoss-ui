@@ -10,6 +10,8 @@ import {
 	styled,
 	Table,
 	Typography,
+	Modal,
+	TextField,
 } from "@semoss/ui";
 import { Metamodel } from "@/components/metamodel";
 import { Section } from "@/components/ui";
@@ -45,6 +47,17 @@ export const EngineMetadataPage = observer(() => {
 	const [customEdges, setCustomEdges] = useState(null);
 	const [relationships, setRelationships] = useState(null);
 	const [canSave, setCanSave] = useState(true);
+	
+	// State for edit description dialog
+	const [editDescriptionDialog, setEditDescriptionDialog] = useState({
+		open: false,
+		columnId: "",
+		columnName: "",
+		tableName: "",
+		currentDescription: "",
+		newDescription: "",
+	});
+
 	const navigate = useNavigate();
 
 	const getDatabaseMetamodel = usePixel<{
@@ -317,6 +330,78 @@ export const EngineMetadataPage = observer(() => {
 		saveDatabase(payloadObj);
 	};
 
+	const handleEditDescriptionOpen = async (columnId: string, columnName: string, tableName: string, currentDescription: string) => {
+		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
+		// Use the first logical name if available, otherwise fallback to processing the column name
+		const columnNameForPixel = logicalNames.length > 0 
+			? logicalNames[0] 
+			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+			
+		// Use GetOwlDescriptions to get the most up-to-date description
+		const pixel = `GetOwlDescriptions(database=["${active.id}"], concept="${tableName}", column="${columnNameForPixel}")`;
+		console.log("GetOwlDescriptions pixel:", pixel);
+
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const description = response.pixelReturn[0]?.output?.[columnName] || currentDescription;
+			
+			setEditDescriptionDialog({
+				open: true,
+				columnId,
+				columnName,
+				tableName,
+				currentDescription: description,
+				newDescription: description,
+			});
+		} catch (error) {
+			console.error("Failed to retrieve description:", error);
+			// Fallback to current description if API call fails
+			setEditDescriptionDialog({
+				open: true,
+				columnId,
+				columnName,
+				tableName,
+				currentDescription,
+				newDescription: currentDescription,
+			});
+		}
+	};
+
+	const handleEditDescriptionClose = () => {
+		setEditDescriptionDialog({
+			...editDescriptionDialog,
+			open: false,
+		});
+	};
+
+	const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setEditDescriptionDialog({
+			...editDescriptionDialog,
+			newDescription: e.target.value,
+		});
+	};
+
+	const handleSaveDescription = async () => {
+		// Use logical names instead of column name
+		// Get the logical name from the metamodel data
+		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
+		// Use the first logical name if available, otherwise fallback to processing the column name
+		const columnNameForPixel = logicalNames.length > 0 
+			? logicalNames[0] 
+			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+			
+		const pixel = `EditOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", description="${editDescriptionDialog.newDescription}")`;
+		
+		try {
+			await monolithStore.runQuery(pixel);
+			// Refresh the metamodel data to show updated description
+			getDatabaseMetamodel.refresh();
+			handleEditDescriptionClose();
+		} catch (error) {
+			console.error("Failed to update description:", error);
+		}
+	};
+
 	return (
 		<StyledPage>
 			<Section>
@@ -386,7 +471,7 @@ export const EngineMetadataPage = observer(() => {
 							<Table stickyHeader>
 								<Table.Head>
 									<Table.Row>
-										<Table.Cell />
+										<Table.Cell>Edit</Table.Cell>
 										<Table.Cell>Name</Table.Cell>
 										<Table.Cell>Description</Table.Cell>
 										<Table.Cell>Logical Names</Table.Cell>
@@ -404,10 +489,17 @@ export const EngineMetadataPage = observer(() => {
 											[];
 										return (
 											<Table.Row
-												key={`${property}--${idx}`}
+												key={`${property.id}--${idx}`}
 											>
 												<Table.Cell>
-													<IconButton disabled>
+													<IconButton 
+														onClick={() => handleEditDescriptionOpen(
+															property.id,
+															property.name,
+															selectedNode.data.name,
+															desc
+														)}
+													>
 														<Create />
 													</IconButton>
 												</Table.Cell>
@@ -504,6 +596,36 @@ export const EngineMetadataPage = observer(() => {
 				tables={tabledata}
 				views={viewdata}
 			/>
+
+			{/* Edit Description Dialog */}
+			<Modal open={editDescriptionDialog.open} onClose={handleEditDescriptionClose}>
+				<Modal.Title>Edit Column Description</Modal.Title>
+				<Modal.Content>
+					<TextField
+						label="Column Name"
+						value={editDescriptionDialog.columnName}
+						disabled
+						fullWidth
+						margin="normal"
+					/>
+					<TextField
+						label="Description"
+						value={editDescriptionDialog.newDescription}
+						onChange={handleDescriptionChange}
+						multiline
+						rows={4}
+						fullWidth
+						margin="normal"
+					/>
+				</Modal.Content>
+				<Modal.Actions>
+					<Button onClick={handleEditDescriptionClose}>Cancel</Button>
+					<Button onClick={handleSaveDescription} variant="contained">
+						Save
+					</Button>
+				</Modal.Actions>
+			</Modal>
+
 		</StyledPage>
 	);
 });
