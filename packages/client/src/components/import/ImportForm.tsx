@@ -1,6 +1,6 @@
 // InputForm
 
-import { ExpandLess, ExpandMore, } from "@mui/icons-material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -106,7 +106,11 @@ export const ImportForm = (props) => {
 			return acc;
 		}, {}),
 	});
-	const _lastField = useRef({lastFocussedField: "", lastFocussedValue:""});
+	const _lastField = useRef({
+		lastFocussedField: "",
+		lastFocussedValue: "",
+		lastValidatedValue: "",
+	});
 
 	/** Used to Trigger useEffect anytime these vals change */
 	const fieldsToWatch = useMemo(() => {
@@ -238,7 +242,8 @@ export const ImportForm = (props) => {
 				// if they do match the user has not changed the initScript or they manually changed it back
 				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
 				const isMatched =
-					initScriptValueFromCallback === initScriptValueFromTextField;
+					initScriptValueFromCallback ===
+					initScriptValueFromTextField;
 				setIsDynamicInputChangedByUser(!isMatched);
 			}, 0);
 		}
@@ -678,7 +683,10 @@ export const ImportForm = (props) => {
 		//if the name already exists then the engine name is not valid
 		if (output.exists) {
 			// setFocus(field.fieldName);
-			setError(field.fieldName, {message: field.rules.custom.message, type: 'checkField'});
+			setError(field.fieldName, {
+				message: field.rules.custom.message,
+				type: "checkField",
+			});
 			return false;
 		}
 
@@ -719,23 +727,50 @@ export const ImportForm = (props) => {
 				{defaultFields.map((val, i) => {
 					if (!val.hidden) {
 						return (
-							<StyledKeyValue key={`${val.fieldName}-${val.label}-${i}`}>
+							<StyledKeyValue
+								key={`${val.fieldName}-${val.label}-${i}`}
+							>
 								<Controller
 									name={val.fieldName}
 									control={control}
 									rules={{
 										required: val.rules.required,
 										validate: {
-											...(val.rules?.custom ? {
-												checkField: async (fieldVal) => {
-													if(_lastField.current.lastFocussedField === val.fieldName) {
-														return validateFormField(
-															val,
+											...(val.rules?.custom
+												? {
+														checkField: async (
 															fieldVal,
-														);
+														) => {
+															if (
+																_lastField
+																	.current
+																	.lastValidatedValue ===
+																fieldVal
+															)
+																return true;
+
+															try {
+																let validStatus: Promise<boolean> | null;
+																if (
+																	_lastField
+																		.current
+																		.lastFocussedField ===
+																	val.fieldName
+																) {
+																	validStatus =
+																		validateFormField(
+																			val,
+																			fieldVal,
+																		);
+																}
+																return validStatus;
+															} finally {
+																_lastField.current.lastValidatedValue =
+																	fieldVal;
+															}
+														},
 													}
-												}
-											} : {})
+												: {}),
 										},
 										pattern: {
 											...(val.rules.pattern && {
@@ -803,13 +838,16 @@ export const ImportForm = (props) => {
 													error={invalid}
 													inputProps={{
 														"data-testid": `importForm-textField-${val.fieldName}`,
-														onFocus: () =>{
-															_lastField.current = {
+														onFocus: () => {
+															_lastField.current =
+																{
 																	..._lastField.current,
-																	lastFocussedField: val.fieldName,
-																	lastFocussedValue: field.value
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
 																};
-														}
+														},
 													}}
 													{...field}
 												></TextField>
@@ -840,10 +878,12 @@ export const ImportForm = (props) => {
 													}}
 													onFocus={() => {
 														_lastField.current = {
-																..._lastField.current,
-																lastFocussedField: val.fieldName,
-																lastFocussedValue: field.value
-															};
+															..._lastField.current,
+															lastFocussedField:
+																val.fieldName,
+															lastFocussedValue:
+																field.value,
+														};
 													}}
 													helperText={val.helperText}
 												></TextField>
@@ -872,13 +912,16 @@ export const ImportForm = (props) => {
 														);
 													}}
 													SelectProps={{
-															onFocus: () => {
-																_lastField.current = {
-																		..._lastField.current,
-																		lastFocussedField: val.fieldName,
-																		lastFocussedValue: field.value
-																	};
-															},
+														onFocus: () => {
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
+														},
 													}}
 													InputProps={{
 														"data-testid": `importForm-selectField-${val.fieldName}`,
@@ -933,10 +976,12 @@ export const ImportForm = (props) => {
 													}}
 													onFocus={() => {
 														_lastField.current = {
-																..._lastField.current,
-																lastFocussedField: val.fieldName,
-																lastFocussedValue: field.value
-															};
+															..._lastField.current,
+															lastFocussedField:
+																val.fieldName,
+															lastFocussedValue:
+																field.value,
+														};
 													}}
 												></TextField>
 											);
@@ -961,11 +1006,14 @@ export const ImportForm = (props) => {
 															field.onChange(
 																newValues,
 															);
-															_lastField.current = {
-																..._lastField.current,
-																lastFocussedField: val.fieldName,
-																lastFocussedValue: field.value
-															};
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
 														}}
 													/>
 												</StyledDropzoneField>
@@ -1001,7 +1049,9 @@ export const ImportForm = (props) => {
 							advancedFields.map((val, i) => {
 								if (!val.hidden) {
 									return (
-										<StyledKeyValue key={`${val.fieldName}-${i}`}>
+										<StyledKeyValue
+											key={`${val.fieldName}-${i}`}
+										>
 											<Controller
 												name={val.fieldName}
 												control={control}
@@ -1203,9 +1253,7 @@ export const ImportForm = (props) => {
 																	) => {
 																		return (
 																			<Menu.Item
-																				key={
-																					`${opt.value}-${i}`
-																				}
+																				key={`${opt.value}-${i}`}
 																				value={
 																					opt.value
 																				}
