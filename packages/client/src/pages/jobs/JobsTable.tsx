@@ -115,7 +115,9 @@ export const JobsTable = (props: {
           <Stack height="100%" direction="row" spacing={1} alignItems="center">
             {params.value.map((tag) => {
               if (tag) {
-                return <Chip key={`test-${tag}`} label={tag} />;
+                return (
+                  <Chip key={`test-${params?.row?.id}-${tag}`} label={tag} />
+                );
               }
               return null;
             })}
@@ -163,7 +165,7 @@ export const JobsTable = (props: {
       disableColumnMenu: true,
       minWidth: 150,
       renderCell: (params) => {
-        const job = jobs.find((job) => job.id === params.value);
+        const job = jobs?.find((job) => job.id === params?.value);
         return (
           <>
             <IconButton
@@ -171,7 +173,7 @@ export const JobsTable = (props: {
               color="primary"
               size="medium"
               onClick={() => {
-                runJob(job);
+                job && runJob(job);
               }}
               data-testid={"jobs-table-play-btn"}
             >
