@@ -2,14 +2,14 @@ import {
 	ChevronLeftOutlined,
 	ChevronRightOutlined,
 	CopyAllOutlined,
+	RefreshOutlined,
+	SouthEastOutlined,
 	ThumbDownOffAltOutlined,
 	ThumbUpAltOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import {
-	Button,
 	Chip,
-	Divider,
 	IconButton,
 	Markdown,
 	Stack,
@@ -24,9 +24,11 @@ import {
 } from "@/stores";
 import { ResponseMessageTool } from "./ResponseMessageTool";
 
-const StyledAgentResponse = styled(Stack)(({ theme }) => ({
-	paddingLeft: theme.spacing(2),
-	paddingRight: theme.spacing(2),
+const StyledResponseMessage = styled(Stack)(({ theme }) => ({
+	width: "100%",
+	padding: "8px 16px",
+	background: theme.palette.background.paper,
+	borderRadius: theme.shape.borderRadius,
 }));
 
 const StyledHover = styled("div")(() => ({
@@ -120,9 +122,14 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		return (
-			<StyledAgentResponse direction={"column"} spacing={1}>
+			<StyledResponseMessage direction={"column"} spacing={2}>
+				<Stack direction="row" spacing={1}>
+					<Typography variant="caption">Response</Typography>
+					<SouthEastOutlined
+						sx={{ color: "#757575", fontSize: "1rem" }}
+					/>
+				</Stack>
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
-
 				{message.tools.map((t) => (
 					<ResponseMessageTool
 						key={t.id}
@@ -131,7 +138,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						tool={t}
 					/>
 				))}
-
 				{message.sources.length > 0 ? (
 					<Stack direction={"row"} spacing={1} flexWrap={"wrap"}>
 						{message.sources.map((s, sIdx) => {
@@ -142,105 +148,88 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						})}
 					</Stack>
 				) : null}
-
 				<StyledHover>
-					<div>
-						<Divider />
-						<Stack
-							direction={"row"}
-							alignItems={"center"}
-							justifyContent={"space-between"}
+					<Stack direction={"row"} alignItems={"center"} spacing={1}>
+						<IconButton
+							size="small"
+							onClick={() => {
+								recordFeedback(true);
+							}}
 						>
-							<Stack direction={"row"} alignItems={"center"}>
-								{inputMessage && (
-									<Button
-										variant="text"
-										size="small"
-										color="inherit"
-										onClick={() => rewriteMessage()}
-									>
-										Rewrite
-									</Button>
-								)}
-								{inputMessage?.siblings.length > 1 && (
-									<>
-										<IconButton
-											size="small"
-											disabled={
-												!inputMessage.previousSibling
-											}
-											onClick={() => {
-												if (
-													!inputMessage.previousSibling
-												) {
-													return;
-												}
+							<ThumbUpAltOutlined fontSize="small" />
+						</IconButton>
 
-												inputMessage.previousSibling.activateMessage();
-											}}
-										>
-											<ChevronLeftOutlined fontSize="small" />
-										</IconButton>
-										<Typography variant="caption">
-											{inputMessage.position + 1}/
-											{inputMessage.siblings.length}
-										</Typography>
-										<IconButton
-											size="small"
-											disabled={!inputMessage.nextSibling}
-											onClick={() => {
-												if (!inputMessage.nextSibling) {
-													return;
-												}
+						<IconButton
+							size="small"
+							onClick={() => {
+								recordFeedback(false);
+							}}
+						>
+							<ThumbDownOffAltOutlined fontSize="small" />
+						</IconButton>
 
-												inputMessage.nextSibling.activateMessage();
-											}}
-										>
-											<ChevronRightOutlined fontSize="small" />
-										</IconButton>
-									</>
-								)}
-							</Stack>
-							<Stack
-								direction={"row"}
-								alignItems={"center"}
-								spacing={1}
+						<IconButton
+							size="small"
+							disabled={!message.text}
+							onClick={() => {
+								if (!message.text) {
+									return;
+								}
+
+								copyMessage(message.text);
+							}}
+						>
+							<CopyAllOutlined fontSize="small" />
+						</IconButton>
+
+						{inputMessage && (
+							<IconButton
+								size="small"
+								onClick={() => {
+									rewriteMessage();
+								}}
 							>
-								<IconButton
-									size="small"
-									onClick={() => {
-										recordFeedback(false);
-									}}
-								>
-									<ThumbDownOffAltOutlined fontSize="small" />
-								</IconButton>
-								<IconButton
-									size="small"
-									onClick={() => {
-										recordFeedback(true);
-									}}
-								>
-									<ThumbUpAltOutlined fontSize="small" />
-								</IconButton>
+								<RefreshOutlined fontSize="small" />
+							</IconButton>
+						)}
 
+						{inputMessage?.siblings.length > 1 && (
+							<>
 								<IconButton
 									size="small"
-									disabled={!message.text}
+									disabled={!inputMessage.previousSibling}
 									onClick={() => {
-										if (!message.text) {
+										if (!inputMessage.previousSibling) {
 											return;
 										}
 
-										copyMessage(message.text);
+										inputMessage.previousSibling.activateMessage();
 									}}
 								>
-									<CopyAllOutlined fontSize="small" />
+									<ChevronLeftOutlined fontSize="small" />
 								</IconButton>
-							</Stack>
-						</Stack>
-					</div>
+								<Typography variant="caption">
+									{inputMessage.position + 1}/
+									{inputMessage.siblings.length}
+								</Typography>
+								<IconButton
+									size="small"
+									disabled={!inputMessage.nextSibling}
+									onClick={() => {
+										if (!inputMessage.nextSibling) {
+											return;
+										}
+
+										inputMessage.nextSibling.activateMessage();
+									}}
+								>
+									<ChevronRightOutlined fontSize="small" />
+								</IconButton>
+							</>
+						)}
+					</Stack>
 				</StyledHover>
-			</StyledAgentResponse>
+			</StyledResponseMessage>
 		);
 	},
 );

@@ -96,7 +96,7 @@ interface RoomStoreInterface {
 		isOpen: boolean;
 
 		/** type of sidebar to open */
-		type: "OPTIONS" | "ARTIFACTS";
+		type: "CONFIGURATION" | "ARTIFACTS";
 	};
 
 	/**
@@ -135,7 +135,7 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			type: "OPTIONS",
+			type: "CONFIGURATION",
 		},
 		artifact: {
 			model: FlexLayout.Model.fromJson({
