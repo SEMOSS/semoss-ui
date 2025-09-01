@@ -336,7 +336,9 @@ export const EngineMetadataPage = observer(() => {
 		const columnNameForPixel = logicalNames.length > 0 
 			? logicalNames[0] 
 			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
-			
+			console.log("columnNameForPixel:    ", logicalNames);
+			console.log("tableName:", tableName);
+
 		// Use GetOwlDescriptions to get the most up-to-date description
 		const pixel = `GetOwlDescriptions(database=["${active.id}"], concept="${tableName}", column="${columnNameForPixel}")`;
 		console.log("GetOwlDescriptions pixel:", pixel);
@@ -394,16 +396,94 @@ export const EngineMetadataPage = observer(() => {
 		
 		try {
 			await monolithStore.runQuery(pixel);
-			// Refresh the metamodel data to show updated description
-			getDatabaseMetamodel.refresh();
+			
+			// Check if the table being updated is the one displayed in the data section (depends on getData)
+			const isDataSectionTable = selectedNode && selectedNode.data.name === editDescriptionDialog.tableName;
+			
+			// Create the descriptions object for updating
+			const descriptions: Record<string, string> = {};
+			
+			// Fix mapping: use the column name instead of numeric key
+			if (isDataSectionTable) {
+				// Use GetOwlDescriptions to get all descriptions for the table
+				const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
+				// Use the first logical name if available, otherwise fallback to processing the column name
+				const columnNameForPixel = logicalNames.length > 0 
+					? logicalNames[0] 
+					: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+
+				// Use GetOwlDescriptions to get the most up-to-date description
+				const descriptionsPixel = `GetOwlDescriptions(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}")`;
+				const response = await monolithStore.runQuery(descriptionsPixel);
+
+				// response.pixelReturn[0]?.output is giving you something like { "0": "mmmm" }
+				const rawDescriptions = response.pixelReturn[0]?.output || {};
+				console.log("rawDescriptions: ", rawDescriptions);
+				console.log("response: ", response);
+
+				// Fix mapping: use the column name instead of numeric key
+				// If the API returns { "0": "someText" }, it should be saved as { [tableName__columnName]: "someText" }
+				// If multiple valid keys exist (like employees__email, employees__hire_date…), merge them normally
+				if (rawDescriptions["0"] && Object.keys(rawDescriptions).length === 1) {
+					// Special case: only "0" key exists, map it to the tableName__columnName format
+					const tableNameColumnName = `${editDescriptionDialog.tableName}__${columnNameForPixel}`;
+					descriptions[tableNameColumnName] = rawDescriptions["0"];
+				} else {
+					// Normal case: multiple keys or keys are actual column names, merge them normally
+					Object.keys(rawDescriptions).forEach(key => {
+						// Skip the "0" key if there are other keys present
+						if (key !== "0") {
+							// If key already has tableName__ format, use as is
+							// Otherwise, construct tableName__columnName format
+							if (key.includes("__")) {
+								descriptions[key] = rawDescriptions[key];
+							} else {
+								const tableNameColumnName = `${editDescriptionDialog.tableName}__${key}`;
+								descriptions[tableNameColumnName] = rawDescriptions[key];
+							}
+						}
+					});
+				}
+			} else {
+				// For tables not displayed in the data section, just create the description entry
+				const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
+				const columnNameForPixel = logicalNames.length > 0 
+					? logicalNames[0] 
+					: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+				const tableNameColumnName = `${editDescriptionDialog.tableName}__${columnNameForPixel}`;
+				descriptions[tableNameColumnName] = editDescriptionDialog.newDescription;
+			}
+			
+			console.log("fixed descriptions: ", descriptions);
+			
+			// Update the table data with the new descriptions
+			const updatedData = { ...getDatabaseMetamodel.data };
+			updatedData.descriptions = {
+				...updatedData.descriptions,
+				...descriptions,
+			};
+
+			// Update the getDatabaseMetamodel with new descriptions
+			getDatabaseMetamodel.update(updatedData);
+			console.log("data", getDatabaseMetamodel.data);
+			console.log("updatedData: ", updatedData);
+
 			// Also refresh the data table if it's the same table
-			if (selectedNode && selectedNode.data.name === editDescriptionDialog.tableName) {
-				// Run pixel to get all data of the table to get the new data from the file
-				const tableDataPixel = `Database(database=["${active.id}"]) | Select(${selectedNode.data.properties
-					.map((p) => p.id)
-					.join(", ")}) | Collect(100);`;
+			if (isDataSectionTable) {
+				// Refresh the data table 
 				getData.refresh();
-				console.log("tableDataPixel:", tableDataPixel);
+				
+				// Since refresh() doesn't return a Promise, we need to update descriptions in a different way
+				// Schedule the description update after a brief delay to ensure refresh has completed
+				setTimeout(() => {
+					// Reapply the fixed descriptions after refresh to ensure they're preserved
+					const refreshedData = { ...getDatabaseMetamodel.data };
+					refreshedData.descriptions = {
+						...refreshedData.descriptions,
+						...descriptions,
+					};
+					getDatabaseMetamodel.update(refreshedData);
+				}, 0);
 			}
 
 			handleEditDescriptionClose();
