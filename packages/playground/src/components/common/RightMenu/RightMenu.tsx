@@ -1,5 +1,5 @@
 import { Close } from "@mui/icons-material";
-import { IconButton, Stack, styled } from "@semoss/ui";
+import { IconButton, Stack, styled, Typography } from "@semoss/ui";
 
 const StyledRightMenu = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -10,6 +10,7 @@ const StyledRightMenu = styled("div")(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 	overflow: "hidden",
 }));
+
 export const StyledRightMenuHeader = styled(Stack)(({ theme }) => ({
 	position: "sticky",
 	top: 0,
@@ -20,10 +21,9 @@ export const StyledRightMenuHeader = styled(Stack)(({ theme }) => ({
 	zIndex: 1,
 }));
 
-export const StyledRightMenuContent = styled("div", {
-	shouldForwardProp: (prop) => prop !== "mode",
-})<{ mode: RightMenuProps["mode"] }>(({ theme, mode }) => ({
-	flex: mode === "fixed" ? 1 : "initial",
+export const StyledRightMenuContent = styled("div")(({ theme }) => ({
+	position: "relative",
+	flex: 1,
 	width: "100%",
 	paddingRight: theme.spacing(2),
 	paddingLeft: theme.spacing(2),
@@ -37,9 +37,6 @@ export const StyledRightMenuContent = styled("div", {
 }));
 
 interface RightMenuProps {
-	/** Mode */
-	mode?: "fluid" | "fixed";
-
 	/** Header in the menu */
 	header: React.ReactNode;
 
@@ -51,7 +48,7 @@ interface RightMenuProps {
 }
 
 export const RightMenu = (props: RightMenuProps) => {
-	const { children, mode = "fluid", header, onClose } = props;
+	const { children, header, onClose } = props;
 	return (
 		<StyledRightMenu>
 			<StyledRightMenuHeader
@@ -60,7 +57,18 @@ export const RightMenu = (props: RightMenuProps) => {
 				justifyContent={"space-between"}
 				spacing={1}
 			>
-				{header ? header : null}
+				{header ? (
+					<Typography
+						variant={"body1"}
+						fontWeight={"bold"}
+						noWrap={true}
+						sx={{
+							flex: 1,
+						}}
+					>
+						{header}
+					</Typography>
+				) : null}
 				<IconButton
 					size="small"
 					onClick={() => {
@@ -70,9 +78,7 @@ export const RightMenu = (props: RightMenuProps) => {
 					<Close fontSize="medium" />
 				</IconButton>
 			</StyledRightMenuHeader>
-			<StyledRightMenuContent mode={mode}>
-				{children}
-			</StyledRightMenuContent>
+			<StyledRightMenuContent>{children}</StyledRightMenuContent>
 		</StyledRightMenu>
 	);
 };

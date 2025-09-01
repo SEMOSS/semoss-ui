@@ -1,9 +1,4 @@
 /**
- * Space where to run commands in
- */
-export type Space = "insight" | "app" | "system";
-
-/**
  * Script object
  */
 export type Script = {
