@@ -12,14 +12,13 @@ import {
 	STATE_VERSION,
 	useBlocks,
 	VARIABLE_TYPES,
+	type Variable,
 	type VariableType,
 	type VariableWithId,
 } from "@semoss/renderer";
 import {
 	Alert,
 	Button,
-	Checkbox,
-	Grid,
 	Icon,
 	Popover,
 	Select,
@@ -38,12 +37,12 @@ import {
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
-const StyledPlaceholder = styled("div")(({ theme }) => ({
+const StyledPlaceholder = styled("div")(() => ({
 	height: "10vh",
 	width: "100%",
 }));
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)(() => ({
 	width: "500px",
 }));
 
@@ -52,13 +51,13 @@ const StyledPopover = styled(Popover)(({ theme }) => ({
 	marginLeft: theme.spacing(2),
 }));
 
-const QueryPreviewContainer = styled(Stack)(({ theme }) => ({
+const QueryPreviewContainer = styled(Stack)(() => ({
 	maxHeight: "275px",
 	width: "100%",
 	overflow: "auto",
 }));
 
-const StyledImg = styled("img")(({ theme }) => ({
+const _StyledImg = styled("img")(({ theme }) => ({
 	maxWidth: theme.spacing(5),
 }));
 
@@ -134,9 +133,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		app_subtype;
 	} | null>(null);
 
-	const [monaco, setMonaco] = useState(null);
-	const [isInput, setIsInput] = useState(false);
-	const [isOutput, setIsOutput] = useState(false);
+	const [_monaco, setMonaco] = useState(null);
 
 	const [variableInputValue, setVariableInputValue] = useState(null);
 	const inputVariableTypeList = ["string", "number", "JSON", "date", "array"];
@@ -319,7 +316,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 						width={"100%"}
 						height={"10vh"}
 						language={"json"}
-						onChange={(newValue, e) => {
+						onChange={(newValue, _e) => {
 							setVariableInputValue(newValue);
 						}}
 						value={
@@ -524,7 +521,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 			) {
 				return <StyledPlaceholder />;
 			}
-		} catch (e) {
+		} catch (_e) {
 			return (
 				<Typography variant={"body2"}>Value is undefined</Typography>
 			);
@@ -552,8 +549,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 		} else {
 			isValid = hasRequiredFields && hasRequiredDependency;
 		}
-		let v;
-
+		let v: Variable | unknown;
 		if (variable) {
 			v = state.getVariable(variable.to, variable.type);
 		}
@@ -591,8 +587,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                     : variable.id,
             );
 			setVariableType(variable.type);
-			setIsInput(variable.isInput);
-			setIsOutput(variable.isOutput);
 
 			if (
 				variable.type !== "query" &&
@@ -690,9 +684,9 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 							setVariableType(val);
 						}}
 					>
-						{VARIABLE_TYPES.map((val, i) => {
+						{VARIABLE_TYPES.map((val) => {
 							return (
-								<Select.Item key={i} value={val}>
+								<Select.Item key={val} value={val}>
 									{capitalizeFirstLetter(val)}
 								</Select.Item>
 							);
@@ -702,24 +696,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 					{input}
 					<Typography variant={"h6"}>Preview</Typography>
 					{preview}
-					{variablePointer || variableInputValue || engine ? (
-						<Grid container>
-							<Grid item>
-								<Checkbox
-									label="Is Input"
-									checked={isInput}
-									onChange={() => setIsInput(!isInput)}
-								/>
-							</Grid>
-							<Grid item>
-								<Checkbox
-									label="Is Output"
-									checked={isOutput}
-									onChange={() => setIsOutput(!isOutput)}
-								/>
-							</Grid>
-						</Grid>
-					) : null}
 				</Stack>
 				<Stack direction={"row"} justifyContent={"flex-end"}>
 					<Button
@@ -756,8 +732,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 																variablePointer,
 																"right",
 															),
-															isInput: isInput,
-															isOutput: isOutput,
 														}:
 														 variable.type === 'block'
                                                     ? {
@@ -773,8 +747,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
                                                                     variableInputValue,
                                                                 )
                                                               : variableInputValue,
-                                                          isInput: isInput,
-                                                          isOutput: isOutput,
                                                           rename: variableName,
                                                       }
 													: {
@@ -790,8 +762,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 																			variableInputValue,
 																		)
 																	: variableInputValue,
-															isInput: isInput,
-															isOutput: isOutput,
 														},
 										},
 									});
@@ -853,8 +823,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 															variablePointer,
 															"right",
 														),
-														isInput: isInput,
-														isOutput: isOutput,
 													}
 												: {
 														id: variableName,
@@ -870,8 +838,6 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 																		variableInputValue,
 																	)
 																: variableInputValue,
-														isInput: isInput,
-														isOutput: isOutput,
 													},
 									});
 									// else {

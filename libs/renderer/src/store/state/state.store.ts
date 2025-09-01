@@ -1,5 +1,5 @@
 import { makeAutoObservable, runInAction, toJS } from "mobx";
-import { download, runPixel } from "@semoss/sdk/react";
+import { download, Env, runPixel } from "@semoss/sdk/react";
 import {
 	cancellablePromise,
 	getValueByPath,
@@ -54,9 +54,6 @@ interface StateStoreInterface {
 
 	/** Order of how we consume app as API */
 	executionOrder: string[];
-
-	/** Graph to track nodes and edges based on {{}} */
-	dependencyGraph: Record<string, unknown>;
 }
 
 export class StateStoreConfig {
@@ -71,9 +68,6 @@ export class StateStoreConfig {
 
 	/** Cells registered to the insight */
 	cellRegistry: CellRegistry;
-
-	/** initial params for our variables can come from query params */
-	initialParams?: Record<string, unknown>;
 }
 
 /**
@@ -90,7 +84,6 @@ export class StateStore {
 		cellRegistry: {},
 		variables: {},
 		executionOrder: [],
-		dependencyGraph: {},
 	};
 
 	/**
@@ -122,7 +115,7 @@ export class StateStore {
 		makeAutoObservable(this);
 
 		// set the initial state after reactive to invoke it
-		this.setState(config.state, config.initialParams);
+		this.setState(config.state);
 	}
 
 	/**
@@ -314,7 +307,7 @@ export class StateStore {
 				) {
 					return value;
 				} else if (type === "array" || type === "JSON") {
-					let v;
+					let v: unknown;
 					if (value === "string") {
 						v = JSON.parse(value as string);
 					} else v = value;
@@ -381,7 +374,7 @@ export class StateStore {
 	 *
 	 * @param action - Action to execute
 	 */
-	dispatch = (action: Actions) => {
+	dispatch = async (action: Actions, callbackMessage?: "sync" | "async") => {
 		// TODO: Develop History + Invert + UNDO;
 		console.log(
 			"ACTION :::",
@@ -400,8 +393,7 @@ export class StateStore {
 
 				this.setState(state);
 			} else if (ActionMessages.ADD_VARIABLE === action.message) {
-				const { id, to, type, cellId, value, isInput, isOutput,rename } =
-					action.payload;
+				const { id, to, type, cellId, value,rename } = action.payload;
 
 				return this.addVariable(
 					id,
@@ -409,14 +401,17 @@ export class StateStore {
 					type,
 					cellId,
 					value,
-					isInput,
-					isOutput,
 					rename
 				);
 			} else if (ActionMessages.EDIT_VARIABLE === action.message) {
 				const { id, from, to } = action.payload;
 
-				const newVariable = {
+				const newVariable: {
+					type: string;
+					to?: string;
+					cellId?: string;
+					value?: string;
+				} = {
 					type: to.type,
 				};
 
@@ -437,19 +432,18 @@ export class StateStore {
 				const { id, alias,rename } = action.payload;
 
 				return this.renameVariable(id, alias,rename);
-			}  else if (
+			} else if (
 				ActionMessages.SET_SHEET_EXECUTION_ORDER === action.message
 			) {
 				const { list } = action.payload;
 
 				return this.setExecutionOrder(list);
-			}
-			/**
-			 * --------------------------------------------------
-			 * Blocks
-			 * --------------------------------------------------
-			 */
-			else if (ActionMessages.ADD_BLOCK === action.message) {
+			} else if (ActionMessages.ADD_BLOCK === action.message) {
+				/**
+				 * --------------------------------------------------
+				 * Blocks
+				 * --------------------------------------------------
+				 */
 				const { json, position, isCommunity } = action.payload;
 
 				return this.addBlock(json, position, isCommunity);
@@ -474,23 +468,21 @@ export class StateStore {
 
 				this.setListener(id, listener, actions, type);
 			} else if (ActionMessages.ADD_DYNAMIC_SLOT === action.message) {
-				const { id } = action.payload
+				const { id } = action.payload;
 
-				this.addDynamicSlot(id)
+				this.addDynamicSlot(id);
 			} else if (ActionMessages.REMOVE_DYNAMIC_SLOT === action.message) {
+				console.log(action.payload);
+				const { id, indexToRemove } = action.payload;
 
-				console.log(action.payload)
-				const { id, indexToRemove } = action.payload
-
-				const i = JSON.stringify(indexToRemove)
-				this.removeDynamicSlot(id, i)
-			}
-			/**
-			 * --------------------------------------------------
-			 * Notebooks
-			 * --------------------------------------------------
-			 */
-			else if (ActionMessages.NEW_QUERY === action.message) {
+				const i = JSON.stringify(indexToRemove);
+				this.removeDynamicSlot(id, i);
+			} else if (ActionMessages.NEW_QUERY === action.message) {
+				/**
+				 * --------------------------------------------------
+				 * Notebooks
+				 * --------------------------------------------------
+				 */
 				const { queryId, config, isCommunity } = action.payload;
 
 				this.newQuery(queryId, config, isCommunity);
@@ -518,83 +510,51 @@ export class StateStore {
 				const { queryId, cellId, path, value } = action.payload;
 
 				this.updateCell(queryId, cellId, path, value);
-			} 
-			/**
-			 * --------------------------------------------------
-			 * Events
-			 * --------------------------------------------------
-			 */
-			else if (ActionMessages.RUN_QUERY === action.message) {
+			} else if (ActionMessages.RUN_QUERY === action.message) {
+				/**
+				 * --------------------------------------------------
+				 * Events
+				 * --------------------------------------------------
+				 */
 				const { queryId } = action.payload;
 
-				return this.runQuery(queryId);
+				// If callback is provided, run as async with promise
+				if (callbackMessage) {
+					return (async () => {
+						await this.runQuery(queryId, callbackMessage);
+						return this._store.queries[queryId].output;
+					})();
+				} else {
+					return this.runQuery(queryId);
+				}
 			} else if (ActionMessages.RUN_CELL === action.message) {
 				const { queryId, cellId } = action.payload;
 
-				this.runCell(queryId, cellId);
+				// If callback is provided, run as async with promise
+				if (callbackMessage) {
+					return (async () => {
+						await this.runCell(queryId, cellId, callbackMessage);
+						return this._store.queries[queryId].cells[cellId]
+							.output;
+					})();
+				} else {
+					this.runCell(queryId, cellId);
+				}
 			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
 				const { name, detail } = action.payload;
 
 				this.dispatchEvent(name, detail);
-			} else if (ActionMessages.RUN_MARKDOWN_CELL === action.message) {
-				const { queryId, cellId, marked } = action.payload;
-
-				this.runMarkdownCell(queryId, cellId, marked);
-			} else if (
-				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-			) {
-				this.dispatchOutputsEvent();
 			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
-			}
-		} catch (e) {
-			console.error(e);
-		}
-	};
+			} else if (ActionMessages.MODIFY_VARIABLE === action.message) {
+				const { blockId, variable, value } = action.payload;
 
-	/**
-	 * TODO: Needs to get folded into code above --> useBlock.tsx
-	 * @param action
-	 * @returns
-	 */
-	dispatchEventAction = async (action: Actions, type: "sync" | "async") => {
-		try {
-			if (ActionMessages.RUN_QUERY === action.message) {
-				const { queryId } = action.payload;
+				// parse the value and assign
+				const parsed = this.parseVariable(value as string, blockId);
 
-				const run = () =>
-					new Promise(async (resolve) => {
-						await this.runQuery(queryId, type);
-						resolve(this._store.queries[queryId].output);
-					});
-
-				return await run();
-			} else if (ActionMessages.RUN_CELL === action.message) {
-				const { queryId, cellId } = action.payload;
-
-				const run = () =>
-					new Promise(async (resolve) => {
-						await this.runCell(queryId, cellId, type);
-
-						resolve(
-							this._store.queries[queryId].cells[cellId].output,
-						);
-					});
-				return await run();
-			} else if (ActionMessages.DISPATCH_EVENT === action.message) {
-				const { name, detail } = action.payload;
-
-				this.dispatchEvent(name, detail);
-			} else if (
-				ActionMessages.DISPATCH_OUTPUTS_EVENT === action.message
-			) {
-				this.dispatchOutputsEvent();
-			} else if (ActionMessages.DISPATCH_OPEN_EVENT === action.message) {
-				const { destinationType, destination } = action.payload;
-
-				this.dispatchOpenEvent(destinationType, destination);
+				this.modifyVariable(variable, parsed);
 			}
 		} catch (e) {
 			console.error(e);
@@ -654,7 +614,7 @@ export class StateStore {
 						}
 					}
 
-					let variable;
+					let variable: string;
 
 					if (expression.includes(".")) {
 						variable = expression.match(/\$(.*?)\./)[1];
@@ -696,11 +656,8 @@ export class StateStore {
 		const isNumber = !isNaN(parseFloat(path[1]));
 
 		if (isNumber) {
-			let q;
+			let q: QueryState;
 
-			// TODO: Problem we want to reference cells by a special syntax
-			// I don't want to change ids to be numbered for cells,
-			// i think we are good with our id generation
 			if (this._store.variables[pointer]) {
 				const variable = this._store.variables[path[0]];
 				if (variable.type === "query") {
@@ -820,6 +777,8 @@ export class StateStore {
 			operation.includes("FRAME_FILTER_CHANGE")
 		) {
 			this.syncFrame((output as { name: string }).name);
+		} else if (operation.includes("MCP_TOOL_EXECUTION")) {
+			this.notifyToolExecution(output as string);
 		}
 	};
 
@@ -1066,12 +1025,14 @@ export class StateStore {
 
 	extractDependenciesFromString = (str) => {
 		const regex = /{{\s*([\w_]+)\s*}}/g;
-		let match,
-			deps = [];
-		while ((match = regex.exec(str)) !== null) {
+		const deps = [];
+		while (true) {
+			const match = regex.exec(str);
+			if (match === null) {
+				break;
+			}
 			deps.push(match[1]);
 		}
-
 		return deps;
 	};
 
@@ -1173,6 +1134,27 @@ export class StateStore {
 	};
 
 	/**
+	 * Notifiy that a tool has been run
+	 */
+	private notifyToolExecution = (response: string) => {
+		if (Env.TOOL) {
+			window.parent?.postMessage(
+				{
+					type: "SMSS_EXEC_TOOL",
+					tool: {
+						type: "MCP",
+						message: Env.TOOL.message,
+						id: Env.TOOL.id,
+						name: Env.TOOL.name,
+						response: response,
+					},
+				},
+				"*",
+			);
+		}
+	};
+
+	/**
 	 * Actions
 	 */
 	/**
@@ -1180,10 +1162,7 @@ export class StateStore {
 	 *
 	 * @param state - pixel to execute
 	 */
-	private setState = (
-		state: SerializedState,
-		initialParams?: Record<string, unknown>,
-	) => {
+	private setState = (state: SerializedState) => {
 		// store the block information
 		this._store.blocks = state.blocks;
 
@@ -1220,89 +1199,8 @@ export class StateStore {
 
 		this._store.executionOrder = order;
 
-		// Replace initial param values provided from URL
-		if (initialParams) {
-			Object.entries(initialParams).forEach((keyValue) => {
-				const key = keyValue[0];
-				const value = keyValue[1];
-
-				const variable = this._store.variables[key];
-
-				if (variable) {
-					// retrieve the "to" value
-					const toValue = variable.to;
-					if (variable.type == "block") {
-						// Look into blocks section
-						if (this._store.blocks[toValue]) {
-							this._store.blocks[toValue].data.value = value;
-						}
-					} else if (
-						variable.type == "cell" ||
-						variable.type == "query"
-					) {
-						// TODO: Handle query and cell types do we just swap output?
-					} else {
-						this._store.variables[key]["value"] = value;
-					}
-				}
-			});
-		}
-
 		// store the version or the one we currently are on
 		this._store.version = state.version ? state.version : STATE_VERSION;
-	};
-
-	private buildDependencyGraph = (json, nodes = {}, edges = []) => {
-		if (typeof json === "object" && json !== null) {
-			for (const [key, value] of Object.entries(json)) {
-				// If the key is 'id', treat it as a node
-				if (key === "id" && typeof value === "string") {
-					if (!nodes[value]) {
-						nodes[value] = {
-							id: value,
-							data: { label: value },
-							position: {
-								x: Math.random() * 400,
-								y: Math.random() * 400,
-							},
-						};
-					}
-				}
-				// If value is a string, look for dependencies
-				if (typeof value === "string") {
-					const deps = this.extractDependenciesFromString(value);
-					if (json.id && deps.length) {
-						deps.forEach((dep) => {
-							if (!nodes[dep]) {
-								nodes[dep] = {
-									id: dep,
-									data: { label: dep },
-									position: {
-										x: Math.random() * 400,
-										y: Math.random() * 400,
-									},
-								};
-							}
-							edges.push({
-								id: `e${json.id}-${dep}`,
-								source: json.id,
-								target: dep,
-							});
-						});
-					}
-				}
-				// Recurse into objects/arrays
-				if (typeof value === "object") {
-					this.buildDependencyGraph(value, nodes, edges);
-				}
-			}
-		} else if (Array.isArray(json)) {
-			json.forEach((item) =>
-				this.buildDependencyGraph(item, nodes, edges),
-			);
-		}
-
-		return { nodes: Object.values(nodes), edges };
 	};
 
 	/**
@@ -1578,29 +1476,27 @@ export class StateStore {
 	 * @param listener - listener to add to the block
 	 * @param actions - actions to add to the block
 	 */
-	private addDynamicSlot = (
-		id: string
-	): void => {
+	private addDynamicSlot = (id: string): void => {
 		const block = this._store.blocks[id];
- 		if (!block || !block.slots) {
- 			return;
- 		}
+		if (!block || !block.slots) {
+			return;
+		}
 
- 		// Find the next available slot number
- 		const slotNames = Object.keys(block.slots)
- 			.filter(name => !isNaN(Number(name)))
- 			.map(name => Number(name))
- 			.sort((a, b) => a - b);
+		// Find the next available slot number
+		const slotNames = Object.keys(block.slots)
+			.filter((name) => !isNaN(Number(name)))
+			.map((name) => Number(name))
+			.sort((a, b) => a - b);
 
- 		const nextSlotNumber = slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
- 		const newSlotName = nextSlotNumber.toString();
+		const nextSlotNumber =
+			slotNames.length > 0 ? Math.max(...slotNames) + 1 : 1;
+		const newSlotName = nextSlotNumber.toString();
 
- 		// Add the new slot
- 		block.slots[newSlotName] = {
- 			name: newSlotName,
- 			children: []
- 		};
-
+		// Add the new slot
+		block.slots[newSlotName] = {
+			name: newSlotName,
+			children: [],
+		};
 	};
 
 	/**
@@ -1609,50 +1505,37 @@ export class StateStore {
 	 * @param listener - listener to add to the block
 	 * @param actions - actions to add to the block
 	 */
-	private removeDynamicSlot = (
-		id: string,
-		indexToRemove: string,
-	): void => {
-		console.log(this._store.blocks[id].slots)
-		console.log(indexToRemove)
+	private removeDynamicSlot = (id: string, indexToRemove: string): void => {
 		const block = this._store.blocks[id];
 
 		if (!block || !block.slots) {
- 			return;
+			return;
 		}
 
 		// Convert slot names to array and sort them numerically
- 		const slotNames = Object.keys(block.slots)
- 			.filter(name => !isNaN(Number(name)))
- 			.map(name => Number(name))
- 			.sort((a, b) => a - b);
+		const slotNames = Object.keys(block.slots)
+			.filter((name) => !isNaN(Number(name)))
+			.map((name) => Number(name))
+			.sort((a, b) => a - b);
 
-		console.log('slotnames', slotNames)
+		// Find the slot name at the specified index
+		const slotNameToRemove = slotNames[indexToRemove];
+		if (slotNameToRemove === undefined) {
+			return;
+		}
+		// Remove the slot at the specified index
+		delete block.slots[slotNameToRemove];
 
- 		// Find the slot name at the specified index
- 		const slotNameToRemove = slotNames[indexToRemove];
- 		if (slotNameToRemove === undefined) {
- 			return;
- 		}
-
-
-		console.log('nameToRemove',slotNameToRemove)
-		debugger
-	
-		console.log("before Delete",block.slots)
- 		// Remove the slot at the specified index
- 		delete block.slots[slotNameToRemove];
-
-		console.log("after deleet", block.slots)
-	
- 		// Shift all subsequent slots down by one
- 		const slotsToShift = slotNames.filter(name => name > slotNameToRemove);
- 		slotsToShift.forEach(oldSlotName => {
- 			const newSlotName = oldSlotName - 1;
- 			block.slots[newSlotName] = block.slots[oldSlotName];
- 			block.slots[newSlotName].name = newSlotName.toString();
- 			delete block.slots[oldSlotName];
- 		});
+		// Shift all subsequent slots down by one
+		const slotsToShift = slotNames.filter(
+			(name) => name > slotNameToRemove,
+		);
+		slotsToShift.forEach((oldSlotName) => {
+			const newSlotName = oldSlotName - 1;
+			block.slots[newSlotName] = block.slots[oldSlotName];
+			block.slots[newSlotName].name = newSlotName.toString();
+			delete block.slots[oldSlotName];
+		});
 	};
 
 	/**
@@ -1681,7 +1564,6 @@ export class StateStore {
 				id: queryId,
 				type: "query",
 				to: queryId,
-				isOutput: true,
 			},
 		});
 
@@ -1751,7 +1633,10 @@ export class StateStore {
 	 * Run a query
 	 * @param queryId - name of the query that we are running
 	 */
-	private runQuery = (queryId: string, type?: "sync" | "async"): void => {
+	private runQuery = (
+		queryId: string,
+		type?: "sync" | "async",
+	): void | Promise<boolean> => {
 		const q = this._store.queries[queryId];
 
 		const key = `query--${queryId};`;
@@ -1759,8 +1644,8 @@ export class StateStore {
 		// cancel a previous command
 		this._utils.queryPromises[key]?.cancel();
 
-		let p;
-		let sync;
+		let p: { promise: Promise<boolean>; cancel: () => void };
+		let sync: boolean;
 
 		if (!type || type === "async") {
 			sync = false;
@@ -1900,7 +1785,7 @@ export class StateStore {
 		queryId: string,
 		cellId: string,
 		type?: string,
-	): void => {
+	): void | Promise<boolean> => {
 		const q = this._store.queries[queryId];
 		const c = q.getCell(cellId);
 
@@ -1909,8 +1794,8 @@ export class StateStore {
 		// cancel a previous command
 		this._utils.queryPromises[key]?.cancel();
 
-		let p;
-		let sync;
+		let p: { promise: Promise<boolean>; cancel: () => void };
+		let sync: boolean;
 
 		if (!type || type === "async") {
 			sync = false;
@@ -1948,14 +1833,6 @@ export class StateStore {
 		this._utils.queryPromises[key] = p;
 	};
 
-	private runMarkdownCell = (
-		queryId: string,
-		cellId: string,
-		marked: boolean,
-	): void => {
-		// make the cell as marked
-		this._store.queries[queryId].cells[cellId].parameters.marked = marked;
-	};
 	/**
 	 * Dispatch a custom event
 	 * @param name - name of the event
@@ -2019,29 +1896,6 @@ export class StateStore {
 		window.dispatchEvent(event);
 	};
 
-	/**
-	 *
-	 * Dispatch an event
-	 * @param detail - payload associated with event
-	 */
-	private dispatchOutputsEvent = (): void => {
-		const outputMap = {};
-
-		Object.keys(this._store.variables).forEach((k) => {
-			if (this._store.variables[k].isOutput) {
-				outputMap[k] = this.parseVariable(`{{${k}}}`);
-			}
-		});
-
-		// Communication with Iframe
-		window.parent.postMessage(
-			{
-				type: "DISPATCH_APP_OUTPUTS",
-				data: outputMap,
-			},
-			"*",
-		); // --> Cross Origin Communications
-	};
 	private conflictExists(id: string, rename?: string): boolean {
     return Object.entries(this._store.variables).some(
         ([key, variable]: [string, any]) => {
@@ -2070,9 +1924,7 @@ export class StateStore {
 		to: string,
 		type: VariableType,
 		cellId?: string,
-		value?,
-		isInput?,
-		isOutput?,
+		value?: unknown,
 		rename?,
 	) => {
 		if (id.includes(".")) {
@@ -2091,14 +1943,16 @@ export class StateStore {
 
 		if (to) token["to"] = to;
 		if (cellId) token["cellId"] = cellId;
-		if (isInput) token["isInput"] = isInput;
-		if (isOutput) token["isOutput"] = isOutput;
 		if (value) token["value"] = value;
 		if(rename) token["rename"] = rename;
 
 		this._store.variables[id] = token as Variable;
 
 		return token;
+	};
+
+	private modifyVariable = (id: string, value: unknown) => {
+		this._store.variables[id].value = value;
 	};
 
 	/**

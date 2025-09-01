@@ -1,20 +1,24 @@
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
+	ACTIONS_DISPLAY,
 	ActionMessages,
 	type BlockDef,
 	type ListenerActions,
 } from "@semoss/renderer";
-import { Button, Modal, Stack, styled } from "@semoss/ui";
+import { Button, Modal, Select, Stack, styled } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import {
-	ActionFormFields,
-	ActionTypeSelector,
+	BlockEventNameSelector,
+	CellIdSelector,
 	getDefaultFormValues,
+	QueryIdSelector,
+	RedirectDestinationSelector,
 	useEventActionData,
 	validateForm,
 } from "./block-events";
+import { ModifyVariableSelector } from "./block-events/ModifyVariableSelector";
 
 const StyledSpacer = styled("div")(() => ({
 	flex: 1,
@@ -101,21 +105,82 @@ export const ListenerActionOverlay = observer(
 
 				<Modal.Content>
 					<Stack padding={2}>
-						<ActionTypeSelector
+						<Controller
+							name="message"
 							control={control}
-							setValue={setValue}
+							render={({ field }) => (
+								<Select
+									label="Type"
+									value={field.value || ""}
+									onChange={(
+										value: React.ChangeEvent<HTMLInputElement>,
+									) => {
+										const newMessage = value.target
+											.value as ActionMessages;
+										const defaultValues =
+											getDefaultFormValues(newMessage);
+										setValue(
+											"payload",
+											defaultValues.payload,
+										);
+										field.onChange(value);
+									}}
+								>
+									{[
+										ActionMessages.RUN_QUERY,
+										ActionMessages.RUN_CELL,
+										ActionMessages.DISPATCH_EVENT,
+										ActionMessages.DISPATCH_OPEN_EVENT,
+										ActionMessages.MODIFY_VARIABLE,
+									].map((action) => (
+										<Select.Item
+											key={action}
+											value={action}
+										>
+											{ACTIONS_DISPLAY[action]}
+										</Select.Item>
+									))}
+								</Select>
+							)}
 						/>
-
-						<ActionFormFields
-							message={message}
-							control={control}
-							setValue={setValue}
-							queries={queries}
-							cells={cells}
-							queryId={queryId}
-							destinationType={destinationType}
-							pages={pages}
-						/>
+						{message === ActionMessages.RUN_QUERY && (
+							<QueryIdSelector
+								control={control}
+								queries={queries}
+							/>
+						)}
+						{message === ActionMessages.RUN_CELL && (
+							<>
+								<QueryIdSelector
+									control={control}
+									queries={queries}
+									label="Notebook"
+								/>
+								<CellIdSelector
+									control={control}
+									cells={cells}
+									queryId={queryId}
+								/>
+							</>
+						)}
+						{message === ActionMessages.DISPATCH_EVENT && (
+							<BlockEventNameSelector control={control} />
+						)}
+						{message === ActionMessages.DISPATCH_OPEN_EVENT && (
+							<RedirectDestinationSelector
+								control={control}
+								setValue={setValue}
+								destinationType={destinationType}
+								pages={pages}
+							/>
+						)}
+						{message === ActionMessages.MODIFY_VARIABLE && (
+							<ModifyVariableSelector
+								id={id}
+								control={control}
+								setValue={setValue}
+							/>
+						)}
 					</Stack>
 				</Modal.Content>
 
