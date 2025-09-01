@@ -396,6 +396,16 @@ export const EngineMetadataPage = observer(() => {
 			await monolithStore.runQuery(pixel);
 			// Refresh the metamodel data to show updated description
 			getDatabaseMetamodel.refresh();
+			// Also refresh the data table if it's the same table
+			if (selectedNode && selectedNode.data.name === editDescriptionDialog.tableName) {
+				// Run pixel to get all data of the table to get the new data from the file
+				const tableDataPixel = `Database(database=["${active.id}"]) | Select(${selectedNode.data.properties
+					.map((p) => p.id)
+					.join(", ")}) | Collect(100);`;
+				getData.refresh();
+				console.log("tableDataPixel:", tableDataPixel);
+			}
+
 			handleEditDescriptionClose();
 		} catch (error) {
 			console.error("Failed to update description:", error);
