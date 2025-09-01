@@ -13,10 +13,12 @@ import {
 	type Template,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
+	RowToNotebookTemplate
 } from "./templates";
 
 const DEFAULT_TEMPLATE = [
 	LandingPageTemplate,
+	RowToNotebookTemplate,
 	AskLLMTemplate,
 	CustomFrameToVisualizationTemplate,
 	VisualizeCSVTemplate,

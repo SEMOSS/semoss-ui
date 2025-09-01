@@ -18,6 +18,7 @@ import {
 	useEventActionData,
 	validateForm,
 } from "./block-events";
+import { ModifyVariableSelector } from "./block-events/ModifyVariableSelector";
 
 const StyledSpacer = styled("div")(() => ({
 	flex: 1,
@@ -130,6 +131,7 @@ export const ListenerActionOverlay = observer(
 										ActionMessages.RUN_CELL,
 										ActionMessages.DISPATCH_EVENT,
 										ActionMessages.DISPATCH_OPEN_EVENT,
+										ActionMessages.MODIFY_VARIABLE,
 									].map((action) => (
 										<Select.Item
 											key={action}
@@ -170,6 +172,13 @@ export const ListenerActionOverlay = observer(
 								setValue={setValue}
 								destinationType={destinationType}
 								pages={pages}
+							/>
+						)}
+						{message === ActionMessages.MODIFY_VARIABLE && (
+							<ModifyVariableSelector
+								id={id}
+								control={control}
+								setValue={setValue}
 							/>
 						)}
 					</Stack>
