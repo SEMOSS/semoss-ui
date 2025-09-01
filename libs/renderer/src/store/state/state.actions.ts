@@ -49,6 +49,7 @@ export enum ActionMessages {
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	COPY_TO_CLIPBOARD = "COPY_TO_CLIPBOARD",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
+	MODIFY_VARIABLE = "MODIFY_VARIABLE",
 }
 
 export type Actions =
@@ -77,7 +78,8 @@ export type Actions =
 	| EditVariableAction
 	| DeleteVariableAction
 	| SetSheetExecutionOrderAction
-	| CopyToClipboardAction;
+	| CopyToClipboardAction
+	| ModifyVariableAction;
 
 /**
  * All
@@ -318,10 +320,6 @@ export interface UpdateCellAction extends Action {
 /**
  * Events
  */
-export interface DispatchOutputsEventAction extends Action {
-	message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
-	payload: {};
-}
 
 export interface DispatchOpenEventAction extends Action {
 	message: ActionMessages.DISPATCH_OPEN_EVENT;
@@ -351,5 +349,14 @@ export interface RunCellAction extends Action {
 	payload: {
 		queryId: string;
 		cellId: string;
+	};
+}
+
+export interface ModifyVariableAction extends Action {
+	message: ActionMessages.MODIFY_VARIABLE;
+	payload: {
+		blockId: string;
+		variable: string;
+		value: unknown;
 	};
 }

@@ -25,6 +25,10 @@ export const getDefaultFormValues = (
 			// payload: { destinationType: "", destination: "" },
 			payload: { text: "" },
 		},
+		[ActionMessages.MODIFY_VARIABLE]: {
+			message: ActionMessages.DISPATCH_OPEN_EVENT,
+			payload: { blockId: "", variable: "", value: "" },
+		},
 	};
 
 	return formConfigs[message] || formConfigs[ActionMessages.RUN_QUERY];
@@ -46,6 +50,8 @@ export const validateForm = (
 			return !!payload.destinationType && !!payload.destination;
 		case ActionMessages.COPY_TO_CLIPBOARD:
 			return !!payload.text;
+		case ActionMessages.MODIFY_VARIABLE:
+			return !!payload.variable && !!payload.value;
 		default:
 			return false;
 	}

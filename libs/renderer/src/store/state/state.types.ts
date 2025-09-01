@@ -5,6 +5,7 @@ import type {
 	CopyToClipboardAction,
 	DispatchEventAction,
 	DispatchOpenEventAction,
+	ModifyVariableAction,
 	RunCellAction,
 	RunQueryAction,
 } from "./state.actions";
@@ -59,6 +60,7 @@ export type Variable =
 			to: string;
 			type: "cell"; // Specific case when type is 'cell'
 			cellId: string;
+			value?: any; // value can be optional here in this specific case when type is 'cell'
 	  };
 
 export type VariableWithId =
@@ -254,7 +256,8 @@ export type ListenerActions =
 	| RunQueryAction
 	| DispatchEventAction
 	| RunCellAction
-	| DispatchOpenEventAction;
+	| DispatchOpenEventAction
+	| ModifyVariableAction;
 
 /**
  * Cell Definition

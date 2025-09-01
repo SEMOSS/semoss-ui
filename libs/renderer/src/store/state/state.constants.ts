@@ -36,4 +36,5 @@ export const ACTIONS_DISPLAY = {
 	[ActionMessages.DISPATCH_EVENT]: "Dispatch Event",
 	[ActionMessages.COPY_TO_CLIPBOARD]: "Copy to Clipboard",
 	[ActionMessages.DISPATCH_OPEN_EVENT]: "Navigate",
+	[ActionMessages.MODIFY_VARIABLE]: "Modify Variable",
 };
