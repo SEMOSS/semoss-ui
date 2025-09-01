@@ -4,6 +4,7 @@ import type { QueryStateConfig } from "./query.state";
 import type {
 	DispatchEventAction,
 	DispatchOpenEventAction,
+	ModifyVariableAction,
 	RunCellAction,
 	RunQueryAction,
 } from "./state.actions";
@@ -252,7 +253,8 @@ export type ListenerActions =
 	| RunQueryAction
 	| DispatchEventAction
 	| RunCellAction
-	| DispatchOpenEventAction;
+	| DispatchOpenEventAction
+	| ModifyVariableAction;
 
 /**
  * Cell Definition
