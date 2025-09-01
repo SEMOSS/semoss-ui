@@ -31,32 +31,40 @@ const navCards = [
 	},
 ];
 
-const StyledButton = styled(Button)(({}) => ({
+const StyledButton = styled(Button)(({ theme }) => ({
 	"&.app-navigation-buttons": {
-		borderColor: "#C4C4C4",
+		borderColor: theme.palette.common.white,
 		borderRadius: "12px",
 		padding: "4px 10px",
 		alignSelf: "flex-start",
 		"> :hover": {
-			border: "#C4C4C4",
+			border: theme.palette.common.white,
 		},
 	},
 }));
 
+const UploadAppButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.text.primary,
+	borderRadius: "12px",
+	padding: "10px 16px",
+	alignSelf: "flex-start",
+}));
+
+const StyledBox = styled(Box)(({ theme }) => ({
+	minWidth: "32%",
+	borderRadius: "12px",
+	boxShadow: "0px 5px 8px 0px rgba(0, 0, 0, 0.08)",
+	padding: theme.spacing(2),
+	display: "flex",
+	flexDirection: "column",
+	justifyContent: "space-between",
+	gap: theme.spacing(2),
+	backgroundColor: theme.palette.background.paper,
+}));
+
 const NavCard = ({ title, description, type, image, setApp, testId }) => (
-	<Box
-		sx={{
-			minWidth: "32%",
-			borderRadius: 2,
-			boxShadow: "0px 5px 8px 0px rgba(0, 0, 0, 0.08)",
-			padding: 2,
-			display: "flex",
-			flexDirection: "column",
-			justifyContent: "space-between",
-			gap: 2,
-			backgroundColor: "#ffffff",
-		}}
-	>
+	<StyledBox>
 		<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
 			<Typography variant="h6" gutterBottom>
 				{title}
@@ -100,7 +108,7 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
 				</Box>
 			)}
 		</Box>
-	</Box>
+	</StyledBox>
 );
 
 const CreateAppSection = ({
@@ -132,21 +140,14 @@ const CreateAppSection = ({
 					Get started with our tools
 				</Typography>
 				{uploadApp && (
-					<Button
+					<UploadAppButton
 						startIcon={<FileUploadOutlined />}
 						variant="outlined"
-						sx={{
-							borderColor: "#C4C4C4",
-							color: "#212121",
-							borderRadius: "12px",
-							padding: "10px 16px",
-							alignSelf: "flex-start",
-						}}
 						onClick={uploadApp}
 						data-testid={"new-app-upload-btn"}
 					>
 						Upload App
-					</Button>
+					</UploadAppButton>
 				)}
 			</Box>
 			<Box

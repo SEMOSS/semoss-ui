@@ -1,9 +1,7 @@
-import { AccessTime } from "@mui/icons-material";
 import React from "react";
 import {
 	Card,
 	type CardProps,
-	Chip,
 	IconButton,
 	Link,
 	styled,
@@ -19,14 +17,24 @@ import RemoveRedEyeFilled from "@/assets/img/RemoveRedEyeFilled.svg";
 import { removeUnderscores } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
-const StyledName = styled(Typography)(() => ({
+const StyledName = styled(Typography)(({ theme }) => ({
 	fontWeight: 400,
-	color: "#212121",
+	color: theme.palette.text.primary,
 	fontFamily: "Inter",
 	fontSize: "14px",
 	fontStyle: "normal",
 	lineHeight: "143%",
 	letterSpacing: "0.17px",
+}));
+
+const StyledProjectType = styled("div")(({ theme }) => ({
+	color: theme.palette.text.disabled,
+	fontFamily: "Inter",
+	fontWeight: "400",
+	lineHeight: "19.92px",
+	letterSpacing: "0.4px",
+	fontStyle: "normal",
+	fontSize: "12px",
 }));
 
 const StyledTileCard = styled(
@@ -87,11 +95,11 @@ const StyledCardDescription = styled(Typography)(({ theme }) => ({
 	overflow: "hidden",
 	textOverflow: "ellipsis",
 	wordWrap: "break-word",
-	color: "#666",
+	color: theme.palette.text.secondary,
 	height: "40px",
 }));
 
-const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
+const StyledCardHeader = styled(Card.Header)({
 	"&.MuiCardHeader-root": {
 		padding: "0px",
 		margin: "0px",
@@ -104,9 +112,9 @@ const StyledCardHeader = styled(Card.Header)(({ theme }) => ({
 	flexDirection: "column",
 	alignItems: "flex-start",
 	alignSelf: "stretch",
-}));
+});
 
-const ButtonName = styled("p")(({ theme }) => ({
+const ButtonName = styled("p")({
 	fontSize: "13px",
 	color: "#fff",
 	fontFamily: "Inter",
@@ -114,15 +122,15 @@ const ButtonName = styled("p")(({ theme }) => ({
 	fontWeight: "500",
 	lineHeight: "22px",
 	letterSpacing: "0.46px",
-}));
+});
 
-const StyledCardContent = styled(Card.Content)(({ theme }) => ({
+const StyledCardContent = styled(Card.Content)({
 	"&.MuiCardContent-root": {
 		padding: "0px",
 		margin: "0px",
 		gap: "0px",
 	},
-}));
+});
 
 const StyledCardActions = styled(Card.Actions)({
 	display: "flex",
@@ -138,42 +146,42 @@ const StyledCardActions = styled(Card.Actions)({
 	gap: "40px",
 });
 
-const StyledIconButton = styled(IconButton)({
-	backgroundColor: "#EBEBEB",
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
 	height: "28px",
 	width: "28px",
 	radius: "24px",
 	"&:hover": {
-		backgroundColor: "#EBEBEB",
+		backgroundColor: theme.palette.background.paper,
 		$icon: {
 			color: "red",
 		},
 	},
-});
+}));
 
-const StyledOpenButton = styled(IconButton)(({ theme }) => ({
+const StyledOpenButton = styled(IconButton)({
 	display: "flex",
 	alignItems: "center",
 	"&.MuiIconButton-root": {
 		padding: "0px",
 	},
-}));
+});
 
-const StyledMainDiv = styled("div")(({ theme }) => ({
+const StyledMainDiv = styled("div")({
 	width: "307px",
 	height: "292px",
-}));
+});
 
-const StyledContent = styled("div")(({ theme }) => ({
+const StyledContent = styled("div")({
 	display: "flex",
 	padding: "8px 16px",
 	flexDirection: "column",
 	gap: "8px",
 	alignItems: "flex-start",
 	height: "80px",
-}));
+});
 
-const StyledFooterDiv = styled("div")(({ theme }) => ({
+const StyledFooterDiv = styled("div")({
 	display: "flex",
 	alignItems: "center",
 	height: "30px",
@@ -183,9 +191,9 @@ const StyledFooterDiv = styled("div")(({ theme }) => ({
 	// flex: '1 0 0',
 	borderRadius: "12px",
 	background: "#0471F0",
-}));
+});
 
-const StyledParentImageDiv = styled("div")(({ theme }) => ({
+const StyledParentImageDiv = styled("div")({
 	display: "flex",
 	padding: "16px 16.79px 0px 16px",
 	justifyContent: "center",
@@ -193,17 +201,17 @@ const StyledParentImageDiv = styled("div")(({ theme }) => ({
 	alignSelf: "stretch",
 	height: "138px",
 	width: "100%",
-}));
+});
 
-const StyledCardContentDiv = styled("div")(({ theme }) => ({
+const StyledCardContentDiv = styled("div")({
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
 	gap: "8px",
 	alignself: "stretch",
-}));
+});
 
-const StyledFooter1Div = styled("div")(({ theme }) => ({
+const StyledFooter1Div = styled("div")({
 	display: "flex",
 	padding: "8px 16px",
 	alignItems: "center",
@@ -213,7 +221,7 @@ const StyledFooter1Div = styled("div")(({ theme }) => ({
 	background: "#fff",
 	height: "30px",
 	width: "100%",
-}));
+});
 
 interface BrowseTemplateTileCardProps {
 	/**
@@ -278,20 +286,7 @@ interface BrowseTemplateTileCardProps {
 }
 
 export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
-	const {
-		app,
-		background = "#DAC9F5",
-		onAction = () => null,
-		href = null,
-		isFavorite,
-		favorite,
-		appType,
-		systemApp,
-		isDiscoverable = false,
-		onDelete,
-		isLoading,
-		showSkeleton,
-	} = props;
+	const { app, onAction = () => null, href = null } = props;
 
 	return (
 		<StyledMainDiv>
@@ -299,7 +294,7 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 				<StyledContainer>
 					<StyledOverlayContent>
 						<StyledIconButton size="small" color="default">
-							<img src={RemoveRedEyeFilled}></img>
+							<img alt="icon" src={RemoveRedEyeFilled}></img>
 						</StyledIconButton>
 					</StyledOverlayContent>
 				</StyledContainer>
@@ -403,23 +398,13 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 												}}
 											/>
 										</div>
-										<div
-											style={{
-												color: "#9E9E9E",
-												fontFamily: "Inter",
-												fontSize: "12px",
-												fontWeight: "400",
-												lineHeight: "19.92px",
-												letterSpacing: "0.4px",
-												fontStyle: "normal",
-											}}
-										>
+										<StyledProjectType>
 											{app.project_type === "BLOCKS"
 												? "Drag and Drop"
 												: app.project_type === "CODE"
 													? "Pro Code"
 													: "Agent Builder"}
-										</div>
+										</StyledProjectType>
 									</div>
 								</div>
 								<StyledOpenButton onClick={onAction}>
