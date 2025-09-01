@@ -1392,6 +1392,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						nameLocation: "middle",
 						show: true,
 						type: "value",
+						nameGap: 30,
 						axisLine: {
 							show: true,
 						},
