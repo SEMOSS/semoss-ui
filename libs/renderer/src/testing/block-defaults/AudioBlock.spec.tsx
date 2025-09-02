@@ -9,8 +9,7 @@ const blocks = {
 			label: "Audio Player",
 			loop: false,
 			show: "true",
-			source:
-				"https://upload.wikimedia.org/wikipedia/commons/6/65/Star_Spangled_Banner_instrumental.ogg",
+			source: "https://upload.wikimedia.org/wikipedia/commons/6/65/Star_Spangled_Banner_instrumental.ogg",
 		},
 		id: "audio-player",
 		widget: "audio-player",

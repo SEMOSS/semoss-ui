@@ -1,9 +1,9 @@
-import type { Meta, StoryObj } from "@storybook/react";
+import type { Meta, StoryObj } from "@storybook/react-webpack5";
 import { FileUpload } from "./index";
 
 const meta: Meta<typeof FileUpload> = {
-    title: "Components/FileUpload",
-    component: FileUpload,
+	title: "Components/FileUpload",
+	component: FileUpload,
 };
 
 export default meta;
@@ -11,5 +11,5 @@ export default meta;
 type Story = StoryObj<typeof FileUpload>;
 
 export const Default: Story = {
-    render: () => <FileUpload />,
+	render: () => <FileUpload />,
 };
