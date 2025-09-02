@@ -218,11 +218,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					name: removeUnderscores(
 						(getEngineMetadata.data?.database_name as string) || "",
 					),
-					metadata: {
-						...values,
-						database_subtype:
-							getEngineMetadata.data?.database_subtype,
-					},
+					metadata: values,
+					database_subtype: getEngineMetadata.data?.database_subtype,
 					refresh: getEngineMetadata.refresh,
 				},
 			}}
