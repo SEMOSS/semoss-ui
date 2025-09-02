@@ -4,7 +4,7 @@ import type { QueryStateConfig } from "./query.state";
 import type {
 	DispatchEventAction,
 	DispatchOpenEventAction,
-	DispatchOutputsEventAction,
+	ModifyVariableAction,
 	RunCellAction,
 	RunQueryAction,
 } from "./state.actions";
@@ -260,9 +260,9 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
 export type ListenerActions =
 	| RunQueryAction
 	| DispatchEventAction
-	| DispatchOutputsEventAction
 	| RunCellAction
-	| DispatchOpenEventAction;
+	| DispatchOpenEventAction
+	| ModifyVariableAction;
 
 /**
  * Cell Definition
