@@ -130,7 +130,6 @@ export const PDFViewerSettings = observer(
 		);
 		const [selectedTab, setSelectedTab] = useState(tabs[1]);
 		const [uploadFiles, setUploadFiles] = useState<File>(null);
-		const [savedUploadFile, setSavedUploadFile] = useState(data?.selectedPdf);
 		const [isLoading, setIsLoading] = useState(false);
 		const uploadedRefresh = configStore.store.reloadFiles;
 		const [engineAutocompleteOpen, setEngineAutocompleteOpen] =
@@ -220,10 +219,12 @@ export const PDFViewerSettings = observer(
 
 			// Check if uploadedFiles exists in outputArray
 			if (
-				(uploadFiles || savedUploadFile) &&
+				uploadFiles &&
 				Array.isArray(outputArray) &&
-				!outputArray.some((item) =>
-					(savedUploadFile && item.path === savedUploadFile)
+				!outputArray.some(
+					(item) =>
+						item.name === uploadFiles.name ||
+						item.path === selectedPdfPath,
 				)
 			) {
 				setUploadFiles(null);
@@ -233,66 +234,69 @@ export const PDFViewerSettings = observer(
 			}
 		};
 
-		// Fetch Engine Ids
-		const getengineId = `MyEngines(engineTypes=[${allEngineTypes.map((type) => `"${type}"`).join(",")}]);`;
-		//Fetch Engine Details
-		const engineIdResponse = runPixel(getengineId);
-	
-		const fetchAppAssets = async () => {
-			try {
-				const result = await getAssetsApp;
-				const outputArray = result?.pixelReturn?.[0]?.output;
-				const outputNames = Array.isArray(outputArray)
-					? outputArray
-							.filter(
-								(item) =>
-									typeof item.name === "string" &&
-									item.name.toLowerCase().endsWith(".pdf"),
-							)
-							.map((item) => ({
-								name: item.name,
-								path: item.path,
-							}))
-					: [];
-				setAppOptions(outputNames);
-			} catch (error) {
-				console.error("Error fetching app assets:", error);
-			}
-		};
-		
-		const fetchEngineAssets = async () => {
-			try {
-				const output = (await engineIdResponse).pixelReturn?.[0]?.output;
-				const engineIds = Array.isArray(output)
-					? Array.from(
-							new Map(
-								output.map((item) => [
-									item.app_id,
-									{
-										app_id: item.app_id,
-										app_type: item.app_type,
-										app_name: item.app_name,
-									},
-								]),
-							).values(),
-						)
-					: [];
-				fetchEngineOptions(engineIds);
-			} catch (error) {
-				console.error("Error fetching engine assets:", error);
-			}
-		};
-
-		useEffect(() => {
-			fetchEngineAssets();
-		}, []);
-
 		useEffect(() => {
 			if (uploadedRefresh === "Delete") {
 				refreshFiles();
 			}
-			fetchAppAssets();
 		}, [uploadedRefresh]);
+
+		useEffect(() => {
+			// Fetch Engine Ids
+			const getengineId = `MyEngines(engineTypes=[${allEngineTypes.map((type) => `"${type}"`).join(",")}]);`;
+
+			//Fetch Engine Details
+			const engineIdResponse = runPixel(getengineId);
+
+			// Fetch App Assets
+			const fetchAssetsAndEngines = async () => {
+				try {
+					const result = await getAssetsApp;
+					const outputArray = result?.pixelReturn?.[0]?.output;
+					const outputNames = Array.isArray(outputArray)
+						? outputArray
+								.filter(
+									(item) =>
+										typeof item.name === "string" &&
+										item.name
+											.toLowerCase()
+											.endsWith(".pdf"),
+								)
+								.map((item) => ({
+									name: item.name,
+									path: item.path,
+								}))
+						: [];
+					setAppOptions(outputNames);
+				} catch (error) {
+					console.error("Error fetching assets:", error);
+				}
+
+				// Fetch Engine IDs
+				try {
+					const output = (await engineIdResponse).pixelReturn?.[0]
+						?.output;
+					const engineIds = Array.isArray(output)
+						? Array.from(
+								new Map(
+									output.map((item) => [
+										item.app_id,
+										{
+											app_id: item.app_id,
+											app_type: item.app_type,
+											app_name: item.app_name,
+										},
+									]),
+								).values(),
+							)
+						: [];
+					fetchEngineOptions(engineIds);
+				} catch (error) {
+					console.error("Error fetching engines:", error);
+				}
+			};
+
+			fetchAssetsAndEngines();
+		}, []);
 
 		const fetchEngineOptions = async (engineIdsList: engineIdType[]) => {
 			let pdfFiles: {
@@ -809,9 +813,13 @@ const AppTab: React.FC<{
 					id="PDFViewer-App"
 					multiple={false}
 					value={
-						appOptions.find(
-							(opt) => opt.path === selectedPdfPath,
-						) || null
+						appOptions.find((opt) => opt.path === selectedPdfPath) ||
+						(selectedPdfPath
+							? {
+									path: selectedPdfPath,
+									name: selectedPdfPath.split(/[/\\]/).pop(),
+							  }
+							: null)
 					}
 					options={appOptions}
 					getOptionLabel={(option) => {
