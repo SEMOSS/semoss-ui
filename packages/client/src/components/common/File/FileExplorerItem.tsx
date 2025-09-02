@@ -153,6 +153,7 @@ const FolderContextMenu = ({
 		anchorEl={anchorEl}
 		open={open}
 		onClose={onClose}
+		disableAutoFocusItem
 		sx={{
 			"& .MuiMenu-list": {
 				display: "inline-flex",
@@ -320,6 +321,33 @@ export const FileExplorerItem = forwardRef<
 		setIsEditing(false);
 	};
 
+	// running the useEffect here to close the menu when clicking outside or when the window loses focus
+	useEffect(() => {
+		const handleWindowBlur = () => {
+			handleMenuClose();
+		};
+		
+		const handleVisibilityChange = () => {
+			if (document.hidden) {
+				handleMenuClose();
+			}
+		};
+
+		const handleBeforeUnload = () => {
+			handleMenuClose();
+		};
+
+		window.addEventListener("blur", handleWindowBlur);
+		document.addEventListener("visibilitychange", handleVisibilityChange);
+		window.addEventListener("beforeunload", handleBeforeUnload);
+		
+		return () => {
+			window.removeEventListener("blur", handleWindowBlur);
+			document.removeEventListener("visibilitychange", handleVisibilityChange);
+			window.removeEventListener("beforeunload", handleBeforeUnload);
+		};
+	}, []);
+
 	const isOpen = expanded.indexOf(path) > -1;
 	const [forceOpen, setForceOpen] = useState(false);
 
@@ -331,38 +359,12 @@ export const FileExplorerItem = forwardRef<
 			type: "directory" | "file";
 		}[]
 	>(
-		isDirectory && isOpen
+		(isDirectory && isOpen && !forceOpen) || forceOpen
 			? type === "app"
 				? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
 				: ""
 			: "",
 	);
-
-	const getChildrenAssets = usePixel<
-		{
-			lastModified: string;
-			name: string;
-			path: string;
-			type: "directory" | "file";
-		}[]
-	>(
-		isDirectory
-			? type === "app"
-				? `BrowseAsset(filePath=["${path}"], space=["${space}"]);`
-				: ""
-			: "",
-	);
-
-	useEffect(() => {
-		if (forceOpen && isDirectory && !isOpen) {
-			const childrenPaths =
-				isDirectory && getChildrenAssets.status === "SUCCESS"
-					? getChildrenAssets.data.map((n) => n.path)
-					: [];
-			onExpand(path, childrenPaths);
-			setForceOpen(false);
-		}
-	}, [forceOpen, isDirectory, isOpen, path, onExpand]);
 
 	// Expose method for parent: expand + wait for load children
 	useImperativeHandle(ref, () => ({
@@ -370,7 +372,6 @@ export const FileExplorerItem = forwardRef<
 			if (!isDirectory) {
 				return;
 			}
-			// console.log('Expanding directory through handle:', path);
 			setForceOpen(true);
 		},
 	}));
@@ -555,11 +556,8 @@ export const FileExplorerItem = forwardRef<
 											if (isDirectory) {
 												const childrenPaths =
 													isDirectory &&
-													getChildrenAssets.status ===
-														"SUCCESS"
-														? getChildrenAssets.data.map(
-																(n) => n.path,
-															)
+													getAssets.status === "SUCCESS"
+														? getAssets.data.map((n) => n.path)
 														: [];
 												onExpand(path, childrenPaths); // trigger expand
 												setPendingAction("duplicate"); // wait for children
@@ -571,16 +569,12 @@ export const FileExplorerItem = forwardRef<
 												);
 											}
 										}}
-										// onDelete={() => onTrashClick(undefined as any, path)}
 										onDelete={() => {
 											if (isDirectory) {
 												const childrenPaths =
 													isDirectory &&
-													getChildrenAssets.status ===
-														"SUCCESS"
-														? getChildrenAssets.data.map(
-																(n) => n.path,
-															)
+													getAssets.status === "SUCCESS"
+														? getAssets.data.map((n) => n.path)
 														: [];
 												onExpand(path, childrenPaths);
 												setPendingAction("delete");

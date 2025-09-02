@@ -517,22 +517,38 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		}
 	};
 
-	// helper function to fetch file content when duplicating files within a folder or a directory
-	const fetchFileContent = async (filePath: string) => {
-		const pixel = `GetAsset(filePath=["${filePath}"], space=["${workspace.appId}"]);`;
-		const response = await monolithStore.runQuery(
-			pixel,
-			workspace.insightId,
-		);
-		return response.pixelReturn[0].output ?? "";
-	};
-
 	// handle duplicating files or folder and saving them to the workspace
 	const handleOnDuplicateClickFunc = async (
 		checkedPaths: Set<string>,
 		duplicateRootPath: string | null,
 	) => {
 		try {
+			// helper function to fetch file content when duplicating files within a folder or a directory
+			const fetchFileContent = async (filePath: string) => {
+				const pixel = `GetAsset(filePath=["${filePath}"], space=["${workspace.appId}"]);`;
+				const response = await monolithStore.runQuery(
+					pixel,
+					workspace.insightId,
+				);
+				return response.pixelReturn[0].output ?? "";
+			};
+
+			// TODO: optimize this by fetching multiple files content in one go, this is currently not supported in the backend
+			// but if it is supported in the future, we can use this function to fetch multiple files content at once
+			// const fetchMultipleFileContents = async (filePaths: string[]) => {
+			// 	if (filePaths.length === 0) return [];
+			// 	const filePathsStr = filePaths.map(path => `"${path}"`).join(",");
+			// 	const pixel = `GetAsset(filePath=[${filePathsStr}], space=["${workspace.appId}"]);`;
+			// 	const response = await monolithStore.runQuery(pixel, workspace.insightId);
+				
+			// 	// Handle both single and multiple file responses
+			// 	if (Array.isArray(response.pixelReturn)) {
+			// 		return response.pixelReturn.map((item: any) => item.output ?? "");
+			// 	} else {
+			// 		return [(response.pixelReturn as any)?.output ?? ""];
+			// 	}
+			// };
+            
 			const checked = Array.from(checkedPaths);
 			const folderChecked = !!(
 				duplicateRootPath && checked.includes(duplicateRootPath)
@@ -584,6 +600,9 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 					const fileContents = await Promise.all(
 						filesChecked.map((p) => fetchFileContent(p)),
 					);
+					
+					// const fileContents = await fetchMultipleFileContents(filesChecked);
+
 					const newFileNames = filesChecked.map((p) => {
 						const fileName = p.split("/").pop();
 						return newPath + fileName;
@@ -609,6 +628,8 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				const fileContents = await Promise.all(
 					filesChecked.map((p) => fetchFileContent(p)),
 				);
+
+				// const fileContents = await fetchMultipleFileContents(filesChecked);
 
 				// Helper function to get all files in a folder when we checked files where the file name starts with the folder path
 				// and does not end with a slash (to avoid folders)
