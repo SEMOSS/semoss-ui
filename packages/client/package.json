@@ -5,93 +5,8 @@
         "build": "vite build --mode production",
         "build:dev": "vite build --mode development",
         "type-check": "tsc --pretty --noEmit",
-<<<<<<< HEAD
-        "test": "vitest --watch=false --passWithNoTests --changed",
-        "test:browser": "vitest --watch --ui --pool=forks --project client",
-        "test:coverage": "vitest --coverage"
-    },
-    "nx": {
-        "targets": {
-            "build": {
-                "options": {
-                    "cwd": "packages/client",
-                    "args": [
-                        "--node-env=production"
-                    ],
-                    "command": "webpack-cli build"
-                },
-                "cache": true,
-                "dependsOn": [
-                    "^build"
-                ],
-                "inputs": [
-                    "production",
-                    "^production",
-                    {
-                        "externalDependencies": [
-                            "webpack-cli"
-                        ]
-                    }
-                ],
-                "outputs": [
-                    "{projectRoot}/dist"
-                ],
-                "metadata": {
-                    "technologies": [
-                        "webpack"
-                    ],
-                    "description": "Runs Webpack build",
-                    "help": {
-                        "command": "pnpm exec webpack-cli build --help",
-                        "example": {
-                            "options": {
-                                "json": "stats.json"
-                            },
-                            "args": [
-                                "--profile"
-                            ]
-                        }
-                    }
-                },
-                "executor": "nx:run-commands",
-                "configurations": {},
-                "parallelism": true
-            },
-            "dev": {
-                "options": {
-                    "cwd": "packages/client",
-                    "args": [
-                        "--mode=development",
-                        "--node-env=development",
-                        "--watch"
-                    ],
-                    "command": "webpack-cli"
-                },
-                "metadata": {
-                    "technologies": [
-                        "webpack"
-                    ],
-                    "description": "Starts Webpack dev",
-                    "help": {
-                        "command": "pnpm exec webpack-cli --help",
-                        "example": {
-                            "options": {
-                                "args": [
-                                    "--client-progress",
-                                    "--history-api-fallback "
-                                ]
-                            }
-                        }
-                    }
-                },
-                "executor": "nx:run-commands",
-                "configurations": {}
-            }
-        }
-=======
         "test": "vitest run",
         "test:watch": "vitest --watch"
->>>>>>> fa3866aaa6e81ca86dd983f9d27119b96565bf99
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
@@ -110,6 +25,7 @@
         "@semoss/ui": "workspace:*",
         "@semoss/shared": "workspace:*",
         "@textea/json-viewer": "^4.0.0",
+        "@vitest/ui": "^1.3.1",
         "@xyflow/react": "^12.0.4",
         "axios": "^1.5.0",
         "dayjs": "^1.11.4",
@@ -131,48 +47,10 @@
         "@types/react": "18.3.1",
         "@types/react-dom": "18.3.0",
         "@types/react-router-dom": "^5.3.3",
-<<<<<<< HEAD
-        "@types/webpack": "^5.28.0",
-        "@typescript-eslint/eslint-plugin": "^5.32.0",
-        "@typescript-eslint/parser": "^5.32.0",
-        "@vitejs/plugin-react": "^4.2.0",
-        "@vitest/coverage-v8": "^3.0.9",
-        "@vitest/ui": "^3.0.9",
-        "babel-loader": "9.1.2",
-        "babel-plugin-istanbul": "^6.1.1",
-        "css-loader": "^6.7.1",
-        "cypress": "^13.7.1",
-        "dotenv": "^16.0.1",
-        "eslint": "^8.21.0",
-        "eslint-config-prettier": "^8.5.0",
-        "eslint-plugin-prettier": "^4.2.1",
-        "eslint-plugin-react": "^7.30.1",
-        "html-webpack-plugin": "^5.5.0",
-        "identity-obj-proxy": "^3.0.0",
-        "mini-css-extract-plugin": "^2.6.1",
-        "monaco-editor-webpack-plugin": "^7.1.0",
-        "npm-run-all": "^4.1.5",
-        "prettier": "^2.4.1",
-        "raw-loader": "^4.0.2",
-        "style-loader": "^3.3.1",
-        "terser-webpack-plugin": "^5.3.10",
-        "ts-loader": "^9.3.1",
-        "tslib": "^2.4.0",
-        "typescript": "5.1.3",
-        "vite": "^6.1.1",
-        "vite-tsconfig-paths": "^5.1.4",
-        "vitest": "^3.0.9",
-        "vitest-canvas-mock": "^0.3.3",
-        "webpack": "^5.74.0",
-        "webpack-bundle-analyzer": "^4.10.2",
-        "webpack-cli": "^4.10.0",
-        "webpack-dev-server": "^4.9.3"
-=======
         "@vitejs/plugin-react": "^4.6.0",
         "typescript": "~5.5.2",
         "vite": "^7.0.0",
         "vitest": "^3.2.4",
         "html2canvas": "^1.4.1"
->>>>>>> fa3866aaa6e81ca86dd983f9d27119b96565bf99
     }
 }
