@@ -27,6 +27,7 @@ import { ResponseMessageStore } from "@/stores/message/response-message.store";
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
 	height: "100%",
+	padding: "16px 16px 0 16px",
 }));
 
 const StyledPageHeader = styled(Stack)(() => ({
@@ -38,6 +39,7 @@ const StyledContent = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
 	overflow: "hidden",
+	paddingBottom: "16px",
 }));
 
 const StyledScroll = styled("div")(() => ({
@@ -205,7 +207,7 @@ export const RoomPage = observer(() => {
 					variant={"body2"}
 					noWrap={true}
 					sx={{
-						maxWidth: "50%",
+						maxWidth: "40%",
 					}}
 				>
 					{room?.metadata?.name}
@@ -224,7 +226,7 @@ export const RoomPage = observer(() => {
 			</StyledPageHeader>
 			<Divider
 				orientation="horizontal"
-				sx={{ backgroundColor: "secondary.divider" }}
+				sx={{ borderColor: "secondary.divider" }}
 			/>
 			<Stack
 				flex={1}
@@ -242,7 +244,7 @@ export const RoomPage = observer(() => {
 				>
 					<StyledScroll>
 						<Container
-							maxWidth="md"
+							maxWidth="xl"
 							sx={{ padding: "0 !important" }}
 						>
 							{room.history.map((m) => (
@@ -264,56 +266,57 @@ export const RoomPage = observer(() => {
 						justifyContent={"center"}
 						width={"100%"}
 					>
-						<Container maxWidth="md">
-							<Stack direction={"column"} spacing={1}>
-								<RoomInput
-									isLoading={room.isLoading}
-									isDisabled={false}
-									minRows={3}
-									maxRows={8}
-									actions={
-										<Tooltip
-											title={"Open Configuration Menu"}
-											placement="top"
-										>
-											<IconButton
-												size={"medium"}
-												type="button"
-												aria-label="Open Configuration Menu"
-												disabled={room.isLoading}
-												color={
+						<Container
+							maxWidth="xl"
+							sx={{ padding: "0 !important" }}
+						>
+							<RoomInput
+								isLoading={room.isLoading}
+								isDisabled={false}
+								minRows={3}
+								maxRows={8}
+								actions={
+									<Tooltip
+										title={"Open Configuration Menu"}
+										placement="top"
+									>
+										<IconButton
+											size={"medium"}
+											type="button"
+											aria-label="Open Configuration Menu"
+											disabled={room.isLoading}
+											color={
+												room.sidebar.isOpen &&
+												room.sidebar.type ===
+													"CONFIGURATION"
+													? "primary"
+													: "default"
+											}
+											onClick={() => {
+												// toggle open / closed based on the state
+												if (
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-														? "primary"
-														: "default"
+												) {
+													room.closeSidebar();
+												} else {
+													room.openSidebar(
+														"CONFIGURATION",
+													);
 												}
-												onClick={() => {
-													// toggle open / closed based on the state
-													if (
-														room.sidebar.isOpen &&
-														room.sidebar.type ===
-															"CONFIGURATION"
-													) {
-														room.closeSidebar();
-													} else {
-														room.openSidebar(
-															"CONFIGURATION",
-														);
-													}
-												}}
-											>
-												<Tune color="inherit" />
-											</IconButton>
-										</Tooltip>
-									}
-									onPrompt={async (prompt, files) => {
-										await room.askModel(prompt, files);
+											}}
+										>
+											<Tune color="inherit" />
+										</IconButton>
+									</Tooltip>
+								}
+								onPrompt={async (prompt, files) => {
+									await room.askModel(prompt, files);
 
-										return true;
-									}}
-								/>
-							</Stack>
+									return true;
+								}}
+							/>
 						</Container>
 					</Stack>
 				</StyledContent>
@@ -322,7 +325,9 @@ export const RoomPage = observer(() => {
 						minWidth={340}
 						defaultSize={{
 							width:
-								room.sidebar.type === "ARTIFACTS" ? 600 : 340,
+								room.sidebar.type === "ARTIFACTS"
+									? `70%`
+									: "340px",
 							height: "100%",
 						}}
 						handleStyles={{
@@ -333,6 +338,9 @@ export const RoomPage = observer(() => {
 							bottomRight: { pointerEvents: "none" },
 							bottomLeft: { pointerEvents: "none" },
 							topLeft: { pointerEvents: "none" },
+						}}
+						style={{
+							paddingBottom: "16px",
 						}}
 					>
 						{room.sidebar.type === "CONFIGURATION" && (

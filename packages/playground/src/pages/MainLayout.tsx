@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Stack, styled } from "@semoss/ui";
+import BACKGROUND from "@/assets/img/background.png";
 import { Sidebar } from "@/components";
 import { ChatContext } from "@/contexts";
 import { ChatStore } from "@/stores";
@@ -10,8 +11,11 @@ const StyledMain = styled(Stack)(({ theme }) => ({
 	position: "relative",
 	height: "100%",
 	width: "100%",
-	padding: "16px",
 	background: theme.palette.background.default,
+	backgroundImage: `url(${BACKGROUND})`,
+	backgroundRepeat: "no-repeat",
+	backgroundSize: "cover",
+	backgroundPosition: "center",
 }));
 
 export const MainLayout = () => {
@@ -33,7 +37,7 @@ export const MainLayout = () => {
 				chat: chatStore,
 			}}
 		>
-			<StyledMain direction={"row"} overflow={"hidden"} spacing={2}>
+			<StyledMain direction={"row"} overflow={"hidden"} spacing={0}>
 				<Sidebar />
 				<Outlet />
 			</StyledMain>

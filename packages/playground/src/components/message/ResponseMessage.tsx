@@ -13,6 +13,7 @@ import {
 	IconButton,
 	Markdown,
 	Stack,
+	Stepper,
 	styled,
 	Typography,
 	useNotification,
@@ -29,9 +30,14 @@ const StyledResponseMessage = styled(Stack)(({ theme }) => ({
 	padding: "8px 16px",
 	background: theme.palette.background.paper,
 	borderRadius: theme.shape.borderRadius,
+	boxShadow: theme.shadows[1],
 }));
 
 const StyledHover = styled("div")(() => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "flex-end",
+	flex: 1,
 	opacity: 0,
 	width: "100%",
 	"&:hover": {
@@ -123,21 +129,123 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		return (
 			<StyledResponseMessage direction={"column"} spacing={2}>
-				<Stack direction="row" spacing={1}>
+				<Stack direction="row" alignItems={"center"} spacing={1}>
 					<Typography variant="caption">Response</Typography>
 					<SouthEastOutlined
 						sx={{ color: "#757575", fontSize: "1rem" }}
 					/>
+					<StyledHover>
+						<Stack
+							direction={"row"}
+							alignItems={"center"}
+							spacing={1}
+						>
+							{inputMessage?.siblings.length > 1 && (
+								<>
+									<IconButton
+										size="small"
+										disabled={!inputMessage.previousSibling}
+										onClick={() => {
+											if (!inputMessage.previousSibling) {
+												return;
+											}
+
+											inputMessage.previousSibling.activateMessage();
+										}}
+									>
+										<ChevronLeftOutlined fontSize="inherit" />
+									</IconButton>
+									<Typography variant="caption">
+										{inputMessage.position + 1}/
+										{inputMessage.siblings.length}
+									</Typography>
+									<IconButton
+										size="small"
+										disabled={!inputMessage.nextSibling}
+										onClick={() => {
+											if (!inputMessage.nextSibling) {
+												return;
+											}
+
+											inputMessage.nextSibling.activateMessage();
+										}}
+									>
+										<ChevronRightOutlined fontSize="inherit" />
+									</IconButton>
+								</>
+							)}
+
+							{inputMessage && (
+								<IconButton
+									size="small"
+									onClick={() => {
+										rewriteMessage();
+									}}
+								>
+									<RefreshOutlined fontSize="inherit" />
+								</IconButton>
+							)}
+
+							<IconButton
+								size="small"
+								onClick={() => {
+									recordFeedback(true);
+								}}
+							>
+								<ThumbUpAltOutlined fontSize="inherit" />
+							</IconButton>
+
+							<IconButton
+								size="small"
+								onClick={() => {
+									recordFeedback(false);
+								}}
+							>
+								<ThumbDownOffAltOutlined fontSize="inherit" />
+							</IconButton>
+
+							<IconButton
+								size="small"
+								disabled={!message.text}
+								onClick={() => {
+									if (!message.text) {
+										return;
+									}
+
+									copyMessage(message.text);
+								}}
+							>
+								<CopyAllOutlined fontSize="inherit" />
+							</IconButton>
+						</Stack>
+					</StyledHover>
 				</Stack>
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={t.id}
-						room={room}
-						message={message}
-						tool={t}
-					/>
-				))}
+				{message.tools.length > 0 && (
+					<Stepper orientation="vertical">
+						{message.tools.map((t) => (
+							<Stepper.Step
+								key={t.id}
+								active={true}
+								completed={!!t.response}
+							>
+								<Stepper.StepLabel
+									StepIconProps={{
+										icon: "",
+									}}
+									sx={{ alignItems: "flex-start" }}
+								>
+									<ResponseMessageTool
+										key={`tool-${t.id}`}
+										room={room}
+										message={message}
+										tool={t}
+									/>
+								</Stepper.StepLabel>
+							</Stepper.Step>
+						))}
+					</Stepper>
+				)}
 				{message.sources.length > 0 ? (
 					<Stack direction={"row"} spacing={1} flexWrap={"wrap"}>
 						{message.sources.map((s, sIdx) => {
@@ -148,87 +256,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						})}
 					</Stack>
 				) : null}
-				<StyledHover>
-					<Stack direction={"row"} alignItems={"center"} spacing={1}>
-						<IconButton
-							size="small"
-							onClick={() => {
-								recordFeedback(true);
-							}}
-						>
-							<ThumbUpAltOutlined fontSize="small" />
-						</IconButton>
-
-						<IconButton
-							size="small"
-							onClick={() => {
-								recordFeedback(false);
-							}}
-						>
-							<ThumbDownOffAltOutlined fontSize="small" />
-						</IconButton>
-
-						<IconButton
-							size="small"
-							disabled={!message.text}
-							onClick={() => {
-								if (!message.text) {
-									return;
-								}
-
-								copyMessage(message.text);
-							}}
-						>
-							<CopyAllOutlined fontSize="small" />
-						</IconButton>
-
-						{inputMessage && (
-							<IconButton
-								size="small"
-								onClick={() => {
-									rewriteMessage();
-								}}
-							>
-								<RefreshOutlined fontSize="small" />
-							</IconButton>
-						)}
-
-						{inputMessage?.siblings.length > 1 && (
-							<>
-								<IconButton
-									size="small"
-									disabled={!inputMessage.previousSibling}
-									onClick={() => {
-										if (!inputMessage.previousSibling) {
-											return;
-										}
-
-										inputMessage.previousSibling.activateMessage();
-									}}
-								>
-									<ChevronLeftOutlined fontSize="small" />
-								</IconButton>
-								<Typography variant="caption">
-									{inputMessage.position + 1}/
-									{inputMessage.siblings.length}
-								</Typography>
-								<IconButton
-									size="small"
-									disabled={!inputMessage.nextSibling}
-									onClick={() => {
-										if (!inputMessage.nextSibling) {
-											return;
-										}
-
-										inputMessage.nextSibling.activateMessage();
-									}}
-								>
-									<ChevronRightOutlined fontSize="small" />
-								</IconButton>
-							</>
-						)}
-					</Stack>
-				</StyledHover>
 			</StyledResponseMessage>
 		);
 	},

@@ -174,7 +174,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
-							name={"Knowledge"}
+							name={"Tools"}
 							actions={
 								<Button
 									variant="outlined"

@@ -9,6 +9,7 @@ const StyledInputMessage = styled(Stack)(({ theme }) => ({
 	display: "inline-flex",
 	borderRadius: "8px 8px 0 8px",
 	background: "#EBF4FE",
+	boxShadow: theme.shadows[1],
 }));
 
 const StyledAvatar = styled(Avatar)(({ theme }) => ({

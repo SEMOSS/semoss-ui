@@ -13,6 +13,7 @@ const StyledRightMenu = styled("div")(({ theme }) => ({
 	background: theme.palette.background.paper,
 	overflow: "hidden",
 	gap: "8px",
+	boxShadow: theme.shadows[1],
 }));
 
 export const StyledRightMenuHeader = styled(Stack)(({ theme }) => ({

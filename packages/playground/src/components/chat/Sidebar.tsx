@@ -42,6 +42,7 @@ const StyledAvatar = styled(Avatar)(({ theme }) => ({
 
 const StyledActions = styled(Stack)(() => ({
 	height: "100%",
+	padding: "16px 0 16px 16px",
 	position: "relative",
 	zIndex: 0,
 }));

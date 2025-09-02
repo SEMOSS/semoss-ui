@@ -24,6 +24,7 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 const StyledPage = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
+	padding: "16px",
 }));
 
 const StyledContent = styled(Stack)(() => ({
