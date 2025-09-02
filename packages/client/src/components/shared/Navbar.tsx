@@ -1,6 +1,7 @@
 import { Search as SearchIcon } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
+import { runPixel } from "@semoss/sdk";
 import {
   Container,
   InputAdornment,
@@ -54,67 +55,35 @@ const StyledTextField = styled(TextField)(() => ({
   },
 }));
 
-// Prime check helper
-function isPrime(n: number): boolean {
-  if (n <= 1) return false;
-  if (n === 2) return true;
-  if (n % 2 === 0) return false;
-  for (let i = 3; i * i <= n; i += 2) {
-    if (n % i === 0) return false;
-  }
-  return true;
-}
-
-// Fixed sequence to test polling visually
-const sequence = [10, 13, 16, 17, 18, 19, 20];
-let seqIndex = 0;
-
-async function fetchHasUnreadNotifications(): Promise<{
-  number: number;
-  isPrime: boolean;
-}> {
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  const num = sequence[seqIndex];
-  seqIndex = (seqIndex + 1) % sequence.length;
-  return { number: num, isPrime: isPrime(num) };
-}
 
 export const Navbar: React.FC = observer(() => {
   const { page } = usePage();
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [hasUnread, setHasUnread] = useState(0);
-  const [_lastNumber, setLastNumber] = useState<number | null>(null);
-  const [_lastTimestamp, setLastTimestamp] = useState<string>("");
+  const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const [hasUnread, setHasUnread] = useState<number>(0);
 
-  useEffect(() => {
-    let mounted = true;
-
-    async function poll() {
-      if (!mounted) return;
-      try {
-        const { number, isPrime } = await fetchHasUnreadNotifications();
-        if (mounted) {
-          setHasUnread(isPrime ? number : 0);
-          setLastNumber(number);
-          setLastTimestamp(new Date().toLocaleTimeString());
-          console.log(
-            `Polling: number=${number}, isPrime=${isPrime}`,
-            `lastTimestamp=${new Date().toLocaleTimeString()}`
-          );
-        }
-      } catch (e) {
-        console.error("Polling error:", e);
-      }
+useEffect(() => {
+  async function poll() {
+    try {
+      // 1) call pixel first
+      const pixel = `PollingNotifications()` //`PollingNotificationsReactor`
+      const res = await runPixel(pixel);
+      const num = res.pixelReturn[0].output;
+      setHasUnread(num as number);
+      console.log("Polling unread count (after pixel):", num, "at", new Date().toLocaleTimeString());
+    } catch (e) {
+      console.error("Pixel call failed:", e);
     }
+  }
 
-    poll();
-    const pollInterval = setInterval(poll, 60000); // 1 min
+  poll(); // initial call
+  const pollInterval = setInterval(poll, 60000); // every 1 min
 
-    return () => {
-      mounted = false;
-      clearInterval(pollInterval);
-    };
-  }, []);
+  return () => {
+    clearInterval(pollInterval);
+  };
+}, []);
+
+
   const handleBellClick = () => {
     setDrawerOpen(true);
     setHasUnread(0);

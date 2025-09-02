@@ -34,15 +34,26 @@ const StyledButton = styled(Button)({
 });
 
 const NotificationIcon = styled(NotificationsIcon)(({ theme }) => ({
-  color: theme.palette.secondary.dark,
+	color: theme.palette.secondary.dark,
 }));
 
 export const BellButton: React.FC<{ onClick: () => void; hasUnread: number }> =
-  observer(({ onClick, hasUnread }) => (
-    <StyledButton onClick={onClick}>
-      <NotificationIcon />
-      {hasUnread > 0 && (
-        <CountBubble>{hasUnread > 99 ? "99+" : hasUnread}</CountBubble>
-      )}
-    </StyledButton>
-  ));
+	observer(({ onClick, hasUnread }) => (
+		<StyledButton onClick={onClick}>
+		  <NotificationIcon />
+		  {hasUnread > 0 && (
+		    <CountBubble>{hasUnread > 9 ? "9+" : hasUnread}</CountBubble>
+		  )}
+		</StyledButton>
+		// <IconButton onClick={onClick} color="secondary">
+		// 	<Badge
+		// 		badgeContent={hasUnread}
+		// 		max={9}
+		// 		color="error"
+		// 		overlap="circular"
+    //     variant="standard"
+		// 	>
+		// 		<NotificationIcon />
+		// 	</Badge>
+		// </IconButton>
+	));
