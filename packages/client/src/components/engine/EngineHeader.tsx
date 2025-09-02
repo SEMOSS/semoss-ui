@@ -156,7 +156,7 @@ export const EngineHeader: React.FC = () => {
 									variant="outlined"
 									onClick={() => {
 										const engineType =
-											active.metadata.database_subtype;
+											active.database_subtype;
 										if (engineType === "H2_DB") {
 											setOpenExportModal(true);
 										} else {
