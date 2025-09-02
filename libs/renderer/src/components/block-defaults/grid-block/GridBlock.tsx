@@ -214,9 +214,9 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		const b = typeof target === "number" ? target : parseFloat(target);
 		switch (comparator) {
 			case "==":
-				return a == b;
+				return a === b;
 			case "!=":
-				return a != b;
+				return a !== b;
 			case ">":
 				return a > b;
 			case "<":
@@ -322,7 +322,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}
 
 			return (
-				<div
+				<td
 					onContextMenu={(e) =>
 						handleTableCellOnContextMenu(e, col, params.value)
 					}
@@ -331,13 +331,13 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					}}
 				>
 					{params.value}
-				</div>
+				</td>
 			);
 		},
 	}));
 
 	const rows = frame.data.values.map((r, idx) => {
-		const obj: Record<string, any> = { id: idx };
+		const obj: Record<string, unknown> = { id: idx };
 		columns.forEach((c, cIdx) => {
 			obj[c.field] = r[cIdx];
 		});
@@ -386,7 +386,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	const colorRules: ColorRule[] = data.option?.colorByValue || [];
 
-	const getRowHeight = (params: any) => {
+	const getRowHeight = () => {
 		if (data.option?.rowSpanning) {
 			return 50;
 		}
