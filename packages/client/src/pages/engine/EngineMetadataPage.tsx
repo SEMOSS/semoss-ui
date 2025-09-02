@@ -383,6 +383,29 @@ export const EngineMetadataPage = observer(() => {
 		});
 	};
 
+	const handlePredictDescription = async () => {
+
+		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
+		
+		const columnNameForPixel = logicalNames.length > 0 
+			? logicalNames[0] 
+			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+			
+		const pixel = `PredictOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}")`;
+		
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+			
+			setEditDescriptionDialog({
+				...editDescriptionDialog,
+				newDescription: predictedDescription,
+			});
+		} catch (error) {
+			console.error("Failed to predict description:", error);
+		}
+	};
+
 	const handleSaveDescription = async () => {
 		// Use logical names instead of column name
 		// Get the logical name from the metamodel data
@@ -689,7 +712,18 @@ export const EngineMetadataPage = observer(() => {
 
 			{/* Edit Description Dialog */}
 			<Modal open={editDescriptionDialog.open} onClose={handleEditDescriptionClose}>
-				<Modal.Title>Edit Column Description</Modal.Title>
+				<Modal.Title>
+					<Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
+						<span>Edit Column Description</span>
+						<Button 
+							variant="outlined" 
+							size="small"
+							onClick={handlePredictDescription}
+						>
+							Predict
+						</Button>
+					</Stack>
+				</Modal.Title>
 				<Modal.Content>
 					<TextField
 						label="Column Name"
