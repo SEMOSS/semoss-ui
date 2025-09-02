@@ -182,7 +182,7 @@ export const Sidebar: React.FC = observer(() => {
 			anchor="left"
 			open={page.sidebar.open}
 			onClose={() => {
-				closeSidebar
+				closeSidebar;
 			}}
 			PaperProps={{
 				onMouseLeave: () => {
@@ -205,17 +205,16 @@ export const Sidebar: React.FC = observer(() => {
 					</Typography>
 				</StyledNavHeaderLink>
 
-				
-				<StyledCloseIconButton 
-					size="small" 
+				<StyledCloseIconButton
+					size="small"
 					onClick={() => {
-						if(page.sidebar.pinned){
+						if (page.sidebar.pinned) {
 							page.unpinSidebar();
 						} else {
-							page.pinSidebar()
-							return
+							page.pinSidebar();
+							return;
 						}
-						closeSidebar()
+						closeSidebar();
 					}}
 				>
 					<MenuOpenRounded fontSize="medium" />
