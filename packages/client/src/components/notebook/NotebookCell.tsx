@@ -373,7 +373,7 @@ export const NotebookCell = observer(
 							},
 						},
 					},
-				}) as string;
+				}) as unknown as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -933,6 +933,12 @@ export const NotebookCell = observer(
 																						}
 																						output={
 																							cell.output
+																						}
+																						cellData={
+																							({
+																								cellId: cell.id.toString(),
+																								queryId: queryId.toString()
+																							})
 																						}
 																					/>
 																				);
