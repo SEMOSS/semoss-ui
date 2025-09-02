@@ -80,7 +80,7 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
 const StyledActions = styled(Stack)(({ theme }) => ({
   position: "absolute",
   bottom: "36px",
-  left: "8px",
+  left: "5px",
   width: "32px", // from flexlayout
   zIndex: 1,
 }));
@@ -311,6 +311,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                 <Layout
                   ref={layoutRef}
                   model={workspace.model}
+				  classNameMapper={(defaultClassName) => `${defaultClassName} workspace_layout`}
                   factory={(node) => {
                     return factory(node, layoutRef.current);
                   }}
@@ -337,7 +338,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
                         <IconButton size={"small"} color="default">
                           <Icon
                             color={isSelected ? "primary" : "inherit"}
-                            fontSize="medium"
+                            fontSize="inherit"
                           />
                         </IconButton>
                       );

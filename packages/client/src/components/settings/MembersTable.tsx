@@ -25,7 +25,6 @@ import type { AxiosResponse } from "axios";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MembersAddOverlay } from "./MembersAddOverlay";
 import { MembersDeleteOverlay } from "./MembersDeleteOverlay";
-import { PendingMembersTable } from "./PendingMembersTable";
 import type {
   SETTINGS_PROVISIONED_USER,
   SETTINGS_ROLE,
@@ -669,7 +668,6 @@ export const MembersTable = (props: MembersTableProps) => {
   return (
     <StyledMemberContent>
       <StyledMemberInnerContent>
-        <PendingMembersTable type={type} id={id} />
         <StyledTableContainer>
           <StyledTableTitleContainer>            
             <StyledTableTitleDiv>

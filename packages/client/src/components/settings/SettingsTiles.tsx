@@ -2,6 +2,7 @@ import databaseIcon from "@/assets/img/databaseIcon.png";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
+import DeleteIcon from '@mui/icons-material/Delete';
 import LockIcon from "@mui/icons-material/Lock";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -23,7 +24,7 @@ import { useEffect, useState } from "react";
 
 const StyledAlert = styled(Alert, {
   shouldForwardProp: (prop) => prop !== "setBounds",
-})<{ setBounds?: boolean }>(({ theme, setBounds }) => ({
+})<{ setBounds?: boolean, colorName?: string }>(({ theme, setBounds, colorName, }) => ({
   width: "100%",
   height: "100%",
   display: "flex",
@@ -33,15 +34,15 @@ const StyledAlert = styled(Alert, {
   flex: "1 0 0",
   alignSelf: "stretch",
   borderRadius: "12px",
-  color: theme.palette.text.primary,
-  background: theme.palette.background.paper,
-  border: `1px solid ${theme.palette.secondary.main}`,
+  color: colorName ? theme.palette[colorName]?.[700] : theme.palette.text.primary,
+  background: colorName ? theme.palette[colorName]?.[50] : theme.palette.background.paper,
+  border: `1px solid ${colorName ? theme.palette[colorName]?.[100] : theme.palette.secondary.main}`,
   ".MuiAlert-action": {
     paddingRight: "8px",
   },
   ...(setBounds && {
-    height: theme.spacing(13),
-    width: "600px",
+    maxHeight: theme.spacing(13),
+    minWidth: "600px",
   }),
 }));
 
@@ -105,7 +106,7 @@ interface SettingsTilesProps {
 
 export const SettingsTiles = (props: SettingsTilesProps) => {
   const { id, type, name, condensed, onDelete, direction = "column" } = props;
-  const typeName = type.toLowerCase();
+  const captilizedType = type?.toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
 
   const { monolithStore, configStore } = useRootStore();
   const notification = useNotification();
@@ -412,7 +413,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         Non Discoverable
                       </Typography>
                       <Typography variant="body2">
-                        Users cannot request access to this {typeName} if private
+                        Users cannot request access to this {name} if private
                       </Typography>
                     </Box>
                   </StyledBlock>
@@ -458,7 +459,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       Non Discoverable
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this {typeName} if private
+                      Users cannot request access to this {name} if private
                     </Typography>
                   </Box>
                 </StyledBlock>
@@ -498,10 +499,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 {/* Text Stack on the right */}
                 <Box>
                   <Typography variant="body1" fontWeight="500">
-                    Delete {typeName}
+                    Delete {captilizedType}
                   </Typography>
                   <Typography variant="body2">
-                    Users cannot request access to this {typeName} if private
+                    Users cannot request access to this {name} if private
                   </Typography>
                 </Box>
               </StyledBlock>
@@ -649,7 +650,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         Non Discoverable
                       </Typography>
                       <Typography variant="body2">
-                        Users cannot request access to this {typeName} if private
+                        Users cannot request access to this {name} if private
                       </Typography>
                     </Box>
                   </StyledBlock>
@@ -696,7 +697,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       Non Discoverable
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this {typeName} if private
+                      Users cannot request access to this {name} if private
                     </Typography>
                   </Box>
                 </StyledBlock>
@@ -709,6 +710,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             <StyledAlert
               setBounds={direction === "column"}
               icon={false}
+              colorName="red"
               action={
                 <Button
                   variant="contained"
@@ -724,24 +726,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
             >
               <Alert.Title>
                 <StyledBlock>
-                  {/* Single Lock Icon on the left */}
-                  <img
-                    src={databaseIcon}
-                    alt="Database Icon"
-                    style={{
-                      width: 18,
-                      height: 18,
-                      marginTop: "2px",
-                    }}
-                  />
-
+                  <StyledIcon>
+                    <DeleteIcon color="error" />
+                  </StyledIcon>
                   {/* Text Stack on the right */}
                   <Box>
                     <Typography variant="body1" fontWeight="500">
-                      Delete {typeName}
+                      Delete {captilizedType}
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this {typeName} if private
+                      Users cannot request access to this {name} if private
                     </Typography>
                   </Box>
                 </StyledBlock>

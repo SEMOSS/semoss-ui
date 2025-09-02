@@ -1,16 +1,15 @@
 import {
 	alpha,
-	keyframes,
 	type PaletteOptions,
 	type SimplePaletteColorOptions,
 	styled,
 	type ThemeOptions,
-	useTheme,
+	useTheme
 } from "@mui/material";
 import type { TypographyOptions } from "@mui/material/styles/createTypography";
 
 // export specifics from the library
-export { alpha, styled, useTheme, keyframes };
+export { alpha, styled, useTheme };
 export type { ThemeOptions };
 
 declare module "@mui/material" {
@@ -108,6 +107,7 @@ export interface CustomPaletteOptions extends PaletteOptions {
 	purple?: CustomPaletteColor;
 	orange?: CustomPaletteColor;
 	grey?: CustomPaletteColor;
+	red?: CustomPaletteColor;
 }
 
 export interface CustomShapeOptions {
@@ -265,6 +265,12 @@ export const lightTheme: CustomThemeOptions = {
 			"700": "#D62C71",
 			"800": "#C0286C",
 			"900": "#992263",
+		},
+		red: {
+			"50": "#FEEBEE",
+			"100": "#FF8A80",
+			"500": "#F44336",
+			"700": "#D50000",
 		},
 		purple: {
 			"50": "#F1E9FB",

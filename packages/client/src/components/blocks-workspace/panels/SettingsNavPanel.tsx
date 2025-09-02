@@ -1,7 +1,6 @@
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
-import { GridView as GridViewIcon } from "@mui/icons-material";
-import TopicOutlinedIcon from "@mui/icons-material/TopicOutlined";
+import { AppShortcut, AssignmentOutlined, DvrOutlined } from "@mui/icons-material";
 import { List, styled } from "@semoss/ui";
 import { Actions, DockLocation, TabNode } from "flexlayout-react";
 import { observer } from "mobx-react-lite";
@@ -14,7 +13,7 @@ const StyledContainer = styled("div")(({ theme }) => ({
 
 const StyledTitle = styled("div")(({ theme }) => ({
   borderRadius: "16px",
-  background: " #EBF4FE",
+  background: "#EBF4FE",
   width: "fit-content",
   paddingRight: theme.spacing(2),
   paddingLeft: theme.spacing(2),
@@ -39,10 +38,19 @@ const StyledTitleSpan = styled("span")(({ theme }) => ({
   marginTop: "8px",
 }));
 
+const StyledListItemBtn = styled(List.ItemButton)(({ theme }) => ({
+  color: theme.palette.text.primary,
+  width: "100%",
+  textAlign: "left",
+  "&:hover": {
+    backgroundColor: theme.palette.primary.selected,
+  },
+}));
+
 const SETTINGS_OPTIONS: { label: string; value: SettingValues, icon?: JSX.Element }[] = [
-  { label: "Members", value: "CURRENT" },
-  { label: "Apps", value: "APP", icon: <GridViewIcon /> },
-  { label: "General", value: "GENERAL" },
+  { label: "Members", value: "CURRENT", icon: <DvrOutlined /> },
+  { label: "Apps", value: "APP", icon: <AppShortcut /> },
+  { label: "General", value: "GENERAL", icon: <AssignmentOutlined /> },
 ];
 
 type SettingValues = "CURRENT" | "GENERAL" | "APP";
@@ -103,17 +111,17 @@ export const SettingsNavPanel = observer(() => {
       <StyledContainer>
         {SETTINGS_OPTIONS.map((item) => {
           return (
-            <List.ItemButton
+            <StyledListItemBtn
               key={item.value}
               onClick={() => addSettingsTab(item)}
               aria-label={item.label}
               dense={true}
             >
               <List.Icon>
-                {item.icon ?? <TopicOutlinedIcon />}
+                {item.icon}
               </List.Icon>
               <List.ItemText primary={item.label} />
-            </List.ItemButton>
+            </StyledListItemBtn>
           );
         })}
       </StyledContainer>

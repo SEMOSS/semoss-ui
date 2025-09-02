@@ -1,6 +1,7 @@
 import { AppSettings } from "@/components/app";
 import {
 	MembersTable,
+	PendingMembersTable,
 	SettingsTiles
 } from "@/components/settings";
 import { SettingsContext } from "@/contexts";
@@ -86,125 +87,77 @@ export const SettingsPanel = observer(({ value }:{ value: string }) => {
 	};
 
 	return (
-		<Panel>
-			<SettingsContext.Provider
-				value={{
-					adminMode: false,
-				}}
-			>
-				<Container
-					maxWidth={"xl"}
-					sx={{
-						height: "100%",
-						display: "flex",
-						flexDirection: "column",
-						gap: "16px",
-						overflowX: "hidden",
-						overflowY: "auto",
-					}}
-				>
-					<StyledContainer>
-						{view !== "GENERAL" && (workspace.role === "EDITOR" ||
-						workspace.role === "OWNER") ? (
-							<Stack
-								sx={{ width: "100%" }}
-								justifyContent={"flex-end"}
-								direction={"row"}
-							>
-								<div>
-									<Tooltip title={"Export"}>
-										<IconButton
-											color="inherit"
-											onClick={() => {
-												exportApp();
-											}}
-										>
-											<GetAppRounded />
-										</IconButton>
-									</Tooltip>
-								</div>
-							</Stack>
-						) : null}
-						{/* {workspace.role === "OWNER" && view === "CURRENT" ? (
-							<SettingsTiles
-								type={"APP"}
-								id={workspace.appId}
-								name={workspace.metadata?.project_name || "app"}
-								direction="row"
-								onDelete={() => {
-									if (
-										location.pathname.startsWith(
-											"/settings/app/",
-										)
-									) {
-										// If in app settings
-										navigate("/settings/app");
-									} else {
-										// If in App Library
-										navigate("/");
-									}
-								}}
-							/>
-						) : null} */}
-						<StyledContent>
-							{/* <ToggleTabsGroup
-								value={view}
-								onChange={(e, v) => setView(v as VIEW)}
-							>
-								<ToggleTabsGroup.Item
-									label="Member"
-									value={"CURRENT"}
-								/>
-								<ToggleTabsGroup.Item
-									label="Pending Requests"
-									disabled={workspace.role === "READ_ONLY"}
-									value={"PENDING"}
-								/>
-								<ToggleTabsGroup.Item
-									label="Data Apps"
-									disabled={workspace.role === "READ_ONLY"}
-									value={"APP"}
-								/>
-							</ToggleTabsGroup> */}
-							{view === "CURRENT" && (
-								<MembersTable
-									type={"APP"}
-									id={workspace.appId}
-									onChange={() => console.log("TODO")}
-								/>
-							)}
-							{/* {view === "PENDING" && (
-								<PendingMembersTable
-									type={"APP"}
-									id={workspace.appId}
-								/>
-							)} */}
-							{view === "APP" && (
-								<AppSettings id={workspace.appId} />
-							)}
-							{view === "GENERAL" && <SettingsTiles
-								type={"APP"}
-								id={workspace.appId}
-								name={workspace.metadata?.project_name || "app"}
-								direction="row"
-								onDelete={() => {
-									if (
-										location.pathname.startsWith(
-											"/settings/app/",
-										)
-									) {
-										// If in app settings
-										navigate("/settings/app");
-									} else {
-										// If in App Library
-										navigate("/");
-									}
-								}}
-							/>}
-						</StyledContent>
-					</StyledContainer>
-				</Container>
-			</SettingsContext.Provider>
-		</Panel>
-	);
+    <Panel>
+      <SettingsContext.Provider
+        value={{
+          adminMode: false,
+        }}
+      >
+        <Container
+          maxWidth={"xl"}
+          sx={{
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            gap: "16px",
+            overflowX: "hidden",
+            overflowY: "auto",
+          }}
+        >
+          <StyledContainer>
+            {view !== "GENERAL" &&
+            (workspace.role === "EDITOR" || workspace.role === "OWNER") ? (
+              <Stack
+                sx={{ width: "100%" }}
+                justifyContent={"flex-end"}
+                direction={"row"}
+              >
+                <div>
+                  <Tooltip title={"Export"}>
+                    <IconButton
+                      color="inherit"
+                      onClick={() => {
+                        exportApp();
+                      }}
+                    >
+                      <GetAppRounded />
+                    </IconButton>
+                  </Tooltip>
+                </div>
+              </Stack>
+            ) : null}
+            <StyledContent>
+              {view === "CURRENT" && (
+                <>
+                  <PendingMembersTable type={"APP"} id={workspace.appId} />
+                  <MembersTable
+                    type={"APP"}
+                    id={workspace.appId}
+                    onChange={() => console.log("TODO")}
+                  />
+                </>
+              )}
+              {view === "APP" && <AppSettings id={workspace.appId} />}
+              {view === "GENERAL" && (
+                <SettingsTiles
+                  type={"APP"}
+                  id={workspace.appId}
+                  name={workspace.metadata?.project_name || "app"}
+                  onDelete={() => {
+                    if (location.pathname.startsWith("/settings/app/")) {
+                      // If in app settings
+                      navigate("/settings/app");
+                    } else {
+                      // If in App Library
+                      navigate("/");
+                    }
+                  }}
+                />
+              )}
+            </StyledContent>
+          </StyledContainer>
+        </Container>
+      </SettingsContext.Provider>
+    </Panel>
+  );
 });

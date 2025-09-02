@@ -61,13 +61,17 @@
 
 .flexlayout__border_bottom {
     border-top: none;
-    /* padding-left: 4px; */
+    padding-left: 34px;
+}
+
+.workspace_layout .flexlayout__border_bottom {
+    padding-left: 0;
     position: absolute;
     bottom: 0;
     min-width: 90px;
 }
 
-.flexlayout__border_bottom .flexlayout__border_button_bottom {
+.workspace_layout .flexlayout__border_bottom .flexlayout__border_button_bottom {
    background: transparent;
 }
 
