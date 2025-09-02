@@ -620,6 +620,13 @@ export class StateStore {
 				} else {
 					return this.runMCPTool(name, parameters);
 				}
+			} else if (ActionMessages.MODIFY_VARIABLE === action.message) {
+				const { blockId, variable, value } = action.payload;
+
+				// parse the value and assign
+				const parsed = this.parseVariable(value as string, blockId);
+
+				this.modifyVariable(variable, parsed);
 			}
 		} catch (e) {
 			console.error(e);
@@ -856,47 +863,51 @@ export class StateStore {
 	 * text_input_1 --> symptom1
 	 * * Get user to confirm
 	 */
-	async suggestVariableRenames(variableKey?: string): Promise<boolean | unknown> {
-       /**
-         * { previous_variable_name: suggested_variable_name, ..others }
-         */
-        const keyHashmap = {};
+	async suggestVariableRenames(
+		variableKey?: string,
+	): Promise<boolean | unknown> {
+		/**
+		 * { previous_variable_name: suggested_variable_name, ..others }
+		 */
+		const keyHashmap = {};
 
-        console.log("state", this._store);
+		console.log("state", this._store);
 
-        // Determine which variables to process
-        let variablesToProcess: [string, Variable][];
-        
-        if (variableKey) {
-            // Process only the specific variable
-            if (this._store.variables[variableKey]) {
-                variablesToProcess = [[variableKey, this._store.variables[variableKey]]];
-            } else {
-                console.warn(`Variable key "${variableKey}" not found`);
-                return keyHashmap;
-            }
-        } else {
-            // Process all variables (original behavior)
-            variablesToProcess = Object.entries(this._store.variables);
-        }
+		// Determine which variables to process
+		let variablesToProcess: [string, Variable][];
 
-        const promises = variablesToProcess.map(
-            async ([key, value]: [string, Variable]) => {
-                console.log(`${key} value: `, value);
+		if (variableKey) {
+			// Process only the specific variable
+			if (this._store.variables[variableKey]) {
+				variablesToProcess = [
+					[variableKey, this._store.variables[variableKey]],
+				];
+			} else {
+				console.warn(`Variable key "${variableKey}" not found`);
+				return keyHashmap;
+			}
+		} else {
+			// Process all variables (original behavior)
+			variablesToProcess = Object.entries(this._store.variables);
+		}
 
-                let prompt;
+		const promises = variablesToProcess.map(
+			async ([key, value]: [string, Variable]) => {
+				console.log(`${key} value: `, value);
 
-                // Change prompts per variable
+				let prompt;
 
-                // PROMPTS START -------------------------------------------------
-                if (value.type === "block") {
-                    prompt = `
+				// Change prompts per variable
+
+				// PROMPTS START -------------------------------------------------
+				if (value.type === "block") {
+					prompt = `
                 I have this data structure:
 
                 ${JSON.stringify({
-                    widget: this._store.blocks[value.to].widget,
-                    data: this._store.blocks[value.to].data,
-                })}
+					widget: this._store.blocks[value.to].widget,
+					data: this._store.blocks[value.to].data,
+				})}
 
                 Based on this data structure would be a good variableName?
 
@@ -904,14 +915,14 @@ export class StateStore {
                 - Please only return the ""variableName""
                 - and ensure it is valid python variable naming format.
             `;
-                } else if (value.type === "cell") {
-                    prompt = `
+				} else if (value.type === "cell") {
+					prompt = `
                 I have this snippet of code:
 
                 ${JSON.stringify(
-                    this._store.queries[value.to].cells[value.cellId].parameters
-                        .code,
-                )}
+					this._store.queries[value.to].cells[value.cellId].parameters
+						.code,
+				)}
 
                 I need you to look at the code that gets ran based on above snippet and come up with a valid variableName for it.
 
@@ -920,37 +931,37 @@ export class StateStore {
                 - and ensure it is valid python variable naming syntax.
                 - Should not be longer than 10 characters
             `;
-                } else {
-                    // Notebooks
+				} else {
+					// Notebooks
 
-                    // TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
-                    return;
-                }
+					// TODO: Stringify all cells.  Or just append all the pixel and python in order to miinimze token count
+					return;
+				}
 
-                // PROMPTS END -------------------------------------------------
+				// PROMPTS END -------------------------------------------------
 
-                // Get variable name suggestions from LLM
-                const resp = await runPixel(
-                    `LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
-                );
+				// Get variable name suggestions from LLM
+				const resp = await runPixel(
+					`LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
+				);
 
-                console.log("-----------------------");
-                console.log(`Variable name suggestions for ${key}`, resp);
-                console.log("-----------------------");
+				console.log("-----------------------");
+				console.log(`Variable name suggestions for ${key}`, resp);
+				console.log("-----------------------");
 
-                const output = resp.pixelReturn[0].output as LLMResponse;
+				const output = resp.pixelReturn[0].output as LLMResponse;
 
-                if (output.response) {
-                    keyHashmap[key] = output.response;
-                }
-            },
-        );
+				if (output.response) {
+					keyHashmap[key] = output.response;
+				}
+			},
+		);
 
-        await Promise.all(promises);
+		await Promise.all(promises);
 
-        console.log("keyHashmap", keyHashmap);
+		console.log("keyHashmap", keyHashmap);
 
-        return keyHashmap;
+		return keyHashmap;
 	}
 
 	/**
@@ -1107,6 +1118,22 @@ export class StateStore {
 		// Return primitives as-is
 		return obj;
 	}
+
+	/**
+	 * Converts cell and publishes cell as MCP function
+	 */
+	makeCellMCP = (queryId: string, cellId: string) => {
+		console.log("Make the cell MCP");
+		console.log(queryId);
+		console.log(cellId);
+
+		const q = this.getQuery(queryId);
+		const c = q.getCell(cellId);
+
+		if (c) {
+			c.makeCellMCP();
+		}
+	};
 
 	/**
 	 * Serialize to JSON
@@ -2300,6 +2327,10 @@ export class StateStore {
 		this._store.variables[uniqId] = token as Variable;
 
 		return token;
+	};
+
+	private modifyVariable = (id: string, value: unknown) => {
+		this._store.variables[id].value = value;
 	};
 
 	/**

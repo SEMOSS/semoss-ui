@@ -1,4 +1,4 @@
-import { AppsRounded } from "@mui/icons-material";
+import { AppsRounded, ReportProblemRounded } from "@mui/icons-material";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import { FlexLayout } from "@semoss/shared";
@@ -115,6 +115,9 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					</Typography>
 					<Typography variant="caption">Click to Open</Typography>
 				</Stack>
+				{!tool.response && (
+					<ReportProblemRounded fontSize={"small"} color="warning" />
+				)}
 			</StyledSidebarOpen>
 		);
 	},

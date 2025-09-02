@@ -9,6 +9,24 @@ import type { QueryState } from "./query.state";
 import type { StateStore } from "./state.store";
 import type { CellComponent, CellConfig, CellDef } from "./state.types";
 
+interface MCPInterface {
+	name: string;
+	title: string;
+	description: string;
+	inputSchema: {
+		properties: {
+			[key: string]: {
+				title: string;
+				description: string;
+				type: string;
+			};
+		};
+		required: string[];
+		title: string;
+		type: string;
+	};
+}
+
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 	/** Id of the cell */
 	id: string;
@@ -33,6 +51,12 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 
 	/** Parameters associated with the cell */
 	parameters: D["parameters"];
+
+	/** Properties used to execute tool */
+	mcpEnabled?: MCPInterface | null;
+
+	/** used to fill pixel params for RunMCPTool */
+	mcpParameters?: Record<string, unknown> | null;
 }
 
 export interface CellStateConfig<D extends CellDef = CellDef> {
@@ -44,6 +68,12 @@ export interface CellStateConfig<D extends CellDef = CellDef> {
 
 	/** Parameters associated with the cell */
 	parameters: D["parameters"];
+
+	/** Properties used to execute tool */
+	mcpEnabled?: MCPInterface | null;
+
+	/** used to fill pixel params for RunMCPTool */
+	mcpParameters?: Record<string, unknown> | null;
 }
 
 /**
@@ -61,6 +91,8 @@ export class CellState<D extends CellDef = CellDef> {
 		messages: [],
 		widget: "",
 		parameters: {},
+		mcpEnabled: null,
+		mcpParameters: null,
 	};
 
 	constructor(config: CellStateConfig, query: QueryState, state: StateStore) {
@@ -72,6 +104,9 @@ export class CellState<D extends CellDef = CellDef> {
 		this._store.id = config.id;
 		this._store.widget = config.widget;
 		this._store.parameters = config.parameters;
+
+		this._store.mcpEnabled = config.mcpEnabled;
+		this._store.mcpParameters = config.mcpParameters;
 
 		// make it observable
 		makeAutoObservable(this);
@@ -211,6 +246,66 @@ export class CellState<D extends CellDef = CellDef> {
 	}
 
 	/**
+	 * Get the inputs to execute mcp tool
+	 */
+	get mcpEnabled() {
+		return this._store.mcpEnabled;
+	}
+
+	/**
+	 * Get the mcp parameters associated with the cell
+	 */
+	get mcpParameters() {
+		return this._store.mcpParameters;
+	}
+
+	/**
+	 * Bind the MCP Tool to the cell for execution
+	 * @returns
+	 */
+	makeCellMCP = (): void => {
+		// TODO: Make Pixel call
+
+		this._store.mcpEnabled = {
+			name: "diagnose_short_symptom",
+			title: "Diagnose Short Symptom",
+			description:
+				"Generates a short (20-character) possible diagnosis based on two symptom inputs, using the SEMOSS Insight engine.\n\nArgs:\n    symptom1 (str): Description or name of the first symptom.\n    symptom2 (str): Description or name of the second symptom.\n\nReturns:\n    str: A concise diagnosis (up to 20 characters), inferred by the LLM engine.",
+			inputSchema: {
+				properties: {
+					symptom1: {
+						title: "Symptom1",
+						description:
+							"Description or name of the first symptom.",
+						type: "string",
+					},
+					symptom2: {
+						title: "Symptom2",
+						description:
+							"Description or name of the second symptom.",
+						type: "string",
+					},
+				},
+				required: ["symptom1", "symptom2"],
+				title: "diagnose_short_symptom_Arguments",
+				type: "object",
+			},
+		};
+
+		this._store.mcpParameters = {
+			symptom1: "{{input_1}}",
+			symptom2: "{{input_2}}",
+		};
+	};
+
+	/**
+	 *
+	 */
+	setMCPParameters = (key: string, value: unknown): void => {
+		this._store.mcpParameters[key] = value;
+	};
+
+	/**
 	 * Actions
 	 */
 	/**
@@ -220,7 +315,9 @@ export class CellState<D extends CellDef = CellDef> {
 		return {
 			id: this._store.id,
 			widget: this._store.widget,
+			mcpEnabled: this._store.mcpEnabled,
 			parameters: toJS(this._store.parameters),
+			mcpParameters: toJS(this._store.mcpParameters),
 		};
 	};
 
@@ -233,6 +330,9 @@ export class CellState<D extends CellDef = CellDef> {
 		parameters: Record<string, unknown> = this._store.parameters,
 	): string | string[] {
 		const cellConfig = this.config;
+
+		// TODO: if mcpEnabled do not run the pixel
+		// RunMCPTool(tool=["${cell.mcpEnabled.name}"])
 
 		// use the toPixel from the cell
 		if (cellConfig) {
@@ -255,9 +355,29 @@ export class CellState<D extends CellDef = CellDef> {
 	 * @param rawPixel - pixel to be formatted and run
 	 */
 	private async runPixel(rawPixel: string) {
-		// Gets rid of braces and evaluate parameters in query
-		// const filled = this._state.flattenVar(raw);
-		const filled = this._state.flattenVariable(rawPixel);
+		console.log("-------------------------------------");
+		console.log("cell state: is this cell, mcpEnabled");
+		console.log(this._store.mcpEnabled);
+		console.log("-------------------------------------");
+
+		const projId = "7c5771e1-ce6a-4cfb-a2d6-9f6a2dd049d3";
+
+		let filled;
+		// Construct pixel for MCPEnabled
+		if (this._store.mcpEnabled) {
+			// RunMCPTool(project="7c5771e1-ce6a-4cfb-a2d6-9f6a2dd049d3", function="diagnose_short_symptom", paramValues=[{"symptom1":"cough","symptom2":"extreme headache"}]);
+			const pixel = `RunMCPTool(project=["${projId}"], function=["${this._store.mcpEnabled.name}"], paramValues=[${JSON.stringify(this._store.mcpParameters)}])`;
+
+			console.log(this._store.mcpParameters);
+			console.log("pixel", pixel);
+			filled = this._state.flattenVariable(pixel);
+		} else {
+			// Gets rid of braces and evaluate parameters in query
+			// const filled = this._state.flattenVar(raw);
+			filled = this._state.flattenVariable(rawPixel);
+		}
+
+		console.log("filled", filled);
 
 		// clear the previous messages + operation + output
 		this._store.messages = [];

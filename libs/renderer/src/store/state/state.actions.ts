@@ -49,6 +49,7 @@ export enum ActionMessages {
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 	RUN_MCP_TOOL = "RUN_MCP_TOOL",
+	MODIFY_VARIABLE = "MODIFY_VARIABLE",
 }
 
 export type Actions =
@@ -77,7 +78,8 @@ export type Actions =
 	| EditVariableAction
 	| DeleteVariableAction
 	| SetSheetExecutionOrderAction
-	| RunMCPToolAction;
+	| RunMCPToolAction
+	| ModifyVariableAction;
 
 /**
  * All
@@ -311,10 +313,6 @@ export interface UpdateCellAction extends Action {
 /**
  * Events
  */
-export interface DispatchOutputsEventAction extends Action {
-	message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
-	payload: {};
-}
 
 export interface DispatchOpenEventAction extends Action {
 	message: ActionMessages.DISPATCH_OPEN_EVENT;
@@ -354,5 +352,13 @@ export interface RunMCPToolAction extends Action {
 		parameters: {
 			[key: string]: unknown;
 		};
+	};
+}
+export interface ModifyVariableAction extends Action {
+	message: ActionMessages.MODIFY_VARIABLE;
+	payload: {
+		blockId: string;
+		variable: string;
+		value: unknown;
 	};
 }

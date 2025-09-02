@@ -18,6 +18,7 @@ import {
 	useEventActionData,
 	validateForm,
 } from "./block-events";
+import { ModifyVariableSelector } from "./block-events/ModifyVariableSelector";
 import { RunMCPSelector } from "./block-events/RunMCPSelector";
 
 const StyledSpacer = styled("div")(() => ({
@@ -133,6 +134,7 @@ export const ListenerActionOverlay = observer(
 										ActionMessages.DISPATCH_EVENT,
 										ActionMessages.DISPATCH_OPEN_EVENT,
 										ActionMessages.RUN_MCP_TOOL,
+										ActionMessages.MODIFY_VARIABLE,
 									].map((action) => (
 										<Select.Item
 											key={action}
@@ -181,6 +183,13 @@ export const ListenerActionOverlay = observer(
 								control={control}
 								setValue={setValue}
 								name={name}
+							/>
+						)}
+						{message === ActionMessages.MODIFY_VARIABLE && (
+							<ModifyVariableSelector
+								id={id}
+								control={control}
+								setValue={setValue}
 							/>
 						)}
 					</Stack>

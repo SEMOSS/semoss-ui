@@ -1,6 +1,7 @@
 import {
 	ArrowDownward,
 	ArrowUpward,
+	AutoFixHigh,
 	CheckCircle,
 	ContentCopy,
 	Delete,
@@ -35,6 +36,7 @@ import { useWorkspace } from "@/hooks";
 import { copyTextToClipboard } from "@/utility";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { AddVariableModal } from "./AddVariableModal";
+import { CellMCPForm } from "./CellMCPForm";
 import { NotebookAddCell } from "./NotebookAddCell";
 import { NotebookCellConsole } from "./NotebookCellConsole";
 import { Operation } from "./operations";
@@ -555,6 +557,25 @@ export const NotebookCell = observer(
 						<Stack gap={1} direction={"row"} alignItems={"center"}>
 							<StyledButtonGroup variant="outlined">
 								<StyledButtonGroupButton
+									title="Make Available through MCP"
+									size="small"
+									disabled={cell.isLoading}
+									onClick={(e) => {
+										// stop propogation to card parent so newly created cell will be selected
+										e.stopPropagation();
+
+										// publish call as mcp
+										state.makeCellMCP(query.id, cell.id);
+
+										console.log(state);
+										debugger;
+									}}
+								>
+									<StyledButtonLabel>
+										<AutoFixHigh />
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+								<StyledButtonGroupButton
 									title="Run this cell and below"
 									size="small"
 									disabled={cell.isLoading}
@@ -774,7 +795,16 @@ export const NotebookCell = observer(
 									</StyledPlayWrapper>
 								)}
 							</StyledRunIconButton>
-							<StyledCardInput>{rendered}</StyledCardInput>
+							<StyledCardInput>
+								{cell.mcpEnabled ? (
+									<CellMCPForm
+										queryId={queryId}
+										cellId={cellId}
+									/>
+								) : (
+									rendered
+								)}
+							</StyledCardInput>
 						</StyledCardContent>
 						{cell.parameters.type !== "markdown" && (
 							<div>

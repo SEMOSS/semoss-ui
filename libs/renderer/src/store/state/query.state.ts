@@ -52,6 +52,8 @@ export class QueryState {
 		// set the id
 		this._store.id = config.id;
 
+		console.log(config.cells)
+
 		// create the cells
 		const { cells, list } = config.cells.reduce(
 			(acc, val) => {
