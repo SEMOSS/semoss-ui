@@ -54,7 +54,7 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
   if (!data.isStreaming) displayTxt = textContent;
 
   // Process source data to generate events
-  // Expected format: [{ date: "YYYY-MM-DD", events: [["Event Name", "event_id", "recurring_id?"], ...] }]
+  // Handle multiple possible formats of source data
   const processSourceData = (source: string | any[]): Array<{
     summary: string;
     id: string;
@@ -84,24 +84,79 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
         displayText: string;
       }> = [];
       
-      // Process each day's data
-      parsedData.forEach((dayData: any) => {
-        if (dayData.date && dayData.events && Array.isArray(dayData.events)) {
-          dayData.events.forEach((eventData: string[]) => {
-            if (eventData.length >= 2) {
+      // Process each item in the data
+      parsedData.forEach((item: any, index: number) => {
+        // Handle different possible data structures
+        
+        // Format 1: { date: "YYYY-MM-DD", events: [["Event Name", "event_id", "recurring_id?"], ...] }
+        if (item.date && item.events && Array.isArray(item.events)) {
+          item.events.forEach((eventData: any, eventIndex: number) => {
+            // Handle array format: ["Event Name", "event_id", "recurring_id?"]
+            if (Array.isArray(eventData) && eventData.length >= 2) {
               const [summary, id, recurringId] = eventData;
               events.push({
                 summary: summary || 'Untitled Event',
-                id: id || '',
+                id: id || `event-${index}-${eventIndex}`,
                 recurringId: recurringId || undefined,
-                date: dayData.date,
+                date: item.date,
                 displayText: summary || 'Untitled Event'
+              });
+            }
+            // Handle object format: { summary: "Event Name", id: "event_id", ... }
+            else if (typeof eventData === 'object' && eventData !== null) {
+              events.push({
+                summary: eventData.summary || eventData.title || eventData.name || 'Untitled Event',
+                id: eventData.id || `event-${index}-${eventIndex}`,
+                recurringId: eventData.recurringId || undefined,
+                date: item.date,
+                displayText: eventData.summary || eventData.title || eventData.name || 'Untitled Event'
               });
             }
           });
         }
+        // Format 2: Direct event object { date: "...", title/summary: "...", id?: "..." }
+        else if (item.date && (item.title || item.summary || item.name)) {
+          events.push({
+            summary: item.title || item.summary || item.name || 'Untitled Event',
+            id: item.id || `event-${index}`,
+            recurringId: item.recurringId || undefined,
+            date: item.date,
+            displayText: item.title || item.summary || item.name || 'Untitled Event'
+          });
+        }
+        // Format 3: Array where each element represents an event [date, title, id?, ...]
+        else if (Array.isArray(item) && item.length >= 2) {
+          const [date, title, id, recurringId] = item;
+          if (date && title) {
+            events.push({
+              summary: title || 'Untitled Event',
+              id: id || `event-${index}`,
+              recurringId: recurringId || undefined,
+              date: date,
+              displayText: title || 'Untitled Event'
+            });
+          }
+        }
+        // Format 4: Object with any date field and any text field
+        else {
+          // Look for date fields
+          const dateField = ['date', 'Date', 'DATE', 'eventDate', 'startDate', 'start_date'].find(field => item[field]);
+          // Look for text/title fields
+          const textField = ['title', 'summary', 'name', 'text', 'event', 'eventTitle', 'description'].find(field => item[field]);
+          
+          if (dateField && textField && item[dateField] && item[textField]) {
+            events.push({
+              summary: item[textField] || 'Untitled Event',
+              id: item.id || item.eventId || `event-${index}`,
+              recurringId: item.recurringId || undefined,
+              date: item[dateField],
+              displayText: item[textField] || 'Untitled Event'
+            });
+          }
+        }
       });
       
+      console.log('Processed events from source:', events);
       return events;
     } catch (error) {
       console.warn('Error processing calendar source data:', error);
@@ -109,11 +164,42 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
     }
   };
 
+  // Helper function to normalize date format to YYYY-MM-DD
+  const normalizeDateFormat = (dateString: string): string => {
+    try {
+      let eventDate;
+      if (dateString.includes("/")) {
+        // Handle MM/DD/YYYY format
+        eventDate = dayjs(dateString, "MM/DD/YYYY");
+      } else if (dateString.includes("-")) {
+        // Handle YYYY-MM-DD or MM-DD-YYYY format
+        eventDate = dayjs(dateString);
+      } else {
+        // Fallback to default parsing
+        eventDate = dayjs(dateString);
+      }
+
+      // Ensure the parsed date is valid
+      if (!eventDate.isValid()) {
+        console.warn("Invalid date:", dateString);
+        return "";
+      }
+
+      return eventDate.format("YYYY-MM-DD");
+    } catch (error) {
+      console.warn("Error parsing date:", dateString, error);
+      return "";
+    }
+  };
+
   // Get events from source data or fallback to direct events property
   const calendarEvents = data.source ? processSourceData(data.source) : (data.events || []);
 
-  // Get unique event dates for child component replication
-  const uniqueEventDates = [...new Set(calendarEvents.map(event => event.date))];
+  // Get unique event dates for child component replication (normalized to YYYY-MM-DD)
+  const uniqueEventDates = [...new Set(calendarEvents.map(event => normalizeDateFormat(event.date)).filter(date => date !== ""))];
+
+  // Create a mapping of event dates to child block IDs
+  const [dateToBlockMap, setDateToBlockMap] = useState<Record<string, string>>({});
 
   // Replicate child components for each event date (similar to IterationBlock)
   useEffect(() => {
@@ -161,8 +247,14 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
             }
           }
 
-          // Create replicated blocks for each event date (except the first one which is the original)
+          // Create replicated blocks for each event date and map them
           const newReplicatedBlocks: string[] = [];
+          const newDateToBlockMap: Record<string, string> = {};
+          
+          // Map the original child to the first event date
+          if (uniqueEventDates.length > 0) {
+            newDateToBlockMap[uniqueEventDates[0]] = originalChildId;
+          }
           
           for (let i = 1; i < uniqueEventDates.length; i++) {
             const eventDate = uniqueEventDates[i];
@@ -184,6 +276,7 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
 
               if (typeof newBlockId === 'string') {
                 newReplicatedBlocks.push(newBlockId);
+                newDateToBlockMap[eventDate] = newBlockId;
               }
             } catch (error) {
               console.warn('Error adding replicated block:', error);
@@ -191,41 +284,25 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
           }
 
           setReplicatedBlocks(newReplicatedBlocks);
+          setDateToBlockMap(newDateToBlockMap);
         }
       }
     };
 
     replicateComponents();
-  }, [JSON.stringify(uniqueEventDates), slots.children?.children.length]);
+  }, [JSON.stringify(uniqueEventDates), slots.children?.children.length, JSON.stringify(data.source)]);
+
+  // Reset dateToBlockMap when source data changes
+  useEffect(() => {
+    setDateToBlockMap({});
+  }, [JSON.stringify(data.source)]);
 
   // Helper function to group events by date
   const getEventsForDate = (date: dayjs.Dayjs) => {
+    const targetDateString = date.format("YYYY-MM-DD");
     return calendarEvents.filter((event) => {
-      // Parse the event date and compare - handle multiple date formats
-      try {
-        // Try parsing different date formats that might come from the API
-        let eventDate;
-        if (event.date.includes("/")) {
-          // Handle MM/DD/YYYY format
-          eventDate = dayjs(event.date, "MM/DD/YYYY");
-        } else if (event.date.includes("-")) {
-          // Handle YYYY-MM-DD or MM-DD-YYYY format
-          eventDate = dayjs(event.date);
-        } else {
-          // Fallback to default parsing
-          eventDate = dayjs(event.date);
-        }
-
-        // Ensure the parsed date is valid
-        if (!eventDate.isValid()) {
-          return false;
-        }
-
-        return eventDate.format("YYYY-MM-DD") === date.format("YYYY-MM-DD");
-      } catch (error) {
-        console.warn("Error parsing event date:", event.date, error);
-        return false;
-      }
+      const normalizedEventDate = normalizeDateFormat(event.date);
+      return normalizedEventDate === targetDateString;
     });
   };
 
@@ -263,7 +340,14 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
     childrenCount: slots.children?.children?.length || 0,
     children: slots.children?.children || [],
     eventsCount: calendarEvents.length,
-    uniqueEventDates: uniqueEventDates
+    calendarEvents: calendarEvents,
+    uniqueEventDates: uniqueEventDates,
+    dateToBlockMap: dateToBlockMap,
+    sourceData: data.source,
+    sourceDataSample: data.source ? data.source.slice(0, 3) : null, // Show first 3 items
+    mode: state.mode,
+    designMode: data.designMode,
+    replicatedBlocks: replicatedBlocks
   });
 
   return (
@@ -514,37 +598,49 @@ export const CalendarViewBlock: BlockComponent = observer(({ id }) => {
                     </div>
                   </div>
 
-                  {/* Child components - show in design mode OR on dates with events */}
-                  {((isStatic && data.designMode && slots.children && slots.children.children.length > 0) || 
-                    (!isStatic && hasEvents && slots.children && slots.children.children.length > 0) ||
-                    (isStatic && !data.designMode && hasEvents && slots.children && slots.children.children.length > 0)) && (
-                    <div
-                      style={{
-                        flex: 1,
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        fontSize: "0.75rem",
-                        color: "#666",
-                        textAlign: "center",
-                        minHeight: "40px",
-                        padding: "2px",
-                        overflow: isStatic ? "visible" : "hidden",
-                      }}
-                    >
-                      <div
-                        style={{
-                          maxWidth: "100%",
-                          transform: isStatic ? "scale(1)" : "scale(0.75)",
-                          transformOrigin: "center",
-                          width: isStatic ? "100%" : "133.33%",
-                        }}
-                      >
-                        <Slot slot={{ name: 'children', children: [slots.children.children[0]] }} />
-                      </div>
-                    </div>
-                  )}
+                  {/* Child components - show based on events and availability */}
+                  {(() => {
+                    const dateString = date.format("YYYY-MM-DD");
+                    const blockId = dateToBlockMap[dateString];
+                    const shouldShowChild = slots.children && slots.children.children.length > 0 && 
+                      ((isStatic && data.designMode) || (!isStatic && hasEvents) || (isStatic && !data.designMode && hasEvents));
+                    
+                    if (shouldShowChild) {
+                      // Use the specific block for this date if available, otherwise use the first child
+                      const childBlockId = blockId || slots.children.children[0];
+                      
+                      return (
+                        <div
+                          style={{
+                            flex: 1,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            fontSize: "0.75rem",
+                            color: "#666",
+                            textAlign: "center",
+                            minHeight: "40px",
+                            padding: "2px",
+                            overflow: isStatic ? "visible" : "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              maxWidth: "100%",
+                              transform: isStatic ? "scale(1)" : "scale(0.75)",
+                              transformOrigin: "center",
+                              width: isStatic ? "100%" : "133.33%",
+                            }}
+                          >
+                            <Slot slot={{ name: 'children', children: [childBlockId] }} />
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                 </div>
               );
             })}
