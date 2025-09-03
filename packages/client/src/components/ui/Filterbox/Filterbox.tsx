@@ -65,7 +65,7 @@ export interface FilterboxProps {
 		| "BROWSETEMPLATES";
 	/** Filters to hold in state at parent */
 	onChange: (filters: unknown) => void;
-	appIds?: string[];
+	filteredCatalogIds?: string[];
 }
 
 const initialState = {
@@ -87,7 +87,7 @@ const reducer = (state, action) => {
 };
 
 export const Filterbox = (props: FilterboxProps) => {
-	const { type, onChange, appIds } = props;
+	const { type, onChange, filteredCatalogIds } = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -164,10 +164,10 @@ export const Filterbox = (props: FilterboxProps) => {
 			? type === "APP"
 				? `GetProjectMetaValues(metaKeys=${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)}${appIds.length > 0 ? `, projectIdList = ${JSON.stringify(appIds)}` : ""}) ;`
+					)}${filteredCatalogIds.length > 0 ? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}` : ""}) ;`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)}${appIds.length > 0 ? `, projectIdList = ${JSON.stringify(appIds)}` : ""}) ;`
+					)}${filteredCatalogIds.length > 0 ? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}` : ""}) ;`
 			: "",
 	);
 
@@ -236,7 +236,7 @@ export const Filterbox = (props: FilterboxProps) => {
 		});
 
 		setFilterOptions(updated);
-	}, [getCatalogFilters.status, getCatalogFilters.data, appIds]);
+	}, [getCatalogFilters.status, getCatalogFilters.data, filteredCatalogIds]);
 
 	/**
 	 *

@@ -231,7 +231,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	}, [getFavoritedApps.status, getFavoritedApps.data]);
 
 	const debouncedSet = debounced((newInputValue) => {
-		setSearch(newInputValue);
+		setSearch(newInputValue as string);
 	}, 300);
 
 	const handleInputChange = (newInputValue) => {
@@ -362,7 +362,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									) => {
 										setMetaFilters(filters);
 									}}
-									appIds={renderedAppIds}
+									filteredCatalogIds={renderedAppIds}
 								/>
 							</div>
 						)}

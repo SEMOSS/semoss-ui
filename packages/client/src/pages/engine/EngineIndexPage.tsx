@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
@@ -15,7 +15,6 @@ import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { ENGINE_TYPES } from "@/types";
 import { removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -128,7 +127,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const offsetRef = useRef(0);
 		offsetRef.current = offset;
-		let scrollEle, scrollTimeout, currentScroll, previousScroll;
+		let scrollEle: HTMLElement | null,
+			scrollTimeout: ReturnType<typeof setTimeout> | undefined,
+			currentScroll: number | undefined,
+			previousScroll: number | undefined;
 
 		const [inputValue, setInputValue] = useState("");
 		const [search, setSearch] = useState("");
@@ -204,7 +206,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		);
 
 		const debouncedSet = debounced((newInputValue) => {
-			setSearch(newInputValue);
+			setSearch(newInputValue as string);
 		}, 300);
 
 		const handleInputChange = (newInputValue) => {
@@ -314,7 +316,6 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 			monolithStore.runQuery(pixelString).then((response) => {
 				const type = response.pixelReturn[0].operationType;
-				const pixelResponse = response.pixelReturn[0].output;
 
 				if (type.indexOf("ERROR") === -1) {
 					const newDatabases = [];
@@ -325,7 +326,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							newCopy.upvotes = !db.hasUpvoted
 								? newCopy.upvotes + 1
 								: newCopy.upvotes - 1;
-							newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
+							newCopy.hasUpvoted = !db.hasUpvoted;
 
 							newDatabases.push(newCopy);
 						} else {
@@ -465,7 +466,20 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			getDatabases.status === "ERROR" ||
 			getCatalogFilters.status === "ERROR"
 		) {
-			return <>ERROR</>;
+			return <Typography variant="body1">ERROR</Typography>;
+		}
+
+		// to limit the catalogs that are sent to filterbox for performance
+		let renderedEngineIds = [];
+		if (inputValue) {
+			renderedEngineIds.push(
+				...databases.map((engine) => engine.database_id),
+			);
+			renderedEngineIds.push(
+				...favoritedDbs.map((engine) => engine.database_id),
+			);
+			if (renderedEngineIds.length === 0)
+				renderedEngineIds = ["dummy-id"]; //dummy id to avoid empty array in query
 		}
 
 		return (
@@ -538,6 +552,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							setMetaFilters(filters);
 							setOffset(0);
 						}}
+						filteredCatalogIds={renderedEngineIds}
 					/>
 					<StyledContent>
 						<Stack
@@ -547,6 +562,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						>
 							<StyledToggleTabsGroup
 								value={mode}
+								// biome-ignore lint/correctness/noUnusedFunctionParameters: Event handler needs both parameters even if we don't use the event
 								onChange={(e: React.SyntheticEvent, val) => {
 									dispatch({
 										type: "field",
