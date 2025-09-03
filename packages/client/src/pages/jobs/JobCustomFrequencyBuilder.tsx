@@ -5,15 +5,6 @@ import { JobBuilder } from "./job.types";
 
 // Helper for default values
 const DEFAULT_CRON = ["0", "0", "12", "?", "*", "?", "*"];
-const CRON_LABELS = [
-	"Seconds",
-	"Minutes",
-	"Hours",
-	"Day of Month",
-	"Month",
-	"Day of Week",
-	"Year",
-];
 
 export const JobCustomFrequencyBuilder = (props: {
 	builder: JobBuilder;
@@ -55,7 +46,7 @@ export const JobCustomFrequencyBuilder = (props: {
 
 	return (
 		<Stack direction="row" spacing={1} width="100%">
-			{CRON_LABELS.map((label, idx) => (
+			{cronValidator.fieldNames.map((label, idx) => (
 				<TextField
 					key={label}
 					label={label}

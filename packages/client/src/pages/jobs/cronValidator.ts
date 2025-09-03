@@ -29,6 +29,11 @@ class CronExpressionValidator implements CronValidator {
 		"Year",
 	];
 
+	// Public getter for field names
+	get fieldNames(): string[] {
+		return [...this.FIELD_NAMES];
+	}
+
 	private getCronFields(cronExpression: string): string[] {
 		const fields = cronExpression.split(" ");
 		while (fields.length < 7) fields.push("*");
