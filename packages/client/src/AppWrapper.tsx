@@ -1,11 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo } from "react";
 import { HashRouter } from "react-router-dom";
-import {
-	type CustomThemeOptions,
-	Notification,
-	ThemeProvider,
-} from "@semoss/ui";
+import { Notification, type ThemeOptions, ThemeProvider } from "@semoss/ui";
 import { LoadingScreen } from "@/components/ui";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
@@ -30,10 +26,8 @@ export const AppWrapper = observer(() => {
 		}
 	}, [configStore.theme]);
 
-	const t: CustomThemeOptions = useMemo(() => {
-		return (
-			(configStore.theme.materialTheme as CustomThemeOptions) || undefined
-		);
+	const t: ThemeOptions = useMemo(() => {
+		return (configStore.theme.materialTheme as ThemeOptions) || undefined;
 	}, [configStore.theme]);
 
 	return (
