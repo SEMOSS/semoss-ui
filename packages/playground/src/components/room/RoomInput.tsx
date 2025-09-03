@@ -3,8 +3,8 @@ import {
 	AudioFileOutlined,
 	CloseRounded,
 	InsertDriveFile,
-	MicRounded,
-	SendRounded,
+	MicNoneOutlined,
+	SendOutlined,
 	TextSnippetOutlined,
 	VideoFileOutlined,
 } from "@mui/icons-material";
@@ -13,6 +13,7 @@ import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import {
 	Badge,
+	Button,
 	CircularProgress,
 	FormControl,
 	IconButton,
@@ -30,12 +31,39 @@ const StyledContainer = styled(FormControl)(() => ({
 	width: "100%",
 }));
 
+const StyledTopRightCorner = styled(Stack)(() => ({
+	position: "absolute",
+	top: "16px",
+	right: "16px",
+	zIndex: 1,
+}));
+
+const StyledBottomRightCorner = styled(Stack)(() => ({
+	position: "absolute",
+	bottom: "16px",
+	right: "16px",
+	zIndex: 1,
+}));
+
+const StyledBottomLeftCorner = styled(Stack)(() => ({
+	position: "absolute",
+	left: "16px",
+	bottom: "16px",
+	zIndex: 1,
+
+	// pointerEvents: 'none',
+	// '& *': {
+	//     pointerEvents: 'all',
+	// },
+}));
+
 const StyledInput = styled(TextField, {
 	shouldForwardProp: (prop) => prop !== "dragging",
 })<{
 	/** Highlight if dragging */
 	dragging: boolean;
 }>(({ theme, dragging }) => ({
+	background: theme.palette.background.paper,
 	"& .MuiInputBase-input::placeholder": {
 		color: theme.palette.text.primary,
 		opacity: 1,
@@ -43,24 +71,27 @@ const StyledInput = styled(TextField, {
 	"& .MuiOutlinedInput-root": {
 		paddingBottom: "51px",
 		"& fieldset": {
-			borderColor: dragging ? theme.palette.primary.border : "",
-			borderStyle: dragging ? "dashed" : "",
-			borderRadius: theme.spacing(1),
+			borderColor: dragging ? theme.palette.primary.border : "#BAB5F4",
+			borderWidth: "2px",
+			borderStyle: dragging ? "dashed" : "solid",
+			borderRadius: "8px",
+			boxShadow: theme.shadows[1],
+		},
+	},
+
+	"&:hover .MuiOutlinedInput-root": {
+		"& fieldset": {
+			borderColor: theme.palette.primary.main,
 		},
 	},
 }));
 
-const StyledActions = styled(Stack)(() => ({
-	position: "absolute",
-	bottom: "8.5px",
-	left: "14px",
-	right: "14px",
-	zIndex: 1,
-
-	// pointerEvents: 'none',
-	// '& *': {
-	//     pointerEvents: 'all',
-	// },
+const StyledPromptButton = styled(Button)(({ theme }) => ({
+	minWidth: "auto",
+	lineHeight: "1",
+	padding: "8px",
+	borderRadius: "8px",
+	boxShadow: theme.shadows[1],
 }));
 
 const StyledFileContainer = styled(Stack)(({ theme }) => ({
@@ -298,6 +329,116 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<>
 				<StyledContainer>
+					<StyledTopRightCorner
+						direction={"row"}
+						alignItems={"center"}
+						justifyContent={"flex-end"}
+						spacing={1}
+					>
+						<Tooltip
+							title={isListening ? "Stop Recording" : "Record"}
+							placement="top"
+						>
+							<span>
+								<IconButton
+									size={"small"}
+									type="button"
+									color={isListening ? "error" : "default"}
+									aria-label="Record the Model"
+									disabled={
+										!canListen || isDisabled || isLoading
+									}
+									onClick={() => {
+										if (isListening) {
+											stopListening();
+										} else {
+											startListening();
+										}
+									}}
+								>
+									<MicNoneOutlined
+										color={"inherit"}
+										fontSize="medium"
+									/>
+								</IconButton>
+							</span>
+						</Tooltip>
+					</StyledTopRightCorner>
+					<StyledBottomLeftCorner
+						direction={"row"}
+						alignItems={"center"}
+						spacing={1}
+					>
+						{ENABLE_ATTACHMENT && (
+							<Tooltip title={"Attach Document"} placement="top">
+								<IconButton
+									size={"small"}
+									type="button"
+									color="default"
+									aria-label="Attach Documents"
+									disabled={isDisabled || isLoading}
+									onClick={() => {
+										fileRef.current?.click();
+									}}
+								>
+									<Badge
+										color={"primary"}
+										variant="dot"
+										invisible={files.length === 0}
+									>
+										<AttachFileRounded
+											color={"inherit"}
+											fontSize="medium"
+										/>
+									</Badge>
+								</IconButton>
+							</Tooltip>
+						)}
+						{actions}
+					</StyledBottomLeftCorner>
+					<StyledBottomRightCorner>
+						<Tooltip
+							title={(() => {
+								if (isEmpty) {
+									return "Please enter a prompt";
+								} else if (isLoading) {
+									return "Processing prompt";
+								} else if (isDisabled) {
+									return "";
+								}
+								return "Prompt";
+							})()}
+							placement="top"
+						>
+							<span>
+								<StyledPromptButton
+									variant="contained"
+									size={"medium"}
+									type="button"
+									color="primary"
+									aria-label="Prompt the Model"
+									disabled={
+										isDisabled || isLoading || isEmpty
+									}
+									onClick={() => {
+										promptModel(input);
+									}}
+								>
+									{isLoading ? (
+										<CircularProgress
+											size={"24px"}
+											color="primary"
+										/>
+									) : (
+										<SendOutlined
+											color={"inherit"}
+											fontSize="medium"
+										/>
+									)}
+								</StyledPromptButton>
+							</span>
+						</Tooltip>
+					</StyledBottomRightCorner>
 					<input
 						ref={fileRef}
 						type="file"
@@ -352,107 +493,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							}
 						}}
 					/>
-					<StyledActions
-						direction={"row"}
-						alignItems={"center"}
-						justifyContent={"flex-end"}
-						spacing={0.5}
-					>
-						{actions}
-						{ENABLE_ATTACHMENT && (
-							<Tooltip title={"Attach Document"} placement="top">
-								<IconButton
-									size={"small"}
-									type="button"
-									color="default"
-									aria-label="Attach Documents"
-									disabled={isDisabled || isLoading}
-									onClick={() => {
-										fileRef.current?.click();
-									}}
-								>
-									<Badge
-										color={"primary"}
-										variant="dot"
-										invisible={files.length === 0}
-									>
-										<AttachFileRounded
-											color={"inherit"}
-											fontSize="medium"
-										/>
-									</Badge>
-								</IconButton>
-							</Tooltip>
-						)}
-						<Tooltip
-							title={isListening ? "Stop Recording" : "Record"}
-							placement="top"
-						>
-							<span>
-								<IconButton
-									size={"small"}
-									type="button"
-									color={isListening ? "error" : "default"}
-									aria-label="Record the Model"
-									disabled={
-										!canListen || isDisabled || isLoading
-									}
-									onClick={() => {
-										if (isListening) {
-											stopListening();
-										} else {
-											startListening();
-										}
-									}}
-								>
-									<MicRounded
-										color={"inherit"}
-										fontSize="medium"
-									/>
-								</IconButton>
-							</span>
-						</Tooltip>
-						<Tooltip
-							title={(() => {
-								if (isEmpty) {
-									return "Please enter a prompt";
-								} else if (isLoading) {
-									return "Processing prompt";
-								} else if (isDisabled) {
-									return "";
-								}
-								return "Prompt";
-							})()}
-							placement="top"
-						>
-							<span>
-								<IconButton
-									size={"small"}
-									type="button"
-									color="primary"
-									aria-label="Prompt the Model"
-									disabled={
-										isDisabled || isLoading || isEmpty
-									}
-									onClick={() => {
-										promptModel(input);
-									}}
-								>
-									{isLoading ? (
-										<CircularProgress
-											size={"24px"}
-											color="primary"
-										/>
-									) : (
-										<SendRounded
-											color={"inherit"}
-											fontSize="medium"
-										/>
-									)}
-								</IconButton>
-							</span>
-						</Tooltip>
-					</StyledActions>
 				</StyledContainer>
 				{files.length > 0 ? (
 					<StyledFileContainer
