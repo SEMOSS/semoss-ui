@@ -167,7 +167,7 @@ export const Filterbox = (props: FilterboxProps) => {
 					)}${filteredCatalogIds.length > 0 ? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}` : ""}) ;`
 				: `GetEngineMetaValues( engineTypes=["${type}"], metaKeys = ${JSON.stringify(
 						metaKeys.filter((mk) => mk),
-					)}${filteredCatalogIds.length > 0 ? `, projectIdList = ${JSON.stringify(filteredCatalogIds)}` : ""}) ;`
+					)}${filteredCatalogIds.length > 0 ? `, engineIdList = ${JSON.stringify(filteredCatalogIds)}` : ""}) ;`
 			: "",
 	);
 
