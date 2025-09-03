@@ -116,25 +116,22 @@ export const SelectInputValueSettings = observer(
 				// NOOP
 				return [];
 			} else if (!Array.isArray(parsedData?.options)) {
-				if (typeof data.options === "string") {
-					let opts: string;
-					if (typeof data.options === "string") {
-						opts = (data.options as string).trim();
-						// If Python-style array, convert to valid JSON
-						if (opts.startsWith("[") && opts.endsWith("]")) {
-							// Replace single quotes with double quotes
-							opts = opts.replace(/'/g, '"');
-							// Remove spaces after commas
-							opts = opts.replace(/,\s+/g, ",");
-							try {
-								arr = JSON.parse(opts);
-							} catch (e) {
-								// fallback: try to split manually
-								arr = opts
-									.slice(1, -1)
-									.split(",")
-									.map((s) => s.trim().replace(/^"|"$/g, ""));
-							}
+				if (typeof parsedData.options === "string") {
+					let opts: string = (parsedData.options as string).trim();
+					// If Python-style array, convert to valid JSON
+					if (opts.startsWith("[") && opts.endsWith("]")) {
+						// Replace single quotes with double quotes
+						opts = opts.replace(/'/g, '"');
+						// Remove spaces after commas
+						opts = opts.replace(/,\s+/g, ",");
+						try {
+							arr = JSON.parse(opts);
+						} catch (e) {
+							// fallback: try to split manually
+							arr = opts
+								.slice(1, -1)
+								.split(",")
+								.map((s) => s.trim().replace(/^"|"$/g, ""));
 						}
 					}
 				}
