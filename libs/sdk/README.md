@@ -55,7 +55,7 @@ const logout = (username, password) => {
 };
 ```
 
--   Query a LLM and return a result
+-   Ask a LLM and return a result
 
 ```js
 const ask = (question) => {
@@ -110,13 +110,6 @@ const askWithStream = async () => {
         `LLM(engine=["001510f8-b86e-492e-a7f0-41299775e7d9"], command=["<encode>${question}</encode>"]);`,
         insightId,
     );
-
-    // OR
-
-    // const response = await  insight.actions.run(
-    //     `LLM(engine=[MODEL_ID], command=["<encode>${question}</encode>"]);`,
-    //     insightId,
-    // )
 
     isCollecting = false;
 };

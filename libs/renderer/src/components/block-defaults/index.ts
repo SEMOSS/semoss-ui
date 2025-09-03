@@ -95,6 +95,7 @@ import {
 	config as SwitchBlockConfig,
 	type SwitchBlockDef,
 } from "./switch-block";
+import { config as TabBlockConfig, type TabBlockDef } from "./tab-block";
 import { config as TextBlockConfig, type TextBlockDef } from "./text-block";
 import { config as ThemeBlockConfig, type ThemeBlockDef } from "./theme-block";
 import {
@@ -117,8 +118,6 @@ import {
 	config as VisualizationFilterBlockConfig,
 	type VisualizationFilterBlockDef,
 } from "./visualization-filter-block";
-
-import { config as TabBlockConfig, type TabBlockDef } from './tab-block'
 import {config as CalendarViewBlockConfig, CalendarViewBlockDef } from "./calendarview-block";
 
 export type DefaultBlockDefinitions =
@@ -251,5 +250,5 @@ export {
 	VisualizationFilterBlockConfig,
 	GridDynamicFrameBlockConfig,
 	TabBlockConfig,
-    CalendarViewBlockConfig
+    CalendarViewBlockConfig,
 };
