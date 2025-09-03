@@ -2,31 +2,42 @@ import {
 	ChevronLeftOutlined,
 	ChevronRightOutlined,
 	CopyAllOutlined,
+	RefreshOutlined,
+	SouthEastOutlined,
 	ThumbDownOffAltOutlined,
 	ThumbUpAltOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useInsight } from "@semoss/sdk/react";
 import {
-	Button,
 	Chip,
-	Divider,
 	IconButton,
 	Markdown,
 	Stack,
+	Stepper,
 	styled,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import {
+	InputMessageStore,
+	type ResponseMessageStore,
+	type RoomStore,
+} from "@/stores";
 import { ResponseMessageTool } from "./ResponseMessageTool";
 
-const StyledAgentResponse = styled(Stack)(({ theme }) => ({
-	paddingLeft: theme.spacing(2),
-	paddingRight: theme.spacing(2),
+const StyledResponseMessage = styled(Stack)(({ theme }) => ({
+	width: "100%",
+	padding: "8px 16px",
+	background: theme.palette.background.paper,
+	borderRadius: theme.shape.borderRadius,
+	boxShadow: theme.shadows[1],
 }));
 
 const StyledHover = styled("div")(() => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "flex-end",
+	flex: 1,
 	opacity: 0,
 	width: "100%",
 	"&:hover": {
@@ -44,22 +55,13 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ room, message }) => {
-		const { system } = useInsight();
-
 		const notification = useNotification();
 
-		const loginType = Object.keys(system.config.logins)[0];
-		const userName: string =
-			typeof system.config.logins[loginType] === "string"
-				? (system.config.logins[loginType] as unknown as string)
-				: "";
-
-		const _initials: string = userName
-			.match(/(\b\S)?/g)
-			.join("")
-			.match(/(^\S|\S$)?/g)
-			.join("")
-			.toUpperCase();
+		// get the parent input message
+		let inputMessage: InputMessageStore | null = null;
+		if (message.parent instanceof InputMessageStore) {
+			inputMessage = message.parent;
+		}
 
 		/**
 		 * Copy the text
@@ -107,6 +109,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 */
 		const rewriteMessage = async () => {
 			try {
+				if (!inputMessage) {
+					return;
+				}
+
 				await room.rewriteMessage(message);
 
 				notification.add({
@@ -122,18 +128,124 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		return (
-			<StyledAgentResponse direction={"column"} spacing={1}>
-				{message.text ? <Markdown>{message.text}</Markdown> : null}
-
-				{message.tools.map((t) => (
-					<ResponseMessageTool
-						key={t.id}
-						room={room}
-						message={message}
-						tool={t}
+			<StyledResponseMessage direction={"column"} spacing={2}>
+				<Stack direction="row" alignItems={"center"} spacing={1}>
+					<Typography variant="caption">Response</Typography>
+					<SouthEastOutlined
+						sx={{ color: "#757575", fontSize: "1rem" }}
 					/>
-				))}
+					<StyledHover>
+						<Stack
+							direction={"row"}
+							alignItems={"center"}
+							spacing={1}
+						>
+							{inputMessage?.siblings.length > 1 && (
+								<>
+									<IconButton
+										size="small"
+										disabled={!inputMessage.previousSibling}
+										onClick={() => {
+											if (!inputMessage.previousSibling) {
+												return;
+											}
 
+											inputMessage.previousSibling.activateMessage();
+										}}
+									>
+										<ChevronLeftOutlined fontSize="inherit" />
+									</IconButton>
+									<Typography variant="caption">
+										{inputMessage.position + 1}/
+										{inputMessage.siblings.length}
+									</Typography>
+									<IconButton
+										size="small"
+										disabled={!inputMessage.nextSibling}
+										onClick={() => {
+											if (!inputMessage.nextSibling) {
+												return;
+											}
+
+											inputMessage.nextSibling.activateMessage();
+										}}
+									>
+										<ChevronRightOutlined fontSize="inherit" />
+									</IconButton>
+								</>
+							)}
+
+							{inputMessage && (
+								<IconButton
+									size="small"
+									onClick={() => {
+										rewriteMessage();
+									}}
+								>
+									<RefreshOutlined fontSize="inherit" />
+								</IconButton>
+							)}
+
+							<IconButton
+								size="small"
+								onClick={() => {
+									recordFeedback(true);
+								}}
+							>
+								<ThumbUpAltOutlined fontSize="inherit" />
+							</IconButton>
+
+							<IconButton
+								size="small"
+								onClick={() => {
+									recordFeedback(false);
+								}}
+							>
+								<ThumbDownOffAltOutlined fontSize="inherit" />
+							</IconButton>
+
+							<IconButton
+								size="small"
+								disabled={!message.text}
+								onClick={() => {
+									if (!message.text) {
+										return;
+									}
+
+									copyMessage(message.text);
+								}}
+							>
+								<CopyAllOutlined fontSize="inherit" />
+							</IconButton>
+						</Stack>
+					</StyledHover>
+				</Stack>
+				{message.text ? <Markdown>{message.text}</Markdown> : null}
+				{message.tools.length > 0 && (
+					<Stepper orientation="vertical">
+						{message.tools.map((t) => (
+							<Stepper.Step
+								key={t.id}
+								active={true}
+								completed={!!t.response}
+							>
+								<Stepper.StepLabel
+									StepIconProps={{
+										icon: "",
+									}}
+									sx={{ alignItems: "flex-start" }}
+								>
+									<ResponseMessageTool
+										key={`tool-${t.id}`}
+										room={room}
+										message={message}
+										tool={t}
+									/>
+								</Stepper.StepLabel>
+							</Stepper.Step>
+						))}
+					</Stepper>
+				)}
 				{message.sources.length > 0 ? (
 					<Stack direction={"row"} spacing={1} flexWrap={"wrap"}>
 						{message.sources.map((s, sIdx) => {
@@ -144,99 +256,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						})}
 					</Stack>
 				) : null}
-
-				<StyledHover>
-					<div>
-						<Divider />
-						<Stack
-							direction={"row"}
-							alignItems={"center"}
-							justifyContent={"space-between"}
-						>
-							<Stack direction={"row"} alignItems={"center"}>
-								<Button
-									variant="text"
-									size="small"
-									color="inherit"
-									onClick={() => rewriteMessage()}
-								>
-									Rewrite
-								</Button>
-								{message.siblings.length > 1 && (
-									<>
-										<IconButton
-											size="small"
-											disabled={!message.previousSibling}
-											onClick={() => {
-												if (!message.previousSibling) {
-													return;
-												}
-
-												message.previousSibling.activateMessage();
-											}}
-										>
-											<ChevronLeftOutlined fontSize="small" />
-										</IconButton>
-										<Typography variant="caption">
-											{message.position + 1}/
-											{message.siblings.length}
-										</Typography>
-										<IconButton
-											size="small"
-											disabled={!message.nextSibling}
-											onClick={() => {
-												if (!message.nextSibling) {
-													return;
-												}
-
-												message.nextSibling.activateMessage();
-											}}
-										>
-											<ChevronRightOutlined fontSize="small" />
-										</IconButton>
-									</>
-								)}
-							</Stack>
-							<Stack
-								direction={"row"}
-								alignItems={"center"}
-								spacing={1}
-							>
-								<IconButton
-									size="small"
-									onClick={() => {
-										recordFeedback(false);
-									}}
-								>
-									<ThumbDownOffAltOutlined fontSize="small" />
-								</IconButton>
-								<IconButton
-									size="small"
-									onClick={() => {
-										recordFeedback(true);
-									}}
-								>
-									<ThumbUpAltOutlined fontSize="small" />
-								</IconButton>
-
-								<IconButton
-									size="small"
-									disabled={!message.text}
-									onClick={() => {
-										if (!message.text) {
-											return;
-										}
-
-										copyMessage(message.text);
-									}}
-								>
-									<CopyAllOutlined fontSize="small" />
-								</IconButton>
-							</Stack>
-						</Stack>
-					</div>
-				</StyledHover>
-			</StyledAgentResponse>
+			</StyledResponseMessage>
 		);
 	},
 );
