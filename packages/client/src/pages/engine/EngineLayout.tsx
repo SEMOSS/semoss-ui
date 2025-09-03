@@ -138,8 +138,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	]);
 
 	// get the user's role
-	const getUserEnginePermission =
-		!adminMode && engineId && useAPI(["getUserEnginePermission", engineId]);
+	const getUserEnginePermission = useAPI(
+		!adminMode && engineId ? ["getUserEnginePermission", engineId] : null,
+	);
 
 	// get the tabs based on permission
 	const tabs = useMemo(() => {
@@ -217,11 +218,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					name: removeUnderscores(
 						(getEngineMetadata.data?.database_name as string) || "",
 					),
-					metadata: {
-						...values,
-						database_subtype:
-							getEngineMetadata.data?.database_subtype,
-					},
+					metadata: values,
+					database_subtype: getEngineMetadata.data?.database_subtype,
 					refresh: getEngineMetadata.refresh,
 				},
 			}}
