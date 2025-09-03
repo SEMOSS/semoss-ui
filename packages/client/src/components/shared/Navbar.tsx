@@ -26,9 +26,7 @@ const StyledNavbar = styled("div")(({ theme }) => ({
 	padding: theme.spacing(0, 4),
 }));
 
-const StyledLeft = styled(Stack)(({ theme }) => ({
-	minWidth: 0,
-}));
+const StyledLeft = styled(Stack)(({ theme }) => ({}));
 
 const StyledTextField = styled(TextField)(() => ({
 	width: "100%",
