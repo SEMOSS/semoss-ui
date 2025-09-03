@@ -2,7 +2,7 @@ import { CloseRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { FlexLayout } from "@semoss/shared";
 import { styled } from "@semoss/ui";
-import { ArtifactApp, RightMenu } from "@/components";
+import { RightMenu, ToolArtifact } from "@/components";
 import type { RoomStore } from "@/stores";
 
 const StyledContent = styled("div")(() => ({
@@ -25,7 +25,7 @@ export const RoomArtifact: React.FC<RoomArtifactProps> = observer(
 					<FlexLayout.Layout
 						model={room.artifact.model}
 						factory={(node) => {
-							return <ArtifactApp node={node} />;
+							return <ToolArtifact node={node} />;
 						}}
 						icons={{
 							close: <CloseRounded fontSize="small" />,
