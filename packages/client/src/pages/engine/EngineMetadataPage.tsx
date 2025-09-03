@@ -1,6 +1,6 @@
 import { ArrowCircleDown, Create } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -12,6 +12,10 @@ import {
 	Typography,
 	Modal,
 	TextField,
+	Select,
+	FormControl,
+	InputLabel,
+	MenuItem,
 } from "@semoss/ui";
 import { Metamodel } from "@/components/metamodel";
 import { Section } from "@/components/ui";
@@ -58,7 +62,40 @@ export const EngineMetadataPage = observer(() => {
 		newDescription: "",
 	});
 
+	const [availableModels, setAvailableModels] = useState<{ name: string; id: string }[]>([]);
+	const [selectedModel, setSelectedModel] = useState<string>("");
+
 	const navigate = useNavigate();
+
+	useEffect(() => {
+		fetchAvailableModels();
+	}, []);
+
+	const fetchAvailableModels = async () => {
+		try {
+			const pixel = `MyEngines(engineTypes=["MODEL"])`;
+			const response = await monolithStore.runQuery(pixel);
+			const models = response.pixelReturn[0].output as Array<{
+				database_subtype: string;
+				database_type: string;
+				database_name: string;
+				database_id: string;
+				app_name: string;
+			}>;
+
+			const modelList = models.map((model) => ({
+				name: model.database_name,
+				id: model.database_id,
+			}));
+			
+			setAvailableModels(modelList);
+			if (modelList.length > 0 && !selectedModel) {
+				setSelectedModel(modelList[0].id);
+			}
+		} catch (error) {
+			console.error("Failed to fetch available models:", error);
+		}
+	};
 
 	const getDatabaseMetamodel = usePixel<{
 		dataTypes: Record<string, "INT" | "DOUBLE" | "STRING">;
@@ -384,6 +421,10 @@ export const EngineMetadataPage = observer(() => {
 	};
 
 	const handlePredictDescription = async () => {
+		if (!selectedModel) {
+			console.error("No model selected");
+			return;
+		}
 
 		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
 		
@@ -391,7 +432,7 @@ export const EngineMetadataPage = observer(() => {
 			? logicalNames[0] 
 			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
 			
-		const pixel = `PredictOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}")`;
+		const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", engine=["${selectedModel}"])`;
 		
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -715,13 +756,30 @@ export const EngineMetadataPage = observer(() => {
 				<Modal.Title>
 					<Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
 						<span>Edit Column Description</span>
-						<Button 
-							variant="outlined" 
-							size="small"
-							onClick={handlePredictDescription}
-						>
-							Predict
-						</Button>
+						<Stack direction="row" spacing={2} alignItems="center">
+							<FormControl size="small" sx={{ minWidth: 200 }}>
+								<InputLabel>Model</InputLabel>
+								<Select
+									value={selectedModel}
+									label="Model"
+									onChange={(e) => setSelectedModel(e.target.value)}
+								>
+									{availableModels.map((model) => (
+										<MenuItem key={model.id} value={model.id}>
+											{model.name}
+										</MenuItem>
+									))}
+								</Select>
+							</FormControl>
+							<Button 
+								variant="outlined" 
+								size="small"
+								onClick={handlePredictDescription}
+								disabled={!selectedModel}
+							>
+								Predict
+							</Button>
+						</Stack>
 					</Stack>
 				</Modal.Title>
 				<Modal.Content>
