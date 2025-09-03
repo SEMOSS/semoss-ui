@@ -8,12 +8,12 @@ import {
 	Chip,
 	CircularProgress,
 	IconButton,
+	Modal,
 	Stack,
 	styled,
 	Tooltip,
 	Typography,
 	useNotification,
-	Modal,
 } from "@semoss/ui";
 import { useEngine, useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
@@ -81,8 +81,8 @@ export const EngineHeader: React.FC = () => {
 	const exportDB = (includeData: boolean) => {
 		setExportLoading(true);
 		const pixel = `META | ExportEngine(engine=["${
-            active.id
-        }"], includeData="${includeData ? 'true' : 'false'}" );`;
+			active.id
+		}"], includeData="${includeData ? "true" : "false"}" );`;
 
 		monolithStore.runQuery(pixel).then((response) => {
 			const output = response.pixelReturn[0].output,
@@ -159,16 +159,14 @@ export const EngineHeader: React.FC = () => {
 									)}
 									variant="outlined"
 									onClick={() => {
-                                        const engineType =
-                                            active.metadata.database_subtype;
-                                        if (
-                                            engineType === 'H2_DB'
-                                        ) {
-                                            setOpenExportModal(true);
-                                        } else {
-                                            exportDB(false);
-                                        }
-                                    }}
+										const engineType =
+											active.metadata.database_subtype;
+										if (engineType === "H2_DB") {
+											setOpenExportModal(true);
+										} else {
+											exportDB(false);
+										}
+									}}
 								>
 									Export
 								</Button>
@@ -177,51 +175,51 @@ export const EngineHeader: React.FC = () => {
 						</Stack>
 					</Stack>
 					<Modal
-                        open={openExportModal}
-                        maxWidth="sm"
-                        fullWidth
-                        onClose={() => setOpenExportModal(false)}
-                        aria-labelledby="export-modal-title"
-                        aria-describedby="export-modal-description"
-                    >
-                        <Modal.Title>
-                            <Typography id="export-modal-title" variant="h6">
-                                Export Engine
-                            </Typography>
-                        </Modal.Title>
-                        <Modal.Content>
-                            <Typography
-                                id="export-modal-description"
-                                variant="body1"
-                                sx={{ mb: 2 }}
-                            >
-                                Do you want to export data along with the
-                                database?
-                            </Typography>
-                        </Modal.Content>
-                        <Modal.Actions>
-                            <Button
-                                variant="contained"
-                                color="primary"
-                                onClick={() => {
-                                    setOpenExportModal(false);
-                                    exportDB(true);
-                                }}
-                            >
-                                Yes
-                            </Button>
-                            <Button
-                                variant="outlined"
-                                color="secondary"
-                                onClick={() => {
-                                    setOpenExportModal(false);
-                                    exportDB(false);
-                                }}
-                            >
-                                No
-                            </Button>
-                        </Modal.Actions>
-                    </Modal>
+						open={openExportModal}
+						maxWidth="sm"
+						fullWidth
+						onClose={() => setOpenExportModal(false)}
+						aria-labelledby="export-modal-title"
+						aria-describedby="export-modal-description"
+					>
+						<Modal.Title>
+							<Typography id={"export-modal-title"} variant="h6">
+								Export Engine
+							</Typography>
+						</Modal.Title>
+						<Modal.Content>
+							<Typography
+								id={"export-modal-description"}
+								variant="body1"
+								sx={{ mb: 2 }}
+							>
+								Do you want to export data along with the
+								database?
+							</Typography>
+						</Modal.Content>
+						<Modal.Actions>
+							<Button
+								variant="contained"
+								color="primary"
+								onClick={() => {
+									setOpenExportModal(false);
+									exportDB(true);
+								}}
+							>
+								Yes
+							</Button>
+							<Button
+								variant="outlined"
+								color="secondary"
+								onClick={() => {
+									setOpenExportModal(false);
+									exportDB(false);
+								}}
+							>
+								No
+							</Button>
+						</Modal.Actions>
+					</Modal>
 					<Stack
 						flex={1}
 						direction="row"
@@ -272,16 +270,19 @@ export const EngineHeader: React.FC = () => {
 					<Stack direction="row" spacing={1}>
 						{active.metadata.tag &&
 							(active.metadata.tag as string[]).map((tag, i) => {
-								if (i < 2)
+								if (i < 2) {
 									return (
 										<Chip
-											key={i}
+											key={tag}
 											label={tag}
 											color="default"
 											size="small"
 											variant="outlined"
 										/>
 									);
+								} else {
+									return null;
+								}
 							})}
 					</Stack>
 				</StyledInfoLeft>
@@ -304,14 +305,9 @@ export const EngineHeader: React.FC = () => {
 								</Typography>
 							</>
 						) : (
-							<>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									No updates since creation
-								</Typography>
-							</>
+							<Typography variant={"caption"} color="disabled">
+								No updates since creation
+							</Typography>
 						)}
 					</Stack>
 				</StyledInfoRight>

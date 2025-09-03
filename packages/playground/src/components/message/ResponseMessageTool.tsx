@@ -1,22 +1,15 @@
-import { AppsRounded } from "@mui/icons-material";
-import { computed } from "mobx";
+import { GridViewRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { FlexLayout } from "@semoss/shared";
 import { Stack, styled, Typography } from "@semoss/ui";
 import type { ResponseMessageStore, RoomStore } from "@/stores";
 
-const StyledSidebarOpen = styled(Stack, {
-	shouldForwardProp: (prop) => prop !== "isSelected",
-})<{
-	isSelected: boolean;
-}>(({ theme, isSelected }) => ({
-	padding: theme.spacing(1),
-	borderRadius: theme.shape.borderRadiusLg,
+const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
+	padding: "8px",
+	borderRadius: "12px",
 	borderWidth: "1px",
 	borderStyle: "solid",
-	borderColor: isSelected
-		? theme.palette.primary.main
-		: theme.palette.secondary.border,
+	borderColor: theme.palette.secondary.border,
 	cursor: "pointer",
 }));
 
@@ -33,89 +26,88 @@ interface ResponseMessageToolProps {
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ room, message, tool }) => {
-		const isSelected = computed(() => {
-			return (
-				room.sidebar.isOpen &&
-				room.sidebar.type === "ARTIFACTS" &&
-				room.artifact.model.getNodeById(
-					`message-${message.id}-tool-${tool.id}`,
-				) !== undefined
-			);
-		}).get();
-
 		return (
-			<StyledSidebarOpen
-				isSelected={isSelected}
-				direction={"row"}
-				alignItems={"center"}
-				spacing={2}
-				onClick={() => {
-					// open the sidebar
-					room.openSidebar("ARTIFACTS");
-
-					// set the id
-					const toolNodeId = `message-${message.id}-tool-${tool.id}`;
-
-					// select the node if there
-					const selectedNode =
-						room.artifact.model.getNodeById(toolNodeId);
-					if (selectedNode) {
-						room.artifact.model.doAction(
-							FlexLayout.Actions.selectTab(selectedNode.getId()),
-						);
-						return;
-					}
-
-					// create the node if it is not there
-					// where to add the node
-					const addId =
-						room.artifact.model.getActiveTabset()?.getId() ||
-						room.artifact.model
-							.getRoot()
-							.getChildren()[0]
-							?.getId() ||
-						"";
-
-					// create and select the panel
-					room.artifact.model.doAction(
-						FlexLayout.Actions.addNode(
-							{
-								id: toolNodeId,
-								type: "tab",
-								name: tool.title,
-								component: "tools-artifact",
-								config: {
-									app: tool._meta.map.SMSS_PROJECT_ID,
-									tool: {
-										message: message.id,
-										id: tool.id,
-										name: tool.name,
-										parameters: tool.parameters,
-									},
-								},
-								enableClose: true,
-							},
-							addId,
-							FlexLayout.DockLocation.CENTER,
-							-1,
-							true,
-						),
-					);
-				}}
-			>
-				<AppsRounded fontSize="medium" />
-				<Stack direction={"column"} spacing={1} flex={1}>
-					<Typography
-						variant="subtitle2"
-						sx={{
-							textOverflow: "ellipsis",
-						}}
-					>
+			<Stack direction={"column"} spacing={1} width={"100%"}>
+				<Stack>
+					<Typography variant="subtitle2" noWrap={true}>
+						{tool._meta.map.SMSS_PROJECT_NAME}
+					</Typography>
+					<Typography variant="caption" noWrap={true}>
 						{tool.title}
 					</Typography>
-					<Typography variant="caption">Click to Open</Typography>
 				</Stack>
-			</StyledSidebarOpen>
+				<StyledSidebarOpen
+					direction={"row"}
+					alignItems={"center"}
+					spacing={2}
+					onClick={() => {
+						// open the sidebar
+						room.openSidebar("ARTIFACTS");
+
+						// set the id
+						const toolNodeId = `message-${message.id}-tool-${tool.id}`;
+
+						// select the node if there
+						const selectedNode =
+							room.artifact.model.getNodeById(toolNodeId);
+						if (selectedNode) {
+							room.artifact.model.doAction(
+								FlexLayout.Actions.selectTab(
+									selectedNode.getId(),
+								),
+							);
+							return;
+						}
+
+						// create the node if it is not there
+						// where to add the node
+						const addId =
+							room.artifact.model.getActiveTabset()?.getId() ||
+							room.artifact.model
+								.getRoot()
+								.getChildren()[0]
+								?.getId() ||
+							"";
+
+						// create and select the panel
+						room.artifact.model.doAction(
+							FlexLayout.Actions.addNode(
+								{
+									id: toolNodeId,
+									type: "tab",
+									name: tool.title,
+									component: "tools-artifact",
+									config: {
+										app: tool._meta.map.SMSS_PROJECT_ID,
+										tool: {
+											message: message.id,
+											id: tool.id,
+											name: tool.name,
+											parameters: tool.parameters,
+										},
+									},
+									enableClose: true,
+								},
+								addId,
+								FlexLayout.DockLocation.CENTER,
+								-1,
+								true,
+							),
+						);
+					}}
+				>
+					<GridViewRounded
+						fontSize="medium"
+						sx={{ color: "#757575" }}
+					/>
+					<Stack direction={"column"} spacing={1} flex={1}>
+						<Typography variant="subtitle2" noWrap={true}>
+							{tool.title}
+						</Typography>
+						<Typography variant="caption">Click to Open</Typography>
+					</Stack>
+				</StyledSidebarOpen>
+			</Stack>
 		);
 	},
 );

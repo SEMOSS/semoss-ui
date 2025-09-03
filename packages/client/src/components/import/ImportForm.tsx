@@ -1,8 +1,8 @@
 // InputForm
 
-import { ExpandLess, ExpandMore, Help } from "@mui/icons-material";
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
-import { Controller, Form, useFieldArray, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
@@ -15,7 +15,6 @@ import {
 	Stack,
 	styled,
 	TextField,
-	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
@@ -28,7 +27,7 @@ const StyledFlexEnd = styled("div")(({ theme }) => ({
 	gap: theme.spacing(1),
 }));
 
-const StyledProperty = styled("div")(({ theme }) => ({
+const _StyledProperty = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	flexDirection: "column",
@@ -99,14 +98,19 @@ export const ImportForm = (props) => {
 		watch,
 		setValue,
 		getValues,
-		setFocus,
+		setError,
 		formState: { isValid },
 	} = useForm({
-		mode: "onSubmit",
+		mode: "onBlur",
 		defaultValues: defaultFields.reduce((acc, field) => {
 			acc[field.fieldName] = field.defaultValue || "";
 			return acc;
 		}, {}),
+	});
+	const _lastField = useRef({
+		lastFocussedField: "",
+		lastFocussedValue: "",
+		lastValidatedValue: "",
 	});
 
 	/** Used to Trigger useEffect anytime these vals change */
@@ -239,7 +243,8 @@ export const ImportForm = (props) => {
 				// if they do match the user has not changed the initScript or they manually changed it back
 				// this allows them to re-enable the dynamic updateScript behavior if they revert the field value manually
 				const isMatched =
-					initScriptValueFromCallback == initScriptValueFromTextField;
+					initScriptValueFromCallback ===
+					initScriptValueFromTextField;
 				setIsDynamicInputChangedByUser(!isMatched);
 			}, 0);
 		}
@@ -251,7 +256,7 @@ export const ImportForm = (props) => {
 	 * May be combinable with another useEffect
 	 */
 	useEffect(() => {
-		defaultFields.forEach((val, i) => {
+		defaultFields.forEach((val, _i) => {
 			if (val.updateCallback) {
 				setUpdateFieldName(val.fieldName);
 				setInitScriptCallback(
@@ -678,7 +683,11 @@ export const ImportForm = (props) => {
 
 		//if the name already exists then the engine name is not valid
 		if (output.exists) {
-			setFocus(field.fieldName);
+			// setFocus(field.fieldName);
+			setError(field.fieldName, {
+				message: field.rules.custom.message,
+				type: "checkField",
+			});
 			return false;
 		}
 
@@ -719,20 +728,50 @@ export const ImportForm = (props) => {
 				{defaultFields.map((val, i) => {
 					if (!val.hidden) {
 						return (
-							<StyledKeyValue key={i}>
+							<StyledKeyValue
+								key={`${val.fieldName}-${val.label}-${i}`}
+							>
 								<Controller
 									name={val.fieldName}
 									control={control}
 									rules={{
 										required: val.rules.required,
 										validate: {
-											...(val.rules.custom && {
-												checkField: async (fieldVal) =>
-													validateFormField(
-														val,
-														fieldVal,
-													),
-											}),
+											...(val.rules?.custom
+												? {
+														checkField: async (
+															fieldVal,
+														) => {
+															if (
+																_lastField
+																	.current
+																	.lastValidatedValue ===
+																fieldVal
+															)
+																return true;
+
+															try {
+																let validStatus: Promise<boolean> | null;
+																if (
+																	_lastField
+																		.current
+																		.lastFocussedField ===
+																	val.fieldName
+																) {
+																	validStatus =
+																		validateFormField(
+																			val,
+																			fieldVal,
+																		);
+																}
+																return validStatus;
+															} finally {
+																_lastField.current.lastValidatedValue =
+																	fieldVal;
+															}
+														},
+													}
+												: {}),
 										},
 										pattern: {
 											...(val.rules.pattern && {
@@ -760,6 +799,7 @@ export const ImportForm = (props) => {
 													}
 													label={val.label}
 													disabled={val.disabled}
+													data-testid={`field-${val.fieldName}`}
 													value={
 														field.value
 															? field.value
@@ -789,7 +829,7 @@ export const ImportForm = (props) => {
 													// }}
 													helperText={
 														invalid
-															? error?.type ==
+															? error?.type ===
 																"checkField"
 																? val.rules
 																		.custom
@@ -803,6 +843,16 @@ export const ImportForm = (props) => {
 															formatToDataTestId(
 																`importForm-${val.fieldName}-textField`,
 															),
+														onFocus: () => {
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
+														},
 													}}
 													{...field}
 												></TextField>
@@ -834,6 +884,15 @@ export const ImportForm = (props) => {
 																`importForm-${val.fieldName}-textField`,
 															),
 													}}
+													onFocus={() => {
+														_lastField.current = {
+															..._lastField.current,
+															lastFocussedField:
+																val.fieldName,
+															lastFocussedValue:
+																field.value,
+														};
+													}}
 													helperText={val.helperText}
 												></TextField>
 											);
@@ -860,6 +919,18 @@ export const ImportForm = (props) => {
 															value.target.value,
 														);
 													}}
+													SelectProps={{
+														onFocus: () => {
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
+														},
+													}}
 													InputProps={{
 														"data-testId":
 															formatToDataTestId(
@@ -872,7 +943,7 @@ export const ImportForm = (props) => {
 														(opt, i) => {
 															return (
 																<Menu.Item
-																	key={i}
+																	key={`${opt.value}-${i}`}
 																	value={
 																		opt.value
 																	}
@@ -917,6 +988,15 @@ export const ImportForm = (props) => {
 																`importForm-${val.fieldName}-textField`,
 															),
 													}}
+													onFocus={() => {
+														_lastField.current = {
+															..._lastField.current,
+															lastFocussedField:
+																val.fieldName,
+															lastFocussedValue:
+																field.value,
+														};
+													}}
 												></TextField>
 											);
 										} else if (
@@ -943,6 +1023,14 @@ export const ImportForm = (props) => {
 															field.onChange(
 																newValues,
 															);
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
 														}}
 													/>
 												</StyledDropzoneField>
@@ -978,7 +1066,9 @@ export const ImportForm = (props) => {
 							advancedFields.map((val, i) => {
 								if (!val.hidden) {
 									return (
-										<StyledKeyValue key={i}>
+										<StyledKeyValue
+											key={`${val.fieldName}-${i}`}
+										>
 											<Controller
 												name={val.fieldName}
 												control={control}
@@ -987,7 +1077,7 @@ export const ImportForm = (props) => {
 													field,
 													fieldState,
 												}) => {
-													const hasError =
+													const _hasError =
 														fieldState.error;
 													if (
 														val.options
@@ -1139,6 +1229,7 @@ export const ImportForm = (props) => {
 																		? field.value
 																		: false
 																}
+																data-testid={`importForm-advancedcheckbox-${val.fieldName}`}
 																onChange={(
 																	value,
 																) =>
@@ -1195,9 +1286,7 @@ export const ImportForm = (props) => {
 																	) => {
 																		return (
 																			<Menu.Item
-																				key={
-																					i
-																				}
+																				key={`${opt.value}-${i}`}
 																				value={
 																					opt.value
 																				}
@@ -1226,6 +1315,7 @@ export const ImportForm = (props) => {
 																	field.value
 																}
 																disabled={false}
+																data-testid={`importForm-advancedfileDropzone-${val.fieldName}`}
 																onChange={(
 																	newValues,
 																) => {

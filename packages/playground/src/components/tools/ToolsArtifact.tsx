@@ -1,6 +1,6 @@
 import { toJS } from "mobx";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Env, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton, styled } from "@semoss/ui";
@@ -31,94 +31,94 @@ const StyledIframe = styled("iframe")(() => ({
 	height: "100%",
 }));
 
-interface ArtifactAppProps {
+interface ToolArtifactProps {
 	/** Node */
 	node: FlexLayout.TabNode;
 }
 
-export const ArtifactApp: React.FC<ArtifactAppProps> = observer(({ node }) => {
-	const config: {
-		app: string;
-		tool: {
-			message: string;
-			id: string;
-			name: string;
-			parameters: Record<string, unknown>;
-		};
-	} = useMemo(() => {
-		return node.getConfig();
-	}, [node]);
+export const ToolArtifact: React.FC<ToolArtifactProps> = observer(
+	({ node }) => {
+		const config: {
+			app: string;
+			tool: {
+				message: string;
+				id: string;
+				name: string;
+				parameters: Record<string, unknown>;
+			};
+		} = useMemo(() => {
+			return node.getConfig();
+		}, [node]);
 
-	const iframeRef = useRef<HTMLIFrameElement>(null);
-	const [isLoading, setIsLoading] = useState<boolean>(true);
+		const iframeRef = useRef<HTMLIFrameElement>(null);
+		const [isLoading, setIsLoading] = useState<boolean>(true);
 
-	// get the metadata
-	const getAppInfo = usePixel<{
-		project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
-	}>(config.app ? `ProjectInfo(project=["${config.app}"]);` : "", {
-		data: {
-			project_type: "",
-		},
-	});
+		console.log(isLoading);
 
-	// Send parameters to iframe
-	useEffect(() => {
-		if (isLoading) {
-			return;
-		}
-
-		iframeRef.current?.contentWindow?.postMessage(
-			{
-				type: "SMSS_INIT_TOOL",
-				tool: {
-					type: "MCP",
-					message: config?.tool?.message || "",
-					id: config?.tool?.id || "",
-					name: config?.tool?.name || "",
-					parameters: toJS(config?.tool?.parameters || {}),
-				},
+		// get the metadata
+		const getAppInfo = usePixel<{
+			project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
+		}>(config.app ? `ProjectInfo(project=["${config.app}"]);` : "", {
+			data: {
+				project_type: "",
 			},
-			"*",
-		);
-	}, [
-		isLoading,
-		config?.tool?.message,
-		config?.tool?.id,
-		config?.tool?.name,
-		config?.tool?.parameters,
-	]);
+		});
 
-	const url = useMemo(() => {
-		// ignore if no tool
-		if (!config || !config.app || getAppInfo.status !== "SUCCESS") {
-			return "";
+		/**
+		 * Process iframe on load
+		 */
+		const handleOnLoad = () => {
+			// send the parameters
+			iframeRef.current?.contentWindow?.postMessage(
+				{
+					type: "SMSS_INIT_TOOL",
+					tool: {
+						type: "MCP",
+						message: config?.tool?.message || "",
+						id: config?.tool?.id || "",
+						name: config?.tool?.name || "",
+						parameters: toJS(config?.tool?.parameters || {}),
+					},
+				},
+				"*",
+			);
+
+			// turn the loading screen off
+			setIsLoading(false);
+		};
+
+		const url = useMemo(() => {
+			// ignore if no tool
+			if (!config || !config.app || getAppInfo.status !== "SUCCESS") {
+				return "";
+			}
+
+			if (getAppInfo.data.project_type === "BLOCKS") {
+				return `${PLATFORM_URL}/#/s/${config.app}/`;
+			}
+
+			return `${Env.MODULE}/public_home/${config.app}/portals/`;
+		}, [config, config?.app, getAppInfo.status, getAppInfo.data]);
+
+		if (!config) {
+			return <div>No Tool</div>;
 		}
 
-		if (getAppInfo.data.project_type === "BLOCKS") {
-			return `${PLATFORM_URL}/#/s/${config.app}/`;
-		}
-
-		return `${Env.MODULE}/public_home/${config.app}/portals/`;
-	}, [config, config?.app, getAppInfo.status, getAppInfo.data]);
-
-	if (!config) {
-		return <div>No Tool</div>;
-	}
-
-	return (
-		<StyledContent>
-			{(!url || isLoading) && (
-				<StyledIframeSkeleton
-					variant="rectangular"
-					width="100%"
-					height="100%"
+		return (
+			<StyledContent>
+				{(!url || isLoading) && (
+					<StyledIframeSkeleton
+						variant="rectangular"
+						width="100%"
+						height="100%"
+					/>
+				)}
+				<StyledIframe
+					ref={iframeRef}
+					src={url}
+					onLoad={() => handleOnLoad()}
 				/>
-			)}
-			<StyledIframe
-				ref={iframeRef}
-				src={url}
-				onLoad={() => setIsLoading(false)}
-			/>
-		</StyledContent>
-	);
-});
+			</StyledContent>
+		);
+	},
+);

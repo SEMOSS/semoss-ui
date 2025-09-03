@@ -96,7 +96,7 @@ interface RoomStoreInterface {
 		isOpen: boolean;
 
 		/** type of sidebar to open */
-		type: "OPTIONS" | "ARTIFACTS";
+		type: "CONFIGURATION" | "ARTIFACTS";
 	};
 
 	/**
@@ -135,7 +135,7 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			type: "OPTIONS",
+			type: "CONFIGURATION",
 		},
 		artifact: {
 			model: FlexLayout.Model.fromJson({
@@ -506,7 +506,6 @@ paramValues=[${JSON.stringify({
 		}
 	};
 
-	// TODO: Optimize
 	/**
 	 * Rewrite a message and generate a new sibling
 	 * @param message - the original agent message
@@ -518,6 +517,12 @@ paramValues=[${JSON.stringify({
 
 			// get the parent message
 			const parentMessage = message.parent;
+			if (parentMessage instanceof InputMessageStore === false) {
+				throw new Error("Can only rewrite response to user messages");
+			}
+
+			// get the grand parent message
+			const grandParentMessage = parentMessage.parent;
 
 			// build the context if it is there
 			let context = "";
@@ -543,11 +548,11 @@ paramValues=[${JSON.stringify({
 				`AskPlayground(
 engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
-command=["<encode>${prompt}</encode>"],
+command=["<encode>${parentMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 
 ${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
-${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
+${grandParentMessage.id ? `parentMessageId=["${grandParentMessage.id}"],` : ""}
 paramValues=[${JSON.stringify({
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
@@ -633,17 +638,23 @@ paramValues=[${JSON.stringify({
 	 * @param message - the original agent message
 `	 * @param toolId - id of the tool
 	 * @param toolName - func of the tool to run
-	 * @param response - response
+	 * @param toolResponse - response of the tool
 	 */
 	saveTool = async (
 		message: ResponseMessageStore,
 		toolId: string,
 		toolName: string,
-		executionResponse: string,
+		toolResponse: string,
 	): Promise<void> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
+
+			// save the response
+			const tool = message.tools.find((tool) => tool.id === toolId);
+			if (tool) {
+				tool.response = toolResponse;
+			}
 
 			// wait for the pixel to run
 			const response = await this.runPixel<
@@ -655,10 +666,11 @@ paramValues=[${JSON.stringify({
 			>(
 				`AddPlaygroundToolExecution(
 engine=["${this._store.modelId}"],
-roomId = ["${this._store.roomId}"], 
+roomId = ["${this._store.roomId}"],
+${message.id ? `parentMessageId=["${message.id}"],` : ""}
 toolId = ["${toolId}"],
 toolName=["${toolName}"],
-tool_execution_response=["${executionResponse}"]
+toolExecutionResponse=["${toolResponse}"]
 );`,
 			);
 
@@ -799,17 +811,7 @@ tool_execution_response=["${executionResponse}"]
 				pixelMessage.inputUIPrompt,
 			);
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-			return new ResponseMessageStore(
-				pixelMessage.messageId,
-				"",
-				pixelMessage.tool_responses.map((t) => ({
-					id: t.id,
-					_meta: t._meta,
-					title: t.title,
-					name: t.name,
-					parameters: t.arguments,
-				})),
-			);
+			return new ResponseMessageStore(pixelMessage.messageId, "", []);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			return new ResponseMessageStore(
 				pixelMessage.messageId,
@@ -826,6 +828,7 @@ tool_execution_response=["${executionResponse}"]
 					title: t.title,
 					name: t.name,
 					parameters: t.arguments,
+					response: "",
 				})),
 			);
 		}
