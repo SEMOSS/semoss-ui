@@ -69,9 +69,43 @@ export const JobBuilderModal = (props: {
 	useEffect(() => {
 		if (initialBuilder) {
 			setBuilder(initialBuilder);
-			// Optionally set frequencyType based on cronExpression if needed
+			// Determine if this cronExpression can be represented in standard format
+			const cronValues = initialBuilder.cronExpression.split(" ");
+			if (cronValues.length >= 6) {
+				// Check if it fits standard patterns
+				const isStandardDaily =
+					cronValues[3] === "*" &&
+					cronValues[4] === "*" &&
+					(cronValues[5] === "*" || cronValues[5] === "?");
+				const isStandardWeekly =
+					cronValues[3] === "*" &&
+					cronValues[4] === "*" &&
+					!isNaN(parseInt(cronValues[5]));
+				const isStandardMonthly =
+					!isNaN(parseInt(cronValues[3])) &&
+					cronValues[4] === "*" &&
+					(cronValues[5] === "*" || cronValues[5] === "?");
+				const isStandardYearly =
+					!isNaN(parseInt(cronValues[3])) &&
+					!isNaN(parseInt(cronValues[4])) &&
+					(cronValues[5] === "*" || cronValues[5] === "?");
+
+				if (
+					isStandardDaily ||
+					isStandardWeekly ||
+					isStandardMonthly ||
+					isStandardYearly
+				) {
+					setFrequencyType("standard");
+				} else {
+					setFrequencyType("custom");
+				}
+			} else {
+				setFrequencyType("custom");
+			}
 		} else {
 			setBuilder(emptyBuilder);
+			setFrequencyType("standard");
 		}
 	}, [initialBuilder]);
 
