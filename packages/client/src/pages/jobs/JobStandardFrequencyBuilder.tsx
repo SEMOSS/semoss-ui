@@ -30,7 +30,10 @@ export const JobStandardFrequencyBuilder = (props: {
 		if (cronValues.length < 6) {
 			// make sure it's valid cron syntax
 			return;
-		} else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
+		} else if (
+			Number.isNaN(parseInt(cronValues[1])) ||
+			Number.isNaN(parseInt(cronValues[2]))
+		) {
 			// make sure there's a valid numbered time
 			return;
 		}
@@ -38,12 +41,10 @@ export const JobStandardFrequencyBuilder = (props: {
 		// Set flag to prevent circular updates
 		isParsingCron.current = true;
 
-		// set time
-		setTime(
-			`${cronValues[2] == "0" ? "00" : cronValues[2]}:${
-				cronValues[1] == "0" ? "00" : cronValues[1]
-			}`,
-		);
+		// set time - cronValues[2] is hours, cronValues[1] is minutes
+		const hours = cronValues[2].padStart(2, "0");
+		const minutes = cronValues[1].padStart(2, "0");
+		setTime(`${hours}:${minutes}`);
 
 		// check frequency type
 		if (
@@ -96,36 +97,33 @@ export const JobStandardFrequencyBuilder = (props: {
 			return;
 		}
 
-		const [hour, minute] = time ? time.split(":") : [0, 0];
+		const [hour, minute] = time ? time.split(":") : ["0", "0"];
+		const hourNum = parseInt(hour);
+		const minuteNum = parseInt(minute);
+
 		switch (frequency) {
 			case "Daily":
 				setBuilderField(
 					"cronExpression",
-					`0 ${minute == "00" ? "0" : minute} ${hour} * * ? *`,
+					`0 ${minuteNum} ${hourNum} * * ? *`,
 				);
 				break;
 			case "Weekly":
 				setBuilderField(
 					"cronExpression",
-					`0 ${minute == "00" ? "0" : minute} ${hour} * * ${
-						dayOfWeek.value
-					}`,
+					`0 ${minuteNum} ${hourNum} * * ${dayOfWeek.value}`,
 				);
 				break;
 			case "Monthly":
 				setBuilderField(
 					"cronExpression",
-					`0 ${
-						minute == "00" ? "0" : minute
-					} ${hour} ${dayOfMonth} * ? *`,
+					`0 ${minuteNum} ${hourNum} ${dayOfMonth} * ? *`,
 				);
 				break;
 			case "Yearly":
 				setBuilderField(
 					"cronExpression",
-					`0 ${minute == "00" ? "0" : minute} ${hour} ${dayOfMonth} ${
-						month.value
-					} ? *`,
+					`0 ${minuteNum} ${hourNum} ${dayOfMonth} ${month.value} ? *`,
 				);
 				break;
 		}
