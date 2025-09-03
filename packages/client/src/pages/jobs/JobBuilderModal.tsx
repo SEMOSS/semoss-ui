@@ -317,7 +317,7 @@ export const JobBuilderModal = (props: {
 					<IconButton
 						aria-label="close"
 						onClick={closeModal}
-						data-testid={"job-builder-close-btn"}
+						data-testid={"jobBuilder-close-btn"}
 					>
 						<Close />
 					</IconButton>
@@ -341,20 +341,20 @@ export const JobBuilderModal = (props: {
 						<ToggleButton
 							value="standard"
 							onClick={() => setFrequencyType("standard")}
-							data-testid={"job-builder-standard-btn"}
+							data-testid={"jobBuilder-standard-btn"}
 						>
 							Standard
 						</ToggleButton>
 						<ToggleButton
 							value="custom"
 							onClick={() => setFrequencyType("custom")}
-							data-testid={"job-builder-custom-btn"}
+							data-testid={"jobBuilder-custom-btn"}
 						>
 							Custom
 						</ToggleButton>
 					</ToggleButtonGroup>
 					<Autocomplete
-                        multiple={false}
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>
@@ -396,7 +396,7 @@ export const JobBuilderModal = (props: {
 						type="button"
 						disabled={isLoading}
 						onClick={closeModal}
-						data-testid={"job-builder-cancel-btn"}
+						data-testid={"jobBuilder-cancel-btn"}
 					>
 						Cancel
 					</Button>
@@ -413,7 +413,7 @@ export const JobBuilderModal = (props: {
 							isEditMode ? updateJob() : addJob();
 						}}
 						loading={isLoading}
-						data-testid={"job-builder-add-save-btn"}
+						data-testid={"jobBuilder-add-save-btn"}
 					>
 						{isEditMode ? "Save" : "Add"}
 					</Button>

@@ -17,12 +17,12 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
-import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
+import { ColorPickerSettings } from "../../../shared/ColorPickerSettings";
 import {
 	FontFamily,
 	FontWeights,
 	Title_Alignment,
-} from "../../Visualization.constants";
+} from "../Visualization.constants";
 
 interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	/**
@@ -32,16 +32,6 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 
 	path: Paths<Block<D>["data"], 4>;
 }
-
-const StyledAxis = styled("div")<{
-	display?: string;
-	justifyContent?: string;
-}>(({ theme, display, justifyContent }) => ({
-	display: display ?? undefined,
-	justifyContent: justifyContent ?? undefined,
-	flexDirection: "row",
-}));
-
 const StyledAxisDiv = styled("div")<{
 	display?: string;
 	justifyContent?: string;
@@ -53,6 +43,14 @@ const StyledAxisDiv = styled("div")<{
 	padding: "8px 16px",
 	alignItems: "center",
 	gap: gap ?? undefined,
+}));
+const StyledAxis = styled("div")<{
+	display?: string;
+	justifyContent?: string;
+}>(({ theme, display, justifyContent }) => ({
+	display: display ?? undefined,
+	justifyContent: justifyContent ?? undefined,
+	flexDirection: "row",
 }));
 const StyledButtonWrapper = styled("div")({
 	display: "flex",
@@ -76,7 +74,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 const StyledSelect = styled(Select)(() => ({
 	width: "100%",
 }));
-export const PieTitle = observer(
+export const TitleTool = observer(
 	<D extends BlockDef = BlockDef>({ id, path }: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
 		const [value, setValue] = useState("");
@@ -116,16 +114,23 @@ export const PieTitle = observer(
 				retainLocalState(data.option);
 			}
 		}, [showTitle]);
-		//Retain the local state of the feature on toggle switch and on reset button
-		//With the local state we will be displaying the values in the fields
+		/**
+		 * Retains the local state of the feature on toggle switch and on reset button
+		 * With the local state we will be displaying the values in the fields
+		 */
 		const retainLocalState = (options) => {
 			setTitle((prev) => ({
-				...prev,
+				// Retain the title name
 				name: options["title"]["text"],
+				// Retain the alignment of the title
 				alignment: options["title"]["left"],
+				// Retain the font size of the title
 				size: options["title"]["textStyle"]["fontSize"],
+				// Retain the font weight of the title
 				weight: options["title"]["textStyle"]["fontWeight"],
+				// Retain the font family of the title
 				family: options["title"]["textStyle"]["fontFamily"],
+				// Retain the color of the title
 				color: options["title"]["textStyle"]["color"],
 			}));
 		};
@@ -133,61 +138,90 @@ export const PieTitle = observer(
 		const reInitializeFeatures = (options) => {
 			setShowTitle(options["title"].show ?? true);
 		};
-		//Handle the change event for any Title input
-		function handleInputChange(title, inputValue) {
+		/**
+		 * Handle the change event for any Title input
+		 * @param title - name of the input field
+		 * @param inputValue - value of the input field
+		 */
+		function handleInputChange(title: string, inputValue) {
 			const option = JSON.parse(value);
 			if (title === "showTitle") {
+				// Update the showTitle property of the option
 				option["title"].show = inputValue;
+				// Update the showTitle state
 				setShowTitle(inputValue);
 			} else if (title === "titleName") {
+				// Update the titleName property of the option
 				option["title"]["text"] = inputValue;
+				// Update the titleName state
 				setTitle((prev) => ({
 					...prev,
 					name: inputValue,
 				}));
 			} else if (title === "titleAlignment") {
+				// Update the titleAlignment property of the option
 				option["title"]["left"] = inputValue;
+				// Update the titleAlignment state
 				setTitle((prev) => ({
 					...prev,
 					alignment: inputValue,
 				}));
 			} else if (title === "titleSize") {
+				// Update the titleSize property of the option
 				option["title"]["textStyle"]["fontSize"] = inputValue;
+				// Update the titleSize state
 				setTitle((prev) => ({
 					...prev,
 					size: inputValue,
 				}));
 			} else if (title === "titleWeight") {
+				// Update the titleWeight property of the option
 				option["title"]["textStyle"]["fontWeight"] = inputValue;
+				// Update the titleWeight state
 				setTitle((prev) => ({
 					...prev,
 					weight: inputValue,
 				}));
 			} else if (title === "titleFamily") {
+				// Update the titleFamily property of the option
 				option["title"]["textStyle"]["fontFamily"] = inputValue;
+				// Update the titleFamily state
 				setTitle((prev) => ({
 					...prev,
 					family: inputValue,
 				}));
 			}
+			// Update the data with the new option
 			setData(path, option as PathValue<D["data"], typeof path>);
 		}
-		//Reset the feature to the default values
-		//The default values are set in the reset object in the option
+		/**
+		 * Resets the title feature to its default values.
+		 * Default values are defined in the 'reset' object of the option.
+		 */
 		function handleReset() {
+			// Parse the current option value
 			const option = JSON.parse(value);
+			// Reset show property of the title
 			option["title"].show = option["reset"]["title"]["show"];
+			// Reset text property of the title
 			option["title"]["text"] = option["reset"]["title"]["text"];
+			// Reset alignment of the title
 			option["title"]["left"] = option["reset"]["title"]["left"];
+			// Reset font size of the title
 			option["title"]["textStyle"]["fontSize"] =
 				option["reset"]["title"]["textStyle"]["fontSize"];
+			// Reset font weight of the title
 			option["title"]["textStyle"]["fontWeight"] =
 				option["reset"]["title"]["textStyle"]["fontWeight"];
+			// Reset font family of the title
 			option["title"]["textStyle"]["fontFamily"] =
 				option["reset"]["title"]["textStyle"]["fontFamily"];
+			// Reset color of the title
 			option["title"]["textStyle"]["color"] =
 				option["reset"]["title"]["textStyle"]["color"];
+			// Update the data with the reset option
 			setData(path, option as PathValue<D["data"], typeof path>);
+			// Retain the local state with the updated option
 			retainLocalState(option);
 		}
 		return (

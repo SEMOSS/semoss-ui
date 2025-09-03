@@ -335,6 +335,7 @@ export const Search = observer(({ renderInput }: SearchProps) => {
 			getOptionLabel={(option) =>
 				typeof option === "string" ? option : option.label
 			}
+			data-testid={`search-txt`}
 			renderInput={renderInput}
 			renderOption={(props, option) => (
 				<Link

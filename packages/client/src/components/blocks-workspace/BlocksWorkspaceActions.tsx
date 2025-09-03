@@ -62,6 +62,8 @@ export const BlocksWorkspaceActions = observer(() => {
 					selectedLLM={workspace.agentModelEngine || ""}
 					onSelect={(id: string) => {
 						workspace.setAgentModelEngine(id);
+
+						state.setAiGenModelId(id);
 					}}
 					onClose={() => {
 						workspace.closeOverlay();
@@ -186,7 +188,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		// convert the state to json
 		const json = state.toJSON();
 
-		let updatedJson = json;
+		const updatedJson = json;
 
 		// John Start ---------------------------------------------
 

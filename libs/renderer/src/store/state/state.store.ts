@@ -65,9 +65,6 @@ interface StateStoreInterface {
 	/** project id to associate */
 	projectId?: string;
 
-	/** Tool config used for block events */
-	tools?: MCPToolConfig[];
-
 	/** AI Gen model */
 	aiGenModelId: string;
 }
@@ -106,7 +103,6 @@ export class StateStore {
 		cellRegistry: {},
 		variables: {},
 		executionOrder: [],
-		tools: [],
 		aiGenModelId: "",
 	};
 
@@ -141,35 +137,7 @@ export class StateStore {
 		// set the initial state after reactive to invoke it
 		this.setState(config.state);
 
-		// Set the tools in order to enable tool calling with events
-		this._store.tools = [
-			{
-				name: "get_diagnosis",
-				title: "Get Diagnosis",
-				description:
-					"Generates a short (â‰¤20 character) provisional diagnosis based on two symptom descriptions using the SEMoss LLM API.\n\nArgs:\n symptoms_1 (str): Symptom set or description, as a string.\n symptoms_2 (str): Additional symptom set or description, as a string.\n\nReturns:\n str: The LLM's suggested diagnosis as a short sentence.",
-				inputSchema: {
-					properties: {
-						symptoms_1: {
-							title: "Symptoms 1",
-							description:
-								"Symptom set or description, as a string.",
-							type: "string",
-						},
-						symptoms_2: {
-							title: "Symptoms 2",
-							description:
-								"Additional symptom set or description, as a string.",
-							type: "string",
-						},
-					},
-					required: ["symptoms_1", "symptoms_2"],
-					title: "get_diagnosis_Arguments",
-					type: "object",
-				},
-			},
-		];
-
+		console.log("config state.store", config);
 		// project id used for tool calling
 		if (config.projectId) {
 			this._store.projectId = config.projectId;
@@ -241,10 +209,25 @@ export class StateStore {
 	}
 
 	/**
-	 * gets mcp tools for playground execution
+	 * gets project id
 	 */
-	get tools() {
-		return this._store.tools;
+	get projectId() {
+		return this._store.projectId;
+	}
+
+	/**
+	 * Gets model to use for LLM calls
+	 */
+	get aiGenModelId() {
+		return this._store.aiGenModelId;
+	}
+
+	/**
+	 *
+	 * @param id
+	 */
+	setAiGenModelId(id: string) {
+		this._store.aiGenModelId = id;
 	}
 
 	/**
@@ -942,7 +925,7 @@ export class StateStore {
 
 				// Get variable name suggestions from LLM
 				const resp = await runPixel(
-					`LLM(engine = "9adae906-f585-4a8a-b932-4e7237f81b8d", command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
+					`LLM(engine=["${this._store.aiGenModelId}"], command = "<encode>${prompt}</encode>", paramValues=[{'max_completion_tokens':10,'temperature':0.3}]);`,
 				);
 
 				console.log("-----------------------");
@@ -1387,29 +1370,6 @@ export class StateStore {
 			deps.push(match[1]);
 		}
 		return deps;
-	};
-
-	/**
-	 * Used for LLM calls to help
-	 * @param id
-	 */
-	setAIGenModel = (id) => {
-		this._store.aiGenModelId = id;
-	};
-
-	/**
-	 * Set Tools that are available for app
-	 */
-	setMCPTools = (tools: MCPToolConfig[]) => {
-		this._store.tools = tools;
-	};
-
-	/**
-	 * Set id of the app we are looking at
-	 * @param id
-	 */
-	setAppId = (id) => {
-		this._store.projectId = id;
 	};
 
 	/**

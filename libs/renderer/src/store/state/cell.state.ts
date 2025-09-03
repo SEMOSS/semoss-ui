@@ -7,25 +7,12 @@ import {
 import { setValueByPath } from "../../utility";
 import type { QueryState } from "./query.state";
 import type { StateStore } from "./state.store";
-import type { CellComponent, CellConfig, CellDef } from "./state.types";
-
-interface MCPInterface {
-	name: string;
-	title: string;
-	description: string;
-	inputSchema: {
-		properties: {
-			[key: string]: {
-				title: string;
-				description: string;
-				type: string;
-			};
-		};
-		required: string[];
-		title: string;
-		type: string;
-	};
-}
+import type {
+	CellComponent,
+	CellConfig,
+	CellDef,
+	MCPToolConfig,
+} from "./state.types";
 
 export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 	/** Id of the cell */
@@ -53,7 +40,7 @@ export interface CellStateStoreInterface<D extends CellDef = CellDef> {
 	parameters: D["parameters"];
 
 	/** Properties used to execute tool */
-	mcpEnabled?: MCPInterface | null;
+	mcpEnabled?: MCPToolConfig | null;
 
 	/** used to fill pixel params for RunMCPTool */
 	mcpParameters?: Record<string, unknown> | null;
@@ -70,7 +57,7 @@ export interface CellStateConfig<D extends CellDef = CellDef> {
 	parameters: D["parameters"];
 
 	/** Properties used to execute tool */
-	mcpEnabled?: MCPInterface | null;
+	mcpEnabled?: MCPToolConfig | null;
 
 	/** used to fill pixel params for RunMCPTool */
 	mcpParameters?: Record<string, unknown> | null;
@@ -265,6 +252,7 @@ export class CellState<D extends CellDef = CellDef> {
 	 */
 	makeCellMCP = (): void => {
 		// TODO: Make Pixel call
+		// `MakeCellMCP(projectId=[], queryId=[], cellId=[])`
 
 		this._store.mcpEnabled = {
 			name: "diagnose_short_symptom",
@@ -353,6 +341,7 @@ export class CellState<D extends CellDef = CellDef> {
 	/**
 	 * Helper function to run a pixel
 	 * @param rawPixel - pixel to be formatted and run
+	 * TODO: projectId
 	 */
 	private async runPixel(rawPixel: string) {
 		console.log("-------------------------------------");
@@ -362,14 +351,13 @@ export class CellState<D extends CellDef = CellDef> {
 
 		const projId = "7c5771e1-ce6a-4cfb-a2d6-9f6a2dd049d3";
 
-		let filled;
+		let filled: string;
 		// Construct pixel for MCPEnabled
 		if (this._store.mcpEnabled) {
-			// RunMCPTool(project="7c5771e1-ce6a-4cfb-a2d6-9f6a2dd049d3", function="diagnose_short_symptom", paramValues=[{"symptom1":"cough","symptom2":"extreme headache"}]);
-			const pixel = `RunMCPTool(project=["${projId}"], function=["${this._store.mcpEnabled.name}"], paramValues=[${JSON.stringify(this._store.mcpParameters)}])`;
+			const pixel = `RunMCPTool(project=["${this._state.projectId}"], function=["${this._store.mcpEnabled.name}"], paramValues=[${JSON.stringify(this._store.mcpParameters)}])`;
 
-			console.log(this._store.mcpParameters);
 			console.log("pixel", pixel);
+
 			filled = this._state.flattenVariable(pixel);
 		} else {
 			// Gets rid of braces and evaluate parameters in query
@@ -383,6 +371,10 @@ export class CellState<D extends CellDef = CellDef> {
 		this._store.messages = [];
 		this._store.operation = [];
 		this._store.output = undefined;
+
+		console.log("--------------------------------------");
+		console.log("state.projectId", this._state.projectId);
+		console.log("--------------------------------------");
 
 		// start polling
 		const { jobId } = await runPixelAsync(filled, this._state.insightId);
