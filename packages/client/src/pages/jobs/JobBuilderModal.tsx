@@ -78,7 +78,7 @@ export const JobBuilderModal = (props: {
 					cronValues[4] === "*" &&
 					(cronValues[5] === "*" || cronValues[5] === "?");
 				const isStandardWeekly =
-					cronValues[3] === "*" &&
+					(cronValues[3] === "*" || cronValues[3] === "?") &&
 					cronValues[4] === "*" &&
 					!isNaN(parseInt(cronValues[5]));
 				const isStandardMonthly =

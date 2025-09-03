@@ -53,7 +53,10 @@ export const JobStandardFrequencyBuilder = (props: {
 			(cronValues[5] == "*" || cronValues[5] == "?")
 		) {
 			setFrequency("Daily");
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (
+			(cronValues[3] == "*" || cronValues[3] == "?") &&
+			cronValues[4] == "*"
+		) {
 			setFrequency("Weekly");
 			const dayOfWeekValue = parseInt(cronValues[5]);
 			const dayOfWeekRecord = DaysOfWeek.find(
@@ -111,7 +114,7 @@ export const JobStandardFrequencyBuilder = (props: {
 			case "Weekly":
 				setBuilderField(
 					"cronExpression",
-					`0 ${minuteNum} ${hourNum} * * ${dayOfWeek.value}`,
+					`0 ${minuteNum} ${hourNum} ? * ${dayOfWeek.value}`,
 				);
 				break;
 			case "Monthly":
