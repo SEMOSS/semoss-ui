@@ -7,31 +7,28 @@ const StyledRightMenu = styled("div")(({ theme }) => ({
 	position: "relative",
 	height: "100%",
 	width: "100%",
-	borderRadius: theme.shape.borderRadius,
+	padding: "8px 0",
+	borderRadius: theme.shape.borderRadiusLg,
+	border: `1px solid ${theme.palette.secondary.border}`,
+	background: theme.palette.background.paper,
 	overflow: "hidden",
+	gap: "8px",
+	boxShadow: theme.shadows[1],
 }));
 
 export const StyledRightMenuHeader = styled(Stack)(({ theme }) => ({
 	position: "sticky",
 	top: 0,
-	height: theme.spacing(9),
+	height: "24px",
 	width: "100%",
-	padding: theme.spacing(2),
-	background: theme.palette.background.default,
+	padding: "0 16px",
 	zIndex: 1,
 }));
 
-export const StyledRightMenuContent = styled("div")(({ theme }) => ({
-	position: "relative",
+export const StyledRightMenuContent = styled(Stack)(({ theme }) => ({
 	flex: 1,
+	position: "relative",
 	width: "100%",
-	paddingRight: theme.spacing(2),
-	paddingLeft: theme.spacing(2),
-	paddingBottom: theme.spacing(2),
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(2),
-	background: theme.palette.background.default,
 	overflowX: "hidden",
 	overflowY: "auto",
 }));
@@ -59,8 +56,7 @@ export const RightMenu = (props: RightMenuProps) => {
 			>
 				{header ? (
 					<Typography
-						variant={"body1"}
-						fontWeight={"bold"}
+						variant={"caption"}
 						noWrap={true}
 						sx={{
 							flex: 1,
@@ -75,10 +71,12 @@ export const RightMenu = (props: RightMenuProps) => {
 						onClose();
 					}}
 				>
-					<Close fontSize="medium" />
+					<Close fontSize="small" />
 				</IconButton>
 			</StyledRightMenuHeader>
-			<StyledRightMenuContent>{children}</StyledRightMenuContent>
+			<StyledRightMenuContent direction="column" spacing={1}>
+				{children}
+			</StyledRightMenuContent>
 		</StyledRightMenu>
 	);
 };
