@@ -61,7 +61,6 @@ export * from "./components/Tabs";
 export * from "./components/Terminal";
 export * from "./components/TextArea";
 export * from "./components/TextField";
-export * from "./components/TextFieldStack";
 export * from "./components/ThemeProvider";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";

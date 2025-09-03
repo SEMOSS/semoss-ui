@@ -1,5 +1,4 @@
 import {
-    InputBaseComponentProps,
 	TextField as MuiTextField,
 	type TextFieldProps as MuiTextFieldProps,
 	type SxProps,
@@ -12,7 +11,7 @@ export type TextFieldProps = MuiTextFieldProps & {
 };
 
 export const TextField = (props: TextFieldProps) => {
-	const { sx, inputProps } = props;
+	const { sx } = props;
 	const [componentId, setComponentId] = useState(props.id);
 
 	useEffect(() => {
@@ -22,12 +21,5 @@ export const TextField = (props: TextFieldProps) => {
 		}
 	}, [componentId]);
 
-	return (
-        <MuiTextField
-            id={componentId}
-            sx={sx}
-            {...props}
-            inputProps={{ ...inputProps, spellCheck: true }}
-        />
-    );
+	return <MuiTextField id={componentId} sx={sx} {...props} />;
 };
