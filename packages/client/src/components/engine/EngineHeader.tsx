@@ -179,13 +179,13 @@ export const EngineHeader: React.FC = () => {
 						aria-describedby="export-modal-description"
 					>
 						<Modal.Title>
-							<Typography id="export-modal-title" variant="h6">
+							<Typography id={"export-modal-title"} variant="h6">
 								Export Engine
 							</Typography>
 						</Modal.Title>
 						<Modal.Content>
 							<Typography
-								id="export-modal-description"
+								id={"export-modal-description"}
 								variant="body1"
 								sx={{ mb: 2 }}
 							>
@@ -265,16 +265,19 @@ export const EngineHeader: React.FC = () => {
 					<Stack direction="row" spacing={1}>
 						{active.metadata.tag &&
 							(active.metadata.tag as string[]).map((tag, i) => {
-								if (i < 2)
+								if (i < 2) {
 									return (
 										<Chip
-											key={i}
+											key={tag}
 											label={tag}
 											color="default"
 											size="small"
 											variant="outlined"
 										/>
 									);
+								} else {
+									return null;
+								}
 							})}
 					</Stack>
 				</StyledInfoLeft>
@@ -297,14 +300,9 @@ export const EngineHeader: React.FC = () => {
 								</Typography>
 							</>
 						) : (
-							<>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									No updates since creation
-								</Typography>
-							</>
+							<Typography variant={"caption"} color="disabled">
+								No updates since creation
+							</Typography>
 						)}
 					</Stack>
 				</StyledInfoRight>

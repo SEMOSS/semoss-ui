@@ -4,10 +4,10 @@ export { BlocksGuideTemplate } from "./BlocksGuideTemplate";
 export { CreateDiabetesRecordTemplate } from "./CreateDiabetesRecordTemplate";
 export { CustomFrameToVisualizationTemplate } from "./CustomFrameToVisualizationTemplate";
 export { DeleteDiabetesRecordTemplate } from "./DeleteDiabetesRecordTemplate";
-export { RowToNotebookTemplate } from "./RowToNotebookTemplate"
 export { LandingPageTemplate } from "./LandingPageTemplate";
 export { MultiPageTemplate } from "./MultiPageTemplate";
 export { ReadDiabetesRecordTemplate } from "./ReadDiabetesRecordTemplate";
+export { RowToNotebookTemplate } from "./RowToNotebookTemplate";
 export * from "./templates.types";
 export { UpdateDiabetesRecordTemplate } from "./UpdateDiabetesRecordTemplate";
 export { VisualizeCSVTemplate } from "./VisualizeCSVTemplate";
