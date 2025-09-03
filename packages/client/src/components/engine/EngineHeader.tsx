@@ -16,6 +16,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useEngine, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { EditEngineDetails, EngineAccessButton } from ".";
 
 const StyledName = styled(Stack)(({ theme }) => ({
@@ -153,6 +154,9 @@ export const EngineHeader: React.FC = () => {
 											<SimCardDownload />
 										)
 									}
+									data-testid={formatToDataTestId(
+										`engineHeader-${name}-export-btn`,
+									)}
 									variant="outlined"
 									onClick={() => {
 										const engineType =
@@ -226,6 +230,7 @@ export const EngineHeader: React.FC = () => {
 						<IconButton
 							aria-label={`copy ${name} ID`}
 							size="small"
+							data-testid={`engineHeader-copy-${name}-id-btn`}
 							onClick={(e) => {
 								// prevent the default action
 								e.preventDefault();
