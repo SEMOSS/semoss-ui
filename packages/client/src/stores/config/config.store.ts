@@ -763,8 +763,10 @@ export class ConfigStore {
 				this._store.status = "MISSING AUTHENTICATION";
 			});
 
-			// Reset CSRF token and re-initialize config
-			await this.resetAfterLogout();
+			// Reset CSRF token and re-initialize config only when CSRF is enabled
+			if(this.store.config.csrf){
+				await this.resetAfterLogout();
+			}
 		} catch (error) {
 			console.error(error);
 			throw error;

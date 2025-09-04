@@ -90,21 +90,6 @@ const interceptors: {
 			if (options.method === "POST" || options.method === "GET") {
 				// use the token if it is there otherwise fetch it
 				if (!CSRF.token) {
-					// const response = await fetch(
-					// 	`${Env.MODULE}/api/config/fetchCsrf`,
-					// 	{
-					// 		headers: {
-					// 			"X-CSRF-Token": "fetch",
-					// 		},
-					// 	},
-					// );
-
-					// // not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-					// CSRF.token =
-					// 	response.headers.get("X-CSRF-Token") ||
-					// 	response.headers.get("x-csrf-token") ||
-					// 	"";
-
 					try {
 						const token =
 							getCsrfToken() || (await fetchCsrfTokenIfNeeded());
