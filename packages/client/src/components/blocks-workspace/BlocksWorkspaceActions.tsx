@@ -109,74 +109,7 @@ export const BlocksWorkspaceActions = observer(() => {
 		}
 	};
 
-	/**
-	 * Save the current app
-	 */
-	const saveAppOg = async () => {
-		// turn on loading
-		workspace.setLoading(true);
 
-		// convert the state to json
-		const json = state.toJSON();
-
-		const suggestedChanges = await state.processRename();
-
-		const stringified = JSON.stringify(json);
-
-		// Go through whole json and replace
-
-		Object.entries(suggestedChanges).forEach(
-			([key, value]: [string, string]) => {
-				stringified.replaceAll(/{{(.*?)}}/g, (match) => {
-					const pattern = RegExp(key, "g");
-
-					return match.replace(pattern, value as string);
-				});
-			},
-		);
-
-		const updated = JSON.parse(stringified);
-
-		debugger;
-
-		// TODO: remove the visual from the json or save it with it
-		Object.keys(json?.blocks).forEach((key) => {
-			if (key.startsWith("e-chart")) {
-				if (json?.blocks[key]?.data?.option?.["visual"]) {
-					json.blocks[key].data.option["visual"] = false;
-				}
-			}
-		});
-
-		try {
-			// save the json
-			const { errors } = await monolithStore.runQuery<[true]>(
-				`SaveAppBlocksJson(project=["${
-					workspace.appId
-				}"], json=["<encode>${JSON.stringify(json)}</encode>"]);`,
-			);
-
-			if (errors.length > 0) {
-				throw new Error(errors.join(""));
-			}
-
-			notification.add({
-				color: "success",
-				message:
-					"Save successful! Make sure to double-check your changes for correctness",
-			});
-		} catch (e) {
-			console.error(e);
-
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
-		} finally {
-			// turn of loading
-			workspace.setLoading(false);
-		}
-	};
 
 	/**
 	 * Save the current app
