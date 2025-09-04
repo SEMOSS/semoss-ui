@@ -1087,10 +1087,10 @@ export const VisualMapConstant = {
 					trigger: "item",
 					triggerOn: "mousemove",
 				},
-                title: {
-					text: 'Dendrogram Chart',
-					left: 'left',
-					top: 'top',
+				title: {
+					text: "Dendrogram Chart",
+					left: "left",
+					top: "top",
 					show: true,
 					textStyle: {
 						color: "#000000",
@@ -1101,9 +1101,9 @@ export const VisualMapConstant = {
 				},
 				reset: {
 					title: {
-						text: 'Dendrogram Chart',
-						left: 'left',
-						top: 'top',
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
 						show: true,
 						textStyle: {
 							color: "#000000",
@@ -1223,10 +1223,10 @@ export const VisualMapConstant = {
 			label: "Gantt",
 			title: "echart-gantt-chart",
 			option: {
-                title: {
-					text: 'Gantt Chart',
-					left: 'left',
-					top: 'top',
+				title: {
+					text: "Gantt Chart",
+					left: "left",
+					top: "top",
 					show: true,
 					textStyle: {
 						color: "#000000",
@@ -1237,9 +1237,9 @@ export const VisualMapConstant = {
 				},
 				reset: {
 					title: {
-						text: 'Gantt Chart',
-						left: 'left',
-						top: 'top',
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
 						show: true,
 						textStyle: {
 							color: "#000000",
