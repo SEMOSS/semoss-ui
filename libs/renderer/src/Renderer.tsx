@@ -2,7 +2,7 @@ import { CircularProgress, Stack } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { runPixel } from "@semoss/sdk/react";
+import { Env, runPixel } from "@semoss/sdk/react";
 import { Backdrop, Notification, Typography } from "@semoss/ui";
 import { DefaultBlocks } from "./components/block-defaults";
 import { Blocks, RendererEngine } from "./components/blocks";
@@ -104,13 +104,39 @@ export const Renderer = observer((props: RendererProps) => {
 				const activePage = getCurrentPageId(s);
 				setHomePage(activePage);
 
+				// process Env.Tool parameters and add to the state
+				// TODO: Dispatch?
+				if (Env.TOOL) {
+					for (const parameter in Env.TOOL.parameters) {
+						const value = Env.TOOL.parameters[parameter];
+
+						// check if the variable exists
+						const variable = s.variables[parameter];
+						if (variable) {
+							// retrieve the "to" value
+							const toValue = variable.to;
+							if (variable.type === "block") {
+								// Look into blocks section
+								if (s.blocks[toValue]) {
+									s.blocks[toValue].data.value = value;
+								}
+							} else if (
+								variable.type === "cell" ||
+								variable.type === "query"
+							) {
+							} else {
+								variable.value = value;
+							}
+						}
+					}
+				}
+
 				// create a new state store
 				const store = new StateStore({
 					mode: "interactive",
 					insightId: insightId,
 					state: s,
 					cellRegistry: DefaultCells,
-					initialParams: params,
 				});
 
 				// set it

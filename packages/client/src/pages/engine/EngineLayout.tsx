@@ -86,6 +86,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 		last_updated?: string;
 		description?: string;
 		database_type?: string;
+		database_subtype?: string;
 		DATEADDED?: string;
 		PERMISSIONGRANTEDBY?: string;
 		markdown?: string;
@@ -137,8 +138,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	]);
 
 	// get the user's role
-	const getUserEnginePermission =
-		!adminMode && engineId && useAPI(["getUserEnginePermission", engineId]);
+	const getUserEnginePermission = useAPI(
+		!adminMode && engineId ? ["getUserEnginePermission", engineId] : null,
+	);
 
 	// get the tabs based on permission
 	const tabs = useMemo(() => {
@@ -246,6 +248,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 									<StyledToggleTabsGroupItem
 										key={t.path}
 										label={t.name}
+										data-testid={`engineLayout-${t.name}-tab`}
 									/>
 								);
 							})}
