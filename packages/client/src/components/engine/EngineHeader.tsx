@@ -222,18 +222,18 @@ export const EngineHeader: React.FC = () => {
 				</StyledInfoLeft>
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
-						{active.metadata?.PERMISSIONGRANTEDBY ? (
+						{active?.PERMISSIONGRANTEDBY ? (
 							<Typography variant={"caption"} color="disabled">
-								{`Published by ${active.metadata.PERMISSIONGRANTEDBY}`}
+								{`Published by ${active.PERMISSIONGRANTEDBY}`}
 							</Typography>
 						) : (
 							<Typography variant={"caption"} color="disabled">
-								{`Created by ${active.metadata.database_created_by}`}
+								{`Created by ${active.database_created_by}`}
 							</Typography>
 						)}
-						{active.metadata?.DATEADDED && (
+						{active?.DATEADDED && (
 							<Typography variant={"caption"} color="disabled">
-								{`on ${active.metadata.DATEADDED}`}
+								{`on ${active.DATEADDED}`}
 							</Typography>
 						)}
 					</Stack>
