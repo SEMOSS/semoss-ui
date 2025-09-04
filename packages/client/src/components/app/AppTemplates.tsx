@@ -10,6 +10,7 @@ import {
 	LandingPageTemplate,
 	MultiPageTemplate,
 	ReadDiabetesRecordTemplate,
+	RowToNotebookTemplate,
 	type Template,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
@@ -17,6 +18,7 @@ import {
 
 const DEFAULT_TEMPLATE = [
 	LandingPageTemplate,
+	RowToNotebookTemplate,
 	AskLLMTemplate,
 	CustomFrameToVisualizationTemplate,
 	VisualizeCSVTemplate,

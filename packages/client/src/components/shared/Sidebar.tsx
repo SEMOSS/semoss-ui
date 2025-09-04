@@ -23,6 +23,7 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import { usePage, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
 const DRAWER_OPEN_WIDTH = 288;
@@ -170,8 +171,7 @@ export const Sidebar: React.FC = observer(() => {
 	]);
 
 	function closeSidebar() {
-		if (!page.sidebar.pinned) {
-			page.pinSidebar();
+		if (page.sidebar.pinned) {
 			return;
 		}
 		page.closeSidebar();
@@ -182,13 +182,11 @@ export const Sidebar: React.FC = observer(() => {
 			variant={page.sidebar.pinned ? "permanent" : "temporary"}
 			anchor="left"
 			open={page.sidebar.open}
-			onClose={closeSidebar}
+			onClose={() => {
+				closeSidebar;
+			}}
 			PaperProps={{
 				onMouseLeave: () => {
-					// closes if it is not pinned
-					if (page.sidebar.pinned) {
-						return;
-					}
 					closeSidebar();
 				},
 			}}
@@ -208,7 +206,18 @@ export const Sidebar: React.FC = observer(() => {
 					</Typography>
 				</StyledNavHeaderLink>
 
-				<StyledCloseIconButton size="small" onClick={closeSidebar}>
+				<StyledCloseIconButton
+					size="small"
+					onClick={() => {
+						if (page.sidebar.pinned) {
+							page.unpinSidebar();
+						} else {
+							page.pinSidebar();
+							return;
+						}
+						closeSidebar();
+					}}
+				>
 					<MenuOpenRounded fontSize="medium" />
 				</StyledCloseIconButton>
 			</StyledNavHeader>
@@ -256,6 +265,9 @@ export const Sidebar: React.FC = observer(() => {
 										}
 										aria-label={r.text}
 										dense={true}
+										data-testid={formatToDataTestId(
+											`sidebar-${r.text}-btn`,
+										)}
 									>
 										<StyledListItemIcon>
 											{r.icon}

@@ -122,7 +122,7 @@ export const ViewAppPage = observer(() => {
 						size="small"
 						color={bookmarked ? "primary" : "default"}
 						onClick={() => handleBookmark(!bookmarked)}
-						data-testid={"app-page-bookmark-btn"}
+						data-testid={"viewAppPage-bookmark-btn"}
 					>
 						{bookmarked ? (
 							<Bookmark fontSize={"inherit"} />
@@ -138,7 +138,7 @@ export const ViewAppPage = observer(() => {
 						onClick={() => {
 							setIsShareOpen(true);
 						}}
-						data-testid={"app-page-share-btn"}
+						data-testid={"viewAppPage-share-btn"}
 					>
 						<ShareRounded fontSize={"inherit"} />
 					</IconButton>
@@ -157,7 +157,7 @@ export const ViewAppPage = observer(() => {
 					component={Link}
 					//@ts-expect-error this is expected. props are forwarded
 					to={`../../../app/${appId}/edit`}
-					data-testid={"app-page-edit-btn"}
+					data-testid={"viewAppPage-edit-btn"}
 				>
 					Edit
 				</Button>
