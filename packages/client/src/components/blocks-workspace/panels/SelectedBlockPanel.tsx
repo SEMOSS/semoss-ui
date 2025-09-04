@@ -535,10 +535,16 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								<StyledToggleTabsGroupItem
 									label="Settings"
 									value={0}
+									data-testId={
+										"selectedBlockPanel-settings-toggle"
+									}
 								/>
 								<StyledToggleTabsGroupItem
 									label="Appearance"
 									value={1}
+									data-testId={
+										"selectedBlockPanel-appearance-toggle"
+									}
 								/>
 							</StyledToggleTabsGroup>
 						)

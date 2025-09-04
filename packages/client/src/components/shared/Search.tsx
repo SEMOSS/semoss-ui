@@ -330,6 +330,7 @@ export const Search = observer(({ renderInput }: SearchProps) => {
 			getOptionLabel={(option) =>
 				typeof option === "string" ? option : option.label
 			}
+			data-testid={`search-txt`}
 			renderInput={renderInput}
 			// biome-ignore lint/correctness/noUnusedFunctionParameters: props is required as first parameter
 			renderOption={(props, option) => (
