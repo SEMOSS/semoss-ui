@@ -79,19 +79,19 @@ export const JobBuilderModal = (props: {
 		}
 
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			cronValues[5] == "*"
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			cronValues[5] === "*"
 		) {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[5] == "*") {
+		} else if (cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
 		} else {
@@ -259,10 +259,10 @@ export const JobBuilderModal = (props: {
 			if (response.errors.length) {
 				notification.add({
 					color: "error",
-					message: response.errors.length[0],
+					message: response.errors[0],
 				});
 			}
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
