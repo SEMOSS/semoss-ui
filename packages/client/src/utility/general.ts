@@ -285,3 +285,7 @@ export const FormatData = {
 };
 
 export const formatDate = FormatData.format;
+
+export const formatToDataTestId = (text: string) => {
+	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
+};
