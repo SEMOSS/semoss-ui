@@ -729,7 +729,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				color: "default",
 				showBadge: false,
 			},
-			listeners: {},
+			listeners: {
+				onClick: {
+					type: "sync",
+					order: [],
+				},
+			},
 			slots: {} as BlockJSON["slots"],
 		},
 	},

@@ -22,7 +22,12 @@ export const config: BlockConfig<IconBlockDef> = {
 		color: "default",
 		showBadge: false,
 	},
-	listeners: {},
+	listeners: {
+		onClick: {
+			type: "sync",
+			order: [],
+		},
+	},
 	slots: {},
 	render: IconBlock,
 };
