@@ -32,6 +32,10 @@ const StyledDataGrid = styled(DataGrid)(() => ({
 	},
 }));
 
+const LoadingOverlay = () => {
+	return <LinearProgress color="primary" />;
+};
+
 export const JobsTable = (props: {
 	jobs: Job[];
 	jobsLoading: boolean;
@@ -60,7 +64,7 @@ export const JobsTable = (props: {
 			await runPixel(
 				`META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
 			);
-		} catch (e) {
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Job could not be executed.",
@@ -68,7 +72,7 @@ export const JobsTable = (props: {
 		}
 		try {
 			await getHistory();
-		} catch (e) {
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Could not retrieve job history.",
@@ -116,10 +120,16 @@ export const JobsTable = (props: {
 						spacing={1}
 						alignItems="center"
 					>
-						{params.value.map((tag, idx) => {
+						{params.value.map((tag) => {
 							if (tag) {
-								return <Chip key={idx} label={tag} />;
+								return (
+									<Chip
+										key={`test-${params?.row?.id}-${tag}`}
+										label={tag}
+									/>
+								);
 							}
+							return null;
 						})}
 					</Stack>
 				);
@@ -163,8 +173,9 @@ export const JobsTable = (props: {
 			flex: 1,
 			sortable: false,
 			disableColumnMenu: true,
+			minWidth: 150,
 			renderCell: (params) => {
-				const job = jobs.find((job) => job.id == params.value);
+				const job = jobs?.find((job) => job.id === params?.value);
 				return (
 					<>
 						<IconButton
@@ -172,9 +183,9 @@ export const JobsTable = (props: {
 							color="primary"
 							size="medium"
 							onClick={() => {
-								runJob(job);
+								job && runJob(job);
 							}}
-							data-testid={"jobs-table-play-btn"}
+							data-testid={"jobsTable-play-btn"}
 						>
 							{runJobLoading ? (
 								<CircularProgress
@@ -211,7 +222,7 @@ export const JobsTable = (props: {
 									password: job.password,
 								});
 							}}
-							data-testid={"jobs-table-edit-btn"}
+							data-testid={"jobsTable-edit-btn"}
 						>
 							<Edit />
 						</IconButton>
@@ -222,7 +233,7 @@ export const JobsTable = (props: {
 							onClick={() => {
 								showDeleteJobModal(job);
 							}}
-							data-testid={"jobs-table-delete-btn"}
+							data-testid={"jobsTable-delete-btn"}
 						>
 							<Delete />
 						</IconButton>
@@ -246,7 +257,7 @@ export const JobsTable = (props: {
 			rowSelectionModel={rowSelectionModel}
 			onRowSelectionModelChange={(value) => setRowSelectionModel(value)}
 			slots={{
-				loadingOverlay: LinearProgress as any,
+				loadingOverlay: LoadingOverlay,
 				// loadingOverlay: LinearProgress as GridSlots['loadingOverlay'],
 				noRowsOverlay: () => (
 					<Stack
