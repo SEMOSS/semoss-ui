@@ -1,17 +1,17 @@
-import { ArrowCircleDown, Create, Refresh } from "@mui/icons-material";
+import { ArrowCircleDown, Create } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Button,
 	Chip,
 	IconButton,
-	Modal,
 	Stack,
 	styled,
 	Table,
+	Typography,
+	Modal,
 	TextField,
-	Typography
 } from "@semoss/ui";
 import { Metamodel } from "@/components/metamodel";
 import { Section } from "@/components/ui";
@@ -85,43 +85,6 @@ export const EngineMetadataPage = observer(() => {
 		`GetDatabaseMetamodel( database=["${active.id}"], options=["dataTypes","additionalDataTypes","logicalNames","descriptions","positions"]); `,
 	);
 
-	const reloadDescriptions = useCallback(
-		async (node = selectedNode) => {
-			if (getDatabaseMetamodel.status !== "SUCCESS" || !node) return;
-	
-			try {
-				const updatedDescriptions = { ...getDatabaseMetamodel.data.descriptions };
-	
-				for (const property of node.data.properties) {
-					const tableName = node.data.name;
-					const logicalNames = getDatabaseMetamodel.data.logicalNames?.[property.id] || [];
-					const columnNameForPixel = logicalNames.length > 0 ? logicalNames[0] : property.name.replace(/\s+/g, "_");
-	
-					const pixel = `GetOwlDescriptions(database=["${active.id}"], concept="${tableName}", column="${columnNameForPixel}")`;
-					const response = await monolithStore.runQuery(pixel);
-					const output = response.pixelReturn[0]?.output || {};
-	
-					let description = "";
-					if (output["0"] && Object.keys(output).length === 1) {
-						description = output["0"];
-					} else if (Object.keys(output).length > 0) {
-						description = output[columnNameForPixel] || "";
-					}
-	
-					updatedDescriptions[property.id] = description;
-				}
-	
-				getDatabaseMetamodel.update({
-					...getDatabaseMetamodel.data,
-					descriptions: updatedDescriptions,
-				});
-			} catch (error) {
-				console.error("Failed to reload descriptions:", error);
-			}
-		},
-		[getDatabaseMetamodel, monolithStore, active.id] // no selectedNode here
-	);
-	
 	// get the data if a table is selected
 	const getData = usePixel<{
 		data: {
@@ -189,12 +152,6 @@ export const EngineMetadataPage = observer(() => {
 			target: e.target,
 		}));
 	}, [getDatabaseMetamodel.status, getDatabaseMetamodel.data]);
-
-	useEffect(() => {
-		if (selectedNode) {
-			reloadDescriptions();
-		}
-	}, [selectedNode]);
 
 	const [showSyncModal, setShowSyncModal] = useState(false);
 	const [tabledata, setTabledata] = useState<string[]>([]);
