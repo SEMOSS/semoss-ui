@@ -5,6 +5,62 @@ export const CSRF = {
 	isEnabled: false,
 	token: "",
 };
+export function resetCsrfToken(): void {
+	CSRF.token = "";
+	csrfToken = null;
+	csrfPromise = null;
+	// CSRF token has been reset
+}
+
+/**
+ * Centralized CSRF token fetcher.
+ * Ensures token is fetched once and cached.
+ * this will only fetch it once and use it for all requests
+ */
+let csrfToken: string | null = null;
+let csrfPromise: Promise<string> | null = null;
+
+/**
+ * Fetch CSRF token if not already cached.
+ */
+export async function fetchCsrfTokenIfNeeded(): Promise<string> {
+	if (csrfToken) return csrfToken;
+
+	if (!csrfPromise) {
+		csrfPromise = fetch(`${Env.MODULE}/api/config/fetchCsrf`, {
+			headers: {
+				"X-CSRF-Token": "fetch",
+			},
+		})
+			.then(async (res) => {
+				// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+				const token =
+					res.headers.get("X-CSRF-Token") ||
+					res.headers.get("x-csrf-token") ||
+					"";
+
+				csrfToken = token;
+				return token;
+			})
+			.catch((_err) => {
+				csrfToken = null;
+				throw Error("Failed to fetch CSRF token:");
+			})
+			.finally(() => {
+				csrfPromise = null;
+			});
+	}
+
+	return csrfPromise;
+}
+
+/**
+ * Getter for the already fetched token.
+ * Returns `null` if not yet fetched.
+ */
+export function getCsrfToken(): string | null {
+	return csrfToken;
+}
 
 /**
  * Store the interceptors to modify any fetch command
@@ -31,23 +87,34 @@ const interceptors: {
 
 		// only set if enabled
 		if (CSRF.isEnabled || Env.CSRF) {
-			if (options.method === "POST") {
+			if (options.method === "POST" || options.method === "GET") {
 				// use the token if it is there otherwise fetch it
 				if (!CSRF.token) {
-					const response = await fetch(
-						`${Env.MODULE}/api/config/fetchCsrf`,
-						{
-							headers: {
-								"X-CSRF-Token": "fetch",
-							},
-						},
-					);
+					// const response = await fetch(
+					// 	`${Env.MODULE}/api/config/fetchCsrf`,
+					// 	{
+					// 		headers: {
+					// 			"X-CSRF-Token": "fetch",
+					// 		},
+					// 	},
+					// );
 
-					// not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
-					CSRF.token =
-						response.headers.get("X-CSRF-Token") ||
-						response.headers.get("x-csrf-token") ||
-						"";
+					// // not sure why the proxy server is sending it as lowercase, preserving headers doesn't fix it
+					// CSRF.token =
+					// 	response.headers.get("X-CSRF-Token") ||
+					// 	response.headers.get("x-csrf-token") ||
+					// 	"";
+
+					try {
+						const token =
+							getCsrfToken() || (await fetchCsrfTokenIfNeeded());
+						CSRF.token = token || "";
+					} catch (error) {
+						if (error instanceof Error) {
+							CSRF.token = "";
+							throw Error("Failed to fetch CSRF token:");
+						}
+					}
 				}
 
 				// add the token

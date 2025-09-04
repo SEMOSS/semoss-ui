@@ -1,9 +1,9 @@
-import axios, { isAxiosError } from "axios";
-import { useEffect } from "react";
-import { Env } from "@semoss/sdk/react";
-import { RootStoreContext } from "@/contexts";
-import { RootStore } from "@/stores";
-import { AppWrapper } from "./AppWrapper";
+import axios, { isAxiosError } from 'axios';
+import { useEffect } from 'react';
+import { Env, fetchCsrfTokenIfNeeded, getCsrfToken} from "@semoss/sdk/react";
+import { RootStoreContext } from '@/contexts';
+import { RootStore } from '@/stores';
+import { AppWrapper } from './AppWrapper';
 
 // use the environment variable to set the module
 Env.update({
@@ -12,32 +12,32 @@ Env.update({
 
 const CSRF = {
 	isEnabled: false,
-	token: "",
+	// token: "",
 };
 
-/**
- * Get the CSRF Token
- * @returns token
- */
-async function getToken(): Promise<string> {
-	try {
-		const response = await axios.get(`${Env.MODULE}/api/config/fetchCsrf`, {
-			headers: {
-				"X-CSRF-Token": "fetch",
-			},
-		});
+// /**
+//  * Get the CSRF Token
+//  * @returns token
+//  */
+// async function getToken(): Promise<string> {
+// 	try {
+// 		const response = await axios.get(`${Env.MODULE}/api/config/fetchCsrf`, {
+// 			headers: {
+// 				"X-CSRF-Token": "fetch",
+// 			},
+// 		});
 
-		// not sure why the server is sending it as lowercase, preserving headers doesn't fix it
-		const token =
-			response.headers["X-CSRF-Token"] ||
-			response.headers["x-csrf-token"] ||
-			"";
+// 		// not sure why the server is sending it as lowercase, preserving headers doesn't fix it
+// 		const token =
+// 			response.headers["X-CSRF-Token"] ||
+// 			response.headers["x-csrf-token"] ||
+// 			"";
 
-		return token;
-	} catch {
-		return "";
-	}
-}
+// 		return token;
+// 	} catch {
+// 		return "";
+// 	}
+// }
 
 // add interceptors
 axios.interceptors.request.use(
@@ -69,11 +69,16 @@ axios.interceptors.request.use(
 		// Check the CSRF before login or after the configStore is set, then add the token
 		if (CSRF.isEnabled || _store.configStore.store.config.csrf) {
 			if (config.method === "post") {
-				if (!CSRF.token) {
-					CSRF.token = await getToken();
+				// if (!CSRF.token) {
+				// 	CSRF.token = await getToken();
+				// }
+				// config.headers["X-CSRF-Token"] = CSRF.token;
+				// Use the centralized CSRF token from fetch.ts
+				const token =
+					getCsrfToken() || (await fetchCsrfTokenIfNeeded());
+				if (token) {
+					config.headers["X-CSRF-Token"] = token;
 				}
-
-				config.headers["X-CSRF-Token"] = CSRF.token;
 			}
 		}
 		return config;
