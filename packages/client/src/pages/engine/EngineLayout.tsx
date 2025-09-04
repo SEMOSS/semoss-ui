@@ -246,6 +246,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 									<StyledToggleTabsGroupItem
 										key={t.path}
 										label={t.name}
+										data-testid={`engineLayout-${t.name}-tab`}
 									/>
 								);
 							})}
