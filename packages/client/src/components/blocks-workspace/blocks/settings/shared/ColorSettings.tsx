@@ -10,6 +10,7 @@ import {
 } from "@semoss/renderer";
 import { TextField } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { BaseSettingSection } from "../BaseSettingSection";
 
 /**
@@ -114,6 +115,9 @@ export const ColorSettings = observer(
 					size="small"
 					variant="outlined"
 					autoComplete="off"
+					data-testid={formatToDataTestId(
+						`colorSettings-${label}-txt`,
+					)}
 				/>
 			</BaseSettingSection>
 		);
