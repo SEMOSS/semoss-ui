@@ -2,8 +2,6 @@ import {
 	Add,
 	AddBox,
 	AddCard,
-	ContentCopy,
-	Delete,
 	DeleteOutline,
 	Image,
 	List,
@@ -21,7 +19,6 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	Button,
 	ButtonGroup,
 	IconButton,
 	styled,
@@ -144,7 +141,7 @@ export const DeleteDuplicateMask = observer(
 		}, [designer.selected, isVisible]);
 
 		if (!size || !isVisible) {
-			return <></>;
+			return null;
 		}
 
 		const getStyle = () => {
@@ -300,7 +297,6 @@ export const DeleteDuplicateMask = observer(
 						id: id as string,
 						type: "block",
 						to: id as string,
-						isInput: true,
 					},
 				});
 			}

@@ -2,36 +2,20 @@ import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Stack, styled } from "@semoss/ui";
+import BACKGROUND from "@/assets/img/background.png";
 import { Sidebar } from "@/components";
 import { ChatContext } from "@/contexts";
 import { ChatStore } from "@/stores";
 
-const StyledMain = styled(Stack)(() => ({
+const StyledMain = styled(Stack)(({ theme }) => ({
 	position: "relative",
 	height: "100%",
 	width: "100%",
-}));
-
-const StyledContent = styled("div")(({ theme }) => ({
-	position: "relative",
-	flex: "1",
-	height: "100%",
-	width: "100%",
-	overflow: "hidden",
-	paddingTop: theme.spacing(3),
-	paddingRight: theme.spacing(3),
-	paddingBottom: theme.spacing(3),
-	paddingLeft: theme.spacing(1),
-}));
-
-const StyledInner = styled("div")(({ theme }) => ({
-	flex: "1",
-	height: "100%",
-	width: "100%",
-	background: theme.palette.background.paper,
-	borderRadius: theme.shape.borderRadius,
-	overflowX: "hidden",
-	overflowY: "auto",
+	background: theme.palette.background.default,
+	backgroundImage: `url(${BACKGROUND})`,
+	backgroundRepeat: "no-repeat",
+	backgroundSize: "cover",
+	backgroundPosition: "center",
 }));
 
 export const MainLayout = () => {
@@ -53,13 +37,9 @@ export const MainLayout = () => {
 				chat: chatStore,
 			}}
 		>
-			<StyledMain direction={"row"} overflow={"hidden"}>
+			<StyledMain direction={"row"} overflow={"hidden"} spacing={0}>
 				<Sidebar />
-				<StyledContent>
-					<StyledInner>
-						<Outlet />
-					</StyledInner>
-				</StyledContent>
+				<Outlet />
 			</StyledMain>
 		</ChatContext.Provider>
 	);

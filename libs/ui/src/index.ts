@@ -54,6 +54,7 @@ export * from "./components/Skeleton";
 export * from "./components/Slider";
 export * from "./components/Snackbar";
 export * from "./components/Stack";
+export * from "./components/Stepper";
 export * from "./components/Switch";
 export * from "./components/Table";
 export * from "./components/Tabs";
@@ -73,34 +74,16 @@ export * from "./components/Typography";
 import type { SvgIconProps } from "@mui/material";
 // TODO: fix miscellaneous mui components/functions
 import {
-	Autocomplete,
-	Box,
-	Checkbox,
-	Chip,
 	ClickAwayListener,
 	Fade,
 	FormHelperText,
 	Input,
-	ListItem,
-	ListItemButton,
 	ListItemIcon,
 	ListItemText,
-	Menu,
-	MenuItem,
 	MenuList,
 	OutlinedInput,
-	Popover,
 	Popper,
-	Select,
 	SvgIcon,
-	Switch,
-	Table,
-	TableBody,
-	TableCell,
-	TableHead,
-	TableRow,
-	Tooltip,
-	type TooltipProps,
 } from "@mui/material";
 export type { SvgIconProps };
 

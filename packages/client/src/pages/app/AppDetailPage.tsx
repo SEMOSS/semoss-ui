@@ -634,9 +634,7 @@ export const AppDetailPage = () => {
 											}
 											variant="outlined"
 											onClick={() => exportApp()}
-											data-testid={
-												"app-detail-export-btn"
-											}
+											data-testid={"appDetail-export-btn"}
 										>
 											Export
 										</Button>
@@ -665,7 +663,7 @@ export const AppDetailPage = () => {
 												setIsChangeAccessModalOpen(true)
 											}
 											data-testid={
-												"app-detail-access-btn"
+												"appDetail-access-btn"
 											}
 										>
 											{responseStatus || pendingRequest
@@ -687,7 +685,7 @@ export const AppDetailPage = () => {
 														true,
 													);
 												}}
-												data-testid="app-detail-open-btn"
+												data-testid="appDetail-edit-btn"
 											>
 												Edit
 											</Button>
@@ -818,7 +816,7 @@ export const AppDetailPage = () => {
 																true,
 															)
 														}
-														data-testid="app-detail-edit-btn"
+														data-testid="appDetail-edit-btn"
 													>
 														<Edit />
 													</IconButton>
