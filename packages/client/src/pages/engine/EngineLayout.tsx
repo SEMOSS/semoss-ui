@@ -219,6 +219,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 						(getEngineMetadata.data?.database_name as string) || "",
 					),
 					metadata: values,
+					database_subtype: getEngineMetadata.data?.database_subtype,
 					database_created_by: getEngineMetadata.data?.database_created_by,
 					PERMISSIONGRANTEDBY: getEngineMetadata.data?.PERMISSIONGRANTEDBY,
 					DATEADDED: getEngineMetadata.data?.DATEADDED,
