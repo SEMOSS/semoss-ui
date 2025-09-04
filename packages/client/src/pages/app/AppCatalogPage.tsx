@@ -335,7 +335,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									navigate("/app/new");
 								}}
 								aria-label={`Open the App Model`}
-								data-testid={"home-create-app-btn"}
+								data-testid={
+									"appCatalogPage-create-new-app-btn"
+								}
 							>
 								Create New App
 							</Button>
@@ -387,14 +389,17 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								<StyledToggleTabsGroupItem
 									label="My Apps"
 									value={"Mine"}
+									data-testid={`appCatalogPage-myApps-btn`}
 								/>
 								<StyledToggleTabsGroupItem
 									label="Discoverable"
 									value={"Discoverable"}
+									data-testid={`appCatalogPage-discoverable-btn`}
 								/>
 								<StyledToggleTabsGroupItem
 									label="System Apps"
 									value={"System"}
+									data-testid={`appCatalogPage-systemApps-btn`}
 								/>
 							</StyledToggleTabsGroup>
 						</Stack>

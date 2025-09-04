@@ -23,6 +23,7 @@ import {
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import { usePage, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { LogoutPopover } from "./LogoutPopover";
 
 const DRAWER_OPEN_WIDTH = 288;
@@ -264,6 +265,9 @@ export const Sidebar: React.FC = observer(() => {
 										}
 										aria-label={r.text}
 										dense={true}
+										data-testid={formatToDataTestId(
+											`sidebar-${r.text}-btn`,
+										)}
 									>
 										<StyledListItemIcon>
 											{r.icon}

@@ -11,7 +11,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { removeUnderscores, toTitleCase } from "@/utility";
+import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
 
 const StyledFilter = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -334,6 +334,7 @@ export const Filterbox = (props: FilterboxProps) => {
 									});
 								}}
 								sx={{ width: "100%" }}
+								data-testid={`filterbox-search`}
 							/>
 						</StyledFilterSearchContainer>
 					) : null}
@@ -460,7 +461,12 @@ export const Filterbox = (props: FilterboxProps) => {
 																	<List.ItemText
 																		disableTypography
 																		primary={
-																			<Typography variant="body1">
+																			<Typography
+																				variant="body1"
+																				data-testid={formatToDataTestId(
+																					`filterbox-${filterOption.value}-filterBtn`,
+																				)}
+																			>
 																				{
 																					filterOption.value
 																				}
