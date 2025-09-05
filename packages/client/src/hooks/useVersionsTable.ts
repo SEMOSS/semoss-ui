@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNotification } from "@semoss/ui";
+import {
+	fetchProjectCommitDetails,
+	restoreProjectCommit,
+} from "@/api/versions";
 import type { CommitVersion } from "@/types/types";
 import { useRootStore } from "./useRootStore";
 
 // Hook for managing versions table state and operations
 
 export function useVersionsTable(id: string) {
-	const { monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 
 	// Loading and error states
@@ -27,6 +31,31 @@ export function useVersionsTable(id: string) {
 	// Constants
 	const BACKEND_FETCH_SIZE = 100; // Always fetch 100 from backend
 
+	// Get all existing tags for the project (for uniqueness validation)
+	const getAllTags = useCallback((): string[] => {
+		const tagSet = new Set<string>();
+		allVersions.forEach((version) => {
+			version.tags?.forEach((tag) => tagSet.add(tag));
+		});
+		return Array.from(tagSet);
+	}, [allVersions]);
+
+	// Add a tag to a specific version
+	const addTagToVersion = useCallback((commitId: string, newTag: string) => {
+		setAllVersions((prevVersions) =>
+			prevVersions.map((version) =>
+				version.commitId === commitId
+					? {
+							...version,
+							tags: version.tags
+								? [...version.tags, newTag]
+								: [newTag],
+						}
+					: version,
+			),
+		);
+	}, []);
+
 	// Fetch a batch of 100 records from backend
 	const fetchBatchFromBackend = useCallback(
 		async (batchNumber: number) => {
@@ -37,35 +66,33 @@ export function useVersionsTable(id: string) {
 				const offset = batchNumber * BACKEND_FETCH_SIZE + 1;
 				const limit = BACKEND_FETCH_SIZE;
 
-				const response = await monolithStore.runQuery(
-					`ProjectCommitDetails(project="${id}", offset="${offset}", limit="${limit}");`,
+				const result = await fetchProjectCommitDetails(
+					id,
+					offset,
+					limit,
+					configStore.store.insightID,
 				);
 
-				const { output, operationType } = response.pixelReturn[0];
-
-				if (
-					operationType.some((type: string) => type.includes("ERROR"))
-				) {
-					setError("Failed to fetch commit details");
+				if (result.hasError) {
+					setError(
+						result.errorMessage || "Failed to fetch commit details",
+					);
 					return [];
 				}
 
-				// Transform API response to CommitVersion format
-				const transformedVersions: CommitVersion[] = output || [];
-
 				// Update hasMoreData based on response
-				if (transformedVersions.length < BACKEND_FETCH_SIZE) {
+				if (result.data.length < BACKEND_FETCH_SIZE) {
 					setHasMoreData(false);
 				}
 
-				return transformedVersions;
+				return result.data;
 			} catch (err) {
 				console.error("Error fetching versions:", err);
 				setError("Failed to fetch commit details");
 				return [];
 			}
 		},
-		[id, monolithStore],
+		[id, configStore.store.insightID],
 	);
 
 	// Load initial data or refresh
@@ -143,7 +170,7 @@ export function useVersionsTable(id: string) {
 	// Handle page change
 	const handlePageChange = useCallback(
 		async (
-			event: React.MouseEvent<HTMLButtonElement> | null,
+			_event: React.MouseEvent<HTMLButtonElement> | null,
 			newPage: number,
 		) => {
 			// Check if we need to load more data first
@@ -165,6 +192,10 @@ export function useVersionsTable(id: string) {
 
 	// Handle refresh with current pagination settings
 	const handleRefresh = useCallback(() => {
+		// Reset pagination state on refresh
+		setHasMoreData(true);
+		setCurrentBatch(0);
+		setPage(0);
 		loadData(true);
 	}, [loadData]);
 
@@ -183,18 +214,18 @@ export function useVersionsTable(id: string) {
 			try {
 				setRestoreLoading(version.commitId);
 
-				const response = await monolithStore.runQuery(
-					`ProjectCommitRestore(project="${id}", commitId="${version.commitId}")`,
+				const result = await restoreProjectCommit(
+					id,
+					version.commitId,
+					configStore.store.insightID,
 				);
 
-				const { operationType } = response.pixelReturn[0];
-
-				if (
-					operationType.some((type: string) => type.includes("ERROR"))
-				) {
+				if (result.hasError) {
 					notification.add({
 						color: "error",
-						message: `Failed to restore to commit ${version.commitId}`,
+						message:
+							result.errorMessage ||
+							`Failed to restore to commit ${version.commitId}`,
 					});
 				} else {
 					notification.add({
@@ -213,7 +244,7 @@ export function useVersionsTable(id: string) {
 				setRestoreLoading(null);
 			}
 		},
-		[id, monolithStore, notification],
+		[id, configStore.store.insightID, notification],
 	);
 
 	return {
@@ -235,5 +266,9 @@ export function useVersionsTable(id: string) {
 		handleRowsPerPageChange,
 		handleRefresh,
 		handleRestore,
+
+		// Tag-related functions
+		getAllTags,
+		addTagToVersion,
 	};
 }
