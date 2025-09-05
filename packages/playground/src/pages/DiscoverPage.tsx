@@ -11,9 +11,8 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { useChat } from "@/hooks";
 
-const StyledCaption = styled(Typography)(({ theme }) => ({
+const StyledCaption = styled(Typography)(() => ({
 	color: "var(--Text-Primary, #212121)",
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	fontFamily: "Roboto",
@@ -51,12 +50,12 @@ const StyledGridCard = styled(Grid)(({ theme }) => ({
 	paddingTop: "0",
 }));
 
-const StyledBox = styled(Box)(({ theme }) => ({
+const StyledBox = styled(Box)(() => ({
 	maxHeight: "640px",
 	overflowY: "scroll",
 }));
 
-const StyledTitle = styled(Typography)(({ theme }) => ({
+const StyledTitle = styled(Typography)(() => ({
 	color: "var(--Text-Primary, #212121)",
 	fontFeatureSettings: "'liga' off, 'clig' off",
 	/* Typography/H6 */
@@ -108,31 +107,10 @@ const ALL_AGENTS = [
 	},
 ];
 
-export const DiscoverPage = observer((props) => {
-	const { chat } = useChat();
+export const DiscoverPage = observer(() => {
 	const navigate = useNavigate();
 
 	const [search, setSearch] = useState("");
-	const [filter, setFilter] = useState("");
-	const [allAgents, setAllAgents] = useState(ALL_AGENTS);
-
-	const filtered = (filter) => {
-		if (filter == null || filter.length == 0) {
-			return allAgents;
-		}
-
-		const searchText = filter ? filter.toLowerCase() : null;
-		const filtered = allAgents.filter((agent) => {
-			if (searchText) {
-				return true;
-			} else {
-				return false;
-			}
-		});
-
-		return filtered;
-	};
-
 	return (
 		<StyledOuterContainer
 			direction={"column"}
@@ -152,7 +130,7 @@ export const DiscoverPage = observer((props) => {
 					variant="outlined"
 					startIcon={<Add />}
 					onClick={() => {
-						navigate("/agents/new");
+						navigate("/discover/new");
 					}}
 				>
 					Create Agent
@@ -168,18 +146,19 @@ export const DiscoverPage = observer((props) => {
 					value={search}
 					onChange={(e) => setSearch(e.target.value)}
 				/>
-				<TextField
-					color="secondary"
-					variant={"outlined"}
-					size="small"
-					placeholder="Sort by"
-					select
-					value={filter}
-				></TextField>
 			</Stack>
 			<StyledBox>
 				<Grid container spacing={2} alignItems={"flex-start"}>
-					{filtered(search).map((p) => {
+					{ALL_AGENTS.filter((agent) => {
+						const searchText = search ? search.toLowerCase() : null;
+						if (searchText) {
+							return agent.NAME.toLowerCase().includes(
+								searchText,
+							);
+						} else {
+							return false;
+						}
+					}).map((p) => {
 						return (
 							<StyledGridCard
 								key={p.NAME}

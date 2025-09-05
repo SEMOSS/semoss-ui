@@ -373,8 +373,8 @@ export const MyProfilePage = () => {
 					<GridItem sm={4}>
 						<Typography variant="h6">
 							{nativeLogin
-								? "Edit profile information"
-								: "Profile Info"}
+								? "Edit profile information Alan"
+								: "Profile Info ALan"}
 						</Typography>
 					</GridItem>
 
@@ -389,7 +389,7 @@ export const MyProfilePage = () => {
 								setProfileImgModal(true);
 							}}
 							disabled
-							data-testid={"my-profile-page-upload-btn"}
+							data-testid={"myProfilePage-upload-btn"}
 						>
 							Upload
 						</Button>
@@ -521,7 +521,7 @@ export const MyProfilePage = () => {
 										color="primary"
 										type="submit"
 										disabled={!admin}
-										data-testid={"my-profile-page-save-btn"}
+										data-testid={"myProfilePage-save-btn"}
 									>
 										Save
 									</Button>
@@ -533,9 +533,7 @@ export const MyProfilePage = () => {
 											userInfoReset();
 										}}
 										disabled={!admin}
-										data-testid={
-											"my-profile-page-reset-btn"
-										}
+										data-testid={"myProfilePage-reset-btn"}
 									>
 										Reset
 									</Button>
@@ -606,7 +604,7 @@ export const MyProfilePage = () => {
 							onClick={() => {
 								copy(jsSnippet);
 							}}
-							data-testid={"my-profile-js-copy-btn"}
+							data-testid={"myProfilePage-js-copy-btn"}
 						>
 							<ContentCopyOutlined />
 						</IconButton>
@@ -633,7 +631,7 @@ export const MyProfilePage = () => {
 							onClick={() => {
 								copy(pySnippet);
 							}}
-							data-testid={"my-profile-py-copy-btn"}
+							data-testid={"myProfilePage-py-copy-btn"}
 						>
 							<ContentCopyOutlined />
 						</IconButton>
@@ -658,7 +656,7 @@ export const MyProfilePage = () => {
 						onClick={() => {
 							setAddModal(true);
 						}}
-						data-testid={"my-profile-new-key-btn"}
+						data-testid={"myProfilePage-new-key-btn"}
 					>
 						New Key
 					</Button>
@@ -714,7 +712,7 @@ export const MyProfilePage = () => {
 															copy(k.ACCESSKEY);
 														}}
 														data-testid={
-															"my-profile-access-key-copy-btn"
+															"myProfilePage-access-key-copy-btn"
 														}
 													>
 														<ContentCopyOutlined />
@@ -727,7 +725,7 @@ export const MyProfilePage = () => {
 															);
 														}}
 														data-testid={
-															"my-profile-access-key-delete-btn"
+															"myProfilePage-access-key-delete-btn"
 														}
 													>
 														<Delete />
@@ -783,6 +781,9 @@ export const MyProfilePage = () => {
 													field.onChange(value)
 												}
 												inputProps={{ maxLength: 255 }}
+												data-testid={
+													"myProfilePage-generate-key-name-txt"
+												}
 											></TextField>
 										);
 									}}
@@ -806,6 +807,9 @@ export const MyProfilePage = () => {
 													field.onChange(value)
 												}
 												inputProps={{ maxLength: 500 }}
+												data-testid={
+													"myProfilePage-generate-key-description-txt"
+												}
 											></TextField>
 										);
 									}}
@@ -818,7 +822,7 @@ export const MyProfilePage = () => {
 										variant={"outlined"}
 										color="primary"
 										data-testid={
-											"my-profile-page-generate-btn"
+											"myProfilePage-generate-btn"
 										}
 									>
 										Generate
@@ -846,7 +850,7 @@ export const MyProfilePage = () => {
 														copy(ACCESSKEY)
 													}
 													data-testid={
-														"my-profile-created-access-copy-btn"
+														"myProfilePage-created-access-copy-btn"
 													}
 												>
 													Copy
@@ -873,7 +877,7 @@ export const MyProfilePage = () => {
 														copy(SECRETKEY)
 													}
 													data-testid={
-														"my-profile-secret-key-copy-btn"
+														"myProfilePage-secret-key-copy-btn"
 													}
 												>
 													Copy
@@ -883,7 +887,7 @@ export const MyProfilePage = () => {
 										<Stack
 											direction="column"
 											spacing={1}
-											className="my-profile-page__js-sdk-access key"
+											className="myProfilePage_js-sdk-access key"
 										>
 											<Stack
 												direction="row"
@@ -902,7 +906,7 @@ export const MyProfilePage = () => {
 														);
 													}}
 													data-testid={
-														"my-profile-page-js-toggle-btn"
+														"myProfilePage-js-toggle-btn"
 													}
 												>
 													{isJsSdkOpen ? (
@@ -932,7 +936,7 @@ export const MyProfilePage = () => {
 															copy(jsSnippet)
 														}
 														data-testid={
-															"my-profile-js-sdk-copy-btn"
+															"myProfilePage-js-sdk-copy-btn"
 														}
 													>
 														Copy
@@ -943,7 +947,7 @@ export const MyProfilePage = () => {
 										<Stack
 											direction="column"
 											spacing={1}
-											className="my-profile-page__py-sdk-access key"
+											className="myProfilePage-py-sdk-access key"
 										>
 											<Stack
 												direction="row"
@@ -962,7 +966,7 @@ export const MyProfilePage = () => {
 														);
 													}}
 													data-testid={
-														"my-profile-page-py-toggle-btn"
+														"myProfilePage-py-toggle-btn"
 													}
 												>
 													{isPySdkOpen ? (
@@ -991,7 +995,7 @@ export const MyProfilePage = () => {
 															copy(pySnippet)
 														}
 														data-testid={
-															"my-profile-py-sdk-copy-btn"
+															"myProfilePage-py-sdk-copy-btn"
 														}
 													>
 														Copy
@@ -1051,7 +1055,7 @@ export const MyProfilePage = () => {
 									variant="contained"
 									disabled
 									type="submit"
-									data-testid={"my-profile-page-submit-btn"}
+									data-testid={"myProfilePage-submit-btn"}
 								>
 									Save
 								</Button>
@@ -1059,7 +1063,7 @@ export const MyProfilePage = () => {
 									variant="text"
 									onClick={() => closeProfileEditModel()}
 									data-testid={
-										"my-profile-page-close-profile-btn"
+										"myProfilePage-close-profile-btn"
 									}
 								>
 									Close

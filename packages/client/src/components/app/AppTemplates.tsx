@@ -10,10 +10,10 @@ import {
 	LandingPageTemplate,
 	MultiPageTemplate,
 	ReadDiabetesRecordTemplate,
+	RowToNotebookTemplate,
 	type Template,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
-	RowToNotebookTemplate
 } from "./templates";
 
 const DEFAULT_TEMPLATE = [
