@@ -175,7 +175,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 			if (listeners.preProcess) {
 				listeners.preProcess();
 			}
-		}
+        }
 	}, [data.open]);
 
 	const open = useMemo(() => {
@@ -190,13 +190,16 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 		) {
 			o = true;
 		}
-
+		
 		return o;
 	}, [data.open]);
 
 	const handleClose = () => {
 		if (!isStatic) {
 			setData("open", "false");
+			if (listeners.onClose) {
+				listeners.onClose();
+			}
 		}
 	};
 
