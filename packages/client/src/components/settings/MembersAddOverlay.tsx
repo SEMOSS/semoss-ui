@@ -1,10 +1,12 @@
+import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
+import { useRootStore, useSettings } from "@/hooks";
+import type { ALL_TYPES } from "@/types";
+import { permissionPriorityMapper } from "@/utility/general";
 import {
 	ClearRounded,
 	EditRounded,
 	RemoveRedEyeRounded,
 } from "@mui/icons-material";
-import type { AxiosResponse } from "axios";
-import { useEffect, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Autocomplete,
@@ -23,10 +25,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
-import { useRootStore, useSettings } from "@/hooks";
-import type { ALL_TYPES } from "@/types";
-import { permissionPriorityMapper } from "@/utility/general";
+import type { AxiosResponse } from "axios";
+import { useEffect, useState } from "react";
 import { MembersAddOverlayUser } from "./MembersAddOverlayUser";
 import type { SETTINGS_ROLE } from "./settings.types";
 
@@ -526,7 +526,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 	return (
 		<Modal open={open} maxWidth="lg">
-			<Modal.Title>
+			<Modal.Title onClose={() => closeOverlay(type, false)}>
 				{" "}
 				{user === null ? "Add Members" : "Edit Member"}
 			</Modal.Title>

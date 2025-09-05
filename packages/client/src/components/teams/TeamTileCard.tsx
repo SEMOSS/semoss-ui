@@ -1,3 +1,4 @@
+import { useRootStore } from "@/hooks";
 import {
 	ClearRounded,
 	Close,
@@ -6,8 +7,6 @@ import {
 } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { AxiosResponse } from "axios";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Autocomplete,
 	Avatar,
@@ -26,7 +25,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import type { AxiosResponse } from "axios";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { AddTeamModal } from "./AddTeamModal";
 
 const colors = [
@@ -576,13 +576,10 @@ export const TeamTileCard = (props: TeamCardProps) => {
 				</Modal.Actions>
 			</StyledDeleteModal>
 			<Modal open={addMembersModal} maxWidth="lg">
-				<StyledModalTitle>
+				<StyledModalTitle onClose={() => setAddMembersModal(false)}>
 					<Typography sx={{ color: "#000000DE" }} variant="h6">
 						Add Members to Team
 					</Typography>
-					<IconButton onClick={() => setAddMembersModal(false)}>
-						<Close />
-					</IconButton>
 				</StyledModalTitle>
 				<Modal.Content sx={{ width: "50rem" }}>
 					<StyledModalContentText>

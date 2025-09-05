@@ -15,11 +15,8 @@ const ModalNameSpace = Object.assign(Modal, {
 });
 
 export type {
-	ModalProps,
-	ModalContentProps,
-	ModalTitleProps,
-	ModalActionsProps,
-	ModalContentTextProps,
+	ModalActionsProps, ModalContentProps, ModalContentTextProps, ModalProps, ModalTitleProps
 };
 
-export { ModalNameSpace as Modal };
+	export { ModalNameSpace as Modal };
+

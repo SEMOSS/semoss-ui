@@ -1,6 +1,6 @@
-import { observer } from "mobx-react-lite";
 import { Renderer, type SerializedState } from "@semoss/renderer";
 import { Button, Modal, styled } from "@semoss/ui";
+import { observer } from "mobx-react-lite";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	height: "60vh",
@@ -21,7 +21,7 @@ export const PreviewOverlay = observer((props: PreviewOverlayProps) => {
 
 	return (
 		<>
-			<Modal.Title>Preview</Modal.Title>
+			<Modal.Title onClose={onClose}>Preview</Modal.Title>
 			<Modal.Content>
 				<StyledContainer>
 					<Renderer state={state} />

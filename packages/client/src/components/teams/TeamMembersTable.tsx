@@ -1,7 +1,5 @@
+import { useRootStore } from "@/hooks";
 import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
-import { AxiosResponse } from "axios";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
 import { debounced } from "@semoss/sdk/react";
 import {
 	Autocomplete,
@@ -22,7 +20,9 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import type { AxiosResponse } from "axios";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 
 const colors = [
 	"#22A4FF",
@@ -816,7 +816,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			</StyledMemberInnerContent>
 
 			<Modal open={addMembersModal} maxWidth="lg">
-				<Modal.Title>Add Members</Modal.Title>
+				<Modal.Title onClose={() => setAddMembersModal(false)}>
+					Add Members
+				</Modal.Title>
 				<Modal.Content sx={{ width: "50rem" }}>
 					<StyledModalContentText>
 						<Autocomplete

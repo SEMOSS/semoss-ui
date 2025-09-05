@@ -75,5 +75,5 @@ export interface ModalProps {
 
 export const Modal = (props: ModalProps) => {
 	const { sx } = props;
-	return <MuiModal sx={sx} {...props} />;
+	return <MuiModal sx={sx} PaperProps={{ sx: { borderRadius: "12px" } }} {...props} />;
 };

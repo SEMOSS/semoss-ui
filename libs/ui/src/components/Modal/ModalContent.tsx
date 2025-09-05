@@ -19,9 +19,9 @@ export interface ModalContentProps {
 }
 
 export const ModalContent = (props: ModalContentProps) => {
-	const { children, sx } = props;
+	const { children, sx, ...otherProps } = props;
 	return (
-		<MuiModalContent sx={sx} {...props}>
+		<MuiModalContent sx={{ p: "8px 16px", ...(sx || {})}} {...otherProps}>
 			{children}
 		</MuiModalContent>
 	);
