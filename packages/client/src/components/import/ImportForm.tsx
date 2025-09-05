@@ -19,6 +19,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useRootStore, useStepper } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -100,7 +101,7 @@ export const ImportForm = (props) => {
 		setError,
 		formState: { isValid },
 	} = useForm({
-		mode: "onBlur",
+		mode: "onSubmit",
 		defaultValues: defaultFields.reduce((acc, field) => {
 			acc[field.fieldName] = field.defaultValue || "";
 			return acc;
@@ -838,7 +839,10 @@ export const ImportForm = (props) => {
 													}
 													error={invalid}
 													inputProps={{
-														"data-testid": `importForm-textField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-textField`,
+															),
 														onFocus: () => {
 															_lastField.current =
 																{
@@ -875,7 +879,10 @@ export const ImportForm = (props) => {
 														field.onChange(value)
 													}
 													inputProps={{
-														"data-testid": `importForm-textField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-textField`,
+															),
 													}}
 													onFocus={() => {
 														_lastField.current = {
@@ -925,7 +932,10 @@ export const ImportForm = (props) => {
 														},
 													}}
 													InputProps={{
-														"data-testid": `importForm-selectField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-select`,
+															),
 													}}
 													helperText={val.helperText}
 												>
@@ -937,9 +947,9 @@ export const ImportForm = (props) => {
 																	value={
 																		opt.value
 																	}
-																	data-testid={
-																		opt.display
-																	}
+																	data-testId={formatToDataTestId(
+																		`importForm-${opt.display}-item`,
+																	)}
 																>
 																	{
 																		opt.display
@@ -973,7 +983,10 @@ export const ImportForm = (props) => {
 													}
 													helperText={val.helperText}
 													inputProps={{
-														"data-testid": `importForm-textField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-textField`,
+															),
 													}}
 													onFocus={() => {
 														_lastField.current = {
@@ -1001,7 +1014,9 @@ export const ImportForm = (props) => {
 														multiple={false}
 														value={field.value}
 														disabled={false}
-														data-testid={`importForm-filedropzone-${val.fieldName}`}
+														data-testid={formatToDataTestId(
+															`importForm-${val.fieldName}-fileDropZone`,
+														)}
 														onChange={(
 															newValues,
 														) => {
@@ -1099,7 +1114,10 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-advancedtextField-${val.fieldName}`,
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-textField`,
+																		),
 																}}
 															></TextField>
 														);
@@ -1139,7 +1157,10 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-advancedtextField-${val.fieldName}`,
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-textField`,
+																		),
 																}}
 															></TextField>
 														);
@@ -1179,7 +1200,10 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-advancedtextField-${val.fieldName}`,
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-textField`,
+																		),
 																}}
 															></TextField>
 														);
@@ -1248,7 +1272,12 @@ export const ImportForm = (props) => {
 																helperText={
 																	val.helperText
 																}
-																data-testid={`importForm-advancedselect-${val.fieldName}`}
+																InputProps={{
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-select`,
+																		),
+																}}
 															>
 																{val.options.options.map(
 																	(
@@ -1261,6 +1290,9 @@ export const ImportForm = (props) => {
 																				value={
 																					opt.value
 																				}
+																				data-testId={formatToDataTestId(
+																					`importForm-${opt.display}-item`,
+																				)}
 																			>
 																				{
 																					opt.display
@@ -1291,6 +1323,9 @@ export const ImportForm = (props) => {
 																		newValues,
 																	);
 																}}
+																data-testId={formatToDataTestId(
+																	`importForm-${val.fieldName}-zipUpload`,
+																)}
 															/>
 														);
 													}
@@ -1307,6 +1342,7 @@ export const ImportForm = (props) => {
 						disabled={formLoading || !isValid}
 						type="submit"
 						variant="contained"
+						data-testId={`importForm-submit-btn`}
 					>
 						{formLoading ? (
 							<CircularProgress size="1.5em" />

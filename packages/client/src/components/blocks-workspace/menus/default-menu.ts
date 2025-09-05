@@ -691,8 +691,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				src: "",
 				title: "",
 				show: "true",
-				unavailable: '',
-                placeholderText: '',
+				unavailable: "",
+				placeholderText: "",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1776,7 +1776,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						text: "Stacked Bar Chart",
 						left: "left",
 						top: "top",
-                        show: true,
+						show: true,
 						textStyle: {
 							color: "#000000",
 							fontWeight: "bold",
@@ -2127,23 +2127,23 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				variation: "echart-gantt-chart",
 				option: {
-                    title: {
-                        text: 'Gantt Chart',
-                        left: 'left',
-                        top: 'top',
-                        show: true,
+					title: {
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
+						show: true,
 						textStyle: {
 							color: "#000000",
 							fontWeight: "bold",
 							fontFamily: "Arial Narrow",
 							fontSize: 12,
 						},
-                    },
+					},
 					reset: {
 						title: {
-							text: 'Gantt Chart',
-							left: 'left',
-							top: 'top',
+							text: "Gantt Chart",
+							left: "left",
+							top: "top",
 							show: true,
 							textStyle: {
 								color: "#000000",
@@ -2241,10 +2241,10 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						trigger: "item",
 						triggerOn: "mousemove",
 					},
-                    title: {
-						text: 'Dendrogram Chart',
-						left: 'left',
-						top: 'top',
+					title: {
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
 						show: true,
 						textStyle: {
 							color: "#000000",
@@ -2255,9 +2255,9 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					},
 					reset: {
 						title: {
-							text: 'Dendrogram Chart',
-							left: 'left',
-							top: 'top',
+							text: "Dendrogram Chart",
+							left: "left",
+							top: "top",
 							show: true,
 							textStyle: {
 								color: "#000000",
