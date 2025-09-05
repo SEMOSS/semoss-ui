@@ -5715,29 +5715,19 @@ export const CONNECTION_OPTIONS = {
 	FUNCTION: {
 		Function: [
 			{
-				name: "AWS Image Text Extraction",
+				name: "AWS TEXTRACT",
 				disable: false,
 				icon: AWS_TEXTRACT,
 				fields: [
 					{
 						fieldName: "FUNCTION_TYPE",
 						label: "Function Type",
-						defaultValue: "AWS_TEXTRACT",
+						defaultValue: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS",
+
 						options: {
-							component: "select",
-							options: [
-								{
-									display: "AWS TEXTRACT",
-									value: "AWS_TEXTRACT",
-								},
-								{
-									display: "AWS REKOGNITION",
-									value: "AWS_REKOGNITION",
-								},
-							],
+							component: "text-field",
 						},
-						disabled: false,
-						hidden: false,
+						disabled: true,
 						rules: { required: true },
 					},
 					{
@@ -5791,18 +5781,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "FUNCTION_NAME",
-						label: "Function Name (metadata)",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "FUNCTION_DESCRIPTION",
-						label: "Function Description (metadata)",
+						fieldName: "STORAGE_PATH",
+						label: "Storage Path",
 						defaultValue: "",
 						options: {
 							component: "text-field",
@@ -5813,11 +5793,23 @@ export const CONNECTION_OPTIONS = {
 					{
 						fieldName: "FUNCTION_REQUIRED_PARAMETERS",
 						label: "Function Required Parameters",
-						defaultValue: '["isFilePresentInS3","filePath"]',
+						defaultValue:
+							'["FILE_PATH","CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE"]',
 						options: {
 							component: "text-field",
 						},
 						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "PAGE_LENGTH",
+						label: "Page Length",
+						defaultValue: "1",
+						options: {
+							component: "text-field",
+						},
+						hidden: true,
+						disabled: true,
 						rules: { required: true },
 					},
 				],
@@ -6307,7 +6299,7 @@ export const CONNECTION_OPTIONS = {
 					{
 						fieldName: "FUNCTION_TYPE",
 						label: "Function Type",
-						defaultValue: "GOOGLE_OCR",
+						defaultValue: "GOOGLE_OCR_CUSTOM_EMBEDDINGS",
 
 						options: {
 							component: "text-field",
@@ -6377,18 +6369,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "FUNCTION_NAME",
-						label: "Function Name (metadata)",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "FUNCTION_DESCRIPTION",
-						label: "Function Description (metadata)",
+						fieldName: "STORAGE_PATH",
+						label: "Storage Path",
 						defaultValue: "",
 						options: {
 							component: "text-field",
@@ -6399,11 +6381,23 @@ export const CONNECTION_OPTIONS = {
 					{
 						fieldName: "FUNCTION_REQUIRED_PARAMETERS",
 						label: "Function Required Parameters",
-						defaultValue: '["isFilePresentInBucket","filePath"]',
+						defaultValue:
+							'["FILE_PATH","CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE"]',
 						options: {
 							component: "text-field",
 						},
 						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "PAGE_LENGTH",
+						label: "Page Length",
+						defaultValue: "5",
+						options: {
+							component: "text-field",
+						},
+						hidden: true,
+						disabled: true,
 						rules: { required: true },
 					},
 				],
@@ -6760,6 +6754,68 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true, min: 0 },
 					},
 					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
+					},
+					{
 						fieldName: "METHOD_NAME",
 						label: "Method Name",
 						defaultValue: "hnsw",
@@ -7100,6 +7156,68 @@ export const CONNECTION_OPTIONS = {
 						rules: {},
 					},
 					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
+					},
+					{
 						fieldName: "DISTANCE_METHOD",
 						label: "Distance Method",
 						defaultValue: "cosine",
@@ -7359,6 +7477,68 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
 					},
 					{
 						fieldName: "DIMENSION_SIZE",
@@ -7632,6 +7812,68 @@ export const CONNECTION_OPTIONS = {
 						rules: {},
 					},
 					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
+					},
+					{
 						fieldName: "DISTANCE_METHOD",
 						label: "Distance Method",
 						defaultValue: "Squared Euclidean (L2) distance",
@@ -7880,6 +8122,68 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",
@@ -8165,6 +8469,68 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",
@@ -8502,6 +8868,68 @@ export const CONNECTION_OPTIONS = {
 						rules: {},
 					},
 					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
+					},
+					{
 						fieldName: "DISTANCE_METHOD",
 						label: "Distance Method",
 						defaultValue: "Squared Euclidean (L2) distance",
@@ -8783,6 +9211,68 @@ export const CONNECTION_OPTIONS = {
 						secondary: true,
 						rules: {},
 					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
+					},
 					// right now, below is not used
 					// BE does not create the index if it doesn't exist
 					// {
@@ -9025,6 +9515,68 @@ export const CONNECTION_OPTIONS = {
 						disabled: true,
 						secondary: true,
 						rules: {},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR",
+						label: "Custom Document Processor",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						disabled: false,
+						hidden: false,
+						rules: { required: true },
+						displayRules: {
+							hideOtherFields: [
+								{
+									fieldName:
+										"CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+									value: ["false"],
+								},
+							],
+						},
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_FUNCTION_ID",
+						label: "Custom Document Processor Function Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
+						label: "Custom Document Processor Need STORAGE",
+						defaultValue: "true",
+						options: {
+							component: "select",
+							options: [
+								{
+									display: "False",
+									value: "false",
+								},
+								{
+									display: "True",
+									value: "true",
+								},
+							],
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: false },
+						helperText: "",
 					},
 					{
 						fieldName: "DISTANCE_METHOD",

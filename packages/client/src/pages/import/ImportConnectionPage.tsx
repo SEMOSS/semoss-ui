@@ -210,7 +210,7 @@ export const ImportConnectionPage = () => {
 					configStore.store.insightID,
 				);
 				pixel = `
-                    CreateRestFunctionEngine(function=["${
+                    CreateFunctionEngine(function=["${
 						values.name
 					}"],functionDetails=[${JSON.stringify(values.fields)}],
                     filePaths=["${upload[0].fileLocation}"]);`;
