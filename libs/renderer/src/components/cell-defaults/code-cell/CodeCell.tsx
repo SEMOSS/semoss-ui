@@ -111,12 +111,12 @@ export interface CodeCellDef extends CellDef<"code"> {
 
 // best documentation on component versions of monaco editor and diffeditor
 // https://www.npmjs.com/package/@monaco-editor/react
-const StyledContent = styled("div")(({ theme }) => ({
+const StyledContent = styled("div")(() => ({
 	position: "relative",
 	width: "100%",
 }));
 
-const StyledContainer = styled("div")(({ theme }) => ({
+const StyledContainer = styled("div")(() => ({
 	width: "98%",
 }));
 
@@ -154,7 +154,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 	const [isLLMRejected, setIsLLMRejected] = useState(false);
 	const [count, setCount] = useState(0);
 	const [modelId, setModelId] = useState(agentModelEngine);
-	// const { workspace } = useWorkspace();
 
 	/**
 	 * Ask a LLM a question to generate a response
@@ -454,7 +453,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 			}
 
 			//define completion item providers by language
-			if (language == "pixel") {
+			if (language === "pixel") {
 				completionItemProviders = {
 					...completionItemProviders,
 					pixel: monaco.languages.registerCompletionItemProvider(
@@ -468,32 +467,6 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 								//trigger reactor suggestions
 								if (word.word !== "") {
-									// const suggestions =
-									//     configStore.generalReactors.map(
-									//         (reactor) => ({
-									//             label: {
-									//                 label: reactor,
-									//                 description:
-									//                     "General Reactor",
-									//             },
-									//             kind: monaco.languages
-									//                 .CompletionItemKind
-									//                 .Function,
-									//             insertText: reactor,
-									//             range: {
-									//                 startLineNumber:
-									//                     position.lineNumber,
-									//                 endLineNumber:
-									//                     position.lineNumber,
-									//                 startColumn:
-									//                     word.startColumn,
-									//                 endColumn: word.startColumn,
-									//             },
-									//         }),
-									//     );
-									// return {
-									//     suggestions: suggestions,
-									// };
 								}
 
 								// triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
@@ -674,30 +647,14 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 
 	return (
 		<StyledContent>
-			{LLMLoading && (
-				<>Loading...</>
-				// <LoadingScreen.Trigger description="Generating..." />
-			)}
+			{LLMLoading && <div>Loading...</div>}
 
 			<Stack direction="row" spacing={1}>
-				<StyledContainer
-					onDoubleClick={() =>
-						EDITOR_TYPE[cell.parameters.type].language ===
-							"Markdown" &&
-						state.dispatch({
-							message: ActionMessages.RUN_MARKDOWN_CELL,
-							payload: {
-								queryId: cell.query.id,
-								cellId: cell.id,
-								marked: false,
-							},
-						})
-					}
-				>
+				<StyledContainer>
 					{!isExpanded ? (
 						<Suspense fallback={<>...</>}>
 							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.parameters.marked ? (
+								"Markdown" && cell.isExecuted ? (
 								<Markdown>
 									{typeof cell.parameters.code === "string"
 										? cell.parameters.code
@@ -790,7 +747,7 @@ export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
 					) : (
 						<Suspense fallback={<>...</>}>
 							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.parameters.marked ? (
+								"Markdown" && cell.isExecuted ? (
 								<Markdown>
 									{typeof cell.parameters.code === "string"
 										? cell.parameters.code

@@ -31,6 +31,7 @@ import { PersonRounded } from "@/assets/img/PersonRounded";
 import { SEMOSS } from "@/assets/img/SEMOSS";
 import { Vector } from "@/assets/img/Vector";
 import { useSettings } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { SETTINGS_ROUTES } from "./settings.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -136,6 +137,7 @@ export const SettingsIndexPage = () => {
 			<StyledSearchbarContainer>
 				<StyledSearch
 					size="small"
+					data-testid={`settingsIndexPage-searchBar`}
 					onChange={(e) => {
 						setSearch(e.target.value);
 					}}
@@ -144,6 +146,7 @@ export const SettingsIndexPage = () => {
 					size={"small"}
 					label={"Sort"}
 					value={sort}
+					data-testid={`settingsIndexPage-sort-select`}
 					onChange={(e) => setSort(e.target.value)}
 				>
 					<Menu.Item value="Name">Name</Menu.Item>
@@ -157,7 +160,12 @@ export const SettingsIndexPage = () => {
 					} else {
 						return (
 							<Grid item key={i} sm={12} md={6} lg={4} xl={3}>
-								<StyledCard onClick={() => navigate(c.path)}>
+								<StyledCard
+									onClick={() => navigate(c.path)}
+									data-testid={formatToDataTestId(
+										`settingsIndexPage-${c.title}-card`,
+									)}
+								>
 									<StyledCardHeader
 										title={c.title}
 										titleTypographyProps={{
@@ -177,7 +185,7 @@ export const SettingsIndexPage = () => {
 											<IconButton
 												disabled={true}
 												data-testid={
-													"settings-index-setting-btn"
+													"settingsIndexPage-setting-btn"
 												}
 											>
 												<MoreVert />
