@@ -17,3 +17,4 @@ export { QuerySelectionSettings } from "./QuerySelectionSettings";
 export { SelectInputOptionsSettings } from "./SelectInputOptionsSettings";
 export { SelectInputValueSettings } from "./SelectInputValueSettings";
 export { SizeSpacingSettings } from "./SizeSpacingSettings";
+export { TabBlockArraySettings } from "./tab";

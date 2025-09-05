@@ -9,6 +9,7 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
+	tag?: string | string[];
 }
 
 /**
@@ -34,9 +35,6 @@ export interface Knowledge {
 }
 
 export interface Tool {
-	/** Type of the tool */
-	type: "APP" | "FUNCTION" | "DATABASE";
-
 	/** Id of the tool */
 	id: string;
 
@@ -106,17 +104,8 @@ interface InputTextPixelMessage extends AbstractPixelMessage {
 interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TOOL_EXEC";
 	visible: false;
-	toolResponse: {
-		/** tool execution id */
-		id: string;
-
-		/**  Name of function **/
-		name: string;
-
-		/** THIS IS A STRING, but ONLY in playground we parse as an app */
-		/** THIS IS THE FINAL STATE OF A TOOL (what was actually ran) */
-		arguments: Record<string, unknown>;
-	}[];
+	tool_call_id: string;
+	tool_name: string;
 }
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
@@ -128,9 +117,20 @@ interface ResponseTextPixelMessage extends AbstractPixelMessage {
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
 	visible: true;
-	toolResponse: {
+	tool_responses: {
 		/** tool execution id */
 		id: string;
+
+		/** meta data from the tool */
+		_meta: {
+			map: {
+				SMSS_PROJECT_NAME: string;
+				SMSS_PROJECT_ID: string;
+			};
+		};
+
+		/**  Display of the tool **/
+		title: string;
 
 		/**  Name of function **/
 		name: string;
@@ -138,5 +138,5 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
-	};
+	}[];
 }

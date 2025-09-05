@@ -1,5 +1,5 @@
-import { ClearRounded, Delete } from "@mui/icons-material";
-import type { AxiosResponse } from "axios";
+import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
+import { AxiosResponse } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { debounced } from "@semoss/sdk/react";
@@ -34,19 +34,29 @@ const colors = [
 	"#4CAF50",
 ];
 
-const UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
-
-const AvatarWrapper = styled("div")({
-	display: "inline-block",
-	width: "50px",
-});
-
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
+});
+
+const NameTableCell = styled(Table.Cell)({
+	width: "100%",
+	maxWidth: "1px",
+});
+
+const DateTableCell = styled(Table.Cell)({
+	whiteSpace: "nowrap",
+	"@media (max-width: 768px)": {
+		whiteSpace: "normal",
+	},
+});
+
+const StyledAvatar = styled(Avatar)({
+	width: "32px",
+	height: "32px",
+});
+
+const StyledTablePagination = styled(Table.Pagination)({
+	border: "none",
 });
 
 const StyledMemberContent = styled("div")({
@@ -68,7 +78,6 @@ const StyledMemberInnerContent = styled("div")({
 
 const StyledTableContainer = styled(Table.Container)({
 	borderRadius: "12px",
-	/* Devias Drop Shadow */
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
@@ -87,6 +96,7 @@ const StyledTableTitleDiv = styled("div")({
 	padding: "12px 24px 12px 16px",
 	alignItems: "center",
 	gap: "10px",
+	fontWeight: 500,
 });
 
 const StyledTableTitleMemberContainer = styled("div")({
@@ -95,15 +105,17 @@ const StyledTableTitleMemberContainer = styled("div")({
 	flex: "1 0 0",
 });
 
+const StyledAvatarGroup = styled(AvatarGroup)({
+	"& .MuiAvatar-root": {
+		marginLeft: "-20px",
+		border: "2px solid white",
+	},
+});
+
 const StyledAvatarGroupContainer = styled("div")({
 	display: "flex",
-	width: "130px",
 	height: "56px",
-	padding: "10px 16px",
-	flexDirection: "column",
-	justifyContent: "center",
 	alignItems: "center",
-	gap: "10px",
 });
 
 const StyledTableTitleMemberCountContainer = styled("div")({
@@ -145,12 +157,6 @@ const StyledAddMemberContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledNoMembersContainer = styled("div")({
-	width: "100%",
-	borderRadius: "12px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-});
-
 const StyledNoMembersDiv = styled("div")({
 	width: "100%",
 	height: "503px",
@@ -159,14 +165,7 @@ const StyledNoMembersDiv = styled("div")({
 	gap: "1rem",
 	justifyContent: "center",
 	alignItems: "center",
-});
-
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
-});
-
-const StyledEmptyTableCell = styled(Table.Cell)({
-	width: "700px",
+	background: "white",
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -214,11 +213,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
 		useState([]);
 
-	const [teamMembers, setTeamMembers] = useState(null);
-	const [memberCount, setMemberCount] = useState(null);
+	const [teamMembers, setTeamMembers] = useState([]);
+	const [memberCount, setMemberCount] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
+	const [allTeamMembers, setAllTeamMembers] = useState([]);
 	const [hasMembers, setHasMembers] = useState(false);
 
-	const limit = 5;
 	const [searchMemberInput, setSearchMemberInput] = useState<string>("");
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -245,6 +245,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	};
 
 	const memberSearchRef = useRef(undefined);
+	const filteredNonCredentialedUsers = Array.from(
+		new Map(
+			nonCredentialedUsers
+				.filter((user) => !allTeamMembers.some((member) => member.userid === user.id))
+				.map((user) => [user.id, user])
+		).values()
+	);
 
 	const { watch, setValue } = useForm<{
 		SEARCH_FILTER: string;
@@ -262,19 +269,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 * @desc - sets members in react hook form
 	 */
 	useEffect(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				limit,
-				membersPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(true);
-			});
-	}, []);
-
+		filter();
+	}, [groupId, count, membersPage, searchFilter,rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -485,14 +481,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 	/** HELPERS */
 	const Avatars = useMemo(() => {
-		if (!teamMembers) return [];
+		if (!allTeamMembers) return [];
 
 		let i = 0;
 		const avatarList = [];
-		while (i < 5 && i < teamMembers.length) {
+		while (i < 5 && i < allTeamMembers.length) {
 			avatarList.push(
 				<Avatar key={i}>
-					{teamMembers[i].name.charAt(0).toUpperCase()}
+					{allTeamMembers[i].name.charAt(0).toUpperCase()}
 				</Avatar>,
 			);
 
@@ -500,28 +496,28 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 
 		return avatarList;
-	}, [teamMembers]);
+	}, [allTeamMembers]);
 
 	const paginationOptions = {
 		membersPageCounts: [5],
 	};
 
-	teamMembers > 9 && paginationOptions.membersPageCounts.push(10);
-	teamMembers > 19 && paginationOptions.membersPageCounts.push(20);
+	memberCount > 9 && paginationOptions.membersPageCounts.push(10);
+	memberCount > 19 && paginationOptions.membersPageCounts.push(20);
 
 	const filterUsers = useCallback(() => {
 		monolithStore
 			.getTeamUsers(
 				groupId,
-				limit,
-				membersPage * limit - limit, // offset
+				rowsPerPage,
+				membersPage * rowsPerPage - rowsPerPage, // offset
 				searchFilter,
 			)
 			.then((data) => {
 				setTeamMembers(data);
-				setHasMembers(true);
+				setHasMembers(data?.length > 0);
 			});
-	}, [count, membersPage, searchFilter]);
+	}, [count, membersPage, searchFilter,rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
 		monolithStore
@@ -531,7 +527,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				0, // offset
 				searchFilter,
 			)
-			.then((data) => setMemberCount(data.length));
+			.then((data) => {
+				setMemberCount(data.length);
+				setAllTeamMembers(data);
+        	});
 	}, [count, membersPage, searchFilter]);
 
 	const filter = () => {
@@ -558,10 +557,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<StyledTableTitleMemberContainer>
 								{Avatars.length > 0 ? (
 									<StyledAvatarGroupContainer>
-										<AvatarGroup
+										<StyledAvatarGroup
 											spacing={"small"}
 											variant={"circular"}
-											max={4}
+											max={5}
 											total={
 												teamMembers &&
 												teamMembers.length
@@ -570,13 +569,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											{Avatars.map((el) => {
 												return el;
 											})}
-										</AvatarGroup>
+										</StyledAvatarGroup>
 									</StyledAvatarGroupContainer>
 								) : null}
 								<StyledTableTitleMemberCountContainer>
 									<StyledTableTitleMemberCount>
 										<Typography variant={"body1"}>
-											{teamMembers.length} Members
+											{memberCount} Members
 										</Typography>
 									</StyledTableTitleMemberCount>
 								</StyledTableTitleMemberCountContainer>
@@ -614,15 +613,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										setAddMembersModal(true);
 										getUsersNonGroup(false);
 									}}
+									startIcon={<Add />}
 								>
-									Add Members{" "}
+									Add Members
 								</Button>
 							</StyledAddMemberContainer>
 						</StyledTableTitleContainer>
 						<StyledMemberTable>
 							<Table.Head>
 								<Table.Row>
-									<Table.Cell size="small" padding="checkbox">
+									<Table.Cell size="small">
 										<Checkbox
 											checked={
 												selectedMembers.length ===
@@ -644,7 +644,6 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										/>
 									</Table.Cell>
 									<Table.Cell size="small">Name</Table.Cell>
-									<StyledEmptyTableCell />
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -653,9 +652,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							</Table.Head>
 							<Table.Body>
 								{teamMembers &&
-									teamMembers.map((x, i) => {
-										const user = teamMembers[i];
-
+									teamMembers.map((user, i) => {
 										let isSelected = false;
 
 										if (user) {
@@ -668,83 +665,96 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												},
 											);
 										}
+
 										if (user) {
 											return (
 												<Table.Row key={user.name + i}>
-													<StyledTableCell
-														size="medium"
-														padding="checkbox"
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selMembers =
-																		[];
-																	selectedMembers.forEach(
-																		(u) => {
-																			if (
-																				u.userid !==
-																				user.userid
-																			)
-																				selMembers.push(
-																					u,
-																				);
-																		},
-																	);
-																	setSelectedMembers(
-																		selMembers,
-																	);
-																} else {
-																	setSelectedMembers(
-																		[
-																			...selectedMembers,
-																			user,
-																		],
-																	);
 																}
-															}}
-														/>
-													</StyledTableCell>
-													<UserInfoTableCell
-														size="medium"
-														component="td"
-														scope="row"
-													>
-														<AvatarWrapper>
-															<Avatar>
-																{user.name[0].toUpperCase()}
-															</Avatar>
-														</AvatarWrapper>
-														<NameIDWrapper>
-															<Stack>
-																{user.name}
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selMembers =
+																			[];
+																		selectedMembers.forEach(
+																			(
+																				u,
+																			) => {
+																				if (
+																					u.userid !==
+																					user.userid
+																				)
+																					selMembers.push(
+																						u,
+																					);
+																			},
+																		);
+																		setSelectedMembers(
+																			selMembers,
+																		);
+																	} else {
+																		setSelectedMembers(
+																			[
+																				...selectedMembers,
+																				user,
+																			],
+																		);
+																	}
+																}}
+															/>
+															<Stack
+																direction="row"
+																spacing={1}
+																alignItems="center"
+															>
+																<StyledAvatar>
+																	{user.name[0].toUpperCase()}
+																</StyledAvatar>
+																<NameIDWrapper>
+																	<Typography variant="body2">
+																		{
+																			user.name
+																		}
+																	</Typography>
+																	<Typography
+																		variant="body2"
+																		color="secondary"
+																	>
+																		{`${user.type} ID: ${user.userid}`}
+																	</Typography>
+																</NameIDWrapper>
 															</Stack>
-															<Stack>
-																{`${user.type} ID: ${user.userid}`}
-															</Stack>
-														</NameIDWrapper>
-													</UserInfoTableCell>
-													<Table.Cell />
+														</Stack>
+													</Table.Cell>
 													<Table.Cell size="medium">
 														{user.dateadded}
 													</Table.Cell>
-													<Table.Cell size="medium">
+
+													<DateTableCell size="small">
+														{user.dateadded}
+													</DateTableCell>
+
+													<Table.Cell size="small">
 														<IconButton
+															size="small"
 															onClick={() => {
-																// set user
 																setUserToDelete(
 																	user,
 																);
-																// open modal
 																setDeleteMemberModal(
 																	true,
 																);
 															}}
 														>
-															<Delete></Delete>
+															<DeleteRounded />
 														</IconButton>
 													</Table.Cell>
 												</Table.Row>
@@ -756,11 +766,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 														i + "No data available"
 													}
 												>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
 												</Table.Row>
 											);
 										}
@@ -768,7 +776,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
-									<Table.Pagination
+									<StyledTablePagination
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
@@ -776,8 +784,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											setMembersPage(v + 1);
 											setSelectedMembers([]);
 										}}
+										onRowsPerPageChange={(e) => {
+											setRowsPerPage(parseInt(e.target.value, 10));
+											setMembersPage(1);
+										}}
 										page={membersPage - 1}
-										rowsPerPage={5}
+										rowsPerPage={rowsPerPage}
 										count={memberCount}
 									/>
 								</Table.Row>
@@ -785,7 +797,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						</StyledMemberTable>
 					</StyledTableContainer>
 				) : (
-					<StyledNoMembersContainer>
+					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>
 								<Typography variant={"h6"}>Members</Typography>
@@ -805,7 +817,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								Add Members{" "}
 							</Button>
 						</StyledNoMembersDiv>
-					</StyledNoMembersContainer>
+					</StyledTableContainer>
 				)}
 			</StyledMemberInnerContent>
 
@@ -819,7 +831,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							multiple={true}
 							freeSolo={false}
 							filterOptions={(x) => x}
-							options={nonCredentialedUsers}
+							options={filteredNonCredentialedUsers}
 							includeInputInList={true}
 							limitTags={2}
 							getLimitTagsText={() =>
@@ -827,13 +839,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option: any) => {
+							getOptionLabel={(option) => {
 								return `${option.name}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
 								return option.name === value.name;
 							}}
-							onChange={(event, newValue: any) => {
+							onChange={(event, newValue) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{

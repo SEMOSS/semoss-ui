@@ -1,4 +1,5 @@
 import {
+	Add,
 	ClearRounded,
 	Delete,
 	EditRounded,
@@ -45,14 +46,24 @@ const colors = [
 
 const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
 
-const UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
-
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
+});
+
+const NameTableCell = styled(Table.Cell)({
+	width: "100%",
+	maxWidth: "1px",
+});
+
+const DateTableCell = styled(Table.Cell)({
+	whiteSpace: "nowrap",
+	"@media (max-width: 768px)": {
+		whiteSpace: "normal",
+	},
+});
+
+const StyledTablePagination = styled(Table.Pagination)({
+	border: "none",
 });
 
 const StyledProjectContent = styled("div")({
@@ -74,7 +85,6 @@ const StyledProjectInnerContent = styled("div")({
 
 const StyledTableContainer = styled(Table.Container)({
 	borderRadius: "12px",
-	/* Devias Drop Shadow */
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
 });
 
@@ -90,37 +100,23 @@ const StyledTableTitleContainer = styled("div")({
 
 const StyledTableTitleDiv = styled("div")({
 	display: "flex",
-	padding: "12px 24px 12px 16px",
+	padding: "12px 16px 12px 16px",
 	alignItems: "center",
 	gap: "10px",
-});
-
-const StyledTableTitleProjectContainer = styled("div")({
-	display: "flex",
-	alignItems: "flex-start",
-	flex: "1 0 0",
+	fontWeight: 500,
 });
 
 const StyledTableTitleProjectCountContainer = styled("div")({
 	display: "flex",
 	height: "56px",
-	padding: "6px 16px 6px 8px",
-	flexDirection: "column",
-	justifyContent: "center",
 	alignItems: "center",
 	gap: "10px",
-});
-
-const StyledTableTitleProjectCount = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
+	flex: "1 0 0",
 });
 
 const StyledSearchButtonContainer = styled("div")({
 	display: "flex",
 	alignItems: "center",
-	// gap: '10px',
 });
 
 const StyledDeleteSelectedContainer = styled("div")({
@@ -141,12 +137,6 @@ const StyledAddProjectsContainer = styled("div")({
 	gap: "10px",
 });
 
-const StyledNonProjectsContainer = styled("div")({
-	width: "100%",
-	borderRadius: "12px",
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-});
-
 const StyledNonProjectsDiv = styled("div")({
 	width: "100%",
 	height: "503px",
@@ -155,10 +145,7 @@ const StyledNonProjectsDiv = styled("div")({
 	gap: "1rem",
 	justifyContent: "center",
 	alignItems: "center",
-});
-
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
+	background: "white",
 });
 
 const StyledCheckbox = styled(Checkbox)({
@@ -181,6 +168,11 @@ const StyledModal = styled(Modal)({
 		borderRadius: "12px",
 		padding: "24px",
 	},
+});
+
+const StyledRadioGroup = styled(RadioGroup)({
+	flexWrap: "nowrap",
+	whiteSpace: "nowrap",
 });
 
 // maps for permissions,
@@ -233,11 +225,11 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	] = useState([]);
 	const [addProjectRole, setAddProjectRole] = useState<SETTINGS_ROLE>();
 
-	const [projects, setProjects] = useState(null);
-	const [projectCount, setProjectCount] = useState(null);
+	const [projects, setProjects] = useState([]);
+	const [projectCount, setProjectCount] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasProjects, setHasProject] = useState(false);
 
-	const limit = 5;
 	const [searchProjectInput, setSearchProjectInput] = useState<string>("");
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -285,21 +277,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 * @desc - sets projects in react hook form
 	 */
 	useEffect(() => {
-		monolithStore
-			.getTeamProjects(
-				groupId,
-				groupType,
-				limit,
-				projectsPage * limit - limit, // offset
-				searchFilter,
-				false,
-			)
-			.then((data) => {
-				setProjects(data);
-				setHasProject(true);
-			});
-	}, []);
-
+		filterProjects();
+	}, [groupId, groupType, count, projectsPage, searchFilter,rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -342,7 +321,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			if (requests.length === 0) {
 				notification.add({
 					color: "warning",
-					message: `No projects to add`,
+					message: `No apps to add`,
 				});
 
 				return;
@@ -368,7 +347,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 
 					notification.add({
 						color: "success",
-						message: "Successfully added project permission",
+						message: "Successfully added app permission",
 					});
 				} else {
 					notification.add({
@@ -455,7 +434,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		} finally {
 			notification.add({
 				color: "success",
-				message: `Successfully removed projects`,
+				message: `Successfully removed apps`,
 			});
 			setCount(count + 1);
 			setDeleteProjectsModal(false);
@@ -540,7 +519,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			if (response.data) {
 				notification.add({
 					color: "success",
-					message: "Succesfully updated permissions",
+					message: "Successfully updated permissions",
 				});
 			} else {
 				notification.add({
@@ -563,22 +542,22 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		projectsPageCounts: [5],
 	};
 
-	projects > 9 && paginationOptions.projectsPageCounts.push(10);
-	projects > 19 && paginationOptions.projectsPageCounts.push(20);
+	projectCount > 9 && paginationOptions.projectsPageCounts.push(10);
+	projectCount > 19 && paginationOptions.projectsPageCounts.push(20);
 
 	const filterProjects = useCallback(() => {
 		monolithStore
 			.getTeamProjects(
 				groupId,
 				groupType,
-				limit,
-				projectsPage * limit - limit, // offset
+				rowsPerPage,
+				projectsPage * rowsPerPage - rowsPerPage, // offset
 				searchFilter,
 				false,
 			)
 			.then((data) => {
 				setProjects(data);
-				setHasProject(true);
+				setHasProject(data.length > 0);
 			});
 		monolithStore
 			.getTeamProjects(
@@ -590,7 +569,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				false,
 			)
 			.then((data) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter]);
+	}, [count, projectsPage, searchFilter,rowsPerPage]);
 
 	const debouncedFilterProjects = debounced(filterProjects, 400);
 
@@ -630,12 +609,16 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				hasProjects ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
-							<StyledTableTitleDiv>Projects</StyledTableTitleDiv>
-							<StyledTableTitleProjectContainer />
+							<StyledTableTitleDiv>Apps</StyledTableTitleDiv>
+							<StyledTableTitleProjectCountContainer>
+								<Typography variant="body1">
+									{projectCount} Apps
+								</Typography>
+							</StyledTableTitleProjectCountContainer>
 							<StyledSearchButtonContainer>
 								<Search
 									ref={projectSearchRef}
-									placeholder="Search Projects"
+									placeholder="Search Apps"
 									size="small"
 									value={searchFilter}
 									onChange={(e) => {
@@ -663,17 +646,19 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									variant={"contained"}
 									onClick={() => {
 										getProjects(true);
+										setAddProjectRole(undefined);
 										setAddProjectModal(true);
 									}}
+									startIcon={<Add />}
 								>
-									Add Projects{" "}
+									Add Apps
 								</Button>
 							</StyledAddProjectsContainer>
 						</StyledTableTitleContainer>
 						<StyledProjectTable>
 							<Table.Head>
 								<Table.Row>
-									<Table.Cell size="small" padding="checkbox">
+									<NameTableCell size="small">
 										<Checkbox
 											checked={
 												selectedProjects.length ===
@@ -693,8 +678,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												}
 											}}
 										/>
-									</Table.Cell>
-									<Table.Cell size="small">Name</Table.Cell>
+										Name
+									</NameTableCell>
 									<Table.Cell size="small">Access</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
@@ -704,9 +689,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 							</Table.Head>
 							<Table.Body>
 								{projects &&
-									projects.map((x, i) => {
-										const project = projects[i];
-
+									projects.map((project, i) => {
 										let isSelected = false;
 
 										if (project) {
@@ -724,61 +707,65 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 												<Table.Row
 													key={project.projectid + i}
 												>
-													<StyledTableCell
-														size="medium"
-														padding="checkbox"
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selProjects =
-																		[];
-																	selectedProjects.forEach(
-																		(p) => {
-																			if (
-																				p.projectid !==
-																				project.projectid
-																			)
-																				selProjects.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedProojects(
-																		selProjects,
-																	);
-																} else {
-																	setSelectedProojects(
-																		[
-																			...selectedProjects,
-																			project,
-																		],
-																	);
 																}
-															}}
-														/>
-													</StyledTableCell>
-													<UserInfoTableCell
-														size="medium"
-														component="td"
-														scope="row"
-													>
-														<NameIDWrapper>
-															<Stack>
-																{
-																	project.project_name
-																}
-															</Stack>
-															<Stack>
-																{`Project ID: ${project.projectid}`}
-															</Stack>
-														</NameIDWrapper>
-													</UserInfoTableCell>
-													<Table.Cell size="medium">
-														<RadioGroup
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selProjects =
+																			[];
+																		selectedProjects.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.projectid !==
+																					project.projectid
+																				)
+																					selProjects.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedProojects(
+																			selProjects,
+																		);
+																	} else {
+																		setSelectedProojects(
+																			[
+																				...selectedProjects,
+																				project,
+																			],
+																		);
+																	}
+																}}
+															/>
+
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		project.project_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`App ID: ${project.projectid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
 															row
 															defaultValue={
 																project.permission
@@ -812,14 +799,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																value="3"
 																label="Read-Only"
 															/>
-														</RadioGroup>
+														</StyledRadioGroup>
 													</Table.Cell>
-													<Table.Cell size="medium">
+													<DateTableCell size="small">
 														{
 															project.project_date_created
 														}
-													</Table.Cell>
-													<Table.Cell size="medium">
+													</DateTableCell>
+													<Table.Cell size="small">
 														<IconButton
 															onClick={() => {
 																// set project
@@ -844,11 +831,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 														i + "No data available"
 													}
 												>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
-													<Table.Cell size="medium"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
 												</Table.Row>
 											);
 										}
@@ -856,7 +842,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
-									<Table.Pagination
+									<StyledTablePagination
 										rowsPerPageOptions={
 											paginationOptions.projectsPageCounts
 										}
@@ -864,8 +850,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 											setProjectsPage(v + 1);
 											setSelectedProojects([]);
 										}}
+										onRowsPerPageChange={(e) => {
+											setRowsPerPage(parseInt(e.target.value, 10));
+											setProjectsPage(1);
+										}}
 										page={projectsPage - 1}
-										rowsPerPage={5}
+										rowsPerPage={rowsPerPage}
 										count={projectCount}
 									/>
 								</Table.Row>
@@ -873,15 +863,15 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 						</StyledProjectTable>
 					</StyledTableContainer>
 				) : (
-					<StyledNonProjectsContainer>
+					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>
-								<Typography variant={"h6"}>projects</Typography>
+								<Typography variant={"h6"}>Apps</Typography>
 							</StyledTableTitleDiv>
 						</StyledTableTitleContainer>
 						<StyledNonProjectsDiv>
 							<Typography variant={"body1"}>
-								No projects present
+								No apps present
 							</Typography>
 							<Button
 								variant={"contained"}
@@ -890,20 +880,20 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									setAddProjectModal(true);
 								}}
 							>
-								Add Projects
+								Add Apps
 							</Button>
 						</StyledNonProjectsDiv>
-					</StyledNonProjectsContainer>
+					</StyledTableContainer>
 				)}
 			</StyledProjectInnerContent>
 			<StyledModal open={addProjectModal} maxWidth="lg">
 				<Modal.Title>
-					<Typography variant="h6">Add Projects</Typography>
+					<Typography variant="h6">Add Apps</Typography>
 				</Modal.Title>
 				<Modal.Content sx={{ width: "50rem" }}>
 					<StyledModalContentText>
 						<Autocomplete
-							label="Select Project"
+							label="Select App"
 							loading={searchLoading}
 							multiple={true}
 							freeSolo={false}
@@ -918,7 +908,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 							}
 							value={selectedNonCredentialedProjects}
 							inputValue={searchProjectInput}
-							getOptionLabel={(option: any) => {
+							getOptionLabel={(option) => {
 								return `${option.project_name} ID: ${option.project_id}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
@@ -926,7 +916,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									option.project_name === value.project_name
 								);
 							}}
-							onChange={(event, newValue: any) => {
+							onChange={(event, newValue) => {
 								setSelectedNonCredentialedProjects([
 									...newValue,
 								]);
@@ -1054,7 +1044,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 																	gap: "4px",
 																}}
 															>
-																{`Project ID: `}
+																{`App ID: `}
 																<Typography
 																	variant="body2"
 																	component="span"
@@ -1112,7 +1102,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 								color: "#000",
 							}}
 						>
-							Project access
+							App access
 						</Typography>
 						<Box
 							sx={{
@@ -1345,7 +1335,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			<Modal open={deleteProjectsModal}>
 				<Modal.Title>Are you sure?</Modal.Title>
 				<Modal.Content>
-					Would you like to delete all selected projects?
+					Would you like to delete all selected apps?
 				</Modal.Content>
 				<Modal.Actions>
 					<Button

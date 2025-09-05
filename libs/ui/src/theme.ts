@@ -31,6 +31,7 @@ declare module "@mui/material" {
 		darkBlue?: CustomPaletteColor;
 		pink?: CustomPaletteColor;
 		purple?: CustomPaletteColor;
+		orange?: CustomPaletteColor;
 	}
 
 	interface PaletteColor {
@@ -89,8 +90,8 @@ export interface CustomSimplePaletteColorOptions
 }
 
 export interface CustomTypographyOptions extends TypographyOptions {
-	body3: any;
-	body4: any;
+	body3: React.CSSProperties;
+	body4: React.CSSProperties;
 }
 
 export interface CustomPaletteOptions extends PaletteOptions {
@@ -105,6 +106,8 @@ export interface CustomPaletteOptions extends PaletteOptions {
 	darkBlue?: CustomPaletteColor;
 	pink?: CustomPaletteColor;
 	purple?: CustomPaletteColor;
+	orange?: CustomPaletteColor;
+	grey?: CustomPaletteColor;
 }
 
 export interface CustomShapeOptions {
@@ -168,6 +171,8 @@ export const lightTheme: CustomThemeOptions = {
 			main: "#D9D9D9",
 			dark: "#757575",
 			light: "#F2F2F2",
+			border: "#C4C4C4",
+			divider: "#E6E6E6",
 		},
 		text: {
 			primary: "#000000",
@@ -224,7 +229,7 @@ export const lightTheme: CustomThemeOptions = {
 			// "700": "#26890D",
 			// "800": "#167800",
 			// "900": "#005A00",
-			// "shadow": "#E7F4E5" // Todo
+			// "shadow": "#E7F4E5"
 		},
 		green: {
 			"50": "#DEF4F3",
@@ -273,6 +278,30 @@ export const lightTheme: CustomThemeOptions = {
 			"700": "#6A32CE",
 			"800": "#5D2BC7",
 			"900": "#481EB8",
+		},
+		orange: {
+			"50": "#FFB428",
+			"100": "#FFA324",
+			"200": "#FF9220",
+			"300": "#FF811D",
+			"400": "#FF7019",
+			"500": "#FF5F15",
+			"600": "#D14E11",
+			"700": "#A33D0D",
+			"800": "#752C0A",
+			"900": "#471B06",
+		},
+		grey: {
+			"50": "#F9F9FA",
+			"100": "#F6F6F7",
+			"200": "#F2F3F4",
+			"300": "#EFF0F1",
+			"400": "#ECEDEF",
+			"500": "#E9EAEC",
+			"600": "#DBDBDB",
+			"700": "#A6A7A9",
+			"800": "#858687",
+			"900": "#646465",
 		},
 	},
 	shape: {
@@ -410,7 +439,7 @@ export const lightTheme: CustomThemeOptions = {
 	},
 	components: {
 		MuiCssBaseline: {
-			styleOverrides: (themeParam) => ({
+			styleOverrides: (_themeParam) => ({
 				body: {
 					overflow: "hidden",
 				},
@@ -491,7 +520,7 @@ export const lightTheme: CustomThemeOptions = {
 						borderRadius: shape.borderRadiusLg,
 
 						"&:hover": {
-							boxShadow: `0px 5px 22px 0px ${palette.primaryContrast["shadow"]}`,
+							boxShadow: `0px 5px 22px 0px ${palette.primaryContrast.shadow}`,
 						},
 					};
 				},
@@ -799,7 +828,7 @@ export const darkTheme: CustomThemeOptions = {
 	},
 	components: {
 		MuiCssBaseline: {
-			styleOverrides: (themeParam) => ({
+			styleOverrides: (_themeParam) => ({
 				"*::-webkit-scrollbar": {
 					width: "8px",
 					height: "8px",
@@ -877,7 +906,7 @@ export const darkTheme: CustomThemeOptions = {
 						borderRadius: shape.borderRadiusLg,
 
 						"&:hover": {
-							boxShadow: `0px 5px 22px 0px ${palette.primaryContrast["shadow"]}`,
+							boxShadow: `0px 5px 22px 0px ${palette.primaryContrast.shadow}`,
 						},
 					};
 				},
@@ -932,7 +961,7 @@ export const darkTheme: CustomThemeOptions = {
 			styleOverrides: {
 				root: ({ theme }) => {
 					const shape = theme.shape as CustomShapeOptions;
-					const palette =
+					const _palette =
 						theme.palette as unknown as CustomPaletteOptions;
 					return {
 						boxShadow:

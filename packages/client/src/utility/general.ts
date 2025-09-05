@@ -97,7 +97,7 @@ export const copyTextToClipboard = (text: string, notificationService) => {
 
 		notificationService.add({
 			color: "success",
-			message: "Succesfully copied to clipboard",
+			message: "Successfully copied to clipboard",
 		});
 	} catch (e) {
 		notificationService.add({
@@ -244,4 +244,8 @@ export const extractInitials = (str: string): string => {
     return str.split(' ').reduce((prev, curr) => {
         return prev + (curr[0] || '');
     }, '');
+}
+
+export const formatToDataTestId = (text: string) => {
+	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
 };

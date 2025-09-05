@@ -40,6 +40,37 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	// ----------------------------------------------------------
 	{
 		section: SECTION_LAYOUT,
+		name: "Tab",
+		helperText: "Show content in tabular manner",
+		json: {
+			widget: "tab",
+			data: {
+				style: {},
+				triggerBgColor: "",
+				contentBgColor: "",
+				showExpandIcon: false,
+				activeTab: 1,
+				show: "true",
+				tabLabels: ["Tab 1", "Tab 2"],
+			},
+			listeners: {
+				preProcess: {
+					type: "sync",
+					order: [],
+				},
+				onChange: {
+					type: "sync",
+					order: [],
+				},
+			},
+			slots: {
+				"1": [],
+				"2": [],
+			},
+		},
+	},
+	{
+		section: SECTION_LAYOUT,
 		name: "Accordion",
 		activeImage: BLOCK_IMAGES["ACCORDION_ACTIVE"],
 		hoverImage: BLOCK_IMAGES["ACCORDION_HOVER"],
@@ -54,14 +85,6 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				contentBgColor: "",
 				showExpandIcon: false,
 				show: "true",
-				// -------------------------------------------
-				// John B:
-				// We may need to track styles differently.
-				// Can handle this in a migration function
-				// accordionStyles:
-				// accordionHeaderStyles:
-				// accordionContentStyles:
-				// -------------------------------------------
 			},
 			listeners: {
 				preProcess: {
@@ -533,6 +556,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					flexWrap: "wrap",
 				},
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 				boxShadowParts: {
 					offsetX: "",
 					offsetY: "",
@@ -620,29 +645,30 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 			slots: {} as BlockJSON["slots"],
 		},
 	},
-	// {
-	//     section: SECTION_ELEMENT,
-	//     name: 'PDF Viewer',
-	//     helperText: 'Embed a PDF for viewing',
-	//     activeImage: BLOCK_IMAGES['PDF_VIEWER_ACTIVE'],
-	//     hoverImage: BLOCK_IMAGES['PDF_VIEWER_HOVER'],
-	//     json: {
-	//         widget: 'pdfViewer',
-	//         data: {
-	//             style: {
-	//                 width: '100%',
-	//                 height: '82%',
-	//                 padding: '8px',
-	//             },
-	//             selectedPdf: null,
-	//             show: 'true',
-	//         },
-	//         listeners: {
-	//             preProcess: { type: 'sync', order: [] },
-	//         },
-	//         slots: {} as BlockJSON['slots'],
-	//     },
-	// },
+	{
+		section: SECTION_ELEMENT,
+		name: "PDF Viewer",
+		helperText: "Embed a PDF for viewing",
+		activeImage: BLOCK_IMAGES["PDF_VIEWER_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["PDF_VIEWER_HOVER"],
+		json: {
+			widget: "pdfViewer",
+			data: {
+				style: {
+					width: "100%",
+					height: "82%",
+					padding: "8px",
+				},
+				selectedPdf: null,
+				engineId: "",
+				show: "true",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
 	{
 		section: SECTION_ELEMENT,
 		name: "Image",
@@ -665,6 +691,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				src: "",
 				title: "",
 				show: "true",
+				unavailable: "",
+				placeholderText: "",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -847,6 +875,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				markdown: "**Hello world**",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -891,6 +921,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h1",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -915,6 +947,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h2",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -939,6 +973,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h3",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -963,6 +999,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h4",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -987,6 +1025,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h5",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1011,6 +1051,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "h6",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1035,6 +1077,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				text: "Hello world",
 				variant: "p",
 				show: "true",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {
 				preProcess: { type: "sync", order: [] },
@@ -1089,13 +1133,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						"#deeaee",
 					],
 					title: {
-						text: "",
-						left: "center",
+						text: "Pie Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					tooltip: {
@@ -1147,14 +1192,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					reset: {
 						radius: "50%",
 						title: {
-							text: "",
-							left: "center",
+							text: "Pie Chart",
+							left: "left",
 							show: true,
 							textStyle: {
-								fontSize: 18,
-								color: "#ff6f61",
-								fontWeight: "normal",
-								fontFamily: "",
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
 							},
 						},
 						label: {
@@ -1310,6 +1355,19 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							fontSize: 12,
 						},
 					},
+					reset: {
+						title: {
+							text: "Bar Graph",
+							left: "left",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
 				},
 				show: "true",
 			},
@@ -1335,9 +1393,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				option: {
 					title: {
-						text: "",
-						left: "center",
+						text: "Scatter Plot",
+						left: "left",
 						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
 					},
 					tooltip: {
 						show: true,
@@ -1486,6 +1551,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							fontSize: 12,
 							color: "#000000",
 						},
+						title: {
+							text: "Scatter Plot",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
 					},
 				},
 				frame: {
@@ -1515,13 +1592,15 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				option: {
 					title: {
-						text: "ECharts Line Chart",
-						left: "center",
+						text: "Line Chart",
 						top: 20,
+						left: "left",
+						show: true,
 						textStyle: {
-							fontSize: 18,
-							fontWeight: "normal",
 							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					tooltip: {
@@ -1606,14 +1685,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					],
 					reset: {
 						title: {
-							text: "",
-							left: "center",
+							text: "Line Chart",
+							left: "left",
 							show: true,
 							textStyle: {
-								fontSize: 18,
-								color: "#ff6f61",
-								fontWeight: "normal",
-								fontFamily: "",
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
 							},
 						},
 						xAxis: {
@@ -1694,9 +1773,16 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				option: {
 					title: {
-						text: "",
-						left: "center",
+						text: "Stacked Bar Chart",
+						left: "left",
 						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
 					},
 					tooltip: {
 						show: false,
@@ -1879,6 +1965,18 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							color: "#000000",
 						},
 						barWidth: 10,
+						title: {
+							text: "Stacked Bar Chart",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
 					},
 				},
 				frame: {
@@ -1989,6 +2087,19 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							fontSize: 12,
 						},
 					},
+					reset: {
+						title: {
+							text: "Map Graph",
+							left: "left",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
 				},
 				frame: {
 					name: "",
@@ -2016,6 +2127,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				variation: "echart-gantt-chart",
 				option: {
+					title: {
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					reset: {
+						title: {
+							text: "Gantt Chart",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
+					},
 					tooltip: {
 						show: true,
 					},
@@ -2103,6 +2240,32 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					tooltip: {
 						trigger: "item",
 						triggerOn: "mousemove",
+					},
+					title: {
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					reset: {
+						title: {
+							text: "Dendrogram Chart",
+							left: "left",
+							top: "top",
+							show: true,
+							textStyle: {
+								color: "#000000",
+								fontWeight: "bold",
+								fontFamily: "Arial Narrow",
+								fontSize: 12,
+							},
+						},
 					},
 					toolbox: {
 						show: true,
@@ -2636,6 +2799,8 @@ export const CLIENT_BLOCKS_MENU = [
 					gap: "px",
 					flexWrap: "wrap",
 				},
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {},
 			slots: {
@@ -2650,6 +2815,8 @@ export const CLIENT_BLOCKS_MENU = [
 							},
 							text: "Contact Information",
 							variant: "p",
+							loading: false,
+							loadType: "Skeleton",
 						},
 						listeners: {},
 						slots: {},
@@ -2665,6 +2832,8 @@ export const CLIENT_BLOCKS_MENU = [
 								flexWrap: "wrap",
 								border: "2px dotted #4a4a4a",
 							},
+							loading: false,
+							loadType: "Skeleton",
 						},
 						listeners: {},
 						slots: {
@@ -2682,6 +2851,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -2698,6 +2869,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2745,6 +2918,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2796,6 +2971,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -2812,6 +2989,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2859,6 +3038,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -2910,6 +3091,8 @@ export const CLIENT_BLOCKS_MENU = [
 											width: "100%",
 											justifyContent: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -2974,6 +3157,8 @@ export const CLIENT_BLOCKS_MENU = [
 														maxWidth: "50%",
 														width: "49%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3026,6 +3211,8 @@ export const CLIENT_BLOCKS_MENU = [
 											justifyContent: "left",
 											alignItems: "center",
 										},
+										loading: false,
+										loadType: "Skeleton",
 									},
 									listeners: {},
 									slots: {
@@ -3041,6 +3228,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "32%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3087,6 +3276,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "32%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3134,6 +3325,8 @@ export const CLIENT_BLOCKS_MENU = [
 														flexWrap: "wrap",
 														width: "33%",
 													},
+													loading: false,
+													loadType: "Skeleton",
 												},
 												listeners: {},
 												slots: {
@@ -3661,7 +3854,8 @@ export const CLIENT_BLOCKS_MENU = [
 					flexWrap: "wrap",
 					border: "4px solid ",
 				},
-				route: "container--6732",
+				loading: false,
+				loadType: "Skeleton",
 			},
 			listeners: {},
 			slots: {
@@ -3676,6 +3870,8 @@ export const CLIENT_BLOCKS_MENU = [
 							},
 							text: "Grouped Component",
 							variant: "h1",
+							loading: false,
+							loadType: "Skeleton",
 						},
 						listeners: {},
 						slots: {},
