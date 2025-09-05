@@ -34,7 +34,7 @@ export const ModalTitle: React.FC<ModalTitleProps> = ({
   ...otherProps
 }) => {
   return (
-    <MuiModalTitle sx={{ padding: "8px 16px", ...(sx || {}) }} {...otherProps}>
+    <MuiModalTitle sx={{ px: 2, py: 1, ...(sx || {}) }} {...otherProps}>
       {children}
       {onClose && (
         <StyledIconButton aria-label="close" onClick={onClose} size="small">

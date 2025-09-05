@@ -840,13 +840,16 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							</Alert.Title>
 						</StyledAlert>
 						<Modal open={deleteModal}>
-							<Modal.Title>Are you sure?</Modal.Title>
+							<Modal.Title onClose={() => setDeleteModal(false)}>
+								Are you sure?
+							</Modal.Title>
 							<Modal.Content>
 								This action is irreversable. This will
 								permanentely delete this {name}.
 							</Modal.Content>
 							<Modal.Actions>
 								<Button
+									color="secondary"
 									onClick={() => setDeleteModal(false)}
 									data-testid={formatToDataTestId(
 										`settingsTiles-${name}-confirmCancel-btn`,

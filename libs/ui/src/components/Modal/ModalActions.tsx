@@ -21,7 +21,7 @@ export interface ModalActionsProps {
 export const ModalActions = (props: ModalActionsProps) => {
 	const { sx, children } = props;
 	return (
-		<MuiModalActions  sx={{ p: "8px 16px", ...(sx || {})}} {...props}>
+		<MuiModalActions  sx={{ px: 2, py: 1, ...(sx || {})}} {...props}>
 			{children}
 		</MuiModalActions>
 	);

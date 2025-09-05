@@ -73,7 +73,9 @@ export interface ModalProps {
 	sx?: SxProps;
 }
 
+// modal guidelines: https://www.figma.com/design/kZwcxDBSMJbOcFaCin2xbd/SEMOSS-MUI-Core-v5.4.0?node-id=6230-6039&m=dev
+
 export const Modal = (props: ModalProps) => {
 	const { sx } = props;
-	return <MuiModal sx={sx} PaperProps={{ sx: { borderRadius: "12px" } }} {...props} />;
+	return <MuiModal sx={sx} PaperProps={{ sx: { borderRadius: 1.5 } }} {...props} />;
 };
