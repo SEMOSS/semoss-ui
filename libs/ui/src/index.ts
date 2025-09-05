@@ -4,7 +4,6 @@ export * from "./theme";
 
 export * from "./components/Accordion";
 export * from "./components/Alert";
-export * from "./components/AppBar";
 export * from "./components/Autocomplete";
 export * from "./components/Avatar";
 export * from "./components/AvatarGroup";
