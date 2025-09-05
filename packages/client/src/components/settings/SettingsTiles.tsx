@@ -518,7 +518,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                     Delete {captilizedType}
                   </Typography>
                   <Typography variant="body2">
-                    Users cannot request access to this {name} if private
+                    Once deleted, this {name} will be permanently removed. This action cannot be undone.
                   </Typography>
                 </Box>
               </StyledBlock>
@@ -766,7 +766,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       Delete {captilizedType}
                     </Typography>
                     <Typography variant="body2">
-                      Users cannot request access to this {name} if private
+                     Once deleted, this {name} will be permanently removed. This action cannot be undone.
                     </Typography>
                   </Box>
                 </StyledBlock>
