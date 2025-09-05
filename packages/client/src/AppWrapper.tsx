@@ -1,8 +1,12 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo } from "react";
 import { HashRouter } from "react-router-dom";
-import { Notification, type ThemeOptions, ThemeProvider } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import {
+	LoadingScreen,
+	Notification,
+	type ThemeOptions,
+	ThemeProvider,
+} from "@semoss/ui";
 import { Router } from "@/pages";
 import { CookieWrapper } from "./components/cookies";
 import { useRootStore } from "./hooks";

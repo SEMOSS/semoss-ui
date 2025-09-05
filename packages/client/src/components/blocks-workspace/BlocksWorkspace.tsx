@@ -11,13 +11,12 @@ import {
 	StateStore,
 } from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk/react";
-import { useNotification } from "@semoss/ui";
+import { LoadingScreen, useNotification } from "@semoss/ui";
 import {
 	DesignerStore,
 	type WorkspaceOptions,
 	type WorkspaceStore,
 } from "@/stores";
-import { LoadingScreen } from "../../components/ui";
 import {
 	FileEditorPanel,
 	FileExplorerPanel,

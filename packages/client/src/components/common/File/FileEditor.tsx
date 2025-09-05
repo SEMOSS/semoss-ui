@@ -14,8 +14,7 @@ import {
 	useState,
 } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { styled, useNotification } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import { LoadingScreen, styled, useNotification } from "@semoss/ui";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
