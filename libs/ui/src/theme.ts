@@ -31,6 +31,7 @@ declare module "@mui/material" {
 		darkBlue?: CustomPaletteColor;
 		pink?: CustomPaletteColor;
 		purple?: CustomPaletteColor;
+		lightGreen?: CustomPaletteColor;
 		red?: CustomPaletteColor;
 		orange?: CustomPaletteColor;
 	}
@@ -103,6 +104,7 @@ export interface CustomPaletteOptions extends PaletteOptions {
 	success: CustomSimplePaletteColorOptions;
 	text?: CustomSimplePaletteColorOptions;
 	primaryContrast?: CustomPaletteColor;
+	lightGreen?: CustomPaletteColor;
 	green?: CustomPaletteColor;
 	darkBlue?: CustomPaletteColor;
 	pink?: CustomPaletteColor;
@@ -231,6 +233,18 @@ export const lightTheme: CustomThemeOptions = {
 			// "800": "#167800",
 			// "900": "#005A00",
 			// "shadow": "#E7F4E5"
+		},
+		lightGreen: {
+			"50": "#E7F4E5",
+			"100": "#C6E4BF",
+			"200": "#A1D396",
+			"300": "#7AC36B",
+			"400": "#5CB649",
+			"500": "#3EA924",
+			"600": "#349B1B",
+			"700": "#26890D",
+			"800": "#167800",
+			"900": "#005A00",
 		},
 		green: {
 			"50": "#DEF4F3",

@@ -18,9 +18,9 @@ const StyledContainer = styled("div")(({ theme }) => ({
 	gap: theme.spacing(0.5),
 }));
 
-const StyledLabel = styled(Typography)(() => ({
-	fontSize: "14px",
-	fontWeight: 500,
+const StyledLabel = styled(Typography)(({ theme }) => ({
+	fontSize: theme.typography.subtitle2.fontSize,
+	fontWeight: theme.typography.subtitle2.fontWeight,
 }));
 
 export interface SwitchBlockDef extends BlockDef<"switch"> {

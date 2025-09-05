@@ -43,6 +43,13 @@ const StyledButton = styled(Button)(({ theme }) => ({
 	},
 }));
 
+const StyledImgTag = styled("img")(() => ({
+	width: "100%",
+	height: "100%",
+	objectFit: "contain",
+	display: "block",
+}));
+
 const UploadAppButton = styled(Button)(({ theme }) => ({
 	borderColor: theme.palette.action.disabled,
 	color: theme.palette.text.primary,
@@ -95,16 +102,7 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
 						justifyContent: "center",
 					}}
 				>
-					<img
-						src={image}
-						alt={title}
-						style={{
-							width: "100%",
-							height: "100%",
-							objectFit: "contain",
-							display: "block",
-						}}
-					/>
+					<StyledImgTag src={image} alt={title} />
 				</Box>
 			)}
 		</Box>

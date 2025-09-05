@@ -23,6 +23,12 @@ const StyledTitle = styled("div")(() => ({
 	justifyContent: "center",
 }));
 
+const StyledDataGridContainer = styled("div")(() => ({
+	flex: 1,
+	width: "100%",
+	height: "100%",
+}));
+
 export interface HeaderBackgroundSettings {
 	backgroundColor: string;
 	fontSize: string;
@@ -410,13 +416,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	return (
 		<StyledBlock sx={data.style} {...attrs}>
-			<div
-				style={{
-					flex: 1,
-					width: "100%",
-					height: "100%",
-				}}
-			>
+			<StyledDataGridContainer>
 				<DataGrid
 					rows={rows}
 					columns={columns}
@@ -458,7 +458,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 						},
 					}}
 				/>
-			</div>
+			</StyledDataGridContainer>
 			<GridBlockContextMenu
 				id={id}
 				frame={frame}
