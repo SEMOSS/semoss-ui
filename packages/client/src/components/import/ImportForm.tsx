@@ -101,7 +101,7 @@ export const ImportForm = (props) => {
 		setError,
 		formState: { isValid },
 	} = useForm({
-		mode: "onBlur",
+		mode: "onSubmit",
 		defaultValues: defaultFields.reduce((acc, field) => {
 			acc[field.fieldName] = field.defaultValue || "";
 			return acc;
