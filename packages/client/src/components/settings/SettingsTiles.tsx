@@ -2,6 +2,7 @@ import databaseIcon from "@/assets/img/databaseIcon.png";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
+import { formatToDataTestId } from "@/utility";
 import LockIcon from "@mui/icons-material/Lock";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import {
@@ -359,6 +360,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										"public",
 									)
 								}
+								data-testid={formatToDataTestId(
+									`settingsTiles-make-${name}-public-private-switch`,
+								)}
 								onChange={() => {
 									changeGlobal();
 								}}
@@ -411,6 +415,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												"discoverable",
 											)
 										}
+										data-testid={formatToDataTestId(
+											`settingsTiles-${name}-makeDiscoverable-switch`,
+										)}
 										checked={!discoverable}
 										onChange={() => {
 											changeDiscoverable();
@@ -446,6 +453,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							setBounds={direction === "column"}
 							sx={StyledWidth}
 							icon={false}
+							data-testid={formatToDataTestId(
+								`settingsTiles-${name}-makeDiscoverable-switch`,
+							)}
 							action={
 								<Switch
 									title={
@@ -453,6 +463,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											? `Make ${name} non-discoverable`
 											: `Make ${name} discoverable`
 									}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-makeDiscoverable-switch`,
+									)}
 									disabled={
 										global ||
 										!configStore.isEngineOperationAvailable(
@@ -505,6 +518,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										"delete",
 									)
 								}
+								data-testid={formatToDataTestId(
+									`settingsTiles-${name}-delete-btn`,
+								)}
 								onClick={() => setDeleteModal(true)}
 							>
 								Delete
@@ -541,9 +557,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						</Alert.Title>
 					</StyledAlert>
 					<Modal open={deleteModal}>
-						<Modal.Title onClose={() => setDeleteModal(false)}>
-							Are you sure?
-						</Modal.Title>
+						<Modal.Title>Are you sure?</Modal.Title>
 						<Modal.Content>
 							This action is irreversable. This will permanentely
 							delete this {name}.
@@ -555,6 +569,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<Button
 								color={"error"}
 								variant={"contained"}
+								data-testid={formatToDataTestId(
+									`settingsTiles-${name}-confirmDelete-btn`,
+								)}
 								onClick={() => deleteWorkflow()}
 							>
 								Delete
@@ -624,6 +641,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										"public",
 									)
 								}
+								data-testid={formatToDataTestId(
+									`settingsTiles-make-${name}-public-private-switch`,
+								)}
 								onChange={() => {
 									changeGlobal();
 								}}
@@ -678,6 +698,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												: `Make ${name} discoverable`
 										}
 										checked={!discoverable}
+										data-testid={formatToDataTestId(
+											`settingsTiles-${name}-makeDiscoverable-switch`,
+										)}
 										onChange={() => {
 											changeDiscoverable();
 										}}
@@ -729,6 +752,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											: `Make ${name} discoverable`
 									}
 									checked={!discoverable}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-makeDiscoverable-switch`,
+									)}
 									onChange={() => {
 										changeDiscoverable();
 									}}
@@ -770,6 +796,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									variant="contained"
 									color="error"
 									onClick={() => setDeleteModal(true)}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-delete-btn`,
+									)}
 									disabled={
 										!configStore.isEngineOperationAvailable(
 											type,
@@ -811,20 +840,26 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							</Alert.Title>
 						</StyledAlert>
 						<Modal open={deleteModal}>
-							<Modal.Title onClose={() => setDeleteModal(false)}>
-								Are you sure?
-							</Modal.Title>
+							<Modal.Title>Are you sure?</Modal.Title>
 							<Modal.Content>
 								This action is irreversable. This will
 								permanentely delete this {name}.
 							</Modal.Content>
 							<Modal.Actions>
-								<Button onClick={() => setDeleteModal(false)}>
+								<Button
+									onClick={() => setDeleteModal(false)}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmCancel-btn`,
+									)}
+								>
 									Cancel
 								</Button>
 								<Button
 									color={"error"}
 									variant={"contained"}
+									data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmDelete-btn`,
+									)}
 									onClick={() => deleteWorkflow()}
 								>
 									Delete

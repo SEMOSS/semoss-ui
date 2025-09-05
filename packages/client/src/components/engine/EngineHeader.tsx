@@ -16,6 +16,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useEngine, useRootStore } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 import { EditEngineDetails, EngineAccessButton } from ".";
 
 const StyledName = styled(Stack)(({ theme }) => ({
@@ -153,6 +154,9 @@ export const EngineHeader: React.FC = () => {
 											<SimCardDownload />
 										)
 									}
+									data-testid={formatToDataTestId(
+										`engineHeader-${name}-export-btn`,
+									)}
 									variant="outlined"
 									onClick={() => {
 										const engineType =
@@ -226,6 +230,7 @@ export const EngineHeader: React.FC = () => {
 						<IconButton
 							aria-label={`copy ${name} ID`}
 							size="small"
+							data-testid={`engineHeader-copy-${name}-id-btn`}
 							onClick={(e) => {
 								// prevent the default action
 								e.preventDefault();
@@ -283,25 +288,18 @@ export const EngineHeader: React.FC = () => {
 				</StyledInfoLeft>
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
-						{active.metadata?.DATEADDED &&
-						active.metadata?.PERMISSIONGRANTEDBY ? (
-							<>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									{`Updated by ${active.metadata.PERMISSIONGRANTEDBY}`}
-								</Typography>
-								<Typography
-									variant={"caption"}
-									color="disabled"
-								>
-									{`at ${active.metadata.DATEADDED}`}
-								</Typography>
-							</>
+						{active?.PERMISSIONGRANTEDBY ? (
+							<Typography variant={"caption"} color="disabled">
+								{`Published by ${active.PERMISSIONGRANTEDBY}`}
+							</Typography>
 						) : (
 							<Typography variant={"caption"} color="disabled">
-								No updates since creation
+								{`Created by ${active.database_created_by}`}
+							</Typography>
+						)}
+						{active?.DATEADDED && (
+							<Typography variant={"caption"} color="disabled">
+								{`on ${active.DATEADDED}`}
 							</Typography>
 						)}
 					</Stack>
