@@ -1,9 +1,6 @@
 export * from "./theme";
 
-// import "@fontsource/inter/300.css";
-// import "@fontsource/inter/400.css";
-// import "@fontsource/inter/500.css";
-// import "@fontsource/inter/700.css";
+// components
 
 export * from "./components/Accordion";
 export * from "./components/Alert";
@@ -24,7 +21,6 @@ export * from "./components/Chip";
 export * from "./components/CircularProgress";
 export * from "./components/Code";
 export * from "./components/Collapse";
-// export * from "./components/Colorpicker";
 export * from "./components/Container";
 export * from "./components/Divider";
 export * from "./components/Drawer";
