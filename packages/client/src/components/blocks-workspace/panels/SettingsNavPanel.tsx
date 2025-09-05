@@ -1,8 +1,8 @@
 import { Panel } from "@/components/workspace";
 import { useWorkspace } from "@/hooks";
 import { AppShortcut, AssignmentOutlined, DvrOutlined } from "@mui/icons-material";
+import { FlexLayout } from "@semoss/shared";
 import { List, styled } from "@semoss/ui";
-import { Actions, DockLocation, TabNode } from "flexlayout-react";
 import { observer } from "mobx-react-lite";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -58,12 +58,13 @@ type SettingValues = "CURRENT" | "GENERAL" | "APP";
 export const SettingsNavPanel = observer(() => {
   const { workspace } = useWorkspace();
 
+  const { Actions, DockLocation, TabNode } = FlexLayout;
   const addSettingsTab = (option) => {
     // get the model
     const model = workspace.model;
     if (!model) throw new Error("Missing model");
 
-    let selectedNode: TabNode | null = null;
+    let selectedNode: FlexLayout.TabNode | null = null;
 
     // visit the notes, and see if it exists
     model.visitNodes((node) => {
