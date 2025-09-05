@@ -59,7 +59,6 @@ export * from "./components/ThemeProvider";
 export * from "./components/ToggleButton";
 export * from "./components/ToggleButtonGroup";
 export * from "./components/ToggleTabsGroup";
-export * from "./components/Toolbar";
 export * from "./components/Tooltip";
 export * from "./components/TreeView";
 export * from "./components/Typography";
