@@ -1,14 +1,13 @@
 import NorthEastIcon from "@mui/icons-material/NorthEast";
-import Autocomplete from "@mui/material/Autocomplete";
-import Chip from "@mui/material/Chip";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { debounced, Env, usePixel } from "@semoss/sdk/react";
 import {
+	Autocomplete,
 	Box,
-	Button,
 	Card,
+	Chip,
 	Divider,
 	Grid,
 	Link,
@@ -176,11 +175,11 @@ const StyledPublishedByContainer = styled("div")(({ theme }) => ({
 	height: "24px",
 }));
 
-interface SearchProps {
+interface PlatformSearchProps {
 	renderInput: (params: any) => React.ReactNode;
 }
 
-export const Search = observer(({ renderInput }: SearchProps) => {
+export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) => {
 	// TODO: navigation should be done through callback
 	const navigate = useNavigate();
 	const location = useLocation();

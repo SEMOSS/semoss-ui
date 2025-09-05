@@ -6,7 +6,6 @@ import {
 	SimCardDownload,
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
-import { IconButton, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
@@ -18,10 +17,12 @@ import {
 	Chip,
 	CircularProgress,
 	Grid,
+	IconButton,
 	Modal,
 	Stack,
 	styled,
 	ToggleTabsGroup,
+	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
@@ -660,9 +661,7 @@ export const AppDetailPage = () => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"appDetail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus || pendingRequest
 												? "Pending Access"
