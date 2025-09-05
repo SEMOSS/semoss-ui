@@ -1,8 +1,4 @@
-import {
-	Typography as MuiTypography,
-	type TypographyProps as MuiTypographyProps,
-	type SxProps,
-} from "@mui/material";
+import { Typography as MuiTypography, type SxProps } from "@mui/material";
 
 export interface TypographyProps {
 	/**
@@ -98,7 +94,7 @@ export interface TypographyProps {
 	 * Show a default margin below the element.
 	 * @default false
 	 */
-	gutterBottom?: MuiTypographyProps["gutterBottom"];
+	gutterBottom?: boolean;
 
 	/**
 	 * The component used for the root node. By default tied to the variant
