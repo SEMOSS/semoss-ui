@@ -41,7 +41,7 @@ export const EngineSettingsPage = () => {
 				<PendingMembersTable type={type} id={active.id} />
 				<MembersTable type={type} id={active.id} />
 			</StyledContainer>
-			<TeamsTable />
+			{/* <TeamsTable /> */}
 		</SettingsContext.Provider>
 	);
 };
