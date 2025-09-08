@@ -264,12 +264,13 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 
 		const saveFile = async (commitMsg = "Save from editor") => {
 			const content = editorRef.current.getValue();
+			const sanitizedCommitMsg = commitMsg.replace(/\s+/g, " ").trim();
 			try {
 				// setIsLoading(true);
 
 				let pixel = "";
 				if (type === "app") {
-					pixel = `SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"],comment=[${JSON.stringify(commitMsg)}])`;
+					pixel = `SaveAsset(fileName=["${path}"], content=["<encode>${content}</encode>"], space=["${space}"],comment=[${JSON.stringify(sanitizedCommitMsg)}])`;
 				} else if (type === "insight") {
 					throw Error("TODO");
 					// TODO: add insight

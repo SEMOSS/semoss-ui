@@ -154,7 +154,7 @@ export const BlocksWorkspaceActions = observer(() => {
 				throw new Error(errors.join(""));
 			}
 
-			const successMsg = commitMsg.trim()
+			const successMsg = sanitizedCommitMsg
 				? `Save successful !! File is saved with the following commit message: ${sanitizedCommitMsg}`
 				: "Save successful !!";
 			notification.add({
