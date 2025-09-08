@@ -419,10 +419,14 @@ export const EngineMetadataPage = observer(() => {
   };
 
   const handleEditDescriptionClose = () => {
-    setEditDescriptionDialog(prev => ({
-      ...prev,
+    setEditDescriptionDialog({
       open: false,
-    }));
+      columnId: "",
+      columnName: "",
+      tableName: "",
+      currentDescription: "",
+      newDescription: "",
+    });
     setSelectedLlmEngine("");
   };
 
@@ -439,28 +443,28 @@ export const EngineMetadataPage = observer(() => {
 			return;
 		}
 
-		setEditDescriptionDialog(currentState => {
-			const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[currentState.columnId] || [];
+		const currentState = editDescriptionDialog;
+		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[currentState.columnId] || [];
+		
+		const columnNameForPixel = logicalNames.length > 0 
+			? logicalNames[0] 
+			: currentState.columnName.replace(/\s+/g, "_");
 			
-			const columnNameForPixel = logicalNames.length > 0 
-				? logicalNames[0] 
-				: currentState.columnName.replace(/\s+/g, "_");
-				
-			const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
-			
-			monolithStore.runQuery(pixel).then((response) => {
-				const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
-				
-				setEditDescriptionDialog(prev => ({
-					...prev,
-					newDescription: predictedDescription,
-				}));
-			}).catch((error) => {
-				console.error("Failed to predict description:", error);
-			});
+		const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
 
-			return currentState;
-		});
+		console.log(pixel);
+		
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+			
+			setEditDescriptionDialog(prev => ({
+				...prev,
+				newDescription: predictedDescription,
+			}));
+		} catch (error) {
+			console.error("Failed to predict description:", error);
+		}
 	};
 
   const handleSaveDescription = async () => {
