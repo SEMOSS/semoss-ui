@@ -187,10 +187,25 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
     );
     const notificationListId = useId();
 
+    /**
+     * Fetch notifications from the backend.
+     *
+     * @param limit - The number of notifications to fetch.
+     * @param offset - The offset to start fetching from.
+     * @returns A promise that resolves to the fetched notifications.
+     */
     const fetchNotifications = async (limit: number, offset: number) => {
+      // Construct the pixel command
       const pixel = `GetNotifications(limit = "${limit}", offset = "${offset}")`;
+
+      // Run the pixel command
       const res = await runPixel(pixel);
-      return res.pixelReturn[0].output as NotificationRecord[];
+
+      // Extract the output of the pixel command
+      const notifications = res.pixelReturn[0].output as NotificationRecord[];
+
+      // Return the notifications
+      return notifications;
     };
 
     useEffect(() => {
@@ -211,10 +226,21 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
       })();
     }, [open]);
 
+    /**
+     * Load more notifications.
+     *
+     * This function is called when the user reaches the bottom of the notification list,
+     * and it fetches more notifications from the backend. It sets the loading state to true,
+     * fetches the notifications using the `fetchNotifications` function, and appends the
+     * new notifications to the existing list of notifications. It then sets the offset to
+     * the new number of notifications, and sets the `hasMore` state to true if the length
+     * of the new notifications is equal to the limit.
+     */
     const loadMore = async () => {
       if (loading || !hasMore) return;
       setLoading(true);
       try {
+        // Fetch more notifications from the backend.
         const more = await fetchNotifications(LIMIT, offset);
         setNotifications((prev) => [...prev, ...more]);
         setOffset(offset + more.length);
@@ -222,6 +248,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
       } catch (err) {
         console.error("Pixel call failed (loadMore):", err);
       } finally {
+        // Set the loading state to false.
         setLoading(false);
       }
     };
@@ -267,16 +294,18 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
       setSelectedTab(v as "all" | "unread" | "read");
     };
 
+    /**
+     * Mark notifications as read.
+     * @param id - Read only the notification with the given id.
+     */
     const MarkAsRead = async (id: string) => {
-      setNotifications((prev) =>
-        prev.map((n) =>
-          n.notification_id === id ? { ...n, notification_isread: true } : n
-        )
-      );
-
-      const UpdateReadNotificationsPixel = `UpdateReadNotifications ( notificationId = "${id}" )`;
-
       try {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.notification_id === id ? { ...n, notification_isread: true } : n
+          )
+        );
+        const UpdateReadNotificationsPixel = `UpdateReadNotifications ( notificationId = "${id}" )`;
         await runPixel(UpdateReadNotificationsPixel);
       } catch (e) {
         console.error("UpdateReadNotifications failed:", e);
@@ -287,17 +316,23 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
         );
       }
     };
+    /**
+     * Delete notifications.
+     * @param id - If provided, delete only the notification with the given id.
+     *             Otherwise, delete all notifications.
+     */
     const deleteNotifications = async (id?: string) => {
       try {
-        if (id) {
-          await runPixel(`DeleteNotifications(notificationId = "${id}")`);
-          setNotifications((prev) =>
-            prev.filter((n) => n.notification_id !== id)
-          );
-        } else {
-          await runPixel(`DeleteNotifications()`);
-          setNotifications([]);
-        }
+        // If an id is provided, delete only the notification with that id.
+        // Otherwise, delete all notifications.
+        const DeleteNotificationsPixel = id
+          ? `DeleteNotifications(notificationId = "${id}")`
+          : "DeleteNotifications()";
+        // Run the pixel to delete the notifications.
+        await runPixel(DeleteNotificationsPixel);
+        setNotifications((prev) =>
+          id ? prev.filter((n) => n.notification_id !== id) : []
+        );
       } catch (err) {
         console.error("DeleteNotifications failed:", err);
         if (id) {
@@ -306,8 +341,21 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
       }
     };
 
+    /**
+     * Given a notification record, returns a URL that the user should be taken
+     * to when the notification is clicked. The URL is constructed as follows:
+     *
+     * 1. If the notification is not a user request, or if the notification does
+     *    not have a project ID or source, return null.
+     * 2. If the notification is from the current user, return null.
+     * 3. Otherwise, construct a URL of the form `/source/project_id?tab=accesscontrol`.
+     * 4. If the current URL has a hash, append the hash to the constructed URL.
+     * 5. Return the constructed URL.
+     *
+     * @param n - The notification record.
+     * @returns The URL to take the user to when the notification is clicked, or null.
+     */
     const getHrefFromNotification = (n: NotificationRecord): string | null => {
-      console.log(n.user_name, loggedInUser, "notification");
       if (
         n.notification_type !== "USER_REQUEST" &&
         !n.notification_source &&
@@ -319,7 +367,6 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
       const currentUrl = window.location.href;
       const hashNeedle = "#";
       const idx = currentUrl.indexOf(hashNeedle);
-
       if (idx !== -1) {
         const base = currentUrl.substring(0, idx + hashNeedle.length);
         return `${base}${appPath}`;
@@ -327,14 +374,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
       return appPath;
     };
 
-    // const onLinkClick = () => {
-    //   page.setFromNotification(true);
-    //   onClose();
-    //   console.log(
-    //     page.fromNotification,
-    //     "Link clicked, drawer closed."
-    //   );
-    // };
+    const onLinkClick = () => {
+      // page.setFromNotification(true);
+      onClose();
+    };
 
     if (!open) return null;
     return (
@@ -423,6 +466,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
                               href={href}
                               onClick={(e) => {
                                 MarkAsRead(n.notification_id);
+                                onLinkClick();
                               }}
                             >
                               <StyledRedirectionIcon>

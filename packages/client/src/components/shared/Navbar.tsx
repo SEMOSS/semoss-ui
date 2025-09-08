@@ -64,12 +64,10 @@ export const Navbar: React.FC = observer(() => {
 useEffect(() => {
   async function poll() {
     try {
-      // 1) call pixel first
-      const pixel = `PollingNotifications()` //`PollingNotificationsReactor`
+      const pixel = `PollingNotifications()`;
       const res = await runPixel(pixel);
       const num = res.pixelReturn[0].output;
       setHasUnread(num as number);
-      console.log("Polling unread count (after pixel):", num, "at", new Date().toLocaleTimeString());
     } catch (e) {
       console.error("Pixel call failed:", e);
     }
