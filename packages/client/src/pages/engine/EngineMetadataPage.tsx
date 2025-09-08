@@ -6,7 +6,9 @@ import {
   Button,
   Chip,
   IconButton,
+  Menu,
   Modal,
+  Select,
   Stack,
   styled,
   Table,
@@ -57,6 +59,9 @@ export const EngineMetadataPage = observer(() => {
     currentDescription: "",
     newDescription: "",
   });
+
+  const [llmEngines, setLlmEngines] = useState<Array<{ database_id: string; database_name: string }>>([]);
+  const [selectedLlmEngine, setSelectedLlmEngine] = useState<string>("");
 
   const navigate = useNavigate();
 
@@ -195,6 +200,27 @@ export const EngineMetadataPage = observer(() => {
 		reloadDescriptions();
 	}
 }, [selectedNode]);
+
+  useEffect(() => {
+    const fetchLlmEngines = async () => {
+      try {
+        const pixel = `MyEngines(engineTypes=["MODEL"]);`;
+        const response = await monolithStore.runQuery(pixel);
+        const { output, operationType } = response.pixelReturn[0];
+
+        if (operationType.indexOf("ERROR") > -1) {
+          throw new Error(output as string);
+        }
+        if (Array.isArray(output)) {
+          setLlmEngines(output);
+        }
+      } catch (error) {
+        console.error("Failed to fetch LLM engines:", error);
+      }
+    };
+
+    fetchLlmEngines();
+  }, [monolithStore]);
 
 
   const [showSyncModal, setShowSyncModal] = useState(false);
@@ -395,6 +421,7 @@ export const EngineMetadataPage = observer(() => {
       ...prev,
       open: false,
     }));
+    setSelectedLlmEngine("");
   };
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -405,6 +432,10 @@ export const EngineMetadataPage = observer(() => {
   };
 
 	const handlePredictDescription = async () => {
+		if (!selectedLlmEngine) {
+			console.error("No LLM engine selected");
+			return;
+		}
 
 		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
 		
@@ -412,9 +443,7 @@ export const EngineMetadataPage = observer(() => {
 			? logicalNames[0] 
 			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
 			
-		// const pixel = `PredictOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}")`;
-
-		const pixel= `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", engine = "4801422a-5c62-421e-a00c-05c6a9e15de8")`;
+		const pixel= `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
 		
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -696,13 +725,32 @@ export const EngineMetadataPage = observer(() => {
 				<Modal.Title>
 					<Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
 						<span>Edit Column Description</span>
-						<Button 
-							variant="outlined" 
-							size="small"
-							onClick={handlePredictDescription}
-						>
-							Predict
-						</Button>
+						<Stack direction="row" spacing={2} alignItems="center">
+							<Select
+								value={selectedLlmEngine}
+								onChange={(e) => setSelectedLlmEngine(e.target.value)}
+								displayEmpty
+								size="small"
+								sx={{ minWidth: 200 }}
+							>
+								<Menu.Item value="">
+									<em>Select LLM Engine</em>
+								</Menu.Item>
+								{llmEngines.map((engine) => (
+									<Menu.Item key={engine.database_id} value={engine.database_id}>
+										{engine.database_name}
+									</Menu.Item>
+								))}
+							</Select>
+							<Button 
+								variant="outlined" 
+								size="small"
+								onClick={handlePredictDescription}
+								disabled={!selectedLlmEngine}
+							>
+								Predict
+							</Button>
+						</Stack>
 					</Stack>
 				</Modal.Title>
 				<Modal.Content>
