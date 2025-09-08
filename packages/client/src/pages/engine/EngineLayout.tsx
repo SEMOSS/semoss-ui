@@ -220,8 +220,10 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					),
 					metadata: values,
 					database_subtype: getEngineMetadata.data?.database_subtype,
-					database_created_by: getEngineMetadata.data?.database_created_by,
-					PERMISSIONGRANTEDBY: getEngineMetadata.data?.PERMISSIONGRANTEDBY,
+					database_created_by:
+						getEngineMetadata.data?.database_created_by,
+					PERMISSIONGRANTEDBY:
+						getEngineMetadata.data?.PERMISSIONGRANTEDBY,
 					DATEADDED: getEngineMetadata.data?.DATEADDED,
 					refresh: getEngineMetadata.refresh,
 				},

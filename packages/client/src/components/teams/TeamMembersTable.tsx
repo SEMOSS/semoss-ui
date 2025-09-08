@@ -1,5 +1,5 @@
 import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { debounced } from "@semoss/sdk/react";
@@ -248,9 +248,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const filteredNonCredentialedUsers = Array.from(
 		new Map(
 			nonCredentialedUsers
-				.filter((user) => !allTeamMembers.some((member) => member.userid === user.id))
-				.map((user) => [user.id, user])
-		).values()
+				.filter(
+					(user) =>
+						!allTeamMembers.some(
+							(member) => member.userid === user.id,
+						),
+				)
+				.map((user) => [user.id, user]),
+		).values(),
 	);
 
 	const { watch, setValue } = useForm<{
@@ -270,7 +275,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 */
 	useEffect(() => {
 		filter();
-	}, [groupId, count, membersPage, searchFilter,rowsPerPage]);
+	}, [groupId, count, membersPage, searchFilter, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -517,7 +522,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				setTeamMembers(data);
 				setHasMembers(data?.length > 0);
 			});
-	}, [count, membersPage, searchFilter,rowsPerPage]);
+	}, [count, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
 		monolithStore
@@ -530,7 +535,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			.then((data) => {
 				setMemberCount(data.length);
 				setAllTeamMembers(data);
-        	});
+			});
 	}, [count, membersPage, searchFilter]);
 
 	const filter = () => {
@@ -785,7 +790,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											setSelectedMembers([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(parseInt(e.target.value, 10));
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
 											setMembersPage(1);
 										}}
 										page={membersPage - 1}

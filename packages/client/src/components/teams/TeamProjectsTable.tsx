@@ -278,7 +278,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 */
 	useEffect(() => {
 		filterProjects();
-	}, [groupId, groupType, count, projectsPage, searchFilter,rowsPerPage]);
+	}, [groupId, groupType, count, projectsPage, searchFilter, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -569,7 +569,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				false,
 			)
 			.then((data) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter,rowsPerPage]);
+	}, [count, projectsPage, searchFilter, rowsPerPage]);
 
 	const debouncedFilterProjects = debounced(filterProjects, 400);
 
@@ -851,7 +851,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 											setSelectedProojects([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(parseInt(e.target.value, 10));
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
 											setProjectsPage(1);
 										}}
 										page={projectsPage - 1}

@@ -237,14 +237,14 @@ export const permissionPriorityMapper = (permission: string | number) => {
  * @param str
  */
 export const extractInitials = (str: string): string => {
-    if (str.length < 1) {
-        return '';
-    }
+	if (str.length < 1) {
+		return "";
+	}
 
-    return str.split(' ').reduce((prev, curr) => {
-        return prev + (curr[0] || '');
-    }, '');
-}
+	return str.split(" ").reduce((prev, curr) => {
+		return prev + (curr[0] || "");
+	}, "");
+};
 
 export const formatToDataTestId = (text: string) => {
 	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");

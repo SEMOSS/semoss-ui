@@ -374,8 +374,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 * @desc - sets engines in react hook form
 	 */
 	useEffect(() => {
-		filterEngines();	
-	}, [groupId, groupType, enginesPage, searchFilter, count,rowsPerPage]);
+		filterEngines();
+	}, [groupId, groupType, enginesPage, searchFilter, count, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -887,7 +887,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 											setSelectedEngines([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(parseInt(e.target.value, 10));
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
 											setEnginesPage(1);
 										}}
 										page={enginesPage - 1}
@@ -1017,7 +1019,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														display: "flex",
 														height: "50px",
 														width: "50px",
-														justifyContent: "center",
+														justifyContent:
+															"center",
 														alignItems: "center",
 														border: "0.5px solid rgba(0, 0, 0, .05)",
 														borderRadius: "50%",
@@ -1032,7 +1035,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 															"& img": {
 																width: "100%",
 																height: "100%",
-																objectFit: "cover",
+																objectFit:
+																	"cover",
 															},
 														}}
 														src={getRandomImageForProject(
@@ -1068,7 +1072,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														<span
 															style={{
 																opacity: 0.9,
-																fontSize: "11px",
+																fontSize:
+																	"11px",
 																width: "70%",
 																gap: "4px",
 															}}
@@ -1078,7 +1083,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 																variant="body2"
 																component="span"
 															>
-																{engine.engine_id}
+																{
+																	engine.engine_id
+																}
 															</Typography>
 														</span>
 													</Box>
@@ -1092,7 +1099,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 															color: "rgba( 0, 0, 0, .7)",
 															mr: "2px",
 															top: "20%",
-															position: "absolute",
+															position:
+																"absolute",
 															padding: "10px",
 														}}
 														onClick={() => {

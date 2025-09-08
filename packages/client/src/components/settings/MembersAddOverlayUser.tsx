@@ -1,5 +1,5 @@
-import { extractInitials } from '@/utility/general';
 import { Avatar, Stack, styled, Typography } from "@semoss/ui";
+import { extractInitials } from "@/utility/general";
 
 const StyledUser = styled(Stack)(({ theme }) => ({
 	paddingTop: theme.spacing(1),

@@ -170,7 +170,7 @@ export const SelectInputSettings = observer(
 					<Autocomplete
 						fullWidth
 						size="small"
-                        multiple={false}
+						multiple={false}
 						value={value}
 						onChange={(_, newValue) => {
 							onChange(newValue.replace("Custom: ", ""));
