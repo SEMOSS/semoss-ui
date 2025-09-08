@@ -190,7 +190,7 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 					>
 						<Modal.Title>Enter Commit Message</Modal.Title>
 						<Modal.Content>
-							<Stack spacing={2}>
+							<Stack spacing={2} padding={2}>
 								<TextField
 									autoFocus
 									fullWidth
