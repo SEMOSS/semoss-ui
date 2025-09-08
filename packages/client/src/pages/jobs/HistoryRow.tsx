@@ -41,7 +41,7 @@ export const HistoryRow = (props: {
 					<IconButton
 						size="small"
 						onClick={() => setOpen(!open)}
-						data-testid={"history-table-toggle-btn"}
+						data-testid={"historyRow-table-toggle-btn"}
 					>
 						{open ? <KeyboardArrowDown /> : <ChevronRight />}
 					</IconButton>
