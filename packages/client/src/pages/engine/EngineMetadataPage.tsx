@@ -395,24 +395,26 @@ export const EngineMetadataPage = observer(() => {
       const response = await monolithStore.runQuery(pixel);
       const description = response.pixelReturn[0]?.output?.[columnName] || currentDescription;
       
-      setEditDescriptionDialog({
+      setEditDescriptionDialog(prev => ({
+        ...prev,
         open: true,
         columnId,
         columnName,
         tableName,
         currentDescription: description,
         newDescription: description,
-      });
+      }));
     } catch (error) {
       console.error("Failed to retrieve description:", error);
-      setEditDescriptionDialog({
+      setEditDescriptionDialog(prev => ({
+        ...prev,
         open: true,
         columnId,
         columnName,
         tableName,
         currentDescription,
         newDescription: currentDescription,
-      });
+      }));
     }
   };
 
@@ -437,25 +439,28 @@ export const EngineMetadataPage = observer(() => {
 			return;
 		}
 
-		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
-		
-		const columnNameForPixel = logicalNames.length > 0 
-			? logicalNames[0] 
-			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+		setEditDescriptionDialog(currentState => {
+			const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[currentState.columnId] || [];
 			
-		const pixel= `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
-		
-		try {
-			const response = await monolithStore.runQuery(pixel);
-			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+			const columnNameForPixel = logicalNames.length > 0 
+				? logicalNames[0] 
+				: currentState.columnName.replace(/\s+/g, "_");
+				
+			const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
 			
-			setEditDescriptionDialog({
-				...editDescriptionDialog,
-				newDescription: predictedDescription,
+			monolithStore.runQuery(pixel).then((response) => {
+				const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+				
+				setEditDescriptionDialog(prev => ({
+					...prev,
+					newDescription: predictedDescription,
+				}));
+			}).catch((error) => {
+				console.error("Failed to predict description:", error);
 			});
-		} catch (error) {
-			console.error("Failed to predict description:", error);
-		}
+
+			return currentState;
+		});
 	};
 
   const handleSaveDescription = async () => {
