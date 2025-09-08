@@ -139,13 +139,14 @@ export const BlocksWorkspaceActions = observer(() => {
 				}
 			}
 		});
+		const sanitizedCommitMsg = commitMsg.replace(/\s+/g, " ").trim();
 		try {
 			// save the json
 			const { errors } = await monolithStore.runQuery<[true]>(
 				`SaveAppBlocksJson(project=["${
 					workspace.appId
 				}"], json=["<encode>${JSON.stringify(json)}</encode>"],
-                comment=[${JSON.stringify(commitMsg)}]
+                comment=[${JSON.stringify(sanitizedCommitMsg)}]
                 );`,
 			);
 
@@ -154,7 +155,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			}
 
 			const successMsg = commitMsg.trim()
-				? `Save successful !! File is saved with the following commit message: ${commitMsg}`
+				? `Save successful !! File is saved with the following commit message: ${sanitizedCommitMsg}`
 				: "Save successful !!";
 			notification.add({
 				color: "success",
@@ -339,7 +340,7 @@ export const BlocksWorkspaceActions = observer(() => {
 			>
 				<Modal.Title>Enter Commit Message</Modal.Title>
 				<Modal.Content>
-					<Stack spacing={2}>
+					<Stack spacing={2} padding={2}>
 						<TextField
 							autoFocus
 							fullWidth
