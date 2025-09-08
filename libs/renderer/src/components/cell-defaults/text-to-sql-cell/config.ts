@@ -26,11 +26,14 @@ export const TextToSqlCellConfig: CellConfig<TextToSqlCellDef> = {
         },
     },
     toPixel: ({
+        databaseId,
         frameVariableName,
         userQuery,
         model,
     }) => {
         const userQuerySanitized = sanitizeQuery(userQuery);
+        return `TextToSQL(databaseId=["${databaseId}"], command=["${userQuerySanitized}"], model=["${model}"])`;
         return `NLPQuery3(command=["${userQuerySanitized}"], json=true, tokenCount=["${userQuerySanitized.length}"],  frame = [${frameVariableName}], allFrames = [""], dialect = [""], engine=["${model}"])`;
+        //model, database, command, error, sql, paramValues
     },
 };
