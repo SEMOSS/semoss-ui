@@ -469,6 +469,15 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			return <>ERROR</>;
 		}
 
+		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
+		const nonBookmarked = databases.filter(
+			(db) =>
+				!favoritedDbs.some(
+					(fav) => fav.database_id === db.database_id
+				)
+		);
+
+
 		return (
 			<Stack direction="column" gap={2}>
 				<Stack>
@@ -651,7 +660,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						{"bi".includes(search.toLowerCase()) &&
 							Object.entries(metaFilters).length === 0 &&
 							"terminal".includes(search.toLowerCase()) &&
-							databases.length > 0 && (
+							databases.length > 0 && nonBookmarked.length > 0 && (
 								<StyledSectionLabel variant="subtitle1">
 									All {route.name}s
 								</StyledSectionLabel>
@@ -659,7 +668,14 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 						{databases.length ? (
 							<Grid container spacing={3}>
-								{databases.map((db) => {
+								{databases
+								.filter(
+									(db) =>
+										!favoritedDbs.some(
+											(fav) => fav.database_id === db.database_id
+									)
+								)
+								.map((db) => {
 									return (
 										<Grid item key={db.database_id} sm={12}>
 											<EngineLandscapeCard
