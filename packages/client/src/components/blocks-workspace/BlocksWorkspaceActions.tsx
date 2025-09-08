@@ -17,7 +17,6 @@ import { ModelBrain } from "@/assets/img/ModelBrain";
 import { ShareOverlay } from "@/components/ui";
 import { PreviewOverlay } from "@/components/workspace";
 import { useRootStore, useWorkspace } from "@/hooks";
-import type { FileSavedEventDetail } from "@/types/types";
 import { LLMSelectOverlay } from "../llms";
 
 export const BlocksWorkspaceActions = observer(() => {
@@ -161,19 +160,6 @@ export const BlocksWorkspaceActions = observer(() => {
 				color: "success",
 				message: successMsg,
 			});
-
-			// Dispatch custom event to notify VersionsTable of the save
-			const event: CustomEvent<FileSavedEventDetail> = new CustomEvent(
-				"fileSaved",
-				{
-					detail: {
-						appId: workspace.appId,
-						path: "blocks.json", // Indicate this is a blocks save
-						type: "blocks",
-					},
-				},
-			);
-			window.dispatchEvent(event);
 		} catch (e) {
 			console.error(e);
 

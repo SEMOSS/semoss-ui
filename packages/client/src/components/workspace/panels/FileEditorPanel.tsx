@@ -12,7 +12,6 @@ import {
 } from "@semoss/ui";
 import { FileEditor, type FileEditorRefDef } from "@/components/common";
 import { useWorkspace } from "@/hooks";
-import type { FileSavedEventDetail } from "@/types/types";
 import { Panel } from "./Panel";
 
 interface FileEditorPanelProps {
@@ -147,22 +146,6 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 		await performSave(commitMsg);
 	};
 
-	//  Handle file saved callback - trigger versions table refresh
-
-	const handleFileSaved = () => {
-		// Dispatch a custom event to notify other components that a file was saved
-		const event: CustomEvent<FileSavedEventDetail> = new CustomEvent(
-			"fileSaved",
-			{
-				detail: {
-					appId: workspace.appId,
-					path: path,
-					type: "file",
-				},
-			},
-		);
-		window.dispatchEvent(event);
-	};
 	return (
 		<Panel
 			actions={
@@ -254,7 +237,6 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 				insightId={workspace.insightId}
 				path={path}
 				agentModelEngine={workspace.agentModelEngine}
-				onFileSaved={handleFileSaved}
 				onChange={(_content, isModified) => {
 					onFileEditorChange(isModified);
 				}}

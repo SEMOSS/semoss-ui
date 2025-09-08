@@ -1,5 +1,5 @@
 import Refresh from "@mui/icons-material/Refresh";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
 	Button,
 	Chip,
@@ -10,11 +10,7 @@ import {
 } from "@semoss/ui";
 import { Section } from "@/components/ui";
 import { useVersionsTable } from "@/hooks";
-import type {
-	CommitVersion,
-	FileSavedEventDetail,
-	VersionsTableProps,
-} from "@/types/types";
+import type { CommitVersion, VersionsTableProps } from "@/types/types";
 import { AddTagModal } from "./AddTagModal";
 
 // Styled Components
@@ -131,25 +127,6 @@ export const VersionsTable: React.FC<VersionsTableProps> = ({ id }) => {
 			addTagToVersion(selectedVersion.commitId, newTag);
 		}
 	};
-
-	// Listen for file save events to automatically refresh the versions table
-	useEffect(() => {
-		const handleFileSaved = (event: CustomEvent<FileSavedEventDetail>) => {
-			// Check if the saved file belongs to the same app/project
-			if (event.detail?.appId === id) {
-				handleRefresh();
-			}
-		};
-
-		window.addEventListener("fileSaved", handleFileSaved as EventListener);
-
-		return () => {
-			window.removeEventListener(
-				"fileSaved",
-				handleFileSaved as EventListener,
-			);
-		};
-	}, [id, handleRefresh]);
 
 	// Early returns for loading and error states
 	if (loading) {
