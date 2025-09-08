@@ -62,6 +62,7 @@ export const EngineMetadataPage = observer(() => {
 
   const [llmEngines, setLlmEngines] = useState<Array<{ database_id: string; database_name: string }>>([]);
   const [selectedLlmEngine, setSelectedLlmEngine] = useState<string>("");
+  const [dialogKey, setDialogKey] = useState<number>(0);
 
   const navigate = useNavigate();
 
@@ -404,6 +405,7 @@ export const EngineMetadataPage = observer(() => {
         currentDescription: description,
         newDescription: description,
       }));
+      setDialogKey(prev => prev + 1);
     } catch (error) {
       console.error("Failed to retrieve description:", error);
       setEditDescriptionDialog(prev => ({
@@ -415,6 +417,7 @@ export const EngineMetadataPage = observer(() => {
         currentDescription,
         newDescription: currentDescription,
       }));
+      setDialogKey(prev => prev + 1);
     }
   };
 
@@ -444,11 +447,20 @@ export const EngineMetadataPage = observer(() => {
 		}
 
 		const currentState = editDescriptionDialog;
-		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[currentState.columnId] || [];
 		
-		const columnNameForPixel = logicalNames.length > 0 
-			? logicalNames[0] 
-			: currentState.columnName.replace(/\s+/g, "_");
+		let columnNameForPixel = currentState.columnName.replace(/\s+/g, "_");
+		
+		try {
+			const logicalNamesPixel = `GetDatabaseMetamodel(database=["${active.id}"], options=["logicalNames"]);`;
+			const logicalNamesResponse = await monolithStore.runQuery(logicalNamesPixel);
+			const logicalNames = logicalNamesResponse.pixelReturn[0]?.output?.logicalNames?.[currentState.columnId] || [];
+			
+			if (logicalNames.length > 0) {
+				columnNameForPixel = logicalNames[0];
+			}
+		} catch (error) {
+			console.warn("Failed to fetch logical names, using column name:", error);
+		}
 			
 		const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
 
@@ -730,7 +742,7 @@ export const EngineMetadataPage = observer(() => {
 			/>
 
 			{/* Edit Description Dialog */}
-			<Modal open={editDescriptionDialog.open} onClose={handleEditDescriptionClose}>
+			<Modal key={dialogKey} open={editDescriptionDialog.open} onClose={handleEditDescriptionClose}>
 				<Modal.Title>
 					<Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
 						<span>Edit Column Description</span>
