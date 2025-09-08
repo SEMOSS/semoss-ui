@@ -1,6 +1,11 @@
 import type { Role } from "@/types";
 
-export type NotificationType = "USER_REQUEST" | "REQUEST_APPROVAL" | "USER_ADDITION" | "PERMISSION_CHANGE";
+export type NotificationType =
+  | "USER_REQUEST"
+  | "REQUEST_APPROVAL"
+  | "USER_ADDITION"
+  | "PERMISSION_CHANGE"
+  | "REQUEST_DENIAL";
 export interface NotificationRecord {
   notification_id: string;
   recipient_id?: string;
@@ -17,4 +22,5 @@ export interface NotificationRecord {
   user_name?: string;
   user_existingrole?: Role | null;
   user_newrole?: Role;
+  project_id?: string;
 }

@@ -7,9 +7,10 @@ import {
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
 import { IconButton, Tooltip } from "@mui/material";
+import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Box,
@@ -222,7 +223,7 @@ const StyledStack = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(3),
 }));
 
-export const AppDetailPage = () => {
+export const AppDetailPage = observer(() => {
 	const { control, setValue, getValues, watch, handleSubmit } =
 		useForm<AppDetailsFormTypes>({ defaultValues: AppDetailsFormValues });
 
@@ -242,16 +243,29 @@ export const AppDetailPage = () => {
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const { appId } = useParams();
+	//const { page } = usePage();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
-
-	console.log(appInfo, "appInfo");
+	const [selectedTab, setSelectedTab] = useState("Overview");
+	const [searchParams, setSearchParams] = useSearchParams();
+	const tab = searchParams.get("tab");
 
 	useEffect(() => {
 		setValue("appId", appId);
 		fetchUserSpecificData();
 		fetchAppData(appId);
 	}, [appId]);
+
+	useEffect(() => {
+		// if(page.fromNotification) {
+		// 	setSelectedTab("Access Control");
+		// 	page.setFromNotification(false);
+		// }
+		if (tab === "accesscontrol") {
+			setSelectedTab("Access Control");
+			setSearchParams({});
+		}
+	}, [tab]);
 
 	const fetchUserSpecificData = async () => {
 		const currPermission = getValues("permission");
@@ -262,7 +276,6 @@ export const AppDetailPage = () => {
 			fetchSimilarApps();
 		}
 	};
-	// This runs ONLY when `appId` changes — not when dependencies change
 	useEffect(() => {
 		if (appId) {
 			const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
@@ -278,7 +291,7 @@ export const AppDetailPage = () => {
 					}
 				})
 				.catch((_error) => {
-					setPendingRequest(false); // fallback in case of error
+					setPendingRequest(false);
 				});
 		}
 	}, [appId]);
@@ -567,8 +580,6 @@ export const AppDetailPage = () => {
 	const handleAccessRequested = () => {
 		setResponseStatus(true);
 	};
-	const [selectedTab, setSelectedTab] = useState("Overview");
-
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
 		author: ["Overview", "Access Control", "Dependencies", "Settings"],
 		editor: ["Overview", "Access Control"],
@@ -879,4 +890,4 @@ export const AppDetailPage = () => {
 			</OuterContainer>
 		</div>
 	);
-};
+});

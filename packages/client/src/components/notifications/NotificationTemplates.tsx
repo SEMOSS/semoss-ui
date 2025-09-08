@@ -166,6 +166,37 @@ export const getNotificationMessage = (
         </>
       );
 
+    case "REQUEST_DENIAL":
+      if (isSelf) {
+        return (
+          <>
+            <Message>Your request for</Message> {newPermission}{" "}
+            <Message>permission on</Message> {app}{" "}
+            <Message>has been denied by</Message> {by}
+            <FullStop />
+          </>
+        );
+      } else if (isAuthor) {
+        return (
+          <>
+            {member}
+            <Message> access request to</Message> {newPermission}{" "}
+            <Message>permission on</Message> {app}{" "}
+            <Message>has been denied by</Message> you
+            <FullStop />
+          </>
+        );
+      }
+      return (
+        <>
+          {member}
+          <Message> access request to</Message> {newPermission}{" "}
+          <Message>permission on</Message> {app}{" "}
+          <Message>was denied by</Message> {by}
+          <FullStop />
+        </>
+      );
+
     default:
       return null;
   }

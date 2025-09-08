@@ -38,6 +38,8 @@ export interface PageStoreInterface {
 		 */
 		pinned: boolean;
 	};
+	//fromNotification?: boolean;
+
 }
 
 /**
@@ -54,6 +56,7 @@ export class PageStore {
 			open: false,
 			pinned: false,
 		},
+		//fromNotification: false,
 	};
 
 	constructor() {
@@ -107,6 +110,9 @@ export class PageStore {
 		return this._store.sidebar;
 	}
 
+	// get fromNotification() {
+	// 	return this._store.fromNotification;
+	// }
 	/**
 	 * Actions
 	 */
@@ -168,4 +174,10 @@ export class PageStore {
 	unpinSidebar = () => {
 		this._store.sidebar.pinned = false;
 	};
+
+	// setFromNotification(value: boolean) {
+	// 	runInAction(() => {
+	// 		this._store.fromNotification = value;
+	// 	});
+	// }
 }
