@@ -7,7 +7,7 @@ import { List, ListItemIcon, ListItemText, Stack, styled } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { getShowFieldOptions } from "../../../../../block-settings/block-defaults.shared";
 import { SelectInputSettings } from "../../../../../settings";
-import { ResizeSetting, ResizeSetting } from "../../../../shared";
+import { ResizeSetting } from "../../../../shared";
 import { ColorPalatteSettings } from "../../../../shared/ColorPalatteSettings";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 import { ChangeOrientation } from "../dendrogram/ChangeOrientation";
@@ -1687,7 +1687,7 @@ const NetworkChartTools = ({ id }) => {
 					<InfoOutlined />
 				</List.ItemButton>
 				{networkSelection === "title" && (
-					<PieTitle id={id} path={"option"} />
+					<TitleTool id={id} path={"option"} />
 				)}
 			</StyledListItem>
 			<StyledListItem disablePadding>
