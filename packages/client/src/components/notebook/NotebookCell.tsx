@@ -12,10 +12,12 @@ import {
 	Pending,
 	PlayArrowRounded,
 	PlayCircle,
+	SmartToy,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk";
 import {
 	ButtonGroup,
 	Card,
@@ -514,8 +516,88 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const generateWithAIHandler = () => {
-			console.log("generateWithAIHandler");
+		/**
+		 * @description
+		 * 1. make pixel call to generate python tool for cell
+		 * 2. Swap cell config in place for mcp config
+		 */
+		const makeCellMCP = async () => {
+			try {
+				// Make pixel call to generate MCP tool
+				const { errors, pixelReturn } = await runPixel(
+					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
+				);
+
+				// Handle pixel call errors
+				if (errors?.length) {
+					notification.add({
+						message: errors[0],
+						color: "error",
+					});
+					return;
+				}
+
+				// Validate pixel return
+				if (!pixelReturn?.[0]?.output) {
+					throw new Error("Invalid response from pixel call");
+				}
+
+				const output = pixelReturn[0].output as {
+					tools: {
+						name: string;
+						title: string;
+						description: string;
+						inputSchema: {
+							properties: {
+								[key: string]: {
+									title: string;
+									description: string;
+									type: string;
+								};
+							};
+							required: string[];
+							title: string;
+							type: string;
+						};
+					}[];
+				};
+
+				// Validate output structure
+				if (!output.tools?.[0]) {
+					throw new Error("No tools found in pixel response");
+				}
+
+				const tool = output.tools[0];
+				const toolName = tool.name;
+				const properties = tool.inputSchema?.properties || {};
+
+				// Build parameters object from schema properties
+				const params = Object.keys(properties).reduce((acc, key) => {
+					acc[key] = null;
+					return acc;
+				}, {});
+
+				// Dispatch action to update cell configuration
+				state.dispatch({
+					message: ActionMessages.MAKE_CELL_MCP,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						parameters: {
+							name: toolName,
+							projectId: workspace.appId,
+							originalParams: { ...cell.parameters },
+							params,
+						},
+					},
+				});
+			} catch (error) {
+				console.error("Error in makeCellMCP:", error);
+				notification.add({
+					message: error.message || "Failed to create MCP cell",
+					color: "error",
+				});
+			}
 		};
 
 		return (
@@ -559,20 +641,20 @@ export const NotebookCell = observer(
 								<StyledButtonGroupButton
 									title="Make Available through MCP"
 									size="small"
-									disabled={cell.isLoading}
+									disabled={
+										cell.isLoading ||
+										!workspace.agentModelEngine ||
+										cell.config.widget !== "code"
+									}
 									onClick={(e) => {
 										// stop propogation to card parent so newly created cell will be selected
 										e.stopPropagation();
-
-										// publish call as mcp
-										state.makeCellMCP(query.id, cell.id);
-
-										console.log(state);
-										debugger;
+										// helper fn to make the cell mcp
+										makeCellMCP();
 									}}
 								>
 									<StyledButtonLabel>
-										<AutoFixHigh />
+										<SmartToy />
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 								<StyledButtonGroupButton
@@ -686,10 +768,6 @@ export const NotebookCell = observer(
 								</StyledButtonGroupButton>
 							</StyledButtonGroup>
 
-							{/**
-							 * more options menu
-							 * only showing one option currently with no attached function
-							 **/}
 							<StyledMenu
 								anchorEl={anchorEl}
 								open={open}
@@ -702,7 +780,6 @@ export const NotebookCell = observer(
 									value={"generate-with-ai"}
 									onClick={() => {
 										setAnchorEl(null);
-										generateWithAIHandler();
 									}}
 								>
 									Generate with AI

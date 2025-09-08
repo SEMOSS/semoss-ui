@@ -250,40 +250,9 @@ export class CellState<D extends CellDef = CellDef> {
 	 * Bind the MCP Tool to the cell for execution
 	 * @returns
 	 */
-	makeCellMCP = (): void => {
-		// TODO: Make Pixel call
-		// `MakeCellMCP(projectId=[], queryId=[], cellId=[])`
-
-		this._store.mcpEnabled = {
-			name: "diagnose_short_symptom",
-			title: "Diagnose Short Symptom",
-			description:
-				"Generates a short (20-character) possible diagnosis based on two symptom inputs, using the SEMOSS Insight engine.\n\nArgs:\n    symptom1 (str): Description or name of the first symptom.\n    symptom2 (str): Description or name of the second symptom.\n\nReturns:\n    str: A concise diagnosis (up to 20 characters), inferred by the LLM engine.",
-			inputSchema: {
-				properties: {
-					symptom1: {
-						title: "Symptom1",
-						description:
-							"Description or name of the first symptom.",
-						type: "string",
-					},
-					symptom2: {
-						title: "Symptom2",
-						description:
-							"Description or name of the second symptom.",
-						type: "string",
-					},
-				},
-				required: ["symptom1", "symptom2"],
-				title: "diagnose_short_symptom_Arguments",
-				type: "object",
-			},
-		};
-
-		this._store.mcpParameters = {
-			symptom1: "{{input_1}}",
-			symptom2: "{{input_2}}",
-		};
+	makeCellMCP = (params): void => {
+		this._store.widget = "mcp-tool";
+		this._store.parameters = params;
 	};
 
 	/**

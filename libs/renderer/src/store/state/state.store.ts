@@ -27,7 +27,6 @@ import type {
 	CellRegistry,
 	Frame,
 	ListenerActions,
-	MCPToolConfig,
 	SerializedState,
 	Variable,
 	VariableType,
@@ -553,6 +552,10 @@ export class StateStore {
 				const { queryId, cellId, path, value } = action.payload;
 
 				this.updateCell(queryId, cellId, path, value);
+			} else if (ActionMessages.MAKE_CELL_MCP === action.message) {
+				const { queryId, cellId, parameters } = action.payload;
+
+				this.makeCellMCP(queryId, cellId, parameters);
 			} else if (ActionMessages.RUN_QUERY === action.message) {
 				/**
 				 * --------------------------------------------------
@@ -1105,16 +1108,16 @@ export class StateStore {
 	/**
 	 * Converts cell and publishes cell as MCP function
 	 */
-	makeCellMCP = (queryId: string, cellId: string) => {
-		console.log("Make the cell MCP");
-		console.log(queryId);
-		console.log(cellId);
-
+	makeCellMCP = (
+		queryId: string,
+		cellId: string,
+		params: Record<string, unknown>,
+	) => {
 		const q = this.getQuery(queryId);
 		const c = q.getCell(cellId);
 
 		if (c) {
-			c.makeCellMCP();
+			c.makeCellMCP(params);
 		}
 	};
 

@@ -225,7 +225,6 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 					state = await migration.run(output);
 				}
 
-				debugger;
 				// create a new state store
 				const s = new StateStore({
 					mode: "static",

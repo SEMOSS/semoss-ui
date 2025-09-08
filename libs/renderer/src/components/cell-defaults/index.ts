@@ -33,6 +33,7 @@ import {
 	type JoinTransformationCellDef,
 } from "./join-transformation-cell";
 import { LLMCellConfig, type LLMCellDef } from "./llm-cell";
+import { MCPToolCellConfig, type MCPToolCellDef } from "./mcp-tool-cell";
 import {
 	QueryImportCellConfig,
 	type QueryImportCellDef,
@@ -73,7 +74,8 @@ export type DefaultCellDefinitions =
 	| CumulativeSumTransformationCellDef
 	| EncodeColumnTransformationCellDef
 	| CollapseTransformationCellDef
-	| SendEmailCellDef;
+	| SendEmailCellDef
+	| MCPToolCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[CodeCellConfig.widget]: CodeCellConfig,
@@ -99,6 +101,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[CollapseTransformationCellConfig.widget]: CollapseTransformationCellConfig,
 	[LLMCellConfig.widget]: LLMCellConfig,
 	[SendEmailCellConfig.widget]: SendEmailCellConfig,
+	[MCPToolCellConfig.widget]: MCPToolCellConfig,
 } as const;
 
 const filteredTransformations: Partial<CellRegistry<DefaultCellDefinitions>> =
