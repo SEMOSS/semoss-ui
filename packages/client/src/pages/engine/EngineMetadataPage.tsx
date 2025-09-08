@@ -449,10 +449,10 @@ export const EngineMetadataPage = observer(() => {
 			const response = await monolithStore.runQuery(pixel);
 			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
 			
-			setEditDescriptionDialog({
-				...editDescriptionDialog,
+			setEditDescriptionDialog(prev => ({
+				...prev,
 				newDescription: predictedDescription,
-			});
+			}));
 		} catch (error) {
 			console.error("Failed to predict description:", error);
 		}
@@ -464,7 +464,7 @@ export const EngineMetadataPage = observer(() => {
       ? logicalNames[0] 
       : editDescriptionDialog.columnName.replace(/\s+/g, "_");
       
-    const pixel = `EditOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", description="${editDescriptionDialog.newDescription}")`;
+    const pixel = `EditOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", description="<encode>${editDescriptionDialog.newDescription}</encode>")`;
     
     try {
       await monolithStore.runQuery(pixel);
