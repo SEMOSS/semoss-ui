@@ -124,6 +124,19 @@ export const VisualMapConstant = {
 						fontSize: 12,
 					},
 				},
+				reset: {
+					title: {
+						text: "Bar Graph",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+				},
 			},
 		},
 		{
@@ -155,13 +168,15 @@ export const VisualMapConstant = {
 			title: "echart-line-graph",
 			option: {
 				title: {
-					text: "ECharts Line Chart",
-					left: "center",
+					text: "Line Chart",
 					top: 20,
+					left: "left",
+					show: true,
 					textStyle: {
-						fontSize: 18,
-						fontWeight: "normal",
 						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
 					},
 				},
 				tooltip: {
@@ -246,14 +261,14 @@ export const VisualMapConstant = {
 				],
 				reset: {
 					title: {
-						text: "",
-						left: "center",
+						text: "Line Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
-							fontFamily: "",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					xAxis: {
@@ -421,13 +436,26 @@ export const VisualMapConstant = {
 				},
 				title: {
 					text: "Map Graph",
-					show: true,
 					left: "left",
+					show: true,
 					textStyle: {
 						color: "#000000",
 						fontWeight: "bold",
 						fontFamily: "Arial Narrow",
 						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Map Graph",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
 					},
 				},
 			},
@@ -468,13 +496,14 @@ export const VisualMapConstant = {
 					"#deeaee",
 				],
 				title: {
-					text: "",
-					left: "center",
+					text: "Pie Chart",
+					left: "left",
 					show: true,
 					textStyle: {
-						fontSize: 18,
-						color: "#ff6f61",
-						fontWeight: "normal",
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
 					},
 				},
 				tooltip: {
@@ -526,14 +555,14 @@ export const VisualMapConstant = {
 				reset: {
 					radius: "50%",
 					title: {
-						text: "",
-						left: "center",
+						text: "Pie Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
-							fontFamily: "",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					label: {
@@ -573,9 +602,16 @@ export const VisualMapConstant = {
 			title: "echart-stack-chart",
 			option: {
 				title: {
-					text: "",
-					left: "center",
+					text: "Stacked Bar Chart",
+					left: "left",
 					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
 				},
 				tooltip: {
 					show: false,
@@ -757,6 +793,18 @@ export const VisualMapConstant = {
 						fontSize: 12,
 						color: "#000000",
 					},
+					title: {
+						text: "Stacked Bar Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 					barWidth: 10,
 				},
 			},
@@ -795,9 +843,16 @@ export const VisualMapConstant = {
 			title: "echart-scatter-plots",
 			option: {
 				title: {
-					text: "",
-					left: "center",
+					text: "Scatter Plot",
+					left: "left",
 					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
 				},
 				tooltip: {
 					show: true,
@@ -946,6 +1001,18 @@ export const VisualMapConstant = {
 						fontSize: 12,
 						color: "#000000",
 					},
+					title: {
+						text: "Scatter Plot",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 				},
 			},
 		},
@@ -1019,6 +1086,32 @@ export const VisualMapConstant = {
 				tooltip: {
 					trigger: "item",
 					triggerOn: "mousemove",
+				},
+				title: {
+					text: "Dendrogram Chart",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 				},
 				toolbox: {
 					show: true,
@@ -1227,6 +1320,32 @@ export const VisualMapConstant = {
 			label: "Gantt",
 			title: "echart-gantt-chart",
 			option: {
+				title: {
+					text: "Gantt Chart",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+				},
 				tooltip: {
 					show: true,
 				},
