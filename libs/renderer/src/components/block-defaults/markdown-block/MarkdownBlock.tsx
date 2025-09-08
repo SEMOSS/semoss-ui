@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
-import { Markdown } from "@semoss/ui";
+import { Markdown, Skeleton } from "@semoss/ui";
 import { useBlock, useTypeWriter } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
@@ -11,6 +11,8 @@ export interface MarkdownBlockDef extends BlockDef<"markdown"> {
 		markdown: string;
 		isStreaming: boolean;
 		show: string;
+		loading: boolean | string;
+		loadType: string;
 	};
 	slots: never;
 	listeners: {
@@ -36,6 +38,28 @@ export const MarkdownBlock: BlockComponent = observer(({ id }) => {
 			listeners.preProcess();
 		}
 	}, []);
+
+	const isLoading =
+		Object.hasOwn(data, "loading") &&
+		data.loading?.toString().toLowerCase() === "true";
+
+	if (isLoading && data.loadType === "None (show nothing)") {
+		return <div {...attrs} />;
+	}
+
+	if (isLoading && data.loadType === "Skeleton") {
+		return (
+			<div
+				style={{
+					width: "auto",
+					height: "auto",
+				}}
+				{...attrs}
+			>
+				<Skeleton width={"auto"} height={"auto"} />
+			</div>
+		);
+	}
 
 	return (
 		<div

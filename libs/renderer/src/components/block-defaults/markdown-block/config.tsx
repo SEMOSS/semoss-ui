@@ -13,6 +13,8 @@ export const config: BlockConfig<MarkdownBlockDef> = {
 		markdown: "**Hello world**",
 		isStreaming: false,
 		show: "true",
+		loading: false,
+		loadType: "Skeleton",
 	},
 	listeners: {
 		preProcess: {
