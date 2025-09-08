@@ -357,11 +357,12 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
      */
     const getHrefFromNotification = (n: NotificationRecord): string | null => {
       if (
-        n.notification_type !== "USER_REQUEST" &&
-        !n.notification_source &&
+        n.notification_type !== "USER_REQUEST" ||
+        !n.notification_source ||
         !n.project_id
-      )
+      ) {
         return null;
+      }
       if (n.user_name === loggedInUser) return null;
       const appPath = `/${n.notification_source}/${n.project_id}?tab=accesscontrol`;
       const currentUrl = window.location.href;
@@ -416,6 +417,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
             size="small"
             onClick={() => deleteNotifications()}
             variant="outlined"
+            data-testid="clear-all-notifications"
           >
             Clear All
           </ClearButton>
@@ -438,8 +440,10 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
               return (
                 <Item
                   key={n.notification_id}
+                  data-testid="notification-item"
                   is_read={n.notification_isread}
                   onClick={() => MarkAsRead(n.notification_id)}
+                  tabIndex={0}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" || e.key === " ") {
                       e.preventDefault();
@@ -464,6 +468,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
                           {href && (
                             <StyledLink
                               href={href}
+                              data-testid="notification-link"
                               onClick={(e) => {
                                 MarkAsRead(n.notification_id);
                                 onLinkClick();
@@ -480,6 +485,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 
                     <IconButton
                       className="deleteOverlay"
+                      data-testid="delete-notification"
                       size="small"
                       onClick={(e) => {
                         e.stopPropagation();

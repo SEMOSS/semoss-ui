@@ -139,10 +139,11 @@ useEffect(() => {
         spacing={1}
         flex={"1 1 0"}
       >
-        <BellButton onClick={handleBellClick} hasUnread={hasUnread} />
+        <BellButton onClick={handleBellClick} hasUnread={hasUnread} data-testid="notification-button"/>
         <NotificationDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          data-testid="notification-drawer"
         />
       </Stack>
     </StyledNavbar>
