@@ -65,14 +65,18 @@ export const Graph = observer(({ id, updateJson }: NetworkProps) => {
 		inputData.forEach(([_, fields]) => {
 			for (const field in fields) {
 				const rawAgg = fields[field];
-				aliasParts.push(field);
+				if (!aliasParts.includes(field)) aliasParts.push(field);
 
 				if (rawAgg) {
 					const cleanedAgg = rawAgg.split(" ").join(""); // Remove spaces (e.g., "Unique Count" → "UniqueCount")
-					selectParts.push(`${cleanedAgg}(${field})`);
+					if (!selectParts.includes(`${cleanedAgg}(${field})`)) {
+						selectParts.push(`${cleanedAgg}(${field})`);
+					}
 				} else {
-					selectParts.push(field);
-					groupByParts.push(field); // Only unaggregated fields are grouped
+					if (!selectParts.includes(field)) {
+						selectParts.push(field);
+						groupByParts.push(field); // Only unaggregated fields are grouped
+					}
 				}
 			}
 		});
@@ -146,45 +150,73 @@ export const Graph = observer(({ id, updateJson }: NetworkProps) => {
 
 		// categories for each header
 		const categories = header.map((h) => ({ name: h }));
+
+		const startKeys = start?.name || [];
+		const endKeys = end?.name || [];
+
 		rows.forEach((row) => {
-			(start.name || []).forEach((startKey) => {
-				(end.name || []).forEach((endKey) => {
-					const startIdx = header.indexOf(startKey);
-					const endIdx = header.indexOf(endKey);
+			if (startKeys.length > 0 && endKeys.length > 0) {
+				// Normal case (both start & end exist)
+				startKeys.forEach((startKey) => {
+					endKeys.forEach((endKey) => {
+						const startIdx = header.indexOf(startKey);
+						const endIdx = header.indexOf(endKey);
 
-					if (
-						startIdx >= 0 &&
-						startIdx < row.length &&
-						endIdx >= 0 &&
-						endIdx < row.length
-					) {
-						const startVal = String(row[startIdx]);
-						const endVal = String(row[endIdx]);
+						if (
+							startIdx >= 0 &&
+							startIdx < row.length &&
+							endIdx >= 0 &&
+							endIdx < row.length
+						) {
+							const startVal = String(row[startIdx]);
+							const endVal = String(row[endIdx]);
 
-						if (startVal === "nan" || endVal === "nan") return;
+							if (startVal === "nan" || endVal === "nan") return;
 
-						if (!nodeSet.has(startVal)) {
+							if (!nodeSet.has(startVal)) {
+								nodes.push({
+									name: startVal,
+									category: startKey,
+									symbol: "circle",
+								});
+								nodeSet.add(startVal);
+							}
+
+							if (!nodeSet.has(endVal)) {
+								nodes.push({
+									name: endVal,
+									category: endKey,
+									symbol: "circle",
+								});
+								nodeSet.add(endVal);
+							}
+
+							links.push({ source: startVal, target: endVal });
+						}
+					});
+				});
+			} else {
+				// Single column case (only start OR only end)
+				const activeKeys = startKeys.length > 0 ? startKeys : endKeys;
+
+				activeKeys.forEach((colKey) => {
+					const colIdx = header.indexOf(colKey);
+
+					if (colIdx >= 0 && colIdx < row.length) {
+						const val = String(row[colIdx]);
+						if (val === "nan") return;
+
+						if (!nodeSet.has(val)) {
 							nodes.push({
-								name: startVal,
-								category: startKey,
+								name: val,
+								category: colKey,
 								symbol: "circle",
 							});
-							nodeSet.add(startVal);
+							nodeSet.add(val);
 						}
-
-						if (!nodeSet.has(endVal)) {
-							nodes.push({
-								name: endVal,
-								category: endKey,
-								symbol: "circle",
-							});
-							nodeSet.add(endVal);
-						}
-
-						links.push({ source: startVal, target: endVal });
 					}
 				});
-			});
+			}
 		});
 
 		return { nodes, links, categories };
@@ -230,24 +262,20 @@ export const Graph = observer(({ id, updateJson }: NetworkProps) => {
 		contextmenu: (params) => {
 			//  let currentOption = chart.getOption();
 			if (params.data) {
-				const labelName = (
-					data.option as {
-						_state?: { fields?: Record<string, string[]> };
-					}
-				)?._state?.fields?.[params.data.name]?.[0];
 				setContextMenu(
 					contextMenu === null
 						? {
 								mouseX: params.event.event.clientX,
 								mouseY: params.event.event.clientY,
 								value: {
-									label: labelName,
+									label: params.data.category,
 									value: params.data.name,
 								},
 							}
 						: // repeated contextmenu when it is already open closes it with Chrome 84 on Ubuntu
 							// Other native context menus might behave different.
-							// With this behavior we prevent contextmenu from the backdrop to re-locale existing context menus.
+							// With this behavior we prevent contextmen
+							// u from the backdrop to re-locale existing context menus.
 							null,
 				);
 				params.event.event.preventDefault();

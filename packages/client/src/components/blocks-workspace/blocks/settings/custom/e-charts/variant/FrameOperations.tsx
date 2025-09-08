@@ -30,7 +30,6 @@ import { DataTabStyling } from "./bar-chart/DataTabStyling";
 //frame operations component props structure
 export interface FrameOperationsProps {
 	id: string;
-	updateFrame: (option) => void;
 }
 // a styled section to maintain the basic styles for every element in the component
 const StyledDropDownSection = styled("div")(() => ({
@@ -147,7 +146,6 @@ interface SelectedItem {
 export const FrameOperations = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
-		updateFrame,
 		path,
 		chart,
 		storedColumns,
@@ -717,6 +715,37 @@ export const FrameOperations = observer(
 								? selectorList[item.label]
 								: [selectorList[item.label]],
 							dataType: dataTypeList[item.label],
+						};
+					});
+					tempStoredColumnsForDropped = tempStoredColumns;
+					setSelectedColumn((preVCol) => tempStoredColumns);
+				}
+			}
+			if (data.variation === "echart-network-chart") {
+				const parsedOption = JSON.parse(computedValue) || {};
+				if (
+					Object.hasOwn(parsedOption, "_state") &&
+					Object.hasOwn(parsedOption["_state"], "fields") &&
+					Object.hasOwn(parsedOption["_state"]["fields"], "end") &&
+					Object.hasOwn(parsedOption["_state"]["fields"], "start")
+				) {
+					const dataTypeList = {};
+					["end", "start"].forEach((item) => {
+						dataTypeList[item] = columnsSelector
+							.filter((col) =>
+								parsedOption["_state"]["fields"][item].includes(
+									col.name,
+								),
+							)
+							.map((col) => col.dataType);
+					});
+					const tempStoredColumns = chart.map((item) => {
+						return {
+							name: item.name,
+							label: item.label,
+							values: parsedOption["_state"]["fields"][
+								item.label
+							],
 						};
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
@@ -1601,41 +1630,24 @@ export const FrameOperations = observer(
 			}
 			if (variation === "echart-network-chart") {
 				const tempValue = JSON.parse(computedValue);
+				const secondDropColumn = [...new Set(secondColumn?.values)];
+				const firstDropColumn = [...new Set(firstColumn?.values)];
 				tempValue["_state"] = {};
 				tempValue["_state"]["fields"] = {};
 
 				tempValue["_state"]["fields"] = {
 					...tempValue["_state"]["fields"],
-					end: secondColumn?.values,
-					start: firstColumn?.values,
+					end: secondDropColumn,
+					start: firstDropColumn,
 				};
 				tempValue["start"] = {
 					...tempValue["start"],
-					name: firstColumn?.values,
+					name: firstDropColumn,
 				};
 				tempValue["end"] = {
 					...tempValue["end"],
-					name: secondColumn?.values,
+					name: secondDropColumn,
 				};
-				const nodeNames = [
-					...new Set([
-						...tempValue["start"]["name"],
-						...tempValue["end"]["name"],
-					]),
-				];
-				const data = nodeNames.map((name) => ({
-					id: name,
-					name: name,
-					category: tempValue["start"]["name"].includes(name) ? 0 : 1,
-				}));
-				const datalinks = tempValue["start"]["name"].flatMap((start) =>
-					tempValue["end"]["name"].map((end) => ({
-						source: start,
-						target: end,
-					})),
-				);
-				tempValue["series"][0]["data"] = data;
-				tempValue["series"][0]["links"] = datalinks;
 
 				let columnsToSet = [];
 				const formattedArray = [];
@@ -1645,8 +1657,8 @@ export const FrameOperations = observer(
 					tempValue["customSettings"]["columnDetails"] || {};
 
 				// ---- Handle Start Columns (always as array) ----
-				if (firstColumn?.values?.length > 0) {
-					columnsToSet = [...columnsToSet, ...firstColumn.values];
+				if (firstDropColumn?.length > 0) {
+					columnsToSet = [...columnsToSet, ...firstDropColumn];
 
 					tempValue["customSettings"]["columnDetails"][
 						firstColumn?.label
@@ -1759,6 +1771,7 @@ export const FrameOperations = observer(
 			});
 			return colIndex;
 		}
+
 		const handleDragEnd = (result) => {
 			if (!result.destination) return;
 
@@ -1768,54 +1781,54 @@ export const FrameOperations = observer(
 			const updated = { ...droppedColumns };
 			if (!updated[dropId])
 				updated[dropId] = { values: [], dataType: [] };
+
+			// Safe find without optional chaining
 			const dropCol = filteredColumns.find(
-				(col) => col?.name === draggableId,
+				(col) => col && col.name === draggableId,
 			);
-			updated[dropId] = {
-				...updated[dropId],
-				values: [
-					...(updated[dropId] && updated[dropId].values
-						? updated[dropId].values
-						: []),
-					draggableId,
-				],
-				dataType: [
-					...(updated[dropId] && updated[dropId].dataType
-						? updated[dropId].dataType
-						: []),
-					dropCol?.dataType,
-				],
-			};
+
+			if (!updated[dropId].values.includes(draggableId)) {
+				updated[dropId] = {
+					...updated[dropId],
+					values: [...updated[dropId].values, draggableId],
+					dataType: [
+						...updated[dropId].dataType,
+						dropCol ? dropCol.dataType : null,
+					],
+				};
+			}
+
 			setDroppedColumns(updated);
 		};
-		const deleteDroppedColumn = (columnName: string) => {
+
+		const deleteDroppedColumn = (columnName: string, dropId: string) => {
 			setDroppedColumns((prev) => {
 				const updated = { ...prev };
-				for (const key in updated) {
-					const index = updated[key]["values"].indexOf(columnName);
-					updated[key] = {
-						...updated[key],
-						values: [
-							...(updated[key]["values"]
-								? updated[key]["values"].slice(0, index)
-								: []),
-							...(updated[key]["values"]
-								? updated[key]["values"].slice(index + 1)
-								: []),
-						],
-						dataType: [
-							...(updated[key]["dataType"]
-								? updated[key]["dataType"].slice(0, index)
-								: []),
-							...(updated[key]["dataType"]
-								? updated[key]["dataType"].slice(index + 1)
-								: []),
-						],
-					};
+
+				if (updated[dropId]) {
+					const values = updated[dropId]?.values || [];
+					const dataTypes = updated[dropId]?.dataType || [];
+					const index = values.indexOf(columnName);
+
+					if (index !== -1) {
+						updated[dropId] = {
+							...updated[dropId],
+							values: [
+								...values.slice(0, index),
+								...values.slice(index + 1),
+							],
+							dataType: [
+								...dataTypes.slice(0, index),
+								...dataTypes.slice(index + 1),
+							],
+						};
+					}
 				}
+
 				return updated;
 			});
 		};
+
 		const onClickAdd = (value: boolean, id) => {
 			setIsAdd(value);
 			setAddedColumnName(id);
@@ -2056,27 +2069,33 @@ export const FrameOperations = observer(
 																					const index =
 																						updated[
 																							addedColumnName
-																						][
-																							"values"
-																						].indexOf(
+																						].values.indexOf(
 																							col.name,
 																						);
-																					updated[
-																						addedColumnName
-																					].values =
+																					if (
+																						index >
+																						-1
+																					) {
 																						updated[
 																							addedColumnName
 																						].values.splice(
 																							index,
 																							1,
-																						);
-																					// If the array becomes empty, you can optionally delete the key
+																						); // just remove
+																						updated[
+																							addedColumnName
+																						].dataType.splice(
+																							index,
+																							1,
+																						); // also remove dataType at same index
+																					}
+
 																					if (
 																						updated[
 																							addedColumnName
 																						]
-																							?.values
-																							?.length ===
+																							.values
+																							.length ===
 																						0
 																					) {
 																						delete updated[
@@ -2104,7 +2123,6 @@ export const FrameOperations = observer(
 					<StyledSubSection>
 						<DataTabStyling
 							id={id}
-							updateFrame={updateFrame}
 							syncHeader={syncHeaders}
 							path="option"
 							dragdropColumns={droppedColumns}

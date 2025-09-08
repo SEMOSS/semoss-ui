@@ -87,7 +87,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 	const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	const [selectedTab, setSelectedTab] = useState("Data");
 	const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-	function updateFrame() {}
 
 	function handleStoreData(storeData) {
 		const hasValues = storeData.some(
@@ -136,7 +135,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-bar-graph" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={Bar}
 								storedColumns={selectedColumn}
@@ -147,7 +145,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-line-graph" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={Line}
 								storedColumns={selectedColumn}
@@ -158,7 +155,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-pie-chart" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={Pie}
 								storedColumns={selectedColumn}
@@ -169,7 +165,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-scatter-plots" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={ScatterPlot}
 								storedColumns={selectedColumn}
@@ -180,7 +175,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-world-map-chart" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={WorldMap}
 								storedColumns={selectedColumn}
@@ -192,7 +186,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-stack-chart" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={StackChart}
 								storedColumns={selectedColumn}
@@ -203,7 +196,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-gantt-chart" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={Gantt}
 								storedColumns={selectedColumn}
@@ -214,7 +206,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-dendrogram-chart" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={Dendrogram}
 								storedColumns={selectedColumn}
@@ -225,7 +216,6 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 						{data.variation === "echart-network-chart" && (
 							<FrameOperations
 								id={id}
-								updateFrame={updateFrame}
 								path="option"
 								chart={Graph}
 								storedColumns={selectedColumn}
