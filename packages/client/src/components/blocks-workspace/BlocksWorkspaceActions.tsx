@@ -8,6 +8,7 @@ import {
 	IconButton,
 	Modal,
 	Stack,
+	Switch,
 	TextField,
 	Tooltip,
 	useNotification,
@@ -27,6 +28,9 @@ export const BlocksWorkspaceActions = observer(() => {
 	const { workspace } = useWorkspace();
 	const [modalOpen, setModalOpen] = useState(false);
 	const [commitMsg, setCommitMsg] = useState("");
+	// When true, require a commit message before saving (opens modal). When false, save immediately without message.
+	// Use global workspace toggle
+	const toggleChecked = workspace.requireCommitMessage;
 
 	const removePageIdsFromURL = () => {
 		const url = window.location.href;
@@ -131,8 +135,8 @@ export const BlocksWorkspaceActions = observer(() => {
 		// remove the visual from the json
 		Object.keys(json?.blocks).forEach((key) => {
 			if (key.startsWith("e-chart")) {
-				if (json?.blocks[key]?.data?.option?.visual) {
-					json.blocks[key].data.option.visual = false;
+				if (json?.blocks[key]?.data?.option?.["visual"]) {
+					json.blocks[key].data.option["visual"] = false;
 				}
 			}
 		});
@@ -150,9 +154,12 @@ export const BlocksWorkspaceActions = observer(() => {
 				throw new Error(errors.join(""));
 			}
 
+			const successMsg = commitMsg.trim()
+				? `Save successful !! File is saved with the following commit message: ${commitMsg}`
+				: "Save successful !!";
 			notification.add({
 				color: "success",
-				message: `Save successful !! File is saved with the following commit message: ${commitMsg}`,
+				message: successMsg,
 			});
 
 			// Dispatch custom event to notify VersionsTable of the save
@@ -239,7 +246,12 @@ export const BlocksWorkspaceActions = observer(() => {
 		const onDocumentKeydown = (event: KeyboardEvent) => {
 			if ((event.ctrlKey || event.metaKey) && event.key === "s") {
 				event.preventDefault();
-				setModalOpen(true);
+				if (workspace.requireCommitMessage) {
+					setModalOpen(true);
+				} else {
+					// save immediately without commit message
+					saveApp();
+				}
 			}
 		};
 
@@ -250,11 +262,31 @@ export const BlocksWorkspaceActions = observer(() => {
 		return () => {
 			document.removeEventListener("keydown", onDocumentKeydown);
 		};
-	}, []);
+	}, [workspace.requireCommitMessage]);
 
 	return (
 		<>
 			<Stack direction="row" spacing={1} alignItems={"center"}>
+				<Tooltip
+					title={
+						workspace.requireCommitMessage
+							? "Require commit message on save"
+							: "Save changes without commit message"
+					}
+				>
+					<Switch
+						checked={workspace.requireCommitMessage}
+						onChange={() => {
+							const next = !workspace.requireCommitMessage;
+							workspace.setRequireCommitMessage(next);
+							if (!next) {
+								setCommitMsg("");
+							}
+						}}
+						color="primary"
+						size="small"
+					/>
+				</Tooltip>
 				<Tooltip title={"Modal Selection"}>
 					<IconButton
 						size={"small"}
@@ -301,7 +333,11 @@ export const BlocksWorkspaceActions = observer(() => {
 						size={"small"}
 						color={"primary"}
 						onClick={() => {
-							setModalOpen(true);
+							if (workspace.requireCommitMessage) {
+								setModalOpen(true);
+							} else {
+								saveApp();
+							}
 						}}
 					>
 						<SaveOutlined fontSize="inherit" />
@@ -342,7 +378,7 @@ export const BlocksWorkspaceActions = observer(() => {
 						<Button
 							variant="contained"
 							color="primary"
-							disabled={!commitMsg.trim()}
+							disabled={toggleChecked && !commitMsg.trim()}
 							onClick={handleModalSave}
 						>
 							Save

@@ -1,6 +1,7 @@
 import { ContentCopyOutlined, SaveOutlined } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useRef, useState } from "react";
+import { FlexLayout } from "@semoss/shared";
 import {
 	Button,
 	IconButton,
@@ -29,6 +30,8 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 	const fileEditorRef = useRef<FileEditorRefDef>(null);
 	const [modalOpen, setModalOpen] = useState(false);
 	const [commitMsg, setCommitMsg] = useState("");
+	// Use global workspace toggle
+	const toggleChecked = workspace.requireCommitMessage;
 
 	// get the name
 	const name = path.split("/").pop();
@@ -118,22 +121,30 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 			});
 		}
 	};
-	// Save handler for modal
-	const handleModalSave = async () => {
+	// Generic save helper (with or without commit message)
+	const performSave = async (message: string) => {
 		try {
-			await fileEditorRef.current?.saveFile(commitMsg);
-			setModalOpen(false);
-			setCommitMsg("");
+			await fileEditorRef.current?.saveFile(message);
+			const successMsg = message.trim()
+				? `Save successful! File is saved with the following commit message: ${message}`
+				: "Save successful!";
 			notification.add({
 				color: "success",
-				message: `Save successful! File is saved with the following commit message: ${commitMsg}`,
+				message: successMsg,
 			});
+			setCommitMsg("");
 		} catch (e) {
 			notification.add({
 				color: "error",
 				message: e.message || "Error saving file",
 			});
 		}
+	};
+
+	// Save handler for modal
+	const handleModalSave = async () => {
+		setModalOpen(false);
+		await performSave(commitMsg);
 	};
 
 	//  Handle file saved callback - trigger versions table refresh
@@ -177,7 +188,11 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 						onClick={(e) => {
 							e.preventDefault();
 							e.stopPropagation();
-							setModalOpen(true);
+							if (toggleChecked) {
+								setModalOpen(true);
+							} else {
+								performSave("");
+							}
 						}}
 					>
 						<SaveOutlined fontSize="inherit" />
@@ -219,7 +234,9 @@ export const FileEditorPanel = observer((props: FileEditorPanelProps) => {
 								<Button
 									variant="contained"
 									color="primary"
-									disabled={!commitMsg.trim()}
+									disabled={
+										toggleChecked && !commitMsg.trim()
+									}
 									onClick={handleModalSave}
 								>
 									Save

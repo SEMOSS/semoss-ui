@@ -37,6 +37,11 @@ export interface WorkspaceStoreInterface {
 	agentModelEngine: string;
 
 	/**
+	 * Global flag controlling whether saves require a commit message (modal prompt)
+	 */
+	requireCommitMessage: boolean;
+
+	/**
 	 * Type of the app
 	 */
 	type: "BLOCKS" | "CODE";
@@ -111,6 +116,7 @@ export class WorkspaceStore {
 		role: "READ_ONLY",
 		type: "CODE",
 		agentModelEngine: "",
+		requireCommitMessage: true,
 		metadata: {
 			project_id: "",
 			project_name: "",
@@ -177,6 +183,13 @@ export class WorkspaceStore {
 	 */
 	get agentModelEngine() {
 		return this._store.agentModelEngine;
+	}
+
+	/**
+	 * Get global commit message requirement flag
+	 */
+	get requireCommitMessage() {
+		return this._store.requireCommitMessage;
 	}
 
 	/**
@@ -350,5 +363,12 @@ export class WorkspaceStore {
 	 */
 	setAgentModelEngine = (id: string) => {
 		this._store.agentModelEngine = id;
+	};
+
+	/**
+	 * Set global commit message requirement
+	 */
+	setRequireCommitMessage = (val: boolean) => {
+		this._store.requireCommitMessage = val;
 	};
 }
