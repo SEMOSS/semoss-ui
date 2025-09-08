@@ -99,9 +99,10 @@ export const ImportForm = (props) => {
 		setValue,
 		getValues,
 		setError,
+		trigger,
 		formState: { isValid },
 	} = useForm({
-		mode: "onBlur",
+		mode: "onSubmit",
 		defaultValues: defaultFields.reduce((acc, field) => {
 			acc[field.fieldName] = field.defaultValue || "";
 			return acc;
@@ -111,6 +112,7 @@ export const ImportForm = (props) => {
 		lastFocussedField: "",
 		lastFocussedValue: "",
 		lastValidatedValue: "",
+		runValidate: false,
 	});
 
 	/** Used to Trigger useEffect anytime these vals change */
@@ -743,10 +745,9 @@ export const ImportForm = (props) => {
 															fieldVal,
 														) => {
 															if (
-																_lastField
+																!_lastField
 																	.current
-																	.lastValidatedValue ===
-																fieldVal
+																	.runValidate
 															)
 																return true;
 
@@ -756,7 +757,8 @@ export const ImportForm = (props) => {
 																	_lastField
 																		.current
 																		.lastFocussedField ===
-																	val.fieldName
+																	val.fieldName &&
+																	_lastField.current.lastValidatedValue !== fieldVal
 																) {
 																	validStatus =
 																		validateFormField(
@@ -766,8 +768,7 @@ export const ImportForm = (props) => {
 																}
 																return validStatus;
 															} finally {
-																_lastField.current.lastValidatedValue =
-																	fieldVal;
+																_lastField.current.runValidate = false;
 															}
 														},
 													}
@@ -851,8 +852,15 @@ export const ImportForm = (props) => {
 																		val.fieldName,
 																	lastFocussedValue:
 																		field.value,
+																	lastValidatedValue: field.value
 																};
 														},
+														onBlur: () => {
+															if(val.rules?.custom){
+																_lastField.current.runValidate = true;
+																trigger(val.fieldName);
+															} 
+														}
 													}}
 													{...field}
 												></TextField>
