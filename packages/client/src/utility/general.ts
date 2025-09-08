@@ -229,6 +229,23 @@ export const permissionPriorityMapper = (permission: string | number) => {
 	}
 };
 
+/**
+ * @name extractInitials
+ *
+ * Extract a initials for a string
+ *
+ * @param str
+ */
+export const extractInitials = (str: string): string => {
+    if (str.length < 1) {
+        return '';
+    }
+
+    return str.split(' ').reduce((prev, curr) => {
+        return prev + (curr[0] || '');
+    }, '');
+}
+
 function parseAsUTC(input: string): Date | null {
   const m = input.match(
 	/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?$/
