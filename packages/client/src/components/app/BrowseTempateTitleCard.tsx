@@ -296,13 +296,13 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 	return (
 		<StyledMainDiv>
 			<StyledTileCard disabled>
-				<StyledContainer>
+				{/* <StyledContainer>
 					<StyledOverlayContent>
 						<StyledIconButton size="small" color="default">
 							<img src={RemoveRedEyeFilled}></img>
 						</StyledIconButton>
 					</StyledOverlayContent>
-				</StyledContainer>
+				</StyledContainer> */}
 				<Link
 					href={href}
 					rel="noopener noreferrer"
