@@ -404,26 +404,30 @@ export const EngineMetadataPage = observer(() => {
     }));
   };
 
-  const handlePredictDescription = async () => {
-    const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
-    const columnNameForPixel = logicalNames.length > 0 
-      ? logicalNames[0] 
-      : editDescriptionDialog.columnName.replace(/\s+/g, "_");
-      
-    const pixel = `PredictOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}")`;
-    
-    try {
-      const response = await monolithStore.runQuery(pixel);
-      const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
-      
-      setEditDescriptionDialog(prev => ({
-        ...prev,
-        newDescription: predictedDescription,
-      }));
-    } catch (error) {
-      console.error("Failed to predict description:", error);
-    }
-  };
+	const handlePredictDescription = async () => {
+
+		const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
+		
+		const columnNameForPixel = logicalNames.length > 0 
+			? logicalNames[0] 
+			: editDescriptionDialog.columnName.replace(/\s+/g, "_");
+			
+		// const pixel = `PredictOwlDescription(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}")`;
+
+		const pixel= `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${editDescriptionDialog.tableName}", column="${columnNameForPixel}", engine = "4801422a-5c62-421e-a00c-05c6a9e15de8")`;
+		
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+			
+			setEditDescriptionDialog({
+				...editDescriptionDialog,
+				newDescription: predictedDescription,
+			});
+		} catch (error) {
+			console.error("Failed to predict description:", error);
+		}
+	};
 
   const handleSaveDescription = async () => {
     const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[editDescriptionDialog.columnId] || [];
