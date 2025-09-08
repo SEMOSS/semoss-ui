@@ -616,7 +616,13 @@ const EngineTab: React.FC<{
 				: ""
 		}
 		value={
-			engineOptionList.find((opt) => opt.path === selectedPdfPath) || null
+			engineOptionList.find((opt) => opt.path === selectedPdfPath) || 
+			(selectedPdfPath
+				? {
+						path: selectedPdfPath,
+						display: selectedPdfPath.split(/[/\\]/).pop(),
+				  }
+				: null)
 		}
 		open={engineAutocompleteOpen}
 		onOpen={() => setEngineAutocompleteOpen(true)}
