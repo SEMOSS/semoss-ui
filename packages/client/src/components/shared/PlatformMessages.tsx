@@ -54,7 +54,7 @@ export const PlatformMessages: React.FC = observer(() => {
 						<Button
 							variant="contained"
 							onClick={acceptTerms}
-							data-testid={"platform-messages-accept-btn"}
+							data-testid={"platformMessages-accept-btn"}
 						>
 							Accept
 						</Button>
