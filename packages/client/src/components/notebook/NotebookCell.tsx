@@ -33,15 +33,14 @@ import {
 import { useWorkspace } from "@/hooks";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
-import { CellLoader, CellLoader } from "../../assets/CellLoader";
+import { CellLoader } from "../../assets/CellLoader";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
-import { AddVariableModal, AddVariableModal } from "./AddVariableModal";
-import { NotebookAddCell, NotebookAddCell } from "./NotebookAddCell";
+import { AddVariableModal } from "./AddVariableModal";
+import { NotebookAddCell } from "./NotebookAddCell";
 import {
 	NotebookCellConsole,
-	NotebookCellConsole,
 } from "./NotebookCellConsole";
-import { Operation, Operation } from "./operations";
+import { Operation } from "./operations";
 
 const StyledStack = styled(Stack)(({ theme }) => ({
 	paddingBottom: theme.spacing(2),
@@ -377,7 +376,7 @@ export const NotebookCell = observer(
 							},
 						},
 					},
-				}) as string;
+				}) as unknown as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
