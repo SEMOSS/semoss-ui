@@ -223,6 +223,18 @@ export const EngineMetadataPage = observer(() => {
     fetchLlmEngines();
   }, [monolithStore]);
 
+  useEffect(() => {
+    console.log("Dialog key changed to:", dialogKey);
+  }, [dialogKey]);
+
+  useEffect(() => {
+    console.log("Edit description dialog state changed:", JSON.stringify(editDescriptionDialog, null, 2));
+  }, [editDescriptionDialog]);
+
+  useEffect(() => {
+    console.log("Selected LLM engine changed to:", selectedLlmEngine);
+  }, [selectedLlmEngine]);
+
 
   const [showSyncModal, setShowSyncModal] = useState(false);
   const [tabledata, setTabledata] = useState<string[]>([]);
@@ -386,42 +398,79 @@ export const EngineMetadataPage = observer(() => {
   };
 
   const handleEditDescriptionOpen = async (columnId: string, columnName: string, tableName: string, currentDescription: string) => {
+    console.log("=== DIALOG OPEN START ===");
+    console.log("Input params - columnId:", columnId, "columnName:", columnName, "tableName:", tableName, "currentDescription:", currentDescription);
+    console.log("active.id:", active.id);
+    console.log("getDatabaseMetamodel.status:", getDatabaseMetamodel.status);
+    console.log("getDatabaseMetamodel.data exists:", !!getDatabaseMetamodel.data);
+    
     const logicalNames = getDatabaseMetamodel.data?.logicalNames?.[columnId] || [];
+    console.log("logicalNames from cache:", logicalNames);
+    
     const columnNameForPixel = logicalNames.length > 0 
       ? logicalNames[0] 
       : columnName.replace(/\s+/g, "_");
+    console.log("columnNameForPixel:", columnNameForPixel);
 
     const pixel = `GetOwlDescriptions(database=["${active.id}"], concept="${tableName}", column="${columnNameForPixel}")`;
+    console.log("GetOwlDescriptions pixel:", pixel);
+    
     try {
       const response = await monolithStore.runQuery(pixel);
-      const description = response.pixelReturn[0]?.output?.[columnName] || currentDescription;
+      console.log("GetOwlDescriptions response:", JSON.stringify(response, null, 2));
       
-      setEditDescriptionDialog(prev => ({
-        ...prev,
-        open: true,
-        columnId,
-        columnName,
-        tableName,
-        currentDescription: description,
-        newDescription: description,
-      }));
-      setDialogKey(prev => prev + 1);
+      const description = response.pixelReturn[0]?.output?.[columnName] || currentDescription;
+      console.log("Final description:", description);
+      
+      setEditDescriptionDialog(prev => {
+        console.log("Setting dialog state, prev:", JSON.stringify(prev, null, 2));
+        const newState = {
+          ...prev,
+          open: true,
+          columnId,
+          columnName,
+          tableName,
+          currentDescription: description,
+          newDescription: description,
+        };
+        console.log("New dialog state:", JSON.stringify(newState, null, 2));
+        return newState;
+      });
+      setDialogKey(prev => {
+        const newKey = prev + 1;
+        console.log("Dialog key updated from", prev, "to", newKey);
+        return newKey;
+      });
     } catch (error) {
       console.error("Failed to retrieve description:", error);
-      setEditDescriptionDialog(prev => ({
-        ...prev,
-        open: true,
-        columnId,
-        columnName,
-        tableName,
-        currentDescription,
-        newDescription: currentDescription,
-      }));
-      setDialogKey(prev => prev + 1);
+      setEditDescriptionDialog(prev => {
+        console.log("Setting dialog state (error case), prev:", JSON.stringify(prev, null, 2));
+        const newState = {
+          ...prev,
+          open: true,
+          columnId,
+          columnName,
+          tableName,
+          currentDescription,
+          newDescription: currentDescription,
+        };
+        console.log("New dialog state (error case):", JSON.stringify(newState, null, 2));
+        return newState;
+      });
+      setDialogKey(prev => {
+        const newKey = prev + 1;
+        console.log("Dialog key updated (error case) from", prev, "to", newKey);
+        return newKey;
+      });
     }
+    console.log("=== DIALOG OPEN END ===");
   };
 
   const handleEditDescriptionClose = () => {
+    console.log("=== DIALOG CLOSE START ===");
+    console.log("Current dialog state before close:", JSON.stringify(editDescriptionDialog, null, 2));
+    console.log("Current selectedLlmEngine before close:", selectedLlmEngine);
+    
     setEditDescriptionDialog({
       open: false,
       columnId: "",
@@ -431,6 +480,10 @@ export const EngineMetadataPage = observer(() => {
       newDescription: "",
     });
     setSelectedLlmEngine("");
+    
+    console.log("Dialog state reset to initial values");
+    console.log("selectedLlmEngine reset to empty string");
+    console.log("=== DIALOG CLOSE END ===");
   };
 
   const handleDescriptionChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -441,22 +494,37 @@ export const EngineMetadataPage = observer(() => {
   };
 
 	const handlePredictDescription = async () => {
+		console.log("=== PREDICT DESCRIPTION CALL START ===");
+		console.log("selectedLlmEngine:", selectedLlmEngine);
+		console.log("active.id:", active.id);
+		console.log("editDescriptionDialog state:", JSON.stringify(editDescriptionDialog, null, 2));
+		console.log("getDatabaseMetamodel.status:", getDatabaseMetamodel.status);
+		console.log("getDatabaseMetamodel.data exists:", !!getDatabaseMetamodel.data);
+		
 		if (!selectedLlmEngine) {
 			console.error("No LLM engine selected");
 			return;
 		}
 
 		const currentState = editDescriptionDialog;
+		console.log("currentState extracted:", JSON.stringify(currentState, null, 2));
 		
 		let columnNameForPixel = currentState.columnName.replace(/\s+/g, "_");
+		console.log("Initial columnNameForPixel:", columnNameForPixel);
 		
 		try {
 			const logicalNamesPixel = `GetDatabaseMetamodel(database=["${active.id}"], options=["logicalNames"]);`;
+			console.log("logicalNamesPixel:", logicalNamesPixel);
+			
 			const logicalNamesResponse = await monolithStore.runQuery(logicalNamesPixel);
+			console.log("logicalNamesResponse:", JSON.stringify(logicalNamesResponse, null, 2));
+			
 			const logicalNames = logicalNamesResponse.pixelReturn[0]?.output?.logicalNames?.[currentState.columnId] || [];
+			console.log("logicalNames for columnId", currentState.columnId, ":", logicalNames);
 			
 			if (logicalNames.length > 0) {
 				columnNameForPixel = logicalNames[0];
+				console.log("Updated columnNameForPixel from logicalNames:", columnNameForPixel);
 			}
 		} catch (error) {
 			console.warn("Failed to fetch logical names, using column name:", error);
@@ -464,16 +532,25 @@ export const EngineMetadataPage = observer(() => {
 			
 		const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
 
-		console.log(pixel);
+		console.log("Final pixel query:", pixel);
+		console.log("=== PREDICT DESCRIPTION CALL END ===");
 		
 		try {
 			const response = await monolithStore.runQuery(pixel);
-			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+			console.log("Predict response:", JSON.stringify(response, null, 2));
 			
-			setEditDescriptionDialog(prev => ({
-				...prev,
-				newDescription: predictedDescription,
-			}));
+			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
+			console.log("predictedDescription:", predictedDescription);
+			
+			setEditDescriptionDialog(prev => {
+				console.log("Updating dialog state, prev:", JSON.stringify(prev, null, 2));
+				const newState = {
+					...prev,
+					newDescription: predictedDescription,
+				};
+				console.log("New dialog state:", JSON.stringify(newState, null, 2));
+				return newState;
+			});
 		} catch (error) {
 			console.error("Failed to predict description:", error);
 		}
@@ -749,7 +826,10 @@ export const EngineMetadataPage = observer(() => {
 						<Stack direction="row" spacing={2} alignItems="center">
 							<Select
 								value={selectedLlmEngine}
-								onChange={(e) => setSelectedLlmEngine(e.target.value)}
+								onChange={(e) => {
+									console.log("LLM Engine selection changed from", selectedLlmEngine, "to", e.target.value);
+									setSelectedLlmEngine(e.target.value);
+								}}
 								displayEmpty
 								size="small"
 								sx={{ minWidth: 200 }}
