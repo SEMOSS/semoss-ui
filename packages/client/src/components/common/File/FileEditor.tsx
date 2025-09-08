@@ -16,6 +16,7 @@ import {
 import { runPixel } from "@semoss/sdk/react";
 import { styled, useNotification } from "@semoss/ui";
 import { LoadingScreen } from "@/components/ui";
+import { languageConfigs } from "./FileEditorLanguageConfig";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
 
@@ -358,85 +359,127 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 			onChange(value, isModified);
 		};
 
-		/**
-		 * Handler called when the editor is mounted
-		 */
-		const onEditorMount: OnMount = (editor, monaco) => {
-			editorRef.current = editor;
-			if (IS_PRODUCTION) {
-				return;
-			}
 
-			// prevents redundant additions of new dropdown action
-			if (LLMActionAdded === false) {
-				setLLMActionAdded(true);
-				editor.addCommand(
-					monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS,
-					() => {
-						saveFile();
-					},
-				); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
-				editor.addAction({
-					contextMenuGroupId: "1_modification",
-					contextMenuOrder: 1,
-					id: "prompt-LLM",
-					label: "Generate Code",
-					keybindings: [
-						monaco.KeyMod.CtrlCmd |
-							monaco.KeyMod.Shift |
-							monaco.KeyCode.KeyG,
-					],
+    let syntaxSetupDone = false;
 
-					run: async (editor) => {
-						const selection = editor.getSelection();
-						const selectedText = editor
-							.getModel()
-							.getValueInRange(selection);
+    const setupSyntax = (monaco, language: string) => {
+      if (syntaxSetupDone) return;
+      syntaxSetupDone = true;
 
-						const LLMReturnText = await promptLLM(
-							`Create code for a ${fileLanguage} file with the user prompt: ${selectedText}`, // filetype should be sent as param to LLM
-						);
+      const config = languageConfigs[language];
+      if (!config) return;
 
-						editor.executeEdits("custom-action", [
-							{
-								range: new monaco.Range(
-									selection.endLineNumber + 2,
-									1,
-									selection.endLineNumber + 2,
-									1,
-								),
-								text: `\n\n${LLMReturnText}\n`,
-								forceMoveMarkers: true,
-							},
-						]);
+      // Setup Monarch tokens
+      if (config.monarchTokensProvider) {
+        monaco.languages.setMonarchTokensProvider(
+          language,
+          config.monarchTokensProvider
+        );
+      }
 
-						editor.setSelection(
-							new monaco.Range(
-								selection.endLineNumber + 3,
-								1,
-								selection.endLineNumber +
-									2 +
-									LLMReturnText.split("\n").length,
-								1,
-							),
-						);
-					},
-				});
-				editor.addAction({
-					contextMenuGroupId: "1_modification",
-					contextMenuOrder: 2,
-					id: "toggle-word-wrap",
-					label: "Toggle Word Wrap",
-					keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
-					run: async (editor) => {
-						wordWrapRef.current = !wordWrapRef.current;
-						editor.updateOptions({
-							wordWrap: wordWrapRef.current ? "on" : "off",
-						});
-					},
-				});
-			}
-		};
+      // IntelliSense
+      if (typeof config.completionItems === "function") {
+        monaco.languages.registerCompletionItemProvider(language, {
+          triggerCharacters: [".", "("],
+          provideCompletionItems: (model, position) => {
+            const word = model.getWordUntilPosition(position);
+            const range = {
+              startLineNumber: position.lineNumber,
+              endLineNumber: position.lineNumber,
+              startColumn: word.startColumn,
+              endColumn: word.endColumn,
+            };
+
+            return {
+              suggestions: config.completionItems(monaco).map((s) => ({
+                ...s,
+                range,
+              })),
+            };
+          },
+        });
+      }
+
+      // Custom Theme
+      if (config.theme) {
+        monaco.editor.defineTheme(`${language}-playground`, config.theme);
+        monaco.editor.setTheme(`${language}-playground`);
+      }
+    };
+
+    /**
+     * Handler called when the editor is mounted
+     */
+    const onEditorMount: OnMount = (editor, monaco) => {
+      editorRef.current = editor;
+      if (IS_PRODUCTION) return;
+
+      setupSyntax(monaco, fileLanguage);
+      monaco.editor.setTheme(`${fileLanguage}-playground` || "vs");
+      // prevents redundant additions of new dropdown action
+      if (LLMActionAdded === false) {
+        setLLMActionAdded(true);
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+          saveFile();
+        }); // use editor's api to use built in keyboard shortcuts to handle differnt OS's save
+        editor.addAction({
+          contextMenuGroupId: "1_modification",
+          contextMenuOrder: 1,
+          id: "prompt-LLM",
+          label: "Generate Code",
+          keybindings: [
+            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
+          ],
+
+          run: async (editor) => {
+            const selection = editor.getSelection();
+            const selectedText = editor.getModel().getValueInRange(selection);
+
+            const LLMReturnText = await promptLLM(
+              `Create code for a ${fileLanguage} file with the user prompt: ${selectedText}` // filetype should be sent as param to LLM
+            );
+
+            editor.executeEdits("custom-action", [
+              {
+                range: new monaco.Range(
+                  selection.endLineNumber + 2,
+                  1,
+                  selection.endLineNumber + 2,
+                  1
+                ),
+                text: `\n\n${LLMReturnText}\n`,
+                forceMoveMarkers: true,
+              },
+            ]);
+
+            editor.setSelection(
+              new monaco.Range(
+                selection.endLineNumber + 3,
+                1,
+                selection.endLineNumber + 2 + LLMReturnText.split("\n").length,
+                1
+              )
+            );
+          },
+        });
+        editor.addAction({
+          contextMenuGroupId: "1_modification",
+          contextMenuOrder: 2,
+          id: "toggle-word-wrap",
+          label: "Toggle Word Wrap",
+          keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+          run: async (editor) => {
+            wordWrapRef.current = !wordWrapRef.current;
+            editor.updateOptions({
+              wordWrap: wordWrapRef.current ? "on" : "off",
+            });
+          },
+        });
+      }
+    };
+    const beforeMount = (monaco) => {
+      setupSyntax(monaco, fileLanguage);
+    };
 
 		return (
 			<StyledContainer>
@@ -458,6 +501,7 @@ export const FileEditor = forwardRef<FileEditorRefDef, FileEditorProps>(
 							}}
 							onChange={handleEditorOnChange}
 							onMount={onEditorMount}
+							beforeMount={beforeMount}
 						/>
 					)}
 				</Suspense>
