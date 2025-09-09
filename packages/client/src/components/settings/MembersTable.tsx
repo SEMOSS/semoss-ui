@@ -77,12 +77,12 @@ const StyledTableTitleContainer = styled("div")(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
 }));
 
-const StyledTableTitleDiv = styled("div")({
+const StyledTableTitleDiv = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "12px 24px 12px 16px",
+	padding: theme.spacing(1.5, 3, 1.5, 2),
 	alignItems: "center",
-	gap: "10px",
-});
+	gap: theme.spacing(1.25),
+}));
 
 const StyledTableTitleMemberContainer = styled("div")({
 	display: "flex",
@@ -94,7 +94,7 @@ const StyledAvatarGroupContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "130px",
 	height: "56px",
-	padding: "10px 16px",
+	padding: theme.spacing(1.25, 2),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
@@ -104,11 +104,12 @@ const StyledAvatarGroupContainer = styled("div")(({ theme }) => ({
 const StyledTableTitleMemberCountContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	height: "56px",
-	padding: "6px 16px 6px 8px",
+	padding: theme.spacing(0.75, 2, 0.75, 1),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
 	gap: theme.spacing(1.25),
+	backround: "red",
 }));
 
 const StyledTableTitleMemberCount = styled("div")({
@@ -125,7 +126,7 @@ const StyledSearchButtonContainer = styled("div")({
 
 const StyledDeleteSelectedContainer = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "10px 8px 10px 16px",
+	padding: theme.spacing(1.25, 1, 1.25, 2),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
@@ -134,7 +135,7 @@ const StyledDeleteSelectedContainer = styled("div")(({ theme }) => ({
 
 const StyledAddMemberContainer = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "10px 24px 10px 8px",
+	padding: theme.spacing(1.25, 3, 1.25, 1),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",

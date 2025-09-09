@@ -31,11 +31,45 @@ const navCards = [
 	},
 ];
 
+const StyledBoxNavCardContainer = styled(Box)(({ theme }) => ({
+	margin: 0,
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+}));
+
+const StyledBoxButtonConatiner = styled(Box)(({ theme }) => ({
+	display: "flex",
+	flexDirection: "row",
+	alignItems: "center",
+	justifyContent: "space-between",
+	gap: theme.spacing(2),
+}));
+
+const StyledBoxMainCardWrapper = styled(Box)(({ theme }) => ({
+	display: "flex",
+	alignSelf: "center",
+	gap: theme.spacing(3),
+	margin: 0,
+}));
+
+const StyledBoxNavCardBodyContainer = styled(Box)(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+}));
+
+const StyledBoxImageContainer = styled(Box)(() => ({
+	display: "flex",
+	alignItems: "flex-end",
+	justifyContent: "center",
+}));
+
 const StyledButton = styled(Button)(({ theme }) => ({
 	"&.app-navigation-buttons": {
 		borderColor: theme.palette.common.white,
 		borderRadius: "12px",
-		padding: "4px 10px",
+		padding: theme.spacing(0.5, 1.25),
 		alignSelf: "flex-start",
 		"> :hover": {
 			border: theme.palette.common.white,
@@ -54,7 +88,7 @@ const UploadAppButton = styled(Button)(({ theme }) => ({
 	borderColor: theme.palette.action.disabled,
 	color: theme.palette.text.primary,
 	borderRadius: "12px",
-	padding: "10px 16px",
+	padding: theme.spacing(1.25, 2),
 	alignSelf: "flex-start",
 }));
 
@@ -72,15 +106,15 @@ const StyledBox = styled(Box)(({ theme }) => ({
 
 const NavCard = ({ title, description, type, image, setApp, testId }) => (
 	<StyledBox>
-		<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+		<StyledBoxNavCardBodyContainer>
 			<Typography variant="h6" gutterBottom>
 				{title}
 			</Typography>
 			<Typography variant="body2" gutterBottom>
 				{description}
 			</Typography>
-		</Box>
-		<Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+		</StyledBoxNavCardBodyContainer>
+		<StyledBoxNavCardBodyContainer>
 			<StyledButton
 				variant="text"
 				color="primary"
@@ -95,17 +129,11 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
 				Get started
 			</StyledButton>
 			{image && (
-				<Box
-					sx={{
-						display: "flex",
-						alignItems: "flex-end",
-						justifyContent: "center",
-					}}
-				>
+				<StyledBoxImageContainer>
 					<StyledImgTag src={image} alt={title} />
-				</Box>
+				</StyledBoxImageContainer>
 			)}
-		</Box>
+		</StyledBoxNavCardBodyContainer>
 	</StyledBox>
 );
 
@@ -117,23 +145,8 @@ const CreateAppSection = ({
 	uploadApp?: () => void;
 }) => {
 	return (
-		<Box
-			sx={{
-				margin: 0,
-				display: "flex",
-				flexDirection: "column",
-				gap: 1,
-			}}
-		>
-			<Box
-				sx={{
-					display: "flex",
-					flexDirection: "row",
-					alignItems: "center",
-					justifyContent: "space-between",
-					gap: 2,
-				}}
-			>
+		<StyledBoxNavCardContainer>
+			<StyledBoxButtonConatiner>
 				<Typography variant="h6" gutterBottom>
 					Get started with our tools
 				</Typography>
@@ -147,20 +160,13 @@ const CreateAppSection = ({
 						Upload App
 					</UploadAppButton>
 				)}
-			</Box>
-			<Box
-				sx={{
-					display: "flex",
-					alignSelf: "center",
-					gap: 3,
-					margin: 0,
-				}}
-			>
+			</StyledBoxButtonConatiner>
+			<StyledBoxMainCardWrapper>
 				{navCards.map((card) => (
 					<NavCard key={card.title} {...card} setApp={setupApp} />
 				))}
-			</Box>
-		</Box>
+			</StyledBoxMainCardWrapper>
+		</StyledBoxNavCardContainer>
 	);
 };
 
