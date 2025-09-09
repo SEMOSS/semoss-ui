@@ -464,7 +464,7 @@ export const DataImportFormModal = observer(
 		};
 
 		/** Create a New Cell and Add to Notebook */
-		const appendCell = (widget: string) => {
+		const appendCell = async (widget: string) => {
 			try {
 				const config: NewCellAction["payload"]["config"] = {
 					widget: DefaultCells[widget].widget,
@@ -503,14 +503,14 @@ export const DataImportFormModal = observer(
 					};
 				}
 
-				const newCellId = state.dispatch({
+				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
 						queryId: query.id,
 						previousCellId: previousCellId,
 						config: config as Omit<CellStateConfig, "id">,
 					},
-				}) as string;
+				})) as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,

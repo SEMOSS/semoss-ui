@@ -144,22 +144,27 @@ export function convertDeltaToRuntimeString(duration) {
 }
 
 export function convertSendEmailRecipeToJob(recipe: string): SendEmailJob {
-	if (!recipe.includes("SendEmail")) {
-		return;
-	}
-	const recipeMatches: RegExpMatchArray = recipe.match(/(?<=\().*/g);
-	if (recipeMatches.length === 0) {
-		return;
-	}
-	let cleanedRecipe: string = recipeMatches[0];
-	cleanedRecipe = cleanedRecipe.replaceAll(/[([\];)]/g, "");
-	cleanedRecipe = cleanedRecipe.replaceAll(",,", ",");
-	cleanedRecipe = cleanedRecipe.replaceAll("=", "':");
-	cleanedRecipe = cleanedRecipe.replaceAll("', ", "', '");
-	cleanedRecipe = cleanedRecipe.replaceAll("'", '"');
-	cleanedRecipe = `{"${cleanedRecipe}}`;
-	const job: SendEmailJob = JSON.parse(cleanedRecipe);
-	return job;
+    if (!recipe.includes('SendEmail')) {
+        return;
+    }
+    const recipeMatches: RegExpMatchArray = recipe.match(/(?<=\().*/g);
+    if (recipeMatches.length === 0) {
+        return;
+    }
+    let cleanedRecipe: string = recipeMatches[0];
+    cleanedRecipe = cleanedRecipe.replaceAll(/[\(\[\]\;\)]/g, '');
+    cleanedRecipe = cleanedRecipe.replaceAll(',,', ',');
+    cleanedRecipe = cleanedRecipe.replaceAll('=', "':");
+    cleanedRecipe = cleanedRecipe.replaceAll("', ", "', '");
+    cleanedRecipe = cleanedRecipe.replaceAll("'", '"');
+    cleanedRecipe = `{"${cleanedRecipe}}`;
+    try {
+        const job: SendEmailJob = JSON.parse(cleanedRecipe);
+        return job;
+    } catch (e) {
+        // skip a bad email job
+        return;
+    }
 }
 
 export function getEncodeByJobType(builder: JobBuilder) {

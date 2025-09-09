@@ -20,6 +20,7 @@ import databaseIcon from "@/assets/img/databaseIcon.png";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
+import { formatToDataTestId } from "@/utility";
 
 const StyledAlert = styled(Alert, {
   shouldForwardProp: (prop) => prop !== "setBounds",
@@ -344,6 +345,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 disabled={
                   !configStore.isEngineOperationAvailable(type, "public")
                 }
+                data-testid={formatToDataTestId(
+									`settingsTiles-make-${name}-public-private-switch`,
+								)}
                 onChange={() => {
                   changeGlobal();
                 }}
@@ -392,6 +396,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         "discoverable"
                       )
                     }
+                    data-testid={formatToDataTestId(
+											`settingsTiles-${name}-makeDiscoverable-switch`,
+										)}
                     checked={!discoverable}
                     onChange={() => {
                       changeDiscoverable();
@@ -423,6 +430,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
               setBounds={direction === "column"}
               sx={StyledWidth}
               icon={false}
+              data-testid={formatToDataTestId(
+								`settingsTiles-${name}-makeDiscoverable-switch`,
+							)}
               action={
                 <Switch
                   title={
@@ -430,6 +440,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       ? `Make ${name} non-discoverable`
                       : `Make ${name} discoverable`
                   }
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-makeDiscoverable-switch`,
+									)}
                   disabled={
                     global ||
                     !configStore.isEngineOperationAvailable(
@@ -475,6 +488,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 disabled={
                   !configStore.isEngineOperationAvailable(type, "delete")
                 }
+                data-testid={formatToDataTestId(
+									`settingsTiles-${name}-delete-btn`,
+								)}
                 onClick={() => setDeleteModal(true)}
               >
                 Delete
@@ -517,6 +533,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
               <Button
                 color={"error"}
                 variant={"contained"}
+                data-testid={formatToDataTestId(
+									`settingsTiles-${name}-confirmDelete-btn`,
+								)}
                 onClick={() => deleteWorkflow()}
               >
                 Delete
@@ -579,6 +598,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 disabled={
                   !configStore.isEngineOperationAvailable(type, "public")
                 }
+                data-testid={formatToDataTestId(
+                  `settingsTiles-make-${name}-public-private-switch`
+                )}
                 onChange={() => {
                   changeGlobal();
                 }}
@@ -629,6 +651,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                         : `Make ${name} discoverable`
                     }
                     checked={!discoverable}
+                    data-testid={formatToDataTestId(
+                      `settingsTiles-${name}-makeDiscoverable-switch`
+                    )}
                     onChange={() => {
                       changeDiscoverable();
                     }}
@@ -676,6 +701,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                       : `Make ${name} discoverable`
                   }
                   checked={!discoverable}
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-makeDiscoverable-switch`,
+									)}
                   onChange={() => {
                     changeDiscoverable();
                   }}
@@ -713,6 +741,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                   variant="contained"
                   color="error"
                   onClick={() => setDeleteModal(true)}
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-delete-btn`,
+									)}
                   disabled={
                     !configStore.isEngineOperationAvailable(type, "delete")
                   }
@@ -753,10 +784,17 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                 {name}.
               </Modal.Content>
               <Modal.Actions>
-                <Button onClick={() => setDeleteModal(false)}>Cancel</Button>
+                <Button 
+                  onClick={() => setDeleteModal(false)} 
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmCancel-btn`,
+									)}>Cancel</Button>
                 <Button
                   color={"error"}
                   variant={"contained"}
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmDelete-btn`,
+									)}
                   onClick={() => deleteWorkflow()}
                 >
                   Delete

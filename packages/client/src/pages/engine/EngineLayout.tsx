@@ -220,6 +220,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 					),
 					metadata: values,
 					database_subtype: getEngineMetadata.data?.database_subtype,
+					database_created_by: getEngineMetadata.data?.database_created_by,
+					PERMISSIONGRANTEDBY: getEngineMetadata.data?.PERMISSIONGRANTEDBY,
+					DATEADDED: getEngineMetadata.data?.DATEADDED,
 					refresh: getEngineMetadata.refresh,
 				},
 			}}
@@ -233,7 +236,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								width: "100%",
 							}}
 							value={activeTabIdx}
-							onChange={(e: SyntheticEvent, idx: number) => {
+							onChange={(_e: SyntheticEvent, idx: number) => {
 								// get the specific route
 								const r = tabs[idx];
 
@@ -241,11 +244,12 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 								navigate(`${r.path}`);
 							}}
 						>
-							{tabs.map((t, tIdx) => {
+							{tabs.map((t, _tIdx) => {
 								return (
 									<StyledToggleTabsGroupItem
 										key={t.path}
 										label={t.name}
+										data-testid={`engineLayout-${t.name}-tab`}
 									/>
 								);
 							})}
