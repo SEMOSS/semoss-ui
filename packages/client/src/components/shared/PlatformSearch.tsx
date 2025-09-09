@@ -1,7 +1,7 @@
 import NorthEastIcon from "@mui/icons-material/NorthEast";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { debounced, Env, usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
@@ -16,7 +16,6 @@ import {
 	Popper,
 	Skeleton,
 	Stack,
-	styled,
 	Typography,
 } from "@semoss/ui";
 import BRAIN from "@/assets/img/BRAIN.png";
@@ -62,6 +61,7 @@ const CatalogItem = ({
 				overflow: "visible",
 			},
 		}}
+		data-testid={`catalog-item-${id}`}
 	>
 		<Card.Content
 			sx={{
@@ -165,28 +165,20 @@ function CustomPopper(props) {
 	return <Popper {...props} placement="bottom-start" />;
 }
 
-const StyledPublishedByContainer = styled("div")(({ theme }) => ({
-	display: "flex",
-	justifyContent: "flex-start",
-	alignItems: "center",
-	gap: "4px",
-	alignSelf: "stretch",
-	color: theme.palette.text.secondary,
-	height: "24px",
-}));
-
 interface PlatformSearchProps {
+	// biome-ignore lint/suspicious/noExplicitAny: params's value can't be predicted
 	renderInput: (params: any) => React.ReactNode;
 }
 
 export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) => {
 	// TODO: navigation should be done through callback
-	const navigate = useNavigate();
 	const location = useLocation();
 	const { configStore } = useRootStore();
 	const searchValue = configStore.store.globalSearch || "";
 	const [open, setOpen] = useState(false);
-	const [selectedCategories, setSelectedCategories] = useState([]);
+	const [selectedCategories, setSelectedCategories] = useState([
+		{ name: "All", type: "" },
+	]);
 
 	const [inputValue, setInputValue] = useState("");
 
@@ -220,11 +212,15 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 		configStore.setGlobalSearch("");
 	}, [location?.pathname]);
 
+	// biome-ignore lint/correctness/noUnusedFunctionParameters: this is a debounced function that needs to accept these parameters
 	const debouncedSet = debounced((event, newInputValue) => {
 		configStore.setGlobalSearch(newInputValue);
 	}, 300);
 
-	const handleInputChange = (event, newInputValue) => {
+	const handleInputChange = (event, newInputValue, reason) => {
+		if (reason === "clear") {
+			setSelectedCategories([{ name: "All", type: "" }]);
+		}
 		setInputValue(newInputValue);
 		debouncedSet(event, newInputValue);
 	};
@@ -279,7 +275,7 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 
 	const findDBImage = (appType: string, appSubType: string) => {
 		const obj = ENGINE_IMAGES[appType]?.find(
-			(ele) => ele.name == appSubType,
+			(ele) => ele.name === appSubType,
 		);
 
 		if (!obj) {
@@ -304,17 +300,17 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 	 * @returns url
 	 */
 	const getEngineProjectHref = (option) => {
-		const href = window.location.origin + window.location.pathname + "#";
+		const href = `${window.location.origin}${window.location.pathname}#`;
 
 		if (option.type === "APP" || option.section === "APP") {
 			const id = option.id ? option.id : option.project_id;
 
-			return href + `/app/${id}/view`;
+			return `${href}/app/${id}/view`;
 		} else {
 			const id = option.id ? option.id : option.database_id;
 			const type = option.type ? option.type : option.database_type;
 
-			return href + `/engine/${type.toLowerCase()}/${id}`;
+			return `${href}/engine/${type.toLowerCase()}/${id}`;
 		}
 	};
 
@@ -336,6 +332,7 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 			}
 			data-testid={`search-txt`}
 			renderInput={renderInput}
+			// biome-ignore lint/correctness/noUnusedFunctionParameters: props is required as first parameter
 			renderOption={(props, option) => (
 				<Link
 					key={option.label}
@@ -370,8 +367,8 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 									label: option.label,
 									id: option.id,
 									type: option.section,
-								}),
-									configStore.setGlobalSearch(""); // Clear search after selection
+								});
+								configStore.setGlobalSearch(""); // Clear search after selection
 							}}
 						>
 							<CatalogItem
@@ -387,7 +384,7 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 									option.label,
 									searchValue,
 								)}
-								description={option.description + "nonono"}
+								description={`${option.description}nonono`}
 								id={option.id}
 							/>
 						</List.ItemButton>
@@ -502,6 +499,7 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 											viewBox="0 0 19 16"
 											fill="none"
 										>
+											<title>Recent search icon</title>
 											<path
 												d="M11.2507 4.66667H10.0007V8.83333L13.5673 10.95L14.1673 9.94167L11.2507 8.20833V4.66667ZM10.834 0.5C8.84486 0.5 6.93721 1.29018 5.53068 2.6967C4.12416 4.10322 3.33398 6.01088 3.33398 8H0.833984L4.13398 11.3583L7.50065 8H5.00065C5.00065 6.4529 5.61523 4.96917 6.7092 3.87521C7.80316 2.78125 9.28689 2.16667 10.834 2.16667C12.3811 2.16667 13.8648 2.78125 14.9588 3.87521C16.0527 4.96917 16.6673 6.4529 16.6673 8C16.6673 9.5471 16.0527 11.0308 14.9588 12.1248C13.8648 13.2188 12.3811 13.8333 10.834 13.8333C9.22565 13.8333 7.76732 13.175 6.71732 12.1167L5.53398 13.3C6.89232 14.6667 8.75065 15.5 10.834 15.5C12.8231 15.5 14.7308 14.7098 16.1373 13.3033C17.5438 11.8968 18.334 9.98912 18.334 8C18.334 6.01088 17.5438 4.10322 16.1373 2.6967C14.7308 1.29018 12.8231 0.5 10.834 0.5Z"
 												fill="#9E9E9E"
