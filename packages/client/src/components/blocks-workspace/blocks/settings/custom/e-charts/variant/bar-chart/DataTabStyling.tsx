@@ -577,7 +577,10 @@ export const DataTabStyling = observer(
 													textAlign: "left",
 													paddingLeft: "16px",
 													paddingTop: "8px",
-													fontSize: "1rem",
+													fontSize:
+														aggregatedColumnName(column).length > 20
+															? "0.68rem"
+															: "1rem",
 													display: "flex",
 													justifyContent:
 														"space-between",
@@ -616,6 +619,10 @@ export const DataTabStyling = observer(
 														style={{
 															cursor: "pointer",
 															color: "#888",
+															fontSize:
+																aggregatedColumnName(column).length > 20
+																	? "0.7rem"
+																	: "1.5rem",
 														}}
 														onClick={() => {
 															// Remove the column from dragdropColumns
