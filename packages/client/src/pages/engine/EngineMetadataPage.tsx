@@ -11,6 +11,7 @@ import {
   Select,
   Stack,
   styled,
+  Switch,
   Table,
   TextField,
   Typography
@@ -64,6 +65,7 @@ export const EngineMetadataPage = observer(() => {
   const [llmEngines, setLlmEngines] = useState<Array<{ database_id: string; database_name: string }>>([]);
   const [selectedLlmEngine, setSelectedLlmEngine] = useState<string>("");
   const [dialogKey, setDialogKey] = useState<number>(0);
+  const [useSampleValues, setUseSampleValues] = useState<boolean>(true);
 
   const navigate = useNavigate();
 
@@ -215,6 +217,9 @@ export const EngineMetadataPage = observer(() => {
         }
         if (Array.isArray(output)) {
           setLlmEngines(output);
+          if (output.length > 0) {
+            setSelectedLlmEngine(output[0].database_id);
+          }
         }
       } catch (error) {
         console.error("Failed to fetch LLM engines:", error);
@@ -531,7 +536,7 @@ export const EngineMetadataPage = observer(() => {
 			console.warn("Failed to fetch logical names, using column name:", error);
 		}
 			
-		const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}")`;
+		const pixel = `PredictOwlDescriptionLLM(database=["${active.id}"], concept="${currentState.tableName}", column="${columnNameForPixel}", engine="${selectedLlmEngine}", useSampleValues="${useSampleValues}")`;
 
 		console.log("Final pixel query:", pixel);
 		console.log("=== PREDICT DESCRIPTION CALL END ===");
@@ -830,6 +835,14 @@ export const EngineMetadataPage = observer(() => {
 					<Stack direction="row" justifyContent="space-between" alignItems="center" width="100%">
 						<span>Edit Column Description</span>
 						<Stack direction="row" spacing={2} alignItems="center">
+							<Stack direction="row" alignItems="center" spacing={1}>
+								<Typography variant="body2">Use Sample Values</Typography>
+								<Switch
+									checked={useSampleValues}
+									onChange={(e) => setUseSampleValues(e.target.checked)}
+									size="small"
+								/>
+							</Stack>
 							<Select
 								value={selectedLlmEngine}
 								onChange={(e) => {
