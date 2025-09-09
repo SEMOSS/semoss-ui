@@ -27,7 +27,7 @@ const StyledNoDataContainer = styled("div", {
 const StyledDataContainer = styled("div", {
 	shouldForwardProp: (prop) => prop !== "error",
 })<{ error?: boolean }>(({ error = false, theme }) => ({
-	minHeight: "50%",
+	minHeight: "450px",
 	minWidth: "50%",
 }));
 
