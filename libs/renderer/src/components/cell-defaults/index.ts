@@ -33,6 +33,7 @@ import {
 	type JoinTransformationCellDef,
 } from "./join-transformation-cell";
 import { LLMCellConfig, type LLMCellDef } from "./llm-cell";
+import { MCPToolCellConfig, type MCPToolCellDef } from "./mcp-tool-cell";
 import {
 	QueryImportCellConfig,
 	type QueryImportCellDef,
@@ -58,22 +59,23 @@ import {
 
 export type DefaultCellDefinitions =
 	| CodeCellDef
-	| QueryImportCellDef
-	| DataImportCellDef
-	| FilterDataCellDef
-	| UnFilterDataCellDef
-	| TransformationCellDef
-	| UppercaseTransformationCellDef
-	| UpdateRowTransformationCellDef
-	| LLMCellDef
+	| CollapseTransformationCellDef
 	| ColumnTypeTransformationCellDef
-	| DateDifferenceTransformationCellDef
-	| TimestampTransformationCellDef
-	| JoinTransformationCellDef
 	| CumulativeSumTransformationCellDef
 	| EncodeColumnTransformationCellDef
-	| CollapseTransformationCellDef
-	| SendEmailCellDef;
+	| DataImportCellDef
+	| DateDifferenceTransformationCellDef
+	| FilterDataCellDef
+	| JoinTransformationCellDef
+	| LLMCellDef
+	| MCPToolCellDef
+	| QueryImportCellDef
+	| SendEmailCellDef
+	| TransformationCellDef
+	| TimestampTransformationCellDef
+	| UnFilterDataCellDef
+	| UppercaseTransformationCellDef
+	| UpdateRowTransformationCellDef;
 
 export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[CodeCellConfig.widget]: CodeCellConfig,
@@ -81,6 +83,7 @@ export const DefaultCells: CellRegistry<DefaultCellDefinitions> = {
 	[FilterDataCellConfig.widget]: FilterDataCellConfig,
 	[UnFilterDataCellConfig.widget]: UnFilterDataCellConfig,
 	[DataImportCellConfig.widget]: DataImportCellConfig,
+	[MCPToolCellConfig.widget]: MCPToolCellConfig,
 	[UppercaseTransformationCellConfig.widget]:
 		UppercaseTransformationCellConfig,
 	[UpdateRowTransformationCellConfig.widget]:
