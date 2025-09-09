@@ -12,6 +12,7 @@ import {
 	ReadDiabetesRecordTemplate,
 	RowToNotebookTemplate,
 	type Template,
+	TexttoSQLDataTemplate,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
 } from "./templates";
@@ -29,6 +30,7 @@ const DEFAULT_TEMPLATE = [
 	UpdateDiabetesRecordTemplate,
 	DeleteDiabetesRecordTemplate,
 	// AskCSVTemplate,
+	TexttoSQLDataTemplate,
 ];
 
 const StyledContainer = styled("div")(({ theme }) => ({

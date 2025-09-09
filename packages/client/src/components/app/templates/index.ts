@@ -8,6 +8,7 @@ export { LandingPageTemplate } from "./LandingPageTemplate";
 export { MultiPageTemplate } from "./MultiPageTemplate";
 export { ReadDiabetesRecordTemplate } from "./ReadDiabetesRecordTemplate";
 export { RowToNotebookTemplate } from "./RowToNotebookTemplate";
+export { TexttoSQLDataTemplate } from "./TexttoSQLDataTemplate";
 export * from "./templates.types";
 export { UpdateDiabetesRecordTemplate } from "./UpdateDiabetesRecordTemplate";
 export { VisualizeCSVTemplate } from "./VisualizeCSVTemplate";
