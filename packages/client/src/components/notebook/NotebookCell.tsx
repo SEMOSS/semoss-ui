@@ -606,22 +606,6 @@ export const NotebookCell = observer(
 			return cell.output;
 		};
 
-		/**
-		 * Retrieves the output data for a cell based on the specified operation.
-		 * @param operation - The type of operation to determine if a specific output format is needed.
-		 * @returns The cell output, or a formatted object with the cell's data frame ID and query if the operation type is 'TASK_DATA'.
-		 */
-		const getCellOutput = (operation) => {
-			if (typeof operation === "string" && operation === "TASK_DATA") {
-				return {
-					name: cell.parameters?.dataFrameId || "",
-					type: "GRID",
-					query: cell.parameters?.dataFrameQuery || "",
-				};
-			}
-			return cell.output;
-		};
-
 		return (
 			<StyledStack
 				direction={"column"}
