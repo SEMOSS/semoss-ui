@@ -9,17 +9,16 @@ import {
 } from "@mui/icons-material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
+import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Modal,
 	Search,
 	Stack,
 	Tabs,
-	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 import { DeleteJobModal } from "./DeleteJobModal";
 import { JobBuilderModal } from "./JobBuilderModal";
 import { JobCard } from "./JobCard";
@@ -72,6 +71,7 @@ export function JobsPage() {
 	const [historyPage, setHistoryPage] = useState<number>(0);
 	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
 	const [historyCount, setHistoryCount] = useState<number>(-1);
+	const { adminMode } = useSettings();
 
 	const getJobs = () => {
 		setJobsLoading(true);
@@ -151,7 +151,7 @@ export function JobsPage() {
 	};
 
 	const deleteJob = (jobId: string[], jobGroup: string[]) => {
-		let pixel;
+		let pixel : string;
 		if (jobId.length > 1 && jobGroup.length > 1) {
 			pixel = `META | RemoveJobFromDB(jobId=${JSON.stringify(
 				jobId,
@@ -167,7 +167,6 @@ export function JobsPage() {
 				const type = response.pixelReturn[0].operationType;
 				const output = response.pixelReturn[0].output;
 				// Expecting output to have { success: string[], failed: string[] }
-				const successIds = output?.success || [];
 				const failedIds = output?.failed || [];
 
 				if (type.indexOf("ERROR") === -1) {
@@ -213,7 +212,7 @@ export function JobsPage() {
 		});
 		try {
 			await runPixel(pixel);
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to pause jobs.",
@@ -230,7 +229,7 @@ export function JobsPage() {
 		});
 		try {
 			await runPixel(pixel);
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to resume jobs.",
@@ -349,7 +348,7 @@ export function JobsPage() {
 											output["data"].values[valueIdx][
 												headers["SUCCESS"]
 											],
-										) == "true"
+										) === "true"
 									: false,
 								// appName: Object.prototype.hasOwnProperty.call(headers, 'APP_NAME') ? output['data'].values[valueIdx][headers.APP_NAME] : '',
 								jobTags: Object.hasOwn(headers, "JOB_TAG")
@@ -363,7 +362,7 @@ export function JobsPage() {
 											output["data"].values[valueIdx][
 												headers["IS_LATEST"]
 											],
-										) == "true"
+										) === "true"
 									: false,
 								//capture scheduler output
 								schedulerOutput: Object.hasOwn(
@@ -516,6 +515,9 @@ export function JobsPage() {
 		);
 		setJobsToDelete(rowsToBeDeleted);
 	};
+	if (!adminMode) {
+		return <Navigate to={"/settings"} />;
+	}
 
 	return (
 		<Stack spacing={2}>

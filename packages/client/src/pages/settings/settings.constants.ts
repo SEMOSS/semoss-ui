@@ -149,6 +149,7 @@ export const SETTINGS_ROUTES: {
 		description: "Search by job name or filter using job tags",
 		icon: mdiTabletCellphone,
 		history: ["settings/"],
+		admin: true,
 	},
 	{
 		title: "Member Settings",
