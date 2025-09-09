@@ -657,9 +657,10 @@ export const AppDetailPage = observer(() => {
 													<StyledLockReset />
 												) : null
 											}
-											// disabled={
-											// 	responseStatus || pendingRequest
-											// }
+											disabled={
+												responseStatus 
+												// || pendingRequest
+											}
 											variant={
 												responseStatus
 													? "outlined"
