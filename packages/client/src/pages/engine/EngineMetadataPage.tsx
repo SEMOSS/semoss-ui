@@ -15,6 +15,7 @@ import {
   TextField,
   Typography
 } from "@semoss/ui";
+import { runPixel } from "@semoss/sdk/react";
 import { Metamodel } from "@/components/metamodel";
 import { Section } from "@/components/ui";
 import { useEngine, usePixel, useRootStore } from "@/hooks";
@@ -536,8 +537,13 @@ export const EngineMetadataPage = observer(() => {
 		console.log("=== PREDICT DESCRIPTION CALL END ===");
 		
 		try {
-			const response = await monolithStore.runQuery(pixel);
+
+			const response = await runPixel(pixel, undefined);
 			console.log("Predict response:", JSON.stringify(response, null, 2));
+			
+			if (response.errors.length > 0) {
+				throw new Error(response.errors.join(", "));
+			}
 			
 			const predictedDescription = response.pixelReturn[0]?.output?.[0] || "";
 			console.log("predictedDescription:", predictedDescription);
