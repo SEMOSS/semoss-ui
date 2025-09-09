@@ -50,7 +50,7 @@ export const TexttoSQLDataTemplate: Template = {
 				slots: {
 					content: {
 						children: [
-							"container--1",
+							"text--1",
 							"input--1",
 							"button--1",
 							"grid-dynamic-frame--1",
@@ -66,7 +66,7 @@ export const TexttoSQLDataTemplate: Template = {
 						fontFamily: "roboto",
 						flexDirection: "column",
 						display: "flex",
-						gap: "8px",
+						gap: "16px",
 					},
 				},
 				listeners: {
@@ -76,67 +76,6 @@ export const TexttoSQLDataTemplate: Template = {
 					},
 				},
 				id: "page-1",
-			},
-			"container--1": {
-				parent: {
-					id: "page-1",
-					slot: "content",
-				},
-				slots: {
-					children: {
-						children: ["text--1"],
-						name: "children",
-					},
-				},
-				widget: "container",
-				data: {
-					style: {
-						padding: "4px",
-						overflow: "hidden",
-						flexWrap: "wrap",
-						flexDirection: "column",
-						display: "flex",
-						gap: "8px",
-					},
-					loading: false,
-					loadType: "Skeleton",
-				},
-				listeners: {
-					preProcess: {
-						type: "sync",
-						order: [],
-					},
-				},
-				id: "container--1",
-			},
-			"text--1": {
-				parent: {
-					id: "container--1",
-					slot: "children",
-				},
-				slots: {},
-				widget: "text",
-				data: {
-					style: {
-						padding: "4px",
-						whiteSpace: "pre-line",
-						overflow: "auto",
-						textOverflow: "ellipsis",
-						textAlign: "center",
-						fontWeight: "bold",
-						fontFamily: "Roboto",
-					},
-					text: "Text to SQL App",
-					loading: false,
-					loadType: "Skeleton",
-				},
-				listeners: {
-					preProcess: {
-						type: "sync",
-						order: [],
-					},
-				},
-				id: "text--1",
 			},
 			"input--1": {
 				id: "input--1",
@@ -244,11 +183,39 @@ export const TexttoSQLDataTemplate: Template = {
 						display: "flex",
 						flexDirection: "row",
 						flexWrap: "wrap",
-						width: "450px",
-						height: "350px",
+						width: "100%",
+						height: "650px",
 					},
 				},
 				listeners: {},
+				slots: {},
+				communityBlockMapping: {},
+			},
+			"text--1": {
+				id: "text--1",
+				widget: "text",
+				parent: {
+					id: "page-1",
+					slot: "content",
+				},
+				data: {
+					style: {
+						padding: "4px",
+						whiteSpace: "pre-line",
+						textOverflow: "ellipsis",
+					},
+					text: "Text to SQL App",
+					variant: "h3",
+					show: "true",
+					loading: false,
+					loadType: "Skeleton",
+				},
+				listeners: {
+					preProcess: {
+						type: "sync",
+						order: [],
+					},
+				},
 				slots: {},
 				communityBlockMapping: {},
 			},
