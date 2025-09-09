@@ -239,7 +239,7 @@ export const AppDetailPage = observer(() => {
 	const [values, setValues] = useState<DetailsForm>(
 		AppDetailsFormValues.detailsForm,
 	);
-	const [pendingRequest, setPendingRequest] = useState(false);
+	//const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const { appId } = useParams();
@@ -276,25 +276,25 @@ export const AppDetailPage = observer(() => {
 			fetchSimilarApps();
 		}
 	};
-	useEffect(() => {
-		if (appId) {
-			const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
+	// useEffect(() => {
+	// 	if (appId) {
+	// 		const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
 
-			monolithStore
-				.runQuery(requested)
-				.then((response) => {
-					const output = response?.pixelReturn?.[0]?.output;
-					if (Array.isArray(output) && output.length > 0) {
-						setPendingRequest(true);
-					} else {
-						setPendingRequest(false);
-					}
-				})
-				.catch((_error) => {
-					setPendingRequest(false);
-				});
-		}
-	}, [appId]);
+	// 		monolithStore
+	// 			.runQuery(requested)
+	// 			.then((response) => {
+	// 				const output = response?.pixelReturn?.[0]?.output;
+	// 				if (Array.isArray(output) && output.length > 0) {
+	// 					setPendingRequest(true);
+	// 				} else {
+	// 					setPendingRequest(false);
+	// 				}
+	// 			})
+	// 			.catch((_error) => {
+	// 				setPendingRequest(false);
+	// 			});
+	// 	}
+	// }, [appId]);
 
 	async function getPermission() {
 		const { permission: role } =
@@ -657,9 +657,9 @@ export const AppDetailPage = observer(() => {
 													<StyledLockReset />
 												) : null
 											}
-											disabled={
-												responseStatus || pendingRequest
-											}
+											// disabled={
+											// 	responseStatus || pendingRequest
+											// }
 											variant={
 												responseStatus
 													? "outlined"
@@ -675,7 +675,7 @@ export const AppDetailPage = observer(() => {
 												"appDetail-access-btn"
 											}
 										>
-											{responseStatus || pendingRequest
+											{responseStatus 
 												? "Pending Access"
 												: permission === "discoverable"
 													? "Request Access"
