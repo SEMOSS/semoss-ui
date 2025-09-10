@@ -29,7 +29,6 @@ import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 const StyledContent = styled("div")(({ theme }) => ({
 	position: "absolute",
 	inset: 0,
-	overflow: "hidden",
 }));
 
 export const ViewAppPage = observer(() => {

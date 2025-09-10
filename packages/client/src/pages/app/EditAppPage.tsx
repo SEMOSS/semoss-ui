@@ -11,7 +11,6 @@ import type { WorkspaceStore } from "@/stores";
 const StyledContent = styled("div")(({ theme }) => ({
 	position: "absolute",
 	inset: 0,
-	overflow: "hidden",
 }));
 
 export const EditAppPage = observer(() => {

@@ -45,7 +45,6 @@ export const PageBlock: BlockComponent = observer(({ id }) => {
 				// height: 'inherit',
 				position: "relative",
 				width: "100%",
-				height: "100%",
 				background: "#FFFFFF",
 				overflow: "scroll",
 				...data.style,
