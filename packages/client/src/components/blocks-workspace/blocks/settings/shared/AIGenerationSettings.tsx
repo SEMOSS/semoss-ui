@@ -4,7 +4,7 @@ import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { Block, BlockDef, Paths, useBlocksPixel } from "@semoss/renderer";
-import { usePixel } from "@semoss/sdk/react";
+import { runPixel, upload, usePixel } from "@semoss/sdk/react";
 import {
 	Accordion,
 	AutocompleteTwo,
@@ -97,6 +97,8 @@ export const AIGenerationSettings = observer(
 		const [_models, setModels] = useState<
 			{ app_id: string; app_name: string }[]
 		>([]);
+		const [frames2, setFrames2] = useState<string[]>([]);
+
 		useEffect(() => {
 			modelIdRef.current = modelId;
 		}, [modelId]);
@@ -136,7 +138,21 @@ export const AIGenerationSettings = observer(
 		const getFrames = useBlocksPixel<string[]>("GetFrames();", {
 			data: [],
 		});
-		const frames = getFrames.status === "SUCCESS" ? getFrames.data : [];
+		const getFrames2 = async () => {
+			const response = await runPixel(
+				`GetFrames();`,
+				configStore.store.insightID,
+			);
+			const framesList = response.pixelReturn[0].output as string[];
+			setFrames2(framesList);
+			return framesList;
+		};
+
+		// // Load frames initially
+		// useEffect(() => {
+		// 	getFrames2();
+		// }, []);
+		const _frames = getFrames.status === "SUCCESS" ? getFrames.data : [];
 		const myModels = usePixel<
 			{ app_id: string; app_name: string; tag: string }[]
 		>(`MyEngines(engineTypes=['MODEL']);`);
@@ -195,8 +211,33 @@ export const AIGenerationSettings = observer(
 				setModelId(myModels.data[0].app_id);
 			}
 		}, [myModels.status, myModels.data]);
-		// TODO: const generateFrames but dont use monolithstore
 
+		const generateFrame = async () => {
+			try {
+				setResponseLoading(true);
+				const uploadedFile = await upload(
+					inputFile,
+					configStore.store.insightID,
+					null,
+					null,
+				);
+				console.log("uploadedFile:", uploadedFile[0].fileLocation);
+				const pixel = `FileRead ( filePath = ["${uploadedFile[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "${uploadedFile[0].fileName}" ] ) ] );`;
+				await runPixel(pixel, configStore.store.insightID);
+
+				// Refresh frames list using getFrames2
+				await getFrames2();
+			} catch (e) {
+				console.error(e);
+
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			} finally {
+				setResponseLoading(false);
+			}
+		};
 		const generateAIResponse = async () => {
 			try {
 				// For vega LLM prompting generation
@@ -207,7 +248,7 @@ export const AIGenerationSettings = observer(
 					null,
 					null,
 				);
-				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] ) | FrameToGraph ( model = "${selectedModel}", userInput = "${prompt}", insightName="${configStore.store.insightID}")`;
+				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "NLP_FRAME123" ] ) ] ) | FrameToGraph ( model = "${selectedModel}", userInput = "${prompt}", insightName="${configStore.store.insightID}")`;
 				// const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") `
 				const response = await monolithStore.runQuery(pixel);
 				console.log("Response from runQuery:", response);
@@ -307,21 +348,15 @@ export const AIGenerationSettings = observer(
 							Upload Frame with CSV
 						</StyledAccordionTrigger>
 						<StyledUploadSection spacing={2}>
-							{/* <Typography variant="body1">
-								Upload CSV to Create Frame{" "}
-								<Typography component="span" color="error">
-									*
-								</Typography>
-							</Typography> */}
 							<Controller
 								name="inputFile"
 								control={control}
 								render={({ field }) => (
 									<StyledFileDropzone
 										extensions={[".csv"]}
-										onChange={(file: File) =>
-											field.onChange([file])
-										}
+										onChange={(file: File) => {
+											field.onChange([file]);
+										}}
 										disabled={responseLoading}
 									/>
 								)}
@@ -337,6 +372,9 @@ export const AIGenerationSettings = observer(
 								loading={responseLoading}
 								variant="outlined"
 								type="submit"
+								onClick={() => {
+									generateFrame();
+								}}
 							>
 								Create Frame
 							</Button>
@@ -344,8 +382,8 @@ export const AIGenerationSettings = observer(
 					</Accordion>
 					<AutocompleteTwo
 						multiple={false}
-						disabled={getFrames.status !== "SUCCESS"}
-						options={frames}
+						disabled={false}
+						options={frames2}
 						disablePortal
 						id="frame-select"
 						renderInput={(params) => (
