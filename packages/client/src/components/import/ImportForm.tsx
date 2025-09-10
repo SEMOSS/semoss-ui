@@ -728,7 +728,7 @@ export const ImportForm = (props) => {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Stack rowGap={2}>
-				{defaultFields.map((val, _i) => {
+				{defaultFields?.map((val, _i) => {
 					if (!val.hidden) {
 						return (
 							<StyledKeyValue
@@ -1072,7 +1072,7 @@ export const ImportForm = (props) => {
 						</div>
 
 						{openAdvanced &&
-							advancedFields.map((val, _i) => {
+							advancedFields.map((val, i) => {
 								if (!val.hidden) {
 									return (
 										<StyledKeyValue
