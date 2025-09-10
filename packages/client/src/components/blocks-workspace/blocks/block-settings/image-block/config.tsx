@@ -4,11 +4,7 @@ import {
 	ImageAspectRatio,
 	PanoramaOutlined,
 } from "@mui/icons-material";
-import {
-	ButtonGroupSettings,
-	InputSettings,
-	SelectInputSettings,
-} from "../../settings";
+import { ButtonGroupSettings, SelectInputSettings } from "../../settings";
 import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
 	buildDimensionsSection,
@@ -16,6 +12,7 @@ import {
 	buildShowField,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
+import GeneralSettings from "./GeneralSettings";
 
 export const config: BlockSettingsConfig = {
 	type: BLOCK_TYPE_DISPLAY,
@@ -25,20 +22,8 @@ export const config: BlockSettingsConfig = {
 			name: "General",
 			children: [
 				{
-					description: "Image Source",
-					render: ({ id }) => (
-						<InputSettings id={id} label="Image URL" path="src" />
-					),
-				},
-				{
-					description: "Description",
-					render: ({ id }) => (
-						<InputSettings
-							id={id}
-							label="Description"
-							path="title"
-						/>
-					),
+					description: "",
+					render: ({ id }) => <GeneralSettings id={id} />,
 				},
 			],
 		},

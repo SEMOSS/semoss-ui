@@ -1,5 +1,6 @@
 import FileUploadOutlined from "@mui/icons-material/FileUploadOutlined";
 import { Box, Button, styled, Typography } from "@semoss/ui";
+import { formatToDataTestId } from "@/utility";
 import Appagent from "../../assets/img/Appagent.svg";
 import Appcode from "../../assets/img/Appcode.svg";
 import Appdragdrop from "../../assets/img/Appdragdrop.svg";
@@ -70,7 +71,9 @@ const NavCard = ({ title, description, type, image, setApp, testId }) => (
 				variant="text"
 				color="primary"
 				className="app-navigation-buttons"
-				data-testid={testId}
+				data-testid={formatToDataTestId(
+					`createAppSection-${testId}-btn`,
+				)}
 				onClick={() => {
 					// Handle button click, e.g., navigate to a specific page
 					console.log(`Navigating to ${title}`);
@@ -143,7 +146,7 @@ const CreateAppSection = ({
 							alignSelf: "flex-start",
 						}}
 						onClick={uploadApp}
-						data-testid={"new-app-upload-btn"}
+						data-testid={"createAppSection-upload-btn"}
 					>
 						Upload App
 					</Button>

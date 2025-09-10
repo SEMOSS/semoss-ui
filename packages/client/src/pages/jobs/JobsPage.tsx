@@ -81,66 +81,72 @@ export function JobsPage() {
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 
-				if (type.indexOf("ERROR") > -1) {
-					notification.add({
-						color: "error",
-						message:
-							"Something went wrong. Jobs could not be retrieved.",
-					});
-				} else {
-					const pixelJobs: Record<string, PixelReturnJob> =
-						response.pixelReturn[0].output;
-					const jobs: Job[] = Object.values(pixelJobs).map((job) => {
-						// ui state is a legacy construct, this may not exist
-						let uiState: JobUIState;
-						try {
-							if (job.uiState) {
-								uiState = JSON.parse(job.uiState);
-							}
-						} catch (e) {
-							console.log(e);
-						}
+                if (type.indexOf('ERROR') > -1) {
+                    notification.add({
+                        color: 'error',
+                        message:
+                            'Something went wrong. Jobs could not be retrieved.',
+                    });
+                } else {
+                    const pixelJobs: Record<string, PixelReturnJob> =
+                        response.pixelReturn[0].output;
+                    const jobs: Job[] = [];
+                    Object.values(pixelJobs).forEach((job) => {
+                        // Job group is undefined for jobs made in the old ui
+                        if (!job.jobGroup || job.jobGroup === 'undefined') {
+                            // skip jobs made on the old ui since they aren't backwards compatable
+                            return;
+                        }
+                        // ui state is a legacy construct, this may not exist
+                        let uiState: JobUIState;
+                        try {
+                            if (job.uiState) {
+                                uiState = JSON.parse(job.uiState);
+                            }
+                        } catch (e) {
+                            console.log(e);
+                        }
 
-						let sendEmailJob: SendEmailJob;
-						if (job.recipe) {
-							sendEmailJob = convertSendEmailRecipeToJob(
-								job.recipe,
-							);
-						}
-						return {
-							id: job.jobId,
-							name: job.jobName,
-							type: "Custom",
-							cronExpression: job.cronExpression,
-							timeZone: job.cronTz,
-							tags: (job?.jobTags ?? "")
-								.split(",")
-								.filter((tag) => !!tag),
-							lastRun: job.PREV_FIRE_TIME,
-							nextRun: job.NEXT_FIRE_TIME,
-							ownerId: job.USER_ID,
-							isActive: job.NEXT_FIRE_TIME !== "INACTIVE",
-							group: job.jobGroup,
-							pixel: job.recipe,
-							smtpHost: sendEmailJob?.smtpHost,
-							smtpPort: sendEmailJob?.smtpPort,
-							subject: sendEmailJob?.subject,
-							jobType: uiState?.jobType,
-							to: (sendEmailJob?.to ?? "")
-								.split(",")
-								.filter((to) => !!to),
-							cc: (sendEmailJob?.cc ?? "")
-								.split(",")
-								.filter((cc) => !!cc),
-							bcc: (sendEmailJob?.bcc ?? "")
-								.split(",")
-								.filter((bcc) => !!bcc),
-							from: sendEmailJob?.from,
-							message: sendEmailJob?.message,
-							username: sendEmailJob?.username,
-							password: sendEmailJob?.password,
-						};
-					});
+                        let sendEmailJob: SendEmailJob;
+                        if (job.recipe) {
+                            sendEmailJob = convertSendEmailRecipeToJob(
+                                job.recipe,
+                            );
+                        }
+                        jobs.push({
+                            id: job.jobId,
+                            name: job.jobName,
+                            type: 'Custom',
+                            cronExpression: job.cronExpression,
+                            timeZone: job.cronTz,
+                            tags: (job?.jobTags ?? '')
+                                .split(',')
+                                .filter((tag) => !!tag),
+                            lastRun: job.PREV_FIRE_TIME,
+                            nextRun: job.NEXT_FIRE_TIME,
+                            ownerId: job.USER_ID,
+                            isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
+                            group: job.jobGroup,
+                            pixel: job.recipe,
+                            smtpHost: sendEmailJob?.smtpHost,
+                            smtpPort: sendEmailJob?.smtpPort,
+                            subject: sendEmailJob?.subject,
+                            jobType: uiState?.jobType,
+                            to: (sendEmailJob?.to ?? '')
+                                .split(',')
+                                .filter((to) => !!to),
+                            cc: (sendEmailJob?.cc ?? '')
+                                .split(',')
+                                .filter((cc) => !!cc),
+                            bcc: (sendEmailJob?.bcc ?? '')
+                                .split(',')
+                                .filter((bcc) => !!bcc),
+                            from: sendEmailJob?.from,
+                            message: sendEmailJob?.message,
+                            username: sendEmailJob?.username,
+                            password: sendEmailJob?.password,
+                        });
+                    });
 
 					setJobs(jobs);
 				}
@@ -575,7 +581,7 @@ export function JobsPage() {
 							startIcon={<Pause />}
 							size="medium"
 							onClick={() => pauseJobs()}
-							data-testid={"jobs-page-pause-btn"}
+							data-testid={"jobsPage-pause-btn"}
 						>
 							Pause
 						</Button>
@@ -587,7 +593,7 @@ export function JobsPage() {
 							startIcon={<NotStartedOutlined />}
 							size="medium"
 							onClick={() => resumeJobs()}
-							data-testid={"jobs-page-resume-btn"}
+							data-testid={"jobsPage-resume-btn"}
 						>
 							Resume
 						</Button>
@@ -618,7 +624,7 @@ export function JobsPage() {
 									password: "",
 								})
 							}
-							data-testid={"jobs-page-add-btn"}
+							data-testid={"jobsPage-add-btn"}
 						>
 							Add
 						</Button>
