@@ -1,11 +1,12 @@
 import { AutoAwesome } from "@mui/icons-material";
-import { Typography } from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Block, BlockDef, Paths } from "@semoss/renderer";
+import { Block, BlockDef, Paths, useBlocksPixel } from "@semoss/renderer";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	Accordion,
 	AutocompleteTwo,
 	Button,
 	FileDropzone,
@@ -58,8 +59,16 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	setAIOutputJSON?: (output: string) => void;
 }
-const StyledUploadSection = styled(Stack)(({ theme }) => ({
+const StyledUploadSection = styled(Stack)(() => ({
 	height: "250px",
+}));
+const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
+	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
+		transform: "rotate(180deg)",
+	},
+}));
+const StyledFileDropzone = styled(FileDropzone)(() => ({
+	padding: "0 10px 0 10px",
 }));
 export const AIGenerationSettings = observer(
 	<D extends BlockDef = BlockDef>({
@@ -75,7 +84,8 @@ export const AIGenerationSettings = observer(
 		const { monolithStore, configStore } = useRootStore();
 		// const [prompt, setPrompt] = useState("");
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
-
+		const [frameAccordionExpanded, setFrameAccordionExpanded] =
+			useState(false);
 		const modelIdRef = useRef("");
 		const [modelId, setModelId] = useState<string>("");
 
@@ -87,7 +97,6 @@ export const AIGenerationSettings = observer(
 		const [_models, setModels] = useState<
 			{ app_id: string; app_name: string }[]
 		>([]);
-
 		useEffect(() => {
 			modelIdRef.current = modelId;
 		}, [modelId]);
@@ -115,7 +124,19 @@ export const AIGenerationSettings = observer(
 			cfgLibraryModels.loading ||
 			!inputFile ||
 			!selectedModel;
-
+		// const getFrames = usePixel<{ frameList: string[] }>(`GetFrames();`);
+		// useMemo(() => {
+		// 	if (getFrames.status !== "SUCCESS") {
+		// 		return;
+		// 	}
+		// 	const frames = getFrames.data[0]?.frameList ?? [];
+		// 	_setFrames(frames);
+		// 	console.log("Available frames: ", frames);
+		// }, [getFrames.status, getFrames.data, configStore]);
+		const getFrames = useBlocksPixel<string[]>("GetFrames();", {
+			data: [],
+		});
+		const frames = getFrames.status === "SUCCESS" ? getFrames.data : [];
 		const myModels = usePixel<
 			{ app_id: string; app_name: string; tag: string }[]
 		>(`MyEngines(engineTypes=['MODEL']);`);
@@ -174,6 +195,7 @@ export const AIGenerationSettings = observer(
 				setModelId(myModels.data[0].app_id);
 			}
 		}, [myModels.status, myModels.data]);
+		// TODO: const generateFrames but dont use monolithstore
 
 		const generateAIResponse = async () => {
 			try {
@@ -275,27 +297,65 @@ export const AIGenerationSettings = observer(
 		return (
 			<form onSubmit={handleSubmit(generateAIResponse)}>
 				<Stack spacing={1} width="100%">
-					<StyledUploadSection spacing={2}>
-						<Typography variant="body1">
-							Upload CSV{" "}
-							<Typography component="span" color="error">
-								*
-							</Typography>
-						</Typography>
-						<Controller
-							name="inputFile"
-							control={control}
-							render={({ field }) => (
-								<FileDropzone
-									extensions={[".csv"]}
-									onChange={(file: File) =>
-										field.onChange([file])
-									}
-									disabled={responseLoading}
-								/>
-							)}
-						/>
-					</StyledUploadSection>
+					<Accordion
+						expanded={frameAccordionExpanded}
+						onChange={() =>
+							setFrameAccordionExpanded(!frameAccordionExpanded)
+						}
+					>
+						<StyledAccordionTrigger expandIcon={<ExpandMoreIcon />}>
+							Upload Frame with CSV
+						</StyledAccordionTrigger>
+						<StyledUploadSection spacing={2}>
+							{/* <Typography variant="body1">
+								Upload CSV to Create Frame{" "}
+								<Typography component="span" color="error">
+									*
+								</Typography>
+							</Typography> */}
+							<Controller
+								name="inputFile"
+								control={control}
+								render={({ field }) => (
+									<StyledFileDropzone
+										extensions={[".csv"]}
+										onChange={(file: File) =>
+											field.onChange([file])
+										}
+										disabled={responseLoading}
+									/>
+								)}
+							/>
+						</StyledUploadSection>
+						<Stack
+							direction="row"
+							justifyContent="flex-end"
+							sx={{ p: 2 }}
+						>
+							<Button
+								disabled={_isGenerateButtonDisabled}
+								loading={responseLoading}
+								variant="outlined"
+								type="submit"
+							>
+								Create Frame
+							</Button>
+						</Stack>
+					</Accordion>
+					<AutocompleteTwo
+						multiple={false}
+						disabled={getFrames.status !== "SUCCESS"}
+						options={frames}
+						disablePortal
+						id="frame-select"
+						renderInput={(params) => (
+							<TextField
+								{...params}
+								label="Select Frame"
+								size="small"
+							/>
+						)}
+					/>
 					<Controller
 						name="prompt"
 						control={control}
@@ -319,8 +379,7 @@ export const AIGenerationSettings = observer(
 								}}
 								onChange={(e) =>
 									setValue("prompt", e.target.value)
-								}
-								// required
+								} // required
 							/>
 						)}
 					/>
