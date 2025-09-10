@@ -186,13 +186,6 @@ const StyledCard = styled(Card)({
 	},
 });
 
-const StyledSelectEngineTypography = styled(Typography)({
-	color: "#000000DE",
-	font: "Inter",
-	fontWeight: "500",
-	fontSize: "16px",
-});
-
 const StyledRadioGroup = styled(RadioGroup)({
 	flexWrap: "nowrap",
 	whiteSpace: "nowrap",
@@ -621,41 +614,43 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	enginesCount > 19 && paginationOptions.enginesPageCounts.push(20);
 
 	const filterEngines = useCallback(() => {
-		const response = getTeamEngines(
+		getTeamEngines(
 			groupId,
 			groupType,
 			rowsPerPage,
 			enginesPage * rowsPerPage - rowsPerPage, // offset
 			searchFilter,
-		);
+		).then((response) => {
+			setEngines(
+				(response as unknown as { data: Engine[]; response: unknown })
+					.data as Engine[],
+			);
+			setHasEngines(
+				(response as unknown as { data: Engine[]; response: unknown })
+					.data?.length > 0,
+			);
+		});
 
-		setEngines(
-			(response as unknown as { data: Engine[]; response: unknown })
-				.data as Engine[],
-		);
-		setHasEngines(
-			(response as unknown as { data: Engine[]; response: unknown }).data
-				.length > 0,
-		);
-
-		const responseData = getTeamEngines(
+		getTeamEngines(
 			groupId,
 			groupType,
 			100,
 			0, // offset
 			searchFilter,
-		);
-
-		setEngineCount(
-			(
+		).then((responseData) => {
+			setEngineCount(
 				(
-					responseData as unknown as {
-						data: Engine[];
-						response: unknown;
-					}
-				).data as Engine[]
-			).length,
-		);
+					(
+						responseData as unknown as {
+							data: Engine[];
+							response: unknown;
+						}
+					).data as Engine[]
+				)?.length,
+			);
+		});
+
+
 	}, [
 		enginesPage,
 		searchFilter,
