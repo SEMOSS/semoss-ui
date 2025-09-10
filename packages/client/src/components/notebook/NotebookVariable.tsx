@@ -17,6 +17,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { useWorkspace } from "@/hooks";
+import { suggestVariableRenames } from "../blocks-workspace/utils";
 import { AddVariablePopover } from "./AddVariablePopover";
 import { VariablePreview } from "./VariablePreview";
 
@@ -129,6 +131,8 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	const { state } = useBlocks();
 	const notification = useNotification();
 
+	const { workspace } = useWorkspace();
+
 	const [openRenameAlias, setOpenRenameAlias] = useState(false);
 	const [anchorEl, setAnchorEl] = useState(null);
 	const [newTokenAlias, setNewTokenAlias] = useState(id);
@@ -150,7 +154,11 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	const handleAutoRename = async () => {
 		setIsProcessing(true);
 		try {
-			const changes = await (state as any).suggestVariableRenames(id);
+			const changes = await suggestVariableRenames(
+				state,
+				workspace.agentModelEngine,
+				id,
+			);
 			if (
 				typeof changes === "object" &&
 				changes !== null &&
@@ -341,7 +349,10 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 										handleAutoRename();
 										setAnchorEl(null);
 									}}
-									disabled={isProcessing}
+									disabled={
+										isProcessing ||
+										!workspace.agentModelEngine
+									}
 								>
 									<Stack direction="row" alignItems="center">
 										<StyledIcon color="primary">

@@ -5,7 +5,8 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useState } from "react";
-import { useBlocks, VARIABLE_TYPES } from "@semoss/renderer";
+import { useBlocks, VARIABLE_TYPES, type Variable } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Box,
 	Button,
@@ -24,6 +25,11 @@ import {
 import { AddVariablePopover, NotebookVariable } from "@/components/notebook";
 import { Panel } from "@/components/workspace";
 import { usePixel, useWorkspace } from "@/hooks";
+import { suggestVariableRenames } from "../utils";
+
+interface LLMResponse {
+	response: string;
+}
 
 const StyledStack = styled(Stack)(() => ({
 	maxHeight: "100%",
@@ -233,30 +239,28 @@ export const VariablesPanel = observer(
 		const handleOpenRenameModal = async () => {
 			setLLMLoad(true);
 			try {
-				debugger;
-				// const changes = await (state as any).suggestVariableRenames();
+				const changes = await suggestVariableRenames(
+					state,
+					workspace.agentModelEngine,
+				);
 
-				const changes = {};
+				if (typeof changes === "object" && changes !== null) {
+					const changesRecord = changes as Record<string, string>;
+					setSuggestedChanges(changesRecord);
 
-				setTimeout(() => {
-					debugger;
-					if (typeof changes === "object" && changes !== null) {
-						const changesRecord = changes as Record<string, string>;
-						setSuggestedChanges(changesRecord);
+					// Initialize all changes as selected (true)
+					const initialSelection: Record<string, boolean> = {};
+					Object.keys(changesRecord).forEach((key) => {
+						initialSelection[key] = true;
+					});
+					setSelectedChanges(initialSelection);
 
-						// Initialize all changes as selected (true)
-						const initialSelection: Record<string, boolean> = {};
-						Object.keys(changesRecord).forEach((key) => {
-							initialSelection[key] = true;
-						});
-						setSelectedChanges(initialSelection);
-
-						setIsRenameModalOpen(true);
-					}
-					setLLMLoad(false);
-				}, 3000);
+					setIsRenameModalOpen(true);
+				}
+				setLLMLoad(false);
 			} catch (error) {
 				console.error("Error getting suggested changes:", error);
+				setLLMLoad(false);
 			}
 		};
 
@@ -277,6 +281,7 @@ export const VariablesPanel = observer(
 				);
 
 				if (Object.keys(changesToApply).length > 0) {
+					// TODO: Refactor this and go off of cell and variable class functions
 					const success = await (state as any).applyVariableRenames(
 						changesToApply,
 					);
@@ -376,8 +381,11 @@ export const VariablesPanel = observer(
 								<Stack direction="row" spacing={1}>
 									<IconButton
 										size="small"
+										disabled={
+											!workspace.agentModelEngine ||
+											isProcessing
+										}
 										onClick={handleOpenRenameModal}
-										disabled={isProcessing}
 									>
 										{llmLoad ? (
 											<CircularProgress
@@ -411,6 +419,9 @@ export const VariablesPanel = observer(
 											id={id}
 											variable={variable}
 											engines={engines}
+											suggestVariableRenames={
+												suggestVariableRenames
+											}
 										/>
 									);
 								})}
