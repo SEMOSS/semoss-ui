@@ -253,11 +253,24 @@ export const PlatformSearch = observer(({ renderInput }: PlatformSearchProps) =>
 	};
 
 	const handleCategoryToggle = (category) => {
-		setSelectedCategories((prev) =>
-			prev.some((c) => c.name === category.name)
-				? prev.filter((c) => c.name !== category.name)
-				: [...prev, category],
-		);
+		setSelectedCategories((prev) => {
+			// If selecting "All", deselect everything else
+			if (category.name === "All") {
+				return [{ name: "All", type: "" }];
+			}
+			// If "All" is already selected, remove it and add the new category
+			if (prev.some((c) => c.name === "All")) {
+				return [category];
+			}
+			// Toggle the category
+			if (prev.some((c) => c.name === category.name)) {
+				// Remove the category
+				return prev.filter((c) => c.name !== category.name);
+			} else {
+				// Add the category
+				return [...prev, category];
+			}
+		}); 
 	};
 
 	const limitOptionsPerGroup = (options, maxPerGroup = 3) => {
