@@ -5,8 +5,8 @@ import {
 	SearchOff,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { createElement, useMemo, useState } from "react";
-import { INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
+import { createElement, useMemo, useState,useEffect } from "react";
+import { INPUT_BLOCK_TYPES, useBlocks, ActionMessages } from "@semoss/renderer";
 import {
 	Alert,
 	Collapse,
@@ -26,6 +26,7 @@ import GroupIcon from "../../../assets/img/Group.svg";
 import MultiBlockIcon from "../../../assets/img/Multiple_Block.svg";
 import VariationIcon from "../../../assets/img/VariationLogo.svg";
 import { BlockSettingsRegistry } from "../blocks";
+import EditIcon from "@mui/icons-material/Edit";
 
 const StyledTitle = styled(Typography)(() => ({
 	textTransform: "capitalize",
@@ -213,7 +214,10 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 		? INPUT_BLOCK_TYPES.indexOf(block.widget) > -1
 		: false;
 	const [settingSection, setSettingSection] = useState<string | number>(0); //state to maintain the selected tab in setting appearance tab
-
+	const [showJsonEditor, setShowJsonEditor] = useState(false);
+    const [jsonValue, setJsonValue] = useState(
+        block ? JSON.stringify(block.data?.style ?? {}, null, 2) : "{}"
+    );
 	// get the content menu
 	const contentMenu = useMemo(() => {
 		if (
@@ -360,7 +364,14 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 		if (!block) {
 			setSearch("");
 			setShowSearch(false);
+			setJsonValue("{}");
+		} else {
+			setJsonValue(JSON.stringify(block.data?.style ?? {}, null, 2));
 		}
+	}, [block]);
+
+	useEffect(() => {
+		setShowJsonEditor(false);
 	}, [block]);
 
 	const getBlockDisplay = () => {
@@ -586,17 +597,83 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								aria-labelledby={`simple-tab-1`}
 								hidden={settingSection !== 1 ? true : false}
 							>
-								{styleMenu.length ? (
-									<SelectedMenuSection
-										id={block.id}
-										sectionTitle=""
-										menu={styleMenu}
-										accordion={styleAccordion}
-										setAccordion={setStyleAccordion}
-									/>
-								) : (
-									<></>
-								)}
+								<Stack 
+									direction="row" 
+									alignItems="center" 
+									justifyContent="space-between" 
+									sx={{
+										mb: 2,
+										mt: 3,
+										pl: 1,
+										borderLeft: '3px solid #1260DD', 
+									}}
+								>
+                                    <Typography variant="subtitle1">Edit CSS</Typography>
+                                    <IconButton
+                                        size="small"
+                                        title="Edit CSS JSON"
+                                        onClick={() => setShowJsonEditor((v) => !v)}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </Stack>
+								{!showJsonEditor ? (
+                                    styleMenu.length ? (
+                                        <SelectedMenuSection
+                                            id={block.id}
+                                            sectionTitle=""
+                                            menu={styleMenu}
+                                            accordion={styleAccordion}
+                                            setAccordion={setStyleAccordion}
+                                        />
+                                    ) : null
+                                ) : (
+                                    <Stack spacing={2}>
+                                        <TextField
+                                            multiline
+                                            minRows={8}
+                                            maxRows={20}
+                                            fullWidth
+                                            label="Edit CSS"
+                                            value={jsonValue}
+											onChange={(e) => {
+												setJsonValue(e.target.value);
+												try {
+													const parsed = JSON.parse(e.target.value);
+													state.dispatch({
+														message: ActionMessages.SET_BLOCK_DATA,
+														payload: {
+															id: block.id,
+															path: "style",
+															value: parsed,
+														},
+													});
+													
+												} catch (err) {
+													
+												}
+											}}
+                                            onBlur={(e) => {
+												try {
+													const parsed = JSON.parse(e.target.value);
+													notification.add({
+														color: "success",
+														message: "Style updated!",
+													});
+												} catch (err) {
+													notification.add({
+														color: "error",
+														message: "Invalid JSON",
+													});
+												}
+											}}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                        <Stack direction="row" spacing={1}>
+                                        </Stack>
+                                    </Stack>
+                                )}
 							</StyledCustomTabPanel>
 						)
 					}
