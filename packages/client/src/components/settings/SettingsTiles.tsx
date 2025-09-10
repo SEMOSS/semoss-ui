@@ -26,6 +26,7 @@ import databaseIcon from "@/assets/img/databaseIcon.png";
 import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
+import { formatToDataTestId } from "@/utility";
 
 const StyledAlert = styled(Alert, {
 	shouldForwardProp: (prop) => prop !== "setBounds",
@@ -351,229 +352,219 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 		return <LoadingScreen.Trigger description="Deleting..." />;
 	}
 
-	if (condensed) {
-		return (
-			<Paper sx={StyledWidth}>
-				<Stack direction={direction}>
-					<StyledAlert
-						setBounds={direction === "column"}
-						sx={StyledWidth}
-						icon={false}
-						action={
-							<Switch
-								title={
-									global
-										? `Make ${name} private`
-										: `Make ${name} public`
-								}
-								checked={!global}
-								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"public",
-									)
-								}
-								onChange={() => {
-									changeGlobal();
-								}}
-							></Switch>
-						}
-					>
-						<Alert.Title>
-							<StyledBlock>
-								{/* Single Lock Icon on the left */}
-								<StyledIcon>
-									<LockIcon />
-								</StyledIcon>
+  if (condensed) {
+    return (
+      <Paper sx={StyledWidth}>
+        <Stack direction={direction}>
+          <StyledAlert
+            setBounds={direction === "column"}
+            sx={StyledWidth}
+            icon={false}
+            action={
+              <Switch
+                title={global ? `Make ${name} private` : `Make ${name} public`}
+                checked={!global}
+                disabled={
+                  !configStore.isEngineOperationAvailable(type, "public")
+                }
+                data-testid={formatToDataTestId(
+									`settingsTiles-make-${name}-public-private-switch`,
+								)}
+                onChange={() => {
+                  changeGlobal();
+                }}
+              ></Switch>
+            }
+          >
+            <Alert.Title>
+              <StyledBlock>
+                {/* Single Lock Icon on the left */}
+                <StyledIcon>
+                  <LockIcon />
+                </StyledIcon>
 
-								{/* Text Stack on the right */}
-								<Box>
-									<Typography
-										variant="body1"
-										fontWeight="500"
-									>
-										Private
-									</Typography>
-									<Typography variant="body2">
-										No one outside of the specified member
-										group can access
-									</Typography>
-								</Box>
-							</StyledBlock>
-						</Alert.Title>
-					</StyledAlert>
-					{global ? (
-						<Tooltip
-							title={`An ${name} does not need to be discoverable and public.`}
-							placement="top"
-						>
-							<StyledAlert
-								setBounds={direction === "column"}
-								sx={StyledWidth}
-								icon={false}
-								action={
-									<Switch
-										title={
-											discoverable
-												? `Make ${name} non-discoverable`
-												: `Make ${name} discoverable`
-										}
-										disabled={
-											global ||
-											!configStore.isEngineOperationAvailable(
-												type,
-												"discoverable",
-											)
-										}
-										checked={!discoverable}
-										onChange={() => {
-											changeDiscoverable();
-										}}
-									></Switch>
-								}
-							>
-								<Alert.Title>
-									<StyledBlock>
-										{/* Single Lock Icon on the left */}
-										<StyledIcon>
-											<VisibilityOffIcon />
-										</StyledIcon>
-										{/* Text Stack on the right */}
-										<Box>
-											<Typography
-												variant="body1"
-												fontWeight="500"
-											>
-												Non Discoverable
-											</Typography>
-											<Typography variant="body2">
-												Users cannot request access to
-												this database if private
-											</Typography>
-										</Box>
-									</StyledBlock>
-								</Alert.Title>
-							</StyledAlert>
-						</Tooltip>
-					) : (
-						<StyledAlert
-							setBounds={direction === "column"}
-							sx={StyledWidth}
-							icon={false}
-							action={
-								<Switch
-									title={
-										discoverable
-											? `Make ${name} non-discoverable`
-											: `Make ${name} discoverable`
-									}
-									disabled={
-										global ||
-										!configStore.isEngineOperationAvailable(
-											type,
-											"discoverable",
-										)
-									}
-									checked={!discoverable}
-									onChange={() => {
-										changeDiscoverable();
-									}}
-								></Switch>
-							}
-						>
-							<Alert.Title>
-								<StyledBlock>
-									{/* Single Lock Icon on the left */}
-									<StyledIcon>
-										<VisibilityOffIcon />
-									</StyledIcon>
+                {/* Text Stack on the right */}
+                <Box>
+                  <Typography variant="body1" fontWeight="500">
+                    Private
+                  </Typography>
+                  <Typography variant="body2">
+                    No one outside of the specified member group can access
+                  </Typography>
+                </Box>
+              </StyledBlock>
+            </Alert.Title>
+          </StyledAlert>
+          {global ? (
+            <Tooltip
+              title={`An ${name} does not need to be discoverable and public.`}
+              placement="top"
+            >
+              <StyledAlert
+                setBounds={direction === "column"}
+                sx={StyledWidth}
+                icon={false}
+                action={
+                  <Switch
+                    title={
+                      discoverable
+                        ? `Make ${name} non-discoverable`
+                        : `Make ${name} discoverable`
+                    }
+                    disabled={
+                      global ||
+                      !configStore.isEngineOperationAvailable(
+                        type,
+                        "discoverable"
+                      )
+                    }
+                    data-testid={formatToDataTestId(
+											`settingsTiles-${name}-makeDiscoverable-switch`,
+										)}
+                    checked={!discoverable}
+                    onChange={() => {
+                      changeDiscoverable();
+                    }}
+                  ></Switch>
+                }
+              >
+                <Alert.Title>
+                  <StyledBlock>
+                    {/* Single Lock Icon on the left */}
+                    <StyledIcon>
+                      <VisibilityOffIcon />
+                    </StyledIcon>
+                    {/* Text Stack on the right */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500">
+                        Non Discoverable
+                      </Typography>
+                      <Typography variant="body2">
+                        Users cannot request access to this database if private
+                      </Typography>
+                    </Box>
+                  </StyledBlock>
+                </Alert.Title>
+              </StyledAlert>
+            </Tooltip>
+          ) : (
+            <StyledAlert
+              setBounds={direction === "column"}
+              sx={StyledWidth}
+              icon={false}
+              data-testid={formatToDataTestId(
+								`settingsTiles-${name}-makeDiscoverable-switch`,
+							)}
+              action={
+                <Switch
+                  title={
+                    discoverable
+                      ? `Make ${name} non-discoverable`
+                      : `Make ${name} discoverable`
+                  }
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-makeDiscoverable-switch`,
+									)}
+                  disabled={
+                    global ||
+                    !configStore.isEngineOperationAvailable(
+                      type,
+                      "discoverable"
+                    )
+                  }
+                  checked={!discoverable}
+                  onChange={() => {
+                    changeDiscoverable();
+                  }}
+                ></Switch>
+              }
+            >
+              <Alert.Title>
+                <StyledBlock>
+                  {/* Single Lock Icon on the left */}
+                  <StyledIcon>
+                    <VisibilityOffIcon />
+                  </StyledIcon>
 
-									{/* Text Stack on the right */}
-									<Box>
-										<Typography
-											variant="body1"
-											fontWeight="500"
-										>
-											Non Discoverable
-										</Typography>
-										<Typography variant="body2">
-											Users cannot request access to this
-											database if private
-										</Typography>
-									</Box>
-								</StyledBlock>
-							</Alert.Title>
-						</StyledAlert>
-					)}
-					<StyledAlert
-						setBounds={direction === "column"}
-						sx={StyledWidth}
-						icon={false}
-						action={
-							<Button
-								variant="contained"
-								color="error"
-								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"delete",
-									)
-								}
-								onClick={() => setDeleteModal(true)}
-							>
-								Delete
-							</Button>
-						}
-					>
-						<Alert.Title>
-							<StyledBlock>
-								{/* Single Lock Icon on the left */}
-								<img
-									src={databaseIcon}
-									alt="Database Icon"
-									style={{
-										width: "22px",
-										height: "22px",
-										marginTop: "2px",
-									}}
-								/>
+                  {/* Text Stack on the right */}
+                  <Box>
+                    <Typography variant="body1" fontWeight="500">
+                      Non Discoverable
+                    </Typography>
+                    <Typography variant="body2">
+                      Users cannot request access to this database if private
+                    </Typography>
+                  </Box>
+                </StyledBlock>
+              </Alert.Title>
+            </StyledAlert>
+          )}
+          <StyledAlert
+            setBounds={direction === "column"}
+            sx={StyledWidth}
+            icon={false}
+            action={
+              <Button
+                variant="contained"
+                color="error"
+                disabled={
+                  !configStore.isEngineOperationAvailable(type, "delete")
+                }
+                data-testid={formatToDataTestId(
+									`settingsTiles-${name}-delete-btn`,
+								)}
+                onClick={() => setDeleteModal(true)}
+              >
+                Delete
+              </Button>
+            }
+          >
+            <Alert.Title>
+              <StyledBlock>
+                {/* Single Lock Icon on the left */}
+                <img
+                  src={databaseIcon}
+                  alt="Database Icon"
+                  style={{
+                    width: "22px",
+                    height: "22px",
+                    marginTop: "2px",
+                  }}
+                />
 
-								{/* Text Stack on the right */}
-								<Box>
-									<Typography
-										variant="body1"
-										fontWeight="500"
-									>
-										Delete Database
-									</Typography>
-									<Typography variant="body2">
-										Users cannot request access to this
-										database if private
-									</Typography>
-								</Box>
-							</StyledBlock>
-						</Alert.Title>
-					</StyledAlert>
-					<Modal open={deleteModal}>
-						<Modal.Title>Are you sure?</Modal.Title>
-						<Modal.Content>
-							This action is irreversable. This will permanentely
-							delete this {name}.
-						</Modal.Content>
-						<Modal.Actions>
-							<Button onClick={() => setDeleteModal(false)}>
-								Cancel
-							</Button>
-							<Button
-								color={"error"}
-								variant={"contained"}
-								onClick={() => deleteWorkflow()}
-							>
-								Delete
-							</Button>
-						</Modal.Actions>
-					</Modal>
-					{/* <StyledAlert
+                {/* Text Stack on the right */}
+                <Box>
+                  <Typography variant="body1" fontWeight="500">
+                    Delete Database
+                  </Typography>
+                  <Typography variant="body2">
+                    Users cannot request access to this database if private
+                  </Typography>
+                </Box>
+              </StyledBlock>
+            </Alert.Title>
+          </StyledAlert>
+          <Modal open={deleteModal}>
+            <Modal.Title>Are you sure?</Modal.Title>
+            <Modal.Content>
+              This action is irreversable. This will permanentely delete this{" "}
+              {name}.
+            </Modal.Content>
+            <Modal.Actions>
+              <Button onClick={() => setDeleteModal(false)}>Cancel</Button>
+              <Button
+                color={"error"}
+                variant={"contained"}
+                data-testid={formatToDataTestId(
+									`settingsTiles-${name}-confirmDelete-btn`,
+								)}
+                onClick={() => deleteWorkflow()}
+              >
+                Delete
+              </Button>
+            </Modal.Actions>
+          </Modal>
+          {/* <StyledAlert
                         setBounds={direction === 'column'}
                         sx={{ width: '100%' }}
                         icon={false}
@@ -612,238 +603,229 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
                             </Button>
                         </Modal.Actions>
                     </Modal> */}
-				</Stack>
-			</Paper>
-		);
-	} else {
-		return (
-			<StyledGrid container spacing={3}>
-				<Grid item xs={direction === "row" ? 4 : 12}>
-					<StyledAlert
-						setBounds={direction === "column"}
-						icon={false}
-						action={
-							<Switch
-								title={
-									global
-										? `Make ${name} private`
-										: `Make ${name} public`
-								}
-								checked={!global}
-								disabled={
-									!configStore.isEngineOperationAvailable(
-										type,
-										"public",
-									)
-								}
-								onChange={() => {
-									changeGlobal();
-								}}
-							></Switch>
-						}
-					>
-						<Alert.Title>
-							<StyledBlock>
-								{/* Single Lock Icon on the left */}
-								<StyledIcon>
-									<LockIcon />
-								</StyledIcon>
+        </Stack>
+      </Paper>
+    );
+  } else {
+    return (
+      <StyledGrid container spacing={3}>
+        <Grid item xs={direction === "row" ? 4 : 12}>
+          <StyledAlert
+            setBounds={direction === "column"}
+            icon={false}
+            action={
+              <Switch
+                title={global ? `Make ${name} private` : `Make ${name} public`}
+                checked={!global}
+                disabled={
+                  !configStore.isEngineOperationAvailable(type, "public")
+                }
+                data-testid={formatToDataTestId(
+                  `settingsTiles-make-${name}-public-private-switch`
+                )}
+                onChange={() => {
+                  changeGlobal();
+                }}
+              ></Switch>
+            }
+          >
+            <Alert.Title>
+              <StyledBlock>
+                {/* Single Lock Icon on the left */}
+                <StyledIcon>
+                  <LockIcon />
+                </StyledIcon>
 
-								{/* Text Stack on the right */}
-								<Box>
-									<Typography
-										variant="body1"
-										fontWeight="500"
-									>
-										Private
-									</Typography>
-									<Typography variant="body2">
-										No one outside of the specified member
-										group can access
-									</Typography>
-								</Box>
-							</StyledBlock>
-						</Alert.Title>
-					</StyledAlert>
-				</Grid>
-				{global ? (
-					<Tooltip
-						title={`An ${name} does not need to be discoverable and public.`}
-						placement="top"
-					>
-						<Grid item xs={direction === "row" ? 4 : 12}>
-							<StyledAlert
-								setBounds={direction === "column"}
-								icon={false}
-								action={
-									<Switch
-										disabled={
-											global ||
-											!configStore.isEngineOperationAvailable(
-												type,
-												"discoverable",
-											)
-										}
-										title={
-											discoverable
-												? `Make ${name} non-discoverable`
-												: `Make ${name} discoverable`
-										}
-										checked={!discoverable}
-										onChange={() => {
-											changeDiscoverable();
-										}}
-									></Switch>
-								}
-							>
-								<Alert.Title>
-									<StyledBlock>
-										{/* Single Lock Icon on the left */}
-										<StyledIcon>
-											<VisibilityOffIcon />
-										</StyledIcon>
+                {/* Text Stack on the right */}
+                <Box>
+                  <Typography variant="body1" fontWeight="500">
+                    Private
+                  </Typography>
+                  <Typography variant="body2">
+                    No one outside of the specified member group can access
+                  </Typography>
+                </Box>
+              </StyledBlock>
+            </Alert.Title>
+          </StyledAlert>
+        </Grid>
+        {global ? (
+          <Tooltip
+            title={`An ${name} does not need to be discoverable and public.`}
+            placement="top"
+          >
+            <Grid item xs={direction === "row" ? 4 : 12}>
+              <StyledAlert
+                setBounds={direction === "column"}
+                icon={false}
+                action={
+                  <Switch
+                    disabled={
+                      global ||
+                      !configStore.isEngineOperationAvailable(
+                        type,
+                        "discoverable"
+                      )
+                    }
+                    title={
+                      discoverable
+                        ? `Make ${name} non-discoverable`
+                        : `Make ${name} discoverable`
+                    }
+                    checked={!discoverable}
+                    data-testid={formatToDataTestId(
+                      `settingsTiles-${name}-makeDiscoverable-switch`
+                    )}
+                    onChange={() => {
+                      changeDiscoverable();
+                    }}
+                  ></Switch>
+                }
+              >
+                <Alert.Title>
+                  <StyledBlock>
+                    {/* Single Lock Icon on the left */}
+                    <StyledIcon>
+                      <VisibilityOffIcon />
+                    </StyledIcon>
 
-										{/* Text Stack on the right */}
-										<Box>
-											<Typography
-												variant="body1"
-												fontWeight="500"
-											>
-												Non Discoverable
-											</Typography>
-											<Typography variant="body2">
-												Users cannot request access to
-												this database if private
-											</Typography>
-										</Box>
-									</StyledBlock>
-								</Alert.Title>
-							</StyledAlert>
-						</Grid>
-					</Tooltip>
-				) : (
-					<Grid item xs={direction === "row" ? 4 : 12}>
-						<StyledAlert
-							setBounds={direction === "column"}
-							icon={false}
-							action={
-								<Switch
-									disabled={
-										global ||
-										!configStore.isEngineOperationAvailable(
-											type,
-											"discoverable",
-										)
-									}
-									title={
-										discoverable
-											? `Make ${name} non-discoverable`
-											: `Make ${name} discoverable`
-									}
-									checked={!discoverable}
-									onChange={() => {
-										changeDiscoverable();
-									}}
-								></Switch>
-							}
-						>
-							<Alert.Title>
-								<StyledBlock>
-									{/* Single Lock Icon on the left */}
-									<StyledIcon>
-										<VisibilityOffIcon />
-									</StyledIcon>
+                    {/* Text Stack on the right */}
+                    <Box>
+                      <Typography variant="body1" fontWeight="500">
+                        Non Discoverable
+                      </Typography>
+                      <Typography variant="body2">
+                        Users cannot request access to this database if private
+                      </Typography>
+                    </Box>
+                  </StyledBlock>
+                </Alert.Title>
+              </StyledAlert>
+            </Grid>
+          </Tooltip>
+        ) : (
+          <Grid item xs={direction === "row" ? 4 : 12}>
+            <StyledAlert
+              setBounds={direction === "column"}
+              icon={false}
+              action={
+                <Switch
+                  disabled={
+                    global ||
+                    !configStore.isEngineOperationAvailable(
+                      type,
+                      "discoverable"
+                    )
+                  }
+                  title={
+                    discoverable
+                      ? `Make ${name} non-discoverable`
+                      : `Make ${name} discoverable`
+                  }
+                  checked={!discoverable}
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-makeDiscoverable-switch`,
+									)}
+                  onChange={() => {
+                    changeDiscoverable();
+                  }}
+                ></Switch>
+              }
+            >
+              <Alert.Title>
+                <StyledBlock>
+                  {/* Single Lock Icon on the left */}
+                  <StyledIcon>
+                    <VisibilityOffIcon />
+                  </StyledIcon>
 
-									{/* Text Stack on the right */}
-									<Box>
-										<Typography
-											variant="body1"
-											fontWeight="500"
-										>
-											Non Discoverable
-										</Typography>
-										<Typography variant="body2">
-											Users cannot request access to this
-											database if private
-										</Typography>
-									</Box>
-								</StyledBlock>
-							</Alert.Title>
-						</StyledAlert>
-					</Grid>
-				)}
-				{onDelete ? (
-					<Grid item xs={direction === "row" ? 4 : 12}>
-						<StyledAlert
-							setBounds={direction === "column"}
-							icon={false}
-							action={
-								<Button
-									variant="contained"
-									color="error"
-									onClick={() => setDeleteModal(true)}
-									disabled={
-										!configStore.isEngineOperationAvailable(
-											type,
-											"delete",
-										)
-									}
-								>
-									Delete
-								</Button>
-							}
-						>
-							<Alert.Title>
-								<StyledBlock>
-									{/* Single Lock Icon on the left */}
-									<img
-										src={databaseIcon}
-										alt="Database Icon"
-										style={{
-											width: 18,
-											height: 18,
-											marginTop: "2px",
-										}}
-									/>
+                  {/* Text Stack on the right */}
+                  <Box>
+                    <Typography variant="body1" fontWeight="500">
+                      Non Discoverable
+                    </Typography>
+                    <Typography variant="body2">
+                      Users cannot request access to this database if private
+                    </Typography>
+                  </Box>
+                </StyledBlock>
+              </Alert.Title>
+            </StyledAlert>
+          </Grid>
+        )}
+        {onDelete ? (
+          <Grid item xs={direction === "row" ? 4 : 12}>
+            <StyledAlert
+              setBounds={direction === "column"}
+              icon={false}
+              action={
+                <Button
+                  variant="contained"
+                  color="error"
+                  onClick={() => setDeleteModal(true)}
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-delete-btn`,
+									)}
+                  disabled={
+                    !configStore.isEngineOperationAvailable(type, "delete")
+                  }
+                >
+                  Delete
+                </Button>
+              }
+            >
+              <Alert.Title>
+                <StyledBlock>
+                  {/* Single Lock Icon on the left */}
+                  <img
+                    src={databaseIcon}
+                    alt="Database Icon"
+                    style={{
+                      width: 18,
+                      height: 18,
+                      marginTop: "2px",
+                    }}
+                  />
 
-									{/* Text Stack on the right */}
-									<Box>
-										<Typography
-											variant="body1"
-											fontWeight="500"
-										>
-											Delete Database
-										</Typography>
-										<Typography variant="body2">
-											Users cannot request access to this
-											database if private
-										</Typography>
-									</Box>
-								</StyledBlock>
-							</Alert.Title>
-						</StyledAlert>
-						<Modal open={deleteModal}>
-							<Modal.Title>Are you sure?</Modal.Title>
-							<Modal.Content>
-								This action is irreversable. This will
-								permanentely delete this {name}.
-							</Modal.Content>
-							<Modal.Actions>
-								<Button onClick={() => setDeleteModal(false)}>
-									Cancel
-								</Button>
-								<Button
-									color={"error"}
-									variant={"contained"}
-									onClick={() => deleteWorkflow()}
-								>
-									Delete
-								</Button>
-							</Modal.Actions>
-						</Modal>
-					</Grid>
-				) : null}
-				{/* <Grid item>
+                  {/* Text Stack on the right */}
+                  <Box>
+                    <Typography variant="body1" fontWeight="500">
+                      Delete Database
+                    </Typography>
+                    <Typography variant="body2">
+                      Users cannot request access to this database if private
+                    </Typography>
+                  </Box>
+                </StyledBlock>
+              </Alert.Title>
+            </StyledAlert>
+            <Modal open={deleteModal}>
+              <Modal.Title>Are you sure?</Modal.Title>
+              <Modal.Content>
+                This action is irreversable. This will permanentely delete this{" "}
+                {name}.
+              </Modal.Content>
+              <Modal.Actions>
+                <Button 
+                  onClick={() => setDeleteModal(false)} 
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmCancel-btn`,
+									)}>Cancel</Button>
+                <Button
+                  color={"error"}
+                  variant={"contained"}
+                  data-testid={formatToDataTestId(
+										`settingsTiles-${name}-confirmDelete-btn`,
+									)}
+                  onClick={() => deleteWorkflow()}
+                >
+                  Delete
+                </Button>
+              </Modal.Actions>
+            </Modal>
+          </Grid>
+        ) : null}
+        {/* <Grid item>
                     <StyledAlert
                         setBounds={direction === 'column'}
                         icon={false}

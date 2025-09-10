@@ -171,9 +171,8 @@ const StyledModalContentText = styled(Modal.ContentText)({
 });
 
 const StyledCard = styled(Card)({
-	borderRadius: "0",
+	borderRadius: "12px",
 	boxShadow: "none",
-	borderBottom: "1px solid #D4D4D4",
 	margin: "0",
 	"&:last-child": {
 		borderBottom: "none",
@@ -257,11 +256,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		useState<Engine[]>([]);
 	const [addEngineRole, setAddEngineRole] = useState<SETTINGS_ROLE>();
 
-	const [engines, setEngines] = useState<Engine[] | null>(null);
-	const [enginesCount, setEngineCount] = useState<number | null>(null);
+	const [engines, setEngines] = useState<Engine[]>([]);
+	const [enginesCount, setEngineCount] = useState<number>(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [hasEngines, setHasEngines] = useState(false);
 
-	const limit = 5;
 	const [searchEngineInput, setSearchEngineInput] = useState<string>("");
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -380,26 +379,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 * @desc - sets engines in react hook form
 	 */
 	useEffect(() => {
-		const getTeamEnginesData = async () => {
-			const response = await getTeamEngines(
-				groupId,
-				groupType,
-				limit,
-				enginesPage * limit - limit, // offset
-				searchFilter,
-			);
-			setEngines(
-				(response as { data: Engine[]; response: unknown })
-					.data as Engine[],
-			);
-			setHasEngines(
-				(response as { data: Engine[]; response: unknown }).data
-					.length > 0,
-			);
-		};
-		getTeamEnginesData();
-	}, [groupId, groupType, enginesPage, searchFilter]);
-
+		filterEngines();	
+	}, [groupId, groupType, enginesPage, searchFilter, count,rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -636,15 +617,15 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		enginesPageCounts: [5],
 	};
 
-	engines?.length > 9 && paginationOptions.enginesPageCounts.push(10);
-	engines?.length > 19 && paginationOptions.enginesPageCounts.push(20);
+	enginesCount > 9 && paginationOptions.enginesPageCounts.push(10);
+	enginesCount > 19 && paginationOptions.enginesPageCounts.push(20);
 
 	const filterEngines = useCallback(() => {
 		const response = getTeamEngines(
 			groupId,
 			groupType,
-			limit,
-			enginesPage * limit - limit, // offset
+			rowsPerPage,
+			enginesPage * rowsPerPage - rowsPerPage, // offset
 			searchFilter,
 		);
 
@@ -675,7 +656,14 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				).data as Engine[]
 			).length,
 		);
-	}, [enginesPage, searchFilter, groupId, groupType]);
+	}, [
+		enginesPage,
+		searchFilter,
+		groupId,
+		groupType,
+		rowsPerPage,
+		getTeamEngines,
+	]);
 
 	const debouncedFilterProjects = debounced(filterEngines, 400);
 
@@ -697,7 +685,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									Engines
 								</StyledTableTitleDiv>
 								<Typography variant="body1">
-									{engines?.length} Engines
+									{enginesCount} Engines
 								</Typography>
 							</StyledTableTitleEngineContainer>
 							<StyledSearchButtonContainer>
@@ -716,11 +704,12 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								{selectedEngines.length > 0 && (
 									<Button
 										variant={"outlined"}
+										color="error"
 										onClick={() =>
 											setDeleteEnginesModal(true)
 										}
 									>
-										Delete
+										Delete Selected
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -729,6 +718,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									variant={"contained"}
 									onClick={() => {
 										getEngines(true);
+										setAddEngineRole(undefined);
 										setAddEngineModal(true);
 									}}
 									startIcon={<Add />}
@@ -929,9 +919,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 											setEnginesPage(v + 1);
 											setSelectedEngines([]);
 										}}
+										onRowsPerPageChange={(e) => {
+											setRowsPerPage(parseInt(e.target.value, 10));
+											setEnginesPage(1);
+										}}
 										page={enginesPage - 1}
-										rowsPerPage={5}
-										count={engines ? engines.length : 0}
+										rowsPerPage={rowsPerPage}
+										count={enginesCount}
 									/>
 								</Table.Row>
 							</Table.Footer>
@@ -962,14 +956,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				)}
 			</StyledEngineInnerContent>
 			<StyledModal open={addEngineModal} maxWidth="lg">
-				<Modal.Title>Add Engines</Modal.Title>
+				<Modal.Title>
+					<Typography variant="h6">Add Engines</Typography>
+				</Modal.Title>
 				<Modal.Content sx={{ width: "50rem" }}>
 					<StyledModalContentText>
-						<StyledSelectEngineTypography variant="subtitle1">
-							Select Engine
-						</StyledSelectEngineTypography>
 						<Autocomplete
-							label="Engine"
+							label="Select Engine"
 							size={"small"}
 							loading={searchLoading}
 							multiple={true}
@@ -1016,161 +1009,162 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							}}
 						/>
 
-						{selectedNonCredentialedEngines?.map((engine, idx) => {
-							return (
-								<Box
-									key={`${engine.engine_name}- ${idx}`}
-									sx={{
-										display: "flex",
-										justifyContent: "left",
-										align: "center",
-										backgroundColor:
-											idx % 2 !== 0
-												? "rgba(0, 0, 0, .03)"
-												: "",
-									}}
-								>
+						{selectedNonCredentialedEngines?.map(
+								(engine, idx) => (
 									<Box
+										key={`${engine.engine_name}- ${idx}`}
 										sx={{
-											width: "100%",
-											gap: "8px",
-											position: "relative",
-											paddingBottom: "7px",
-											border: "0px",
 											display: "flex",
-											alignItems: "center",
+											justifyContent: "left",
+											align: "center",
+											backgroundColor:
+												idx % 2 !== 0
+													? "rgba(0, 0, 0, .03)"
+													: "",
 										}}
 									>
 										<Box
 											sx={{
+												width: "100%",
+												gap: "8px",
+												position: "relative",
+												paddingBottom: "7px",
+												border: "0px",
 												display: "flex",
-												justifyContent: "center",
-												marginTop: "6px",
-												marginLeft: "8px",
-												marginRight: "8px",
-												float: "left",
+												alignItems: "center",
 											}}
 										>
 											<Box
 												sx={{
 													display: "flex",
-													height: "32px",
-													width: "32px",
 													justifyContent: "center",
-													alignItems: "center",
-													border: "0.5px solid rgba(0, 0, 0, .05)",
-													borderRadius: "8px",
+													marginTop: "6px",
+													marginLeft: "8px",
+													marginRight: "8px",
+													float: "left",
 												}}
 											>
-												<Avatar
-													aria-label="avatar"
-													sx={{
-														display: "flex",
-														width: "32px",
-														height: "32px",
-														borderRadius: "8px",
-														"& img": {
-															width: "100%",
-															height: "100%",
-															objectFit: "cover",
-															borderRadius: "8px",
-														},
-													}}
-													src={getRandomImageForProject(
-														engine.engine_name,
-													)}
-												/>
-											</Box>
-										</Box>
-
-										<Card.Header
-											title={
-												<Typography variant="body1">
-													{engine.engine_name}
-												</Typography>
-											}
-											sx={{
-												color: "#000",
-												maxWidth: "85%",
-												width: "100%",
-												float: "left",
-												display: "inline-flex",
-												alignItems: "center",
-												margin: "0px 0px 0px 0px",
-												"& .MuiCardHeader-content": {
-													gap: "4px",
-												},
-											}}
-											subheader={
 												<Box
 													sx={{
 														display: "flex",
-														gap: 2,
+														height: "50px",
+														width: "50px",
+														justifyContent: "center",
 														alignItems: "center",
+														border: "0.5px solid rgba(0, 0, 0, .05)",
+														borderRadius: "50%",
 													}}
 												>
-													<Typography
-														variant="body2"
+													<Avatar
+														aria-label="avatar"
 														sx={{
-															display: "inline",
-															color: "#000000DE",
+															display: "flex",
+															width: "50px",
+															height: "50px",
+															"& img": {
+																width: "100%",
+																height: "100%",
+																objectFit: "cover",
+															},
+														}}
+														src={getRandomImageForProject(
+															engine.engine_name,
+														)}
+													/>
+												</Box>
+											</Box>
+											<Card.Header
+												title={
+													<Typography variant="h6">
+														{engine.engine_name}
+													</Typography>
+												}
+												sx={{
+													color: "#000",
+													maxWidth: "85%",
+													width: "100%",
+													float: "left",
+													gap: "16px",
+													display: "inline-flex",
+													alignItems: "center",
+													paddingBottom: "7px",
+													margin: "0px 0px 0px 0px",
+												}}
+												subheader={
+													<Box
+														sx={{
+															display: "flex",
+															gap: 2,
 														}}
 													>
-														{engine?.engine_type} |
-														Engine ID:{" "}
-														{engine?.engine_id}
-													</Typography>
-												</Box>
-											}
-											action={
-												<IconButton
-													sx={{
-														height: "48px",
-														width: "48px",
-														fontSize: "small",
-														color: "rgba( 0, 0, 0, .7)",
-														mr: "2px",
-														top: "0px",
-														position: "absolute",
-														padding: "10px",
-													}}
-													onClick={() => {
-														const filtered =
-															selectedNonCredentialedEngines.filter(
-																(val) =>
-																	val.engine_id !==
-																	engine.engine_id,
+														<span
+															style={{
+																opacity: 0.9,
+																fontSize: "11px",
+																width: "70%",
+																gap: "4px",
+															}}
+														>
+															{`Engine ID: `}
+															<Typography
+																variant="body2"
+																component="span"
+															>
+																{engine.engine_id}
+															</Typography>
+														</span>
+													</Box>
+												}
+												action={
+													<IconButton
+														sx={{
+															height: "48px",
+															width: "48px",
+															fontSize: "small",
+															color: "rgba( 0, 0, 0, .7)",
+															mr: "2px",
+															top: "20%",
+															position: "absolute",
+															padding: "10px",
+														}}
+														onClick={() => {
+															const filtered =
+																selectedNonCredentialedEngines.filter(
+																	(val) =>
+																		val.engine_id !==
+																		engine.engine_id,
+																);
+															setSelectedNonCredentialedEngines(
+																filtered,
 															);
-														setSelectedNonCredentialedEngines(
-															filtered,
-														);
-													}}
-												>
-													<ClearRounded />
-												</IconButton>
-											}
-										/>
+														}}
+													>
+														<ClearRounded />
+													</IconButton>
+												}
+											/>
+										</Box>
 									</Box>
-								</Box>
-							);
-						})}
+								),
+							)}
 
-						<StyledSelectEngineTypography variant="subtitle1">
-							Permissions
-						</StyledSelectEngineTypography>
+						<Typography
+							variant="subtitle1"
+							sx={{
+								pt: "12px",
+								pb: "12px",
+								fontWeight: "bold",
+								fontSize: "16",
+								color: "#000",
+							}}
+						>
+							Engine access
+						</Typography>
 						<Box
 							sx={{
-								backgroundColor: "white",
-								padding: "0",
-								border: "1px solid #D4D4D4",
+								backgroundColor: "rgba(0,0,0,.03)",
+								padding: "10px",
 								borderRadius: "8px",
-								overflow: "hidden",
-								"& .MuiFormControlLabel-root": {
-									marginRight: 0,
-								},
-								"& .MuiCard-root": {
-									borderRadius: 0,
-								},
 							}}
 						>
 							<RadioGroup
@@ -1182,7 +1176,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									}
 								}}
 							>
-								<Stack spacing={0}>
+								<Stack spacing={1}>
 									<StyledCard>
 										<Card.Header
 											title={
@@ -1190,8 +1184,6 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 													sx={{
 														display: "flex",
 														fontSize: "16px",
-														alignItems: "center",
-														gap: "12px",
 													}}
 												>
 													<Avatar
@@ -1203,49 +1195,26 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 															fontSize: "12px",
 															fontWeight: "bold",
 															backgroundColor:
-																"#D4D4D4",
+																"rgba(0, 0, 0, .5)",
 														}}
 													>
 														A
 													</Avatar>
-													<Typography
-														variant="body1"
-														sx={{
-															color: "#212121",
-															font: "Inter",
-															fontWeight: "500",
-															fontSize: "16px",
-														}}
-													>
-														Author
-													</Typography>
+													Author
 												</Box>
 											}
-											sx={{
-												color: "#000",
-											}}
+											sx={{ color: "#000" }}
 											subheader={
 												<Box
 													sx={{
 														marginLeft: "30px",
 													}}
 												>
-													<Typography
-														variant="body2"
-														sx={{
-															color: "#212121",
-															fontSize: "14px",
-															fontWeight: "400",
-														}}
-													>
-														Ability to edit the
-														model connection
-														details, set the model
-														as discoverable,
-														provision other authors,
-														and all editor
-														abilities.
-													</Typography>
+													Ability to edit the model
+													connection details, set the
+													model as discoverable,
+													provision other authors, and
+													all editor abilities.
 												</Box>
 											}
 											action={
@@ -1273,22 +1242,12 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 															marginRight: "12px",
 															fontSize: "12px",
 															fontWeight: "bold",
-															color: "#D4D4D4",
+															color: "rgba(0, 0, 0, .5)",
 														}}
 													>
 														<EditRounded />
 													</Icon>
-													<Typography
-														variant="body1"
-														sx={{
-															color: "#212121",
-															font: "Inter",
-															fontWeight: "500",
-															fontSize: "16px",
-														}}
-													>
-														Editor
-													</Typography>
+													Editor
 												</Box>
 											}
 											sx={{ color: "#000" }}
@@ -1298,20 +1257,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														marginLeft: "30px",
 													}}
 												>
-													<Typography
-														variant="body2"
-														sx={{
-															color: "#212121",
-															fontSize: "14px",
-															fontWeight: "400",
-														}}
-													>
-														Ability to edit the
-														model details, provision
-														other users as editors
-														and read only users, and
-														all read only abilities.
-													</Typography>
+													Ability to edit the model
+													details, provision other
+													users as editors and read
+													only users, and all read
+													only abilities.
 												</Box>
 											}
 											action={
@@ -1339,7 +1289,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 															marginRight: "12px",
 															fontSize: "24px",
 															fontWeight: "bold",
-															color: "#D4D4D4",
+															color: "rgba(0, 0, 0, .5)",
 															maxWidth: "24px",
 															display: "flex",
 															alignItems:
@@ -1350,17 +1300,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 													>
 														<RemoveRedEyeRounded />
 													</Icon>
-													<Typography
-														variant="body1"
-														sx={{
-															color: "#212121",
-															font: "Inter",
-															fontWeight: "500",
-															fontSize: "16px",
-														}}
-													>
-														Read-Only
-													</Typography>
+													Read-Only
 												</Box>
 											}
 											sx={{ color: "#000" }}
@@ -1370,18 +1310,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 														marginLeft: "30px",
 													}}
 												>
-													<Typography
-														variant="body2"
-														sx={{
-															color: "#212121",
-															fontSize: "14px",
-															fontWeight: "400",
-														}}
-													>
-														Ability to view model
-														details and usage
-														instructions
-													</Typography>
+													Ability to view model
+													details and usage
+													instructions
 												</Box>
 											}
 											action={
@@ -1418,7 +1349,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 							submitNonGroupEngines();
 						}}
 					>
-						Add
+						Save
 					</Button>
 				</Modal.Actions>
 			</StyledModal>

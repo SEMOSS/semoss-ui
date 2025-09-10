@@ -230,6 +230,22 @@ export class StateStore {
 	}
 
 	/**
+	 * Converts cell and publishes cell as MCP function
+	 */
+	makeCellMCP = (
+		queryId: string,
+		cellId: string,
+		params: Record<string, unknown>,
+	) => {
+		const q = this.getQuery(queryId);
+		const c = q.getCell(cellId);
+
+		if (c) {
+			c.makeCellMCP(params);
+		}
+	};
+
+	/**
 	 * Gets the variable by it's pointer
 	 * @param pointer
 	 * @param type
@@ -500,6 +516,10 @@ export class StateStore {
 				const { queryId, cellId, path, value } = action.payload;
 
 				this.updateCell(queryId, cellId, path, value);
+			} else if (ActionMessages.MAKE_CELL_MCP === action.message) {
+				const { queryId, cellId, parameters } = action.payload;
+
+				this.makeCellMCP(queryId, cellId, parameters);
 			} else if (ActionMessages.RUN_QUERY === action.message) {
 				/**
 				 * --------------------------------------------------
@@ -538,6 +558,13 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
+			} else if (ActionMessages.MODIFY_VARIABLE === action.message) {
+				const { blockId, variable, value } = action.payload;
+
+				// parse the value and assign
+				const parsed = this.parseVariable(value as string, blockId);
+
+				this.modifyVariable(variable, parsed);
 			}
 		} catch (e) {
 			console.error(e);
@@ -1918,6 +1945,10 @@ export class StateStore {
 		this._store.variables[id] = token as Variable;
 
 		return token;
+	};
+
+	private modifyVariable = (id: string, value: unknown) => {
+		this._store.variables[id].value = value;
 	};
 
 	/**

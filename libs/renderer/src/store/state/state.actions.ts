@@ -40,6 +40,7 @@ export enum ActionMessages {
 	DELETE_CELL = "DELETE_CELL",
 	UPDATE_QUERY = "UPDATE_QUERY",
 	UPDATE_CELL = "UPDATE_CELL",
+	MAKE_CELL_MCP = "MAKE_CELL_MCP",
 	/**
 	 * Events
 	 */
@@ -48,6 +49,7 @@ export enum ActionMessages {
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
+	MODIFY_VARIABLE = "MODIFY_VARIABLE",
 }
 
 export type Actions =
@@ -66,6 +68,7 @@ export type Actions =
 	| MoveCellAction
 	| DeleteCellAction
 	| UpdateCellAction
+	| MakeCellMCPAction
 	| RunCellAction
 	| RemoveDynamicSlotAction
 	| AddDynamicSlotAction
@@ -75,7 +78,8 @@ export type Actions =
 	| RenameVariableAction
 	| EditVariableAction
 	| DeleteVariableAction
-	| SetSheetExecutionOrderAction;
+	| SetSheetExecutionOrderAction
+	| ModifyVariableAction;
 
 /**
  * All
@@ -306,13 +310,24 @@ export interface UpdateCellAction extends Action {
 	};
 }
 
+export interface MakeCellMCPAction extends Action {
+	message: ActionMessages.MAKE_CELL_MCP;
+	payload: {
+		queryId: string;
+		cellId: string;
+		parameters: {
+			name: string;
+			projectId: string;
+			params: {};
+			// What if you want to go back and see code you originally made, meaning you dont want to write out a new cell you just want to go back and edit
+			originalParams: Record<string, unknown>;
+		};
+	};
+}
+
 /**
  * Events
  */
-export interface DispatchOutputsEventAction extends Action {
-	message: ActionMessages.DISPATCH_OUTPUTS_EVENT;
-	payload: {};
-}
 
 export interface DispatchOpenEventAction extends Action {
 	message: ActionMessages.DISPATCH_OPEN_EVENT;
@@ -342,5 +357,14 @@ export interface RunCellAction extends Action {
 	payload: {
 		queryId: string;
 		cellId: string;
+	};
+}
+
+export interface ModifyVariableAction extends Action {
+	message: ActionMessages.MODIFY_VARIABLE;
+	payload: {
+		blockId: string;
+		variable: string;
+		value: unknown;
 	};
 }

@@ -20,6 +20,7 @@ import {
 } from "@semoss/ui";
 import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
+import { formatToDataTestId } from "@/utility";
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -98,7 +99,8 @@ export const ImportForm = (props) => {
 		watch,
 		setValue,
 		getValues,
-		setFocus,
+		setError,
+		trigger,
 		formState: { isValid },
 	} = useForm({
 		mode: "onSubmit",
@@ -106,6 +108,12 @@ export const ImportForm = (props) => {
 			acc[field.fieldName] = field.defaultValue || "";
 			return acc;
 		}, {}),
+	});
+	const _lastField = useRef({
+		lastFocussedField: "",
+		lastFocussedValue: "",
+		lastValidatedValue: "",
+		runValidate: false,
 	});
 
 	/** Used to Trigger useEffect anytime these vals change */
@@ -678,7 +686,11 @@ export const ImportForm = (props) => {
 
 		//if the name already exists then the engine name is not valid
 		if (output.exists) {
-			setFocus(field.fieldName);
+			// setFocus(field.fieldName);
+			setError(field.fieldName, {
+				message: field.rules.custom.message,
+				type: "checkField",
+			});
 			return false;
 		}
 
@@ -719,20 +731,49 @@ export const ImportForm = (props) => {
 				{defaultFields.map((val, _i) => {
 					if (!val.hidden) {
 						return (
-							<StyledKeyValue key={`importForm-${val.fieldName}`}>
+							<StyledKeyValue
+								key={`${val.fieldName}-${val.label}-${i}`}
+							>
 								<Controller
 									name={val.fieldName}
 									control={control}
 									rules={{
 										required: val.rules.required,
 										validate: {
-											...(val.rules.custom && {
-												checkField: async (fieldVal) =>
-													validateFormField(
-														val,
-														fieldVal,
-													),
-											}),
+											...(val.rules?.custom
+												? {
+														checkField: async (
+															fieldVal,
+														) => {
+															if (
+																!_lastField
+																	.current
+																	.runValidate
+															)
+																return true;
+
+															try {
+																let validStatus: Promise<boolean> | null;
+																if (
+																	_lastField
+																		.current
+																		.lastFocussedField ===
+																	val.fieldName &&
+																	_lastField.current.lastValidatedValue !== fieldVal
+																) {
+																	validStatus =
+																		validateFormField(
+																			val,
+																			fieldVal,
+																		);
+																}
+																return validStatus;
+															} finally {
+																_lastField.current.runValidate = false;
+															}
+														},
+													}
+												: {}),
 										},
 										pattern: {
 											...(val.rules.pattern && {
@@ -760,6 +801,7 @@ export const ImportForm = (props) => {
 													}
 													label={val.label}
 													disabled={val.disabled}
+													data-testid={`field-${val.fieldName}`}
 													value={
 														field.value
 															? field.value
@@ -799,7 +841,27 @@ export const ImportForm = (props) => {
 													}
 													error={invalid}
 													inputProps={{
-														"data-testid": `importForm-textField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-textField`,
+															),
+														onFocus: () => {
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																	lastValidatedValue: field.value
+																};
+														},
+														onBlur: () => {
+															if(val.rules?.custom){
+																_lastField.current.runValidate = true;
+																trigger(val.fieldName);
+															} 
+														}
 													}}
 													{...field}
 												></TextField>
@@ -826,7 +888,19 @@ export const ImportForm = (props) => {
 														field.onChange(value)
 													}
 													inputProps={{
-														"data-testid": `importForm-textField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-textField`,
+															),
+													}}
+													onFocus={() => {
+														_lastField.current = {
+															..._lastField.current,
+															lastFocussedField:
+																val.fieldName,
+															lastFocussedValue:
+																field.value,
+														};
 													}}
 													helperText={val.helperText}
 												></TextField>
@@ -854,8 +928,23 @@ export const ImportForm = (props) => {
 															value.target.value,
 														);
 													}}
+													SelectProps={{
+														onFocus: () => {
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
+														},
+													}}
 													InputProps={{
-														"data-testid": `importForm-selectField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-select`,
+															),
 													}}
 													helperText={val.helperText}
 												>
@@ -863,13 +952,13 @@ export const ImportForm = (props) => {
 														(opt, i) => {
 															return (
 																<Menu.Item
-																	key={`importForm-selectField-${val.fieldName}-${i}`}
+																	key={`${opt.value}-${i}`}
 																	value={
 																		opt.value
 																	}
-																	data-testid={
-																		opt.display
-																	}
+																	data-testId={formatToDataTestId(
+																		`importForm-${opt.display}-item`,
+																	)}
 																>
 																	{
 																		opt.display
@@ -903,7 +992,19 @@ export const ImportForm = (props) => {
 													}
 													helperText={val.helperText}
 													inputProps={{
-														"data-testid": `importForm-textField-${val.fieldName}`,
+														"data-testId":
+															formatToDataTestId(
+																`importForm-${val.fieldName}-textField`,
+															),
+													}}
+													onFocus={() => {
+														_lastField.current = {
+															..._lastField.current,
+															lastFocussedField:
+																val.fieldName,
+															lastFocussedValue:
+																field.value,
+														};
 													}}
 												></TextField>
 											);
@@ -922,12 +1023,23 @@ export const ImportForm = (props) => {
 														multiple={false}
 														value={field.value}
 														disabled={false}
+														data-testid={formatToDataTestId(
+															`importForm-${val.fieldName}-fileDropZone`,
+														)}
 														onChange={(
 															newValues,
 														) => {
 															field.onChange(
 																newValues,
 															);
+															_lastField.current =
+																{
+																	..._lastField.current,
+																	lastFocussedField:
+																		val.fieldName,
+																	lastFocussedValue:
+																		field.value,
+																};
 														}}
 													/>
 												</StyledDropzoneField>
@@ -964,7 +1076,7 @@ export const ImportForm = (props) => {
 								if (!val.hidden) {
 									return (
 										<StyledKeyValue
-											key={`importForm-advancedField-${val.fieldName}`}
+											key={`${val.fieldName}-${i}`}
 										>
 											<Controller
 												name={val.fieldName}
@@ -1011,7 +1123,10 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-textField-${val.fieldName}`,
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-textField`,
+																		),
 																}}
 															></TextField>
 														);
@@ -1051,7 +1166,10 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-textField-${val.fieldName}`,
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-textField`,
+																		),
 																}}
 															></TextField>
 														);
@@ -1091,7 +1209,10 @@ export const ImportForm = (props) => {
 																	val.helperText
 																}
 																inputProps={{
-																	"data-testid": `importForm-textField-${val.fieldName}`,
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-textField`,
+																		),
 																}}
 															></TextField>
 														);
@@ -1117,6 +1238,7 @@ export const ImportForm = (props) => {
 																		? field.value
 																		: false
 																}
+																data-testid={`importForm-advancedcheckbox-${val.fieldName}`}
 																onChange={(
 																	value,
 																) =>
@@ -1159,6 +1281,12 @@ export const ImportForm = (props) => {
 																helperText={
 																	val.helperText
 																}
+																InputProps={{
+																	"data-testId":
+																		formatToDataTestId(
+																			`importForm-${val.fieldName}-select`,
+																		),
+																}}
 															>
 																{val.options.options.map(
 																	(
@@ -1167,10 +1295,13 @@ export const ImportForm = (props) => {
 																	) => {
 																		return (
 																			<Menu.Item
-																				key={`importForm-selectField-${val.fieldName}-${i}`}
+																				key={`${opt.value}-${i}`}
 																				value={
 																					opt.value
 																				}
+																				data-testId={formatToDataTestId(
+																					`importForm-${opt.display}-item`,
+																				)}
 																			>
 																				{
 																					opt.display
@@ -1193,6 +1324,7 @@ export const ImportForm = (props) => {
 																	field.value
 																}
 																disabled={false}
+																data-testid={`importForm-advancedfileDropzone-${val.fieldName}`}
 																onChange={(
 																	newValues,
 																) => {
@@ -1200,6 +1332,9 @@ export const ImportForm = (props) => {
 																		newValues,
 																	);
 																}}
+																data-testId={formatToDataTestId(
+																	`importForm-${val.fieldName}-zipUpload`,
+																)}
 															/>
 														);
 													}
@@ -1216,6 +1351,7 @@ export const ImportForm = (props) => {
 						disabled={formLoading || !isValid}
 						type="submit"
 						variant="contained"
+						data-testId={`importForm-submit-btn`}
 					>
 						{formLoading ? (
 							<CircularProgress size="1.5em" />

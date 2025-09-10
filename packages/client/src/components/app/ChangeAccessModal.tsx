@@ -427,7 +427,7 @@ export const ChangeAccessModal = (props: ChangeAccessModalProps) => {
 
 	return (
 		<Box>
-			<Modal open={open} maxWidth={"md"} onClose={onClose}>
+			<Modal open={open} maxWidth={"md"} onClose={onClose} scroll="body">
 				<Modal.Title>
 					{getValues("requestedPermission") === "discoverable" ? (
 						<Typography variant={"button"}>

@@ -118,6 +118,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 						variant="contained"
 						size={"small"}
 						onClick={() => setReadOnly(false)}
+						data-test-id={`updateSMSS-editSNSS-btn`}
 					>
 						Edit SMSS
 					</Button>

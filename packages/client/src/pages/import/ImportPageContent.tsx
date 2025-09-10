@@ -39,6 +39,7 @@ import { CopyDb } from "@/assets/img/CopyDb";
 import { Help } from "@/components/help";
 import { useStepper } from "@/hooks";
 import type { ENGINE_TYPES } from "@/types";
+import { formatToDataTestId } from "@/utility";
 import { CopyDatabaseForm } from "../../components/import/refactor/CopyDatabaseForm";
 import { UploadData } from "../../components/import/refactor/UploadData";
 import { EstablishConnectionPage, ImportConnectionPage } from ".";
@@ -297,6 +298,9 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						);
 					}
 				}}
+				data-testId={formatToDataTestId(
+					`importPageContent-connect-to-${model.name}-img`,
+				)}
 			>
 				<StyledInnerBox isModel={true}>
 					{model.disable ? (
@@ -570,6 +574,9 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 																disabled={
 																	stage.disable
 																}
+																data-testid={formatToDataTestId(
+																	`importPageContent-${stage.name}-card`,
+																)}
 																onClick={() => {
 																	if (
 																		!stage.disable
@@ -630,7 +637,13 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						sx={{ mt: 2, borderBottom: "2px solid #E0E0E0" }}
 					>
 						{tabLabels.map((label, i) => (
-							<StyledTab key={i} label={label} />
+							<StyledTab
+								key={i}
+								label={label}
+								data-tesId={formatToDataTestId(
+									`connect-to-${label}-tab`,
+								)}
+							/>
 						))}
 					</Tabs>
 					<Box sx={{ mt: 4 }}>
