@@ -15562,7 +15562,7 @@ export const SIDEBAR_MENU = {
 		},
 		{
 			name: "Terminal",
-			icon: { default: NOTEBOOK, active: NOTEBOOK_SELECTED, component:TerminalRoundedIcon },
+			icon: { default: NOTEBOOK, active: NOTEBOOK_SELECTED, component:TerminalRoundedIcon, tooltip:"Terminal" },
 		},
 	],
 };

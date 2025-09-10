@@ -1,19 +1,20 @@
 import { AppSettings } from "@/components/app";
 import {
-	MembersTable,
-	PendingMembersTable,
-	SettingsTiles
+  MembersTable,
+  PendingMembersTable,
+  SettingsTiles,
 } from "@/components/settings";
 import { SettingsContext } from "@/contexts";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { GetAppRounded } from "@mui/icons-material";
+import { Typography } from "@mui/material";
 import {
-	Container,
-	IconButton,
-	Stack,
-	styled,
-	Tooltip,
-	useNotification,
+  Container,
+  IconButton,
+  Stack,
+  styled,
+  Tooltip,
+  useNotification,
 } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router-dom";
@@ -26,7 +27,7 @@ const StyledContainer = styled("div")(({ theme }) => ({
 	flexDirection: "column",
 	alignItems: "flex-start",
 	gap: theme.spacing(2),
-	paddingTop: theme.spacing(5),
+	paddingTop: theme.spacing(2),
 }));
 
 const StyledContent = styled("div")(({ theme }) => ({
@@ -40,13 +41,12 @@ const StyledContent = styled("div")(({ theme }) => ({
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
 
-export const SettingsPanel = observer(({ value }:{ value: string }) => {
+export const SettingsPanel = observer(({ value }: { value: string }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { workspace } = useWorkspace();
 	const navigate = useNavigate();
 	const view = value;
-
 
 	/**
 	 * Method that is called to export the app
@@ -87,77 +87,102 @@ export const SettingsPanel = observer(({ value }:{ value: string }) => {
 	};
 
 	return (
-    <Panel>
-      <SettingsContext.Provider
-        value={{
-          adminMode: false,
-        }}
-      >
-        <Container
-          maxWidth={"xl"}
-          sx={{
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-            overflowX: "hidden",
-            overflowY: "auto",
-          }}
-        >
-          <StyledContainer>
-            {view !== "GENERAL" &&
-            (workspace.role === "EDITOR" || workspace.role === "OWNER") ? (
-              <Stack
-                sx={{ width: "100%" }}
-                justifyContent={"flex-end"}
-                direction={"row"}
-              >
-                <div>
-                  <Tooltip title={"Export"}>
-                    <IconButton
-                      color="inherit"
-                      onClick={() => {
-                        exportApp();
-                      }}
-                    >
-                      <GetAppRounded />
-                    </IconButton>
-                  </Tooltip>
-                </div>
-              </Stack>
-            ) : null}
-            <StyledContent>
-              {view === "CURRENT" && (
-                <>
-                  <PendingMembersTable type={"APP"} id={workspace.appId} />
-                  <MembersTable
-                    type={"APP"}
-                    id={workspace.appId}
-                    onChange={() => console.log("TODO")}
-                  />
-                </>
-              )}
-              {view === "APP" && <AppSettings id={workspace.appId} />}
-              {view === "GENERAL" && (
-                <SettingsTiles
-                  type={"APP"}
-                  id={workspace.appId}
-                  name={workspace.metadata?.project_name || "app"}
-                  onDelete={() => {
-                    if (location.pathname.startsWith("/settings/app/")) {
-                      // If in app settings
-                      navigate("/settings/app");
-                    } else {
-                      // If in App Library
-                      navigate("/");
-                    }
-                  }}
-                />
-              )}
-            </StyledContent>
-          </StyledContainer>
-        </Container>
-      </SettingsContext.Provider>
-    </Panel>
-  );
+		<Panel>
+			<SettingsContext.Provider
+				value={{
+					adminMode: false,
+				}}
+			>
+				<Container
+					maxWidth={"xl"}
+					sx={{
+						height: "100%",
+						display: "flex",
+						flexDirection: "column",
+						gap: "16px",
+						overflowX: "hidden",
+						overflowY: "auto",
+					}}
+				>
+					<StyledContainer>
+						{view !== "GENERAL" &&
+						(workspace.role === "EDITOR" ||
+							workspace.role === "OWNER") ? (
+							<Stack
+								sx={{ width: "100%" }}
+								justifyContent={"flex-end"}
+								direction={"row"}
+							>
+								<div>
+									<Tooltip title={"Export"}>
+										<IconButton
+											color="inherit"
+											onClick={() => {
+												exportApp();
+											}}
+										>
+											<GetAppRounded />
+										</IconButton>
+									</Tooltip>
+								</div>
+							</Stack>
+						) : null}
+						<StyledContent>
+							{view === "CURRENT" && (
+								<>
+									<PendingMembersTable
+										type={"APP"}
+										id={workspace.appId}
+									/>
+									<MembersTable
+										type={"APP"}
+										id={workspace.appId}
+										onChange={() => console.log("TODO")}
+									/>
+								</>
+							)}
+							{view === "APP" && (
+								<AppSettings id={workspace.appId} />
+							)}
+							{view === "GENERAL" && (
+								<>
+									<Typography
+										variant="subtitle1"
+										gutterBottom
+									>
+										Privacy & Access Control
+										<Typography variant="body2">
+											Configure who can access your apps
+											and how it appears to others
+										</Typography>
+									</Typography>
+									<SettingsTiles
+										type={"APP"}
+										id={workspace.appId}
+										name={
+											workspace.metadata?.project_name ||
+											"app"
+										}
+										onDelete={() => {
+											if (
+												location.pathname.startsWith(
+													"/settings/app/",
+												)
+											) {
+												// If in app settings
+												navigate("/settings/app");
+											} else {
+												// If in App Library
+												navigate("/");
+											}
+										}}
+									/>
+								</>
+							)}
+						</StyledContent>
+					</StyledContainer>
+				</Container>
+			</SettingsContext.Provider>
+		</Panel>
+	);
 });
