@@ -29,10 +29,19 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 	const fetchLogs = async () => {
 		setLoading(true);
 		try {
+			const date = new Date();
+			const yyyy = date.getFullYear();
+			const mm = String(date.getMonth() + 1).padStart(2, '0');
+			const dd = String(date.getDate()).padStart(2, '0');
+			const hh = String(date.getHours()).padStart(2, '0');
+			const min = String(date.getMinutes()).padStart(2, '0');
+			const ss = String(date.getSeconds()).padStart(2, '0');
+
+			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 			const catalogId =
 				window.location.hash.split("/")[catalogName == "Apps" ? 2 : 3];
 			const response = await monolithStore.runQuery(
-				`AuditLog(auditEndpoint=["timelinedatas"], paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","date":"${new Date().toISOString()}"}]);`,
+				`AuditLog(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}"}]);`,
 			);
 			setLogs(JSON.parse(response.pixelReturn[0].output) as EventData[]);
 		} catch (error) {

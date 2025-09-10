@@ -87,10 +87,12 @@ const ContentText = styled(Typography)({
 	whiteSpace: "pre-wrap",
 });
 
-const TimeDateFormatter = (timeStamp: string) => {
-	const date = timeStamp.split("T")[0];
-	const time = timeStamp.split("T")[1];
-	return { date, time };
+const TimeDateFormatter = (timeStamp: string | number) => {
+	const tempDate = new Date(timeStamp);
+	const formattedDate = tempDate.toISOString().split('.')[0];
+    const date = formattedDate.split("T")[0];
+    const time = formattedDate.split("T")[1];
+    return { date, time };
 };
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails, handleDrawerClose } = props;
