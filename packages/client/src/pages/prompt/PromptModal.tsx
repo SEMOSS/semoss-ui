@@ -229,7 +229,7 @@ export const PromptModal = (props: PromptModalProps) => {
 			<Modal.Actions>
 				<Button
 					onClick={() => onClose(false)}
-					data-testid={"prompt-modal-cancel-btn"}
+					data-testid={"promptModal-cancel-btn"}
 				>
 					Cancel
 				</Button>
@@ -244,7 +244,7 @@ export const PromptModal = (props: PromptModalProps) => {
 						}
 					}}
 					disabled={disableCreate()}
-					data-testid={"prompt-modal-save-btn"}
+					data-testid={"promptModal-save-btn"}
 				>
 					Save
 				</Button>

@@ -290,11 +290,21 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const removeApp = (app) => {
 		const updatedApps = apps;
+		const updatedFavoritedApps = favoritedApps;
+		const favorite = isFavorited(app.project_id);
+		if(favorite){
+			for (let i = updatedFavoritedApps.length - 1; i >= 0; i--) {
+        if (updatedFavoritedApps[i].project_id === app.project_id) {
+            updatedFavoritedApps.splice(i, 1);
+		} 
 		for (let i = updatedApps.length - 1; i >= 0; i--) {
 			if (updatedApps[i].project_id === app.project_id) {
 				updatedApps.splice(i, 1);
 			}
-		}
+		
+	}
+    }
+}
 	};
 
 	return (
@@ -327,7 +337,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									navigate("/app/new");
 								}}
 								aria-label={`Open the App Model`}
-								data-testid={"home-create-app-btn"}
+								data-testid={
+									"appCatalogPage-create-new-app-btn"
+								}
 							>
 								Create New App
 							</Button>
@@ -377,14 +389,17 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								<StyledToggleTabsGroupItem
 									label="My Apps"
 									value={"Mine"}
+									data-testid={`appCatalogPage-myApps-btn`}
 								/>
 								<StyledToggleTabsGroupItem
 									label="Discoverable"
 									value={"Discoverable"}
+									data-testid={`appCatalogPage-discoverable-btn`}
 								/>
 								<StyledToggleTabsGroupItem
 									label="System Apps"
 									value={"System"}
+									data-testid={`appCatalogPage-systemApps-btn`}
 								/>
 							</StyledToggleTabsGroup>
 						</Stack>
@@ -425,6 +440,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 											)}
 											favorite={() => {
 												favoriteApp(app);
+											}}
+											onDelete={() => {
+												removeApp(app);
 											}}
 											isDiscoverable={mode !== "Mine"}
 											isLoading={true}

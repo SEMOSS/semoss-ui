@@ -29,7 +29,6 @@
         "@xyflow/react": "^12.0.4",
         "axios": "^1.5.0",
         "dayjs": "^1.11.4",
-        "flexlayout-react": "^0.8.1",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
         "monaco-editor": "^0.45.0",
