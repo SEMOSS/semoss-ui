@@ -229,6 +229,197 @@ export class StateStore {
 		return null;
 	}
 
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+	// TODO: Sorry, trying to start getting team to see ai gen while im out
+	// Decouple this code below and handle in workspace via dispatch
+	// Create classes for cell and variable
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+
+	/**
+	 * Apply the suggested variable name changes throughout the state store
+	 * This method handles the JSON manipulation to update all references
+	 * @param suggestedChanges - Object mapping old variable names to new suggested names
+	 * @returns boolean indicating success
+	 */
+	async applyVariableRenames(
+		suggestedChanges: Record<string, string>,
+	): Promise<boolean> {
+		try {
+			console.log("Applying variable renames:", suggestedChanges);
+
+			// 1. Update variables object - rename the keys
+			Object.entries(suggestedChanges).forEach(([oldName, newName]) => {
+				if (this._store.variables[oldName]) {
+					// Copy the variable data to the new name
+					this._store.variables[newName] =
+						this._store.variables[oldName];
+					// Remove the old variable
+					delete this._store.variables[oldName];
+				}
+			});
+
+			// 2. Update all blocks data - replace variable references in strings
+			Object.values(this._store.blocks).forEach((block) => {
+				this.updateBlockVariableReferences(block, suggestedChanges);
+			});
+
+			// 3. Update all queries and cells - replace variable references
+			Object.values(this._store.queries).forEach((query) => {
+				this.updateQueryVariableReferences(query, suggestedChanges);
+			});
+
+			console.log("Variable renames applied successfully");
+			return true;
+		} catch (error) {
+			console.error("Error applying variable renames:", error);
+			return false;
+		}
+	}
+
+	/**
+	 * Update variable references within a block's data
+	 * @param block - The block to update
+	 * @param suggestedChanges - Mapping of old to new variable names
+	 */
+	private updateBlockVariableReferences(
+		block: Block,
+		suggestedChanges: Record<string, string>,
+	): void {
+		// Update the entire block data at once
+		const updatedData = this.updateObjectVariableReferences(
+			block.data,
+			suggestedChanges,
+		);
+		this.setBlockData(block.id, null, updatedData);
+
+		// Update listeners if they contain variable references
+		if (block.listeners) {
+			Object.entries(block.listeners).forEach(
+				([listenerName, listener]) => {
+					if (listener.order) {
+						const updatedOrder = listener.order.map((action) =>
+							this.updateObjectVariableReferences(
+								action,
+								suggestedChanges,
+							),
+						);
+						// Update the listener order
+						block.listeners[listenerName].order = updatedOrder;
+					}
+				},
+			);
+		}
+	}
+
+	/**
+	 * Update variable references within a query and its cells
+	 * @param query - The query to update
+	 * @param suggestedChanges - Mapping of old to new variable names
+	 */
+	private updateQueryVariableReferences(
+		query: QueryState,
+		suggestedChanges: Record<string, string>,
+	): void {
+		// Update query-level data - we can't directly update _exposed as it's a getter
+		// The _exposed data is computed from the internal store, so we need to update the store directly
+
+		// Update all cells in the query
+		Object.values(query.cells).forEach((cell) => {
+			if (cell.parameters) {
+				// Use the cell's _update method to update parameters
+				const updatedParameters = this.updateObjectVariableReferences(
+					cell.parameters,
+					suggestedChanges,
+				);
+				cell._update("parameters", updatedParameters);
+			}
+		});
+	}
+
+	/**
+	 * Recursively update variable references in any object
+	 * @param obj - The object to update
+	 * @param suggestedChanges - Mapping of old to new variable names
+	 * @returns Updated object
+	 */
+	private updateObjectVariableReferences(
+		obj: any,
+		suggestedChanges: Record<string, string>,
+	): any {
+		if (obj === null || obj === undefined) {
+			return obj;
+		}
+
+		// Handle strings - replace variable references
+		if (typeof obj === "string") {
+			let updatedString = obj;
+
+			// Replace all variable references in the format {{variableName}}
+			Object.entries(suggestedChanges).forEach(([oldName, newName]) => {
+				// The regex pattern matches the old variable name with an optional . and any characters after it
+				const pattern = new RegExp(`{{${oldName}([^}]*?)}}`, "g");
+				updatedString = updatedString.replaceAll(
+					pattern,
+					`{{${newName}$1}}`,
+				);
+			});
+
+			return updatedString;
+		}
+
+		// Handle arrays
+		if (Array.isArray(obj)) {
+			return obj.map((item) =>
+				this.updateObjectVariableReferences(item, suggestedChanges),
+			);
+		}
+
+		// Handle objects
+		if (typeof obj === "object") {
+			const updatedObj = {};
+			for (const [key, value] of Object.entries(obj)) {
+				updatedObj[key] = this.updateObjectVariableReferences(
+					value,
+					suggestedChanges,
+				);
+			}
+			return updatedObj;
+		}
+
+		// Return primitives as-is
+		return obj;
+	}
+
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+	// TODO: Sorry, trying to start getting team to see ai gen while im out
+	// Decouple this code above and handle in workspace via dispatch
+	// Create classes for cell and variable
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+	// --------------------------------------------------------------------------------
+
+	/**
+	 * Converts cell and publishes cell as MCP function
+	 */
+	makeCellMCP = (
+		queryId: string,
+		cellId: string,
+		params: Record<string, unknown>,
+	) => {
+		const q = this.getQuery(queryId);
+		const c = q.getCell(cellId);
+
+		if (c) {
+			c.makeCellMCP(params);
+		}
+	};
+
 	/**
 	 * Gets the variable by it's pointer
 	 * @param pointer
@@ -510,6 +701,10 @@ export class StateStore {
 				const { queryId, cellId, path, value } = action.payload;
 
 				this.updateCell(queryId, cellId, path, value);
+			} else if (ActionMessages.MAKE_CELL_MCP === action.message) {
+				const { queryId, cellId, parameters } = action.payload;
+
+				this.makeCellMCP(queryId, cellId, parameters);
 			} else if (ActionMessages.RUN_QUERY === action.message) {
 				/**
 				 * --------------------------------------------------

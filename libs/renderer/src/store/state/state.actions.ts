@@ -40,6 +40,7 @@ export enum ActionMessages {
 	DELETE_CELL = "DELETE_CELL",
 	UPDATE_QUERY = "UPDATE_QUERY",
 	UPDATE_CELL = "UPDATE_CELL",
+	MAKE_CELL_MCP = "MAKE_CELL_MCP",
 	/**
 	 * Events
 	 */
@@ -67,6 +68,7 @@ export type Actions =
 	| MoveCellAction
 	| DeleteCellAction
 	| UpdateCellAction
+	| MakeCellMCPAction
 	| RunCellAction
 	| RemoveDynamicSlotAction
 	| AddDynamicSlotAction
@@ -308,6 +310,21 @@ export interface UpdateCellAction extends Action {
 		cellId: string;
 		path: string | null;
 		value: unknown;
+	};
+}
+
+export interface MakeCellMCPAction extends Action {
+	message: ActionMessages.MAKE_CELL_MCP;
+	payload: {
+		queryId: string;
+		cellId: string;
+		parameters: {
+			name: string;
+			projectId: string;
+			params: {};
+			// What if you want to go back and see code you originally made, meaning you dont want to write out a new cell you just want to go back and edit
+			originalParams: Record<string, unknown>;
+		};
 	};
 }
 

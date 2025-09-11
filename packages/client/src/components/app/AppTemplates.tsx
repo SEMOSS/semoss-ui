@@ -9,11 +9,12 @@ import {
 	DeleteDiabetesRecordTemplate,
 	LandingPageTemplate,
 	MultiPageTemplate,
+	NLPToGridTemplate,
 	ReadDiabetesRecordTemplate,
+	RowToNotebookTemplate,
 	type Template,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
-	RowToNotebookTemplate
 } from "./templates";
 
 const DEFAULT_TEMPLATE = [
@@ -22,6 +23,7 @@ const DEFAULT_TEMPLATE = [
 	AskLLMTemplate,
 	CustomFrameToVisualizationTemplate,
 	VisualizeCSVTemplate,
+	NLPToGridTemplate,
 	BlocksGuideTemplate,
 	MultiPageTemplate,
 	CreateDiabetesRecordTemplate,
