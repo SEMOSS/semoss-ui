@@ -6,6 +6,7 @@ export { CustomFrameToVisualizationTemplate } from "./CustomFrameToVisualization
 export { DeleteDiabetesRecordTemplate } from "./DeleteDiabetesRecordTemplate";
 export { LandingPageTemplate } from "./LandingPageTemplate";
 export { MultiPageTemplate } from "./MultiPageTemplate";
+export { NLPToGridTemplate } from "./NLPToGridTemplate";
 export { ReadDiabetesRecordTemplate } from "./ReadDiabetesRecordTemplate";
 export { RowToNotebookTemplate } from "./RowToNotebookTemplate";
 export * from "./templates.types";
