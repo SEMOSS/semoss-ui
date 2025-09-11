@@ -228,7 +228,8 @@ const StyledHomePageChildDiv = styled("div")(() => ({
 const StyledRenameTextFiled = styled(TextField)(() => ({
 	'& .MuiOutlinedInput-root': {
             borderRadius: '4px',
-            width: '170px',
+            width: '100%',
+			maxWidth: '170px',
             height: '21px',
             paddingInline: '4px',
             /* background-color: red; */
@@ -255,6 +256,10 @@ const StyledRenameStack = styled(Stack)(() => ({
 	display: "flex",
 	gap: "4px",
 	flexDirection: "row",
+}));
+
+const StyledIconButton = styled(IconButton)(() => ({
+	bottom: "4px",
 }));
 
 export const PAGE_BLOCK: BlockJSON = {
@@ -904,13 +909,8 @@ export const LayersPanel = observer(
 							</StyledLabelTitle>
 							<div ref={editableAreaRef}>
                             {editingBlockId === block.id ? ( // Check if the current block is being edited
-                                <StyledRenameStack direction="row" alignItems="center" spacing={1} display={'flex'} gap={'4px'}>
+                                <StyledRenameStack>
 								<StyledRenameStack
-                                    // direction="row"
-                                    // alignItems="center"
-                                    // spacing={1}
-                                    // display={'flex'}
-                                    // gap={'4px'}
                                     className="editable-container"
                                 >
                                     <StyledRenameTextFiled
@@ -922,37 +922,13 @@ export const LayersPanel = observer(
                                             setEditBlockId(e.target.value);
                                             handlevalidation(e.target.value);
                                         }}
-                                        // sx={{
-                                        //     // target the root of the OutlinedInput
-                                        //     '& .MuiOutlinedInput-root': {
-                                        //         borderRadius: '4px',
-                                        //         width: '170px',
-                                        //         height: '21px',
-                                        //         paddingInline: '4px',
-                                        //         /* background-color: red; */
-                                        //         border: '1px solid #0471F0', // outer container radius
-                                        //         fontFamily: 'Inter',
-                                        //         fontSize: '14px',
-                                        //         fontWeight: 400,
-                                        //         fontStyle: 'normal',
-                                        //         lineHeight: '150%',
-                                        //         letterSpacing: '0.17px',
-                                        //         color: '#666666',
-                                        //         '& fieldset': {
-                                        //             borderRadius: '4px', // the actual outline radius
-                                        //         },
-                                        //         '& .MuiOutlinedInput-input': {
-                                        //             padding: '0px', // remove padding from input
-                                        //         },
-                                        //     },
-                                        // }}
                                         size="small"
                                         variant="outlined"
                                         autoFocus
                                     />
                                     
                                 </StyledRenameStack>
-								<IconButton
+								<StyledIconButton
                                         color="primary"
                                         disabled={rename}
                                         onMouseDown={(e) => {
@@ -966,7 +942,7 @@ export const LayersPanel = observer(
                                         }}
                                     >
                                         <CheckIcon />
-                                    </IconButton>
+                                    </StyledIconButton>
 									</StyledRenameStack>
                             ) : (
                                 <StyledLabelSubtitleText>
