@@ -285,7 +285,11 @@ export const TeamsSettingsPage = observer(() => {
 								description={team.description}
 								dispatch={dispatch}
 								teams={teams}
-								onClick={() => navigate(teamSlug(team.id))}
+								onClick={() =>
+									navigate(
+										`${teamSlug(team.type)}/${teamSlug(team.id)}`,
+									)
+								}
 							/>
 						</Grid>
 					))}

@@ -1,8 +1,5 @@
-import { CircularProgress } from "@mui/material";
-import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { styled, useNotification } from "@semoss/ui";
-import { getGroupType } from "@/api/teams";
+import { styled } from "@semoss/ui";
 import {
 	TeamEnginesTable,
 	TeamMembersTable,
@@ -30,54 +27,18 @@ const StyledContent = styled("div")(({ theme }) => ({
 }));
 
 export const TeamSettingsDetailPage = () => {
-	// pull :id from the url
-	const { id: rawId } = useParams<{ id: string }>();
+	// pull :type and :id from the url
+	const { type: rawType, id: rawId } = useParams<{
+		type: string;
+		id: string;
+	}>();
+	const type = rawType ? decodeURIComponent(rawType) : undefined;
 	const id = rawId ? decodeURIComponent(rawId) : undefined;
-	const [type, setType] = useState<string | undefined>();
-	const [isLoading, setIsLoading] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-	const notification = useNotification();
-
-	// Fetch type when id changes
-	useEffect(() => {
-		let cancelled = false;
-		if (!id) {
-			setType(undefined);
-			return () => {
-				cancelled = true;
-			};
-		}
-		// reset while loading a new id
-		setType(undefined);
-		setIsLoading(true);
-		setError(null);
-		(async () => {
-			try {
-				const fetchedType = await getGroupType(id);
-				if (!cancelled) setType(fetchedType);
-			} catch {
-				if (!cancelled) {
-					setError("Failed to load team type");
-					notification.add({
-						color: "error",
-						message: "Failed to load team type",
-					});
-				}
-			} finally {
-				if (!cancelled) setIsLoading(false);
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [id, notification]);
 
 	return (
 		<StyledContainer>
 			<StyledContent>
-				{isLoading && <CircularProgress />}
-				{error && <div>{error}</div>}
-				{!isLoading && !error && type && (
+				{type && id && (
 					<>
 						{type === "CUSTOM" ? (
 							<TeamMembersTable groupId={id} name="MEMBERS" />

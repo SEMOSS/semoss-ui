@@ -278,16 +278,3 @@ export const getUnassignedTeamEngines = async (
 	}
 	return response.data;
 };
-
-// Fetch a group's type given its id (always returns a plain string)
-export const getGroupType = async (groupId: string): Promise<string> => {
-	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += `group/getGroupType?groupId=${encodeURIComponent(groupId)}`;
-	const response = await get(url).catch((error) => {
-		throw Error(error);
-	});
-	if (!response || typeof response.data !== "string") {
-		throw Error("Invalid response for group type");
-	}
-	return response.data as string;
-};
