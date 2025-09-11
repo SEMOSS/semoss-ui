@@ -222,11 +222,6 @@ interface BrowseTemplateTileCardProps {
 	app: AppMetadata;
 
 	/**
-	 * Background
-	 */
-	background?: string;
-
-	/**
 	 * Action that is triggered when clicked
 	 * aop - current selected app
 	 */
@@ -236,73 +231,14 @@ interface BrowseTemplateTileCardProps {
 	 * Link to navigate to
 	 */
 	href?: string;
-
-	/**
-	 * is app favorited
-	 */
-	isFavorite?: boolean;
-
-	/**
-	 * toggle favorite bookmark
-	 */
-	favorite?: (value: boolean) => void;
-
-	/**
-	 * type of app to match image
-	 */
-	appType?: string;
-
-	/**
-	 * is the app a default system app
-	 */
-	systemApp?: boolean;
-
-	/**
-	 * Show bookmark
-	 */
-	isDiscoverable?: boolean;
-
-	/**
-	 * Action triggered when deleted
-	 */
-	onDelete?: () => void;
-
-	/**
-	 * Whether the card is loading (shows skeleton)
-	 */
-	isLoading?: boolean;
-	/**
-	 * Whether to show the skeleton loader
-	 */
-	showSkeleton?: boolean;
 }
 
 export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
-	const {
-		app,
-		background = "#DAC9F5",
-		onAction = () => null,
-		href = null,
-		isFavorite,
-		favorite,
-		appType,
-		systemApp,
-		isDiscoverable = false,
-		onDelete,
-		isLoading,
-		showSkeleton,
-	} = props;
+	const { app, onAction = () => null, href = null } = props;
 
 	return (
 		<StyledMainDiv>
 			<StyledTileCard disabled>
-				{/* <StyledContainer>
-					<StyledOverlayContent>
-						<StyledIconButton size="small" color="default">
-							<img src={RemoveRedEyeFilled}></img>
-						</StyledIconButton>
-					</StyledOverlayContent>
-				</StyledContainer> */}
 				<Link
 					href={href}
 					rel="noopener noreferrer"
