@@ -277,7 +277,7 @@ export const ProjectSettingsPage = () => {
 							}}
 							value={"DESC"}
 							aria-label={"Descending Order"}
-							data-testid={"project-settings-desc-btn"}
+							data-testid={"projectSettingsPage-desc-btn"}
 						>
 							<Tooltip title={"Descending Order"}>
 								<ArrowDownward />
@@ -294,7 +294,7 @@ export const ProjectSettingsPage = () => {
 							}}
 							value={"ASC"}
 							aria-label={"Ascending Order"}
-							data-testid={"project-settings-asc-btn"}
+							data-testid={"projectSettingsPage-asc-btn"}
 						>
 							<Tooltip title={"Ascending Order"}>
 								<ArrowUpward />
@@ -310,7 +310,7 @@ export const ProjectSettingsPage = () => {
 						<ToggleButton
 							onClick={(e, v) => setView(v)}
 							value={"tile"}
-							data-testid={"project-settings-tile-btn"}
+							data-testid={"projectSettingsPage-tile-btn"}
 						>
 							<Tooltip title={"Tile View"}>
 								<SpaceDashboardOutlined />
@@ -319,7 +319,7 @@ export const ProjectSettingsPage = () => {
 						<ToggleButton
 							onClick={(e, v) => setView(v)}
 							value={"list"}
-							data-testid={"project-settings-list-btn"}
+							data-testid={"projectSettingsPage-list-btn"}
 						>
 							<Tooltip title={"List View"}>
 								<FormatListBulletedOutlined />

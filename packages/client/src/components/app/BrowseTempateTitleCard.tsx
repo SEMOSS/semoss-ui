@@ -13,7 +13,6 @@ import DragAndDrop from "@/assets/img/DragAndDrop.svg";
 import DragAndDropImage from "@/assets/img/DragDrop.png";
 import Pro_Code from "@/assets/img/Pro_Code.svg";
 import ProCodeImage from "@/assets/img/ProCode.png";
-import RemoveRedEyeFilled from "@/assets/img/RemoveRedEyeFilled.svg";
 import { removeUnderscores } from "@/utility";
 import type { AppMetadata } from "./app.types";
 
@@ -52,22 +51,6 @@ const StyledTileCard = styled(
 		cursor: disabled ? "default" : "pointer",
 	},
 	borderRadius: theme.shape.borderRadius,
-}));
-
-const StyledContainer = styled("div")({
-	position: "relative",
-});
-
-const StyledOverlayContent = styled("div")(({ theme }) => ({
-	// width: '100%',
-	// height: '134px',
-	position: "absolute",
-	top: "0",
-	right: "0",
-	display: "flex",
-	justifyContent: "flex-end",
-	paddingTop: theme.spacing(1),
-	paddingRight: theme.spacing(1.25),
 }));
 
 const StyledTileCardMedia = styled(Card.Media)(({ theme }) => ({
@@ -174,19 +157,6 @@ const StyledCardActionsImageContainer = styled("div")({
 	top: "2px",
 });
 
-const StyledIconButton = styled(IconButton)(({ theme }) => ({
-	backgroundColor: theme.palette.background.paper,
-	height: "28px",
-	width: "28px",
-	radius: "24px",
-	"&:hover": {
-		backgroundColor: theme.palette.background.paper,
-		$icon: {
-			color: "red",
-		},
-	},
-}));
-
 const StyledOpenButton = styled(IconButton)({
 	display: "flex",
 	alignItems: "center",
@@ -273,11 +243,6 @@ interface BrowseTemplateTileCardProps {
 	app: AppMetadata;
 
 	/**
-	 * Background
-	 */
-	background?: string;
-
-	/**
 	 * Action that is triggered when clicked
 	 * aop - current selected app
 	 */
@@ -287,45 +252,6 @@ interface BrowseTemplateTileCardProps {
 	 * Link to navigate to
 	 */
 	href?: string;
-
-	/**
-	 * is app favorited
-	 */
-	isFavorite?: boolean;
-
-	/**
-	 * toggle favorite bookmark
-	 */
-	favorite?: (value: boolean) => void;
-
-	/**
-	 * type of app to match image
-	 */
-	appType?: string;
-
-	/**
-	 * is the app a default system app
-	 */
-	systemApp?: boolean;
-
-	/**
-	 * Show bookmark
-	 */
-	isDiscoverable?: boolean;
-
-	/**
-	 * Action triggered when deleted
-	 */
-	onDelete?: () => void;
-
-	/**
-	 * Whether the card is loading (shows skeleton)
-	 */
-	isLoading?: boolean;
-	/**
-	 * Whether to show the skeleton loader
-	 */
-	showSkeleton?: boolean;
 }
 
 export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
@@ -334,13 +260,6 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 	return (
 		<StyledMainDiv>
 			<StyledTileCard disabled>
-				<StyledContainer>
-					<StyledOverlayContent>
-						<StyledIconButton size="small" color="default">
-							<img alt="icon" src={RemoveRedEyeFilled}></img>
-						</StyledIconButton>
-					</StyledOverlayContent>
-				</StyledContainer>
 				<Link
 					href={href}
 					rel="noopener noreferrer"
