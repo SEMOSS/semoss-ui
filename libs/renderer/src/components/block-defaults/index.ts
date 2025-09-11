@@ -12,6 +12,7 @@ import {
 	config as ButtonBlockConfig,
 	type ButtonBlockDef,
 } from "./button-block";
+import { config as ChatBlockConfig, type ChatBlockDef } from "./chat-block";
 import {
 	config as CheckboxBlockConfig,
 	type CheckboxBlockDef,
@@ -95,6 +96,7 @@ import {
 	config as SwitchBlockConfig,
 	type SwitchBlockDef,
 } from "./switch-block";
+import { config as TabBlockConfig, type TabBlockDef } from "./tab-block";
 import { config as TextBlockConfig, type TextBlockDef } from "./text-block";
 import { config as ThemeBlockConfig, type ThemeBlockDef } from "./theme-block";
 import {
@@ -113,7 +115,6 @@ import {
 	config as VegaVisualizationBlockConfig,
 	type VegaVisualizationBlockDef,
 } from "./vega-visualization-block";
-import { config as ChatBlockConfig, ChatBlockDef } from "./chat-block";
 import {
 	config as VisualizationFilterBlockConfig,
 	type VisualizationFilterBlockDef,
@@ -161,8 +162,8 @@ export type DefaultBlockDefinitions =
 	| TimePickerBlockDef
 	| VisualizationFilterBlockDef
 	| GridDynamicFrameBlockDef
-    | ModalBlockDef
-    | ChatBlockDef;
+	| TabBlockDef
+	| ChatBlockDef;
 
 export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[AccordionBlockConfig.widget]: AccordionBlockConfig,
@@ -205,47 +206,27 @@ export const DefaultBlocks: Registry<DefaultBlockDefinitions> = {
 	[VegaVisualizationBlockConfig.widget]: VegaVisualizationBlockConfig,
 	[VisualizationFilterBlockConfig.widget]: VisualizationFilterBlockConfig,
 	[GridDynamicFrameBlockConfig.widget]: GridDynamicFrameBlockConfig,
+	[TabBlockConfig.widget]: TabBlockConfig,
 	[ChatBlockConfig.widget]: ChatBlockConfig,
 };
 
 export {
-	AccordionBlockConfig,
-	PopoverBlockConfig,
-	AudioBlockConfig,
+	AccordionBlockConfig, AudioBlockConfig,
 	AudioInputBlockConfig,
-	ButtonBlockConfig,
-	CheckboxBlockConfig,
+	ButtonBlockConfig, ChatBlockConfig, CheckboxBlockConfig,
 	ChipBlockConfig,
 	ContainerBlockConfig,
-	DividerBlockConfig,
-	GridBlockConfig,
-	IconBlockConfig,
+	DividerBlockConfig, EchartVisualizationBlockConfig, FlipCardBlockConfig, GridBlockConfig, GridDynamicFrameBlockConfig, HTMLBlockConfig, IconBlockConfig,
 	IframeBlockConfig,
 	ImageBlockConfig,
 	InputBlockConfig,
-	IterationBlockConfig,
-	MarkdownBlockConfig,
-	HTMLBlockConfig,
-	PageBlockConfig,
-	LogsBlockConfig,
-	ProgressBlockConfig,
-	RatingsBlockConfig,
+	IterationBlockConfig, LogsBlockConfig, MarkdownBlockConfig, MermaidBlockConfig,
+	ModalBlockConfig, PageBlockConfig, PDFViewerBlockConfig, PopoverBlockConfig, ProgressBlockConfig, RadioBlockConfig, RatingsBlockConfig,
 	SelectBlockConfig,
 	SidebarBlockConfig,
 	SliderBlockConfig,
-	SwitchBlockConfig,
-	TextBlockConfig,
-	ThemeBlockConfig,
-	UploadBlockConfig,
-	VegaVisualizationBlockConfig,
-	EchartVisualizationBlockConfig,
-	MermaidBlockConfig,
-	ModalBlockConfig,
-	RadioBlockConfig,
-	PDFViewerBlockConfig,
-	TimePickerBlockConfig,
-	FlipCardBlockConfig,
-	VisualizationFilterBlockConfig,
-	GridDynamicFrameBlockConfig,
-	ChatBlockConfig,
+	SwitchBlockConfig, TabBlockConfig, TextBlockConfig,
+	ThemeBlockConfig, TimePickerBlockConfig, UploadBlockConfig,
+	VegaVisualizationBlockConfig, VisualizationFilterBlockConfig
 };
+

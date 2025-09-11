@@ -492,7 +492,7 @@ export const MembersTable = (props: MembersTableProps) => {
       if (response.data.success) {
         notification.add({
           color: "success",
-          message: "Succesfully updated user permissions",
+          message: "Successfully updated user permissions",
         });
 
         // refresh the members
@@ -711,6 +711,7 @@ export const MembersTable = (props: MembersTableProps) => {
                   placeholder="Search Members"
                   size="small"
                   value={search}
+				  data-testid={`membersTables-searchMembers-searchBar}`}
                   onChange={(e) => {
                     setSearch(e.target.value);
                   }}
@@ -743,6 +744,7 @@ export const MembersTable = (props: MembersTableProps) => {
                   <Button
                     disabled={isLoading || userPermission === "Read-Only"}
                     variant={"contained"}
+					data-testid={`membersTables-addMembers-btn`}
                     onClick={() => {
                       openAddMembersModal();
                     }}
@@ -1081,6 +1083,7 @@ export const MembersTable = (props: MembersTableProps) => {
                     <Button
                       disabled={isLoading}
                       variant={"contained"}
+					  data-testid={`membersTables-addMembers-btn`}
                       onClick={() => {
                         setAddModalUser(null);
                         openAddMembersModal();

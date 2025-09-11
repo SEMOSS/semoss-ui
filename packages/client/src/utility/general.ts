@@ -97,7 +97,7 @@ export const copyTextToClipboard = (text: string, notificationService) => {
 
 		notificationService.add({
 			color: "success",
-			message: "Succesfully copied to clipboard",
+			message: "Successfully copied to clipboard",
 		});
 	} catch (e) {
 		notificationService.add({
@@ -227,4 +227,25 @@ export const permissionPriorityMapper = (permission: string | number) => {
 		default:
 			return { permission: "", priority: 0 };
 	}
+};
+
+/**
+ * @name extractInitials
+ *
+ * Extract a initials for a string
+ *
+ * @param str
+ */
+export const extractInitials = (str: string): string => {
+    if (str.length < 1) {
+        return '';
+    }
+
+    return str.split(' ').reduce((prev, curr) => {
+        return prev + (curr[0] || '');
+    }, '');
+}
+
+export const formatToDataTestId = (text: string) => {
+	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
 };

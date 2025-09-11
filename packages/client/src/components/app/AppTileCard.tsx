@@ -28,7 +28,7 @@ import {
 import ImageSkeleton from "@/assets/img/Image_Skeleton.svg";
 import { AppDeleteModal } from "@/components/app";
 import { AddAppCloneModal } from "@/components/app/save-app/AddAppCloneModal";
-import { removeUnderscores } from "@/utility";
+import { formatToDataTestId, removeUnderscores } from "@/utility";
 import { APP_IMAGES } from "./app.images";
 import type { AppMetadata } from "./app.types";
 
@@ -469,7 +469,7 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
       notification.add({
         color: "success",
-        message: "Succesfully copied to clipboard",
+        message: "Successfully copied to clipboard",
       });
     } catch (e) {
       notification.add({
@@ -729,7 +729,11 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
   return (
     <StyledMainDiv ref={cardRef}>
-      <StyledTileCard disabled={!href} style={{ position: "relative" }}>
+      <StyledTileCard 
+	  	disabled={!href} style={{ position: "relative" }} 
+		data-testid={formatToDataTestId(
+			`appTileCard-${app.project_name}-tile`,
+		)}>
         {!systemApp && !isDiscoverable && (
           <StyledContainer>
             <StyledOverlayContent>
@@ -856,7 +860,6 @@ export const AppTileCard = (props: AppTileCardProps) => {
                     onClick={(e) => {
                       e.preventDefault(); // Prevent <Link> navigation
                       e.stopPropagation(); // Prevent bubbling to <Link>
-
                       if (href) {
                         window.open(href, "_blank", "noopener,noreferrer");
                       }

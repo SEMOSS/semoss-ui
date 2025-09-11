@@ -2,6 +2,7 @@ import { config as AccordionSettingsConfig } from "./block-settings/accordion-bl
 import { config as AudioSettingsConfig } from "./block-settings/audio-block";
 import { config as AudioInputSettingsConfig } from "./block-settings/audio-input-block";
 import { config as ButtonSettingsConfig } from "./block-settings/button-block";
+import { config as ChatBlockSettingsConfig } from "./block-settings/chat-block";
 import { config as CheckboxSettingsConfig } from "./block-settings/checkbox-block";
 import { config as ChipSettingsConfig } from "./block-settings/chip-block";
 import { config as ContainerSettingsConfig } from "./block-settings/container-block";
@@ -31,6 +32,7 @@ import { config as SelectSettingsConfig } from "./block-settings/select-block";
 import { config as SidebarSettingsConfig } from "./block-settings/sidebar-block";
 import { config as SliderSettingsConfig } from "./block-settings/slider-block";
 import { config as SwitchSettingsConfig } from "./block-settings/switch-block";
+import { config as TabSettingsConfig } from "./block-settings/tab-block";
 import { config as TextSettingsConfig } from "./block-settings/text-block";
 import { config as ThemeSettingsConfig } from "./block-settings/theme-block";
 import { config as TimePickerSettingsConfig } from "./block-settings/time-picker-block";
@@ -38,48 +40,48 @@ import { config as ToggleButtonSettingsConfig } from "./block-settings/toggle-bu
 import { config as UploadSettingsConfig } from "./block-settings/upload-block";
 import { config as VegaVisualizationSettingsConfig } from "./block-settings/vega-visualization-block";
 import { config as VisualizationFilterSettingsConfig } from "./block-settings/visualization-filter-block";
-import { config as ChatBlockSettingsConfig } from "./block-settings/chat-block";
 
 export const BlockSettingsRegistry = {
-	["accordion"]: AccordionSettingsConfig,
-	["popover"]: PopoverSettingsConfig,
-	["audio-player"]: AudioSettingsConfig,
-	["audio-input"]: AudioInputSettingsConfig,
-	["button"]: ButtonSettingsConfig,
-	["checkbox"]: CheckboxSettingsConfig,
-	["chip"]: ChipSettingsConfig,
-	["container"]: ContainerSettingsConfig,
-	["divider"]: DividerSettingsConfig,
-	["e-chart"]: EchartVisualizationSettingsConfig,
-	["flip-card"]: FlipCardSettingsConfig,
-	["grid"]: GridSettingsConfig,
-	["icon"]: IconSettingsConfig,
-	["iframe"]: IframeSettingsConfig,
-	["image"]: ImageSettingsConfig,
-	["input"]: InputSettingsConfig,
-	["iteration"]: IterationSettingsConfig,
-	["link"]: LinkSettingsConfig,
-	["logs"]: LogsSettingsConfig,
-	["markdown"]: MarkdownSettingsConfig,
-	["mermaid"]: MermaidSettingsConfig,
-	["modal"]: ModalSettingsConfig,
-	["html"]: HTMLSettingsConfig,
-	["page"]: PageSettingsConfig,
-	["pdfViewer"]: PDFViewerSettingsConfig,
-	["progress"]: ProgressSettingsConfig,
-	["radio"]: RadioSettingsConfig,
-	["ratings"]: RatingsSettingsConfig,
-	["select"]: SelectSettingsConfig,
-	["sidebar"]: SidebarSettingsConfig,
-	["slider"]: SliderSettingsConfig,
-	["switch"]: SwitchSettingsConfig,
-	["text"]: TextSettingsConfig,
-	["timepicker"]: TimePickerSettingsConfig,
-	["theme"]: ThemeSettingsConfig,
-	["toggle-button"]: ToggleButtonSettingsConfig,
-	["upload"]: UploadSettingsConfig,
-	["vega"]: VegaVisualizationSettingsConfig,
-	["visualization-filter"]: VisualizationFilterSettingsConfig,
-	["grid-dynamic-frame"]: GridDynamicFrameSettingsConfig,
-	["chat"]: ChatBlockSettingsConfig,
+	accordion: AccordionSettingsConfig,
+	popover: PopoverSettingsConfig,
+	"audio-player": AudioSettingsConfig,
+	"audio-input": AudioInputSettingsConfig,
+	button: ButtonSettingsConfig,
+	checkbox: CheckboxSettingsConfig,
+	chip: ChipSettingsConfig,
+	container: ContainerSettingsConfig,
+	divider: DividerSettingsConfig,
+	"e-chart": EchartVisualizationSettingsConfig,
+	"flip-card": FlipCardSettingsConfig,
+	grid: GridSettingsConfig,
+	icon: IconSettingsConfig,
+	iframe: IframeSettingsConfig,
+	image: ImageSettingsConfig,
+	input: InputSettingsConfig,
+	iteration: IterationSettingsConfig,
+	link: LinkSettingsConfig,
+	logs: LogsSettingsConfig,
+	markdown: MarkdownSettingsConfig,
+	mermaid: MermaidSettingsConfig,
+	modal: ModalSettingsConfig,
+	html: HTMLSettingsConfig,
+	page: PageSettingsConfig,
+	pdfViewer: PDFViewerSettingsConfig,
+	progress: ProgressSettingsConfig,
+	radio: RadioSettingsConfig,
+	ratings: RatingsSettingsConfig,
+	select: SelectSettingsConfig,
+	sidebar: SidebarSettingsConfig,
+	slider: SliderSettingsConfig,
+	switch: SwitchSettingsConfig,
+	tab: TabSettingsConfig,
+	text: TextSettingsConfig,
+	timepicker: TimePickerSettingsConfig,
+	theme: ThemeSettingsConfig,
+	"toggle-button": ToggleButtonSettingsConfig,
+	upload: UploadSettingsConfig,
+	vega: VegaVisualizationSettingsConfig,
+	"visualization-filter": VisualizationFilterSettingsConfig,
+	"grid-dynamic-frame": GridDynamicFrameSettingsConfig,
+	chat: ChatBlockSettingsConfig,
 };
