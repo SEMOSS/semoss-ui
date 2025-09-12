@@ -1,35 +1,21 @@
+import { useBlockSettings } from "@/hooks";
 import { InfoOutlined } from "@mui/icons-material";
 import ImageIcon from "@mui/icons-material/Image";
+import type { EchartVisualizationBlockDef } from "@semoss/renderer";
+import { List, Stack, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import {
-	BlockDef,
-	EchartVisualizationBlockConfig,
-	type EchartVisualizationBlockDef,
-	getValueByPath,
-	PathValue,
-	useBlocksPixel,
-	useFrameHeaders,
-} from "@semoss/renderer";
-import {
-	Autocomplete,
-	List,
-	Stack,
-	styled,
-	TextField,
-} from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
 import { getShowFieldOptions } from "../../../../../block-settings/block-defaults.shared";
 import { SelectInputSettings } from "../../../../../settings";
-import { ResizeSetting, SizeSettings } from "../../../../shared";
+import { ResizeSetting } from "../../../../shared";
 import { ColorPalatteSettings } from "../../../../shared/ColorPalatteSettings";
-import { ColorPickerSettings } from "../../../../shared/ColorPickerSettings";
 import { BAR_CHART_DATA } from "../../Visualization.constants";
 import { ChangeOrientation } from "../dendrogram/ChangeOrientation";
 import { CustomizeDendrogramSymbol } from "../dendrogram/CustomizeDendrogramSymbol";
 import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
 import { CustomizeSymbol } from "../Gantt/CustomizeSymbol";
+import { EditAxis as EditGanttAxis } from "../Gantt/EditAxis";
 import { GanttDisplayValueLabels } from "../Gantt/GanttDisplayValueLabels";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
 import { GanttFiscal } from "../Gantt/GanttFiscal";
@@ -38,7 +24,6 @@ import { GanttLegend } from "../Gantt/GanttLegend";
 import { GanttTargetLine } from "../Gantt/GanttTargetLine";
 import { LineLegend } from "../line-chart/LineLegend";
 import { LineStyling } from "../line-chart/LineStyling";
-import { LineTitle } from "../line-chart/LineTitle";
 import { LineTooltip } from "../line-chart/LineTooltip";
 import { LineValueLabels } from "../line-chart/LineValueLabel";
 import { XAxisStyling } from "../line-chart/XAxisStyling";
@@ -48,12 +33,10 @@ import { MapMarkerSize } from "../map-chart/MapMarkerSize";
 import { TooltipMapChart } from "../map-chart/TooltipMapChart";
 import { CustomTooltip } from "../pie-chart/CustomTooltip";
 import { PieLegend } from "../pie-chart/PieLegend";
-import { PieTitle } from "../pie-chart/PieTitle";
 import { PieValueLabel } from "../pie-chart/PieValueLabel";
 import { ToogleDonut } from "../pie-chart/ToggleDonut";
 import { EditXAxisScatterPlot } from "../scatter-plot/EditXAxisScatterPlot";
 import { EditYAxisScatterPlot } from "../scatter-plot/EditYAxisScatterPlot";
-import { ScatterPlotChartTitle } from "../scatter-plot/ScatterPlotChartTitle";
 import { ScatterPlotSymbol } from "../scatter-plot/ScatterPlotSymbol";
 import { TooltipScatterPlot } from "../scatter-plot/TooltipScatterPlot";
 import { ValueLabelScatterPlot } from "../scatter-plot/ValueLabelScatterPlot";
@@ -63,7 +46,7 @@ import { EditYAxisStackChart } from "../stack-chart/EditYAxisStackChart";
 import { LegendStackChart } from "../stack-chart/LegendStackChart";
 import { StackChartBarStyle } from "../stack-chart/StackChartBarStyle";
 import { ValueLabelStackChart } from "../stack-chart/ValueLabelStackChart";
-import { ChartStyling } from "./ChartStyling";
+import { TitleTool } from "../TitleTool";
 import ColourByValue from "./ColourByValue";
 import { CustomizeValueLabels } from "./CustomizeValueLabels";
 import { EditXAxis } from "./Edit-X-Axis";
@@ -78,7 +61,7 @@ interface UpgradedVisualizationToolProps {
 	id: string;
 }
 //Styled list item with contents type display
-const StyledListItem = styled(List.Item)(({}) => ({
+const StyledListItem = styled(List.Item)(() => ({
 	display: "contents !important",
 }));
 
@@ -94,7 +77,7 @@ const DendrogramToolsList = ({ id }) => {
 		<>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setDendrogramSelection((prevList) =>
 							prevList === "customizeDendrogramSymbol"
 								? ""
@@ -125,7 +108,7 @@ const DendrogramToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setDendrogramSelection((prevList) =>
 							prevList === "changeOrientation"
 								? ""
@@ -153,7 +136,7 @@ const DendrogramToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setDendrogramSelection((prevList) =>
 							prevList === "legendDendrogram"
 								? ""
@@ -181,7 +164,7 @@ const DendrogramToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setDendrogramSelection((prevList) =>
 							prevList === "showLabelsDendrogram"
 								? ""
@@ -207,53 +190,76 @@ const DendrogramToolsList = ({ id }) => {
 					<LabelsDendrogram id={id} path={"option"} />
 				)}
 			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setDendrogramSelection((prevList) =>
+							prevList === "title" ? "" : "title",
+						)
+					}
+					selected={dendrogramSelection === "title"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								dendrogramSelection === "title"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{dendrogramSelection === "title" && (
+					<TitleTool id={id} path={"option"} />
+				)}
+			</StyledListItem>
 		</>
 	);
 };
 
 const ResizingTool = ({ id }) => {
 	const [resizeSelection, setResizeSelection] = useState("");
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	return (
-		<>
-			<StyledListItem disablePadding>
-				<List.ItemButton
-					onClick={(e) =>
-						setResizeSelection((prevList) =>
-							prevList === "resizing" ? "" : "resizing",
-						)
-					}
-					selected={resizeSelection === "resizing"}
-				>
-					<List.Icon>
-						<ImageIcon
-							fontSize="large"
-							color={
-								resizeSelection === "resizing"
-									? "primary"
-									: "disabled"
-							}
-						/>
-					</List.Icon>
-					<List.ItemText primary="Resizing" />
-					<InfoOutlined />
-				</List.ItemButton>
-				{resizeSelection === "resizing" && (
-					<Stack>
-						<ResizeSetting
-							id={id}
-							label={"Height"}
-							path={"style.height"}
-						></ResizeSetting>
-						<ResizeSetting
-							id={id}
-							label={"Width"}
-							path={"style.width"}
-						></ResizeSetting>
-					</Stack>
-				)}
-			</StyledListItem>
-		</>
+		<StyledListItem disablePadding>
+			<List.ItemButton
+				onClick={() =>
+					setResizeSelection((prevList) =>
+						prevList === "resizing" ? "" : "resizing",
+					)
+				}
+				selected={resizeSelection === "resizing"}
+			>
+				<List.Icon>
+					<ImageIcon
+						fontSize="large"
+						color={
+							resizeSelection === "resizing"
+								? "primary"
+								: "disabled"
+						}
+					/>
+				</List.Icon>
+				<List.ItemText primary="Resizing" />
+				<InfoOutlined />
+			</List.ItemButton>
+			{resizeSelection === "resizing" && (
+				<Stack>
+					<ResizeSetting
+						id={id}
+						label={"Height"}
+						path={"style.height"}
+					></ResizeSetting>
+					<ResizeSetting
+						id={id}
+						label={"Width"}
+						path={"style.width"}
+					></ResizeSetting>
+				</Stack>
+			)}
+		</StyledListItem>
 	);
 };
 
@@ -265,7 +271,7 @@ const ColorpalatteTool = ({ id }) => {
 		<>
 			<List.Item disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setColorPalatteSelection((prevList) =>
 							prevList === "colourpalette" ? "" : "colourpalette",
 						)
@@ -317,7 +323,7 @@ const GanttToolsList = ({ id }) => {
 		<>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setGanttSelection((prevList) =>
 							prevList === "fiscalaxis" ? "" : "fiscalaxis",
 						)
@@ -334,10 +340,7 @@ const GanttToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText
-						primary="Fiscal Axis"
-						style={{ flex: "0.5 1 auto" }}
-					/>
+					<List.ItemText primary="Fiscal Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
 			</StyledListItem>
@@ -346,7 +349,107 @@ const GanttToolsList = ({ id }) => {
 			)}
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "xaxis" ? "" : "xaxis",
+						)
+					}
+					selected={ganttSelection === "xaxis"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "xaxis"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Edit X Axis" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "xaxis" && (
+				<EditGanttAxis id={id} path={"option"} axis="x" />
+			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "yaxis" ? "" : "yaxis",
+						)
+					}
+					selected={ganttSelection === "yaxis"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "yaxis"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Edit Y Axis" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "yaxis" && (
+				<EditGanttAxis id={id} path={"option"} axis="y" />
+			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "chartposition" ? "" : "chartposition",
+						)
+					}
+					selected={ganttSelection === "chartposition"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "chartposition"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Position" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "chartposition" && (
+				<>
+					<ResizeSetting
+						id={id}
+						label={"Left"}
+						path={"option.grid.left"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Right"}
+						path={"option.grid.right"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Top"}
+						path={"option.grid.top"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Bottom"}
+						path={"option.grid.bottom"}
+					/>
+				</>
+			)}
+
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
 						setGanttSelection((prevList) =>
 							prevList === "targetdate" ? "" : "targetdate",
 						)
@@ -363,10 +466,7 @@ const GanttToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText
-						primary="Target Date"
-						style={{ flex: "0.5 1 auto" }}
-					/>
+					<List.ItemText primary="Target Date" />
 					<InfoOutlined />
 				</List.ItemButton>
 			</StyledListItem>
@@ -375,7 +475,7 @@ const GanttToolsList = ({ id }) => {
 			)}
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setGanttSelection((prevList) =>
 							prevList === "customizesymbol"
 								? ""
@@ -394,10 +494,7 @@ const GanttToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText
-						primary="Customize Symbol"
-						style={{ flex: "0.5 1 auto" }}
-					/>
+					<List.ItemText primary="Customize Symbol" />
 					<InfoOutlined />
 				</List.ItemButton>
 			</StyledListItem>
@@ -406,7 +503,7 @@ const GanttToolsList = ({ id }) => {
 			)}
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setGanttSelection((prevList) =>
 							prevList === "togglelegendgantt"
 								? ""
@@ -425,10 +522,7 @@ const GanttToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText
-						primary="Legend"
-						style={{ flex: "0.5 1 auto" }}
-					/>
+					<List.ItemText primary="Legend" />
 					<InfoOutlined />
 				</List.ItemButton>
 			</StyledListItem>
@@ -437,7 +531,7 @@ const GanttToolsList = ({ id }) => {
 			)}
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setGanttSelection((prevList) =>
 							prevList === "togglegroupview"
 								? ""
@@ -456,22 +550,17 @@ const GanttToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText
-						primary="Group View"
-						style={{ flex: "0.5 1 auto" }}
-					/>
+					<List.ItemText primary="Group View" />
 					<InfoOutlined />
 				</List.ItemButton>
 			</StyledListItem>
 			{ganttSelection === "togglegroupview" && (
-				<>
-					<GanttGroupView id={id} path={"option"} />
-				</>
+				<GanttGroupView id={id} path={"option"} />
 			)}
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setGanttSelection((prevList) =>
 							prevList === "displayvaluelabels"
 								? ""
@@ -490,32 +579,52 @@ const GanttToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText
-						primary="Display Value Labels"
-						style={{ flex: "0.5 1 auto" }}
-					/>
+					<List.ItemText primary="Display Value Labels" />
 					<InfoOutlined />
 				</List.ItemButton>
 			</StyledListItem>
 
 			{ganttSelection === "displayvaluelabels" && (
-				<>
-					<GanttDisplayValueLabels id={id} path="option" />
-				</>
+				<GanttDisplayValueLabels id={id} path="option" />
 			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "title" ? "" : "title",
+						)
+					}
+					selected={ganttSelection === "title"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "title"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{ganttSelection === "title" && (
+					<TitleTool id={id} path={"option"} />
+				)}
+			</StyledListItem>
 		</>
 	);
 };
 
 const StackChartTool = ({ id }) => {
 	const [stackChartSelection, setStackChartSelection] = useState("");
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	return (
 		<>
 			<ColorpalatteTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setStackChartSelection((prevList) =>
 							prevList === "editxaxis" ? "" : "editxaxis",
 						)
@@ -544,7 +653,7 @@ const StackChartTool = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setStackChartSelection((prevList) =>
 							prevList === "edityaxis" ? "" : "edityaxis",
 						)
@@ -573,7 +682,7 @@ const StackChartTool = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setStackChartSelection((prevList) =>
 							prevList === "valuelabel" ? "" : "valuelabel",
 						)
@@ -602,7 +711,7 @@ const StackChartTool = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setStackChartSelection((prevList) =>
 							prevList === "tooltips" ? "" : "tooltips",
 						)
@@ -629,7 +738,7 @@ const StackChartTool = ({ id }) => {
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setStackChartSelection((prevList) =>
 							prevList === "barstyle" ? "" : "barstyle",
 						)
@@ -655,7 +764,7 @@ const StackChartTool = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setStackChartSelection((prevList) =>
 							prevList === "legend" ? "" : "legend",
 						)
@@ -679,20 +788,46 @@ const StackChartTool = ({ id }) => {
 					<LegendStackChart id={id} path={"option"} />
 				)}
 			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setStackChartSelection((prevList) =>
+							prevList === "title" ? "" : "title",
+						)
+					}
+					selected={stackChartSelection === "title"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								stackChartSelection === "title"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{stackChartSelection === "title" && (
+					<TitleTool id={id} path={"option"} />
+				)}
+			</StyledListItem>
 		</>
 	);
 };
 
 const BarToolsList = ({ id }) => {
 	const [barSelection, setBarSelection] = useState("");
-	const { data, setData } = useBlockSettings(id);
+	const { data } = useBlockSettings(id);
 	function updateChart() {}
 	return (
 		<>
 			<ColorpalatteTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "colourbyvalue" ? "" : "colourbyvalue",
 						)
@@ -722,7 +857,7 @@ const BarToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "editxaxis" ? "" : "editxaxis",
 						)
@@ -748,7 +883,7 @@ const BarToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "edityaxis" ? "" : "edityaxis",
 						)
@@ -774,7 +909,7 @@ const BarToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "valuelabel" ? "" : "valuelabel",
 						)
@@ -805,7 +940,7 @@ const BarToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "barstyle" ? "" : "barstyle",
 						)
@@ -837,7 +972,7 @@ const BarToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "chartstyle" ? "" : "chartstyle",
 						)
@@ -854,22 +989,17 @@ const BarToolsList = ({ id }) => {
 							}
 						/>
 					</List.Icon>
-					<List.ItemText primary="Chart Style" />
+					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
 				{barSelection === "chartstyle" && (
-					<ChartStyling
-						option={data.option}
-						id={id}
-						updateChart={updateChart}
-						path="option"
-					/>
+					<TitleTool id={id} path="option" />
 				)}
 			</StyledListItem>
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setBarSelection((prevList) =>
 							prevList === "trendlines" ? "" : "trendlines",
 						)
@@ -902,7 +1032,7 @@ const BarToolsList = ({ id }) => {
 			<StyledListItem disablePadding>
 				{data.variation === "echart-bar-chart" && (
 					<List.ItemButton
-						onClick={(e) =>
+						onClick={() =>
 							setBarSelection((prevList) =>
 								prevList === "barlegend" ? "" : "barlegend",
 							)
@@ -933,14 +1063,13 @@ const BarToolsList = ({ id }) => {
 
 const ScatterToolsList = ({ id }) => {
 	const [scatterSelection, setScatterSelection] = useState("");
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
 	return (
 		<>
 			<ColorpalatteTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setScatterSelection((prevList) =>
 							prevList === "editxaxis" ? "" : "editxaxis",
 						)
@@ -969,7 +1098,7 @@ const ScatterToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setScatterSelection((prevList) =>
 							prevList === "edityaxis" ? "" : "edityaxis",
 						)
@@ -998,7 +1127,7 @@ const ScatterToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setScatterSelection((prevList) =>
 							prevList === "valuelabel" ? "" : "valuelabel",
 						)
@@ -1028,7 +1157,7 @@ const ScatterToolsList = ({ id }) => {
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setScatterSelection((prevList) =>
 							prevList === "tooltips" ? "" : "tooltips",
 						)
@@ -1057,7 +1186,7 @@ const ScatterToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setScatterSelection((prevList) =>
 							prevList === "symbol" ? "" : "symbol",
 						)
@@ -1086,7 +1215,7 @@ const ScatterToolsList = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setScatterSelection((prevList) =>
 							prevList === "scatter-plots-title"
 								? ""
@@ -1109,10 +1238,7 @@ const ScatterToolsList = ({ id }) => {
 					<InfoOutlined />
 				</List.ItemButton>
 				{scatterSelection === "scatter-plots-title" && (
-					<ScatterPlotChartTitle
-						id={id}
-						path={"option"}
-					></ScatterPlotChartTitle>
+					<TitleTool id={id} path={"option"}></TitleTool>
 				)}
 			</StyledListItem>
 		</>
@@ -1120,14 +1246,14 @@ const ScatterToolsList = ({ id }) => {
 };
 const LineChartTools = ({ id }) => {
 	const [lineSelection, setLineSelection] = useState("");
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+	const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
 	return (
 		<>
 			<ColorpalatteTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineTitle" ? "" : "lineTitle",
 						)
@@ -1148,13 +1274,13 @@ const LineChartTools = ({ id }) => {
 					<InfoOutlined />
 				</List.ItemButton>
 				{lineSelection === "lineTitle" && (
-					<LineTitle id={id} path="option" />
+					<TitleTool id={id} path="option" />
 				)}
 			</StyledListItem>
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineLegend" ? "" : "lineLegend",
 						)
@@ -1180,7 +1306,7 @@ const LineChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineTooltip" ? "" : "lineTooltip",
 						)
@@ -1206,7 +1332,7 @@ const LineChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineValueLabel"
 								? ""
@@ -1239,7 +1365,7 @@ const LineChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineXAixsStyling"
 								? ""
@@ -1267,7 +1393,7 @@ const LineChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineYAixsStyling"
 								? ""
@@ -1295,7 +1421,7 @@ const LineChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setLineSelection((prevList) =>
 							prevList === "lineStyling" ? "" : "lineStyling",
 						)
@@ -1330,7 +1456,7 @@ const MapChartTools = ({ id }) => {
 			<ColorpalatteTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setMapSelection((prevList) =>
 							prevList === "tooltips" ? "" : "tooltips",
 						)
@@ -1357,7 +1483,7 @@ const MapChartTools = ({ id }) => {
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setMapSelection((prevList) =>
 							prevList === "legend" ? "" : "legend",
 						)
@@ -1383,7 +1509,7 @@ const MapChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setMapSelection((prevList) =>
 							prevList === "symbol" ? "" : "symbol",
 						)
@@ -1408,20 +1534,45 @@ const MapChartTools = ({ id }) => {
 					<MapMarkerSize id={id} path={"option"}></MapMarkerSize>
 				)}
 			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setMapSelection((prevList) =>
+							prevList === "title" ? "" : "title",
+						)
+					}
+					selected={mapSelection === "title"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								mapSelection === "title"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{mapSelection === "title" && (
+					<TitleTool id={id} path={"option"} />
+				)}
+			</StyledListItem>
 		</>
 	);
 };
 
 const PieChartTools = ({ id }) => {
 	const [pieSelection, setPieSelection] = useState("");
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
 
 	return (
 		<>
 			<ColorpalatteTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setPieSelection((prevList) =>
 							prevList === "tooltip" ? "" : "tooltip",
 						)
@@ -1448,7 +1599,7 @@ const PieChartTools = ({ id }) => {
 			<ResizingTool id={id} />
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setPieSelection((prevList) =>
 							prevList === "legend" ? "" : "legend",
 						)
@@ -1474,7 +1625,7 @@ const PieChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setPieSelection((prevList) =>
 							prevList === "donutToggle" ? "" : "donutToggle",
 						)
@@ -1500,7 +1651,7 @@ const PieChartTools = ({ id }) => {
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setPieSelection((prevList) =>
 							prevList === "title" ? "" : "title",
 						)
@@ -1521,12 +1672,12 @@ const PieChartTools = ({ id }) => {
 					<InfoOutlined />
 				</List.ItemButton>
 				{pieSelection === "title" && (
-					<PieTitle id={id} path={"option"} />
+					<TitleTool id={id} path={"option"} />
 				)}
 			</StyledListItem>
 			<StyledListItem disablePadding>
 				<List.ItemButton
-					onClick={(e) =>
+					onClick={() =>
 						setPieSelection((prevList) =>
 							prevList === "valueLabel" ? "" : "valueLabel",
 						)
@@ -1556,83 +1707,73 @@ const PieChartTools = ({ id }) => {
 
 export const UpgradedVisualizationTool =
 	observer<UpgradedVisualizationToolProps>(({ id }) => {
-		const { data, setData } =
-			useBlockSettings<EchartVisualizationBlockDef>(id);
+		const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
-		const [generalSettings, setGeneralSettings] = useState({
-			showBlock: data.show,
-		});
-		const queriesList = getShowFieldOptions(id);
-		const [chartType, setChartType] = useState(data.variation);
 		return (
-			<>
-				<List style={{ width: "100%" }}>
-					{/* 
+			<List style={{ width: "100%" }}>
+				{/* 
                         Custom section to handle bar chart components for respective menu section 
                         BAR Chart Menu for tools start here
                         */}
-					<List.Item disablePadding style={{ display: "block" }}>
-						<List.ItemButton
-							onClick={(e) =>
-								setSelectedList((prevList) =>
-									prevList === "generalchartsettings"
-										? ""
-										: "generalchartsettings",
-								)
-							}
-							selected={selectedList === "generalchartsettings"}
-						>
-							<List.Icon>
-								<ImageIcon
-									fontSize="large"
-									color={
-										selectedList === "generalchartsettings"
-											? "primary"
-											: "disabled"
-									}
-								/>
-							</List.Icon>
-							<List.ItemText primary="Conditional" />
-							<InfoOutlined />
-						</List.ItemButton>
-						{selectedList === "generalchartsettings" && (
-							<StyledItem>
-								<SelectInputSettings
-									id={id}
-									path={"show"}
-									label={"Show Block"}
-									options={[...getShowFieldOptions(id)]}
-								/>
-							</StyledItem>
-						)}
-					</List.Item>
-					{data.variation === "echart-world-map-chart" && (
-						<>
-							<MapChartTools id={id} />
-						</>
+				<List.Item disablePadding style={{ display: "block" }}>
+					<List.ItemButton
+						onClick={() =>
+							setSelectedList((prevList) =>
+								prevList === "generalchartsettings"
+									? ""
+									: "generalchartsettings",
+							)
+						}
+						selected={selectedList === "generalchartsettings"}
+					>
+						<List.Icon>
+							<ImageIcon
+								fontSize="large"
+								color={
+									selectedList === "generalchartsettings"
+										? "primary"
+										: "disabled"
+								}
+							/>
+						</List.Icon>
+						<List.ItemText primary="Conditional" />
+						<InfoOutlined />
+					</List.ItemButton>
+					{selectedList === "generalchartsettings" && (
+						<StyledItem>
+							<SelectInputSettings
+								id={id}
+								path={"show"}
+								label={"Show Block"}
+								options={[...getShowFieldOptions(id)]}
+							/>
+						</StyledItem>
 					)}
-					{data.variation === "echart-pie-chart" && (
-						<PieChartTools id={id} />
-					)}
-					{data.variation === "echart-line-chart" && (
-						<LineChartTools id={id} />
-					)}
-					{data.variation === "echart-bar-chart" && (
-						<BarToolsList id={id} />
-					)}
-					{data.variation === "echart-scatter-plots" && (
-						<ScatterToolsList id={id} />
-					)}
-					{data.variation === "echart-stack-chart" && (
-						<StackChartTool id={id} />
-					)}
-					{data.variation === "echart-gantt-chart" && (
-						<GanttToolsList id={id} />
-					)}
-					{data.variation === "echart-dendrogram-chart" && (
-						<DendrogramToolsList id={id} />
-					)}
-				</List>
-			</>
+				</List.Item>
+				{data.variation === "echart-world-map-chart" && (
+					<MapChartTools id={id} />
+				)}
+				{data.variation === "echart-pie-chart" && (
+					<PieChartTools id={id} />
+				)}
+				{data.variation === "echart-line-chart" && (
+					<LineChartTools id={id} />
+				)}
+				{data.variation === "echart-bar-chart" && (
+					<BarToolsList id={id} />
+				)}
+				{data.variation === "echart-scatter-plots" && (
+					<ScatterToolsList id={id} />
+				)}
+				{data.variation === "echart-stack-chart" && (
+					<StackChartTool id={id} />
+				)}
+				{data.variation === "echart-gantt-chart" && (
+					<GanttToolsList id={id} />
+				)}
+				{data.variation === "echart-dendrogram-chart" && (
+					<DendrogramToolsList id={id} />
+				)}
+			</List>
 		);
 	});

@@ -9,7 +9,9 @@ import {
 	DeleteDiabetesRecordTemplate,
 	LandingPageTemplate,
 	MultiPageTemplate,
+	NLPToGridTemplate,
 	ReadDiabetesRecordTemplate,
+	RowToNotebookTemplate,
 	type Template,
 	UpdateDiabetesRecordTemplate,
 	VisualizeCSVTemplate,
@@ -17,9 +19,11 @@ import {
 
 const DEFAULT_TEMPLATE = [
 	LandingPageTemplate,
+	RowToNotebookTemplate,
 	AskLLMTemplate,
 	CustomFrameToVisualizationTemplate,
 	VisualizeCSVTemplate,
+	NLPToGridTemplate,
 	BlocksGuideTemplate,
 	MultiPageTemplate,
 	CreateDiabetesRecordTemplate,

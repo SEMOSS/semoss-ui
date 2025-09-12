@@ -196,7 +196,7 @@ export const TeamsSettingsPage = observer(() => {
 						variant="contained"
 						startIcon={<Add />}
 						onClick={() => setAddModal(true)}
-						data-testid={"teams-settings-add-btn"}
+						data-testid={"teamsSettings-add-btn"}
 					>
 						Add Team
 					</StyledAddButton>
@@ -213,7 +213,7 @@ export const TeamsSettingsPage = observer(() => {
 				>
 					<IconButton
 						onClick={handleMenuClick}
-						data-testid={"teams-settings-sort-btn"}
+						data-testid={"teamsSettings-sort-btn"}
 					>
 						<Typography
 							sx={{ color: "#212121", borderRadius: "0px" }}

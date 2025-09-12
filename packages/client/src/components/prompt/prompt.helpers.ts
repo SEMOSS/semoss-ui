@@ -180,7 +180,7 @@ export function getInputFormatPrompt(
 		prompt[prompt.length - 1] !== "!" &&
 		prompt[prompt.length - 1] !== "?"
 	) {
-		prompt = prompt + ".";
+		prompt = `${prompt}.`;
 	}
 
 	return prompt;
@@ -426,20 +426,14 @@ export async function setBlocksAndOpenUIBuilder(
 			[PROMPT_QUERY_DEFINITION_ID]: {
 				type: "query",
 				to: PROMPT_QUERY_DEFINITION_ID,
-				isOutput: true,
-				isInput: false,
 			},
 			[PROMPT_QUERY_ID]: {
 				type: "query",
 				to: PROMPT_QUERY_ID,
-				isOutput: true,
-				isInput: false,
 			},
 			[MODEL_ID]: {
 				type: "model",
 				value: builder.model.value,
-				isOutput: false,
-				isInput: true,
 			},
 		},
 		queries: {},
@@ -660,8 +654,6 @@ export async function setBlocksAndOpenUIBuilder(
 			state.variables[inputId] = {
 				type: "block",
 				to: inputId,
-				isInput: true,
-				isOutput: false,
 			};
 		}
 	}
