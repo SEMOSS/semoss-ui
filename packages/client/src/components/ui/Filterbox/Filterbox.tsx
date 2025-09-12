@@ -66,6 +66,8 @@ export interface FilterboxProps {
 	/** Filters to hold in state at parent */
 	onChange: (filters: unknown) => void;
 	filteredCatalogIds?: string[];
+	filterBoxRefresh?: boolean;
+	onfilterBoxRefreshCompleted?: () => void;
 }
 
 const initialState = {
@@ -87,7 +89,7 @@ const reducer = (state, action) => {
 };
 
 export const Filterbox = (props: FilterboxProps) => {
-	const { type, onChange, filteredCatalogIds } = props;
+	const { type, onChange, filteredCatalogIds = [], filterBoxRefresh = false, onfilterBoxRefreshCompleted = () => {} } = props;
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
@@ -170,7 +172,13 @@ export const Filterbox = (props: FilterboxProps) => {
 					)}${filteredCatalogIds.length > 0 ? `, engineIdList = ${JSON.stringify(filteredCatalogIds)}` : ""}) ;`
 			: "",
 	);
-
+	//Refresh the pixel call, if any tagrefresh is needed
+	useEffect(() => {
+		if (filterBoxRefresh && filteredCatalogIds.length === 0) {
+			getCatalogFilters.refresh();
+		}
+		onfilterBoxRefreshCompleted();
+	}, [filterBoxRefresh]);
 	// Apply the URL's query params to the filters' state on component mount.
 	useEffect(() => {
 		if (searchParams.size > 0) {
