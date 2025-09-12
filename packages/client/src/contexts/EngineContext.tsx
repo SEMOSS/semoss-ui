@@ -31,6 +31,11 @@ export type EngineContextType = {
 
 		/** refreshes metadata for the active engine */
 		refresh: () => void;
+
+		/** Additional metadata fields */
+        database_created_by?: string;
+        PERMISSIONGRANTEDBY?: string;
+        DATEADDED?: string;
 	};
 };
 
