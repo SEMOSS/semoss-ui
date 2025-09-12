@@ -290,11 +290,21 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const removeApp = (app) => {
 		const updatedApps = apps;
+		const updatedFavoritedApps = favoritedApps;
+		const favorite = isFavorited(app.project_id);
+		if(favorite){
+			for (let i = updatedFavoritedApps.length - 1; i >= 0; i--) {
+        if (updatedFavoritedApps[i].project_id === app.project_id) {
+            updatedFavoritedApps.splice(i, 1);
+		} 
 		for (let i = updatedApps.length - 1; i >= 0; i--) {
 			if (updatedApps[i].project_id === app.project_id) {
 				updatedApps.splice(i, 1);
 			}
-		}
+		
+	}
+    }
+}
 	};
 
 	// to limit the apps that are sent to filterbox for performance
@@ -440,6 +450,9 @@ export const AppCatalogPage = observer((): JSX.Element => {
 											)}
 											favorite={() => {
 												favoriteApp(app);
+											}}
+											onDelete={() => {
+												removeApp(app);
 											}}
 											isDiscoverable={mode !== "Mine"}
 											isLoading={true}
