@@ -481,6 +481,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			);
 			if (renderedEngineIds.length === 0)
 				renderedEngineIds = ["dummy-id"]; //dummy id to avoid empty array in query
+		} else {
+			renderedEngineIds = [];
 		}
 
 		return (

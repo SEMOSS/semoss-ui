@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
@@ -148,6 +148,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
+	const appCatalogPageStatus = useRef({ removalChanges: false, });
 
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -301,10 +302,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
 			if (updatedApps[i].project_id === app.project_id) {
 				updatedApps.splice(i, 1);
 			}
-		
-	}
-    }
-}
+		}
+		appCatalogPageStatus.current.removalChanges = true;
 	};
 
 	// to limit the apps that are sent to filterbox for performance
@@ -313,6 +312,8 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		renderedAppIds.push(...apps.map((app) => app.project_id));
 		renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
 		if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
+	}else{
+		renderedAppIds = [];
 	}
 
 	return (
@@ -375,6 +376,10 @@ export const AppCatalogPage = observer((): JSX.Element => {
 										setMetaFilters(filters);
 									}}
 									filteredCatalogIds={renderedAppIds}
+									filterBoxRefresh={appCatalogPageStatus.current.removalChanges}
+									onfilterBoxRefreshCompleted={() => {
+										appCatalogPageStatus.current.removalChanges = false;
+									}}
 								/>
 							</div>
 						)}
