@@ -364,15 +364,14 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 		if (!block) {
 			setSearch("");
 			setShowSearch(false);
-			setJsonValue("{}");
-		} else {
+		}
+		setShowJsonEditor(false);
+	}, [block]);  
+	useEffect(() => {
+		if (block) {
 			setJsonValue(JSON.stringify(block.data?.style ?? {}, null, 2));
 		}
-	}, [block]);
-
-	useEffect(() => {
-		setShowJsonEditor(false);
-	}, [block]);
+	}, [JSON.stringify(block?.data?.style ?? {})]);
 
 	const getBlockDisplay = () => {
 		if (block) {
@@ -597,26 +596,6 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 								aria-labelledby={`simple-tab-1`}
 								hidden={settingSection !== 1 ? true : false}
 							>
-								<Stack 
-									direction="row" 
-									alignItems="center" 
-									justifyContent="space-between" 
-									sx={{
-										mb: 2,
-										mt: 3,
-										pl: 1,
-										borderLeft: '3px solid #1260DD', 
-									}}
-								>
-                                    <Typography variant="subtitle1">Edit CSS</Typography>
-                                    <IconButton
-                                        size="small"
-                                        title="Edit CSS JSON"
-                                        onClick={() => setShowJsonEditor((v) => !v)}
-                                    >
-                                        <EditIcon fontSize="small" />
-                                    </IconButton>
-                                </Stack>
 								{!showJsonEditor ? (
                                     styleMenu.length ? (
                                         <SelectedMenuSection
@@ -628,13 +607,13 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
                                         />
                                     ) : null
                                 ) : (
-                                    <Stack spacing={2}>
+                                    <Stack spacing={2} sx={{ mt: 4 }}>
                                         <TextField
                                             multiline
                                             minRows={8}
                                             maxRows={20}
                                             fullWidth
-                                            label="Edit CSS"
+                                            label="Edit Custom CSS"
                                             value={jsonValue}
 											onChange={(e) => {
 												setJsonValue(e.target.value);
@@ -650,7 +629,7 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
 													});
 													
 												} catch (err) {
-													
+													// No notification 
 												}
 											}}
                                             onBlur={(e) => {
@@ -670,10 +649,28 @@ export const SelectedBlockPanel = observer((props: SelectedBlocksProps) => {
                                             variant="outlined"
                                             size="small"
                                         />
-                                        <Stack direction="row" spacing={1}>
-                                        </Stack>
                                     </Stack>
                                 )}
+								<Stack 
+									direction="row" 
+									alignItems="center" 
+									justifyContent="space-between" 
+									sx={{
+										mb: 2,
+										mt: 3,
+										pl: 1,
+										borderLeft: '3px solid #1260DD', 
+									}}
+								>
+                                    <Typography variant="subtitle1">Edit Custom CSS</Typography>
+                                    <IconButton
+                                        size="small"
+                                        title="Edit CSS JSON"
+                                        onClick={() => setShowJsonEditor((v) => !v)}
+                                    >
+                                        <EditIcon fontSize="small" />
+                                    </IconButton>
+                                </Stack>
 							</StyledCustomTabPanel>
 						)
 					}
