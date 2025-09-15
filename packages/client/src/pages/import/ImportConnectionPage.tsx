@@ -210,13 +210,13 @@ export const ImportConnectionPage = () => {
 					configStore.store.insightID,
 				);
 				pixel = `
-                    CreateFunctionEngine(function=["${
+                    CreateGoogleFuntionEngine(function=["${
 						values.name
 					}"],functionDetails=[${JSON.stringify(values.fields)}],
                     filePaths=["${upload[0].fileLocation}"]);`;
 			} else {
 				pixel = `
-                    CreateRestFunctionEngine(function=["${
+                    CreateFunctionEngine(function=["${
 						values.name
 					}"],functionDetails=[${JSON.stringify(values.fields)}]);`;
 			}
