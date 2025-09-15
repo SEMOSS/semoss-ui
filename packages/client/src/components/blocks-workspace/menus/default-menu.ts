@@ -1,6 +1,6 @@
+import * as BLOCK_IMAGES from "@/assets/blocks";
 import type { BlockJSON } from "@semoss/renderer";
 import { lightTheme } from "@semoss/ui";
-import * as BLOCK_IMAGES from "@/assets/blocks";
 import type { DesignerMenuItem } from "./menu-types";
 
 const SECTION_ELEMENT = "Element";
@@ -2159,6 +2159,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							},
 						},
 					},
+					grid: {},
 					tooltip: {
 						show: true,
 					},
@@ -2167,10 +2168,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						splitLine: {
 							show: false,
 						},
+						axisLabel: {},
 					},
 					yAxis: {
 						type: "category",
 						data: ["Task A", "Task B", "Task C"],
+						axisLabel: {},
 					},
 					series: [
 						{
