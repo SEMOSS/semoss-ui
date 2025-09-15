@@ -4,22 +4,22 @@ import {
 	CheckCircle,
 	ContentCopy,
 	Delete,
-	Error,
+	Error as ErrorIcon,
 	KeyboardArrowRight,
 	LibraryAdd,
-	LowPriority,
 	MoreVert,
 	Pending,
 	PlayArrowRounded,
 	PlayCircle,
+	SmartToy,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk";
 import {
 	ButtonGroup,
 	Card,
-	Chip,
 	CircularProgress,
 	Collapse,
 	type CustomShapeOptions,
@@ -67,7 +67,7 @@ const StyledStackTwo = styled(Stack)(({ theme }) => ({
 	},
 }));
 
-const StyledName = styled(Typography)(({ theme }) => ({}));
+const StyledName = styled(Typography)(() => ({}));
 
 const StyledCellActions = styled(Collapse)(({ theme }) => ({
 	position: "absolute",
@@ -92,11 +92,11 @@ const StyledCollapseStack = styled("div")(({ theme }) => ({
 	alignItems: "start",
 }));
 
-const StyledActionsCollapseStack = styled(StyledCollapseStack)(({ theme }) => ({
+const StyledActionsCollapseStack = styled(StyledCollapseStack)(() => ({
 	marginTop: "0px !important",
 }));
 
-const StyledRunIconButton = styled(IconButton)(({ theme }) => ({
+const StyledRunIconButton = styled(IconButton)(() => ({
 	padding: 0,
 	width: "35px",
 	display: "flex",
@@ -161,17 +161,13 @@ const StyledButtonGroup = styled(ButtonGroup)(({ theme }) => ({
 	border: `1px solid ${theme.palette.text.secondary}`,
 }));
 
-const StyledIdChip = styled(Chip)(({ theme }) => ({
-	height: theme.spacing(3.5),
-}));
-
 const StyledSidebar = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "row",
 	cursor: "pointer",
 	gap: theme.spacing(1),
 }));
-const StyledExpandContainer = styled("div")(({ theme }) => ({
+const StyledExpandContainer = styled("div")(() => ({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
@@ -188,6 +184,32 @@ const StyledExpandArrow = styled(KeyboardArrowRight, {
 const StyledAddCellContainer = styled(Stack)(({ theme }) => ({
 	marginLeft: `${theme.spacing(9)} !important`,
 	height: theme.spacing(5),
+}));
+
+const StyledPlayArrowRounded = styled(PlayArrowRounded)(() => ({
+	padding: "2px",
+}));
+
+const StyledArrowDownward = styled(ArrowDownward)(() => ({
+	marginTop: "10px",
+	marginLeft: "15px",
+	position: "absolute",
+	width: "10px",
+}));
+
+const StyledArrowUpward = styled(ArrowUpward)(() => ({
+	marginTop: "10px",
+	marginLeft: "15px",
+	position: "absolute",
+	width: "10px",
+}));
+
+const StyledContentCopy = styled(ContentCopy)(() => ({
+	padding: "2px",
+}));
+
+const StyledLibraryAdd = styled(LibraryAdd)(() => ({
+	padding: "2px",
 }));
 
 const StyledMenu = styled((props: MenuProps) => (
@@ -304,7 +326,7 @@ export const NotebookCell = observer(
 		]);
 
 		useEffect(() => {
-			if (cell.isExecuted == false) {
+			if (cell.isExecuted === false) {
 				setLocalCellPlayNumber(null);
 			} else {
 				const newPlayCount = cellPlayCounter + 1;
@@ -320,28 +342,13 @@ export const NotebookCell = observer(
 			}
 		}, [cellPlayCounter]);
 
-		const cellOrderNumber = useMemo(() => {
-			const nbCellList = state.queries[cell.query.id].cellList;
-
-			let matchIndex = 0;
-			nbCellList.forEach((c, i) => {
-				if (c.id === cell.id) matchIndex = i;
-			});
-
-			return matchIndex + 1;
-		}, [
-			cell.id,
-			cell.query.list.indexOf(cell.id),
-			cell.query.cellList.length,
-		]);
-
 		/**
 		 * Create a duplicate cell
 		 */
-		const duplicateCell = () => {
+		const duplicateCell = async () => {
 			try {
 				// copy and add the step to the end
-				const newCellId = state.dispatch({
+				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
 						queryId: queryId,
@@ -353,7 +360,7 @@ export const NotebookCell = observer(
 							},
 						},
 					},
-				}) as string;
+				})) as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -449,7 +456,7 @@ export const NotebookCell = observer(
 			} else if (cell.isSuccessful) {
 				return <CheckCircle color="success" />;
 			} else if (cell.isError) {
-				return <Error color="error" />;
+				return <ErrorIcon color="error" />;
 			} else {
 				return <Pending color="disabled" />;
 			}
@@ -460,7 +467,7 @@ export const NotebookCell = observer(
 				const currentCellIndex = query.list.indexOf(cell.id);
 				const allCells = query.list;
 
-				allCells.slice(currentCellIndex).forEach((currCellId, idx) => {
+				allCells.slice(currentCellIndex).forEach((currCellId) => {
 					state.dispatch({
 						message: ActionMessages.RUN_CELL,
 						payload: {
@@ -478,24 +485,106 @@ export const NotebookCell = observer(
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
 				const allCells = query.list;
-				allCells
-					.slice(0, currentCellIndex)
-					.forEach((currCellId, idx) => {
-						state.dispatch({
-							message: ActionMessages.RUN_CELL,
-							payload: {
-								queryId: cell.query.id,
-								cellId: currCellId,
-							},
-						});
+				allCells.slice(0, currentCellIndex).forEach((currCellId) => {
+					state.dispatch({
+						message: ActionMessages.RUN_CELL,
+						payload: {
+							queryId: cell.query.id,
+							cellId: currCellId,
+						},
 					});
+				});
 			} catch (e) {
 				console.error(e);
 			}
 		};
 
-		const generateWithAIHandler = () => {
-			console.log("generateWithAIHandler");
+		/**
+		 * @description
+		 * 1. make pixel call to generate python tool for cell
+		 * 2. Swap cell config in place for mcp config
+		 */
+		const makeCellMCP = async () => {
+			try {
+				workspace.setLoading(true);
+				// Make pixel call to generate MCP tool
+				const { errors, pixelReturn } = await runPixel(
+					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
+				);
+
+				// Handle pixel call errors
+				if (errors?.length) {
+					notification.add({
+						message: errors[0],
+						color: "error",
+					});
+					return;
+				}
+
+				// Validate pixel return
+				if (!pixelReturn?.[0]?.output) {
+					throw new Error("Invalid response from pixel call");
+				}
+
+				const output = pixelReturn[0].output as {
+					tools: {
+						name: string;
+						title: string;
+						description: string;
+						inputSchema: {
+							properties: {
+								[key: string]: {
+									title: string;
+									description: string;
+									type: string;
+								};
+							};
+							required: string[];
+							title: string;
+							type: string;
+						};
+					}[];
+				};
+
+				// Validate output structure
+				if (!output.tools?.[0]) {
+					throw new Error("No tools found in pixel response");
+				}
+
+				const tool = output.tools[0];
+				const toolName = tool.name;
+				const properties = tool.inputSchema?.properties || {};
+
+				// Build parameters object from schema properties
+				const params = Object.keys(properties).reduce((acc, key) => {
+					acc[key] = null;
+					return acc;
+				}, {});
+
+				// Dispatch action to update cell configuration
+				state.dispatch({
+					message: ActionMessages.MAKE_CELL_MCP,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						parameters: {
+							name: toolName,
+							projectId: workspace.appId,
+							originalParams: { ...cell.parameters },
+							params,
+						},
+					},
+				});
+				workspace.setLoading(false);
+			} catch (error) {
+				console.error("Error in makeCellMCP:", error);
+				workspace.setLoading(false);
+
+				notification.add({
+					message: error.message || "Failed to create MCP cell",
+					color: "error",
+				});
+			}
 		};
 
 		return (
@@ -520,8 +609,6 @@ export const NotebookCell = observer(
 				}}
 			>
 				<StyledRow direction="row" width="100%" spacing={1}>
-					{/* TODO: Alright so do we want to just automate cells as variables, if so no need for condition  */}
-
 					<StyledStackTwo
 						onClick={() => {
 							copyTextToClipboard(
@@ -539,6 +626,25 @@ export const NotebookCell = observer(
 						<Stack gap={1} direction={"row"} alignItems={"center"}>
 							<StyledButtonGroup variant="outlined">
 								<StyledButtonGroupButton
+									title="Make Available through MCP"
+									size="small"
+									disabled={
+										cell.isLoading ||
+										!workspace.agentModelEngine ||
+										cell.config.widget !== "code"
+									}
+									onClick={(e) => {
+										// stop propogation to card parent so newly created cell will be selected
+										e.stopPropagation();
+										// helper fn to make the cell mcp
+										makeCellMCP();
+									}}
+								>
+									<StyledButtonLabel>
+										<SmartToy />
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
+								<StyledButtonGroupButton
 									title="Run this cell and below"
 									size="small"
 									disabled={cell.isLoading}
@@ -549,22 +655,8 @@ export const NotebookCell = observer(
 									}}
 								>
 									<StyledButtonLabel>
-										<PlayArrowRounded
-											fontSize="medium"
-											sx={{
-												padding: "2px",
-											}}
-										/>
-										<ArrowDownward
-											fontSize="small"
-											// styles only applying correctly with sx could not use styled
-											sx={{
-												marginTop: "10px",
-												marginLeft: "15px",
-												position: "absolute",
-												width: "10px",
-											}}
-										/>
+										<StyledPlayArrowRounded fontSize="medium" />
+										<StyledArrowDownward fontSize="small" />
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 								<StyledButtonGroupButton
@@ -578,22 +670,8 @@ export const NotebookCell = observer(
 									}}
 								>
 									<StyledButtonLabel>
-										<PlayArrowRounded
-											fontSize="medium"
-											sx={{
-												padding: "2px",
-											}}
-										/>
-										<ArrowUpward
-											fontSize="small"
-											// styles only applying correctly with sx
-											sx={{
-												marginTop: "10px",
-												marginLeft: "15px",
-												position: "absolute",
-												width: "10px",
-											}}
-										/>
+										<StyledPlayArrowRounded fontSize="medium" />
+										<StyledArrowUpward fontSize="small" />
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 								<StyledButtonGroupButton
@@ -628,12 +706,7 @@ export const NotebookCell = observer(
 										}}
 									>
 										<StyledButtonLabel>
-											<ContentCopy
-												fontSize="small"
-												sx={{
-													padding: "2px",
-												}}
-											/>
+											<StyledContentCopy fontSize="small" />
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
 								) : (
@@ -648,18 +721,15 @@ export const NotebookCell = observer(
 										}}
 									>
 										<StyledButtonLabel>
-											<LibraryAdd
-												fontSize="medium"
-												sx={{
-													padding: "2px",
-												}}
-											/>
+											<StyledLibraryAdd fontSize="medium" />
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
 								)}
 								<StyledButtonGroupButton
 									title="Delete cell"
-									disabled={cell.isLoading}
+									disabled={
+										cell.isLoading || query.list.length <= 1
+									}
 									size="small"
 									onClick={(e) => {
 										e.stopPropagation();
@@ -684,11 +754,6 @@ export const NotebookCell = observer(
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 							</StyledButtonGroup>
-
-							{/**
-							 * more options menu
-							 * only showing one option currently with no attached function
-							 **/}
 							<StyledMenu
 								anchorEl={anchorEl}
 								open={open}
@@ -701,7 +766,6 @@ export const NotebookCell = observer(
 									value={"generate-with-ai"}
 									onClick={() => {
 										setAnchorEl(null);
-										generateWithAIHandler();
 									}}
 								>
 									Generate with AI
@@ -733,7 +797,7 @@ export const NotebookCell = observer(
 								</StyledExpandContainer>
 							</StyledCollapseStack>
 							{cell.isExecuted &&
-								cell.parameters.type != "markdown" && (
+								cell.parameters.type !== "markdown" && (
 									<StyledActionsCollapseStack
 										id={`notebook-cell-${queryId}-${cellId}-card-actions-collapse`}
 										ref={targetActionsCollapseRef}
@@ -756,7 +820,7 @@ export const NotebookCell = observer(
 					</StyledSidebar>
 					<StyledCard
 						isCardCellSelected={
-							(notebook?.selectedCell?.id ?? "") == cell.id
+							(notebook?.selectedCell?.id ?? "") === cell.id
 						}
 						onClick={() => {
 							notebook.selectCell(cell.query.id, cell.id);
@@ -796,14 +860,14 @@ export const NotebookCell = observer(
 							</StyledRunIconButton>
 							<StyledCardInput>{rendered}</StyledCardInput>
 						</StyledCardContent>
-						{cell.parameters.type != "markdown" && (
-							<>
+						{cell.parameters.type !== "markdown" && (
+							<div>
 								{cell.widget === "code" ? (
-									<>
+									<div>
 										{cell.messages.length > 0 && (
-											<>
+											<div>
 												{(notebook?.selectedCell?.id ??
-													"") == cell.id && (
+													"") === cell.id && (
 													<Divider />
 												)}
 												<StyledCardActions
@@ -823,7 +887,7 @@ export const NotebookCell = observer(
 															{getExecutionLabel()}
 														</Stack>
 														{outputExpanded && (
-															<>
+															<div>
 																<NotebookCellConsole
 																	messages={
 																		cell.messages
@@ -833,13 +897,10 @@ export const NotebookCell = observer(
 																	? cell.operation.map(
 																			(
 																				o,
-																				oIdx,
 																			) => {
 																				return (
 																					<Operation
-																						key={
-																							oIdx
-																						}
+																						key={`cell-operation--${cell.id}--${o}`}
 																						operation={
 																							o
 																						}
@@ -851,17 +912,17 @@ export const NotebookCell = observer(
 																			},
 																		)
 																	: null}
-															</>
+															</div>
 														)}
 													</Stack>
 												</StyledCardActions>
-											</>
+											</div>
 										)}
 										{cell.isExecuted &&
 											!cell.messages.length && (
-												<>
+												<div>
 													{(notebook?.selectedCell
-														?.id ?? "") ==
+														?.id ?? "") ===
 														cell.id && <Divider />}
 													<StyledCardActions
 														id={`notebook-cell-${queryId}-${cellId}-card-actions`}
@@ -890,13 +951,10 @@ export const NotebookCell = observer(
 																		? cell.operation.map(
 																				(
 																					o,
-																					oIdx,
 																				) => {
 																					return (
 																						<Operation
-																							key={
-																								oIdx
-																							}
+																							key={`cell-operation--${cell.id}--${o}`}
 																							operation={
 																								o
 																							}
@@ -912,15 +970,15 @@ export const NotebookCell = observer(
 															)}
 														</Stack>
 													</StyledCardActions>
-												</>
+												</div>
 											)}
-									</>
+									</div>
 								) : (
-									<>
+									<div>
 										{cell.isExecuted && (
-											<>
+											<div>
 												{(notebook?.selectedCell?.id ??
-													"") == cell.id && (
+													"") === cell.id && (
 													<Divider />
 												)}
 												<StyledCardActions
@@ -950,13 +1008,10 @@ export const NotebookCell = observer(
 																	? cell.operation.map(
 																			(
 																				o,
-																				oIdx,
 																			) => {
 																				return (
 																					<Operation
-																						key={
-																							oIdx
-																						}
+																						key={`cell-operation--${cell.id}--${o}`}
 																						operation={
 																							o
 																						}
@@ -972,11 +1027,11 @@ export const NotebookCell = observer(
 														)}
 													</Stack>
 												</StyledCardActions>
-											</>
+											</div>
 										)}
-									</>
+									</div>
 								)}
-							</>
+							</div>
 						)}
 					</StyledCard>
 				</StyledRow>

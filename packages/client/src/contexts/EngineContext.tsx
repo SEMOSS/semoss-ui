@@ -27,9 +27,15 @@ export type EngineContextType = {
 
 		/** metadata to show on detail pages */
 		metadata: Record<string, unknown>;
+		database_subtype?: string;
 
 		/** refreshes metadata for the active engine */
 		refresh: () => void;
+
+		/** Additional metadata fields */
+        database_created_by?: string;
+        PERMISSIONGRANTEDBY?: string;
+        DATEADDED?: string;
 	};
 };
 

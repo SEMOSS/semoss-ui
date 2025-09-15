@@ -26,10 +26,6 @@ const StyledNavbar = styled("div")(({ theme }) => ({
 	padding: theme.spacing(0, 4),
 }));
 
-const StyledLeft = styled(Stack)(({ theme }) => ({
-	minWidth: 0,
-}));
-
 const StyledTextField = styled(TextField)(() => ({
 	width: "100%",
 	display: "flex",
@@ -52,14 +48,14 @@ export const Navbar: React.FC = observer(() => {
 
 	return (
 		<StyledNavbar ref={(n) => page.setNavbarElement(n)}>
-			<StyledLeft
+			<Stack
 				id={"navbar--left"}
 				direction="row"
 				alignItems={"center"}
 				justifyContent={"flex-start"}
 				spacing={1}
 				flex={"1 1 0"}
-			></StyledLeft>
+			></Stack>
 			<Container maxWidth={false} sx={{ maxWidth: "720px" }}>
 				{page.navbar && page.navbar.search ? (
 					<Search

@@ -874,83 +874,57 @@ export const BlocksGuideTemplate: Template = {
 		},
 		variables: {
 			date: {
-				isInput: true,
-				isOutput: false,
 				type: "date",
 				value: "2024-12-31",
 			},
 			string: {
-				isInput: true,
-				isOutput: false,
 				type: "string",
 				value: "This is a string variable",
 			},
 			query: {
-				isInput: false,
-				isOutput: true,
 				to: "python_code",
 				type: "query",
 			},
 			new_var: {
-				isInput: true,
-				isOutput: false,
 				type: "model",
 				value: "e338934d-bef1-4920-9136-dc0e37060dfa",
 			},
 			cell: {
-				isInput: false,
-				isOutput: true,
 				to: "python_code",
 				type: "cell",
 				cellId: "74965",
 			},
 			LLM: {
-				isInput: true,
-				isOutput: false,
 				type: "model",
 				value: "001510f8-b86e-492e-a7f0-41299775e7d9",
 			},
 			number: {
-				isInput: true,
-				isOutput: false,
 				type: "number",
 				value: 10,
 			},
 			array: {
-				isInput: true,
-				isOutput: false,
 				type: "array",
 				value: [1, 2, 3],
 			},
 			json: {
-				isInput: true,
-				isOutput: false,
 				type: "JSON",
 				value: {
 					a: "this is a label for a",
 				},
 			},
 			block: {
-				isInput: true,
-				isOutput: false,
 				to: "input--2178",
 				type: "block",
 			},
 			Vector: {
-				isInput: true,
-				isOutput: false,
 				type: "vector",
 				value: "aa72a4be-cb7a-4f7e-b384-7be5c3c081f5",
 			},
 			DB: {
-				isInput: true,
-				isOutput: false,
 				type: "database",
 				value: "61b2d7c0-5dd4-4ea9-bc6e-9f39f2ae8d7a",
 			},
 			py_code: {
-				isInput: false,
-				isOutput: true,
 				to: "py-code",
 				type: "query",
 			},

@@ -29,8 +29,8 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
 	/** Slots */
 	slots: Block<D>["slots"];
 
-    /** Insight id */
-    insightId: string;
+	/** Insight id */
+	insightId: string;
 
 	/** Attributes to add to the block */
 	attrs: {
@@ -43,7 +43,7 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
 	 * @param path - path of the data to set
 	 * @param value - value of the data to set
 	 */
-	setData: <P extends Paths<Block<D>["data"], 4>>(
+	setData: <P extends Paths<Block<D>["data"]>>(
 		path: P,
 		value: PathValue<D["data"], P>,
 		tempOverrideMode?: boolean,
@@ -53,7 +53,7 @@ interface useBlockReturn<D extends BlockDef = BlockDef> {
 	 * Dispatch a message to delete data
 	 * @param path - path of the data to delete
 	 */
-	deleteData: <P extends Paths<Block<D>["data"], 4>>(path: P) => void;
+	deleteData: <P extends Paths<Block<D>["data"]>>(path: P) => void;
 
 	/**
 	 * Upload a file to the insight
@@ -91,7 +91,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 	 * @param value - value of the data to set
 	 */
 	const setData = useCallback(
-		<P extends Paths<Block<D>["data"], 4>>(
+		<P extends Paths<Block<D>["data"]>>(
 			path: P | null,
 			value: PathValue<Block<D>["data"], P>,
 			// TODO: will remove this; needed to update LLM blocks for now.
@@ -119,7 +119,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 	 * @param path - path of the data to delete
 	 */
 	const deleteData = useCallback(
-		<P extends Paths<Block<D>["data"], 4>>(path: P | null): void => {
+		<P extends Paths<Block<D>["data"]>>(path: P | null): void => {
 			// ignore if static
 			if (state.mode === "static") {
 				return;
@@ -193,7 +193,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 				if (action === null) {
 					return;
 				}
-				await state.dispatchEventAction(action, actions.type);
+				await state.dispatch(action, actions.type);
 			}
 		};
 
@@ -230,7 +230,7 @@ export const useBlock = <D extends BlockDef = BlockDef>(
 		data: data,
 		listeners: listeners,
 		slots: block.slots,
-        insightId: state.insightId,
+		insightId: state.insightId,
 		attrs: {
 			"data-block": block.id,
 		},
