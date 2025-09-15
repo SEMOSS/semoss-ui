@@ -1280,9 +1280,14 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 					xAxis: {
 						type: "category",
 						data: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+						nameLocation: "middle", 
+    					nameGap: 25,
 					},
 					yAxis: {
 						type: "value",
+						nameLocation: "middle", 
+    					nameGap: 25,
+						axisLabel:{}
 					},
 					color: [
 						"#5470c6",
