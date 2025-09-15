@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { debounced } from "@semoss/sdk/react";
 import {
@@ -70,6 +70,12 @@ const initialState = {
 };
 const SKELETON_CARD_COUNT = 6;
 
+const skeletonKeys = Array.from(
+  { length: SKELETON_CARD_COUNT },
+  (_, i) => `skeleton-key-${i}`
+);
+
+
 const reducer = (state, action) => {
   switch (action.type) {
     case "field": {
@@ -133,6 +139,7 @@ const TERMINAL_APP: AppMetadata = {
   tag: [],
   description: "Execute commands and see a response",
 };
+
 
 /**
  * App page
@@ -243,37 +250,36 @@ export const AppCatalogPage = observer((): JSX.Element => {
    * @desc action to favorite app
    * @param app
    */
-  const favoriteApp = (app) => {
-    const favorite = !isFavorited(app.project_id);
-    monolithStore
-      .setProjectFavorite(app.project_id, favorite)
-      .then(() => {
-        if (!favorite) {
-          const newFavorites = favoritedApps;
-          for (let i = newFavorites.length - 1; i >= 0; i--) {
-            if (newFavorites[i].project_id === app.project_id) {
-              newFavorites.splice(i, 1);
-            }
+const favoriteApp = (app) => {
+  const favorite = !isFavorited(app.project_id);
+  monolithStore
+    .setProjectFavorite(app.project_id, favorite)
+    .then(() => {
+      if (!favorite) {
+        // Create a new array before modifying
+        const newFavorites = [...favoritedApps];
+        for (let i = newFavorites.length - 1; i >= 0; i--) {
+          if (newFavorites[i].project_id === app.project_id) {
+            newFavorites.splice(i, 1);
           }
-
-          dispatch({
-            type: "field",
-            field: "favoritedApps",
-            value: newFavorites,
-          });
-        } else {
-          dispatch({
-            type: "field",
-            field: "favoritedApps",
-            value: [...favoritedApps, app],
-          });
         }
-      })
-      .catch((err) => {
-        // throw error if promise doesn't fulfill
-        throw Error(err);
-      });
-  };
+        dispatch({
+          type: "field",
+          field: "favoritedApps",
+          value: newFavorites,
+        });
+      } else {
+        dispatch({
+          type: "field",
+          field: "favoritedApps",
+          value: [...favoritedApps, app],
+        });
+      }
+    })
+    .catch((err) => {
+      throw Error(err);
+    });
+};
 
   /**
    * @name isFavorited
@@ -309,14 +315,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
     });
   };
 
-  const skeletonKeys = useMemo(
-    () =>
-      Array.from(
-        { length: SKELETON_CARD_COUNT },
-        (_, i) => `skeleton-key-${i}`
-      ),
-    [SKELETON_CARD_COUNT]
-  );
   return (
     <>
       <NavbarLeft>
