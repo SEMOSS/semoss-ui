@@ -587,7 +587,7 @@ export const DataTabStyling = observer(
 												id={refId}
 											>
 												<span>
-												{aggregatedColumnName(column).length > 20 ? (
+													{aggregatedColumnName(column).length > 20 ? (
                                                         <Tooltip title={aggregatedColumnName(column)}>
                                                             <span style={{ cursor: "pointer" }}>
                                                                 {aggregatedColumnName(column).slice(0, 12) + "..."}
