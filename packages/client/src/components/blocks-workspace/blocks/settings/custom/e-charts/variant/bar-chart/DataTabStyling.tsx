@@ -20,6 +20,7 @@ import {
 	Switch,
 	styled,
 	TextField,
+	Tooltip,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { VisualMap } from "../../VisualMap";
@@ -577,10 +578,7 @@ export const DataTabStyling = observer(
 													textAlign: "left",
 													paddingLeft: "16px",
 													paddingTop: "8px",
-													fontSize:
-														aggregatedColumnName(column).length > 20
-															? "0.68rem"
-															: "1rem",
+													fontSize: "1rem",
 													display: "flex",
 													justifyContent:
 														"space-between",
@@ -589,9 +587,15 @@ export const DataTabStyling = observer(
 												id={refId}
 											>
 												<span>
-													{aggregatedColumnName(
-														column,
-													)}
+												{aggregatedColumnName(column).length > 20 ? (
+                                                        <Tooltip title={aggregatedColumnName(column)}>
+                                                            <span style={{ cursor: "pointer" }}>
+                                                                {aggregatedColumnName(column).slice(0, 12) + "..."}
+                                                            </span>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        aggregatedColumnName(column)
+                                                    )}
 												</span>
 												<div>
 													{item.aggregate && (
@@ -619,10 +623,6 @@ export const DataTabStyling = observer(
 														style={{
 															cursor: "pointer",
 															color: "#888",
-															fontSize:
-																aggregatedColumnName(column).length > 20
-																	? "0.7rem"
-																	: "1.5rem",
 														}}
 														onClick={() => {
 															// Remove the column from dragdropColumns
