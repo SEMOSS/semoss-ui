@@ -1410,20 +1410,6 @@ export class StateStore {
 		// generate the block
 		const block = this.generateBlock(json, isCommunity, {});
 
-		// If the block is an input type, create a variable for it
-		// TODO: the input types should be defined by the block definition
-		//       and not hardcoded here
-		//       This will be fixed when we have a block registry
-		const inputTypes = ["input", "audio-input", "select", "upload", "checkbox", "toggle-button", "radio", "slider", "ratings", "switch", "timepicker"];
-		if (inputTypes.includes(block.widget)) {
-			if (!this._store.variables[block.id]) {
-				this._store.variables[block.id] = {
-					type: "block",
-					to: block.id,
-					value: block.data.value !== undefined ? block.data.value : null,
-				};
-			}
-		}
 
 		// try to place it if position
 		if (!position) {
