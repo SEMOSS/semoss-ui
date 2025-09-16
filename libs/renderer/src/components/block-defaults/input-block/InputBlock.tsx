@@ -3,8 +3,7 @@ import { observer } from "mobx-react-lite";
 import { type CSSProperties, useEffect } from "react";
 import { debounced } from "@semoss/sdk/react";
 import { CircularProgress, InputAdornment } from "@semoss/ui";
-import { useBlock, useBlocks } from "../../../hooks";
-import { ActionMessages } from "../../../store";
+import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 const StyledTextField = styled(TextField)({
@@ -46,25 +45,10 @@ export interface InputBlockDef extends BlockDef<"input"> {
 
 export const InputBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
-	const { state } = useBlocks();
 
 		useEffect(() => {
 			if (listeners.preProcess) {
 				listeners.preProcess();
-			}
-
-			if (data && data.label && state) {
-				const variableName = `${id}`;
-				state.dispatch({
-					message: ActionMessages.ADD_VARIABLE,
-					payload: {
-						id: variableName,
-						to: id,
-						type: "block",
-						cellId: undefined,
-						value: String(data.value),
-					},
-				});
 			}
 		}, []);
 
