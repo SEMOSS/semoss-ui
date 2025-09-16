@@ -48,15 +48,15 @@ export const VisualMapConstant = {
 			option: {
 				xAxis: {
 					type: "category",
-					data: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
-					nameLocation: "middle", 
-    				nameGap: 25, 
+					data: [],
+					nameLocation: "middle",
+					nameGap: 25,
 				},
 				yAxis: {
 					type: "value",
 					nameLocation: "middle",
 					nameGap: 25,
-					axisLabel:{}
+					axisLabel: {},
 				},
 				color: [
 					"#5470c6",
@@ -72,17 +72,7 @@ export const VisualMapConstant = {
 				series: [
 					{
 						name: "Category",
-						data: [
-							{
-								value: 120,
-							},
-							200,
-							150,
-							80,
-							70,
-							110,
-							130,
-						],
+						data: [],
 						type: "bar",
 						labelLine: {
 							show: true,
@@ -205,7 +195,7 @@ export const VisualMapConstant = {
 					nameTextStyle: {
 						fontSize: 10,
 					},
-					data: ["A", "B", "C", "D", "E"],
+					data: [],
 					show: true,
 				},
 				axisTick: {
@@ -213,7 +203,7 @@ export const VisualMapConstant = {
 				},
 				yAxis: {
 					type: "value",
-					name: "b",
+					name: "",
 					nameLocation: "middle",
 					nameGap: 40,
 					axisLabel: {
@@ -248,9 +238,9 @@ export const VisualMapConstant = {
 				],
 				series: [
 					{
-						name: "a",
+						name: "",
 						type: "line",
-						data: [28, 30, 22, 35, 30],
+						data: [],
 						lineStyle: {
 							type: "solid",
 							width: 1,
@@ -489,7 +479,6 @@ export const VisualMapConstant = {
 						{ name: "b", value: 79 },
 					],
 				},
-				// color: ['#40A0FF','#9A74B6','#FBB83A','#F18630','#51ACA8','#187687','#CD5498','#364A90'],
 				color: [
 					"#ff6f61",
 					"#6b5b95",
@@ -541,13 +530,7 @@ export const VisualMapConstant = {
 						labelLine: {
 							length: 30,
 						},
-						data: [
-							{ value: 1048, name: "Search Engine" },
-							{ value: 735, name: "Direct" },
-							{ value: 580, name: "Email" },
-							{ value: 484, name: "Union Ads" },
-							{ value: 300, name: "Video Ads" },
-						],
+						data: [],
 						emphasis: {
 							itemStyle: {
 								shadowBlur: 10,
@@ -1265,50 +1248,13 @@ export const VisualMapConstant = {
 				},
 				yAxis: {
 					type: "category",
-					data: ["Task A", "Task B", "Task C"],
+					data: [],
 				},
 				series: [
 					{
 						type: "custom",
 
-						data: [
-							{
-								task: "Task A",
-								start: "2024-02-01",
-								end: "2024-02-05",
-								resource: "A",
-							},
-							{
-								task: "Task B",
-								start: "2024-02-03",
-								end: "2024-02-08",
-								resource: "B",
-							},
-							{
-								task: "Task C",
-								start: "2024-02-06",
-								end: "2024-02-12",
-								resource: "C",
-							},
-							{
-								task: "Task D",
-								start: "2024-02-02",
-								end: "2024-02-11",
-								resource: "B",
-							},
-							{
-								task: "Task E",
-								start: "2024-02-03",
-								end: "2024-02-10",
-								resource: "A",
-							},
-							{
-								task: "Task F",
-								start: "2024-02-07",
-								end: "2024-02-11",
-								resource: "C",
-							},
-						],
+						data: [],
 					},
 				],
 				customSettings: {
