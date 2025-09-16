@@ -1,10 +1,9 @@
+import { useDesigner, useRootStore } from "@/hooks";
 import {
 	DeleteOutline,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";
-import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
 	Box,
@@ -18,7 +17,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useDesigner, useRootStore } from "@/hooks";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useState } from "react";
 import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
@@ -138,7 +138,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	/**
 	 * Handle the mouseup event on the document
 	 */
-	const handleDocumentMouseUp = useCallback(() => {
+	const handleDocumentMouseUp = useCallback(async () => {
 		if (!designer.drag.active) {
 			return;
 		}
@@ -229,7 +229,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							return;
 						}
 					}
-					id = state.dispatch({
+					id = await state.dispatch({
 						message: ActionMessages.ADD_BLOCK,
 						payload: {
 							json: item.json,
@@ -244,7 +244,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 					}) as string;
 				}
 			} else if (placeholderAction.type === "replace") {
-				id = state.dispatch({
+				id = await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: item.json,

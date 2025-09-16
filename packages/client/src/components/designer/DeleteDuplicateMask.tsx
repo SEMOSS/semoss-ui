@@ -1,3 +1,5 @@
+import { useDesigner, useRootStore } from "@/hooks";
+import { getBlockElement, getRelativeSize } from "@/stores";
 import {
 	Add,
 	AddBox,
@@ -9,9 +11,6 @@ import {
 	SwapHoriz,
 	TextFields,
 } from "@mui/icons-material";
-import { toJS } from "mobx";
-import { observer } from "mobx-react-lite";
-import { useLayoutEffect, useState } from "react";
 import {
 	ActionMessages,
 	type BlockJSON,
@@ -25,8 +24,9 @@ import {
 	Tooltip,
 	useNotification,
 } from "@semoss/ui";
-import { useDesigner, useRootStore } from "@/hooks";
-import { getBlockElement, getRelativeSize } from "@/stores";
+import { toJS } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useLayoutEffect, useState } from "react";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { AddClientBlockModal } from "./AddClientBlockModal";
 import { QuickMenu } from "./QuickMenu";
@@ -203,6 +203,31 @@ export const DeleteDuplicateMask = observer(
 			designer.setSelected("");
 		};
 
+		const addVariable = (id: string) => {
+			const block = state.getBlock(id as string);
+			if (block.slots) {
+				if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+					state.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: id as string,
+							type: "block",
+							to: id as string,
+						},
+					});
+				}
+				Object.keys(block.slots).forEach((slot) => {
+					const children = block.slots[slot].children;
+					if (children?.length) {
+						children.forEach((childId) => {
+							//   const childBlock = state.getBlock(childId);
+							addVariable(childId);
+						});
+					}
+				});
+			}
+		};
+
 		/**
 		 * Delete the block
 		 */
@@ -299,6 +324,8 @@ export const DeleteDuplicateMask = observer(
 						to: id as string,
 					},
 				});
+			} else {
+				addVariable(id as string);
 			}
 
 			designer.setSelected(id ? (id as string) : "");
