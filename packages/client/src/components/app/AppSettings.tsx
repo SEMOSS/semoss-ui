@@ -507,7 +507,7 @@ export const AppSettings = (props: AppSettingsProps) => {
 
 			// unzip the file in the new app
 			await unzipFilePixel(
-				`${path}${upload[0].fileName}}`,
+				`${path}${upload[0].fileName}`,
 				id,
 				configStore.store.insightID,
 			);

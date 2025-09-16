@@ -8,15 +8,8 @@ import {
 	Stack,
 	Typography,
 } from "@semoss/ui";
-import EngineIdsModal from "@/components/app/save-app/EngineIdsModal";
 import { useRootStore } from "@/hooks";
-import {
-	extractAndSetDependenciesPixel,
-	unzipFilePixel,
-} from "@/pixel/projects";
-import { useEngineDependenciesState } from "@/utility/engineDependencies";
-
-type ExtractOutput = { engineIds: Record<string, unknown> };
+import { unzipFilePixel } from "@/pixel/projects";
 
 interface AddFileOverlayProps {
 	/** Type of file opened */
@@ -40,20 +33,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [uploadFile, setUploadFiles] = useState<File>(null);
 	const [unzipFile, setUnzipFile] = useState<boolean>(false);
-	const [showEngineIdsModal, setShowEngineIdsModal] = useState(false);
-	const [pendingUploadPath, setPendingUploadPath] = useState<string | null>(
-		null,
-	);
-	const { engineDependenciesState, updateEngineDependencies } =
-		useEngineDependenciesState();
-
-	const handleEngineIdsModalClose = () => {
-		setShowEngineIdsModal(false);
-		if (pendingUploadPath) {
-			onClose(true, pendingUploadPath);
-			setPendingUploadPath(null);
-		}
-	};
 
 	/**
 	 * Add the file to the app
@@ -87,19 +66,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 						space,
 						configStore.store.insightID,
 					);
-					const extractResult =
-						await extractAndSetDependenciesPixel(space);
-					const extractOutput: ExtractOutput =
-						extractResult.output &&
-						typeof extractResult.output === "object" &&
-						"engineIds" in extractResult.output
-							? (extractResult.output as ExtractOutput)
-							: { engineIds: {} };
-					// Process engine dependencies using utility function
-					updateEngineDependencies(extractOutput.engineIds);
-					setPendingUploadPath(path);
-					setShowEngineIdsModal(true);
-					return;
 				} else {
 					throw new Error("TODO");
 				}
@@ -159,15 +125,6 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 				</Button>
 			</Modal.Actions>
 			{isLoading && <LinearProgress />}
-			<EngineIdsModal
-				open={showEngineIdsModal}
-				successIds={engineDependenciesState.successfulEngineIds}
-				failedIds={engineDependenciesState.failedEngineIds}
-				onClose={handleEngineIdsModalClose}
-				appId={space}
-				isUploadProjectApp={false}
-				engineInfo={engineDependenciesState.engineDetails}
-			/>
 		</>
 	);
 };
