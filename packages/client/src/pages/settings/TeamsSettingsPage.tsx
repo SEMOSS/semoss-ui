@@ -170,6 +170,9 @@ export const TeamsSettingsPage = observer(() => {
 		return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
 	};
 
+	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
+	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
+
 	return (
 		<StyledContainer>
 			<StyledSearchbarContainer>
@@ -282,20 +285,11 @@ export const TeamsSettingsPage = observer(() => {
 								description={team.description}
 								dispatch={dispatch}
 								teams={teams}
-								onClick={() => {
+								onClick={() =>
 									navigate(
-										team.id
-											.toLowerCase()
-											.replace(/['"]+/g, "")
-											.replace(/\s/g, "-"),
-										{
-											state: {
-												name: team.id,
-												type: team.type,
-											},
-										},
-									);
-								}}
+										`${teamSlug(team.type)}/${teamSlug(team.id)}`,
+									)
+								}
 							/>
 						</Grid>
 					))}
