@@ -355,25 +355,42 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
      * @param n - The notification record.
      * @returns The URL to take the user to when the notification is clicked, or null.
      */
-    const getHrefFromNotification = (n: NotificationRecord): string | null => {
-      if (
-        n.notification_type !== "USER_REQUEST" ||
-        !n.notification_source ||
-        !n.project_id
-      ) {
-        return null;
-      }
-      if (n.user_name === loggedInUser) return null;
-      const appPath = `/${n.notification_source}/${n.project_id}?tab=accesscontrol`;
-      const currentUrl = window.location.href;
-      const hashNeedle = "#";
-      const idx = currentUrl.indexOf(hashNeedle);
-      if (idx !== -1) {
-        const base = currentUrl.substring(0, idx + hashNeedle.length);
-        return `${base}${appPath}`;
-      }
-      return appPath;
-    };
+   const getHrefFromNotification = (n: NotificationRecord): string | null => {
+     if (
+       n.notification_type !== "USER_REQUEST" ||
+       !n.notification_source ||
+       !n.catalog_id
+     ) {
+       return null;
+     }
+     if (n.user_name === loggedInUser) return null;
+
+     let appPath: string;
+     switch (n.notification_source) {
+       case "app":
+         appPath = `/${n.notification_source}/${n.catalog_id}?tab=accesscontrol`;
+         break;
+       case "model":
+       case "database":
+       case "function":
+       case "storage":
+       case "vector":
+         appPath = `/engine/${n.notification_source}/${n.catalog_id}/access-control`;
+         break;
+       default:
+         return null; // unsupported source
+     }
+
+     const currentUrl = window.location.href;
+     const idx = currentUrl.indexOf("#");
+     if (idx !== -1) {
+       const base = currentUrl.substring(0, idx + 1);
+       return `${base}${appPath}`;
+     }
+
+     return appPath;
+   };
+
 
     const onLinkClick = () => {
       // page.setFromNotification(true);

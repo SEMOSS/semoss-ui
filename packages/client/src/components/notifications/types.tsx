@@ -15,12 +15,12 @@ export interface NotificationRecord {
   notification_isread?: boolean;
   notification_priority?: "High" | "Medium" | "Low" | string;
   notification_type?: NotificationType | string;
-  project_name?: string;
+  catalog_name?: string;
   notification_createdby?: string | null;
   notification_createdat?: string;
   notification_source?: string;
   user_name?: string;
   user_existingrole?: Role | null;
   user_newrole?: Role;
-  project_id?: string;
+  catalog_id?: string;
 }

@@ -45,7 +45,7 @@ export const getNotificationMessage = (
   const newPermission = (
     <Bold>{capitalizeFirst(determineUserPermission(n.user_newrole))}</Bold>
   );
-  const app = <Bold>{n.project_name}</Bold>;
+  const app = <Bold>{n.catalog_name}</Bold>;
   const by = n.notification_createdby ? (
     <Bold>{n.notification_createdby}</Bold>
   ) : null;
@@ -112,7 +112,7 @@ export const getNotificationMessage = (
       } else if (isAuthor) {
         return (
           <>
-            {member} <Message>has been added as</Message> {newPermission}{" "}
+            {user} <Message>has been added as</Message> {newPermission}{" "}
             <Message>to</Message> {app} <Message>by</Message> you
             <FullStop />
           </>
