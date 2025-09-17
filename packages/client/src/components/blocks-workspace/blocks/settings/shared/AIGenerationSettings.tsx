@@ -70,6 +70,7 @@ const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
 const StyledFileDropzone = styled(FileDropzone)(() => ({
 	padding: "0 10px 0 10px",
 }));
+///TODO: Check parent component if vega, then show the upload frame section
 export const AIGenerationSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
@@ -98,7 +99,7 @@ export const AIGenerationSettings = observer(
 			{ app_id: string; app_name: string }[]
 		>([]);
 		const [frames2, setFrames2] = useState<string[]>([]);
-
+		const [selectedFrame, setSelectedFrame] = useState<string>("");
 		useEffect(() => {
 			modelIdRef.current = modelId;
 		}, [modelId]);
@@ -223,8 +224,22 @@ export const AIGenerationSettings = observer(
 				);
 				console.log("uploadedFile:", uploadedFile[0].fileLocation);
 				const pixel = `FileRead ( filePath = ["${uploadedFile[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "${uploadedFile[0].fileName}" ] ) ] );`;
-				await runPixel(pixel, configStore.store.insightID);
-
+				const response = await runPixel(
+					pixel,
+					configStore.store.insightID,
+				);
+				console.log("Response from runQuery:", response);
+				const { output } = response.pixelReturn[0];
+				console.log("Output from runQuery:", output);
+				// const pixel2 = `FrameHeaders ( frame = "${output["name"]}");`;
+				const pixel2 = `Frame( frame = "${output["name"]}") | QueryAll() | Limit (20) | CollectAll() ;`;
+				const response2 = await runPixel(
+					pixel2,
+					configStore.store.insightID,
+				);
+				console.log("Response from FrameHeaders:", response2);
+				// Refresh frames list using getFrames
+				// const frames = await getFrames2();
 				// Refresh frames list using getFrames2
 				await getFrames2();
 			} catch (e) {
@@ -335,6 +350,22 @@ export const AIGenerationSettings = observer(
 				setResponseLoading(false);
 			}
 		};
+		// const collectFrameData = usePixel<any>(
+		// 	`Frame( frame = "${selectedFrame}") | QueryAll() | Limit (20) | CollectAll() ;`,
+		// 	{ data: null },
+		// );
+		const collectFrameData = async () => {
+			if (!selectedFrame) {
+				return null;
+			}
+			const response = await runPixel(
+				`Frame( frame = "${selectedFrame}") | QueryAll() | Limit (20) | CollectAll() ;`,
+				configStore.store.insightID,
+			);
+			console.log("Response from CollectAll:", response);
+			const frameData = response.pixelReturn[0]?.output ?? null;
+			return frameData;
+		};
 		return (
 			<form onSubmit={handleSubmit(generateAIResponse)}>
 				<Stack spacing={1} width="100%">
@@ -393,6 +424,11 @@ export const AIGenerationSettings = observer(
 								size="small"
 							/>
 						)}
+						onChange={(_, newValue) => {
+							setSelectedFrame(newValue);
+							collectFrameData();
+						}}
+						value={selectedFrame}
 					/>
 					<Controller
 						name="prompt"
