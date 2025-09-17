@@ -46,11 +46,11 @@ export interface InputBlockDef extends BlockDef<"input"> {
 export const InputBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData, listeners } = useBlock<InputBlockDef>(id);
 
-		useEffect(() => {
-			if (listeners.preProcess) {
-				listeners.preProcess();
-			}
-		}, []);
+	useEffect(() => {
+		if (listeners.preProcess) {
+			listeners.preProcess();
+		}
+	}, []);
 
 	const debouncedCallback = debounced(() => {
 		listeners.onChange();
