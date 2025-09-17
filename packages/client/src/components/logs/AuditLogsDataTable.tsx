@@ -979,7 +979,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell align="center">
-										{event.status === "Success" ? (
+										{event.status ? (
 											<CheckCircleIcon color="success" />
 										) : (
 											<Cancel color="error" />

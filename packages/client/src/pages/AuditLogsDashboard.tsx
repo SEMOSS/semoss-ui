@@ -43,7 +43,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			const response = await monolithStore.runQuery(
 				`AuditLog(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}"}]);`,
 			);
-			setLogs(JSON.parse(response.pixelReturn[0].output) as EventData[]);
+			setLogs(response.pixelReturn[0].output as EventData[] || []);
 		} catch (error) {
 			console.error("Error fetching logs:", error);
 		} finally {
