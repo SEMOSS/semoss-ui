@@ -154,7 +154,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								Latency
 							</SummaryLabel>
 							<SummaryValue variant="body2">
-								{logDetails.latency}ms
+								{logDetails.latency}s
 							</SummaryValue>
 						</SummaryItem>
 						<SummaryItem>
@@ -187,7 +187,7 @@ export const AuditLogsDetailDrawer = (props) => {
 										gap: 1,
 									}}
 								>
-									{logDetails.status === "Success" ? (
+									{logDetails.status ? (
 										<CheckCircleIcon color="success" />
 									) : (
 										<Cancel color="error" />
