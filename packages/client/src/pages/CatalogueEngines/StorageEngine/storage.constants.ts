@@ -883,9 +883,9 @@ export const STORAGE_CONNECTION = {
 						label: "Zip File",
 						defaultValue: null,
 						options: {
-							component: "file-upload",
+							component: "zip-upload",
 						},
-						disabled: true,
+						disabled: false,
 						rules: { required: true },
 					},
 				],

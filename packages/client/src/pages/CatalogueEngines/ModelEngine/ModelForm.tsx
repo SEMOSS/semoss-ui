@@ -121,7 +121,6 @@ export const ModelForm = ({ id, title, description, fields }) => {
   }, []);
 
   const onFormSubmit = async (formData) => {
-    console.log("formData", formData);
     setIsLoading(true);
     try {
       
@@ -177,7 +176,7 @@ export const ModelForm = ({ id, title, description, fields }) => {
 
       const vectorFormValues = {
         type: "MODEL",
-        name: formData.CATALOG_NAME,
+        name: formData.NAME,
         fields: connectionDetails,
         secondaryFields: secondaryFieldValues,
       };

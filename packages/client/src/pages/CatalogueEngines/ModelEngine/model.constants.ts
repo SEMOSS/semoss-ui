@@ -24,53 +24,267 @@ export const MODEL_CONNECTION = {
 			{
 				OpenAI: [
 					{
-						name: "GPT-3.5 (LLM)",
+						name: "GPT-3.5",
 						disable: false,
 						icon: OPEN_AI,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
-								options: { component: "text-field" },
+								options: {
+									component: "text-field",
+								},
 								disabled: false,
-								rules: { required: true },
+								rules: {
+									required: true,
+									pattern: {
+										value: /^[\w\-\s]+$/,
+										message:
+											"Catalog names can only contain alphanumeric characters and dashes.",
+									},
+									custom: {
+										value: 'CheckEngineName ( "[VALUE]") ;',
+										message:
+											"This Catalog name has already been used, please try another.",
+									},
+								},
 							},
 							{
 								fieldName: "MODEL_TYPE",
-								label: "Model Type",
+								label: "Type",
 								defaultValue: "OPEN_AI",
-								options: { component: "hidden" },
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "Open AI",
+											value: "OPEN_AI",
+										},
+									],
+								},
 								disabled: false,
 								rules: { required: true },
 							},
 							{
-								fieldName: "API_KEY",
-								label: "API Key",
+								fieldName: "OPEN_AI_KEY",
+								label: "Open AI Key",
 								defaultValue: "",
-								options: { component: "password" },
+								options: {
+									component: "password",
+								},
 								disabled: false,
 								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
 							},
 							{
 								fieldName: "MODEL",
-								label: "Model Name",
+								label: "Model",
 								defaultValue: "gpt-3.5-turbo",
-								options: { component: "text-field" },
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "gpt-3.5-turbo",
+											value: "gpt-3.5-turbo",
+										},
+										{
+											display: "gpt-4-32k",
+											value: "gpt-4-32k",
+										},
+									],
+								},
+								disabled: true,
+								hidden: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								advanced: true,
+								rules: { required: true },
+							},
+                            {
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+                                advanced: true,							
+								rules: { required: true },                                
+							},
+							{
+								fieldName: "CHAT_TYPE",
+								label: "Chat Type",
+								defaultValue: "chat-completion",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "chat-completion",
+											value: "chat-completion",
+										},
+										{
+											display: "completion",
+											value: "completion",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},							
+							{
+								fieldName: "KEEP_CONVERSATION_HISTORY",
+								label: "Keep Conversation History",
+								defaultValue: "false",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "KEEP_INPUT_OUTPUT",
+								label: "Record Questions and Responses",
+								defaultValue: "false",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+							},
+							{
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+							},
+						],
+					},
+					{
+						name: "GPT-4",
+						disable: false,
+						icon: OPEN_AI,
+						fields: [
+							{
+								fieldName: "NAME",
+								label: "Catalog Name",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: {
+									required: true,
+									pattern: {
+										value: /^[\w\-\s]+$/,
+										message:
+											"Catalog names can only contain alphanumeric characters and dashes.",
+									},
+									custom: {
+										value: 'CheckEngineName ( "[VALUE]") ;',
+										message:
+											"This Catalog name has already been used, please try another.",
+									},
+								},
+							},
+							{
+								fieldName: "MODEL_TYPE",
+								label: "Type",
+								defaultValue: "OPEN_AI",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "Open AI",
+											value: "OPEN_AI",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "OPEN_AI_KEY",
+								label: "Open AI Key",
+								defaultValue: "",
+								options: {
+									component: "password",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MODEL",
+								label: "Model",
+								defaultValue: "gpt-4-32k",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "gpt-4-32k",
+											value: "gpt-4-32k",
+										},
+									],
+								},
+								disabled: true,
+								hidden: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
 								disabled: false,
 								rules: { required: true },
 							},
 							{
 								fieldName: "CHAT_TYPE",
-								label: "Completion Type",
+								label: "Chat Type",
 								defaultValue: "chat-completion",
 								options: {
 									component: "select",
@@ -89,26 +303,15 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Completion Tokens",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
 								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
+									component: "text-field",
 								},
 								disabled: false,
-								rules: { required: false },
+								rules: { required: true },
 							},
 							{
 								fieldName: "KEEP_CONVERSATION_HISTORY",
@@ -117,170 +320,277 @@ export const MODEL_CONNECTION = {
 								options: {
 									component: "select",
 									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
 									],
 								},
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: false },
-							},
-						],
-					},
-					{
-						name: "GPT-3.5 (Embedding)",
-						disable: false,
-						icon: OPEN_AI,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "OPEN_AI",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "API_KEY",
-								label: "API Key",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,    
-								rules: { required: false },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "",
-								options: { component: "text-field" },
 								disabled: false,
 								rules: { required: true },
 							},
 							{
 								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Text to Embed",
+								label: "Record Questions and Responses",
 								defaultValue: "false",
 								options: {
 									component: "select",
 									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
 									],
 								},
 								disabled: false,
-								rules: { required: false },
+								rules: { required: true },
 							},
-                            {
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
+							{
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
+							},
+							{
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+							},
+						],
+					},
+					{
+						name: "Text-Davinci",
+						disable: false,
+						icon: OPEN_AI,
+						fields: [
+							{
+								fieldName: "NAME",
+								label: "Catalog Name",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: {
+									required: true,
+									pattern: {
+										value: /^[\w\-\s]+$/,
+										message:
+											"Catalog names can only contain alphanumeric characters and dashes.",
+									},
+									custom: {
+										value: 'CheckEngineName ( "[VALUE]") ;',
+										message:
+											"This Catalog name has already been used, please try another.",
+									},
+								},
+							},
+							{
+								fieldName: "MODEL_TYPE",
+								label: "Type",
+								defaultValue: "OPEN_AI",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "Open AI",
+											value: "OPEN_AI",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "OPEN_AI_KEY",
+								label: "Open AI Key",
+								defaultValue: "",
+								options: {
+									component: "password",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MODEL",
+								label: "Model",
+								defaultValue: "text-davinci",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "text-davinci",
+											value: "text-davinci",
+										},
+									],
+								},
+								disabled: true,
+								hidden: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 								rules: { required: true },
 							},
 							{
 								fieldName: "INIT_MODEL_ENGINE",
 								label: "Init Script",
 								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
+									"from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "KEEP_INPUT_OUTPUT",
+								label: "Record Questions and Responses",
+								defaultValue: "false",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
 								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+							},
+							{
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 							},
 						],
 					},
 					{
-						name: "GPT-4 (LLM)",
+						name: "DALL E",
 						disable: false,
 						icon: OPEN_AI,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
-								options: { component: "text-field" },
+								options: {
+									component: "text-field",
+								},
 								disabled: false,
-								rules: { required: true },
+								rules: {
+									required: true,
+									pattern: {
+										value: /^[\w\-\s]+$/,
+										message:
+											"Catalog names can only contain alphanumeric characters and dashes.",
+									},
+									custom: {
+										value: 'CheckEngineName ( "[VALUE]") ;',
+										message:
+											"This Catalog name has already been used, please try another.",
+									},
+								},
 							},
 							{
 								fieldName: "MODEL_TYPE",
-								label: "Model Type",
+								label: "Type",
 								defaultValue: "OPEN_AI",
-								options: { component: "hidden" },
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "Open AI",
+											value: "OPEN_AI",
+										},
+									],
+								},
 								disabled: false,
 								rules: { required: true },
 							},
 							{
-								fieldName: "API_KEY",
-								label: "API Key",
+								fieldName: "OPEN_AI_KEY",
+								label: "Open AI Key",
 								defaultValue: "",
-								options: { component: "password" },
+								options: {
+									component: "password",
+								},
 								disabled: false,
 								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
 							},
 							{
 								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "gpt-3.5-turbo",
-								options: { component: "text-field" },
+								label: "Model",
+								defaultValue: "dall e",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "dall e",
+											value: "dall e",
+										},
+									],
+								},
+								disabled: true,
+								hidden: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
 								disabled: false,
 								rules: { required: true },
 							},
 							{
 								fieldName: "CHAT_TYPE",
-								label: "Completion Type",
+								label: "Chat Type",
 								defaultValue: "chat-completion",
 								options: {
 									component: "select",
@@ -299,26 +609,14 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Completion Tokens",
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
 								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
 								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
+									component: "text-field",
 								},
 								disabled: false,
-								rules: { required: false },
+								rules: { required: true },
 							},
 							{
 								fieldName: "KEEP_CONVERSATION_HISTORY",
@@ -327,194 +625,18 @@ export const MODEL_CONNECTION = {
 								options: {
 									component: "select",
 									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: false },
-							},
-						],
-					},
-					{
-						name: "GPT-4 (Embedding)",
-						disable: false,
-						icon: OPEN_AI,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "OPEN_AI",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "API_KEY",
-								label: "API Key",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "text-embedding-ada-002",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Text to Embed",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-                            {
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: false },
-							},
-						],
-					},
-					{
-						name: "Text-Davinci (LLM)",
-						disable: false,
-						icon: OPEN_AI,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "OPEN_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "API_KEY",
-								label: "API Key",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "gpt-3.5-turbo",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "CHAT_TYPE",
-								label: "Completion Type",
-								defaultValue: "chat-completion",
-								options: {
-									component: "select",
-									options: [
 										{
-											display: "chat-completion",
-											value: "chat-completion",
+											display: "true",
+											value: "true",
 										},
 										{
-											display: "completion",
-											value: "completion",
+											display: "false",
+											value: "false",
 										},
 									],
 								},
 								disabled: false,
 								rules: { required: true },
-							},
-							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Completion Tokens",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
 							},
 							{
 								fieldName: "KEEP_INPUT_OUTPUT",
@@ -523,195 +645,13 @@ export const MODEL_CONNECTION = {
 								options: {
 									component: "select",
 									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "KEEP_CONVERSATION_HISTORY",
-								label: "Keep Conversation History",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: false },
-							},
-						],
-					},
-					{
-						name: "Text-Davinci (Embedding)",
-						disable: false,
-						icon: OPEN_AI,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "OPEN_AI",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "API_KEY",
-								label: "API Key",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "text-embedding-ada-002",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Text to Embed",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-                            {
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: false },
-							},
-						],
-					},
-					{
-						name: "DALL E (LLM)",
-						disable: false,
-						icon: OPEN_AI,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "OPEN_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "API_KEY",
-								label: "API Key",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "gpt-3.5-turbo",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "CHAT_TYPE",
-								label: "Completion Type",
-								defaultValue: "chat-completion",
-								options: {
-									component: "select",
-									options: [
 										{
-											display: "chat-completion",
-											value: "chat-completion",
+											display: "true",
+											value: "true",
 										},
 										{
-											display: "completion",
-											value: "completion",
+											display: "false",
+											value: "false",
 										},
 									],
 								},
@@ -720,146 +660,23 @@ export const MODEL_CONNECTION = {
 							},
 							{
 								fieldName: "MAX_TOKENS",
-								label: "Max Completion Tokens",
+								label: "Max Tokens",
+								rules: { required: false },
 								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "KEEP_CONVERSATION_HISTORY",
-								label: "Keep Conversation History",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
 							},
 							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: false },
-							},
-						],
-					},
-					{
-						name: "DALL E (Embedding)",
-						disable: false,
-						icon: OPEN_AI,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "OPEN_AI",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "API_KEY",
-								label: "API Key",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "text-embedding-ada-002",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Text to Embed",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{ display: "true", value: "true" },
-										{ display: "false", value: "false" },
-									],
-								},
-								disabled: false,
-								rules: { required: false },
-							},
-                            {
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: false },
 							},
 						],
 					},
@@ -871,7 +688,7 @@ export const MODEL_CONNECTION = {
 						icon: AZURE_OPEN_AI,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
 								options: {
@@ -919,8 +736,8 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
+								fieldName: "MODEL",
+								label: "Deployment Name",
 								defaultValue: "",
 								options: {
 									component: "text-field",
@@ -929,25 +746,19 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MODEL_TYPE",
-								label: "Type",
-								defaultValue: "OPEN_AI",
+								fieldName: "ENDPOINT",
+								label: "Azure Endpoint",
+								defaultValue: "",
 								options: {
-									component: "select",
-									options: [
-										{
-											display: "Open AI",
-											value: "OPEN_AI",
-										},
-									],
+									component: "text-field",
 								},
 								disabled: false,
 								rules: { required: true },
 							},
 							{
-								fieldName: "DEPLOYMENT_NAME",
-								label: "Deployment Name",
-								defaultValue: "",
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
 								options: {
 									component: "text-field",
 								},
@@ -975,24 +786,15 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Tokens",
-								rules: { required: false },
-								defaultValue: "",
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.AzureOpenAiClient(api_key = '${OPEN_AI_KEY}', endpoint = '${ENDPOINT}', model_name = '${MODEL}', chat_type = '${CHAT_TYPE}')",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-							},
-							{
-								fieldName: "MAX_INPUT_TOKENS",
-								label: "Max Input Tokens",
-								rules: { required: false },
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
+								rules: { required: true },
 							},
 							{
 								fieldName: "KEEP_CONVERSATION_HISTORY",
@@ -1015,27 +817,44 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
+								fieldName: "KEEP_INPUT_OUTPUT",
+								label: "Record Questions and Responses",
+								defaultValue: "false",
 								options: {
-									component: "text-field",
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
 								},
 								disabled: false,
-								advanced: true,
 								rules: { required: true },
 							},
 							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
+							},
+							{
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 							},
 						],
 					},
@@ -1045,7 +864,7 @@ export const MODEL_CONNECTION = {
 						icon: AZURE_OPEN_AI,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
 								options: {
@@ -1067,6 +886,16 @@ export const MODEL_CONNECTION = {
 								},
 							},
 							{
+								fieldName: "TAG",
+								label: "Tag",
+								defaultValue: "embeddings",
+								options: {
+									component: "text-field",
+								},
+								disabled: true,
+								rules: { required: true },
+							},
+							{
 								fieldName: "MODEL_TYPE",
 								label: "Type",
 								defaultValue: "OPEN_AI",
@@ -1076,6 +905,22 @@ export const MODEL_CONNECTION = {
 										{
 											display: "Open AI",
 											value: "OPEN_AI",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MODEL",
+								label: "Model",
+								defaultValue: "text-embedding-ada-002",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "text-embedding-ada-002",
+											value: "text-embedding-ada-002",
 										},
 									],
 								},
@@ -1103,15 +948,87 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MODEL",
-								label: "Model",
-								defaultValue: "text-embedding-ada-002",
+								fieldName: "API_VERSION",
+								label: "API version",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"from genai_client import AzureOpenAiEmbedder;${VAR_NAME} = AzureOpenAiEmbedder(model_name = '${MODEL}', endpoint = '${ENDPOINT}', api_key = '${OPEN_AI_KEY}', api_version = '${API_VERSION}')",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: true },
+								defaultValue: "4000",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+							},
+						],
+					},
+				],
+				"AWS Bedrock": [
+					{
+						name: "Claude",
+						disable: false,
+						icon: CLAUDE,
+						fields: [
+							{
+								fieldName: "NAME",
+								label: "Catalog Name",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: {
+									required: "This field is required",
+									pattern: {
+										value: /^[\w\-\s]+$/,
+										message:
+											"Catalog names can only contain alphanumeric characters and dashes.",
+									},
+									custom: {
+										value: 'CheckEngineName ( "[VALUE]") ;',
+										message:
+											"This Catalog name has already been used, please try another.",
+									},
+								},
+							},
+							{
+								fieldName: "MODEL_TYPE",
+								label: "Type",
+								defaultValue: "BEDROCK",
 								options: {
 									component: "select",
 									options: [
 										{
-											display: "text-embedding-ada-002",
-											value: "text-embedding-ada-002",
+											display: "Bedrock",
+											value: "BEDROCK",
 										},
 									],
 								},
@@ -1119,14 +1036,135 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "DEPLOYMENT_NAME",
-								label: "Deployment Name",
+								fieldName: "MODEL",
+								label: "Model",
 								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
 								rules: { required: true },
+							},
+							{
+								fieldName: "AWS_REGION",
+								label: "Aws Region",
+								defaultValue: "us-east-1",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "AWS_ACCESS_KEY",
+								label: "Aws Access Key",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "AWS_SECRET_KEY",
+								label: "Aws Secret Key",
+								defaultValue: "",
+								options: {
+									component: "password",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "CHAT_TYPE",
+								label: "Chat Type",
+								defaultValue: "chat-completion",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "chat-completion",
+											value: "chat-completion",
+										},
+										{
+											display: "completion",
+											value: "completion",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "KEEP_CONVERSATION_HISTORY",
+								label: "Keep Conversation History",
+								defaultValue: "false",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "KEEP_INPUT_OUTPUT",
+								label: "Record Questions and Responses",
+								defaultValue: "false",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 							},
 							{
 								fieldName: "MAX_INPUT_TOKENS",
@@ -1138,40 +1176,17 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: false,
 							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
 						],
 					},
 				],
-				"AWS Bedrock": [
+				"Google GCP": [
 					{
-						name: "Claude (LLM)",
+						name: "Palm Bison",
 						disable: false,
-						icon: CLAUDE,
+						icon: VERTEX,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
 								options: {
@@ -1179,7 +1194,7 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: false,
 								rules: {
-									required: "This field is required",
+									required: true,
 									pattern: {
 										value: /^[\w\-\s]+$/,
 										message:
@@ -1195,53 +1210,43 @@ export const MODEL_CONNECTION = {
 							{
 								fieldName: "MODEL_TYPE",
 								label: "Type",
-								defaultValue: "BEDROCK",
+								defaultValue: "VERTEX",
 								options: {
 									component: "select",
 									options: [
 										{
-											display: "Bedrock",
-											value: "BEDROCK",
+											display: "Vertex",
+											value: "VERTEX",
 										},
 									],
 								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "AWS_ACCESS_KEY",
-								label: "Aws Access Key",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "AWS_SECRET_KEY",
-								label: "Aws Secret Key",
-								defaultValue: "",
-								options: {
-									component: "password",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "AWS_REGION",
-								label: "Aws Region",
-								defaultValue: "us-east-1",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
+								disabled: true,
 								rules: { required: true },
 							},
 							{
 								fieldName: "MODEL",
 								label: "Model",
+								defaultValue: "text-bison",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "GCP_REGION",
+								label: "GCP Region",
 								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
 								options: {
 									component: "text-field",
 								},
@@ -1251,17 +1256,29 @@ export const MODEL_CONNECTION = {
 							{
 								fieldName: "CHAT_TYPE",
 								label: "Chat Type",
-								defaultValue: "chat-completion",
+								defaultValue: "text",
 								options: {
 									component: "select",
 									options: [
 										{
-											display: "chat-completion",
-											value: "chat-completion",
+											display: "chat",
+											value: "chat",
 										},
 										{
-											display: "completion",
-											value: "completion",
+											display: "code",
+											value: "code",
+										},
+										{
+											display: "codechat",
+											value: "codechat",
+										},
+										{
+											display: "generative",
+											value: "generative",
+										},
+										{
+											display: "text",
+											value: "text",
 										},
 									],
 								},
@@ -1269,31 +1286,12 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Tokens",
-								rules: { required: false },
-								defaultValue: "",
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
 								options: {
 									component: "text-field",
-								},
-								disabled: false,
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
 								},
 								disabled: false,
 								rules: { required: true },
@@ -1319,37 +1317,54 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
+								fieldName: "KEEP_INPUT_OUTPUT",
+								label: "Record Questions and Responses",
+								defaultValue: "false",
 								options: {
-									component: "text-field",
+									component: "select",
+									options: [
+										{
+											display: "true",
+											value: "true",
+										},
+										{
+											display: "false",
+											value: "false",
+										},
+									],
 								},
 								disabled: false,
 								rules: { required: true },
-								advanced: true,
 							},
 							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
+							},
+							{
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 							},
 						],
 					},
 					{
-						name: "Claude (Embedding)",
+						name: "Palm Chat Bison",
 						disable: false,
-						icon: CLAUDE,
+						icon: VERTEX,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
 								options: {
@@ -1357,7 +1372,7 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: false,
 								rules: {
-									required: "This field is required",
+									required: true,
 									pattern: {
 										value: /^[\w\-\s]+$/,
 										message:
@@ -1373,53 +1388,23 @@ export const MODEL_CONNECTION = {
 							{
 								fieldName: "MODEL_TYPE",
 								label: "Type",
-								defaultValue: "BEDROCK",
+								defaultValue: "VERTEX",
 								options: {
 									component: "select",
 									options: [
 										{
-											display: "Bedrock",
-											value: "BEDROCK",
+											display: "Vertex",
+											value: "VERTEX",
 										},
 									],
 								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "AWS_ACCESS_KEY",
-								label: "Aws Access Key",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "AWS_SECRET_KEY",
-								label: "Aws Secret Key",
-								defaultValue: "",
-								options: {
-									component: "password",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "AWS_REGION",
-								label: "Aws Region",
-								defaultValue: "us-east-1",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
+								disabled: true,
 								rules: { required: true },
 							},
 							{
 								fieldName: "MODEL",
 								label: "Model",
-								defaultValue: "",
+								defaultValue: "text-bison",
 								options: {
 									component: "text-field",
 								},
@@ -1427,21 +1412,11 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
+								fieldName: "GCP_REGION",
+								label: "GCP Region",
+								defaultValue: "",
 								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
+									component: "text-field",
 								},
 								disabled: false,
 								rules: { required: true },
@@ -1449,117 +1424,52 @@ export const MODEL_CONNECTION = {
 							{
 								fieldName: "VAR_NAME",
 								label: "Variable Name",
-								defaultValue: "model_Var",
+								defaultValue: "modelVar",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
 								rules: { required: true },
-								advanced: true,
+							},
+							{
+								fieldName: "CHAT_TYPE",
+								label: "Chat Type",
+								defaultValue: "text",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "chat",
+											value: "chat",
+										},
+										{
+											display: "code",
+											value: "code",
+										},
+										{
+											display: "codechat",
+											value: "codechat",
+										},
+										{
+											display: "generative",
+											value: "generative",
+										},
+										{
+											display: "text",
+											value: "text",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
 							},
 							{
 								fieldName: "INIT_MODEL_ENGINE",
 								label: "Init Script",
 								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
+									"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
 								options: {
 									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-				],
-				"Google GCP": [
-					{
-						name: "Palm Bison (LLM)",
-						disable: false,
-						icon: VERTEX,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "GOOGLE_VERTEX_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "PROJECT_ID",
-								label: "Project ID",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "GCP_REGION",
-								label: "GCP Region",
-								defaultValue: "us-central1",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "SERVICE_ACCOUNT_JSON",
-								label: "Service Account JSON",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "text-bison@001",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "CONTEXT_WINDOW",
-								label: "Context Window",
-								defaultValue: "",
-								options: { component: "number" },
-								disabled: false,
-								rules: { required: false },
-							},
-							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Tokens",
-								rules: { required: false },
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
 								},
 								disabled: false,
 								rules: { required: true },
@@ -1585,84 +1495,6 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "Palm Bison (Embedding)",
-						disable: false,
-						icon: VERTEX,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "GOOGLE_VERTEX_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "PROJECT_ID",
-								label: "Project ID",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "GCP_REGION",
-								label: "GCP Region",
-								defaultValue: "us-central1",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "SERVICE_ACCOUNT_JSON",
-								label: "Service Account JSON",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "embedding-gecko@001",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
 								fieldName: "KEEP_INPUT_OUTPUT",
 								label: "Record Questions and Responses",
 								defaultValue: "false",
@@ -1681,92 +1513,6 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: false,
 								rules: { required: true },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "Palm Chat Bison (LLM)",
-						disable: false,
-						icon: VERTEX,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "GOOGLE_VERTEX_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "PROJECT_ID",
-								label: "Project ID",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "GCP_REGION",
-								label: "GCP Region",
-								defaultValue: "us-central1",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "SERVICE_ACCOUNT_JSON",
-								label: "Service Account JSON",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "text-bison@001",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "CONTEXT_WINDOW",
-								label: "Context Window",
-								defaultValue: "",
-								options: { component: "number" },
-								disabled: false,
-								rules: { required: false },
 							},
 							{
 								fieldName: "MAX_TOKENS",
@@ -1779,21 +1525,129 @@ export const MODEL_CONNECTION = {
 								disabled: false,
 							},
 							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+							},
+						],
+					},
+					{
+						name: "Palm Code Bison",
+						disable: false,
+						icon: VERTEX,
+						fields: [
+							{
+								fieldName: "NAME",
+								label: "Catalog Name",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: {
+									required: true,
+									pattern: {
+										value: /^[\w\-\s]+$/,
+										message:
+											"Catalog names can only contain alphanumeric characters and dashes.",
+									},
+									custom: {
+										value: 'CheckEngineName ( "[VALUE]") ;',
+										message:
+											"This Catalog name has already been used, please try another.",
+									},
+								},
+							},
+							{
+								fieldName: "MODEL_TYPE",
+								label: "Type",
+								defaultValue: "VERTEX",
 								options: {
 									component: "select",
 									options: [
 										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
+											display: "Vertex",
+											value: "VERTEX",
 										},
 									],
+								},
+								disabled: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "MODEL",
+								label: "Model",
+								defaultValue: "text-bison",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "GCP_REGION",
+								label: "GCP Region",
+								defaultValue: "",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "CHAT_TYPE",
+								label: "Chat Type",
+								defaultValue: "text",
+								options: {
+									component: "select",
+									options: [
+										{
+											display: "chat",
+											value: "chat",
+										},
+										{
+											display: "code",
+											value: "code",
+										},
+										{
+											display: "codechat",
+											value: "codechat",
+										},
+										{
+											display: "generative",
+											value: "generative",
+										},
+										{
+											display: "text",
+											value: "text",
+										},
+									],
+								},
+								disabled: false,
+								rules: { required: true },
+							},
+							{
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.VertexClient(model_name = '${MODEL}', service_account_key_file = '${SERVICE_ACCOUNT_FILE}', region='${GCP_REGION}', chat_type='${CHAT_TYPE}')",
+								options: {
+									component: "text-field",
 								},
 								disabled: false,
 								rules: { required: true },
@@ -1819,84 +1673,6 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "Palm Chat Bison (Embedding)",
-						disable: false,
-						icon: VERTEX,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "GOOGLE_VERTEX_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "PROJECT_ID",
-								label: "Project ID",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "GCP_REGION",
-								label: "GCP Region",
-								defaultValue: "us-central1",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "SERVICE_ACCOUNT_JSON",
-								label: "Service Account JSON",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "embedding-gecko@001",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
 								fieldName: "KEEP_INPUT_OUTPUT",
 								label: "Record Questions and Responses",
 								defaultValue: "false",
@@ -1915,92 +1691,6 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: false,
 								rules: { required: true },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "Palm Code Bison (LLM)",
-						disable: false,
-						icon: VERTEX,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "GOOGLE_VERTEX_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "PROJECT_ID",
-								label: "Project ID",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "GCP_REGION",
-								label: "GCP Region",
-								defaultValue: "us-central1",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "SERVICE_ACCOUNT_JSON",
-								label: "Service Account JSON",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "text-bison@001",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "CONTEXT_WINDOW",
-								label: "Context Window",
-								defaultValue: "",
-								options: { component: "number" },
-								disabled: false,
-								rules: { required: false },
 							},
 							{
 								fieldName: "MAX_TOKENS",
@@ -2013,177 +1703,26 @@ export const MODEL_CONNECTION = {
 								disabled: false,
 							},
 							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "KEEP_CONVERSATION_HISTORY",
-								label: "Keep Conversation History",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "Palm Code Bison (Embedding)",
-						disable: false,
-						icon: VERTEX,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
 								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Model Type",
-								defaultValue: "GOOGLE_VERTEX_AI",
-								options: { component: "hidden" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "PROJECT_ID",
-								label: "Project ID",
-								defaultValue: "",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-                            {
-								fieldName: "GCP_REGION",
-								label: "GCP Region",
-								defaultValue: "us-central1",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "SERVICE_ACCOUNT_JSON",
-								label: "Service Account JSON",
-								defaultValue: "",
-								options: { component: "password" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model Name",
-								defaultValue: "embedding-gecko@001",
-								options: { component: "text-field" },
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
 							},
 						],
 					},
 				],
 				"NVIDIA NIM Models": [
 					{
-						name: "embed-qa-4 (LLm)",
+						name: "embed-qa-4",
 						disable: false,
 						icon: NEMO,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
 								options: {
@@ -2231,16 +1770,6 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
 								fieldName: "MODEL",
 								label: "Model",
 								defaultValue:
@@ -2257,6 +1786,16 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: true,
 								hidden: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 								rules: { required: true },
 							},
 							{
@@ -2280,31 +1819,12 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Tokens",
-								rules: { required: false },
-								defaultValue: "",
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
 								options: {
 									component: "text-field",
-								},
-								disabled: false,
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
 								},
 								disabled: false,
 								rules: { required: true },
@@ -2330,113 +1850,6 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "embed-qa-4 (Embedding)",
-						disable: false,
-						icon: NEMO,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: {
-									required: true,
-									pattern: {
-										value: /^[\w\-\s]+$/,
-										message:
-											"Catalog names can only contain alphanumeric characters and dashes.",
-									},
-									custom: {
-										value: 'CheckEngineName ( "[VALUE]") ;',
-										message:
-											"This Catalog name has already been used, please try another.",
-									},
-								},
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Type",
-								defaultValue: "OPEN_AI",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "Open AI",
-											value: "OPEN_AI",
-										},
-									],
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "OPEN_AI_KEY",
-								label: "Open AI Key",
-								defaultValue: "",
-								options: {
-									component: "password",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model",
-								defaultValue:
-									"mistralai/mixtral-8x7b-instruct-v0.1",
-								options: {
-									component: "select",
-									options: [
-										{
-											display:
-												"mistralai/mixtral-8x7b-instruct-v0.1",
-											value: "mistralai/mixtral-8x7b-instruct-v0.1",
-										},
-									],
-								},
-								disabled: true,
-								hidden: true,
-								rules: { required: true },
-							},
-							{
 								fieldName: "KEEP_INPUT_OUTPUT",
 								label: "Record Questions and Responses",
 								defaultValue: "false",
@@ -2457,37 +1870,34 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
 							},
 							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
 							},
 						],
 					},
 					{
-						name: "rerank-qa-mistral-4b (LLm)",
+						name: "rerank-qa-mistral-4b",
 						disable: false,
 						icon: NEMO,
 						fields: [
 							{
-								fieldName: "CATALOG_NAME",
+								fieldName: "NAME",
 								label: "Catalog Name",
 								defaultValue: "",
 								options: {
@@ -2535,16 +1945,6 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
 								fieldName: "MODEL",
 								label: "Model",
 								defaultValue:
@@ -2561,6 +1961,16 @@ export const MODEL_CONNECTION = {
 								},
 								disabled: true,
 								hidden: true,
+								rules: { required: true },
+							},
+							{
+								fieldName: "VAR_NAME",
+								label: "Variable Name",
+								defaultValue: "modelVar",
+								options: {
+									component: "text-field",
+								},
+								disabled: false,
 								rules: { required: true },
 							},
 							{
@@ -2584,31 +1994,12 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "MAX_TOKENS",
-								label: "Max Tokens",
-								rules: { required: false },
-								defaultValue: "",
+								fieldName: "INIT_MODEL_ENGINE",
+								label: "Init Script",
+								defaultValue:
+									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
 								options: {
 									component: "text-field",
-								},
-								disabled: false,
-							},
-							{
-								fieldName: "KEEP_INPUT_OUTPUT",
-								label: "Record Questions and Responses",
-								defaultValue: "false",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "true",
-											value: "true",
-										},
-										{
-											display: "false",
-											value: "false",
-										},
-									],
 								},
 								disabled: false,
 								rules: { required: true },
@@ -2634,113 +2025,6 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								advanced: true,
-								rules: { required: true },
-							},
-						],
-					},
-					{
-						name: "rerank-qa-mistral-4b (Embedding)",
-						disable: false,
-						icon: NEMO,
-						fields: [
-							{
-								fieldName: "CATALOG_NAME",
-								label: "Catalog Name",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: {
-									required: true,
-									pattern: {
-										value: /^[\w\-\s]+$/,
-										message:
-											"Catalog names can only contain alphanumeric characters and dashes.",
-									},
-									custom: {
-										value: 'CheckEngineName ( "[VALUE]") ;',
-										message:
-											"This Catalog name has already been used, please try another.",
-									},
-								},
-							},
-							{
-								fieldName: "MODEL_TYPE",
-								label: "Type",
-								defaultValue: "OPEN_AI",
-								options: {
-									component: "select",
-									options: [
-										{
-											display: "Open AI",
-											value: "OPEN_AI",
-										},
-									],
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "OPEN_AI_KEY",
-								label: "Open AI Key",
-								defaultValue: "",
-								options: {
-									component: "password",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "ENDPOINT",
-								label: "Endpoint",
-								defaultValue: "",
-								options: {
-									component: "text-field",
-								},
-								disabled: false,
-								rules: { required: true },
-							},
-							{
-								fieldName: "MODEL",
-								label: "Model",
-								defaultValue:
-									"mistralai/mixtral-8x7b-instruct-v0.1",
-								options: {
-									component: "select",
-									options: [
-										{
-											display:
-												"mistralai/mixtral-8x7b-instruct-v0.1",
-											value: "mistralai/mixtral-8x7b-instruct-v0.1",
-										},
-									],
-								},
-								disabled: true,
-								hidden: true,
-								rules: { required: true },
-							},
-							{
 								fieldName: "KEEP_INPUT_OUTPUT",
 								label: "Record Questions and Responses",
 								defaultValue: "false",
@@ -2761,27 +2045,24 @@ export const MODEL_CONNECTION = {
 								rules: { required: true },
 							},
 							{
-								fieldName: "VAR_NAME",
-								label: "Variable Name",
-								defaultValue: "model_Var",
+								fieldName: "MAX_TOKENS",
+								label: "Max Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
 							},
 							{
-								fieldName: "INIT_MODEL_ENGINE",
-								label: "Init Script",
-								defaultValue:
-									"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(endpoint = 'https://integrate.api.nvidia.com/v1', model_name='${MODEL_TYPE}', chat_type = '${CHAT_TYPE}', api_key='${OPEN_AI_KEY}', template={ \"mixtral.default.nocontext\":\"[INST] $question [/INST]\"},  template_name='mixtral.default.nocontext')",
+								fieldName: "MAX_INPUT_TOKENS",
+								label: "Max Input Tokens",
+								rules: { required: false },
+								defaultValue: "",
 								options: {
 									component: "text-field",
 								},
 								disabled: false,
-								advanced: true,
-								rules: { required: true },
 							},
 						],
 					},
@@ -2795,7 +2076,7 @@ export const MODEL_CONNECTION = {
 				icon: BERT,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -2859,7 +2140,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -2964,7 +2245,7 @@ export const MODEL_CONNECTION = {
 				icon: DOLLY,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -3028,7 +2309,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -3133,7 +2414,7 @@ export const MODEL_CONNECTION = {
 				icon: ELEUTHER,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -3197,7 +2478,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -3302,7 +2583,7 @@ export const MODEL_CONNECTION = {
 				icon: FALCON,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -3366,7 +2647,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -3471,7 +2752,7 @@ export const MODEL_CONNECTION = {
 				icon: FLAN,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -3535,7 +2816,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -3640,7 +2921,7 @@ export const MODEL_CONNECTION = {
 				icon: FLAN,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -3704,7 +2985,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -3809,7 +3090,7 @@ export const MODEL_CONNECTION = {
 				icon: BRAIN,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -3873,7 +3154,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -3978,7 +3259,7 @@ export const MODEL_CONNECTION = {
 				icon: META,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -4042,7 +3323,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -4147,7 +3428,7 @@ export const MODEL_CONNECTION = {
 				icon: META,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -4211,7 +3492,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -4316,7 +3597,7 @@ export const MODEL_CONNECTION = {
 				icon: META,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -4380,7 +3661,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -4485,7 +3766,7 @@ export const MODEL_CONNECTION = {
 				icon: MOSAIC,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -4549,7 +3830,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -4654,7 +3935,7 @@ export const MODEL_CONNECTION = {
 				icon: REPLIT,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -4718,7 +3999,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -4823,7 +4104,7 @@ export const MODEL_CONNECTION = {
 				icon: BRAIN,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -4887,7 +4168,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -4992,7 +4273,7 @@ export const MODEL_CONNECTION = {
 				icon: VICUNA,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -5056,7 +4337,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -5161,7 +4442,7 @@ export const MODEL_CONNECTION = {
 				icon: BRAIN,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -5225,7 +4506,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -5330,7 +4611,7 @@ export const MODEL_CONNECTION = {
 				icon: BRAIN,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -5394,7 +4675,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -5507,7 +4788,7 @@ export const MODEL_CONNECTION = {
 				icon: ORCA,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -5567,7 +4848,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -5672,8 +4953,8 @@ export const MODEL_CONNECTION = {
 				icon: Amazon_Titan,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
-						label: "Catalog Name",
+						fieldName: "NAME",
+						label: "Name",
 						defaultValue: "",
 						options: {
 							component: "text-field",
@@ -5710,7 +4991,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -5765,7 +5046,7 @@ export const MODEL_CONNECTION = {
 				icon: STABILITY_AI,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -5825,7 +5106,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},
@@ -5930,7 +5211,7 @@ export const MODEL_CONNECTION = {
 				icon: REPLIT,
 				fields: [
 					{
-						fieldName: "CATALOG_NAME",
+						fieldName: "NAME",
 						label: "Catalog Name",
 						defaultValue: "",
 						options: {
@@ -5990,7 +5271,7 @@ export const MODEL_CONNECTION = {
 					{
 						fieldName: "VAR_NAME",
 						label: "Variable Name",
-						defaultValue: "model_Var",
+						defaultValue: "modelVar",
 						options: {
 							component: "text-field",
 						},

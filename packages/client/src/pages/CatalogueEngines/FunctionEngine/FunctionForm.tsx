@@ -181,10 +181,10 @@ export const FunctionForm = ({ id, title, description, fields }) => {
         secondaryFields: secondaryFieldValues,
       };
 
-      const createFunctionPixel = `CreateFunctionDatabaseEngine(
-      database=["${functionsFormValues.name}"], 
-      conDetails=[${JSON.stringify(functionsFormValues.fields)}]
-    );`;
+      const createFunctionPixel = `CreateRestFunctionEngine(
+        function=["${functionsFormValues.name}"],
+        functionDetails=[${JSON.stringify(functionsFormValues.fields)}]
+      );`;
 
       const createFunctionResponse = await monolithStore.runQuery(
         createFunctionPixel

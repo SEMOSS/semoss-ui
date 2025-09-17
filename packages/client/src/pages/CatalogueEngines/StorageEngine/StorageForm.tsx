@@ -123,41 +123,40 @@ export const StorageForm = ({ id, title, description, fields }) => {
   const onFormSubmit = async (formData) => {
     setIsLoading(true);
     try {
-      
-        if (title === "ZIP") {
-          const uploadedFiles = await monolithStore.uploadFile(
-            formData.ZIP,
-            configStore.store.insightID
-          );
+      if (title === "ZIP") {
+        const uploadedFiles = await monolithStore.uploadFile(
+          formData.ZIP,
+          configStore.store.insightID
+        );
 
-          const uploadEnginePixel = `UploadEngine(
+        const uploadEnginePixel = `UploadEngine(
           filePath=["${uploadedFiles[0].fileLocation}"], 
           engineTypes=["STORAGE"]
         )`;
 
-          const uploadEngineResponse = await monolithStore.runQuery(
-            uploadEnginePixel
-          );
-          const uploadEngineOutput = uploadEngineResponse.pixelReturn[0].output;
-          const uploadEngineOperationType =
-            uploadEngineResponse.pixelReturn[0].operationType;
+        const uploadEngineResponse = await monolithStore.runQuery(
+          uploadEnginePixel
+        );
+        const uploadEngineOutput = uploadEngineResponse.pixelReturn[0].output;
+        const uploadEngineOperationType =
+          uploadEngineResponse.pixelReturn[0].operationType;
 
-          if (uploadEngineOperationType.includes("ERROR")) {
-            notification.add({
-              color: "error",
-              message: uploadEngineOutput,
-            });
-            return;
-          }
-
+        if (uploadEngineOperationType.includes("ERROR")) {
           notification.add({
-            color: "success",
-            message: `ZIP uploaded successfully`,
+            color: "error",
+            message: uploadEngineOutput,
           });
-
-          navigate(`/engine/storage/${uploadEngineOutput.database_id}`);
           return;
         }
+
+        notification.add({
+          color: "success",
+          message: `ZIP uploaded successfully`,
+        });
+
+        navigate(`/engine/storage/${uploadEngineOutput.database_id}`);
+        return;
+      }
 
       const connectionDetails = {};
       const secondaryFieldValues = {};
@@ -181,10 +180,10 @@ export const StorageForm = ({ id, title, description, fields }) => {
         secondaryFields: secondaryFieldValues,
       };
 
-      const createStoragePixel = `CreateStorageDatabaseEngine(
-      database=["${storageFormValues.name}"], 
-      conDetails=[${JSON.stringify(storageFormValues.fields)}]
-    );`;
+      const createStoragePixel = `CreateStorageEngine(
+                storage=["${storageFormValues.name}"], 
+                storageDetails=[${JSON.stringify(storageFormValues.fields)}]
+            )`;
 
       const createStorageResponse = await monolithStore.runQuery(
         createStoragePixel
@@ -508,12 +507,7 @@ export const StorageForm = ({ id, title, description, fields }) => {
                   multiple
                   value={field.value || []}
                   disabled={val.disabled}
-                  extensions={[
-                    ".pdf",
-                    ".txt",
-                    ".doc",
-                    ".ppt",
-                  ]}
+                  extensions={[".pdf", ".txt", ".doc", ".ppt"]}
                   onChange={(v) => field.onChange(v)}
                   data-testid={`storage-form-input-${val.fieldName}`}
                 />
@@ -534,7 +528,7 @@ export const StorageForm = ({ id, title, description, fields }) => {
               <>
                 <FileDropzone
                   multiple
-                   value={field.value || []}
+                  value={field.value || []}
                   disabled={val.disabled}
                   onChange={(newValues) => field.onChange(newValues)}
                   data-testid={`storage-form-input-${val.fieldName}`}
