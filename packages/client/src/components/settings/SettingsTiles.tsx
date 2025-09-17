@@ -440,7 +440,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												Non Discoverable
 											</Typography>
 											<Typography variant="body2">
-												{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+												{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 											</Typography>
 										</Box>
 									</StyledBlock>
@@ -495,7 +495,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											Non Discoverable
 										</Typography>
 										<Typography variant="body2">
-											{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+											{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 										</Typography>
 									</Box>
 								</StyledBlock>
@@ -720,7 +720,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 												Non Discoverable
 											</Typography>
 											<Typography variant="body2">
-												{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+												{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 											</Typography>
 										</Box>
 									</StyledBlock>
@@ -773,7 +773,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 											Non Discoverable
 										</Typography>
 										<Typography variant="body2">
-											{`Allow users that do not currently have access to the ${name} to discover the ${name}, view ${name} details, and request access.`}
+											{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 										</Typography>
 									</Box>
 								</StyledBlock>
