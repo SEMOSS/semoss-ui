@@ -1410,7 +1410,6 @@ export class StateStore {
 		// generate the block
 		const block = this.generateBlock(json, isCommunity, {});
 
-
 		// try to place it if position
 		if (!position) {
 			if (block.widget === "page") return block.id;
