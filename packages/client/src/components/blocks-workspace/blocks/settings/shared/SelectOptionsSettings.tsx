@@ -84,15 +84,21 @@ export const SelectOptionsSettings = observer(
 					}
 				} else {
 					if (
+						parsedData.options.length > 0 &&
 						typeof parsedData.options[0] === "object" &&
 						!Array.isArray(parsedData.options[0]) &&
 						parsedData.options[0] !== null
 					) {
 						arr = Object.keys(parsedData.options[0]);
 					} else {
-						arr = [];
+						arr = parsedData.options || [];
 					}
 				}
+
+				// Add variables as options (like QueryIdSelector pattern)
+				const variableKeys = Object.keys(state.variables);
+				arr = [...arr, ...variableKeys];
+
 				return arr.map((option) => {
 					if (typeof option !== "string") {
 						return JSON.stringify(option);

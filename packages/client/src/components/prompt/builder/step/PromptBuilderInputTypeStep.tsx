@@ -117,7 +117,7 @@ export const PromptBuilderInputTypeStep = (props: {
 	const setInputType = (
 		inputTokenIndex: number,
 		inputType: string,
-		inputTypeMeta: string | null,
+		inputTypeMeta: any,
 	) => {
 		const inputTypesDup = {
 			...inputTypes,
