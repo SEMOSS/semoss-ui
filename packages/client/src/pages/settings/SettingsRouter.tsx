@@ -4,7 +4,6 @@ import { JobsPage } from "../jobs/JobsPage";
 import { AdminQueryPage } from "./AdminQueryPage";
 import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
 import { ConfigurationsPage } from "./ConfigurationsPage";
-import { DatabaseSettingsPage } from "./DatabaseSettingsPage";
 import { EngineSettingsDetailPage } from "./EngineSettingsDetailPage";
 import { EngineSettingsIndexPage } from "./EngineSettingsIndexPage";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
@@ -32,7 +31,7 @@ const SETTINGS_COMPONETS = {
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,
-	"team-permissions/:id": TeamSettingsDetailPage,
+	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,
 
 	// engine

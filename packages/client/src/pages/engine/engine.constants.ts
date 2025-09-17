@@ -11,10 +11,11 @@ import { EngineMetadataPage } from "./EngineMetadataPage";
 import { EngineOverviewPage } from "./EngineOverviewPage";
 import { EngineQAPage } from "./EngineQAPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
-import { EngineSmssPage } from "./EngineSmssPage";
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
-import { EngineUsagePage } from "./EngineUsagePage";
+import { EngineUsagePage } from './EngineUsagePage';
+import { EngineSmssPage } from './EngineSmssPage';
+import { EngineModelChatPage } from './EngineModelChatPage';
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */
@@ -95,6 +96,12 @@ export const ENGINE_ROUTES: {
 				component: EngineOverviewPage,
 				restrict: false,
 			},
+			{
+                name: 'Chat',
+                path: 'chat',
+                component: EngineModelChatPage,
+                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
+            },
 			{
 				name: "Usage",
 				path: "usage",
