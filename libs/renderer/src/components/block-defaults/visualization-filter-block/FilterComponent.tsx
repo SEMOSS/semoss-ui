@@ -88,7 +88,7 @@ interface FilterComponentProps {
 	mode?: string;
 	listOptions?: string[];
 	checkedValues?: string[];
-	onApply: (value: any) => void;
+	onApply: (value: any, mode: string) => void;
 	onReset?: () => void;
 	showSearch?: boolean;
 	multi?: boolean;
@@ -322,7 +322,7 @@ const FilterComponent: React.FC<FilterComponentProps> = ({
 			setChipData(safeChipData);
 		}
 
-		onApply(selected);
+		onApply(selected, mode);
 	};
 	const handleReset = () => {
 		if (mode === "checklist" || mode === "dropdown") {
