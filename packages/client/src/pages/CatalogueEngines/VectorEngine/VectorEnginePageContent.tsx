@@ -145,7 +145,7 @@ const VectorCard = ({
   );
 };
 
-export const VectorPageContent: React.FC<{ name: string }> = ({ name }) => {
+export const VectorEnginePageContent: React.FC<{ name: string }> = ({ name }) => {
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [selectedTab, setSelectedTab] = useState(0);
