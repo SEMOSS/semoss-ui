@@ -99,7 +99,6 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 
 		onApply(selected, mode);
 	};
-
 	const handleReset = () => {
 		setSearchText("");
 
