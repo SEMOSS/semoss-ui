@@ -25,11 +25,19 @@ export const ModifyVariableSelector = ({
 	}, [id]);
 
 	let variableEntries: [string, any][] = [];
-    if (Array.isArray(variables)) {
-        variableEntries = variables.map((v, idx) => [v.id || v.name || `${idx}`, v]);
-    } else if (variables && typeof variables === "object") {
-        variableEntries = Object.entries(variables);
-    }
+	if (Array.isArray(variables)) {
+		variableEntries = variables.map((v, idx) => [v.id || v.name || `${idx}`, v]);
+	} else if (variables && typeof variables === "object") {
+		variableEntries = Object.entries(variables);
+	}
+
+	// Only allow variables of type string, number, array, date, or json
+	const allowedTypes = ["string", "number", "array", "date", "JSON"];
+	variableEntries = variableEntries.filter(([key, variable]) => {
+		// Support both variable.type and variable.dataType
+		const type = variable?.type || variable?.dataType;
+		return allowedTypes.includes(type);
+	});
 
 	return (
 		<>
