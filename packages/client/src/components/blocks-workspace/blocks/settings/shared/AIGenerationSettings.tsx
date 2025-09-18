@@ -107,7 +107,7 @@ export const AIGenerationSettings = observer(
 		});
 
 		const inputFile = watch("inputFile");
-		const prompt = watch("prompt");
+		const _prompt = watch("prompt");
 		const selectedModel = watch("selectedModel");
 
 		const _isGenerateButtonDisabled =
@@ -185,24 +185,45 @@ export const AIGenerationSettings = observer(
 					null,
 					null,
 				);
-				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "NLP_FRAME" ] ) ] ) | FrameToGraph ( model = "${selectedModel}", userInput = "${prompt}", insightName="${configStore.store.insightID}")`;
-				// const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") `
+				// const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) | FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", insightName="${configStore.store.insightID}")`;
+				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) ;`;
 				const response = await monolithStore.runQuery(pixel);
 				console.log("Response from runQuery:", response);
-				const { output } = response.pixelReturn[0];
+				const { output: frameOutput } = response.pixelReturn[0];
+				// const { output } = response2.pixelReturn[0];
 				// if (typeof output === "string") {
 				//     const stringedOutput =  output.replace(/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g, "");
 				//     console.log('stringedOutput:', stringedOutput);
 				// }
-				if (output && setAIOutputJSON) {
-					const stringedOutput = output.replace(
+				const transformedOutput = {
+					data: {
+						values:
+							frameOutput.values ||
+							frameOutput.data?.values ||
+							[],
+						headers:
+							frameOutput.headers ||
+							frameOutput.data?.headers ||
+							[],
+					},
+				};
+				console.log("transformedOutput:", transformedOutput);
+				const _stringifiedOutput = JSON.stringify(transformedOutput);
+				console.log("String:", _stringifiedOutput);
+				const frameToGraphPixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", DATA_STRING = "<encode>${_stringifiedOutput}</encode>", insightName="${configStore.store.insightID}")`;
+				const frameToGraphPixelResponse =
+					await monolithStore.runQuery(frameToGraphPixel);
+				const { output: graphOutput } =
+					frameToGraphPixelResponse.pixelReturn[0];
+				if (graphOutput && setAIOutputJSON) {
+					const stringedOutput = graphOutput.replace(
 						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
 						"",
 					);
 					console.log("stringedOutput:", stringedOutput);
 					console.log(
 						"Setting AI output JSON from generationsettings:",
-						output,
+						graphOutput,
 					);
 					setAIOutputJSON(stringedOutput);
 				}
