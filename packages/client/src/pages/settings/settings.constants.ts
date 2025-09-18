@@ -206,6 +206,6 @@ export const SETTINGS_ROUTES: {
 		description: "View RDF Map",
 		icon: mdiClipboardTextOutline,
 		history: ["settings/"],
-		admin: false,
+		admin: true,
 	},
 ];
