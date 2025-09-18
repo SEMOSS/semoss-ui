@@ -63,9 +63,11 @@ const StyledMenu = styled((props: MenuProps) => (
 	},
 }));
 
-const StyledMenuItem = styled(Menu.Item)(() => ({
+const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
 	textTransform: "capitalize",
 	fontSize: "16px",
+	display: "flex",
+	gap: theme.spacing(1),
 }));
 
 const StyledBorderDiv = styled("div")(({ theme }) => ({
@@ -129,6 +131,10 @@ const DataOptions = [
 	{
 		display: "Unfilter Data",
 		defaultCellType: `unfilter-data`,
+	},
+	{
+		display: "Text to SQL",
+		defaultCellType: "text-to-sql",
 	},
 ];
 
