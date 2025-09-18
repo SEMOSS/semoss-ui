@@ -3,7 +3,7 @@ import { DatabasePageContent } from "../CatalogueEngines/DatabaseEngine/Database
 import { FunctionPageContent } from "../CatalogueEngines/FunctionEngine/FunctionPageContent";
 import { ModelPageContent } from "../CatalogueEngines/ModelEngine/ModelPageContent";
 import { StoragePageContent } from "../CatalogueEngines/StorageEngine/StoragePageContent";
-import { VectorPageContent } from "../CatalogueEngines/VectorEngine/vectorPageContent";
+import { VectorPageContent } from "../CatalogueEngines/vectorEngine/vectorPageContent";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
 
