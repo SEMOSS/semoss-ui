@@ -56,6 +56,95 @@ export const InputBlock: BlockComponent = observer(({ id }) => {
 		listeners.onChange();
 	}, 500);
 
+    // Render date picker for date type (mm/dd/yyyy format)
+    if (data.type === 'date') {
+        return (
+            <StyledTextField
+                size="small"
+                value={data.value !== null && data.value !== undefined ? data.value : ""}
+                label={
+                    typeof data.label !== "string"
+                        ? JSON.stringify(data.label)
+                        : data.label
+                }
+                required={Boolean(data.required)}
+                disabled={Boolean(data?.disabled || data?.loading)}
+                helperText={data?.hint}
+                style={{
+                    ...data.style,
+                }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="end">
+                            {data?.loading ? <StyledLoading size={20} /> : <></>}
+                        </InputAdornment>
+                    ),
+                }}
+                type="date"
+                onChange={(e) => {
+                    const value = e.target.value;
+                    // update the value
+                    setData("value", value);
+                    debouncedCallback();
+                }}
+                {...attrs}
+            />
+        );
+    }
+
+    // Render datetime picker for datetime type (YYYY-MM-DDTHH:mm:ss format)
+    if (data.type === 'datetime') {
+        // Convert value for datetime-local input
+        let displayValue = data.value !== null && data.value !== undefined ? data.value : "";
+        if (displayValue && typeof displayValue === 'string' && displayValue.includes('T')) {
+            // Handle format like '2025-07-29T10:00:00' - remove timezone if present and ensure proper format
+            displayValue = displayValue.replace(/Z?$/, '').substring(0, 16);
+        }
+        
+        return (
+            <StyledTextField
+                size="small"
+                value={displayValue}
+                label={
+                    typeof data.label !== "string"
+                        ? JSON.stringify(data.label)
+                        : data.label
+                }
+                required={Boolean(data.required)}
+                disabled={Boolean(data?.disabled || data?.loading)}
+                helperText={data?.hint}
+                style={{
+                    ...data.style,
+                }}
+                InputProps={{
+                    startAdornment: (
+                        <InputAdornment position="end">
+                            {data?.loading ? <StyledLoading size={20} /> : <></>}
+                        </InputAdornment>
+                    ),
+                }}
+                type="datetime-local"
+                onChange={(e) => {
+                    let value = e.target.value;
+                    
+                    // For datetime-local inputs, convert to format: YYYY-MM-DDTHH:mm:ss
+                    if (value) {
+                        // Convert to the required format: 2025-07-29T10:00:00
+                        if (value.length === 16) { // YYYY-MM-DDTHH:mm
+                            value = value + ':00'; // Add seconds without timezone
+                        }
+                    }
+                    
+                    // update the value
+                    setData("value", value);
+                    debouncedCallback();
+                }}
+                {...attrs}
+            />
+        );
+    }
+
+    // Render regular text field for other types
 	return (
 		<StyledTextField
 			size="small"

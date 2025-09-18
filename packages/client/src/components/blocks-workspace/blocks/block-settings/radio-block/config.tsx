@@ -21,6 +21,7 @@ import {
 import { useBlockSettings } from "@/hooks";
 import { InputSettings } from "../../settings";
 import { BaseSettingSection } from "../../settings/BaseSettingSection";
+import { InputModalSettings } from "../../settings/shared/InputModalSettings";
 import { SwitchSettings } from "../../settings/shared/SwitchSettings";
 import { BLOCK_TYPE_INPUT } from "../block-defaults.constants";
 import { buildListener, buildShowField } from "../block-defaults.shared";
@@ -415,6 +416,16 @@ export const config: BlockSettingsConfig = {
 							</Box>
 						);
 					},
+				},
+				{
+					description: "Value",
+					render: ({ id }) => (
+						<InputModalSettings
+							id={id}
+							label="Value"
+							path="value"
+						/>
+					),
 				},
 				{
 					description: "Required",

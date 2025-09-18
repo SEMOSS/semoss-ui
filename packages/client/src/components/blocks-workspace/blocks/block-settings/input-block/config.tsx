@@ -41,6 +41,10 @@ export const config: BlockSettingsConfig = {
 										value: "date",
 										display: "Date",
 									},
+									{
+										value: "datetime",
+										display: "DateTime",
+									},
 								]}
 							/>
 						);
