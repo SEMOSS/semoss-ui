@@ -8,14 +8,14 @@ import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
 import { EngineFilePage } from "./EngineFilePage";
 import { EngineMetadataPage } from "./EngineMetadataPage";
+import { EngineModelChatPage } from "./EngineModelChatPage";
 import { EngineOverviewPage } from "./EngineOverviewPage";
 import { EngineQAPage } from "./EngineQAPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
+import { EngineSmssPage } from "./EngineSmssPage";
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
-import { EngineUsagePage } from './EngineUsagePage';
-import { EngineSmssPage } from './EngineSmssPage';
-import { EngineModelChatPage } from './EngineModelChatPage';
+import { EngineUsagePage } from "./EngineUsagePage";
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */
@@ -97,11 +97,11 @@ export const ENGINE_ROUTES: {
 				restrict: false,
 			},
 			{
-                name: 'Chat',
-                path: 'chat',
-                component: EngineModelChatPage,
-                restrict: ['EDIT', 'OWNER', 'READ_ONLY'],
-            },
+				name: "Chat",
+				path: "chat",
+				component: EngineModelChatPage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
+			},
 			{
 				name: "Usage",
 				path: "usage",
@@ -241,8 +241,8 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
-				name: "Settings",
-				path: "settings",
+				name: "Access Control",
+				path: "access-control",
 				component: EngineSettingsPage,
 				restrict: ["EDIT", "OWNER"],
 			},
