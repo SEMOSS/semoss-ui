@@ -3,7 +3,6 @@ import { DatabasePageContent } from "../CatalogueEngines/DatabaseEngine/Database
 import { FunctionPageContent } from "../CatalogueEngines/FunctionEngine/FunctionPageContent";
 import { ModelPageContent } from "../CatalogueEngines/ModelEngine/ModelPageContent";
 import { StoragePageContent } from "../CatalogueEngines/StorageEngine/StoragePageContent";
-import { VectorPageContent } from "../CatalogueEngines/VectorEngine/VectorPageContent";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
 
@@ -22,9 +21,7 @@ interface ImportPageProps {
 export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
   return (
     <ImportLayout>
-      {type === "VECTOR" ? (
-        <VectorPageContent name={name} />
-      ) : type === "MODEL" ? (
+      { type === "MODEL" ? (
         <ModelPageContent name={name} />
       ) : type === "DATABASE" ? (
         <DatabasePageContent name={name} />
