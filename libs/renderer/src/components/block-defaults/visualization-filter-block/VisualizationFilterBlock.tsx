@@ -203,7 +203,6 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 							checkedValues={data.selectedValues}
 							onApply={handleApply}
 							filterLabel={data.filterLabel}
-							sliderSensitivity={data.sliderSensitivity}
 							onReset={handleReset}
 							color={data.color}
 							size={data.size}
@@ -220,11 +219,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 										: data.listOptions
 									: data.listOptions
 							}
-							multi={data.multipleSelection}
-							showSearch={data.searchable}
-							checkedValues={data.selectedValues}
 							onApply={handleApply}
-							filterLabel={data.filterLabel}
 							sliderSensitivity={data.sliderSensitivity}
 							onReset={handleReset}
 							color={data.color}
@@ -243,11 +238,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 									: data.listOptions
 							}
 							multi={data.multipleSelection}
-							showSearch={data.searchable}
-							checkedValues={data.selectedValues}
 							onApply={handleApply}
-							filterLabel={data.filterLabel}
-							sliderSensitivity={data.sliderSensitivity}
 							onReset={handleReset}
 							color={data.color}
 							size={data.size}
@@ -268,8 +259,6 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 							showSearch={data.searchable}
 							checkedValues={data.selectedValues}
 							onApply={handleApply}
-							filterLabel={data.filterLabel}
-							sliderSensitivity={data.sliderSensitivity}
 							onReset={handleReset}
 							color={data.color}
 							size={data.size}
