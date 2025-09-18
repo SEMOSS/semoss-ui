@@ -68,6 +68,7 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 }) => {
 	const [searchText, setSearchText] = useState("");
 	const chipsRef = useRef<ChipsArrayHandle>(null);
+
 	const initialChips = useMemo(
 		() =>
 			listOptions.map((label, index) => ({
@@ -98,14 +99,15 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 
 		onApply(selected, mode);
 	};
+
 	const handleReset = () => {
 		setSearchText("");
 
 		if (onReset) {
 			onReset();
+			setChipData(initialChips);
 		}
 	};
-
 	return (
 		<Box
 			sx={{
