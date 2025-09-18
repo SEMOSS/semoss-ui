@@ -1,6 +1,6 @@
-import { Box, TextField, InputAdornment, IconButton } from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
 import ClearIcon from "@mui/icons-material/Close";
+import SearchIcon from "@mui/icons-material/Search";
+import { Box, IconButton, InputAdornment, TextField } from "@mui/material";
 
 // 👉 Separate Search Filter Header Component
 const FilterSearchFilterHeader = ({
@@ -46,4 +46,4 @@ const FilterSearchFilterHeader = ({
 	</Box>
 );
 
-export default FilterSearchFilterHeader
+export default FilterSearchFilterHeader;

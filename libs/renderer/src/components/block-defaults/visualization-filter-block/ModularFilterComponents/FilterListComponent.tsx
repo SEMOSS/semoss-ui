@@ -1,7 +1,5 @@
 import { Checkbox } from "@mui/material";
-import {
-    List,
-} from "@semoss/ui";
+import { List } from "@semoss/ui";
 
 const FilterListComponent = ({
 	listOptions,
@@ -40,7 +38,10 @@ const FilterListComponent = ({
 	return (
 		<List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
 			{multi && (
-				<List.Item key="select-all" onClick={handleToggle("Select All")}>
+				<List.Item
+					key="select-all"
+					onClick={handleToggle("Select All")}
+				>
 					<List.Icon>
 						<Checkbox
 							edge="start"

@@ -4,12 +4,12 @@ export interface ChipData {
 }
 
 export interface ChipsArrayHandle {
-  getChips: () => ChipData[];
+	getChips: () => ChipData[];
 }
 
 export interface ChipsArrayProps {
-  chips: ChipData[];
-  onDelete: (chip: ChipData) => void;
+	chips: ChipData[];
+	onDelete: (chip: ChipData) => void;
 }
 
 export interface FilterComponentProps {
@@ -17,6 +17,7 @@ export interface FilterComponentProps {
 	mode?: string;
 	listOptions?: string[];
 	checkedValues?: string[];
+	// biome-ignore lint/suspicious/noExplicitAny: <stronger typing is needed>
 	onApply: (value: any, mode: string) => void;
 	onReset?: () => void;
 	showSearch?: boolean;
