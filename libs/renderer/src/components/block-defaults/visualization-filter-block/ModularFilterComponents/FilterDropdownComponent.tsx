@@ -1,65 +1,13 @@
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
-import ClearIcon from "@mui/icons-material/Close";
 import CloseIcon from "@mui/icons-material/Close";
-import SearchIcon from "@mui/icons-material/Search";
 import { ClickAwayListener } from "@mui/material";
 import type React from "react";
 import { useEffect, useState } from "react";
-import {
-	Box,
-	Button,
-	IconButton,
-	InputAdornment,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+import { Box, Button, Typography } from "@semoss/ui";
 import type { FilterComponentProps } from "../filter";
 import FilterIconComponent from "./FilterIconComponent";
 import FilterListComponent from "./FilterListComponent";
-
-// 👉 Separate Search Filter Header Component
-const SearchFilterHeader = ({
-	searchText,
-	setSearchText,
-	setChecked,
-}: {
-	searchText: string;
-	setSearchText: (val: string) => void;
-	setChecked: (val: string[]) => void;
-}) => (
-	<Box sx={{ alignItems: "center" }}>
-		<TextField
-			variant="outlined"
-			size="small"
-			placeholder="Search"
-			value={searchText}
-			onChange={(e) => {
-				setSearchText(e.target.value);
-			}}
-			fullWidth
-			InputProps={{
-				startAdornment: (
-					<InputAdornment position="start">
-						<SearchIcon />
-					</InputAdornment>
-				),
-				endAdornment: searchText && (
-					<InputAdornment position="end">
-						<IconButton
-							size="small"
-							onClick={() => {
-								setSearchText("");
-								setChecked([]);
-							}}
-						>
-							<ClearIcon />
-						</IconButton>
-					</InputAdornment>
-				),
-			}}
-		/>
-	</Box>
-);
+import FilterSearchFilterHeader from "./FilterSearchFilterHeader";
 
 const FilterDropdownComponent: React.FC<FilterComponentProps> = ({
 	resetKey,
@@ -189,7 +137,7 @@ const FilterDropdownComponent: React.FC<FilterComponentProps> = ({
 								boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
 							}}
 						>
-							<SearchFilterHeader
+							<FilterSearchFilterHeader
 								searchText={searchText}
 								setSearchText={setSearchText}
 								setChecked={setChecked}
