@@ -24,18 +24,12 @@ export const ModifyVariableSelector = ({
 		setValue("payload.blockId", id);
 	}, [id]);
 
-	let variableEntries: [string, any][] = [];
-	if (Array.isArray(variables)) {
-		variableEntries = variables.map((v, idx) => [v.id || v.name || `${idx}`, v]);
-	} else if (variables && typeof variables === "object") {
-		variableEntries = Object.entries(variables);
-	}
+	const variableEntries: [string, any][] = Object.entries(variables || {});
 
 	// Only allow variables of type string, number, array, date, or json
 	const allowedTypes = ["string", "number", "array", "date", "JSON"];
-	variableEntries = variableEntries.filter(([key, variable]) => {
-		// Support both variable.type and variable.dataType
-		const type = variable?.type || variable?.dataType;
+	const filteredVariableEntries = variableEntries.filter(([key, variable]) => {
+		const type = variable?.type;
 		return allowedTypes.includes(type);
 	});
 
@@ -54,7 +48,7 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{variableEntries.map(([key, variable]) => (
+						{filteredVariableEntries.map(([key, variable]) => (
 							<Select.Item key={key} value={key}>
 								{key}
 							</Select.Item>
