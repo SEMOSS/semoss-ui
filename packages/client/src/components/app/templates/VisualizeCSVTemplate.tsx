@@ -1,6 +1,6 @@
 import { ActionMessages } from "@semoss/renderer";
 import QUERY from "@/assets/img/query.jpeg";
-import { Template } from "./templates.types";
+import type { Template } from "./templates.types";
 
 export const VisualizeCSVTemplate: Template = {
 	name: "Visualize CSV",
@@ -408,7 +408,6 @@ export const VisualizeCSVTemplate: Template = {
 			"pull-data-from-upload": {
 				type: "query",
 				to: "pull-data-from-upload",
-				isOutput: true,
 			},
 			"pull-data-from-upload--1": {
 				type: "cell",
@@ -418,7 +417,6 @@ export const VisualizeCSVTemplate: Template = {
 			file: {
 				type: "block",
 				to: "upload--5885",
-				isInput: true,
 			},
 		},
 		executionOrder: ["pull-data-from-upload"],

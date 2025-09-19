@@ -2,7 +2,7 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { STATE_VERSION } from "@semoss/renderer";
-import { Box, Stack } from "@semoss/ui";
+import { Box, Stack, styled } from "@semoss/ui";
 import AIConductor from "@/assets/img/AIConductor.png";
 import DevBanner from "@/assets/img/DevBanner.png";
 import playground from "@/assets/img/playground.png";
@@ -13,6 +13,13 @@ import { useRootStore } from "@/hooks";
 import { BASE_PAGE_BLOCKS } from "../../pages/app/app.constants";
 import CreateAppSection from "./CreateAppSection";
 import { FanFavoritesSection } from "./FanFavoritesSection";
+
+const StyledAppCard = styled("div")(({}) => ({
+	display: "flex",
+	width: "100%",
+	gap: "24px",
+	flexDirection: "column",
+}));
 
 export const DeveloperUserScreen = observer(() => {
 	const { configStore } = useRootStore();
@@ -85,14 +92,7 @@ export const DeveloperUserScreen = observer(() => {
 					to: "/app/new/template",
 				}}
 			/>
-			<div
-				style={{
-					display: "flex",
-					width: "100%",
-					gap: "24px",
-					flexDirection: "column",
-				}}
-			>
+			<StyledAppCard>
 				<Box
 					sx={{
 						display: "flex",
@@ -103,12 +103,14 @@ export const DeveloperUserScreen = observer(() => {
 				>
 					<FeaturedAppCard
 						href={"../../playground/dist/"}
-						tagline={"Experiment in our Playground"}
+						tagline={
+							<span>Experiment in our Playground&trade;</span>
+						}
 						description={`Chat with different LLMs and try out different prompts from our prompt library. Or chat with multiple LLMs in one room to hold a focus group or round table.`}
 						imageUrl={playground}
 						chip={{
 							label: "FEATURED",
-							color: "#EBF4FE",
+							color: "#FDF0E5",
 						}}
 					/>
 					<FeaturedAppCard
@@ -119,7 +121,7 @@ export const DeveloperUserScreen = observer(() => {
 						imageUrl={AIConductor}
 						chip={{
 							label: "NEW",
-							color: "#EBF4FE",
+							color: "#FDF0E5",
 						}}
 					/>
 				</Box>
@@ -138,7 +140,7 @@ export const DeveloperUserScreen = observer(() => {
 					/>
 				) : null}
 				<CreateAppSection setupApp={setupApp} />
-			</div>
+			</StyledAppCard>
 
 			<FanFavoritesSection />
 		</Stack>

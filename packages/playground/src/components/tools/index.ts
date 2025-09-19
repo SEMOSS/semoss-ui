@@ -1,1 +1,2 @@
-export * from './ToolsOverlayComponent';
+export * from "./ToolsArtifact";
+export * from "./ToolsOverlay";

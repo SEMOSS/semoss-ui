@@ -11,6 +11,7 @@
         "@mui/icons-material": "^5.14.1",
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
+        "@semoss/shared": "workspace:*",
         "mobx": "6.3.7",
         "mobx-react-lite": "^3.4.0",
         "re-resizable": "^6.11.2",

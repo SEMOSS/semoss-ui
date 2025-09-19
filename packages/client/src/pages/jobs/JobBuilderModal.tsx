@@ -2,7 +2,7 @@ import { Close } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
-	AutocompleteTwo,
+	Autocomplete,
 	Button,
 	IconButton,
 	Modal,
@@ -17,7 +17,7 @@ import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
 import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
 import { JobTypesBuilder } from "./JobTypesBuilder";
 import { JobTypeCustomJob, JobTypeSendEmail, timezones } from "./job.constants";
-import { JobBuilder } from "./job.types";
+import type { JobBuilder } from "./job.types";
 import { getEncodeByJobType } from "./job.utils";
 
 const emptyBuilder: JobBuilder = {
@@ -80,14 +80,14 @@ export const JobBuilderModal = (props: {
 				const isStandardWeekly =
 					(cronValues[3] === "*" || cronValues[3] === "?") &&
 					cronValues[4] === "*" &&
-					!isNaN(parseInt(cronValues[5]));
+					!Number.isNaN(parseInt(cronValues[5]));
 				const isStandardMonthly =
-					!isNaN(parseInt(cronValues[3])) &&
+					!Number.isNaN(parseInt(cronValues[3])) &&
 					cronValues[4] === "*" &&
 					(cronValues[5] === "*" || cronValues[5] === "?");
 				const isStandardYearly =
-					!isNaN(parseInt(cronValues[3])) &&
-					!isNaN(parseInt(cronValues[4])) &&
+					!Number.isNaN(parseInt(cronValues[3])) &&
+					!Number.isNaN(parseInt(cronValues[4])) &&
 					(cronValues[5] === "*" || cronValues[5] === "?");
 
 				if (
@@ -291,7 +291,7 @@ export const JobBuilderModal = (props: {
 					<IconButton
 						aria-label="close"
 						onClick={closeModal}
-						data-testid={"job-builder-close-btn"}
+						data-testid={"jobBuilder-close-btn"}
 					>
 						<Close />
 					</IconButton>
@@ -315,24 +315,27 @@ export const JobBuilderModal = (props: {
 						<ToggleButton
 							value="standard"
 							onClick={() => setFrequencyType("standard")}
-							data-testid={"job-builder-standard-btn"}
+							data-testid={"jobBuilder-standard-btn"}
 						>
 							Standard
 						</ToggleButton>
 						<ToggleButton
 							value="custom"
 							onClick={() => setFrequencyType("custom")}
-							data-testid={"job-builder-custom-btn"}
+							data-testid={"jobBuilder-custom-btn"}
 						>
 							Custom
 						</ToggleButton>
 					</ToggleButtonGroup>
-					<AutocompleteTwo
+					<Autocomplete
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
-						onChange={(_, value) =>
-							setBuilderField("cronTz", value)
-						}
+						onChange={(_, value) => {
+							if (value) {
+								setBuilderField("cronTz", value);
+							}
+						}}
 						size="small"
 						getOptionLabel={(option: string) =>
 							option.replaceAll("_", " ")
@@ -368,9 +371,9 @@ export const JobBuilderModal = (props: {
 								>
 									Cron Expression Validation Errors:
 								</div>
-								{cronValidation.errors.map((error, idx) => (
+								{cronValidation.errors.map((error) => (
 									<div
-										key={idx}
+										key={error}
 										style={{
 											color: "#d32f2f",
 											fontSize: "0.75rem",
@@ -395,7 +398,7 @@ export const JobBuilderModal = (props: {
 						type="button"
 						disabled={isLoading}
 						onClick={closeModal}
-						data-testid={"job-builder-cancel-btn"}
+						data-testid={"jobBuilder-cancel-btn"}
 					>
 						Cancel
 					</Button>
@@ -412,7 +415,7 @@ export const JobBuilderModal = (props: {
 							isEditMode ? updateJob() : addJob();
 						}}
 						loading={isLoading}
-						data-testid={"job-builder-add-save-btn"}
+						data-testid={"jobBuilder-add-save-btn"}
 					>
 						{isEditMode ? "Save" : "Add"}
 					</Button>

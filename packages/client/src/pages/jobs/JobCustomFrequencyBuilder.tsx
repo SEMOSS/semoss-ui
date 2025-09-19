@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Stack, TextField } from "@semoss/ui";
 import { cronValidator } from "./cronValidator";
-import { JobBuilder } from "./job.types";
+import type { JobBuilder } from "./job.types";
 
 // Helper for default values
 const DEFAULT_CRON = ["0", "0", "12", "?", "*", "?", "*"];

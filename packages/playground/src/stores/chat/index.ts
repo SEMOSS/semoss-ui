@@ -1,5 +1,3 @@
-import { ChatStore } from './chat.store';
-import { ChatRoom } from './chat.room';
-import { ChatMessage } from './chat.message';
+import { ChatStore } from "./chat.store";
 
-export { ChatStore, ChatRoom, ChatMessage };
+export { ChatStore };

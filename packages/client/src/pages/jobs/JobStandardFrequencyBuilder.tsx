@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AutocompleteTwo, Stack, TextField } from "@semoss/ui";
+import { Autocomplete, Stack, TextField } from "@semoss/ui";
 import { DaysOfWeek, FrequencyOptions, Months } from "./job.constants";
-import { DayOfWeek, Frequencies, JobBuilder, Month } from "./job.types";
+import type { DayOfWeek, Frequencies, JobBuilder, Month } from "./job.types";
 
 export const JobStandardFrequencyBuilder = (props: {
 	builder: JobBuilder;
@@ -48,33 +48,33 @@ export const JobStandardFrequencyBuilder = (props: {
 
 		// check frequency type
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			(cronValues[5] == "*" || cronValues[5] == "?")
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			(cronValues[5] === "*" || cronValues[5] === "?")
 		) {
 			setFrequency("Daily");
 		} else if (
-			(cronValues[3] == "*" || cronValues[3] == "?") &&
-			cronValues[4] == "*"
+			(cronValues[3] === "*" || cronValues[3] === "?") &&
+			cronValues[4] === "*"
 		) {
 			setFrequency("Weekly");
 			const dayOfWeekValue = parseInt(cronValues[5]);
 			const dayOfWeekRecord = DaysOfWeek.find(
-				(record) => record.value == dayOfWeekValue,
+				(record) => record.value === dayOfWeekValue,
 			);
 			if (dayOfWeekRecord) {
 				setDayOfWeek(dayOfWeekRecord);
 			}
 		} else if (
-			cronValues[4] == "*" &&
-			(cronValues[5] == "*" || cronValues[5] == "?")
+			cronValues[4] === "*" &&
+			(cronValues[5] === "*" || cronValues[5] === "?")
 		) {
 			setFrequency("Monthly");
 			const dayOfMonthValue = parseInt(cronValues[3]);
 			if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
 				setDayOfMonth(dayOfMonthValue);
 			}
-		} else if (cronValues[5] == "*" || cronValues[5] == "?") {
+		} else if (cronValues[5] === "*" || cronValues[5] === "?") {
 			setFrequency("Yearly");
 			const dayOfMonthValue = parseInt(cronValues[3]);
 			if (dayOfMonthValue <= 31 && dayOfMonthValue >= 1) {
@@ -82,7 +82,7 @@ export const JobStandardFrequencyBuilder = (props: {
 			}
 			const monthValue = parseInt(cronValues[4]);
 			const monthRecord = Months.find(
-				(record) => record.value == monthValue,
+				(record) => record.value === monthValue,
 			);
 			if (monthRecord) {
 				setMonth(monthRecord);
@@ -149,52 +149,55 @@ export const JobStandardFrequencyBuilder = (props: {
 
 	return (
 		<Stack spacing={2} width="100%">
-			<AutocompleteTwo
+			<Autocomplete
 				size="small"
 				options={FrequencyOptions}
 				value={frequency}
+				multiple={false}
 				renderInput={(params) => {
 					return <TextField {...params} label="Frequency" />;
 				}}
 				fullWidth
-				onChange={(_, value) => setFrequency(value)}
+				onChange={(_, value) => setFrequency(value as Frequencies)}
 			/>
-			{frequency == "Weekly" && (
-				<AutocompleteTwo
+			{frequency === "Weekly" ? (
+				<Autocomplete
 					size="small"
 					options={DaysOfWeek}
-					value={dayOfWeek}
+					value={dayOfWeek as any} // Type assertion needed due to complex generic inference with MUI Autocomplete
+					multiple={false}
 					renderInput={(params) => {
 						return <TextField {...params} label="Day of Week" />;
 					}}
 					fullWidth
 					isOptionEqualToValue={(option, value) =>
-						option.value == value.value
+						option.value === value.value
 					}
 					getOptionLabel={(option) => option.day}
 					onChange={(_, value) => setDayOfWeek(value)}
 				/>
-			)}
-			{frequency == "Yearly" && (
-				<AutocompleteTwo
+			) : null}
+			{frequency === "Yearly" ? (
+				<Autocomplete
 					size="small"
 					options={Months}
-					value={month}
+					value={month as any} // Type assertion needed due to complex generic inference with MUI Autocomplete
+					multiple={false}
 					renderInput={(params) => {
 						return <TextField {...params} label="Month" />;
 					}}
 					fullWidth
 					isOptionEqualToValue={(option, value) =>
-						option.value == value.value
+						option.value === value.value
 					}
 					getOptionLabel={(option) => option.month}
 					onChange={(_, value) => setMonth(value)}
 				/>
-			)}
-			{(frequency == "Monthly" || frequency == "Yearly") && (
+			) : null}
+			{frequency === "Monthly" || frequency === "Yearly" ? (
 				<TextField
 					size="small"
-					value={isNaN(dayOfMonth) ? "" : dayOfMonth}
+					value={Number.isNaN(dayOfMonth) ? "" : dayOfMonth}
 					type="number"
 					label="Day of Month"
 					error={
@@ -207,7 +210,7 @@ export const JobStandardFrequencyBuilder = (props: {
 						setDayOfMonth(parseInt(e.target.value) ?? 0)
 					}
 				/>
-			)}
+			) : null}
 			<TextField
 				label="Time"
 				size="small"

@@ -6,10 +6,10 @@ import { BlocksContext } from "../contexts";
  * @returns the InsightStore
  */
 export const useBlocks = () => {
-    const context = useContext(BlocksContext);
-    if (context === undefined) {
-        throw new Error("useBlocks must be used within Blocks");
-    }
+	const context = useContext(BlocksContext);
+	if (context === undefined) {
+		throw new Error("useBlocks must be used within Blocks");
+	}
 
-    return context;
+	return context;
 };

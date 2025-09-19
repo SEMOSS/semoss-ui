@@ -1,668 +1,223 @@
+import { LightbulbOutlined, Tune } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { Resizable } from "re-resizable";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useInsight } from "@semoss/sdk/react";
 import {
-    ArrowForward,
-    AttachFileRounded,
-    ConstructionOutlined,
-    KeyboardArrowDownRounded,
-    SendRounded,
-    TuneRounded,
-} from '@mui/icons-material';
-import { useInsight, usePixel } from '@semoss/sdk/react';
-import {
-    Alert,
-    Badge,
-    Button,
-    Chip,
-    CircularProgress,
-    Container,
-    FormControl,
-    Grid,
-    IconButton,
-    Link,
-    MenuItem,
-    Select,
-    Stack,
-    styled,
-    TextField,
-    Tooltip,
-    Typography, useNotification
-} from '@semoss/ui';
-import { observer } from 'mobx-react-lite';
-import { Resizable } from 're-resizable';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import {
-    KnowledgeOverlayComponent,
-    OptionsMenuComponent,
-    OptionsPickerComponent,
-    PromptLibraryComponent,
-    ToolsOverlayComponent,
-} from '@/components';
-import { TEMPERATURE, TOKEN_LENGTH } from '@/constants';
-import { useChat } from '@/hooks';
-import { ChatRoom } from '@/stores';
-import { Prompt } from '@/types';
+	Container,
+	IconButton,
+	Stack,
+	styled,
+	Tooltip,
+	Typography,
+} from "@semoss/ui";
+import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
+import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { useChat } from "@/hooks";
+import type { RoomStore } from "@/stores";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
-    ? import.meta.env.VITE_APP_DESCRIPTION
-    : '';
+	? import.meta.env.VITE_APP_DESCRIPTION
+	: "";
 
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
-const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
-const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
-
-const StyledPage = styled(Stack)(({ theme }) => ({
-    height: '100%',
-    width: '100%',
+const StyledPage = styled(Stack)(() => ({
+	height: "100%",
+	width: "100%",
+	padding: "16px",
 }));
 
-const StyledContent = styled(Stack)(({ theme }) => ({
-    height: '100%',
-    width: '100%',
-    overflow: 'auto',
+const StyledContent = styled(Stack)(() => ({
+	height: "100%",
+	width: "100%",
+	overflow: "auto",
 }));
 
-const StyledHolder = styled('div')(({ theme }) => ({
-    height: '98px',
-}));
-
-const StyledItem = styled('div', {
-    shouldForwardProp: (prop) => prop !== 'disabled',
-})<{ disabled?: boolean }>(({ theme, disabled }) => ({
-    padding: theme.spacing(2),
-    color: theme.palette.text.primary,
-    height: '82px',
-    boxShadow: '0px 5px 8px 0px rgba(0, 0, 0, 0.08)',
-    borderRadius: theme.shape.borderRadius,
-    borderColor: disabled ? `${theme.palette.action.disabled} !important` : '',
-    borderTop: '3px solid',
-    borderLeft: '3px solid',
-    cursor: disabled ? undefined : 'pointer',
-    pointerEvents: disabled ? 'none' : undefined,
-}));
-
-const StyledDescription = styled(Typography)(({ theme }) => ({
-    color: theme.palette.text.secondary,
-}));
-
-const StyledTextFieldActions = styled(Stack)(({ theme }) => ({
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 1,
-    paddingLeft: theme.spacing(1.5),
-    paddingRight: theme.spacing(1.5),
-    paddingBottom: theme.spacing(1),
-}));
-
-const StyledSelect = styled(Select)(({ theme }) => ({
-    fontSize: '14px',
-    maxWidth: '220px',
-    '& .MuiOutlinedInput-notchedOutline, &:hover .MuiOutlinedInput-notchedOutline, &.Mui-focused .MuiOutlinedInput-notchedOutline':
-    {
-        border: 'none',
-        borderRadius: theme.shape.borderRadiusSm,
-    },
-    '& .MuiSelect-icon': {
-        color: theme.palette.text.primary,
-        top: 'calc(50% - 10px)',
-        height: '20px',
-        width: '20px',
-    },
-    '& .MuiSelect-select': {
-        padding: theme.spacing(1),
-    },
-})) as unknown as typeof Select;
-
-const StyledAlert = styled(Alert)(({ theme }) => ({
-    background: 'linear-gradient(90deg, #DCD7F9 0%, #EBF4FE 100%)',
-    border: '1px solid #BAB5F4',
-    borderRadius: '8px',
-    color: theme.palette.text.primary,
-}));
-
-const StyledChip = styled(Chip)(() => ({
-    background: '#BAB5F4',
-}));
-
-const StyledLink = styled(Link)(() => ({
-    color: 'inherit',
-    textDecorationColor: 'inherit',
-}));
-
-const StyledTextField = styled(TextField)(({ theme }) => ({
-    '& .MuiInputBase-input::placeholder': {
-        color: theme.palette.text.primary,
-        opacity: 1,
-    },
-    '& .MuiOutlinedInput-root': {
-        '& fieldset': {
-            borderRadius: theme.spacing(1),
-        },
-    },
+const StyledButton = styled("button")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	padding: "8px 16px",
+	gap: "8px",
+	border: `none`,
+	borderRadius: theme.shape.borderRadiusSm,
+	background: theme.palette.background.paper,
+	boxShadow: theme.shadows[1],
+	cursor: "pointer",
+	"&:hover": {
+		background: theme.palette.action.hover,
+	},
 }));
 
 export const NewRoomPage = observer(() => {
-    const { chat } = useChat();
-    const navigate = useNavigate();
-    const { system } = useInsight();
-    const notification = useNotification();
+	const { chat } = useChat();
+	const navigate = useNavigate();
+	const { system } = useInsight();
 
-    const loginType = Object.keys(system.config.logins)[0];
-    const userName: string =
-        typeof system.config.logins[loginType] === 'string'
-            ? (system.config.logins[loginType] as unknown as string)
-            : '';
+	const loginType = Object.keys(system.config.logins)[0];
+	const userName: string =
+		typeof system.config.logins[loginType] === "string"
+			? (system.config.logins[loginType] as unknown as string)
+			: "";
 
-    const [isLoading, setIsLoading] = useState(false);
-    const [input, setInput] = useState('');
-    const [options, setOptions] = useState<ChatRoom['options']>({
-        instructions: '',
-        knowledge: null,
-        tools: [],
-        tokenLength: TOKEN_LENGTH,
-        temperature: TEMPERATURE,
-        autoExecute: false,
-        showUi: false,
-        chainOfThought: false,
-    });
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
-    const [isToolsOpen, setIsToolsOpen] = useState(false);
-    const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+	const [isLoading, setIsLoading] = useState(false);
+	const [options, setOptions] = useState<RoomStore["options"]>({
+		instructions: "",
+		knowledge: null,
+		tools: [],
+		tokenLength: TOKEN_LENGTH,
+		temperature: TEMPERATURE,
+		autoExecute: false,
+	});
+	const [isMenuOpen, setIsMenuOpen] = useState(false);
+	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
-    const getPrompts = usePixel<Prompt[]>(`ListPrompt(collect=[3]);`, {
-        data: [],
-    });
+	/**
+	 * Ask the model
+	 *
+	 * @param - input
+	 */
+	const askModel = async (prompt: string, files: File[]) => {
+		// ignore if loading
+		if (isLoading) {
+			return;
+		}
 
-    /**
-     * Open a prompt prompt
-     * @param prompt - prompt to trigger
-     */
-    const askPrompt = (prompt: Prompt) => {
-        // ignore if loading
-        if (isLoading) {
-            return;
-        }
+		// turn the loading screen
+		setIsLoading(true);
 
-        // TODO: Fix
-        setInput(prompt.CONTEXT);
-        askModel(prompt.CONTEXT);
-    };
+		// create a new room
+		const room = await chat.createRoom(chat.models.selected, prompt);
 
-    /**
-     * Ask the model
-     *
-     * @param - input
-     */
-    const askModel = async (input: string) => {
-        try {
-            // ignore if loading
-            if (isLoading) {
-                return;
-            }
+		// initialize it
+		await room.initialize();
 
-            // turn the loading screen
-            setIsLoading(true);
+		// ask the room
+		await room.askModel(prompt, files, options);
 
-            // create a new room
-            const room = await chat.createRoom(chat.models.selected, input);
+		// turn the loading screen off
+		setIsLoading(false);
 
-            // ask the room
-            await room.askModel(input, options);
+		// go to the new room
+		navigate(`/room/${room.roomId}`);
+	};
 
-            // clear the input
-            setInput('');
+	return (
+		<StyledPage direction={"row"} spacing={2}>
+			<StyledContent
+				direction={"column"}
+				alignItems={"center"}
+				justifyContent={"center"}
+			>
+				<Container maxWidth="md" sx={{ padding: "0 !important" }}>
+					<Stack
+						direction={"column"}
+						alignItems={"center"}
+						justifyContent={"center"}
+						spacing={3}
+					>
+						<Typography
+							variant="h3"
+							fontWeight="bold"
+							sx={{
+								background:
+									"linear-gradient(90deg, #6C53FF 0%, #71DCF0 100%)",
+								backgroundClip: "text",
+								WebkitBackgroundClip: "text",
+								WebkitTextFillColor: "transparent",
+							}}
+						>
+							Welcome
+							{userName ? `, ${userName?.split(" ")[0]}` : ""}
+						</Typography>
+						<Typography
+							variant={"body1"}
+							sx={{ color: "text.secondary" }}
+						>
+							{APP_DESCRIPTION}
+						</Typography>
+						<RoomInput
+							isLoading={isLoading}
+							isDisabled={false}
+							minRows={4}
+							maxRows={8}
+							actions={
+								<Tooltip
+									title={"Open Configuration Menu"}
+									placement="top"
+								>
+									<IconButton
+										size={"medium"}
+										type="button"
+										aria-label="Open Configuration Menu"
+										disabled={isLoading}
+										color={
+											isMenuOpen ? "primary" : "default"
+										}
+										onClick={() => {
+											setIsMenuOpen(!isMenuOpen);
+										}}
+									>
+										<Tune color="inherit" />
+									</IconButton>
+								</Tooltip>
+							}
+							onPrompt={async (prompt, files) => {
+								await askModel(prompt, files);
 
-            // go to the new room
-            navigate(`/room/${room.roomId}`);
-        } catch (e) {
-            // send notification
-            notification.add({
-                message: e.message,
-                color: 'error',
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+								return true;
+							}}
+						/>
+						<Stack direction="row" spacing={2} maxWidth={"80%"}>
+							<StyledButton
+								onClick={() => setIsPromptLibraryOpen(true)}
+							>
+								<LightbulbOutlined
+									color="primary"
+									fontSize="small"
+								/>
+								<Typography variant="body2">Library</Typography>
+							</StyledButton>
+						</Stack>
+					</Stack>
+				</Container>
+			</StyledContent>
+			{isMenuOpen && (
+				<Resizable
+					minWidth={340}
+					handleStyles={{
+						top: { pointerEvents: "none" },
+						right: { pointerEvents: "none" },
+						bottom: { pointerEvents: "none" },
+						topRight: { pointerEvents: "none" },
+						bottomRight: { pointerEvents: "none" },
+						bottomLeft: { pointerEvents: "none" },
+						topLeft: { pointerEvents: "none" },
+					}}
+				>
+					<RoomConfiguration
+						options={options}
+						setOptions={(o) => {
+							setOptions(o);
+						}}
+						onClose={() => {
+							setIsMenuOpen(false);
+						}}
+					/>
+				</Resizable>
+			)}
 
-    let buttonTooltip = '';
-    if (isLoading) {
-        buttonTooltip = 'Please wait';
-    } else if (!chat.models.selected) {
-        buttonTooltip = 'Please select a model';
-    } else if (!input) {
-        buttonTooltip = 'Please enter input';
-    } else {
-        buttonTooltip = 'Ask agent';
-    }
+			{isPromptLibraryOpen && (
+				<PromptLibrary
+					onClose={(success, p) => {
+						// if there is a prompt ask
+						if (success) {
+							askModel(p.INTENT, []);
+						}
 
-    return (
-        <StyledPage direction={'column'} spacing={3}>
-            <Stack
-                direction={'row'}
-                padding={1}
-                alignItems={'center'}
-                justifyContent={'flex-end'}
-                spacing={1}
-                width={'100%'}
-            >
-                <Stack direction={'row'} alignItems={'center'} spacing={1}>
-                    <IconButton
-                        size="small"
-                        color={'default'}
-                        onClick={() => {
-                            setIsMenuOpen(!isMenuOpen);
-                        }}
-                    >
-                        <TuneRounded fontSize="small" />
-                    </IconButton>
-                </Stack>
-            </Stack>
-            <Stack
-                flex={1}
-                direction={'row'}
-                width={'100%'}
-                spacing={3}
-                overflow={'hidden'}
-            >
-                <StyledContent
-                    direction={'column'}
-                    alignItems={'center'}
-                    justifyContent={'center'}
-                >
-                    {isKnowledgeOpen && (
-                        <KnowledgeOverlayComponent
-                            knowledge={options.knowledge}
-                            onClose={(success, knowledge) => {
-                                // if its successful, update the options
-                                if (success) {
-                                    setOptions({
-                                        ...options,
-                                        knowledge: knowledge,
-                                    });
-                                }
-
-                                // close the modal
-                                setIsKnowledgeOpen(false);
-                            }}
-                        />
-                    )}
-
-                    {isToolsOpen && (
-                        <ToolsOverlayComponent
-                            tools={options.tools}
-                            onClose={(success, tools) => {
-                                // update the tools if successful
-                                if (success) {
-                                    setOptions({
-                                        ...options,
-                                        tools: tools,
-                                    });
-                                }
-
-                                // close it
-                                setIsToolsOpen(false);
-                            }}
-                        />
-                    )}
-                    {!isPromptLibraryOpen && (
-                        <Container maxWidth="md">
-                            <Stack direction={'column'} spacing={3}>
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                >
-                                    <Typography variant="h3" fontWeight="bold">
-                                        Welcome
-                                        {userName
-                                            ? ', ' + userName?.split(' ')[0]
-                                            : ''}
-                                    </Typography>
-                                </Stack>
-                                <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    justifyContent="center"
-                                >
-                                    <StyledDescription variant={'body1'}>
-                                        {APP_DESCRIPTION}
-                                    </StyledDescription>
-                                </Stack>
-                                <StyledAlert
-                                    icon={
-                                        <StyledChip size="small" label="NEW" />
-                                    }
-                                    color="info"
-                                >
-                                    <Alert.Title>Agent Tools</Alert.Title>
-                                    Explore tools for file search, code, and
-                                    function calling.{' '}
-                                    <StyledLink
-                                        href="#"
-                                        onClick={(event) => {
-                                            event.preventDefault();
-                                            setIsToolsOpen(true);
-                                        }}
-                                    >
-                                        Try it out!
-                                    </StyledLink>
-                                </StyledAlert>
-                                <Stack direction={'column'} spacing={1}>
-                                    {ENABLE_MODEL_SELECT ? (
-                                        <StyledSelect
-                                            size="small"
-                                            placeholder="Select a Model"
-                                            disabled={isLoading}
-                                            value={chat.models.selected}
-                                            onChange={(e) => {
-                                                chat.setSelectedModel(
-                                                    e.target.value,
-                                                );
-                                            }}
-                                            IconComponent={
-                                                KeyboardArrowDownRounded
-                                            }
-                                        >
-                                            {chat.models.options.map((m) => (
-                                                <MenuItem
-                                                    key={m.app_id}
-                                                    value={m.app_id}
-                                                >
-                                                    {m.app_name}
-                                                </MenuItem>
-                                            ))}
-                                        </StyledSelect>
-                                    ) : null}
-
-                                    <FormControl>
-                                        <StyledTextField
-                                            placeholder="Ask a question..."
-                                            variant={'outlined'}
-                                            value={input}
-                                            fullWidth
-                                            multiline
-                                            minRows={4}
-                                            maxRows={6}
-                                            disabled={isLoading}
-                                            onChange={(e) =>
-                                                setInput(e.target.value)
-                                            }
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                    askModel(input);
-                                                }
-                                            }}
-                                            InputProps={{
-                                                sx: {
-                                                    paddingBottom: '56px',
-                                                },
-                                            }}
-                                        />
-                                        <StyledTextFieldActions
-                                            direction={'row'}
-                                            alignItems={'center'}
-                                        >
-                                            <Stack
-                                                direction={'row'}
-                                                flex={1}
-                                                spacing={0}
-                                                justifyContent={'flex-end'}
-                                            >
-                                                <OptionsPickerComponent
-                                                    isDisabled={isLoading}
-                                                    options={options}
-                                                    setOptions={(o) =>
-                                                        setOptions({
-                                                            ...options,
-                                                            ...o,
-                                                        })
-                                                    }
-                                                />
-                                                {ENABLE_TOOLS && (
-                                                    <Tooltip
-                                                        title={'Add Tools'}
-                                                        placement="top"
-                                                    >
-                                                        <IconButton
-                                                            size={'medium'}
-                                                            type="button"
-                                                            aria-label="Add Tools"
-                                                            disabled={isLoading}
-                                                            color={
-                                                                isToolsOpen
-                                                                    ? 'primary'
-                                                                    : 'default'
-                                                            }
-                                                            onClick={() => {
-                                                                setIsToolsOpen(
-                                                                    true,
-                                                                );
-                                                            }}
-                                                        >
-                                                            <Badge
-                                                                color="primary"
-                                                                variant="dot"
-                                                                invisible={
-                                                                    options
-                                                                        .tools
-                                                                        .length ===
-                                                                    0
-                                                                }
-                                                            >
-                                                                <ConstructionOutlined fontSize="medium" />
-                                                            </Badge>
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                )}
-                                                {ENABLE_KNOWLEDGE && (<Tooltip
-                                                    title={'Add Knowledge'}
-                                                    placement="top"
-                                                >
-                                                    <IconButton
-                                                        size={'medium'}
-                                                        type="button"
-                                                        aria-label="Add Knowledge"
-                                                        disabled={isLoading}
-                                                        color={
-                                                            isKnowledgeOpen
-                                                                ? 'primary'
-                                                                : 'default'
-                                                        }
-                                                        onClick={() => {
-                                                            setIsKnowledgeOpen(
-                                                                true,
-                                                            );
-                                                        }}
-                                                    >
-                                                        <Badge
-                                                            color={'primary'}
-                                                            variant="dot"
-                                                            invisible={
-                                                                !options.knowledge
-                                                            }
-                                                        >
-                                                            <AttachFileRounded fontSize="medium" />
-                                                        </Badge>
-                                                        <Badge />
-                                                    </IconButton>
-                                                </Tooltip>)}
-                                                <Tooltip
-                                                    title={buttonTooltip}
-                                                    placement="top"
-                                                >
-                                                    <IconButton
-                                                        size={'medium'}
-                                                        type="button"
-                                                        color="primary"
-                                                        aria-label="Ask the Model"
-                                                        disabled={isLoading}
-                                                        onClick={() => {
-                                                            askModel(input);
-                                                        }}
-                                                    >
-                                                        {isLoading ? (
-                                                            <CircularProgress
-                                                                size={'24px'}
-                                                                color="primary"
-                                                            />
-                                                        ) : (
-                                                            <SendRounded
-                                                                color={
-                                                                    'inherit'
-                                                                }
-                                                                fontSize="medium"
-                                                            />
-                                                        )}
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </Stack>
-                                        </StyledTextFieldActions>
-                                    </FormControl>
-                                </Stack>
-                                <Stack
-                                    direction={'column'}
-                                    spacing={2}
-                                    width={'100%'}
-                                >
-                                    <Stack
-                                        direction={'row'}
-                                        alignItems={'center'}
-                                        justifyContent={'space-between'}
-                                    >
-                                        <Typography
-                                            variant="body1"
-                                            fontWeight={'medium'}
-                                        >
-                                            Start Now
-                                        </Typography>
-                                        <Button
-                                            size="medium"
-                                            color="inherit"
-                                            variant="text"
-                                            endIcon={<ArrowForward />}
-                                            disabled={isLoading}
-                                            onClick={() =>
-                                                setIsPromptLibraryOpen(true)
-                                            }
-                                        >
-                                            View All
-                                        </Button>
-                                    </Stack>
-                                    <StyledHolder>
-                                        {getPrompts.status === 'LOADING' && (
-                                            <CircularProgress color="primary" />
-                                        )}
-                                        {getPrompts.status !== 'LOADING' && (
-                                            <Grid container spacing={2}>
-                                                {getPrompts.data.map(
-                                                    (p, index) => {
-                                                        const borderColor = [
-                                                            '#BAB5F4',
-                                                            '#8CD98D',
-                                                            '#93CEF8',
-                                                        ];
-
-                                                        if (!p) {
-                                                            return null;
-                                                        }
-
-                                                        return (
-                                                            <Grid
-                                                                item
-                                                                key={p.ID}
-                                                                xs={4}
-                                                            >
-                                                                <StyledItem
-                                                                    disabled={
-                                                                        isLoading
-                                                                    }
-                                                                    onClick={() => {
-                                                                        askPrompt(
-                                                                            p,
-                                                                        );
-                                                                    }}
-                                                                    sx={{
-                                                                        borderColor:
-                                                                            borderColor[
-                                                                            index
-                                                                            ],
-                                                                    }}
-                                                                >
-                                                                    <Typography
-                                                                        variant={
-                                                                            'body1'
-                                                                        }
-                                                                        noWrap={
-                                                                            true
-                                                                        }
-                                                                    >
-                                                                        {
-                                                                            p.TITLE
-                                                                        }
-                                                                    </Typography>
-                                                                </StyledItem>
-                                                            </Grid>
-                                                        );
-                                                    },
-                                                )}
-                                            </Grid>
-                                        )}
-                                    </StyledHolder>
-                                </Stack>
-                            </Stack>
-                        </Container>
-                    )}
-
-                    {isPromptLibraryOpen && (
-                        <PromptLibraryComponent
-                            onClose={(success, p) => {
-                                // if there is a prompt ask
-                                if (success) {
-                                    askPrompt(p);
-                                }
-
-                                setIsPromptLibraryOpen(false);
-                            }}
-                        />
-                    )}
-                </StyledContent>
-                {isMenuOpen && (
-                    <Resizable
-                        defaultSize={{
-                            width: 360,
-                            height: '100%',
-                        }}
-                        minWidth={280}
-                        handleStyles={{
-                            top: { pointerEvents: 'none' },
-                            right: { pointerEvents: 'none' },
-                            bottom: { pointerEvents: 'none' },
-                            topRight: { pointerEvents: 'none' },
-                            bottomRight: { pointerEvents: 'none' },
-                            bottomLeft: { pointerEvents: 'none' },
-                            topLeft: { pointerEvents: 'none' },
-                        }}
-                        style={{
-                            // paddingTop: '8px',
-                            paddingRight: '8px',
-                            paddingBottom: '8px',
-                        }}
-                    >
-                        <OptionsMenuComponent
-                            options={options}
-                            setOptions={(o) => {
-                                setOptions(o);
-                            }}
-                            onClose={() => {
-                                setIsMenuOpen(false);
-                            }}
-                        />
-                    </Resizable>
-                )}
-            </Stack>
-        </StyledPage>
-    );
+						setIsPromptLibraryOpen(false);
+					}}
+				/>
+			)}
+		</StyledPage>
+	);
 });

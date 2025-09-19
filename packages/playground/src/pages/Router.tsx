@@ -1,68 +1,50 @@
+import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
+import { useInsight } from "@semoss/sdk/react";
+import { LoadingScreen } from "@semoss/ui";
+import { AuthenticatedLayout } from "./AuthenticatedLayout";
+import { DiscoverPage } from "./DiscoverPage";
+import { LoginPage } from "./LoginPage";
+import { MainLayout } from "./MainLayout";
+import { NewRoomPage } from "./NewRoomPage";
+import { RoomPage } from "./RoomPage";
 
-import { useInsight } from '@semoss/sdk/react';
-import { CircularProgress, styled } from '@semoss/ui';
-import {
-    HashRouter,
-    Navigate,
-    Route,
-    Routes,
-} from 'react-router-dom';
-
-import { AuthenticatedLayout } from './AuthenticatedLayout';
-import { DiscoverPage } from './DiscoverPage';
-import { LoginPage } from './LoginPage';
-import { MainLayout } from './MainLayout';
-import { NewRoomPage } from './NewRoomPage';
-import { RoomPage } from './RoomPage';
-
-const StyledContainer = styled('div')(() => ({
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'absolute',
-    inset: '0',
-    height: '100%',
-    width: '100%',
-}));
-
-
+/**
+ * The main router for the application. It handles the routing logic and renders the appropriate components based on the current URL.
+ */
 export const Router = () => {
-    const { isInitialized, error } = useInsight();
+	const { isInitialized, error } = useInsight();
 
+	// don't load anything if it is pending
+	if (!isInitialized) {
+		return <LoadingScreen.Trigger />;
+	}
 
-    // don't load anything if it is pending
-    if (!isInitialized) {
-        return (
-            <StyledContainer>
-                <CircularProgress />
-            </StyledContainer>
-        );
-    }
+	if (error) {
+		return "Error";
+	}
 
-    if (error) {
-        return "Error";
-    }
-
-    return (
-        <HashRouter future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true
-        }} >
-            <Routes>
-                <Route element={<AuthenticatedLayout />}>
-                    <Route element={<MainLayout />}>
-                        <Route path="new" element={<NewRoomPage />} />
-                        <Route path="room/:roomId" element={<RoomPage />} />
-                        <Route path="agents" element={<DiscoverPage />} />
-                        <Route
-                            path="*"
-                            element={<Navigate to="new" replace />}
-                        />
-                    </Route>
-                </Route>
-                <Route path="/login" element={<LoginPage />}></Route>
-                <Route path="*" element={<Navigate to="/login" replace />} />
-            </Routes>
-        </HashRouter>
-    );
+	return (
+		<HashRouter
+			future={{
+				v7_startTransition: true,
+				v7_relativeSplatPath: true,
+			}}
+		>
+			<Routes>
+				<Route element={<AuthenticatedLayout />}>
+					<Route element={<MainLayout />}>
+						<Route path="new" element={<NewRoomPage />} />
+						<Route path="room/:roomId" element={<RoomPage />} />
+						<Route path="discover" element={<DiscoverPage />} />
+						<Route
+							path="*"
+							element={<Navigate to="new" replace />}
+						/>
+					</Route>
+				</Route>
+				<Route path="/login" element={<LoginPage />}></Route>
+				<Route path="*" element={<Navigate to="/login" replace />} />
+			</Routes>
+		</HashRouter>
+	);
 };
