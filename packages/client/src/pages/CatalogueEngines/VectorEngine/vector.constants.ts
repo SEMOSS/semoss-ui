@@ -1092,10 +1092,11 @@ VECTOR_CONNECTION = {
             },
             secondary: true,
             rules: {
-              required: {
-                value: true,
-                message: "Please upload file / files.",
-              },
+              required:false
+              //  {
+              //   value: true,
+              //   message: "Please upload file / files.",
+              // },
             },
           },
           {
