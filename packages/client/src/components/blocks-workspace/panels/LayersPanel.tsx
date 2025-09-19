@@ -762,16 +762,13 @@ export const LayersPanel = observer(
 				});
 				setSelectedLayers([]); // Clear first
 
-				// Apply selection and hover
-				designer.setSelected(id as string);
-				designer.setHovered(id as string);
-
-				// Ensure visual selection state is fully synced
-				const nodeIds = [id as string];
-				setSelectedLayers(nodeIds);
-
-				// Render and scroll to the new block (if your system supports it)
-				renderBlock(id as string);
+		id.then((resolvedId) => {
+                    const newId = resolvedId as string;
+                    selectLayer(selectedPages); // Refresh the layer list
+                    designer.setSelected(newId);
+                    designer.setHovered(newId);
+                    setSelectedLayers([newId]);
+                });
 				handleMenuClose();
 			};
 

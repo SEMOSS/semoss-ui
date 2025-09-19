@@ -1014,13 +1014,14 @@ export class StateStore {
 	private generateNonPageId(
 		widget: string,
 		isCommunityBlock: boolean,
+		generatedBlocks: string[],
 	): string {
 		// Try sequential numbers starting from 1
 		let blockNum = 1;
 		while (
 			this._store.blocks[
 				`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`
-			]
+			] || (generatedBlocks.length >0 && generatedBlocks.includes(`${isCommunityBlock ? "com_" : ""}${widget}--${blockNum}`))			
 		) {
 			blockNum++;
 		}
@@ -1034,11 +1035,12 @@ export class StateStore {
 	private generateBlockId = (
 		json: BlockJSON,
 		isCommunityBlock: boolean,
+		generatedBlocks: string[],
 	): string => {
 		if (json.widget === "page") {
 			return this.generatePageId();
 		}
-		return this.generateNonPageId(json.widget, isCommunityBlock);
+		return this.generateNonPageId(json.widget, isCommunityBlock, generatedBlocks);
 	};
 
 	/**
@@ -1050,10 +1052,14 @@ export class StateStore {
 		json: BlockJSON,
 		isCommunityBlock: boolean,
 		communityIdMap: Record<string, string>,
+		generatedBlocks: string[],
 		parent?: Block["parent"],
 	) => {
 		// generate a new id
-		const id = this.generateBlockId(json, isCommunityBlock);
+		const id = this.generateBlockId(json, isCommunityBlock, generatedBlocks);
+
+		generatedBlocks.push(id);
+		
 		// create the block
 		const block = {
 			id: id,
@@ -1103,6 +1109,7 @@ export class StateStore {
 							child,
 							isCommunityBlock,
 							communityIdMap,
+							generatedBlocks,
 							parent,
 						);
 
@@ -1407,8 +1414,9 @@ export class StateStore {
 			json = newJson;
 			variableContainer = variablesList;
 		}
+		const generatedIds = [];
 		// generate the block
-		const block = this.generateBlock(json, isCommunity, {});
+		const block = this.generateBlock(json, isCommunity, {}, generatedIds);
 
 		// try to place it if position
 		if (!position) {
