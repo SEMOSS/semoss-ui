@@ -133,7 +133,11 @@ export const CreateAppPage = () => {
 							Start build with a template
 						</Typography>
 						<AppTemplates
-							randomCount={6}
+							/**
+							 * just commented this out for now,
+							 * to show all templates app cards, could be useful later
+							 */
+							// randomCount={6}
 							onUse={(t) => {
 								setNewAppOptions({
 									type: "blocks",
