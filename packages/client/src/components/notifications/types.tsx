@@ -5,7 +5,8 @@ export type NotificationType =
   | "REQUEST_APPROVAL"
   | "USER_ADDITION"
   | "PERMISSION_CHANGE"
-  | "REQUEST_DENIAL";
+  | "REQUEST_DENIAL"
+  | "SMSS_UPDATE";
 export interface NotificationRecord {
   notification_id: string;
   recipient_id?: string;

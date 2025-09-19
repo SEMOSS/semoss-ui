@@ -196,6 +196,22 @@ export const getNotificationMessage = (
           <FullStop />
         </>
       );
+          case "SMSS_UPDATE":
+    if (isAuthor) {
+        return (
+          <>
+            <Message>The SMSS file of</Message>{" "}
+            {app} <Message>has been updated by</Message>{" "} you
+            <FullStop />
+          </>
+        );
+      }
+      return (
+        <>
+          <Message>The SMSS file of</Message>{" "}
+            {app} <Message>has been updated by</Message>{" "} {by}
+        </>
+      );
 
     default:
       return null;
