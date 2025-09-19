@@ -21,7 +21,12 @@ const blocks = {
 			title: "",
 			show: "true",
 		},
-		listeners: {},
+		listeners: {
+		onClick: {
+			type: "sync",
+			order: [],
+		},
+	},
 		slots: {},
 		id: "icon",
 		widget: "icon",

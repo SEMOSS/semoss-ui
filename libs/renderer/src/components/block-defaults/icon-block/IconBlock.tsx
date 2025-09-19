@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { type CSSProperties, useState } from "react";
 import { iconMap } from "../../../constants";
 import { useBlock } from "../../../hooks";
-import type { BlockComponent, BlockDef } from "../../../store";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 export interface IconBlockDef extends BlockDef<"icon"> {
 	widget: "icon";
@@ -24,11 +24,17 @@ export interface IconBlockDef extends BlockDef<"icon"> {
 			| "warning";
 		showBadge: boolean;
 	};
+	listeners: {
+		onClick: {
+			type: "sync" | "async";
+			order: ListenerActions[];
+		};
+	};
 	slots: never;
 }
 
 export const IconBlock: BlockComponent = observer(({ id }) => {
-	const { attrs, data } = useBlock<IconBlockDef>(id);
+	const { attrs, data, listeners } = useBlock<IconBlockDef>(id);
 
 	const displayIcon = (key: string) => {
 		const Icon = iconMap[key] || iconMap["Icon"];
@@ -63,6 +69,9 @@ export const IconBlock: BlockComponent = observer(({ id }) => {
 				width: "fit-content",
 				paddingInline: "10px",
 			}}
+			onClick={() => {
+				listeners.onClick();
+				}}
 		>
 			{displayIcon(data.icon)}
 		</div>

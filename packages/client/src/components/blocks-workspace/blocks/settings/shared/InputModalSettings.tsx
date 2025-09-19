@@ -77,7 +77,13 @@ export const InputModalSettings = observer(
 				const v = getValueByPath(data, path);
 				if (typeof v === "undefined") {
 					return "";
-				} else if (typeof v === "string") {
+				}
+				
+				if (typeof v === "string") {
+					// For the value field, return empty string if it's empty (to show as truly empty)
+					if (path === "value" && v === "") {
+						return "";
+					}
 					return v;
 				}
 
@@ -105,8 +111,19 @@ export const InputModalSettings = observer(
 
 			timeoutRef.current = setTimeout(() => {
 				try {
+					let valueToSave = value;
+					
+					// Handle datetime conversion for storage
+					const hasType = data && 'type' in data;
+					if (hasType && (data as any).type === "datetime" && path === "value" && value) {
+						// Convert YYYY-MM-DDTHH:mm to YYYY-MM-DDTHH:mm:ssZ for storage
+						if (value.length === 16) { // YYYY-MM-DDTHH:mm format
+							valueToSave = value + ':00Z';
+						}
+					}
+					
 					// set the value
-					setData(path, value as PathValue<D["data"], typeof path>);
+					setData(path, valueToSave as PathValue<D["data"], typeof path>);
 				} catch (e) {
 					console.log(e);
 				}
@@ -125,9 +142,12 @@ export const InputModalSettings = observer(
 							onChange(e.target.value);
 						}}
 						type={
-							Object.hasOwn(data, "type") && path === "value"
-								? (data.type as string)
-								: undefined
+							// Always use text type for value field to keep it empty like text type
+							path === "value" ? "text" : (
+								data && 'type' in data 
+									? ((data as any).type === "datetime" ? "datetime-local" : (data as any).type as string)
+									: undefined
+							)
 						}
 						size="small"
 						variant="outlined"
@@ -140,11 +160,7 @@ export const InputModalSettings = observer(
 				<Modal
 					open={open}
 					fullWidth
-					maxWidth={
-						Object.hasOwn(data, "type") && data.type === "date"
-							? "sm"
-							: "lg"
-					}
+					maxWidth="lg"
 				>
 					<StyledModalHeader>
 						<Typography variant="h5">{`Edit ${label}`}</Typography>
@@ -158,21 +174,19 @@ export const InputModalSettings = observer(
 							fullWidth
 							placeholder={placeholder}
 							multiline
-							rows={
-								Object.hasOwn(data, "type") &&
-								data.type === "date"
-									? 1
-									: 15
-							}
+							rows={15}
 							value={value}
 							onChange={(e) => {
 								// sync the data on change
 								onChange(e.target.value);
 							}}
 							type={
-								Object.hasOwn(data, "type") && path === "value"
-									? (data.type as string)
-									: undefined
+								// Always use text type for value field to keep it empty like text type
+								path === "value" ? "text" : (
+									data && 'type' in data 
+										? ((data as any).type === "datetime" ? "datetime-local" : (data as any).type as string)
+										: undefined
+								)
 							}
 							size="small"
 							variant="outlined"

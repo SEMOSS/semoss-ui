@@ -9,6 +9,7 @@ import { BLOCK_TYPE_DISPLAY } from "../block-defaults.constants";
 import {
 	buildDimensionsSection,
 	buildShowField,
+	buildListener,
 } from "../block-defaults.shared";
 import type { BlockSettingsConfig } from "../settings.types";
 
@@ -40,6 +41,10 @@ export const config: BlockSettingsConfig = {
 		{
 			name: "Conditional",
 			children: [...buildShowField()],
+		},
+		{
+					name: "On Click",
+					children: [...buildListener("onClick")],
 		},
 	],
 	styleMenu: [

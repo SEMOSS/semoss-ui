@@ -9,7 +9,7 @@ export const config: BlockConfig<RadioBlockDef> = {
 		style: {
 			padding: "4px",
 		},
-		value: "yes",
+		value: "",
 		label: "Radio Group",
 		options: [
 			{ label: "Yes", value: "yes" },
