@@ -10,6 +10,7 @@ export const config: BlockConfig<IterationBlockDef> = {
 		style: {},
 		source: "",
 		child: null,
+		removeIds: [],
 		show: "true",
 	},
 	listeners: {

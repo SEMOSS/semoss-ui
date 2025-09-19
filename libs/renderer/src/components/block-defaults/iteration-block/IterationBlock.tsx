@@ -31,6 +31,11 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
 		child: Block;
 
 		/**
+		 * Block ids to remove on next render
+		 */
+		removeIds: string[];
+
+		/**
 		 * Conditionally show the block
 		 */
 		show: string;
@@ -47,7 +52,7 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
 }
 
 export const IterationBlock: BlockComponent = observer(({ id }) => {
-	const { attrs, data, slots, listeners } = useBlock<IterationBlockDef>(id);
+	const { attrs, data, slots, listeners, setData } = useBlock<IterationBlockDef>(id);
 	const { state } = useBlocks();
 
 	const [blocksToRemove, setBlocksToRemove] = useState([]);
@@ -77,8 +82,8 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 		if (state.mode === "interactive") {
 			if (Array.isArray(list)) {
 				const newIds = [];
-
-				blocksToRemove.forEach(async (b) => {
+				// TODO : Need to re-check and reqrite the logic properlly 
+				 (data.removeIds || []).forEach(async (b) => {
 					await state.dispatch({
 						message: ActionMessages.REMOVE_BLOCK,
 						payload: {
@@ -87,104 +92,110 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 						},
 					});
 				});
-
-				// biome-ignore lint/correctness/noUnusedFunctionParameters: though it is not used, to extract index we need it
-				list.forEach(async (j, i) => {
-					// Skip the first
-					if (i === 0) return;
-
-					const getJsonForBlock = (id: string) => {
-						const block = state.blocks[id];
-
-						const blockJson = {
-							widget: toJS(block.widget),
-							data: toJS(block.data),
-							listeners: toJS(block.listeners),
-							slots: {},
+				const data1 = state.getBlock(slots.children.children[0]);
+				const listLoop = async(list) => {
+					// biome-ignore lint/correctness/noUnusedFunctionParameters: though it is not used, to extract index we need it
+					await list.forEach(async (j, i) => {
+						// Skip the first
+						if (i === 0) return;
+	
+						const getJsonForBlock = (id: string) => {
+							const block = state.blocks[id];
+	
+							const blockJson = {
+								widget: toJS(block.widget),
+								data: toJS(block.data),
+								listeners: toJS(block.listeners),
+								slots: {},
+							};
+	
+							// generate the slots
+							for (const slot in block.slots) {
+								if (block.slots[slot]) {
+									blockJson.slots[slot] = block.slots[
+										slot
+									].children.map((childId) => {
+										return getJsonForBlock(childId);
+									});
+								}
+							}
+							// return it
+							return blockJson;
+						};
+						// Add the block
+						// Position it after the last added block or after the original child block if first
+						const position = {
+							parent: id,
+							slot: data1.parent.slot,
+							sibling: data1.id,
+							type: "after",
 						};
 
-						// generate the slots
-						for (const slot in block.slots) {
-							if (block.slots[slot]) {
-								blockJson.slots[slot] = block.slots[
-									slot
-								].children.map((childId) => {
-									return getJsonForBlock(childId);
-								});
-							}
-						}
-						// return it
-						return blockJson;
-					};
+						const newBlockId = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
+							payload: {
+								json: getJsonForBlock(data1.id) as BlockJSON,
+								position: position,
+							},
+						});
 
-					const position = {
-						parent: id,
-						slot: data.child.parent.slot,
-						sibling: data.child.id,
-						type: "after",
-					};
+						const newBlock = await newBlockId;
+						newIds.push(newBlock);
+						const fixListeners = (id: string) => {
+							const block = state.blocks[id];
 
-					const newBlockId = await state.dispatch({
-						message: ActionMessages.ADD_BLOCK,
-						payload: {
-							json: getJsonForBlock(data.child.id) as BlockJSON,
-							position: position,
-						},
-					});
-
-					const fixListeners = (id: string) => {
-						const block = state.blocks[id];
-
-						for (const listener in block.listeners) {
-							if (block.listeners[listener].order) {
-								// Iterate through the order array of messages
-								block.listeners[listener].order.forEach(
-									async (message: ListenerActions) => {
-										// Check for the "MODIFY_VARIABLE" message
-										if (
-											message.message ===
-											"MODIFY_VARIABLE"
-										) {
-											// Update the blockId in the payload
-											message.payload.blockId = id;
-
-											await state.dispatch({
-												message:
-													ActionMessages.SET_LISTENER,
-												payload: {
-													id: id,
-													listener: listener,
-													type: block.listeners[
-														listener
-													].type,
-													actions:
-														block.listeners[
+							for (const listener in block.listeners) {
+								if (block.listeners[listener].order) {
+									// Iterate through the order array of messages
+									block.listeners[listener].order.forEach(
+										async (message: ListenerActions) => {
+											// Check for the "MODIFY_VARIABLE" message
+											if (
+												message.message ===
+												"MODIFY_VARIABLE"
+											) {
+												// Update the blockId in the payload
+												message.payload.blockId = id;
+	
+												await state.dispatch({
+													message:
+														ActionMessages.SET_LISTENER,
+													payload: {
+														id: id,
+														listener: listener,
+														type: block.listeners[
 															listener
-														].order,
-												},
-											});
-										}
-									},
-								);
+														].type,
+														actions:
+															block.listeners[
+																listener
+															].order,
+													},
+												});
+											}
+										},
+									);
+								}
 							}
-						}
-						// Now do the same for all slots recursively
-						for (const slot in block.slots) {
-							if (block.slots[slot]) {
-								block.slots[slot].children.forEach(
-									(childId) => {
-										fixListeners(childId);
-									},
-								);
+							// Now do the same for all slots recursively
+							for (const slot in block.slots) {
+								if (block.slots[slot]) {
+									block.slots[slot].children.forEach(
+										(childId) => {
+											fixListeners(childId);
+										},
+									);
+								}
 							}
-						}
-					};
-					await fixListeners(newBlockId as string);
-
-					newIds.push(newBlockId);
-				});
-
-				setBlocksToRemove(newIds);
+						};
+						await fixListeners(newBlockId as string);					
+					});
+					setBlocksToRemove(newIds);
+					await console.log("After looping >>", newIds);
+					await setData('removeIds', newIds);
+				}
+				listLoop(list);
+				
 			}
 		}
 		// TODO: FIx Dependency array

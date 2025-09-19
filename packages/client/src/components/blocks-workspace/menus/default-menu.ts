@@ -768,6 +768,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				},
 				source: "",
 				child: null,
+				removeIds: [],
 				show: "true",
 			},
 			listeners: {
