@@ -506,7 +506,12 @@ export const ImportForm = (props) => {
 					return;
 				}
 
-				navigate(`/engine/${(steps[0].data as string).toUpperCase()}`);
+				notification.add({
+					color: "success",
+					message: `ZIP uploaded successfully`,
+				});
+
+				navigate(`/engine/${(steps[0].data as string).toLowerCase()}/${output.database_id}`);
 				return;
 			}
 			setFormLoading(false);
