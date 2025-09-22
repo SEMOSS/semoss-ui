@@ -3,862 +3,942 @@ import { observer } from "mobx-react-lite";
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
 import {
-	Button,
-	Markdown,
-	Select,
-	Stack,
-	styled,
-	useNotification,
+  Button,
+  Markdown,
+  Select,
+  Stack,
+  styled,
+  useNotification,
 } from "@semoss/ui";
 import { useBlocks } from "../../../hooks";
 import {
-	ActionMessages,
-	type CellComponent,
-	type CellDef,
-	type Variable,
+  ActionMessages,
+  type CellComponent,
+  type CellDef,
+  type Variable,
 } from "../../../store";
 import { MarkdownIcon, PythonIcon, RIcon } from "./icons";
 
 const StyledSelect = styled(Select)(({ theme }) => ({
-	"& .MuiSelect-select": {
-		color: theme.palette.text.secondary,
-		display: "flex",
-		gap: theme.spacing(1),
-		alignItems: "center",
-		textOverflow: "ellipsis",
-		overflow: "hidden",
-		whiteSpace: "nowrap",
-		"&:focus": {
-			backgroundColor: "inherit !important",
-		},
-	},
+  "& .MuiSelect-select": {
+    color: theme.palette.text.secondary,
+    display: "flex",
+    gap: theme.spacing(1),
+    alignItems: "center",
+    textOverflow: "ellipsis",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    "&:focus": {
+      backgroundColor: "inherit !important",
+    },
+  },
 }));
 const StyledSelectItem = styled(Select.Item)(({ theme }) => ({
-	display: "flex",
-	gap: theme.spacing(1),
-	color: theme.palette.text.secondary,
+  display: "flex",
+  gap: theme.spacing(1),
+  color: theme.palette.text.secondary,
 }));
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));
 const DiffEditor = lazy(() =>
-	import("@monaco-editor/react").then((module) => ({
-		default: module.DiffEditor,
-	})),
+  import("@monaco-editor/react").then((module) => ({
+    default: module.DiffEditor,
+  }))
 );
 
 const EDITOR_LINE_HEIGHT = 19;
 const EDITOR_MAX_HEIGHT = 500; // ~25 lines
 
 interface EDITOR_TYPES {
-	py: {
-		name: string;
-		value: string;
-		language: string;
-	};
-	r: {
-		name: string;
-		value: string;
-		language: string;
-	};
-	pixel: {
-		name: string;
-		value: string;
-		language: string;
-	};
-	markdown: {
-		name: string;
-		value: string;
-		language: string;
-	};
+  py: {
+    name: string;
+    value: string;
+    language: string;
+  };
+  r: {
+    name: string;
+    value: string;
+    language: string;
+  };
+  pixel: {
+    name: string;
+    value: string;
+    language: string;
+  };
+  markdown: {
+    name: string;
+    value: string;
+    language: string;
+  };
 }
 const EDITOR_TYPE: EDITOR_TYPES = {
-	py: {
-		name: "Python",
-		value: "py",
-		language: "python",
-	},
-	r: {
-		name: "R",
-		value: "r",
-		language: "r",
-	},
-	pixel: {
-		name: "Pixel",
-		value: "pixel",
-		language: "pixel",
-	},
-	markdown: {
-		name: "Markdown",
-		value: "markdown",
-		language: "Markdown",
-	},
+  py: {
+    name: "Python",
+    value: "py",
+    language: "python",
+  },
+  r: {
+    name: "R",
+    value: "r",
+    language: "r",
+  },
+  pixel: {
+    name: "Pixel",
+    value: "pixel",
+    language: "pixel",
+  },
+  markdown: {
+    name: "Markdown",
+    value: "markdown",
+    language: "Markdown",
+  },
 } as const;
 
 export interface CodeCellDef extends CellDef<"code"> {
-	widget: "code";
-	parameters: {
-		/** Type of code in the cell */
-		type: "r" | "py" | "pixel" | "markdown";
+  widget: "code";
+  parameters: {
+    /** Type of code in the cell */
+    type: "r" | "py" | "pixel" | "markdown";
 
-		/** Code rendered in the cell */
-		code: string | string[];
+    /** Code rendered in the cell */
+    code: string | string[];
 
-		/** Cell is marked as a code cell */
-		marked?: boolean;
-	};
+    /** Cell is marked as a code cell */
+    marked?: boolean;
+  };
 }
 
 // best documentation on component versions of monaco editor and diffeditor
 // https://www.npmjs.com/package/@monaco-editor/react
 const StyledContent = styled("div")(() => ({
-	position: "relative",
-	width: "100%",
+  position: "relative",
+  width: "100%",
 }));
 
 const StyledContainer = styled("div")(() => ({
-	width: "98%",
+  width: "98%",
 }));
 
 // track completion providers outside of render context
 let completionItemProviders = {};
 const EditorLanguages = {
-	py: "python",
-	pixel: "pixel",
-	r: "r",
+  py: "python",
+  pixel: "pixel",
+  r: "r",
 };
 
 const EditorLineHeight = 19;
-// TODO:: Refactor height to account for Layout
-export const CodeCell: CellComponent<CodeCellDef> = observer((props) => {
-	const editorRef = useRef(null);
-	const monacoRef = useRef(null);
-	const selectionRef = useRef(null);
-	const LLMReturnRef = useRef("");
+type CodeCellApi = {
+  triggerAIGeneration: () => Promise<void>;
+};
 
-	const diffEditorRef = useRef(null);
+interface CodeCellProps extends CellComponent<CodeCellDef> {
+  onReady?: (call: CodeCellApi) => void;
+  agentModelEngine?: string;
+  cell;
+  isExpanded?: boolean;
+}
+export const CodeCell: React.FC<CodeCellProps> = observer(
+  (props: CodeCellProps) => {
+    const editorRef = useRef(null);
+    const monacoRef = useRef(null);
+    const selectionRef = useRef(null);
+    const LLMReturnRef = useRef("");
 
-	const { cell, isExpanded, agentModelEngine } = props;
-	const { state } = useBlocks();
-	const notification = useNotification();
+    const diffEditorRef = useRef(null);
 
-	const [editorHeight, setEditorHeight] = useState<number>(null);
+    const { cell, isExpanded, agentModelEngine, onReady } = props;
+    const { state } = useBlocks();
+    const notification = useNotification();
 
-	const [LLMLoading, setLLMLoading] = useState(false);
-	const [diffEditMode, setDiffEditMode] = useState(false);
-	const wordWrapRef = useRef(true);
+    const [editorHeight, setEditorHeight] = useState<number>(null);
 
-	const [oldContentDiffEdit, setOldContentDiffEdit] = useState("");
-	const [newContentDiffEdit, setNewContentDiffEdit] = useState("");
+    const [LLMLoading, setLLMLoading] = useState(false);
+    const [diffEditMode, setDiffEditMode] = useState(false);
+    const wordWrapRef = useRef(true);
 
-	const [isLLMRejected, setIsLLMRejected] = useState(false);
-	const [count, setCount] = useState(0);
-	const [modelId, setModelId] = useState(agentModelEngine);
+    const [oldContentDiffEdit, setOldContentDiffEdit] = useState("");
+    const [newContentDiffEdit, setNewContentDiffEdit] = useState("");
 
-	/**
-	 * Ask a LLM a question to generate a response
-	 * @param prompt - prompt passed to the LLM
-	 * @returns LLM Response
-	 */
-	const promptLLM = async (prompt: string) => {
-		try {
-			setLLMLoading(true);
-			if (!modelId) {
-				throw new Error("No Agent Model Engine");
-			}
+    const [isLLMRejected, setIsLLMRejected] = useState(false);
+    const [count, setCount] = useState(0);
+    const [modelId, setModelId] = useState(agentModelEngine);
 
-			const res = await runPixel(
-				`LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ] );`,
-			);
+    /**
+     * Ask a LLM a question to generate a response
+     * @param prompt - prompt passed to the LLM
+     * @returns LLM Response
+     */
+    const promptLLM = async (prompt: string) => {
+      try {
+        setLLMLoading(true);
+        if (!modelId) {
+          throw new Error("No Agent Model Engine");
+        }
 
-			const LLMResponse = res.pixelReturn[0].output["response"];
-			let trimmedStarterCode = LLMResponse;
-			trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
+        const res = await runPixel(
+          `LLM(engine = "${modelId}", command = "${prompt}", paramValues = [ {"max_completion_tokens": 2000, "temperature": 0.3} ] );`
+        );
 
-			trimmedStarterCode = trimmedStarterCode.substring(
-				trimmedStarterCode.indexOf("\n") + 1,
-			);
+        const LLMResponse = res.pixelReturn[0].output["response"];
+        let trimmedStarterCode = LLMResponse;
+        trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
 
-			return trimmedStarterCode;
-		} catch {
-			console.error("Failed response from AI Code Generator");
-			return "";
-		} finally {
-			setLLMLoading(false);
-		}
-	};
+        trimmedStarterCode = trimmedStarterCode.substring(
+          trimmedStarterCode.indexOf("\n") + 1
+        );
 
-	/**
-	 * Handle mounting of the diff editor
-	 *
-	 * @param editor - editor that mounted
-	 * @param monaco - monaco instance
-	 */
-	const handleDiffEditorMount = (editor, monaco) => {
-		// save the editor
-		diffEditorRef.current = editor;
+        return trimmedStarterCode;
+      } catch {
+        console.error("Failed response from AI Code Generator");
+        return "";
+      } finally {
+        setLLMLoading(false);
+      }
+    };
 
-		editor.addAction({
-			contextMenuGroupId: "1_modification",
-			contextMenuOrder: 2,
-			id: "toggle-word-wrap",
-			label: "Toggle Word Wrap",
-			keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+    useEffect(() => {
+      if (onReady) {
+        onReady({
+          async triggerAIGeneration() {
+            if (!editorRef.current) {
+              notification.add({
+                color: "error",
+                message: "Editor is not available.",
+              });
+              return;
+            }
+            if (!modelId) {
+              notification.add({
+                color: "error",
+                message:
+                  "No Agent Model Engine selected. Please select a model.",
+              });
+              return;
+            }
 
-			run: async (editor) => {
-				wordWrapRef.current = !wordWrapRef.current;
-				editor.updateOptions({
-					wordWrap: wordWrapRef.current ? "on" : "off",
-				});
-			},
-		});
+            const pixelCommand = `help()`;
+            const response = await state.runSideEffect(pixelCommand);
 
-		// resize the editor
-		resizeDiffEditor();
-	};
+            // Convert output into array and filter unwanted values
+            let extraOptions: string[] = [];
+            if (response?.pixelReturn?.[0]?.output) {
+              extraOptions = (response?.pixelReturn?.[0]?.output as string)
+                .split(/\s+/)
+                .map((item) => item.trim())
+                .filter(
+                  (item) =>
+                    item &&
+                    item.toLowerCase() !== "general" &&
+                    !item.toLowerCase().startsWith("reactors")
+                );
+            }
 
-	/**
-	 * Resize the diff editor
-	 */
-	const resizeDiffEditor = () => {
-		// set the height based ont the max content
-		let height = Math.min(
-			Math.max(
-				diffEditorRef.current.getModifiedEditor().getContentHeight(),
-				diffEditorRef.current.getOriginalEditor().getContentHeight(),
-			),
-			EDITOR_MAX_HEIGHT,
-		);
+            const editor = editorRef.current;
+            const model = editor.getModel();
+            let userInput = model.getValue();
 
-		// add the trailing line
-		height += EDITOR_LINE_HEIGHT;
+            // Select the whole content
+            const fullRange = new monacoRef.current.Range(
+              1,
+              1,
+              model.getLineCount(),
+              model.getLineMaxColumn(model.getLineCount())
+            );
 
-		// resize it
-		diffEditorRef.current.layout({
-			width: diffEditorRef.current.getContainerDomNode().clientWidth,
-			height: height,
-		});
-	};
+            const selection = fullRange;
+            const selectedText = model.getValueInRange(selection);
+            if (selection && !selection.isEmpty()) {
+              userInput = model.getValueInRange(selection);
+            }
+            if (!userInput.trim()) {
+              notification.add({
+                message:
+                  "Please select text or write content to generate code from.",
+              });
+              return;
+            }
 
-	const handleMount = (editor, monaco) => {
-		// if diffedit code has been rejected set to old editor content
-		if (isLLMRejected) {
-			editor.getModel().setValue(oldContentDiffEdit);
-			state.dispatch({
-				message: ActionMessages.UPDATE_CELL,
-				payload: {
-					queryId: cell.query.id,
-					cellId: cell.id,
-					path: "parameters.code",
-					value: oldContentDiffEdit,
-				},
-			});
-			setIsLLMRejected(false);
-		}
+            // Build structured prompt
+                        const promptText = `
+            You are a strict string matcher. Map the user's request to exactly one function name from the provided list.
 
-		// first time you set the height based on content Height
-		editorRef.current = editor;
-		monacoRef.current = monaco;
-		const contentHeight = editor.getContentHeight();
-		setEditorHeight(contentHeight);
-		// update the action
+            Rules:
+            - Return ONLY the single best-matching option (exact text from the list), no quotes, no explanations.
+            - Prefer exact term matches > close synonyms > broader categories.
+            - Read the user's request.
+            - Select the ONE best matching option from the list.
+            - Your answer MUST be exactly one of the options, character-for-character (same case, same spelling).
+            - Do not return explanations, synonyms, or anything else.
+            - If nothing is a good match, return exactly: NO_MATCH
 
-		editor.addAction({
-			contextMenuGroupId: "1_modification",
-			contextMenuOrder: 2,
-			id: "toggle-word-wrap",
-			label: "Toggle Word Wrap",
-			keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
+            User request:
+            ${userInput}
 
-			run: async (editor) => {
-				wordWrapRef.current = !wordWrapRef.current;
-				editor.updateOptions({
-					wordWrap: wordWrapRef.current ? "on" : "off",
-				});
-			},
-		});
+            Options (pick one):
+            [${extraOptions.join(",")}]
 
-		editor.addAction({
-			id: "run",
-			label: "Run",
-			keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
-			run: (editor) => {
-				const newValue = editor.getValue();
+            Output:
+            (Only the chosen option name or NO_MATCH)
+              `.trim();
+            selectionRef.current = selection;
+            const originalContent = model.getValue();
+            setOldContentDiffEdit(originalContent);
 
-				// update with the new code
-				state.dispatch({
-					message: ActionMessages.UPDATE_CELL,
-					payload: {
-						queryId: cell.query.id,
-						cellId: cell.id,
-						path: "parameters.code",
-						value: newValue,
-					},
-				});
+            const commentedText = selectedText
+              .split("\n")
+              .map((line) => `// ${line}`)
+              .join("\n");
+            // Create LLM response
+            const LLMReturnText = await promptLLM(promptText);
 
-				state.dispatch({
-					message: ActionMessages.RUN_CELL,
-					payload: {
-						queryId: cell.query.id,
-						cellId: cell.id,
-					},
-				});
-			},
-		});
+            LLMReturnRef.current = LLMReturnText;
+            setOldContentDiffEdit(editor.getModel().getValue());
+            editor.executeEdits("custom-action", [
+              {
+                range: selection,
+                text: commentedText,
+                forceMoveMarkers: true,
+              },
+              {
+                range: new monacoRef.current.Range(
+                  selection.endLineNumber + 2,
+                  1,
+                  selection.endLineNumber + 2,
+                  1
+                ),
+                text: `\n\n${LLMReturnText}\n`,
+                forceMoveMarkers: true,
+              },
+            ]);
+            setNewContentDiffEdit(editor.getModel().getValue());
+            setDiffEditMode(true);
+          },
+        });
+      }
+    }, [onReady, modelId, cell.parameters.type]);
+    /**
+     * Handle mounting of the diff editor
+     *
+     * @param editor - editor that mounted
+     * @param monaco - monaco instance
+     */
+    const handleDiffEditorMount = (editor, monaco) => {
+      // save the editor
+      diffEditorRef.current = editor;
 
-		editor.addAction({
-			contextMenuGroupId: "1_modification",
-			contextMenuOrder: 1,
-			id: "prompt-LLM",
-			label: "Generate Code",
-			keybindings: [
-				monaco.KeyMod.CtrlCmd |
-					monaco.KeyMod.Shift |
-					monaco.KeyCode.KeyG,
-			],
+      editor.addAction({
+        contextMenuGroupId: "1_modification",
+        contextMenuOrder: 2,
+        id: "toggle-word-wrap",
+        label: "Toggle Word Wrap",
+        keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
 
-			run: async (editor) => {
-				if (!modelId) {
-					console.error("No Agent Model Engine");
-					notification.add({
-						color: "error",
-						message:
-							"No Agent Model Engine selected. Please select a model.",
-					});
-					return;
-				}
-				const selection = editor.getSelection();
-				selectionRef.current = selection;
-				const selectedText = editor
-					.getModel()
-					.getValueInRange(selection);
+        run: async (editor) => {
+          wordWrapRef.current = !wordWrapRef.current;
+          editor.updateOptions({
+            wordWrap: wordWrapRef.current ? "on" : "off",
+          });
+        },
+      });
 
-				// Capture original state BEFORE any edits
-				const originalContent = editor.getModel().getValue();
-				setOldContentDiffEdit(originalContent);
+      // resize the editor
+      resizeDiffEditor();
+    };
 
-				// Determine comment symbol
-				const language = EditorLanguages[cell.parameters.type];
-				const commentSymbol =
-					{
-						pixel: "//",
-						python: "#",
-						r: "#",
-					}[language] || "//";
+    /**
+     * Resize the diff editor
+     */
+    const resizeDiffEditor = () => {
+      // set the height based ont the max content
+      let height = Math.min(
+        Math.max(
+          diffEditorRef.current.getModifiedEditor().getContentHeight(),
+          diffEditorRef.current.getOriginalEditor().getContentHeight()
+        ),
+        EDITOR_MAX_HEIGHT
+      );
 
-				// Create commented version (diff preview)
-				const commentedText = selectedText
-					.split("\n")
-					.map((line) => `${commentSymbol} ${line}`)
-					.join("\n");
+      // add the trailing line
+      height += EDITOR_LINE_HEIGHT;
 
-				// Create LLM response
-				const LLMReturnText = await promptLLM(
-					`Write me code that does ${selectedText} in ${language}`, // filetype should be sent as param to LLM
-				);
-				LLMReturnRef.current = LLMReturnText;
-				setOldContentDiffEdit(editor.getModel().getValue());
-				editor.executeEdits("custom-action", [
-					{
-						range: selection,
-						text: commentedText,
-						forceMoveMarkers: true,
-					},
-					{
-						range: new monaco.Range(
-							selection.endLineNumber + 2,
-							1,
-							selection.endLineNumber + 2,
-							1,
-						),
-						text: `\n\n${LLMReturnText}\n`,
-						forceMoveMarkers: true,
-					},
-				]);
-				setNewContentDiffEdit(editor.getModel().getValue());
-				setDiffEditMode(true);
-			},
-		});
+      // resize it
+      diffEditorRef.current.layout({
+        width: diffEditorRef.current.getContainerDomNode().clientWidth,
+        height: height,
+      });
+    };
 
-		const exposedQueryParameterDescription = (
-			exposedParameter: string,
-			queryId: string,
-		): string => {
-			switch (exposedParameter) {
-				case "id":
-				case "mode":
-					return `Returns the ${exposedParameter} of query ${queryId}`;
-				case "isExecuted":
-					return `Returns whether query ${queryId} has executed`;
-				case "isLoading":
-					return `Returns the loading state for query ${queryId}`;
-				case "isError":
-					return `Returns whether query ${queryId} has an error`;
-				case "error":
-					return `Returns the error for query ${queryId} if it exists`;
-				case "list":
-					return `Returns an ordered list of cell IDs for query ${queryId}`;
-				default:
-					return `Reference the ${exposedParameter} parameter of query ${queryId}`;
-			}
-		};
+    const handleMount = (editor, monaco) => {
+      // if diffedit code has been rejected set to old editor content
+      if (isLLMRejected) {
+        editor.getModel().setValue(oldContentDiffEdit);
+        state.dispatch({
+          message: ActionMessages.UPDATE_CELL,
+          payload: {
+            queryId: cell.query.id,
+            cellId: cell.id,
+            path: "parameters.code",
+            value: oldContentDiffEdit,
+          },
+        });
+        setIsLLMRejected(false);
+      }
 
-		// add editor completion suggestions based on block values and query outputs
-		const generateSuggestions = (range) => {
-			const suggestions = [];
-			Object.entries(state.variables).forEach((keyValue) => {
-				const id = keyValue[0];
-				const variable = keyValue[1] as Variable;
+      // first time you set the height based on content Height
+      editorRef.current = editor;
+      monacoRef.current = monaco;
+      const contentHeight = editor.getContentHeight();
+      setEditorHeight(contentHeight);
+      // update the action
 
-				suggestions.push({
-					label: {
-						label: `{{${id}}}`,
-						description: `${state.getVariable(
-							variable.to,
-							variable.type,
-						)}`,
-					},
-					kind: monaco.languages.CompletionItemKind.Variable,
-					documentation: `This returns the value of ${id}, which is a ${variable.type}.  Feel free to change reference value in the variables panel on the left.`,
-					insertText: `{{${id}}}`,
-					range: range,
-				});
-			});
+      editor.addAction({
+        contextMenuGroupId: "1_modification",
+        contextMenuOrder: 2,
+        id: "toggle-word-wrap",
+        label: "Toggle Word Wrap",
+        keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
 
-			return suggestions;
-		};
+        run: async (editor) => {
+          wordWrapRef.current = !wordWrapRef.current;
+          editor.updateOptions({
+            wordWrap: wordWrapRef.current ? "on" : "off",
+          });
+        },
+      });
 
-		monaco.editor.defineTheme("custom-theme", {
-			base: "vs",
-			inherit: false,
-			rules: [],
-			colors: {
-				"editor.background": "#FAFAFA", // Background color
-				// 'editor.lineHighlightBorder': '#FFF', // Border around selected line
-			},
-		});
+      editor.addAction({
+        id: "run",
+        label: "Run",
+        keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter],
+        run: (editor) => {
+          const newValue = editor.getValue();
 
-		monaco.editor.setTheme("custom-theme");
+          // update with the new code
+          state.dispatch({
+            message: ActionMessages.UPDATE_CELL,
+            payload: {
+              queryId: cell.query.id,
+              cellId: cell.id,
+              path: "parameters.code",
+              value: newValue,
+            },
+          });
 
-		// register custom pixel language
-		monaco.languages.register({ id: "pixel" });
+          state.dispatch({
+            message: ActionMessages.RUN_CELL,
+            payload: {
+              queryId: cell.query.id,
+              cellId: cell.id,
+            },
+          });
+        },
+      });
 
-		// add suggestions for each language
-		Object.values(EditorLanguages).forEach((language) => {
-			// if suggestion already exist, dispose and re-add
-			// this may be superfluous at times but we re-add instead of setting up suggestions once
-			// so that we are pulling more real-time values off of the blocks/queries
-			if (completionItemProviders[language]) {
-				completionItemProviders[language].dispose();
-			}
+      editor.addAction({
+        contextMenuGroupId: "1_modification",
+        contextMenuOrder: 1,
+        id: "prompt-LLM",
+        label: "Generate Code",
+        keybindings: [
+          monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyG,
+        ],
 
-			//define completion item providers by language
-			if (language === "pixel") {
-				completionItemProviders = {
-					...completionItemProviders,
-					pixel: monaco.languages.registerCompletionItemProvider(
-						language,
-						{
-							provideCompletionItems: async (model, position) => {
-								// getWordUntilPosition doesn't track when words are led by special characters
-								// we need to chack for wrapping curly brackets manually to know what to replace
-								const word =
-									model.getWordUntilPosition(position);
+        run: async (editor) => {
+          if (!modelId) {
+            console.error("No Agent Model Engine");
+            notification.add({
+              color: "error",
+              message: "No Agent Model Engine selected. Please select a model.",
+            });
+            return;
+          }
+          const selection = editor.getSelection();
+          selectionRef.current = selection;
+          const selectedText = editor.getModel().getValueInRange(selection);
 
-								//trigger reactor suggestions
-								if (word.word !== "") {
-								}
+          // Capture original state BEFORE any edits
+          const originalContent = editor.getModel().getValue();
+          setOldContentDiffEdit(originalContent);
 
-								// triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
-								const specialCharacterStartRange = {
-									startLineNumber: position.lineNumber,
-									endLineNumber: position.lineNumber,
-									startColumn: word.startColumn - 2,
-									endColumn: word.startColumn,
-								};
-								const preceedingTwoCharacters =
-									model.getValueInRange(
-										specialCharacterStartRange,
-									);
-								const replaceRangeStartBuffer =
-									preceedingTwoCharacters === "{{" ? 2 : 1;
-								// python editor will automatically add closed bracket when you type a start one
-								// need to replace the closed brackets appropriately
-								const specialCharacterEndRange = {
-									startLineNumber: position.lineNumber,
-									endLineNumber: position.lineNumber,
-									startColumn: word.endColumn,
-									endColumn: word.endColumn + 2,
-								};
-								const followingTwoCharacters =
-									model.getValueInRange(
-										specialCharacterEndRange,
-									);
-								const replaceRangeEndBuffer =
-									followingTwoCharacters === "}}"
-										? 2
-										: followingTwoCharacters == "} " ||
-												followingTwoCharacters == "}"
-											? 1
-											: 0;
+          // Determine comment symbol
+          const language = EditorLanguages[cell.parameters.type];
+          const commentSymbol =
+            {
+              pixel: "//",
+              python: "#",
+              r: "#",
+            }[language] || "//";
 
-								// compose range that we want to replace with the suggestion
-								const replaceRange = {
-									startLineNumber: position.lineNumber,
-									endLineNumber: position.lineNumber,
-									startColumn:
-										word.startColumn -
-										replaceRangeStartBuffer,
-									endColumn:
-										word.endColumn + replaceRangeEndBuffer,
-								};
+          // Create commented version (diff preview)
+          const commentedText = selectedText
+            .split("\n")
+            .map((line) => `${commentSymbol} ${line}`)
+            .join("\n");
 
-								return {
-									suggestions:
-										generateSuggestions(replaceRange),
-								};
-							},
-							triggerCharacters: ["{"],
-						},
-					),
-				};
-			} else {
-				completionItemProviders = {
-					...completionItemProviders,
-					[language]: monaco.languages.registerCompletionItemProvider(
-						language,
-						{
-							provideCompletionItems: async (model, position) => {
-								const word =
-									model.getWordUntilPosition(position);
+          // Create LLM response
+          const LLMReturnText = await promptLLM(
+            `Write me code that does ${selectedText} in ${language}` // filetype should be sent as param to LLM
+          );
+          LLMReturnRef.current = LLMReturnText;
+          setOldContentDiffEdit(editor.getModel().getValue());
+          editor.executeEdits("custom-action", [
+            {
+              range: selection,
+              text: commentedText,
+              forceMoveMarkers: true,
+            },
+            {
+              range: new monaco.Range(
+                selection.endLineNumber + 2,
+                1,
+                selection.endLineNumber + 2,
+                1
+              ),
+              text: `\n\n${LLMReturnText}\n`,
+              forceMoveMarkers: true,
+            },
+          ]);
+          setNewContentDiffEdit(editor.getModel().getValue());
+          setDiffEditMode(true);
+        },
+      });
 
-								// word is not empty, completion was triggered by a non-special character
-								if (word.word !== "") {
-									// return empty suggestions to trigger built in typeahead
-									return {
-										suggestions: [],
-									};
-								}
+      // const exposedQueryParameterDescription = (
+      // 	exposedParameter: string,
+      // 	queryId: string,
+      // ): string => {
+      // 	switch (exposedParameter) {
+      // 		case "id":
+      // 		case "mode":
+      // 			return `Returns the ${exposedParameter} of query ${queryId}`;
+      // 		case "isExecuted":
+      // 			return `Returns whether query ${queryId} has executed`;
+      // 		case "isLoading":
+      // 			return `Returns the loading state for query ${queryId}`;
+      // 		case "isError":
+      // 			return `Returns whether query ${queryId} has an error`;
+      // 		case "error":
+      // 			return `Returns the error for query ${queryId} if it exists`;
+      // 		case "list":
+      // 			return `Returns an ordered list of cell IDs for query ${queryId}`;
+      // 		default:
+      // 			return `Reference the ${exposedParameter} parameter of query ${queryId}`;
+      // 	}
+      // };
 
-								const specialCharacterStartRange = {
-									startLineNumber: position.lineNumber,
-									endLineNumber: position.lineNumber,
-									startColumn: word.startColumn - 2,
-									endColumn: word.startColumn,
-								};
-								const preceedingTwoCharacters =
-									model.getValueInRange(
-										specialCharacterStartRange,
-									);
-								const replaceRangeStartBuffer =
-									preceedingTwoCharacters === "{{" ? 2 : 1;
+      // add editor completion suggestions based on block values and query outputs
+      const generateSuggestions = (range) => {
+        const suggestions = [];
+        Object.entries(state.variables).forEach((keyValue) => {
+          const id = keyValue[0];
+          const variable = keyValue[1] as Variable;
 
-								const specialCharacterEndRange = {
-									startLineNumber: position.lineNumber,
-									endLineNumber: position.lineNumber,
-									startColumn: word.endColumn,
-									endColumn: word.endColumn + 2,
-								};
-								const followingTwoCharacters =
-									model.getValueInRange(
-										specialCharacterEndRange,
-									);
-								const replaceRangeEndBuffer =
-									followingTwoCharacters === "}}"
-										? 2
-										: followingTwoCharacters == "} " ||
-												followingTwoCharacters == "}"
-											? 1
-											: 0;
+          suggestions.push({
+            label: {
+              label: `{{${id}}}`,
+              description: `${state.getVariable(variable.to, variable.type)}`,
+            },
+            kind: monaco.languages.CompletionItemKind.Variable,
+            documentation: `This returns the value of ${id}, which is a ${variable.type}.  Feel free to change reference value in the variables panel on the left.`,
+            insertText: `{{${id}}}`,
+            range: range,
+          });
+        });
 
-								const replaceRange = {
-									startLineNumber: position.lineNumber,
-									endLineNumber: position.lineNumber,
-									startColumn:
-										word.startColumn -
-										replaceRangeStartBuffer,
-									endColumn:
-										word.endColumn + replaceRangeEndBuffer,
-								};
+        return suggestions;
+      };
 
-								const variableSuggestions =
-									generateSuggestions(replaceRange);
+      monaco.editor.defineTheme("custom-theme", {
+        base: "vs",
+        inherit: false,
+        rules: [],
+        colors: {
+          "editor.background": "#FAFAFA", // Background color
+          // 'editor.lineHighlightBorder': '#FFF', // Border around selected line
+        },
+      });
 
-								return { suggestions: variableSuggestions };
-							},
-							triggerCharacters: ["{"],
-						},
-					),
-				};
-			}
-		});
+      monaco.editor.setTheme("custom-theme");
 
-		const lines = editor.getModel().getLineCount();
-		const lineContentHeight = lines * EditorLineHeight;
-		const singleLineNoOverflow =
-			lines === 1 && lineContentHeight == editor.getContentHeight();
-		setEditorHeight(
-			Math.max(
-				(singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
-				lineContentHeight,
-			),
-		);
-	};
+      // register custom pixel language
+      monaco.languages.register({ id: "pixel" });
 
-	const handleChange = (newValue: string) => {
-		// set editor height to content height
-		// set max height to equivalent of 25 lines
-		const maxHeight = 25 * EditorLineHeight;
-		setEditorHeight(
-			Math.min(editorRef.current.getContentHeight(), maxHeight),
-		);
-		if (cell.isLoading) {
-			return;
-		}
+      // add suggestions for each language
+      Object.values(EditorLanguages).forEach((language) => {
+        // if suggestion already exist, dispose and re-add
+        // this may be superfluous at times but we re-add instead of setting up suggestions once
+        // so that we are pulling more real-time values off of the blocks/queries
+        if (completionItemProviders[language]) {
+          completionItemProviders[language].dispose();
+        }
 
-		state.dispatch({
-			message: ActionMessages.UPDATE_CELL,
-			payload: {
-				queryId: cell.query.id,
-				cellId: cell.id,
-				path: "parameters.code",
-				value: newValue,
-			},
-		});
-	};
+        //define completion item providers by language
+        if (language === "pixel") {
+          completionItemProviders = {
+            ...completionItemProviders,
+            pixel: monaco.languages.registerCompletionItemProvider(language, {
+              provideCompletionItems: async (model, position) => {
+                // getWordUntilPosition doesn't track when words are led by special characters
+                // we need to chack for wrapping curly brackets manually to know what to replace
+                const word = model.getWordUntilPosition(position);
 
-	const acceptDiffEditHandler = () => {
-		setDiffEditMode(false);
-	};
+                //trigger reactor suggestions
+                if (word.word !== "") {
+                }
 
-	const rejectDiffEditHandler = () => {
-		setIsLLMRejected(true);
-		setDiffEditMode(false);
-	};
+                // triggerCharacters is triggered per character, so we need to check if the users has typed "{" or "{{"
+                const specialCharacterStartRange = {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: word.startColumn - 2,
+                  endColumn: word.startColumn,
+                };
+                const preceedingTwoCharacters = model.getValueInRange(
+                  specialCharacterStartRange
+                );
+                const replaceRangeStartBuffer =
+                  preceedingTwoCharacters === "{{" ? 2 : 1;
+                // python editor will automatically add closed bracket when you type a start one
+                // need to replace the closed brackets appropriately
+                const specialCharacterEndRange = {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: word.endColumn,
+                  endColumn: word.endColumn + 2,
+                };
+                const followingTwoCharacters = model.getValueInRange(
+                  specialCharacterEndRange
+                );
+                const replaceRangeEndBuffer =
+                  followingTwoCharacters === "}}"
+                    ? 2
+                    : followingTwoCharacters === "} " ||
+                      followingTwoCharacters === "}"
+                    ? 1
+                    : 0;
 
-	const getHeight = () => {
-		return isExpanded ? editorHeight : EditorLineHeight;
-	};
+                // compose range that we want to replace with the suggestion
+                const replaceRange = {
+                  startLineNumber: position.lineNumber,
+                  endLineNumber: position.lineNumber,
+                  startColumn: word.startColumn - replaceRangeStartBuffer,
+                  endColumn: word.endColumn + replaceRangeEndBuffer,
+                };
 
-	useEffect(() => {
-		setModelId(agentModelEngine);
-		setCount(count + 1);
-	}, [agentModelEngine]);
+                return {
+                  suggestions: generateSuggestions(replaceRange),
+                };
+              },
+              triggerCharacters: ["{"],
+            }),
+          };
+        } else {
+          completionItemProviders = {
+            ...completionItemProviders,
+            [language]: monaco.languages.registerCompletionItemProvider(
+              language,
+              {
+                provideCompletionItems: async (model, position) => {
+                  const word = model.getWordUntilPosition(position);
 
-	return (
-		<StyledContent>
-			{LLMLoading && <div>Loading...</div>}
+                  // word is not empty, completion was triggered by a non-special character
+                  if (word.word !== "") {
+                    // return empty suggestions to trigger built in typeahead
+                    return {
+                      suggestions: [],
+                    };
+                  }
 
-			<Stack direction="row" spacing={1}>
-				<StyledContainer>
-					{!isExpanded ? (
-						<Suspense fallback={<>...</>}>
-							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.isExecuted ? (
-								<Markdown>
-									{typeof cell.parameters.code === "string"
-										? cell.parameters.code
-										: cell.parameters.code.join("\n")}
-								</Markdown>
-							) : (
-								<Editor
-									width="100%"
-									height={getHeight()}
-									language={
-										EDITOR_TYPE[cell.parameters.type]
-											.language
-									}
-									value={
-										typeof cell.parameters.code === "string"
-											? cell.parameters.code
-											: cell.parameters.code.join("\n")
-									}
-									options={{
-										scrollbar: {
-											alwaysConsumeMouseWheel: false,
-										},
-										lineNumbers: "on",
-										readOnly: false,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-										glyphMargin: false,
-										folding: false,
-										lineNumbersMinChars: 2,
-									}}
-									onChange={handleChange}
-									onMount={handleMount}
-								/>
-							)}
-						</Suspense>
-					) : diffEditMode ? (
-						<>
-							<Suspense fallback={<>...</>}>
-								<DiffEditor
-									width="100%"
-									height={getHeight()}
-									original={oldContentDiffEdit}
-									modified={newContentDiffEdit}
-									language={
-										EDITOR_TYPE[cell.parameters.type].value
-									}
-									options={{
-										// lineNumbers: 'on',
-										readOnly: true,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-									}}
-									onMount={handleDiffEditorMount}
-								/>
-							</Suspense>
-							<Stack
-								direction="row"
-								alignItems={"center"}
-								justifyContent={"center"}
-								margin={1}
-							>
-								<Button
-									title="Accept changes"
-									size="small"
-									color="primary"
-									variant="contained"
-									onClick={acceptDiffEditHandler}
-								>
-									Keep
-								</Button>
-								<Button
-									title="Reject changes"
-									size="small"
-									color="primary"
-									variant="text"
-									onClick={rejectDiffEditHandler}
-								>
-									Reject
-								</Button>
-							</Stack>
-						</>
-					) : (
-						<Suspense fallback={<>...</>}>
-							{EDITOR_TYPE[cell.parameters.type].language ===
-								"Markdown" && cell.isExecuted ? (
-								<Markdown>
-									{typeof cell.parameters.code === "string"
-										? cell.parameters.code
-										: cell.parameters.code.join("\n")}
-								</Markdown>
-							) : (
-								<Editor
-									key={count}
-									width="100%"
-									height={getHeight()}
-									language={
-										EDITOR_TYPE[cell.parameters.type]
-											.language
-									}
-									value={
-										typeof cell.parameters.code === "string"
-											? cell.parameters.code
-											: cell.parameters.code.join("\n")
-									}
-									options={{
-										scrollbar: {
-											alwaysConsumeMouseWheel: false,
-										},
-										lineNumbers: "on",
-										readOnly: false,
-										minimap: { enabled: false },
-										automaticLayout: true,
-										scrollBeyondLastLine: false,
-										lineHeight: EDITOR_LINE_HEIGHT,
-										overviewRulerBorder: false,
-										wordWrap: "on",
-										glyphMargin: false,
-										folding: false,
-										lineNumbersMinChars: 2,
-									}}
-									onChange={handleChange}
-									onMount={handleMount}
-								/>
-							)}
-						</Suspense>
-					)}
-				</StyledContainer>
-				{/* {isExpanded && ( */}
-				<Stack direction="row" sx={{ paddingLeft: "10px" }}>
-					<StyledSelect
-						size={"small"}
-						title={"Select Language"}
-						variant="standard"
-						value={EDITOR_TYPE[cell.parameters.type].value}
-						InputProps={{
-							disableUnderline: true,
-						}}
-						SelectProps={{
-							IconComponent: KeyboardArrowDown,
-						}}
-						onChange={(e) => {
-							const value = e.target.value;
-							if (
-								value !==
-								EDITOR_TYPE[cell.parameters.type].value
-							) {
-								state.dispatch({
-									message: ActionMessages.UPDATE_CELL,
-									payload: {
-										queryId: cell.query.id,
-										cellId: cell.id,
-										path: "parameters.type",
-										value: value,
-									},
-								});
+                  const specialCharacterStartRange = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn - 2,
+                    endColumn: word.startColumn,
+                  };
+                  const preceedingTwoCharacters = model.getValueInRange(
+                    specialCharacterStartRange
+                  );
+                  const replaceRangeStartBuffer =
+                    preceedingTwoCharacters === "{{" ? 2 : 1;
 
-								setCount(count + 1);
-							}
-						}}
-					>
-						{Array.from(
-							Object.values(EDITOR_TYPE),
-							(language, i) => (
-								<StyledSelectItem
-									key={`${i}-${cell.id}-${language.name}`}
-									value={language.value}
-									title={language.name}
-								>
-									{language.value === "py" ? (
-										<PythonIcon
-											color="inherit"
-											fontSize="small"
-										/>
-									) : language.value === "r" ? (
-										<RIcon
-											color="inherit"
-											fontSize="small"
-										/>
-									) : language.value === "markdown" ? (
-										<MarkdownIcon
-											color="inherit"
-											fontSize="small"
-										/>
-									) : (
-										<Code
-											color="inherit"
-											fontSize="small"
-										/>
-									)}
-								</StyledSelectItem>
-							),
-						)}
-					</StyledSelect>
-				</Stack>
-				{/* )} */}
-			</Stack>
-		</StyledContent>
-	);
-});
+                  const specialCharacterEndRange = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.endColumn,
+                    endColumn: word.endColumn + 2,
+                  };
+                  const followingTwoCharacters = model.getValueInRange(
+                    specialCharacterEndRange
+                  );
+                  const replaceRangeEndBuffer =
+                    followingTwoCharacters === "}}"
+                      ? 2
+                      : followingTwoCharacters === "} " ||
+                        followingTwoCharacters === "}"
+                      ? 1
+                      : 0;
+
+                  const replaceRange = {
+                    startLineNumber: position.lineNumber,
+                    endLineNumber: position.lineNumber,
+                    startColumn: word.startColumn - replaceRangeStartBuffer,
+                    endColumn: word.endColumn + replaceRangeEndBuffer,
+                  };
+
+                  const variableSuggestions = generateSuggestions(replaceRange);
+
+                  return { suggestions: variableSuggestions };
+                },
+                triggerCharacters: ["{"],
+              }
+            ),
+          };
+        }
+      });
+
+      const lines = editor.getModel().getLineCount();
+      const lineContentHeight = lines * EditorLineHeight;
+      const singleLineNoOverflow =
+        lines === 1 && lineContentHeight === editor.getContentHeight();
+      setEditorHeight(
+        Math.max(
+          (singleLineNoOverflow ? 1 : 2) * EditorLineHeight,
+          lineContentHeight
+        )
+      );
+    };
+
+    const handleChange = (newValue: string) => {
+      // set editor height to content height
+      // set max height to equivalent of 25 lines
+      const maxHeight = 25 * EditorLineHeight;
+      setEditorHeight(
+        Math.min(editorRef.current.getContentHeight(), maxHeight)
+      );
+      if (cell.isLoading) {
+        return;
+      }
+
+      state.dispatch({
+        message: ActionMessages.UPDATE_CELL,
+        payload: {
+          queryId: cell.query.id,
+          cellId: cell.id,
+          path: "parameters.code",
+          value: newValue,
+        },
+      });
+    };
+
+    const acceptDiffEditHandler = () => {
+      setDiffEditMode(false);
+    };
+
+    const rejectDiffEditHandler = () => {
+      setIsLLMRejected(true);
+      setDiffEditMode(false);
+    };
+
+    const getHeight = () => {
+      return isExpanded ? editorHeight : EditorLineHeight;
+    };
+
+    useEffect(() => {
+      setModelId(agentModelEngine);
+      setCount(count + 1);
+    }, [agentModelEngine]);
+
+    return (
+      <StyledContent>
+        {LLMLoading && <div>Loading...</div>}
+
+        <Stack direction="row" spacing={1}>
+          <StyledContainer>
+            {!isExpanded ? (
+              <Suspense fallback={<>...</>}>
+                {EDITOR_TYPE[cell.parameters.type].language === "Markdown" &&
+                cell.isExecuted ? (
+                  <Markdown>
+                    {typeof cell.parameters.code === "string"
+                      ? cell.parameters.code
+                      : cell.parameters.code.join("\n")}
+                  </Markdown>
+                ) : (
+                  <Editor
+                    width="100%"
+                    height={getHeight()}
+                    language={EDITOR_TYPE[cell.parameters.type].language}
+                    value={
+                      typeof cell.parameters.code === "string"
+                        ? cell.parameters.code
+                        : cell.parameters.code.join("\n")
+                    }
+                    options={{
+                      scrollbar: {
+                        alwaysConsumeMouseWheel: false,
+                      },
+                      lineNumbers: "on",
+                      readOnly: false,
+                      minimap: { enabled: false },
+                      automaticLayout: true,
+                      scrollBeyondLastLine: false,
+                      lineHeight: EDITOR_LINE_HEIGHT,
+                      overviewRulerBorder: false,
+                      wordWrap: "on",
+                      glyphMargin: false,
+                      folding: false,
+                      lineNumbersMinChars: 2,
+                    }}
+                    onChange={handleChange}
+                    onMount={handleMount}
+                  />
+                )}
+              </Suspense>
+            ) : diffEditMode ? (
+              <>
+                <Suspense fallback={<>...</>}>
+                  <DiffEditor
+                    width="100%"
+                    height={getHeight()}
+                    original={oldContentDiffEdit}
+                    modified={newContentDiffEdit}
+                    language={EDITOR_TYPE[cell.parameters.type].value}
+                    options={{
+                      // lineNumbers: 'on',
+                      readOnly: true,
+                      minimap: { enabled: false },
+                      automaticLayout: true,
+                      scrollBeyondLastLine: false,
+                      lineHeight: EDITOR_LINE_HEIGHT,
+                      overviewRulerBorder: false,
+                      wordWrap: "on",
+                    }}
+                    onMount={handleDiffEditorMount}
+                  />
+                </Suspense>
+                <Stack
+                  direction="row"
+                  alignItems={"center"}
+                  justifyContent={"center"}
+                  margin={1}
+                >
+                  <Button
+                    title="Accept changes"
+                    size="small"
+                    color="primary"
+                    variant="contained"
+                    onClick={acceptDiffEditHandler}
+                  >
+                    Keep
+                  </Button>
+                  <Button
+                    title="Reject changes"
+                    size="small"
+                    color="primary"
+                    variant="text"
+                    onClick={rejectDiffEditHandler}
+                  >
+                    Reject
+                  </Button>
+                </Stack>
+              </>
+            ) : (
+              <Suspense fallback={<>...</>}>
+                {EDITOR_TYPE[cell.parameters.type].language === "Markdown" &&
+                cell.isExecuted ? (
+                  <Markdown>
+                    {typeof cell.parameters.code === "string"
+                      ? cell.parameters.code
+                      : cell.parameters.code.join("\n")}
+                  </Markdown>
+                ) : (
+                  <Editor
+                    key={count}
+                    width="100%"
+                    height={getHeight()}
+                    language={EDITOR_TYPE[cell.parameters.type].language}
+                    value={
+                      typeof cell.parameters.code === "string"
+                        ? cell.parameters.code
+                        : cell.parameters.code.join("\n")
+                    }
+                    options={{
+                      scrollbar: {
+                        alwaysConsumeMouseWheel: false,
+                      },
+                      lineNumbers: "on",
+                      readOnly: false,
+                      minimap: { enabled: false },
+                      automaticLayout: true,
+                      scrollBeyondLastLine: false,
+                      lineHeight: EDITOR_LINE_HEIGHT,
+                      overviewRulerBorder: false,
+                      wordWrap: "on",
+                      glyphMargin: false,
+                      folding: false,
+                      lineNumbersMinChars: 2,
+                    }}
+                    onChange={handleChange}
+                    onMount={handleMount}
+                  />
+                )}
+              </Suspense>
+            )}
+          </StyledContainer>
+          {/* {isExpanded && ( */}
+          <Stack direction="row" sx={{ paddingLeft: "10px" }}>
+            <StyledSelect
+              size={"small"}
+              title={"Select Language"}
+              variant="standard"
+              value={EDITOR_TYPE[cell.parameters.type].value}
+              InputProps={{
+                disableUnderline: true,
+              }}
+              SelectProps={{
+                IconComponent: KeyboardArrowDown,
+              }}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value !== EDITOR_TYPE[cell.parameters.type].value) {
+                  state.dispatch({
+                    message: ActionMessages.UPDATE_CELL,
+                    payload: {
+                      queryId: cell.query.id,
+                      cellId: cell.id,
+                      path: "parameters.type",
+                      value: value,
+                    },
+                  });
+
+                  setCount(count + 1);
+                }
+              }}
+            >
+              {Array.from(Object.values(EDITOR_TYPE), (language, i) => (
+                <StyledSelectItem
+                  key={`${i}-${cell.id}-${language.name}`}
+                  value={language.value}
+                  title={language.name}
+                >
+                  {language.value === "py" ? (
+                    <PythonIcon color="inherit" fontSize="small" />
+                  ) : language.value === "r" ? (
+                    <RIcon color="inherit" fontSize="small" />
+                  ) : language.value === "markdown" ? (
+                    <MarkdownIcon color="inherit" fontSize="small" />
+                  ) : (
+                    <Code color="inherit" fontSize="small" />
+                  )}
+                </StyledSelectItem>
+              ))}
+            </StyledSelect>
+          </Stack>
+          {/* )} */}
+        </Stack>
+      </StyledContent>
+    );
+  }
+);

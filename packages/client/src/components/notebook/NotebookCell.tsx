@@ -35,6 +35,10 @@ import {
 import { useWorkspace } from "@/hooks";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
+import type {
+	CellDef,
+	CellState,
+} from "../../../../../libs/renderer/dist/types/store";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./NotebookAddCell";
@@ -268,7 +272,12 @@ interface NotebookCellProps {
 	/** Id of the cell of the query */
 	setCellPlayCounter: (count: number) => void;
 }
-
+interface ComponentProps {
+	cell: CellState<CellDef<string>>;
+	isExpanded?: boolean;
+	agentModelEngine?: string;
+	onReady?: (call) => void;
+}
 /**
  * Render the content of a cell in the notebook
  */
@@ -297,6 +306,7 @@ export const NotebookCell = observer(
 		const cardActionsRef = useRef(null);
 		const targetContentCollapseRef = useRef(null);
 		const targetActionsCollapseRef = useRef(null);
+		const cellApiRef = useRef(null);
 
 		// get the cell
 		const query = state.getQuery(queryId);
@@ -399,22 +409,23 @@ export const NotebookCell = observer(
 			}
 		};
 
-		// render the view
+		console.log(cellApiRef, "test");
 		const rendered = useMemo(() => {
 			if (!cell.component) {
-				return;
+				return null;
 			}
 
-			return createElement(cell.component, {
+			const Component = cell.component;
+
+			return createElement<ComponentProps>(Component, {
 				cell: cell,
 				isExpanded: contentExpanded,
 				agentModelEngine: workspace.agentModelEngine,
+				onReady: (call) => {
+					cellApiRef.current = call;
+				},
 			});
-		}, [
-			cell.component ? cell.component : null,
-			contentExpanded,
-			workspace.agentModelEngine,
-		]);
+		}, [cell.component, contentExpanded, workspace.agentModelEngine]);
 
 		const getExecutionTimeString = (
 			timeMilliseconds: number | undefined,
@@ -586,7 +597,6 @@ export const NotebookCell = observer(
 				});
 			}
 		};
-
 		return (
 			<StyledStack
 				direction={"column"}
@@ -762,9 +772,16 @@ export const NotebookCell = observer(
 								}}
 							>
 								<StyledMenuItem
-									disabled={true}
+									disabled={
+										cell.config.widget !== "code" ||
+										!workspace.agentModelEngine ||
+										cell.parameters.type !== "pixel"
+									}
 									value={"generate-with-ai"}
 									onClick={() => {
+										if (cellApiRef.current) {
+											cellApiRef.current.triggerAIGeneration();
+										}
 										setAnchorEl(null);
 									}}
 								>
