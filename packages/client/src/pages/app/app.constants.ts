@@ -83,3 +83,31 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 		slots: {},
 	},
 };
+
+export const BASE_APP_QUERIES = {
+	"smss_driver": {
+		id: "smss_driver",
+		cells: [
+			{
+				id: "1",
+				widget: "code",
+				parameters: {
+					code: "",
+					type: "pixel"
+				}
+			}
+		]
+	}
+};
+
+export const BASE_APP_VARIABLES = {
+	"smss_driver": {
+		type: "query",
+		to: "smss_driver",
+	},
+	"smss_driver--1": {
+		type: "cell",
+		to: "smss_driver",
+		cellId: "1"
+	}
+};
