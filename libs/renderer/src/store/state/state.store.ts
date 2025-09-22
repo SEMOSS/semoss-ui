@@ -1,11 +1,11 @@
-import { makeAutoObservable, runInAction, toJS } from "mobx";
+import { get, makeAutoObservable, runInAction, toJS } from "mobx";
 import { download, Env, runPixel } from "@semoss/sdk/react";
 import {
 	cancellablePromise,
 	getValueByPath,
 	syncronousPromise,
 } from "../../utility";
-import type { CellStateConfig } from "./cell.state";
+import type { CellState, CellStateConfig } from "./cell.state";
 import { STATE_VERSION } from "./migration/MigrationManager";
 import { QueryState, type QueryStateConfig } from "./query.state";
 import {
@@ -838,7 +838,7 @@ export class StateStore {
 		const pointer = path[0];
 
 		// Special syntax to parse by cell order
-		const isNumber = !isNaN(parseFloat(path[1]));
+		const isNumber = !Number.isNaN(parseFloat(path[1]));
 
 		if (isNumber) {
 			let q: QueryState;
@@ -899,7 +899,142 @@ export class StateStore {
 				) {
 					return this.parseVariable(value, id, _depth + 1, _seen);
 				}
-				return value;
+				let val: unknown = value;
+				if (typeof value === "string" && path.length > 1) {
+					try {
+						const valueParsed = value.replace(/(\w+):/g, '"$1":');
+						val = JSON.parse(valueParsed);
+					} catch {
+						val = value;
+					}
+				}
+				if (val) {
+					const returnData = getValueByPath(
+						val as object,
+						path.slice(1).join("."),
+					);
+					return typeof returnData === "string" && returnData
+						? returnData
+						: JSON.stringify(val);
+				} else {
+					return value;
+				}
+			}
+
+			if (path?.length) {
+				const pathTemp = path;
+				let index = 0;
+				const variable: Record<string, string> =
+					this._store.variables?.[pathTemp[index]] || {};
+				index++;
+				const valueBasedIndex = {};
+				while (pathTemp[index]) {
+					if (variable?.type === "cell") {
+						const cellList =
+							this._store.queries[variable?.to]?.cellList;
+						const cellObj =
+							cellList.find((c) => c.id === variable.cellId) ||
+							{};
+						let cellData = cellObj;
+						if (
+							Object.hasOwn(cellObj, "id") &&
+							cellObj?.[pathTemp[index]]
+						) {
+							cellData =
+								typeof cellObj[pathTemp[index]] === "string"
+									? JSON.parse(cellObj[pathTemp[index]])
+									: JSON.parse(
+											JSON.stringify(
+												cellObj[pathTemp[index]],
+											),
+										);
+							valueBasedIndex[pathTemp[index]] = cellData;
+						} else {
+							valueBasedIndex[pathTemp[index]] = "";
+						}
+					}
+					if (variable?.type === "block") {
+						const blockData =
+							this._store.blocks[variable?.to]?.data?.value ||
+							null;
+						let blockDataParsed = blockData;
+						if (
+							typeof blockDataParsed === "string" &&
+							blockDataParsed.trim().match(/^{{.*}}$/)
+						) {
+							let innerVariable = this.parseVariable(
+								blockDataParsed,
+								id,
+								_depth + 1,
+								_seen,
+							);
+							if (typeof innerVariable === "string") {
+								innerVariable = JSON.parse(innerVariable);
+							}
+							valueBasedIndex[pathTemp[index]] =
+								getValueByPath(
+									innerVariable as object,
+									path.slice(1).join("."),
+								) || "";
+						} else {
+							if (typeof blockData === "string") {
+								blockDataParsed = JSON.parse(blockData);
+								valueBasedIndex[pathTemp[index]] =
+									blockDataParsed[pathTemp[index]];
+							} else {
+								valueBasedIndex[pathTemp[index]] =
+									blockData || "";
+							}
+						}
+					}
+					if (variable?.type === "query") {
+						const queryData =
+							this._store.queries[variable?.to]?.cellList || {};
+						if (
+							typeof queryData === "string" &&
+							queryData.trim().match(/^{{.*}}$/)
+						) {
+							let queryInnerVariable = this.parseVariable(
+								queryData,
+								id,
+								_depth + 1,
+								_seen,
+							);
+							if (typeof queryInnerVariable === "string") {
+								queryInnerVariable =
+									JSON.parse(queryInnerVariable);
+							}
+							valueBasedIndex[pathTemp[index]] =
+								getValueByPath(
+									queryInnerVariable as object,
+									path.slice(1).join("."),
+								) || "";
+						} else {
+							if (Array.isArray(queryData)) {
+								const queryOutput =
+									queryData[queryData.length - 1]?.output ||
+									null;
+								if (typeof queryOutput === "string") {
+									const queryOutputParsed =
+										JSON.parse(queryOutput);
+									valueBasedIndex[pathTemp[index]] =
+										queryOutputParsed[pathTemp[index]] ||
+										"";
+								} else {
+									valueBasedIndex[pathTemp[index]] =
+										queryOutput || "";
+								}
+							}
+						}
+					}
+					index++;
+				}
+				return (
+					getValueByPath(
+						valueBasedIndex,
+						pathTemp.slice(1).join("."),
+					) || ""
+				);
 			}
 
 			if (value === undefined) {
