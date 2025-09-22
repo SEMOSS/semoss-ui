@@ -195,15 +195,16 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 	}, [data.open]);
 
 	const handleClose = () => {
-		const block = state.getBlock(id);
+		// const block = state.getBlock(id);
 		if (!isStatic) {
-			if(block.listeners.onClose.order.length > 0) {
-				listeners.onClose();
-				setData("open", state.variables[data.show?.trim()?.replace('{{', '')?.replace('}}', '')]?.value || false);
-			}
-			else {
-				setData("open", "false");
-			}
+			// if(block.listeners.onClose.order.length > 0) {
+			// 	listeners.onClose();
+			// 	// TODO : The below is false logic, need to fix this
+			// 	setData("open", state.variables[data.show?.trim()?.replace('{{', '')?.replace('}}', '')]?.value || false);
+			// }
+			// else {
+			// 	setData("open", "false");
+			// }
 			listeners.onClose()
 			setData("open", "false");
 		}

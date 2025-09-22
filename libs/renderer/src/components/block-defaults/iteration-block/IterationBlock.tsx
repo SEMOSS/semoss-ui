@@ -82,7 +82,6 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 		if (state.mode === "interactive") {
 			if (Array.isArray(list)) {
 				const newIds = [];
-				// TODO : Need to re-check and reqrite the logic properlly 
 				 (data.removeIds || []).forEach(async (b) => {
 					await state.dispatch({
 						message: ActionMessages.REMOVE_BLOCK,
@@ -92,7 +91,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 						},
 					});
 				});
-				const data1 = state.getBlock(slots.children.children[0]);
+				const jsonData = state.getBlock(slots.children.children[0]);
 				const listLoop = async(list) => {
 					// biome-ignore lint/correctness/noUnusedFunctionParameters: though it is not used, to extract index we need it
 					await list.forEach(async (j, i) => {
@@ -126,15 +125,15 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 						// Position it after the last added block or after the original child block if first
 						const position = {
 							parent: id,
-							slot: data1.parent.slot,
-							sibling: data1.id,
+							slot: jsonData.parent.slot,
+							sibling: jsonData.id,
 							type: "after",
 						};
 
 						const newBlockId = await state.dispatch({
 							message: ActionMessages.ADD_BLOCK,
 							payload: {
-								json: getJsonForBlock(data1.id) as BlockJSON,
+								json: getJsonForBlock(jsonData.id) as BlockJSON,
 								position: position,
 							},
 						});
@@ -191,7 +190,6 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 						await fixListeners(newBlockId as string);					
 					});
 					setBlocksToRemove(newIds);
-					await console.log("After looping >>", newIds);
 					await setData('removeIds', newIds);
 				}
 				listLoop(list);

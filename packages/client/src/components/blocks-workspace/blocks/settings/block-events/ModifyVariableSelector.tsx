@@ -20,12 +20,12 @@ export const ModifyVariableSelector = ({
 	useEffect(() => {
 		setValue("payload.blockId", id);
 	}, [id]);
-	const acceptedTypes = ["string", "number", "boolean", "array", "object"];
-	// get the variables from state and filter by accepted types
-	const conventionalVariables = Object.entries(state.variables)
-		?.filter(([_, v]) => acceptedTypes.includes(v.type))
+
+	const primitiveVarTypes = ["string", "number", "boolean", "array", "object"];
+	const primitiveVariables = Object.entries(state.variables)
+		?.filter(([_, v]) => primitiveVarTypes.includes(v.type))
 		?.map(([k]) => k);
-	console.log("CONVENTIONAL VARIABLES >>", conventionalVariables);
+
 	return (
 		<>
 			Send hidden block id with event so it can parse iterator
@@ -41,7 +41,7 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{conventionalVariables?.map((type, index) => (
+						{primitiveVariables?.map((type, index) => (
 							<Select.Item key={`${type}-${index}`} value={type}>
 								{type}
 							</Select.Item>
@@ -56,6 +56,7 @@ export const ModifyVariableSelector = ({
 					<>
 						<TextField
 							label={"Update Value"}
+							value={field.value || ""}
 							onChange={(value) => {
 								field.onChange(value);
 							}}
