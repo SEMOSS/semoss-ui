@@ -9,7 +9,6 @@ dist
 *.rollup.cache
 tsconfig.tsbuildinfo
 .turbo
-.nx/
 
 # Ignore the generated files for vscode extension
 *.vsix
