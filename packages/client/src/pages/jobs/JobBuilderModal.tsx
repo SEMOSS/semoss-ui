@@ -240,39 +240,26 @@ export const JobBuilderModal = (props: {
 		try {
 			const encode = getEncodeByJobType(builder);
 			const response = await runPixel(
-				`META|ScheduleJob(jobName=["${builder.name}"],${
-					builder.tags.length
-						? ` jobTags=${JSON.stringify(builder.tags)},`
-						: ""
-				} jobGroup=["defaultGroup"], cronExpression=["${
-					builder.cronExpression
-				}"], cronTz=["${
-					builder.cronTz
-				}"], recipe=["<encode>${encode}</encode>"], uiState='{"jobType":"${
-					builder.jobType
-				}","jobName":"${builder.name}", "cronExpression":"${
-					builder.cronExpression
-				}","cronTimeZone":"${builder.cronTz}","recipe":"${
-					builder.pixel
-				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				`META|ScheduleJob(jobName="${builder.name}", jobTags=${JSON.stringify(builder.tags)}, jobGroup=["defaultGroup"], cronExpression="${builder.cronExpression}", cronTz="${builder.cronTz}", recipe="<encode>${encode}</encode>", uiState='{"jobType":"${builder.jobType}", "jobName":"${builder.name}", "cronExpression":"${builder.cronExpression}", "cronTimeZone":"${builder.cronTz}", "recipe":"${builder.pixel}", "recipeParameters":""}',triggerOnLoad=false, triggerNow=false}`,
 			);
 			if (response.errors.length) {
-				notification.add({
-					color: "error",
-					message: response.errors[0],
-				});
+				throw new Error(response.errors[0]);
 			}
-		} catch (_e) {
+			notification.add({
+				color: "success",
+				message: "Job added successfully",
+			});
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
 			});
+		} finally {
+			getJobs();
+			closeModal();
+			setIsLoading(false);
 		}
-		getJobs();
-		closeModal();
-		setIsLoading(false);
-	};
-
+	}
 	const updateJob = async () => {
 		setIsLoading(true);
 		const encode = getEncodeByJobType(builder);
