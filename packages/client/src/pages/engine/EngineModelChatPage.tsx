@@ -263,7 +263,7 @@ export const EngineModelChatPage = () => {
 
 	//Call LLM Feedback reactor to save user's feedback on a message
 	const sendFeedback = async (messageId: string, rating: string) => {
-		const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}")`;
+		const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}", roomId=${JSON.stringify(insightId)})`;
 		try {
 			const response = await runPixel(pixel);
 			const { output, operationType } = response.pixelReturn[0];
