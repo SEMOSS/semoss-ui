@@ -492,6 +492,8 @@ export const AppTileCard = (props: AppTileCardProps) => {
     }
   }, [isLoading]);
 
+  const tags = app.tag ? (Array.isArray(app.tag) ? app.tag : [app.tag]).filter(Boolean) : [];
+
   // Intersection Observer to detect if card is in viewport
   useEffect(() => {
     const observer = new window.IntersectionObserver(
@@ -729,11 +731,11 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
   return (
     <StyledMainDiv ref={cardRef}>
-      <StyledTileCard 
-	  	disabled={!href} style={{ position: "relative" }} 
-		data-testid={formatToDataTestId(
-			`appTileCard-${app.project_name}-tile`,
-		)}>
+      <StyledTileCard
+        disabled={!href}
+        style={{ position: "relative" }}
+        data-testid={formatToDataTestId(`appTileCard-${app.project_name}-tile`)}
+      >
         {!systemApp && !isDiscoverable && (
           <StyledContainer>
             <StyledOverlayContent>
@@ -798,33 +800,28 @@ export const AppTileCard = (props: AppTileCardProps) => {
                 spacing={0.5}
                 height={"24px"}
               >
-                {app.tag !== undefined &&
-                  (Array.isArray(app.tag) && app.tag.length > 0 ? (
-                    <>
-                      {app.tag.map((tag, i) => {
-                        if (i <= 2) {
-                          return (
-                            <StyledTagChip
-                              key={`${app.project_id}${i}`}
-                              maxWidth={
-                                app.tag.length === 2
-                                  ? "100px"
-                                  : app.tag.length === 1
-                                  ? "200px"
-                                  : "75px"
-                              }
-                              label={tag}
-                            />
-                          );
+                {tags.length > 0 && (
+                  <>
+                    {tags.slice(0, 3).map((tag, i) => (
+                      <StyledTagChip
+                        key={`${app.project_id}${i}`}
+                        maxWidth={
+                          tags.length === 2
+                            ? "100px"
+                            : tags.length === 1
+                            ? "200px"
+                            : "75px"
                         }
-                      })}
-                      {app.tag.length > 3 ? (
-                        <Typography variant="caption">
-                          +{app.tag.length - 3}
-                        </Typography>
-                      ) : null}
-                    </>
-                  ) : null)}
+                        label={tag}
+                      />
+                    ))}
+                    {tags.length > 3 && (
+                      <Typography variant="caption">
+                        +{tags.length - 3}
+                      </Typography>
+                    )}
+                  </>
+                )}
               </Stack>
               {createdDate && (
                 <StyledPublishedByContainer>
