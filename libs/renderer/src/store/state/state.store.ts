@@ -927,7 +927,7 @@ export class StateStore {
 				const variable: Record<string, string> =
 					this._store.variables?.[pathTemp[index]] || {};
 				index++;
-				const valueBasedIndexOpt = {};
+				const valueBasedIndexOpt: Record<string, unknown> = {};
 				while (pathTemp[index]) {
 					let variableDatawithProps = {data: {}, needsParsing: false, needsParseVariable: false};
 					if (variable?.type === "cell") {
