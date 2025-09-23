@@ -927,111 +927,80 @@ export class StateStore {
 				const variable: Record<string, string> =
 					this._store.variables?.[pathTemp[index]] || {};
 				index++;
-				const valueBasedIndex = {};
+				const valueBasedIndexOpt = {};
 				while (pathTemp[index]) {
+					let variableDatawithProps = {data: {}, needsParsing: false, needsParseVariable: false};
 					if (variable?.type === "cell") {
 						const cellList =
 							this._store.queries[variable?.to]?.cellList;
 						const cellObj =
 							cellList.find((c) => c.id === variable.cellId) ||
 							{};
-						let cellData = cellObj;
 						if (
 							Object.hasOwn(cellObj, "id") &&
 							cellObj?.[pathTemp[index]]
 						) {
-							cellData =
-								typeof cellObj[pathTemp[index]] === "string"
-									? JSON.parse(cellObj[pathTemp[index]])
-									: JSON.parse(
-											JSON.stringify(
-												cellObj[pathTemp[index]],
-											),
-										);
-							valueBasedIndex[pathTemp[index]] = cellData;
+							variableDatawithProps = {data: cellObj[pathTemp[index]]?.output, needsParsing: true, needsParseVariable: false};
 						} else {
-							valueBasedIndex[pathTemp[index]] = "";
+							variableDatawithProps = {data: "", needsParsing: false, needsParseVariable: false};
 						}
 					}
 					if (variable?.type === "block") {
 						const blockData =
 							this._store.blocks[variable?.to]?.data?.value ||
 							null;
-						let blockDataParsed = blockData;
+						const blockDataParsed = blockData;
 						if (
 							typeof blockDataParsed === "string" &&
 							blockDataParsed.trim().match(/^{{.*}}$/)
 						) {
-							let innerVariable = this.parseVariable(
-								blockDataParsed,
-								id,
-								_depth + 1,
-								_seen,
-							);
-							if (typeof innerVariable === "string") {
-								innerVariable = JSON.parse(innerVariable);
-							}
-							valueBasedIndex[pathTemp[index]] =
-								getValueByPath(
-									innerVariable as object,
-									path.slice(1).join("."),
-								) || "";
+							variableDatawithProps = {data: blockDataParsed, needsParsing: false, needsParseVariable: true};
 						} else {
 							if (typeof blockData === "string") {
-								blockDataParsed = JSON.parse(blockData);
-								valueBasedIndex[pathTemp[index]] =
-									blockDataParsed[pathTemp[index]];
+								variableDatawithProps = {data: blockData, needsParsing: true, needsParseVariable: true};
 							} else {
-								valueBasedIndex[pathTemp[index]] =
-									blockData || "";
+								variableDatawithProps = {data: blockData, needsParsing: false, needsParseVariable: false};
 							}
 						}
 					}
 					if (variable?.type === "query") {
 						const queryData =
-							this._store.queries[variable?.to]?.cellList || {};
+							this._store.queries[variable?.to]?.cellList || [];
 						if (
 							typeof queryData === "string" &&
-							queryData.trim().match(/^{{.*}}$/)
+							(queryData as string).trim().match(/^{{.*}}$/)
 						) {
-							let queryInnerVariable = this.parseVariable(
-								queryData,
-								id,
-								_depth + 1,
-								_seen,
-							);
-							if (typeof queryInnerVariable === "string") {
-								queryInnerVariable =
-									JSON.parse(queryInnerVariable);
-							}
-							valueBasedIndex[pathTemp[index]] =
-								getValueByPath(
-									queryInnerVariable as object,
-									path.slice(1).join("."),
-								) || "";
+							variableDatawithProps = {data: queryData, needsParsing: true, needsParseVariable: true};
 						} else {
-							if (Array.isArray(queryData)) {
 								const queryOutput =
 									queryData[queryData.length - 1]?.output ||
 									null;
 								if (typeof queryOutput === "string") {
-									const queryOutputParsed =
-										JSON.parse(queryOutput);
-									valueBasedIndex[pathTemp[index]] =
-										queryOutputParsed[pathTemp[index]] ||
-										"";
+									variableDatawithProps = {data: queryOutput, needsParsing: true, needsParseVariable: false};
 								} else {
-									valueBasedIndex[pathTemp[index]] =
-										queryOutput || "";
+									variableDatawithProps = {data: queryOutput, needsParsing: false, needsParseVariable: false};
 								}
-							}
 						}
 					}
+					let finalDataToApply = variableDatawithProps.data;
+					if(variableDatawithProps.needsParseVariable){
+						finalDataToApply = this.parseVariable(variableDatawithProps.data as string, id, _depth + 1, _seen);
+					}
+					if(typeof finalDataToApply === 'string' && finalDataToApply){
+						const valueParsed = finalDataToApply.replace(/(\w+):/g, '"$1":');
+						try {
+							finalDataToApply = JSON.parse(valueParsed);
+						}catch{
+							finalDataToApply = valueParsed;
+						}
+					}
+					valueBasedIndexOpt[pathTemp[index]] = finalDataToApply?.[pathTemp[index]] || "";
 					index++;
 				}
+				
 				return (
 					getValueByPath(
-						valueBasedIndex,
+						valueBasedIndexOpt,
 						pathTemp.slice(1).join("."),
 					) || ""
 				);
