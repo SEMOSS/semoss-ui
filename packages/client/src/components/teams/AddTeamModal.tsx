@@ -241,17 +241,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						color: "success",
 						message: "Successfully added group",
 					});
-					navigate(
-						`${data.TEAM_NAME.toLowerCase()
-							.replace(/['"]+/g, "")
-							.replace(/\s/g, "-")}`,
-						{
-							state: {
-								name: data.TEAM_NAME,
-								type: data.TEAM_TYPE,
-							},
-						},
-					);
+					navigate(encodeURIComponent(data.TEAM_NAME));
 				} else {
 					throw new Error("Failed to add team");
 				}
