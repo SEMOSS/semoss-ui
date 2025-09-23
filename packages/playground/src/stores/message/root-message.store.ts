@@ -1,6 +1,7 @@
 import { computed, makeObservable } from "mobx";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
+import { PlanMessageStore } from "./plan-message.store";
 import { ResponseMessageStore } from "./response-message.store";
 
 /**
@@ -19,7 +20,11 @@ export class RootMessageStore extends AbstractMessageStore {
 	/**
 	 * Get the history of the room based on the active children
 	 */
-	get history(): (InputMessageStore | ResponseMessageStore)[] {
+	get history(): (
+		| InputMessageStore
+		| ResponseMessageStore
+		| PlanMessageStore
+	)[] {
 		let current: AbstractMessageStore = this;
 
 		const history = [];
@@ -31,6 +36,8 @@ export class RootMessageStore extends AbstractMessageStore {
 				} else if (
 					current.activeChild instanceof ResponseMessageStore
 				) {
+					history.push(current.activeChild);
+				} else if (current.activeChild instanceof PlanMessageStore) {
 					history.push(current.activeChild);
 				}
 			}

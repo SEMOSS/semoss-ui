@@ -18,7 +18,7 @@ export abstract class AbstractMessageStore {
 	/**
 	 * Track if it is an root, input, or response message
 	 */
-	abstract type: "ROOT" | "INPUT" | "RESPONSE";
+	abstract type: "ROOT" | "PLAN" | "INPUT" | "RESPONSE";
 
 	/**
 	 * Parent of the message

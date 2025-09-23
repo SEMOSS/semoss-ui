@@ -2,10 +2,16 @@ import { makeAutoObservable, runInAction } from "mobx";
 import { download, runPixel, upload } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import type { Knowledge, PixelMessage, Tool } from "@/types";
+import type {
+	Knowledge,
+	PixelMessage,
+	ResponseTextPixelMessage,
+	Tool,
+} from "@/types";
 import {
 	type AbstractMessageStore,
 	InputMessageStore,
+	PlanMessageStore,
 	ResponseMessageStore,
 	RootMessageStore,
 } from "../message";
@@ -218,7 +224,11 @@ export class RoomStore {
 	/**
 	 * Get the history of the room based on the active children
 	 */
-	get history(): (InputMessageStore | ResponseMessageStore)[] {
+	get history(): (
+		| InputMessageStore
+		| ResponseMessageStore
+		| PlanMessageStore
+	)[] {
 		return this._store.root.history || [];
 	}
 
@@ -598,6 +608,138 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 	};
 
 	/**
+	 * Generate a plan for complex prompts
+	 * @param prompt - user message
+	 * @param files - files to upload
+	 * @param options - options to override
+	 */
+	generatePlan = async (
+		prompt: string,
+		files: File[],
+		options?: Partial<RoomStoreInterface["options"]>,
+	): Promise<void> => {
+		try {
+			if (!this._store.modelId) {
+				throw new Error("Model is required");
+			}
+
+			if (!prompt) {
+				throw new Error("Prompt is required");
+			}
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// options to use with the ask
+			if (options) {
+				this.setOptions(options);
+			}
+
+			// upload the files
+			let uploaded = [];
+			if (files.length > 0) {
+				uploaded = await this.upload(files, "");
+			}
+
+			// get the parent message
+			const parentMessage = this.tail;
+			if (
+				parentMessage instanceof ResponseMessageStore === false &&
+				parentMessage instanceof RootMessageStore === false
+			) {
+				throw new Error("Can only ask model to a response message");
+			}
+
+			// build the context if it is there
+			let context = "";
+			if (this._store.options?.instructions) {
+				context = this._store.options?.instructions;
+			}
+
+			// get a list of tool ids
+			const tools: string[] = this._store.options.tools.map(
+				(t) => t.id,
+				[],
+			);
+
+			// create the input message
+			const inputMessage = this.createMessage({
+				messageId: TEMP_MESSAGE_ID,
+				type: "INPUT_TEXT",
+				visible: true,
+				inputUIPrompt: prompt,
+				files: uploaded,
+				modelId: this._store.modelId,
+				paramMap: {
+					max_new_tokens: this._store.options.tokenLength,
+					temperature: this._store.options.temperature,
+				},
+				dateCreated: "",
+				ornaments: {
+					chunks: [],
+				},
+			}) as InputMessageStore;
+
+			// connect to the parent
+			parentMessage.addChild(inputMessage);
+
+			// wait for the pixel to run
+			const response = await this.runPixel<
+				[
+					{
+						inputMessage: PixelMessage;
+						responseMessage: ResponseTextPixelMessage;
+					},
+				]
+			>(
+				`AskCOTRoom(
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+command=["<encode>${prompt}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+${uploaded.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
+${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
+${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
+paramValues=[${JSON.stringify({
+					max_new_tokens: this._store.options.tokenLength,
+					temperature: this._store.options.temperature,
+				})}]
+);`,
+			);
+
+			// throw errors
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
+			}
+
+			const { output } = response.pixelReturn[0];
+
+			// update the input's id
+			inputMessage.updateId(output.inputMessage.messageId);
+
+			// create the response and link to the input
+			// TODO: Utilize a PLAN type
+
+			let steps = [];
+			try {
+				const content = JSON.parse(output.responseMessage.content);
+				steps = content.steps;
+			} catch {
+				console.error("ERROR Parsing Plan");
+			}
+
+			const responseMessage = new PlanMessageStore(
+				this,
+				output.responseMessage.messageId,
+				steps,
+			);
+			inputMessage.addChild(responseMessage);
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
+	};
+
+	/**
 	 * Record Feedback
 	 * @param messageId
 	 * @param rating
@@ -803,7 +945,7 @@ paramValues=[${JSON.stringify({
 		const responseMessage = this.createMessage(output.responseMessage);
 		inputMessage.addChild(responseMessage);
 
-		// auto execute if enabled
+		// auto execute if AK
 		if (this._store.options.autoExecute) {
 			if (!(responseMessage instanceof ResponseMessageStore)) {
 				return;

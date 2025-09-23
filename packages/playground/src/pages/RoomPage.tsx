@@ -16,13 +16,15 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
+	InputMessage,
+	PlanMessage,
+	ResponseMessage,
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
-	RoomMessage,
 } from "@/components";
 import { useChat } from "@/hooks";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { ResponseMessageStore } from "@/stores";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -256,7 +258,15 @@ export const RoomPage = observer(() => {
 										paddingBottom: "8px",
 									}}
 								>
-									<RoomMessage message={m} />
+									{m.type === "INPUT" && (
+										<InputMessage message={m} />
+									)}
+									{m.type === "RESPONSE" && (
+										<ResponseMessage message={m} />
+									)}
+									{m.type === "PLAN" && (
+										<PlanMessage message={m} />
+									)}
 								</Stack>
 							))}
 						</Container>

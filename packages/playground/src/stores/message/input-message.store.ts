@@ -20,17 +20,6 @@ export class InputMessageStore extends AbstractMessageStore {
 		fileLocation: string;
 	}[];
 
-	/**
-	 * Parameters associated with the message
-	 */
-	parameters: {
-		max_new_tokens: number;
-		temperature: number;
-	} = {
-		max_new_tokens: -1,
-		temperature: 0.7,
-	};
-
 	constructor(
 		room: AbstractMessageStore["room"],
 		id: string,

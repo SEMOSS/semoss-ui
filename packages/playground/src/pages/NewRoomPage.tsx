@@ -1,4 +1,8 @@
-import { LightbulbOutlined, Tune } from "@mui/icons-material";
+import {
+	FormatListNumbered,
+	LightbulbOutlined,
+	Tune,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
@@ -68,6 +72,8 @@ export const NewRoomPage = observer(() => {
 		temperature: TEMPERATURE,
 		autoExecute: false,
 	});
+
+	const [isComplex, setIsComplex] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
@@ -92,8 +98,11 @@ export const NewRoomPage = observer(() => {
 		await room.initialize();
 
 		// ask the room
-		await room.askMessage(prompt, files, options);
-
+		if (isComplex) {
+			await room.generatePlan(prompt, files, options);
+		} else {
+			await room.askMessage(prompt, files, options);
+		}
 		// turn the loading screen off
 		setIsLoading(false);
 
@@ -141,25 +150,50 @@ export const NewRoomPage = observer(() => {
 							minRows={4}
 							maxRows={8}
 							actions={
-								<Tooltip
-									title={"Open Configuration Menu"}
-									placement="top"
-								>
-									<IconButton
-										size={"medium"}
-										type="button"
-										aria-label="Open Configuration Menu"
-										disabled={isLoading}
-										color={
-											isMenuOpen ? "primary" : "default"
-										}
-										onClick={() => {
-											setIsMenuOpen(!isMenuOpen);
-										}}
+								<>
+									<Tooltip
+										title={"Open Configuration Menu"}
+										placement="top"
 									>
-										<Tune color="inherit" />
-									</IconButton>
-								</Tooltip>
+										<IconButton
+											size={"medium"}
+											type="button"
+											aria-label="Open Configuration Menu"
+											disabled={isLoading}
+											color={
+												isMenuOpen
+													? "primary"
+													: "default"
+											}
+											onClick={() => {
+												setIsMenuOpen(!isMenuOpen);
+											}}
+										>
+											<Tune color="inherit" />
+										</IconButton>
+									</Tooltip>
+									<Tooltip
+										title={"Generate plan"}
+										placement="top"
+									>
+										<IconButton
+											size={"medium"}
+											type="button"
+											aria-label="Generate plan"
+											disabled={isLoading}
+											color={
+												isComplex
+													? "primary"
+													: "default"
+											}
+											onClick={() => {
+												setIsComplex(!isComplex);
+											}}
+										>
+											<FormatListNumbered color="inherit" />
+										</IconButton>
+									</Tooltip>
+								</>
 							}
 							onPrompt={async (prompt, files) => {
 								await askMessage(prompt, files);
