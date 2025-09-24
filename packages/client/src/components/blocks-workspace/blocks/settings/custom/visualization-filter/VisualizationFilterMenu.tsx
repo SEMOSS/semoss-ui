@@ -1,3 +1,8 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
+
+import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
+import CloseIcon from "@mui/icons-material/Close";
+import { Checkbox, ClickAwayListener } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import {
 	type BlockComponent,
@@ -9,6 +14,7 @@ import {
 	Autocomplete,
 	Box,
 	Button,
+	List,
 	Stack,
 	Switch,
 	styled,
@@ -138,6 +144,10 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
 	const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
 	const frameHeaders = useFrameHeaders(localState.frame);
+	const [checked, setChecked] = useState<string[]>([]);
+	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const toggleDropdown = () => setDropdownOpen((prev) => !prev);
+	const closeDropdown = () => setDropdownOpen(false);
 
 	const columnNames = useMemo(() => {
 		return frameHeaders?.data?.list?.map((item) => item.alias) || [];
@@ -247,48 +257,50 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 		}
 
 		try {
-			const response = await state.runSideEffect(
-				`META | Frame(${localState.frame}) | Select(${localState.column}).as([${localState.column}])|Group(${localState.column})|Sort(${localState.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
-			);
+			for (let i = 0; i < localState.frame.length; i++) {
+				const response = await state.runSideEffect(
+					`META | Frame(${localState.frame[i]}) | Select(${localState.column}).as([${localState.column}])|Group(${localState.column})|Sort(${localState.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
+				);
 
-			const values = (
-				response?.pixelReturn?.[0]?.output as {
-					data?: { values?: any[] };
+				const values = (
+					response?.pixelReturn?.[0]?.output as {
+						data?: { values?: any[] };
+					}
+				)?.data?.values;
+
+				if (!values?.length) {
+					setLocalState((prev) => ({ ...prev, listOptions: [] }));
+
+					notification.add({
+						color: "error",
+						message:
+							"Invalid response or errors found while fetching options.",
+					});
+					return;
 				}
-			)?.data?.values;
 
-			if (!values?.length) {
-				setLocalState((prev) => ({ ...prev, listOptions: [] }));
+				const options = values.map((item: any) => String(item[0]));
 
-				notification.add({
-					color: "error",
-					message:
-						"Invalid response or errors found while fetching options.",
+				setLocalState((prev) => {
+					const updatedState = {
+						...prev,
+						listOptions: options,
+						selectedValues: [],
+						filterLabel:
+							prev.filterLabel && prev.filterLabel.trim() !== ""
+								? prev.filterLabel
+								: prev.column
+									? `Filter of ${prev.column}`
+									: "",
+					};
+
+					Object.entries(updatedState).forEach(([key, value]) => {
+						setData(key, value);
+					});
+
+					return updatedState;
 				});
-				return;
 			}
-
-			const options = values.map((item: any) => String(item[0]));
-
-			setLocalState((prev) => {
-				const updatedState = {
-					...prev,
-					listOptions: options,
-					selectedValues: [],
-					filterLabel:
-						prev.filterLabel && prev.filterLabel.trim() !== ""
-							? prev.filterLabel
-							: prev.column
-								? `Filter of ${prev.column}`
-								: "",
-				};
-
-				Object.entries(updatedState).forEach(([key, value]) => {
-					setData(key, value);
-				});
-
-				return updatedState;
-			});
 		} catch (error) {
 			console.error("Error during handleUpdate:", error);
 		}
@@ -300,6 +312,22 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const handleReset = () => {
 		setLocalState(initialState);
 	};
+
+	const handleToggle = (value: string) => () => {
+		// setChecked(checked.includes(value) ? [] : [value]);
+		if (value === "Select All") {
+			setChecked(checked.length === options.length ? [] : [...options]);
+		} else {
+			const newChecked = checked.includes(value)
+				? checked.filter((c) => c !== value)
+				: [...checked, value];
+			setChecked(newChecked);
+			updateField("frame", [...newChecked]);
+		}
+	};
+
+	const allChecked = checked.length === options.length;
+	const indeterminate = checked.length > 0 && !allChecked;
 
 	return (
 		<StyledStack>
@@ -339,7 +367,128 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 							<StyledTypography variant="body2">
 								Select Frame
 							</StyledTypography>
-							<Autocomplete
+
+							<ClickAwayListener onClickAway={closeDropdown}>
+								<Box
+									sx={{ position: "relative", width: "100%" }}
+								>
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: 1,
+										}}
+									>
+										<Box
+											onClick={toggleDropdown}
+											sx={{
+												border: "1px solid #ccc",
+												borderRadius: 1,
+												px: 1.5,
+												py: 1,
+												display: "flex",
+												justifyContent: "space-between",
+												alignItems: "center",
+												cursor: "pointer",
+												minHeight: "40px",
+												flex: 1,
+											}}
+										>
+											<Typography variant="body2">
+												{"Frames"}
+											</Typography>
+											<Box
+												sx={{
+													display: "flex",
+													alignItems: "center",
+													gap: 1,
+												}}
+											>
+												<ArrowDropDownIcon />
+												<CloseIcon
+													fontSize="small"
+													onClick={(e) => {
+														e.stopPropagation();
+														setChecked([]);
+														closeDropdown();
+													}}
+													sx={{ cursor: "pointer" }}
+												/>
+											</Box>
+										</Box>
+									</Box>
+
+									{dropdownOpen && (
+										<Box
+											sx={{
+												position: "relative",
+												maxHeight: "100%",
+												overflow: "visible",
+												mt: 1,
+												width: "100%",
+												backgroundColor: "#fff",
+												border: "1px solid #ccc",
+												borderRadius: 1,
+												boxShadow:
+													"0 2px 8px rgba(0,0,0,0.15)",
+											}}
+										>
+											<List
+												sx={{
+													maxHeight: 200,
+													overflowY: "auto",
+												}}
+												dense
+											>
+												<List.Item
+													key="select-all"
+													onClick={handleToggle(
+														"Select All",
+													)}
+												>
+													<List.Icon>
+														<Checkbox
+															edge="start"
+															checked={allChecked}
+															indeterminate={
+																indeterminate
+															}
+															tabIndex={-1}
+															disableRipple
+														/>
+													</List.Icon>
+													<List.ItemText primary="Select All" />
+												</List.Item>
+
+												{options.map((option) => (
+													<List.Item
+														key={option}
+														onClick={handleToggle(
+															option,
+														)}
+													>
+														<List.Icon>
+															<Checkbox
+																edge="start"
+																checked={checked.includes(
+																	option,
+																)}
+																tabIndex={-1}
+																disableRipple
+															/>
+														</List.Icon>
+														<List.ItemText
+															primary={option}
+														/>
+													</List.Item>
+												))}
+											</List>
+										</Box>
+									)}
+								</Box>
+							</ClickAwayListener>
+
+							{/* <Autocomplete
 								options={options}
 								value={localState.frame}
 								onChange={handleOnChange("frame")}
@@ -349,7 +498,8 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 								renderInput={(params) => (
 									<TextField {...params} size="small" />
 								)}
-							/>
+							/> */}
+							{/* <Checkbox>Select All</Checkbox> */}
 						</StyledSubSection>
 						<StyledSubSection>
 							<StyledTypography variant="body2">

@@ -87,13 +87,17 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		// Update the selected values in the block's data
 		setData("selectedValues", selected);
 
-		try {
-			// Construct the command to set a filter on the frame based on the selected column and values
-			const pixelCommand = `META | UnfilterFrame(${data.frame});`;
+		console.log("THIS IS DATA FRAME", data.frame);
 
-			// Execute the command as a side effect in the application state
-			// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-			const response = await state.runSideEffect(pixelCommand);
+		try {
+			for (let i = 0; i < data.frame.length; i++) {
+				// Construct the command to set a filter on the frame based on the selected column and values
+				const pixelCommand = `META | UnfilterFrame(${data.frame[i]});`;
+
+				// Execute the command as a side effect in the application state
+				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
+				const response = await state.runSideEffect(pixelCommand);
+			}
 			// biome-ignore lint/correctness/noUnusedVariables: <use error as needed>
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
@@ -120,12 +124,14 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		// Create a string representation of the selected numbers array
 
 		try {
-			// Construct the command to set a filter on the frame based on the selected column and values
-			const pixelCommand = `META | ${data.frame} | AddFrameFilter(((${data.column} == ${valuesString})));`;
+			for (let i = 0; i < data.frame.length; i++) {
+				// Construct the command to set a filter on the frame based on the selected column and values
+				const pixelCommand = `META | ${data.frame[i]} | AddFrameFilter(((${data.column} == ${valuesString})));`;
 
-			// Execute the command as a side effect in the application state
-			// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-			const response = await state.runSideEffect(pixelCommand);
+				// Execute the command as a side effect in the application state
+				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
+				const response = await state.runSideEffect(pixelCommand);
+			}
 			// biome-ignore lint/correctness/noUnusedVariables: <use as needed>
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
@@ -147,24 +153,26 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		// Update the block's data by removing any selected values
 		setData("selectedValues", []);
 
-		// Construct the command to unfilter the frame in the application state
-		const pixelUnfilterCommand = `META | UnfilterFrame(${data.frame});`;
-
 		try {
-			// Execute the command as a side effect in the application state
-			// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
-			const response = await state.runSideEffect(pixelUnfilterCommand);
-			const res = await state.runSideEffect(
-				`META | Frame(${data.frame}) | Select(${data.column}).as([${data.column}])|Group(${data.column})|Sort(${data.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
-			);
-			const values = (
-				res?.pixelReturn?.[0]?.output as {
-					// biome-ignore lint/suspicious/noExplicitAny: <more information needed>
-					data?: { values?: any[] };
-				}
-			)?.data?.values;
-			const options = values.map((item) => String(item[0]));
-			setData("listOptions", options);
+			for (let i = 0; i < data.frame.length; i++) {
+				// Construct the command to unfilter the frame in the application state
+				const pixelUnfilterCommand = `META | UnfilterFrame(${data.frame[i]});`;
+				// Execute the command as a side effect in the application state
+				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
+				const response =
+					await state.runSideEffect(pixelUnfilterCommand);
+				const res = await state.runSideEffect(
+					`META | Frame(${data.frame[i]}) | Select(${data.column}).as([${data.column}])|Group(${data.column})|Sort(${data.column}) | Offset(0) | Limit(1000) | Collect(1000);`,
+				);
+				const values = (
+					res?.pixelReturn?.[0]?.output as {
+						// biome-ignore lint/suspicious/noExplicitAny: <more information needed>
+						data?: { values?: any[] };
+					}
+				)?.data?.values;
+				const options = values.map((item) => String(item[0]));
+				setData("listOptions", options);
+			}
 		} catch (error) {
 			// If an error occurs, notify the user with an error message
 			notification.add({
