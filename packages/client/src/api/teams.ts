@@ -278,3 +278,23 @@ export const getUnassignedTeamEngines = async (
 	}
 	return response.data;
 };
+// Get teams by engineId
+export const getTeamsByEngineId = async (
+	engineId: string,
+	limit?: number,
+	offset?: number,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/group/getGroupsByEngineId?`;
+	const params = [];
+	if (engineId) params.push(`engineId=${engineId}`);
+	if (typeof limit === "number") params.push(`limit=${limit}`);
+	if (typeof offset === "number") params.push(`offset=${offset}`);
+	url += params.join("&");
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get teams by engineId");
+	}
+	return response.data;
+};

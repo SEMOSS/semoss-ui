@@ -1,28 +1,8 @@
-import { Add, Delete, Edit } from "@mui/icons-material";
-import { useState } from "react";
-import {
-	Button,
-	Checkbox,
-	IconButton,
-	styled,
-	Table,
-	Typography,
-} from "@semoss/ui";
+import { useEffect, useState } from "react";
+import { styled, Table, Typography } from "@semoss/ui";
+import { getTeamsByEngineId } from "@/api/teams";
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
 import { useEngine } from "@/hooks";
-
-const StyledAddButton = styled(Button)({
-	width: "150px",
-	borderRadius: "12px",
-	marginBottom: "16px",
-});
-
-const StyledButtonContainer = styled("div")({
-	display: "flex",
-	justifyContent: "flex-end",
-	width: "100%",
-	marginTop: "16px",
-});
 
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	borderRadius: "12px",
@@ -48,41 +28,43 @@ const StyledTableTitleDiv = styled("div")({
 	gap: "10px",
 });
 
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	paddingBottom: "0px",
-});
-
 export const TeamsTable = () => {
-	const [teams, setTeams] = useState([
-		{
-			id: 1,
-			name: "Team 1",
-			permission: "Editor",
-			dateAdded: "2025-05-14 14:34:42",
-			limitType: "None",
-			limitValue: "-",
-			frequency: "-",
-		},
-		{
-			id: 2,
-			name: "Team 2",
-			permission: "Author",
-			dateAdded: "2025-05-15 10:00:00",
-			limitType: "None",
-			limitValue: "-",
-			frequency: "-",
-		},
-	]);
+	const [teams, setTeams] = useState([]);
+	const { type, active } = useEngine();
+	const engineId = active?.id;
+
+	useEffect(() => {
+		if (!engineId) return;
+		const fetchTeams = async () => {
+			try {
+				const data = await getTeamsByEngineId(engineId, 10, 0);
+				const permissionMap = {
+					1: 'Author',
+					2: 'Editor',
+					3: 'Read-Only',
+				};
+				const mappedTeams = (Array.isArray(data) ? data : []).map(
+					(team, idx) => ({
+						id: team.id || idx,
+						name: team.id,
+						type: team.type,
+						permission: permissionMap[team.permission] || team.permission,
+						dateAdded: team.dateadded,
+					}),
+				);
+				setTeams(mappedTeams);
+			} catch (e) {
+				console.error(e);
+				setTeams([]);
+			}
+		};
+		fetchTeams();
+	}, [engineId]);
 	const [addModal, setAddModal] = useState(false);
 	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
 	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
 		"asc",
 	);
-	const { type } = useEngine();
 
 	const handleNameSort = () => {
 		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -108,16 +90,6 @@ export const TeamsTable = () => {
 
 	return (
 		<div>
-			<StyledButtonContainer>
-				<StyledAddButton
-					variant="contained"
-					startIcon={<Add />}
-					onClick={() => setAddModal(true)}
-					data-testid={"teams-settings-add-btn"}
-				>
-					Add Team
-				</StyledAddButton>
-			</StyledButtonContainer>
 			<AddTeamModal
 				type={type}
 				open={addModal}
@@ -132,9 +104,6 @@ export const TeamsTable = () => {
 				<StyledTeamTable>
 					<Table.Head>
 						<Table.Row>
-							<Table.Cell size="small" padding="checkbox">
-								<Checkbox />
-							</Table.Cell>
 							<Table.Cell size="small">
 								<Table.Sort
 									active={true}
@@ -144,6 +113,7 @@ export const TeamsTable = () => {
 									Name
 								</Table.Sort>
 							</Table.Cell>
+							<Table.Cell size="small">Group Type</Table.Cell>
 							<Table.Cell size="small">
 								<Table.Sort
 									active={true}
@@ -156,37 +126,15 @@ export const TeamsTable = () => {
 							<Table.Cell size="small">
 								Permission Date
 							</Table.Cell>
-							<Table.Cell size="small">
-								Model Limit Type
-							</Table.Cell>
-							<Table.Cell size="small">Limit Value</Table.Cell>
-							<Table.Cell size="small">Frequency</Table.Cell>
-							<Table.Cell size="small">Actions</Table.Cell>
 						</Table.Row>
 					</Table.Head>
 					<Table.Body>
 						{teams.map((team) => (
 							<Table.Row key={team.id}>
-								<StyledTableCell
-									size="medium"
-									padding="checkbox"
-								>
-									<StyledCheckbox />
-								</StyledTableCell>
 								<Table.Cell>{team.name}</Table.Cell>
+								<Table.Cell>{team.type}</Table.Cell>
 								<Table.Cell>{team.permission}</Table.Cell>
 								<Table.Cell>{team.dateAdded}</Table.Cell>
-								<Table.Cell>{team.limitType}</Table.Cell>
-								<Table.Cell>{team.limitValue}</Table.Cell>
-								<Table.Cell>{team.frequency}</Table.Cell>
-								<Table.Cell size="medium">
-									<IconButton>
-										<Edit />
-									</IconButton>
-									<IconButton>
-										<Delete />
-									</IconButton>
-								</Table.Cell>
 							</Table.Row>
 						))}
 					</Table.Body>
