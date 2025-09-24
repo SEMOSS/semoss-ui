@@ -126,9 +126,6 @@ export class InsightStore {
 		 */
 		python?:
 			| {
-					type: "detect";
-			  }
-			| {
 					type: "file";
 					path: string;
 					alias: string;
@@ -152,9 +149,7 @@ export class InsightStore {
 			python:
 				options && typeof options.python !== "undefined"
 					? options.python
-					: {
-							type: "detect",
-						},
+					: false,
 		};
 
 		// save the initial appId
@@ -166,9 +161,7 @@ export class InsightStore {
 		// save the python
 		this._store.options.python = null;
 		if (merged.python) {
-			if (merged.python.type === "detect") {
-				this._store.options.python = await this.detectScript();
-			} else if (merged.python.type === "file") {
+			if (merged.python.type === "file") {
 				this._store.options.python = await this.loadScript(
 					merged.python,
 				);
@@ -182,7 +175,7 @@ export class InsightStore {
 
 		// load the environment from the document (production)
 		try {
-			if (document) {
+			if (typeof document !== "undefined") {
 				const env = JSON.parse(
 					document.getElementById("semoss-env")?.textContent || "",
 				) as {
@@ -405,35 +398,6 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 		// propagate it forward
 		throw error;
-	};
-
-	/**
-	 * Detect a script from the html
-	 */
-	private detectScript = async (): Promise<Script | null> => {
-		const output = {
-			script: "",
-			alias: "",
-		};
-
-		try {
-			const scriptEle = document.querySelector("[data-semoss-py]");
-			const content = scriptEle?.textContent;
-			if (!content) {
-				return null;
-			}
-
-			// get the script
-			output.script = content;
-
-			// get the alias
-			output.alias = scriptEle?.getAttribute("data-alias") || "";
-		} catch (e) {
-			console.warn(e);
-			return null;
-		}
-
-		return output;
 	};
 
 	/**
