@@ -76,7 +76,7 @@ export const NewRoomPage = observer(() => {
 	 *
 	 * @param - input
 	 */
-	const askModel = async (prompt: string, files: File[]) => {
+	const askMessage = async (prompt: string, files: File[]) => {
 		// ignore if loading
 		if (isLoading) {
 			return;
@@ -92,7 +92,7 @@ export const NewRoomPage = observer(() => {
 		await room.initialize();
 
 		// ask the room
-		await room.askModel(prompt, files, options);
+		await room.askMessage(prompt, files, options);
 
 		// turn the loading screen off
 		setIsLoading(false);
@@ -162,7 +162,7 @@ export const NewRoomPage = observer(() => {
 								</Tooltip>
 							}
 							onPrompt={async (prompt, files) => {
-								await askModel(prompt, files);
+								await askMessage(prompt, files);
 
 								return true;
 							}}
@@ -211,7 +211,7 @@ export const NewRoomPage = observer(() => {
 					onClose={(success, p) => {
 						// if there is a prompt ask
 						if (success) {
-							askModel(p.INTENT, []);
+							askMessage(p.INTENT, []);
 						}
 
 						setIsPromptLibraryOpen(false);
