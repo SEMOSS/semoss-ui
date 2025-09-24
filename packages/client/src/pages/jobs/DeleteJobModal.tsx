@@ -14,7 +14,7 @@ export const DeleteJobModal = (props: {
 				<Modal.Title>Delete Job</Modal.Title>
 				<Modal.Content>
 					<Typography variant="body1">
-						Are you sure you want to delete
+						Are you sure you want to delete 
 						{job.length > 1 ? "all selected jobs" : job[0]?.name}?
 						This action is permanent.
 					</Typography>
