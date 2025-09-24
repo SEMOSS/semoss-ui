@@ -1,7 +1,7 @@
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "FUNCTION" | "DATABASE" | "KNOWLEDGE";
+	app_type: "STORAGE" | "DATABASE" | "FUNCTION";
 	description?: string;
 }
 
@@ -9,7 +9,6 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
-	tag?: string | string[];
 }
 
 /**
@@ -35,11 +34,20 @@ export interface Knowledge {
 }
 
 export interface Tool {
+	/** Type of the tool */
+	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
+
 	/** Id of the tool */
 	id: string;
 
 	/** Name of the tool */
 	name: string;
+
+	/** Description of the tool */
+	description: string;
+
+	/** Tags of the tool */
+	tags: string[];
 }
 
 /**
@@ -55,20 +63,6 @@ export interface Prompt {
 	CONTEXT: string;
 	tags: string[];
 }
-
-export type FileObj =
-	| {
-			name: string;
-			lastModified: number;
-			webkitRelativePath: string;
-			size: number;
-			type: string;
-			slice: number;
-			stream: number;
-			text: number;
-			//   arrayBuffer?: string;
-	  }
-	| Record<string, never>;
 
 /**
  * Messages from the backend
@@ -94,6 +88,10 @@ interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	visible: true;
 	inputUIPrompt: string;
+	files: {
+		fileName: string;
+		fileLocation: string;
+	}[];
 	modelId: string;
 	paramMap: {
 		max_new_tokens: number;

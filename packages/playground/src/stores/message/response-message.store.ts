@@ -57,11 +57,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	} | null = null;
 
 	constructor(
+		room: AbstractMessageStore["room"],
 		id: string,
 		text: string,
 		tools: ResponseMessageStore["tools"],
 	) {
-		super(id);
+		super(room, id);
 
 		this.text = text;
 		this.tools = tools;
