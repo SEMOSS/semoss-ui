@@ -62,9 +62,9 @@ export const TeamsTable = () => {
 	}, [engineId]);
 	const [addModal, setAddModal] = useState(false);
 	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
-	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
-		"asc",
-	);
+	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">("asc");
+	const [page, setPage] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
 
 	const handleNameSort = () => {
 		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -129,24 +129,29 @@ export const TeamsTable = () => {
 						</Table.Row>
 					</Table.Head>
 					<Table.Body>
-						{teams.map((team) => (
-							<Table.Row key={team.id}>
-								<Table.Cell>{team.name}</Table.Cell>
-								<Table.Cell>{team.type}</Table.Cell>
-								<Table.Cell>{team.permission}</Table.Cell>
-								<Table.Cell>{team.dateAdded}</Table.Cell>
-							</Table.Row>
-						))}
+						{teams
+							.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+							.map((team) => (
+								<Table.Row key={team.id}>
+									<Table.Cell>{team.name}</Table.Cell>
+									<Table.Cell>{team.type}</Table.Cell>
+									<Table.Cell>{team.permission}</Table.Cell>
+									<Table.Cell>{team.dateAdded}</Table.Cell>
+								</Table.Row>
+							))}
 					</Table.Body>
 					<Table.Footer>
 						<Table.Row>
 							<Table.Pagination
-								page={0}
-								rowsPerPage={5}
+								page={page}
+								rowsPerPage={rowsPerPage}
 								rowsPerPageOptions={[5, 10, 20]}
 								count={teams.length}
-								onPageChange={() => {}}
-								onRowsPerPageChange={() => {}}
+								onPageChange={(_, newPage) => setPage(newPage)}
+								onRowsPerPageChange={e => {
+									setRowsPerPage(parseInt(e.target.value, 10));
+									setPage(0);
+								}}
 							/>
 						</Table.Row>
 					</Table.Footer>
