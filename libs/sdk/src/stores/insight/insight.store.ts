@@ -624,7 +624,11 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 
 			const { output, operationType } = pixelReturn[0];
 			if (Env.TOOL && operationType.indexOf("MCP_TOOL_EXECUTION") > -1) {
-				if (window.parent) {
+				// only works in embedded browser
+				if (
+					typeof window !== "undefined" &&
+					typeof window.parent !== "undefined"
+				) {
 					window.parent.postMessage(
 						{
 							type: "SMSS_EXEC_TOOL",
