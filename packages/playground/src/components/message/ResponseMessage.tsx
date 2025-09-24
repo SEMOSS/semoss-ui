@@ -18,11 +18,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import {
-	InputMessageStore,
-	type ResponseMessageStore,
-	type RoomStore,
-} from "@/stores";
+import { InputMessageStore, type ResponseMessageStore } from "@/stores";
 import { ResponseMessageTool } from "./ResponseMessageTool";
 
 const StyledResponseMessage = styled(Stack)(({ theme }) => ({
@@ -46,15 +42,14 @@ const StyledHover = styled("div")(() => ({
 }));
 
 interface ResponseMessageProps {
-	/** Room to render */
-	room: RoomStore;
-
 	/** Message to render */
 	message: ResponseMessageStore;
 }
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
-	({ room, message }) => {
+	({ message }) => {
+		const { room } = message;
+
 		const notification = useNotification();
 
 		// get the parent input message
@@ -62,6 +57,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		if (message.parent instanceof InputMessageStore) {
 			inputMessage = message.parent;
 		}
+
+		console.log(inputMessage);
 
 		/**
 		 * Copy the text
@@ -84,8 +81,8 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		/**
-		 * Copy the text
-		 * @param text - text to copy
+		 * Record the feedback
+		 * @param rating - positive or negative
 		 */
 		const recordFeedback = async (rating: boolean) => {
 			try {
@@ -109,10 +106,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 */
 		const rewriteMessage = async () => {
 			try {
-				if (!inputMessage) {
-					return;
-				}
-
 				await room.rewriteMessage(message);
 
 				notification.add({
