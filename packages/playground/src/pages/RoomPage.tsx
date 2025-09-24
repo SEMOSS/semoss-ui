@@ -256,7 +256,7 @@ export const RoomPage = observer(() => {
 										paddingBottom: "8px",
 									}}
 								>
-									<RoomMessage room={room} message={m} />
+									<RoomMessage message={m} />
 								</Stack>
 							))}
 						</Container>
@@ -268,7 +268,7 @@ export const RoomPage = observer(() => {
 					>
 						<Container
 							maxWidth="xl"
-							sx={{ padding: "0 !important" }}
+							sx={{ padding: " 0 !important" }}
 						>
 							<RoomInput
 								isLoading={room.isLoading}
@@ -312,7 +312,7 @@ export const RoomPage = observer(() => {
 									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
-									await room.askModel(prompt, files);
+									await room.askMessage(prompt, files);
 
 									return true;
 								}}
