@@ -1,4 +1,5 @@
 import { Stack, styled } from "@semoss/ui";
+import { Variable } from "@semoss/renderer";
 import type { AppMetadata } from "./app.types";
 import { BrowseTemplateTileCard } from "./BrowseTempateTitleCard";
 import {
@@ -72,6 +73,50 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 		};
 	};
 
+	const includeSMSSDriverToTemplateState = (template: Template): Template => {
+		if( template.state.queries && !template.state.queries?.["smss_driver"] &&
+			template.state.variables && !template.state.variables?.["smss_driver"] &&
+			!template.state.variables?.["smss_driver--1"]
+		) {
+			return {
+				...template,
+				state: {
+					...template.state,
+					queries: {
+						...template.state.queries,
+						"smss_driver": {
+							id: "smss_driver",
+							cells: [
+								{
+									id: "1",
+									widget: "code",
+									parameters: {
+										code: "",
+										type: "py"
+									}
+								}
+							]
+						}
+					},
+					variables: {
+						...template.state.variables,
+						"smss_driver": {
+							type: "query",
+							to: "smss_driver",
+							cellId: "1"
+						} as Variable,
+						"smss_driver--1": {
+							type: "cell",
+							to: "smss_driver",
+							cellId: "1"
+						}
+					},
+				}
+			};
+		}
+		return template;
+	}
+
 	return (
 		<Stack
 			direction={"row"}
@@ -93,7 +138,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 							app={getAppMetadataFromTemplate(t)}
 							systemApp={true}
 							appType={app.project_type}
-							onAction={() => onUse(t)}
+							onAction={() => onUse(includeSMSSDriverToTemplateState(t))}
 							isLoading={false}
 							showSkeleton={false}
 						/>
