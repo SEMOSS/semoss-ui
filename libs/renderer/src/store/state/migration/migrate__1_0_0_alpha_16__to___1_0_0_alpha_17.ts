@@ -1,4 +1,3 @@
-import { M } from "vitest/dist/chunks/environment.d.cL3nLXbE.js";
 import type { Migration, MigrationState } from "./migration.types";
 
 const migrate__1_0_0_alpha_16__to_1_0_0_alpha_17: Migration = {
