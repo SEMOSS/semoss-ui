@@ -200,4 +200,12 @@ export const SETTINGS_ROUTES: {
 		history: ["settings/"],
 		admin: false,
 	},
+	{
+		title: "View RDF Map",
+		path: "view-rdf-map",
+		description: "View RDF Map",
+		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		admin: true,
+	},
 ];
