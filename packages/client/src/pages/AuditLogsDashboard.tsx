@@ -41,7 +41,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 			const catalogId =
 				window.location.hash.split("/")[catalogName == "Apps" ? 2 : 3];
 			const response = await monolithStore.runQuery(
-				`AuditLog(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}"}]);`,
 			);
 			setLogs(response.pixelReturn[0].output as EventData[] || []);
 		} catch (error) {
