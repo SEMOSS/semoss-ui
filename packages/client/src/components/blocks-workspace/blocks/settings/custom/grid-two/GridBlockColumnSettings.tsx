@@ -8,9 +8,11 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Sync } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import {
 	type GridBlockColumn,
 	type GridBlockDef,
+	useBlocks,
 	useBlocksPixel,
 	useFrameHeaders,
 } from "@semoss/renderer";
@@ -36,6 +38,20 @@ export const GridBlockColumnSettings = observer(
 	({ id }: GridBlockColumnSettingsProps) => {
 		const notification = useNotification();
 		const { data, setData } = useBlockSettings<GridBlockDef>(id);
+		const { state } = useBlocks();
+		const [selectedNotebook, setSelectedNotebook] = useState("");
+		const notebookOptions = Object.entries(state.queries || {}).map(
+			([notebookId, notebook]) => ({
+				id: notebookId,
+				label: notebook.id || notebookId,
+			}),
+		);
+
+		const query = state.queries[selectedNotebook];
+		const cellOptions = query
+			? query.list.map((cellId) => query.cells[cellId])
+			: [];
+
 		// get all of the frames
 		const getFrames = useBlocksPixel<string[]>("GetFrames();", {
 			data: [],
@@ -162,6 +178,86 @@ export const GridBlockColumnSettings = observer(
 						<Sync />
 					</IconButton>
 				</BaseSettingSection>
+
+				<Box sx={{ mt: 2 }}>
+					<BaseSettingSection label="Notebook">
+						<Autocomplete
+							fullWidth
+							multiple={false}
+							value={
+								notebookOptions.find(
+									(n) => n.id === data.notebookId,
+								) || null
+							}
+							options={notebookOptions}
+							getOptionLabel={(option) =>
+								typeof option === "object" &&
+								option !== null &&
+								"label" in option
+									? option.label
+									: ""
+							}
+							isOptionEqualToValue={(option, value) =>
+								option["id"] === value["id"]
+							}
+							onChange={(_, value) => {
+								setData("notebookId", value["id"] || "");
+								setData("cellId", ""); // reset cell selection
+								setSelectedNotebook(value["id"] || "");
+							}}
+							renderInput={(params) => (
+								<TextField
+									{...params}
+									placeholder="Select notebook"
+									size="small"
+									variant="outlined"
+								/>
+							)}
+						/>
+					</BaseSettingSection>
+				</Box>
+
+				{data.notebookId && (
+					<Box sx={{ mt: 2 }}>
+						<BaseSettingSection label="Cell">
+							<Autocomplete
+								fullWidth
+								multiple={false}
+								value={
+									cellOptions.find(
+										(c) => c.id === data.cellId,
+									) || null
+								}
+								options={cellOptions}
+								getOptionLabel={(option) =>
+									typeof option === "object" &&
+									option !== null
+										? state.getAlias(
+												selectedNotebook,
+												option.id,
+											) || option.id
+										: ""
+								}
+								isOptionEqualToValue={(option, value) =>
+									option &&
+									value &&
+									option["id"] === value["id"]
+								}
+								onChange={(_, value) => {
+									setData("cellId", value["id"] || "");
+								}}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										placeholder="Select cell"
+										size="small"
+										variant="outlined"
+									/>
+								)}
+							/>
+						</BaseSettingSection>
+					</Box>
+				)}
 				<Stack direction={"column"} width={"100%"} overflow={"hidden"}>
 					<DndContext
 						collisionDetection={closestCenter}

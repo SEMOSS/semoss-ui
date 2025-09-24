@@ -2,8 +2,12 @@ import { styled } from "@mui/material";
 import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
-import type { BlockComponent, BlockDef } from "../../../store";
+import { useBlock, useBlocks, useFrame, useFrameHeaders } from "../../../hooks";
+import {
+	ActionMessages,
+	type BlockComponent,
+	type BlockDef,
+} from "../../../store";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
 import type { GridBlockColumn } from "./grid-block.types";
 
@@ -70,7 +74,6 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 
 		/** Column Definitions */
 		columns: GridBlockColumn[];
-
 		/** */
 		style: {
 			height: string | undefined;
@@ -107,16 +110,18 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 			/** Enable the pagination */
 			pagination: boolean;
 		};
+		notebookId?: string; // <-- add this
+		cellId?: string;
 	};
 }
 
 export const GridBlock: BlockComponent = observer(({ id }) => {
+	const { state } = useBlocks();
 	const { attrs, data, setData } = useBlock<GridBlockDef>(id);
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
 		pageSize: 50,
 	});
-
 	const [contextMenu, setContextMenu] = useState<{
 		mouseX: number;
 		mouseY: number;
@@ -157,6 +162,18 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}
 		}
 	}, [frameHeaders.data.list]);
+
+	useEffect(() => {
+		if (data.notebookId && data.cellId && state) {
+			state.dispatch({
+				message: ActionMessages.RUN_CELL, // or RUN_CELL if that's your action
+				payload: {
+					queryId: data.notebookId,
+					cellId: data.cellId,
+				},
+			});
+		}
+	}, [data.notebookId, data.cellId, state]);
 
 	/**
 	 * Updates data.columns
@@ -234,6 +251,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		field: col.name,
 		headerName: col.name,
 		sortable: false,
+		editable: data.notebookId && data.cellId ? true : false,
 		renderHeader: () => (
 			<div
 				style={{
@@ -336,13 +354,83 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		},
 	}));
 
-	const rows = frame.data.values.map((r, idx) => {
-		const obj: Record<string, any> = { id: idx };
-		columns.forEach((c, cIdx) => {
-			obj[c.field] = r[cIdx];
-		});
-		return obj;
-	});
+	const cellOutput =
+		data.notebookId && data.cellId
+			? state.queries?.[data.notebookId]?.cells?.[data.cellId]?.output
+			: undefined;
+
+	const maxLenRow =
+		Array.isArray(cellOutput) && cellOutput.length > 0
+			? cellOutput.reduce((a, b) => (b.length > a.length ? b : a), [])
+			: [];
+
+	const notebookColumns =
+		maxLenRow.length > 0
+			? maxLenRow.map((_, idx) => ({
+					field: columns[idx]?.field || `Column${idx + 1}`,
+					headerName: columns[idx]?.headerName || `Column ${idx + 1}`,
+					sortable: false,
+					editable: true,
+				}))
+			: columns;
+
+	const rows =
+		Array.isArray(cellOutput) && cellOutput.length > 0
+			? cellOutput.map((r, idx) => {
+					const obj: Record<string, any> = { id: idx };
+					notebookColumns.forEach((c, cIdx) => {
+						obj[c.field] = r[cIdx];
+					});
+					return obj;
+				})
+			: frame.data.values.map((r, idx) => {
+					const obj: Record<string, any> = { id: idx };
+					columns.forEach((c, cIdx) => {
+						obj[c.field] = r[cIdx];
+					});
+					return obj;
+				});
+
+	const [localRows, setLocalRows] = useState(rows);
+	useEffect(() => {
+		setLocalRows(rows);
+	}, [JSON.stringify(rows)]);
+
+	useEffect(() => {
+		if (localRows && localRows.length > 0 && id && state) {
+			// Update the block's data.value
+			state.dispatch({
+				message: ActionMessages.SET_BLOCK_DATA,
+				payload: {
+					id,
+					path: "value",
+					value: localRows,
+				},
+			});
+
+			// Register or update the variable as before
+			if (!state.variables[id]) {
+				state.dispatch({
+					message: ActionMessages.ADD_VARIABLE,
+					payload: {
+						id,
+						to: id,
+						type: "block",
+						value: JSON.stringify(localRows),
+					},
+				});
+			} else {
+				state.dispatch({
+					message: ActionMessages.MODIFY_VARIABLE,
+					payload: {
+						blockId: id,
+						variable: id,
+						value: JSON.stringify(localRows),
+					},
+				});
+			}
+		}
+	}, [localRows, id, state]);
 
 	const handlePaginationModalChange = (newmodel) => {
 		// if the page size has changed reset the page
@@ -418,8 +506,13 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 				}}
 			>
 				<DataGrid
-					rows={rows}
-					columns={columns}
+					rows={localRows}
+					columns={
+						Array.isArray(cellOutput) && cellOutput.length > 0
+							? notebookColumns
+							: columns
+					}
+					editMode="cell"
 					pagination
 					density="compact"
 					paginationMode="server"
@@ -456,6 +549,44 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 						"& .MuiDataGrid-cell": {
 							padding: "0px",
 						},
+					}}
+					processRowUpdate={(newRow, oldRow) => {
+						const updatedRows = localRows.map((row) =>
+							row.id === newRow.id ? newRow : row,
+						);
+						setLocalRows(updatedRows);
+						// Update block data and variable as before
+						state.dispatch({
+							message: ActionMessages.SET_BLOCK_DATA,
+							payload: {
+								id,
+								path: "value",
+								value: updatedRows,
+							},
+						});
+
+						if (state.variables[id]) {
+							state.dispatch({
+								message: ActionMessages.MODIFY_VARIABLE,
+								payload: {
+									blockId: id,
+									variable: id,
+									value: JSON.stringify(updatedRows),
+								},
+							});
+						} else {
+							state.dispatch({
+								message: ActionMessages.ADD_VARIABLE,
+								payload: {
+									id,
+									to: id,
+									type: "block",
+									value: JSON.stringify(updatedRows),
+								},
+							});
+						}
+
+						return newRow;
 					}}
 				/>
 			</div>

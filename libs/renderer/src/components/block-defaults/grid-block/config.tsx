@@ -30,6 +30,8 @@ export const config: BlockConfig<GridBlockDef> = {
 			hideUnfilter: false,
 		},
 		show: true,
+		notebookId: "",
+		cellId: "",
 	},
 
 	listeners: {},

@@ -2300,6 +2300,8 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 				view: {
 					pagination: true,
 				},
+				notebookId: "",
+				cellId: "",
 			},
 			listeners: {},
 			slots: {} as BlockJSON["slots"],
