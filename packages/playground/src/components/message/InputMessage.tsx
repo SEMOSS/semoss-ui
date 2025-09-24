@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useInsight } from "@semoss/sdk/react";
 import { Avatar, Stack, styled, Typography } from "@semoss/ui";
-import type { InputMessageStore, RoomStore } from "@/stores";
+import type { InputMessageStore } from "@/stores";
 
 const StyledInputMessage = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(2),
@@ -19,9 +19,6 @@ const StyledAvatar = styled(Avatar)(({ theme }) => ({
 }));
 
 interface InputMessageProps {
-	/** Room to render */
-	room: RoomStore;
-
 	/** Message to render */
 	message: InputMessageStore;
 }
