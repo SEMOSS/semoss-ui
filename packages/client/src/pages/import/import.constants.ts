@@ -5722,7 +5722,7 @@ export const CONNECTION_OPTIONS = {
 					{
 						fieldName: "FUNCTION_TYPE",
 						label: "Function Type",
-						defaultValue: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS",
+						defaultValue: "AWS_TEXTRACT",
 
 						options: {
 							component: "text-field",
@@ -5794,7 +5794,96 @@ export const CONNECTION_OPTIONS = {
 						fieldName: "FUNCTION_REQUIRED_PARAMETERS",
 						label: "Function Required Parameters",
 						defaultValue:
-							'["FILE_PATH","CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE"]',
+							'["FILE_PATH","CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE"]',
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "PAGE_LENGTH",
+						label: "Page Length",
+						defaultValue: "1",
+						options: {
+							component: "text-field",
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: true },
+					},
+				],
+			},
+			{
+				name: "AWS TEXTRACT CUSTOM EMBEDDINGS",
+				disable: false,
+				icon: AWS_TEXTRACT,
+				fields: [
+					{
+						fieldName: "FUNCTION_TYPE",
+						label: "Function Type",
+						defaultValue: "AWS_TEXTRACT_CUSTOM_EMBEDDINGS",
+
+						options: {
+							component: "text-field",
+						},
+						disabled: true,
+						rules: { required: true },
+					},
+					{
+						fieldName: "NAME",
+						label: "Name",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "ACCESS_KEY",
+						label: "Access Key",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "SECRET_KEY",
+						label: "Secret Key",
+						defaultValue: "",
+						options: {
+							component: "password",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "REGION",
+						label: "Region",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "S3BUCKETENGINEID",
+						label: "S3 Bucket Engine Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "STORAGE_PATH",
+						label: "Storage Path",
+						defaultValue: "",
 						options: {
 							component: "text-field",
 						},
@@ -6299,7 +6388,7 @@ export const CONNECTION_OPTIONS = {
 					{
 						fieldName: "FUNCTION_TYPE",
 						label: "Function Type",
-						defaultValue: "GOOGLE_OCR_CUSTOM_EMBEDDINGS",
+						defaultValue: "GOOGLE_OCR",
 
 						options: {
 							component: "text-field",
@@ -6382,7 +6471,107 @@ export const CONNECTION_OPTIONS = {
 						fieldName: "FUNCTION_REQUIRED_PARAMETERS",
 						label: "Function Required Parameters",
 						defaultValue:
-							'["FILE_PATH","CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE"]',
+							'["FILE_PATH","CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE"]',
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "PAGE_LENGTH",
+						label: "Page Length",
+						defaultValue: "5",
+						options: {
+							component: "text-field",
+						},
+						hidden: true,
+						disabled: true,
+						rules: { required: true },
+					},
+				],
+			},
+			{
+				name: "Google OCR CUSTOM EMBEDDINGS",
+				disable: false,
+				icon: GOOGLE_OCR,
+				fields: [
+					{
+						fieldName: "FUNCTION_TYPE",
+						label: "Function Type",
+						defaultValue: "GOOGLE_OCR_CUSTOM_EMBEDDINGS",
+
+						options: {
+							component: "text-field",
+						},
+						disabled: true,
+						rules: { required: true },
+					},
+					{
+						fieldName: "NAME",
+						label: "Name",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "PROJECT_ID",
+						label: "Project Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "PROCESSOR_ID",
+						label: "Processor Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "REGION",
+						label: "Region",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "FILE",
+						label: "Upload Service Account File",
+						defaultValue: null,
+						options: {
+							component: "file-upload",
+						},
+						disabled: true,
+						secondary: true,
+						rules: { required: true },
+					},
+					{
+						fieldName: "GOOGLE_BUCKET_ENGINEID",
+						label: "Google Bucket Engine Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "STORAGE_PATH",
+						label: "Storage Path",
+						defaultValue: "",
 						options: {
 							component: "text-field",
 						},
@@ -6794,8 +6983,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -7196,8 +7385,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -7519,8 +7708,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -7852,8 +8041,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -8164,8 +8353,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -8511,8 +8700,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -8908,8 +9097,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -9252,8 +9441,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
@@ -9557,8 +9746,8 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_NEED_STORAGE",
-						label: "Custom Document Processor Need STORAGE",
+						fieldName: "CUSTOM_DOCUMENT_PROCESSOR_USE_STORAGE",
+						label: "Custom Document Processor Use Storage",
 						defaultValue: "true",
 						options: {
 							component: "select",
