@@ -10,7 +10,7 @@ export class RootMessageStore extends AbstractMessageStore {
 	readonly type = "ROOT";
 
 	constructor() {
-		super("");
+		super(null, "");
 
 		makeObservable(this, {
 			history: computed,
