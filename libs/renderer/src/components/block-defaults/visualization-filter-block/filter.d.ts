@@ -26,4 +26,6 @@ export interface FilterComponentProps {
 	sliderSensitivity?: number;
 	color?: "primary" | "secondary" | "success" | "warning" | "error";
 	size?: "small" | "medium" | "large";
+	resetChecked?: boolean;
+	setResetChecked?: (checked: boolean) => void;
 }

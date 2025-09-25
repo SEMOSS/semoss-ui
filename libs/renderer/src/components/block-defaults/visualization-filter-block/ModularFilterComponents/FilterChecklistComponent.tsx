@@ -16,6 +16,8 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 	multi = true,
 	color = "primary",
 	size = "medium",
+	resetChecked,
+	setResetChecked,
 }) => {
 	const [checked, setChecked] = useState<string[]>([]);
 	const [searchText, setSearchText] = useState("");
@@ -88,6 +90,8 @@ const FilterChecklistComponent: React.FC<FilterComponentProps> = ({
 				multi={multi}
 				checked={checked}
 				setChecked={setChecked}
+				resetChecked={resetChecked}
+				setResetChecked={setResetChecked}
 			/>
 			<Box
 				sx={{

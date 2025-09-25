@@ -12,14 +12,16 @@ import FilterSearchFilterHeader from "./FilterSearchFilterHeader";
 const FilterDropdownComponent: React.FC<FilterComponentProps> = ({
 	resetKey,
 	mode,
-	listOptions = [],
-	checkedValues = [],
+	listOptions,
+	checkedValues,
 	onApply,
 	onReset,
 	multi = true,
-	filterLabel = "",
+	filterLabel,
 	color = "primary",
 	size = "medium",
+	resetChecked,
+	setResetChecked,
 }) => {
 	const [checked, setChecked] = useState<string[]>([]);
 	const [searchText, setSearchText] = useState("");
@@ -29,8 +31,10 @@ const FilterDropdownComponent: React.FC<FilterComponentProps> = ({
 
 	useEffect(() => {
 		setSearchText("");
-		if (mode === "dropdown") {
-			setChecked(checkedValues);
+		if (mode === "dropdown" || mode === "checklist") {
+			setChecked(
+				checkedValues.length ? [...checkedValues] : [...listOptions],
+			);
 		}
 	}, [resetKey, mode]);
 
@@ -148,6 +152,8 @@ const FilterDropdownComponent: React.FC<FilterComponentProps> = ({
 								multi={multi}
 								checked={checked}
 								setChecked={setChecked}
+								resetChecked={resetChecked}
+								setResetChecked={setResetChecked}
 							/>
 						</Box>
 					)}

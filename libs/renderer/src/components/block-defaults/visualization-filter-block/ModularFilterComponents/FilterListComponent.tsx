@@ -1,4 +1,5 @@
 import { Checkbox } from "@mui/material";
+import { useEffect } from "react";
 import { List } from "@semoss/ui";
 
 const FilterListComponent = ({
@@ -7,12 +8,16 @@ const FilterListComponent = ({
 	multi,
 	checked,
 	setChecked,
+	resetChecked,
+	setResetChecked,
 }: {
 	listOptions: string[];
 	filteredOptions: string[];
 	multi: boolean;
 	checked: string[];
 	setChecked: (val: string[]) => void;
+	resetChecked: boolean;
+	setResetChecked: (checked: boolean) => void;
 }) => {
 	const handleToggle = (value: string) => () => {
 		if (!multi) {
@@ -31,6 +36,14 @@ const FilterListComponent = ({
 			setChecked(newChecked);
 		}
 	};
+
+	// reset checked when resetChecked changes to true (unfilter action)
+	useEffect(() => {
+		if (resetChecked) {
+			setChecked([...listOptions]);
+			setResetChecked(false);
+		}
+	}, [resetChecked]);
 
 	const allChecked = checked.length === listOptions.length;
 	const indeterminate = checked.length > 0 && !allChecked;

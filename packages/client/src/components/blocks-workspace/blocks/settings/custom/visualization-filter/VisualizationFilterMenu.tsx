@@ -149,10 +149,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 	const closeDropdown = () => setDropdownOpen(false);
 
-	const columnNames = useMemo(() => {
-		return frameHeaders?.data?.list?.map((item) => item.alias) || [];
-	}, [frameHeaders]);
-
 	// Effect to initialize local state from block data
 	useEffect(() => {
 		setLocalState({
@@ -224,6 +220,10 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 		}
 	};
 
+	const columnNames = useMemo(() => {
+		return frameHeaders?.data?.list?.map((item) => item.alias) || [];
+	}, [frameHeaders, localState, handleOnChange]);
+
 	/**
 	 * This function is a higher order function that takes a field name
 	 * and returns a function that will update the local state with
@@ -286,12 +286,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 						...prev,
 						listOptions: options,
 						selectedValues: [],
-						filterLabel:
-							prev.filterLabel && prev.filterLabel.trim() !== ""
-								? prev.filterLabel
-								: prev.column
-									? `Filter of ${prev.column}`
-									: "",
+						filterLabel: `Filter of ${localState.column || localState.filterLabel}`,
 					};
 
 					Object.entries(updatedState).forEach(([key, value]) => {
@@ -526,15 +521,16 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 									size="small"
 									fullWidth
 									value={
-										localState.filterLabel ||
 										(localState.column
 											? `Filter of ${localState.column}`
-											: "")
+											: "") || localState.filterLabel
 									}
 									onChange={(e) =>
 										updateField(
 											"filterLabel",
-											e.target.value,
+											(localState.column
+												? `Filter of ${localState.column}`
+												: "") || localState.filterLabel,
 										)
 									}
 								/>

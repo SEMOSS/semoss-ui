@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { type CSSProperties, useEffect } from "react";
+import { type CSSProperties, useEffect, useState } from "react";
 import { Box, styled, Typography, useNotification } from "@semoss/ui";
 import { useBlock, useBlocks } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
@@ -72,6 +72,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		useBlock<VisualizationFilterBlockDef>(id);
 	const notification = useNotification();
 	const { state } = useBlocks();
+	const [resetChecked, setResetChecked] = useState(false);
 	// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
 	const blocks = state.blocks;
 	useEffect(() => {
@@ -86,8 +87,6 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		let valuesString = "";
 		// Update the selected values in the block's data
 		setData("selectedValues", selected);
-
-		console.log("THIS IS DATA FRAME", data.frame);
 
 		try {
 			for (let i = 0; i < data.frame.length; i++) {
@@ -153,6 +152,9 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		// Update the block's data by removing any selected values
 		setData("selectedValues", []);
 
+		// Reset the resetChecked state to true to indicate that the reset action has been performed
+		setResetChecked(true);
+
 		try {
 			for (let i = 0; i < data.frame.length; i++) {
 				// Construct the command to unfilter the frame in the application state
@@ -214,6 +216,8 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 							onReset={handleReset}
 							color={data.color}
 							size={data.size}
+							resetChecked={resetChecked}
+							setResetChecked={setResetChecked}
 						/>
 					)}
 					{mode === "slider" && (
@@ -270,6 +274,8 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 							onReset={handleReset}
 							color={data.color}
 							size={data.size}
+							resetChecked={resetChecked}
+							setResetChecked={setResetChecked}
 						/>
 					)}
 				</FilterBody>
