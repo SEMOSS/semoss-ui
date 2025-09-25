@@ -753,24 +753,23 @@ export const LayersPanel = observer(
 						   }
 					   : undefined;
 
-				   const id = await state.dispatch({
-					   message: ActionMessages.ADD_BLOCK,
-					   payload: {
-						   json: getJsonForBlock(duplicateId) as BlockJSON,
-						   position: position,
-					   },
-				   });
-				   setSelectedLayers([]); // Clear first
+			   const id = await state.dispatch({
+				   message: ActionMessages.ADD_BLOCK,
+				   payload: {
+					   json: getJsonForBlock(duplicateId) as BlockJSON,
+					   position: position,
+				   },
+			   });
+			   setSelectedLayers([]); // Clear first
 
-		id.then((resolvedId) => {
-                    const newId = resolvedId as string;
-                    selectLayer(selectedPages); // Refresh the layer list
-                    designer.setSelected(newId);
-                    designer.setHovered(newId);
-                    setSelectedLayers([newId]);
-                });
-				handleMenuClose();
-			};
+			   const newId = id as string;
+			   selectLayer(selectedPages); // Refresh the layer list
+			   designer.setSelected(newId);
+			   designer.setHovered(newId);
+			   setSelectedLayers([newId]);
+			   renderBlock(newId);
+			   handleMenuClose();
+		};
 
 			return (
 				<>
