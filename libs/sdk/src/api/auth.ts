@@ -38,7 +38,7 @@ export const oauth = async (
 	);
 
 	//check if they are already logged in
-	if (response.data && response.data.name) {
+	if (response.data?.name) {
 		return true;
 	}
 
@@ -48,7 +48,11 @@ export const oauth = async (
 	}
 
 	return new Promise((resolve, reject) => {
-		if (!window || !window.top) {
+		// only works in browser
+		if (
+			typeof window === "undefined" ||
+			typeof window.top === "undefined"
+		) {
 			reject("Unable to login");
 			return;
 		}
@@ -85,7 +89,7 @@ export const oauth = async (
 					// close it
 					resolve(response);
 				}
-			} catch (err) {
+			} catch (_err) {
 				// do nothing
 				// this is to work around the blocked frame error that comes up
 			}

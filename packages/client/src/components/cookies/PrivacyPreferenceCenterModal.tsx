@@ -11,6 +11,11 @@ import {
 } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 
+const StyledModal = styled(Modal)({
+	"& .MuiPaper-root": {
+		overflowY: "auto",
+	},
+});
 const StyledModalHeader = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(2),
 }));
@@ -87,7 +92,7 @@ export const PrivacyPreferenceCenterModal = (
 	}, [configStore.theme]);
 
 	return (
-		<Modal open={isOpen} fullWidth maxWidth="lg" onClose={onClose}>
+		<StyledModal open={isOpen} fullWidth maxWidth="lg" onClose={onClose}>
 			<StyledModalHeader
 				direction="row"
 				justifyContent="space-between"
@@ -143,6 +148,6 @@ export const PrivacyPreferenceCenterModal = (
 					Close
 				</Button>
 			</StyledFooter>
-		</Modal>
+		</StyledModal>
 	);
 };

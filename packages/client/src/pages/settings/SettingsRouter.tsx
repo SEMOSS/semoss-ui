@@ -4,7 +4,6 @@ import { JobsPage } from "../jobs/JobsPage";
 import { AdminQueryPage } from "./AdminQueryPage";
 import { AppSettingsDetailPage } from "./AppSettingsDetailPage";
 import { ConfigurationsPage } from "./ConfigurationsPage";
-import { DatabaseSettingsPage } from "./DatabaseSettingsPage";
 import { EngineSettingsDetailPage } from "./EngineSettingsDetailPage";
 import { EngineSettingsIndexPage } from "./EngineSettingsIndexPage";
 import { InsightSettingsDetailPage } from "./InsightSettingsDetailPage";
@@ -17,6 +16,7 @@ import { SettingsLayout } from "./SettingsLayout";
 import { SETTINGS_ROUTES } from "./settings.constants";
 import { TeamSettingsDetailPage } from "./TeamSettingsDetailPage";
 import { TeamsSettingsPage } from "./TeamsSettingsPage";
+import { RDFMapPage } from "./RDFMapPage";
 
 // map each route to a component
 const SETTINGS_COMPONETS = {
@@ -31,7 +31,8 @@ const SETTINGS_COMPONETS = {
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,
-	"team-permissions/:id": TeamSettingsDetailPage,
+	"team-permissions/:type/:id": TeamSettingsDetailPage,
+	"view-rdf-map": RDFMapPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

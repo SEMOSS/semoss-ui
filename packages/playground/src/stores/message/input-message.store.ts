@@ -12,13 +12,42 @@ export class InputMessageStore extends AbstractMessageStore {
 	 */
 	text: string = "";
 
-	constructor(id: string, text: string) {
-		super(id);
+	/**
+	 * Files associated with the message
+	 */
+	files: {
+		fileName: string;
+		fileLocation: string;
+	}[];
+
+	/**
+	 * Parameters associated with the message
+	 */
+	parameters: {
+		max_new_tokens: number;
+		temperature: number;
+	} = {
+		max_new_tokens: -1,
+		temperature: 0.7,
+	};
+
+	constructor(
+		room: AbstractMessageStore["room"],
+		id: string,
+		text: string,
+		files: {
+			fileName: string;
+			fileLocation: string;
+		}[],
+	) {
+		super(room, id);
 
 		this.text = text;
+		this.files = files;
 
 		makeObservable(this, {
 			text: observable,
+			files: observable,
 		});
 	}
 }

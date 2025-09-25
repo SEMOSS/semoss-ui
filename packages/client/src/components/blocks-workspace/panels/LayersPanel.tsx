@@ -14,6 +14,7 @@ import { restrictToFirstScrollableAncestor } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
 	Add,
+	Check as CheckIcon,
 	ChevronRight,
 	ContentCopy,
 	Delete,
@@ -22,7 +23,6 @@ import {
 	LibraryAdd,
 	MoreVert,
 	Search,
-	Check as CheckIcon,
 } from "@mui/icons-material/";
 import DeleteOutlineOutlinedIcon from "@mui/icons-material/DeleteOutlineOutlined";
 import { toJS } from "mobx";
@@ -54,8 +54,8 @@ import { Panel } from "@/components/workspace";
 import { useDesigner, useWorkspace } from "@/hooks";
 import { getBlockElement } from "@/stores";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
-import { BlockSettingsRegistry } from "../blocks";
 import RenameIcon from "../../../assets/img/Rename.svg";
+import { BlockSettingsRegistry } from "../blocks";
 
 const customCollisionDetection = (args) => {
 	const collisions = closestCenter(args);
@@ -226,29 +226,29 @@ const StyledHomePageChildDiv = styled("div")(() => ({
 }));
 
 const StyledRenameTextFiled = styled(TextField)(() => ({
-	'& .MuiOutlinedInput-root': {
-            borderRadius: '4px',
-            width: '100%',
-			maxWidth: '170px',
-            height: '21px',
-            paddingInline: '4px',
-            /* background-color: red; */
-            border: '1px solid #0471F0', // outer container radius
-            fontFamily: 'Inter',
-            fontSize: '14px',
-            fontWeight: 400,
-            fontStyle: 'normal',
-            lineHeight: '150%',
-            letterSpacing: '0.17px',
-            color: '#666666',
-            '& fieldset': {
-                borderRadius: '4px', // the actual outline radius
-            },
-            '& .MuiOutlinedInput-input': {
-                padding: '0px', // remove padding from input
-            },
-            },
-}))
+	"& .MuiOutlinedInput-root": {
+		borderRadius: "4px",
+		width: "100%",
+		maxWidth: "170px",
+		height: "21px",
+		paddingInline: "4px",
+		/* background-color: red; */
+		border: "1px solid #0471F0", // outer container radius
+		fontFamily: "Inter",
+		fontSize: "14px",
+		fontWeight: 400,
+		fontStyle: "normal",
+		lineHeight: "150%",
+		letterSpacing: "0.17px",
+		color: "#666666",
+		"& fieldset": {
+			borderRadius: "4px", // the actual outline radius
+		},
+		"& .MuiOutlinedInput-input": {
+			padding: "0px", // remove padding from input
+		},
+	},
+}));
 
 const StyledRenameStack = styled(Stack)(() => ({
 	alignItems: "center",
@@ -355,10 +355,12 @@ export const LayersPanel = observer(
 		const accordionRefs = useRef({});
 
 		const [_activeNode, setActiveNode] = useState<TreeNode | null>(null);
-		const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
-        const [editBlockId, setEditBlockId] = useState<string | null>(null);
-        const [rename, setRename] = useState(true);
-        const editableAreaRef = useRef<HTMLDivElement | null>(null);
+		const [editingBlockId, setEditingBlockId] = useState<string | null>(
+			null,
+		);
+		const [editBlockId, setEditBlockId] = useState<string | null>(null);
+		const [rename, setRename] = useState(true);
+		const editableAreaRef = useRef<HTMLDivElement | null>(null);
 
 		const sensors = useSensors(
 			useSensor(MouseSensor, { activationConstraint: { distance: 5 } }),
@@ -408,28 +410,28 @@ export const LayersPanel = observer(
 		}, [designer.selected]);
 
 		useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                editableAreaRef.current &&
-                !editableAreaRef.current.contains(event.target as Node)
-            ) {
-                const target = event.target as HTMLElement;
+			const handleClickOutside = (event: MouseEvent) => {
+				if (
+					editableAreaRef.current &&
+					!editableAreaRef.current.contains(event.target as Node)
+				) {
+					const target = event.target as HTMLElement;
 
-                // Allow clicks inside the TextField only
-                if (target.closest('.MuiOutlinedInput-root')) {
-                    return; // Ignore clicks inside the TextField
-                }
+					// Allow clicks inside the TextField only
+					if (target.closest(".MuiOutlinedInput-root")) {
+						return; // Ignore clicks inside the TextField
+					}
 
-                setEditingBlockId(null); // Reset editingBlockId when clicking outside
-            }
-        };
+					setEditingBlockId(null); // Reset editingBlockId when clicking outside
+				}
+			};
 
-        document.addEventListener('mousedown', handleClickOutside);
+			document.addEventListener("mousedown", handleClickOutside);
 
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, []);
+			return () => {
+				document.removeEventListener("mousedown", handleClickOutside);
+			};
+		}, []);
 
 		useEffect(() => {
 			const block = state.blocks[selectedPages];
@@ -437,15 +439,15 @@ export const LayersPanel = observer(
 		}, []);
 
 		const handleRename = (id: string) => {
-        state.dispatch({
-            message: ActionMessages.SET_BLOCK_DATA,
-            payload: {
-                id: id,
-                path: 'id',
-                value: editBlockId,
-            },
-        });
-    };
+			state.dispatch({
+				message: ActionMessages.SET_BLOCK_DATA,
+				payload: {
+					id: id,
+					path: "id",
+					value: editBlockId,
+				},
+			});
+		};
 
 		const handleDragStart = (event: DragStartEvent) => {
 			const { active } = event;
@@ -782,7 +784,7 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 
-			const handleDuplicate = (
+			const handleDuplicate = async (
 				event: React.MouseEvent<HTMLElement>,
 				duplicateId: string,
 			) => {
@@ -794,12 +796,12 @@ export const LayersPanel = observer(
 					const blockJson = {
 						widget: toJS(block.widget),
 						data: (() => {
-                        const data = toJS(block.data);
-                        if (data.id) {
-                            delete data.id; // Remove the id property if it exists
-                        }
-                        return data;
-                    })(),
+							const data = toJS(block.data);
+							if (data.id) {
+								delete data.id; // Remove the id property if it exists
+							}
+							return data;
+						})(),
 						listeners: toJS(block.listeners),
 						slots: {},
 					};
@@ -837,7 +839,7 @@ export const LayersPanel = observer(
 						}
 					: undefined;
 
-				const id = state.dispatch({
+				const id = await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: getJsonForBlock(duplicateId) as BlockJSON,
@@ -859,33 +861,33 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 			const handleBlockName = (id: string) => {
-            setEditingBlockId(id);
-            const block = state.blocks[id];
-            setEditBlockId(
-                (block?.data?.id as string)
-                    ? (block?.data?.id as string)
-                    : (block?.id as string),
-            );
-        };
-        const handlevalidation = (id: string) => {
-            for (let i = 0; i < Object.keys(state.blocks).length; i++) {
-                const block = state.blocks[Object.keys(state.blocks)[i]];
-                if (block.data.id) {
-                    if (block.data.id === id) {
-                        setRename(true);
-                        break;
-                    } else if (block.id === id) {
-                        setRename(true);
-                        break;
-                    }
-                } else if (block.id === id) {
-                    setRename(true);
-                    break;
-                } else {
-                    setRename(false);
-                }
-            }
-        };
+				setEditingBlockId(id);
+				const block = state.blocks[id];
+				setEditBlockId(
+					(block?.data?.id as string)
+						? (block?.data?.id as string)
+						: (block?.id as string),
+				);
+			};
+			const handlevalidation = (id: string) => {
+				for (let i = 0; i < Object.keys(state.blocks).length; i++) {
+					const block = state.blocks[Object.keys(state.blocks)[i]];
+					if (block.data.id) {
+						if (block.data.id === id) {
+							setRename(true);
+							break;
+						} else if (block.id === id) {
+							setRename(true);
+							break;
+						}
+					} else if (block.id === id) {
+						setRename(true);
+						break;
+					} else {
+						setRename(false);
+					}
+				}
+			};
 
 			return (
 				<>
@@ -908,48 +910,53 @@ export const LayersPanel = observer(
 									block.widget.slice(1)}
 							</StyledLabelTitle>
 							<div ref={editableAreaRef}>
-                            {editingBlockId === block.id ? ( // Check if the current block is being edited
-                                <StyledRenameStack>
-								<StyledRenameStack
-                                    className="editable-container"
-                                >
-                                    <StyledRenameTextFiled
-                                        value={editBlockId}
-                                        onClick={(e) => e.stopPropagation()}
-                                        onChange={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setEditBlockId(e.target.value);
-                                            handlevalidation(e.target.value);
-                                        }}
-                                        size="small"
-                                        variant="outlined"
-                                        autoFocus
-                                    />
-                                    
-                                </StyledRenameStack>
-								<StyledIconButton
-                                        color="primary"
-                                        disabled={rename}
-                                        onMouseDown={(e) => {
-                                            e.stopPropagation(); // Prevent the mousedown event from propagating
-                                        }}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleRename(block.id); // Replace with your actual function
-                                            setRename(true);
-                                            setEditingBlockId(null); // Reset editingBlockId after renaming
-                                        }}
-                                    >
-                                        <CheckIcon />
-                                    </StyledIconButton>
+								{editingBlockId === block.id ? ( // Check if the current block is being edited
+									<StyledRenameStack>
+										<StyledRenameStack className="editable-container">
+											<StyledRenameTextFiled
+												value={editBlockId}
+												onClick={(e) =>
+													e.stopPropagation()
+												}
+												onChange={(e) => {
+													e.preventDefault();
+													e.stopPropagation();
+													setEditBlockId(
+														e.target.value,
+													);
+													handlevalidation(
+														e.target.value,
+													);
+												}}
+												size="small"
+												variant="outlined"
+												autoFocus
+											/>
+										</StyledRenameStack>
+										<StyledIconButton
+											color="primary"
+											disabled={rename}
+											onMouseDown={(e) => {
+												e.stopPropagation(); // Prevent the mousedown event from propagating
+											}}
+											onClick={(e) => {
+												e.stopPropagation();
+												handleRename(block.id); // Replace with your actual function
+												setRename(true);
+												setEditingBlockId(null); // Reset editingBlockId after renaming
+											}}
+										>
+											<CheckIcon />
+										</StyledIconButton>
 									</StyledRenameStack>
-                            ) : (
-                                <StyledLabelSubtitleText>
-                                    {block.data.id ? block.data.id : block.id}
-                                </StyledLabelSubtitleText>
-                            )}
-                        </div>
+								) : (
+									<StyledLabelSubtitleText>
+										{block.data.id
+											? block.data.id
+											: block.id}
+									</StyledLabelSubtitleText>
+								)}
+							</div>
 						</StyledLabelContainer>
 						{variableName ? (
 							<StyledTreeItemIconButton
@@ -1012,21 +1019,21 @@ export const LayersPanel = observer(
 						}}
 					>
 						<Menu.Item
-                        value="rename"
-                        sx={{ display: 'flex' }}
-                        onClick={() => handleBlockName(block.id)}
-                    >
-                        <img
-                            src={RenameIcon}
-                            alt="Rename Icon"
-                            style={{
-                                marginRight: '12px',
-                                position: 'relative',
-                                left: '4px',
-                            }}
-                        />
-                        Rename
-                    </Menu.Item>
+							value="rename"
+							sx={{ display: "flex" }}
+							onClick={() => handleBlockName(block.id)}
+						>
+							<img
+								src={RenameIcon}
+								alt="Rename Icon"
+								style={{
+									marginRight: "12px",
+									position: "relative",
+									left: "4px",
+								}}
+							/>
+							Rename
+						</Menu.Item>
 						<Menu.Item
 							value="duplicate"
 							sx={{ display: "flex" }}
