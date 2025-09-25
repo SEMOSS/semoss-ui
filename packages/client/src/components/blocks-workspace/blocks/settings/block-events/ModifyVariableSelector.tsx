@@ -1,6 +1,8 @@
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { Select, TextField } from "@semoss/ui";
+import {useBlocks} from "@semoss/renderer";
+import { toJS } from "mobx";
 
 interface ModifyVariableSelectorProps {
 	id: string;
@@ -15,9 +17,21 @@ export const ModifyVariableSelector = ({
 }: ModifyVariableSelectorProps) => {
 	// TODO: FIX this blockId assign, inconsistent behavior
 
+	const { state } = useBlocks();
+	const variables = toJS(state.variables);
+
 	useEffect(() => {
 		setValue("payload.blockId", id);
 	}, [id]);
+
+	const variableEntries: [string, any][] = Object.entries(variables || {});
+
+	// Only allow variables of type string, number, array, date, or json
+	const allowedTypes = ["string", "number", "array", "date", "JSON"];
+	const filteredVariableEntries = variableEntries.filter(([key, variable]) => {
+		const type = variable?.type;
+		return allowedTypes.includes(type);
+	});
 
 	return (
 		<>
@@ -34,9 +48,9 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{["row-id", "Internal"].map((type, index) => (
-							<Select.Item key={`${type}-${index}`} value={type}>
-								{type}
+						{filteredVariableEntries.map(([key, variable]) => (
+							<Select.Item key={key} value={key}>
+								{key}
 							</Select.Item>
 						))}
 					</Select>
