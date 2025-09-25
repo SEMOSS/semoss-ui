@@ -149,6 +149,7 @@ export const SETTINGS_ROUTES: {
 		description: "Search by job name or filter using job tags",
 		icon: mdiTabletCellphone,
 		history: ["settings/"],
+		admin: true,
 	},
 	{
 		title: "Member Settings",
@@ -169,11 +170,11 @@ export const SETTINGS_ROUTES: {
 	},
 	{
 		title: "Team Permissions",
-		path: "team-permissions/:id",
+		path: "team-permissions/:type/:id",
 		description:
 			"View member permissions, pending requests, and all other viewable settings pertaining to the team",
 		icon: mdiDatabase,
-		history: ["team-permissions", "team-permissions/<id>"],
+		history: ["team-permissions", "team-permissions/<type>/<id>"],
 		admin: true,
 	},
 	{
@@ -199,5 +200,13 @@ export const SETTINGS_ROUTES: {
 		icon: mdiDatabase,
 		history: ["settings/"],
 		admin: false,
+	},
+	{
+		title: "View RDF Map",
+		path: "view-rdf-map",
+		description: "View RDF Map",
+		icon: mdiClipboardTextOutline,
+		history: ["settings/"],
+		admin: true,
 	},
 ];

@@ -96,7 +96,7 @@ interface RoomStoreInterface {
 		isOpen: boolean;
 
 		/** type of sidebar to open */
-		type: "OPTIONS" | "ARTIFACTS";
+		type: "CONFIGURATION" | "ARTIFACTS";
 	};
 
 	/**
@@ -135,7 +135,7 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			type: "OPTIONS",
+			type: "CONFIGURATION",
 		},
 		artifact: {
 			model: FlexLayout.Model.fromJson({
@@ -382,7 +382,7 @@ export class RoomStore {
 	 * Send a new user message and recieve a response
 	 * @param prompt - user message
 	 */
-	askModel = async (
+	askMessage = async (
 		prompt: string,
 		files: File[],
 		options?: Partial<RoomStoreInterface["options"]>,
@@ -403,8 +403,21 @@ export class RoomStore {
 				this.setOptions(options);
 			}
 
-			// get the parentMessageId (the current tail)
-			const parentMessageId = this.tail.id;
+			// upload the files
+			let uploaded = [];
+			if (files.length > 0) {
+				uploaded = await this.upload(files, "");
+			}
+
+			// get the parent message
+			const parentMessage = this.tail;
+			console.log(parentMessage);
+			if (
+				parentMessage instanceof ResponseMessageStore === false &&
+				parentMessage instanceof RootMessageStore === false
+			) {
+				throw new Error("Can only ask model to a response message");
+			}
 
 			// create the input message
 			const inputMessage = this.createMessage({
@@ -412,6 +425,7 @@ export class RoomStore {
 				type: "INPUT_TEXT",
 				visible: true,
 				inputUIPrompt: prompt,
+				files: uploaded,
 				modelId: this._store.modelId,
 				paramMap: {
 					max_new_tokens: this._store.options.tokenLength,
@@ -421,92 +435,16 @@ export class RoomStore {
 				ornaments: {
 					chunks: [],
 				},
-			});
+			}) as InputMessageStore;
 
-			// connect to the tail
-			this.tail.addChild(inputMessage);
-
-			// upload the files
-			let uploaded = [];
-			if (files.length > 0) {
-				uploaded = await this.upload(files, "");
-			}
-
-			// build the context if it is there
-			let context = "";
-			if (this._store.options?.instructions) {
-				context = this._store.options?.instructions;
-			}
-
-			// get a list of tool ids
-			const tools: string[] = this._store.options.tools.map(
-				(t) => t.id,
-				[],
-			);
-
-			// wait for the pixel to run
-			const response = await this.runPixel<
-				[
-					{
-						inputMessage: PixelMessage;
-						responseMessage: PixelMessage;
-					},
-				]
-			>(
-				`AskPlayground(
-engine=["${this._store.modelId}"],
-roomId=["${this._store.roomId}"],
-command=["<encode>${prompt}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${files.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
-${parentMessageId ? `parentMessageId=["${parentMessageId}"],` : ""}
-paramValues=[${JSON.stringify({
-					max_new_tokens: this._store.options.tokenLength,
-					temperature: this._store.options.temperature,
-				})}]
-);`,
-			);
-
-			// throw errors
-			if (response.errors.length > 0) {
-				throw new Error(JSON.stringify(response.errors));
-			}
-
-			const { output } = response.pixelReturn[0];
-
-			// update the input's id
-			inputMessage.updateId(output.inputMessage.messageId);
-
-			// create the response and link to the input
-			const responseMessage = this.createMessage(output.responseMessage);
-			inputMessage.addChild(responseMessage);
-
-			// auto execute if enabled
-			if (this._store.options.autoExecute) {
-				if (!(responseMessage instanceof ResponseMessageStore)) {
-					return;
-				}
-
-				// loop through the response and execute the tool
-				// save the response
-				for (const tool of responseMessage.tools) {
-					await this.runTool(
-						responseMessage,
-						tool._meta.map.SMSS_PROJECT_ID,
-						tool.id,
-						tool.name,
-						tool.parameters,
-					);
-				}
-			}
+			// ask it
+			await this.runMessage(parentMessage, inputMessage);
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
 		}
 	};
 
-	// TODO: Optimize
 	/**
 	 * Rewrite a message and generate a new sibling
 	 * @param message - the original agent message
@@ -518,72 +456,40 @@ paramValues=[${JSON.stringify({
 
 			// get the parent message
 			const parentMessage = message.parent;
-
-			// build the context if it is there
-			let context = "";
-			if (this._store.options?.instructions) {
-				context = this._store.options?.instructions;
+			if (parentMessage instanceof InputMessageStore === false) {
+				throw new Error("Can only rewrite response to user messages");
 			}
 
-			// get a list of tool ids
-			const tools: string[] = this._store.options.tools.map(
-				(t) => t.id,
-				[],
-			);
+			// get the grand parent message
+			const grandParentMessage = parentMessage.parent;
+			if (
+				grandParentMessage instanceof ResponseMessageStore === false &&
+				grandParentMessage instanceof RootMessageStore === false
+			) {
+				throw new Error(
+					"Can only if the parent is a response or root message",
+				);
+			}
 
-			// wait for the pixel to run
-			const response = await this.runPixel<
-				[
-					{
-						inputMessage: PixelMessage;
-						responseMessage: PixelMessage;
-					},
-				]
-			>(
-				`AskPlayground(
-engine=["${this._store.modelId}"],
-roomId=["${this._store.roomId}"],
-command=["<encode>${prompt}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
-${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
-paramValues=[${JSON.stringify({
+			// create a new input message
+			const rewrittenMessage = this.createMessage({
+				messageId: TEMP_MESSAGE_ID,
+				type: "INPUT_TEXT",
+				visible: true,
+				inputUIPrompt: parentMessage.text,
+				files: parentMessage.files,
+				modelId: this._store.modelId,
+				paramMap: {
 					max_new_tokens: this._store.options.tokenLength,
 					temperature: this._store.options.temperature,
-				})}]
-);`,
-			);
+				},
+				dateCreated: "",
+				ornaments: {
+					chunks: [],
+				},
+			}) as InputMessageStore;
 
-			// throw errors
-			if (response.errors.length > 0) {
-				throw new Error(JSON.stringify(response.errors));
-			}
-
-			const { output } = response.pixelReturn[0];
-
-			// create the response and link to the input
-			const responseMessage = this.createMessage(output.responseMessage);
-			parentMessage.addChild(responseMessage);
-
-			// auto execute if enabled
-			if (this._store.options.autoExecute) {
-				if (!(responseMessage instanceof ResponseMessageStore)) {
-					return;
-				}
-
-				// loop through the response and execute the tool
-				// save the response
-				for (const tool of responseMessage.tools) {
-					await this.runTool(
-						responseMessage,
-						tool._meta.map.SMSS_PROJECT_ID,
-						tool.id,
-						tool.name,
-						tool.parameters,
-					);
-				}
-			}
+			await this.runMessage(grandParentMessage, rewrittenMessage);
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -661,10 +567,11 @@ paramValues=[${JSON.stringify({
 			>(
 				`AddPlaygroundToolExecution(
 engine=["${this._store.modelId}"],
-roomId = ["${this._store.roomId}"], 
+roomId = ["${this._store.roomId}"],
+${message.id ? `parentMessageId=["${message.id}"],` : ""}
 toolId = ["${toolId}"],
 toolName=["${toolName}"],
-tool_execution_response=["${toolResponse}"]
+toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 );`,
 			);
 
@@ -801,19 +708,28 @@ tool_execution_response=["${toolResponse}"]
 		// set data based on type
 		if (pixelMessage.type === "INPUT_TEXT") {
 			return new InputMessageStore(
+				this,
 				pixelMessage.messageId,
 				pixelMessage.inputUIPrompt,
+				pixelMessage.files || [],
 			);
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-			return new ResponseMessageStore(pixelMessage.messageId, "", []);
+			return new ResponseMessageStore(
+				this,
+				pixelMessage.messageId,
+				"",
+				[],
+			);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			return new ResponseMessageStore(
+				this,
 				pixelMessage.messageId,
 				pixelMessage.content,
 				[],
 			);
 		} else if (pixelMessage.type === "RESPONSE_TOOL") {
 			return new ResponseMessageStore(
+				this,
 				pixelMessage.messageId,
 				"",
 				pixelMessage.tool_responses.map((t) => ({
@@ -825,6 +741,85 @@ tool_execution_response=["${toolResponse}"]
 					response: "",
 				})),
 			);
+		}
+	};
+
+	/**
+	 * Run a new user message and recieve a response
+	 * @param parentMessage - parent message to connect to
+	 * @param inputMessage - input message to send
+	 */
+	private runMessage = async (
+		parentMessage: ResponseMessageStore | RootMessageStore,
+		inputMessage: InputMessageStore,
+	): Promise<void> => {
+		// connect to the parent
+		parentMessage.addChild(inputMessage);
+
+		// build the context if it is there
+		let context = "";
+		if (this._store.options?.instructions) {
+			context = this._store.options?.instructions;
+		}
+
+		// get a list of tool ids
+		const tools: string[] = this._store.options.tools.map((t) => t.id, []);
+
+		// wait for the pixel to run
+		const response = await this.runPixel<
+			[
+				{
+					inputMessage: PixelMessage;
+					responseMessage: PixelMessage;
+				},
+			]
+		>(
+			`AskPlayground(
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+command=["<encode>${inputMessage.text}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+${inputMessage.files.length ? `images=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "images=[],"}
+${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
+${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
+paramValues=[${JSON.stringify({
+				max_new_tokens: this._store.options.tokenLength,
+				temperature: this._store.options.temperature,
+			})}]
+);`,
+		);
+
+		// throw errors
+		if (response.errors.length > 0) {
+			throw new Error(JSON.stringify(response.errors));
+		}
+
+		const { output } = response.pixelReturn[0];
+
+		// update the input's id
+		inputMessage.updateId(output.inputMessage.messageId);
+
+		// create the response and link to the input
+		const responseMessage = this.createMessage(output.responseMessage);
+		inputMessage.addChild(responseMessage);
+
+		// auto execute if enabled
+		if (this._store.options.autoExecute) {
+			if (!(responseMessage instanceof ResponseMessageStore)) {
+				return;
+			}
+
+			// loop through the response and execute the tool
+			// save the response
+			for (const tool of responseMessage.tools) {
+				await this.runTool(
+					responseMessage,
+					tool._meta.map.SMSS_PROJECT_ID,
+					tool.id,
+					tool.name,
+					tool.parameters,
+				);
+			}
 		}
 	};
 

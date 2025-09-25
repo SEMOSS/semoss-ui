@@ -1,28 +1,24 @@
 import { observer } from "mobx-react-lite";
 import { useInsight } from "@semoss/sdk/react";
 import { Avatar, Stack, styled, Typography } from "@semoss/ui";
-import type { InputMessageStore, RoomStore } from "@/stores";
+import type { InputMessageStore } from "@/stores";
 
-const StyledUserMessage = styled(Stack)(({ theme }) => ({
+const StyledInputMessage = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(2),
-	borderRadius: theme.shape.borderRadius,
-	background: theme.palette.background.default,
+	alignSelf: "flex-end",
+	display: "inline-flex",
+	borderRadius: "8px 8px 0 8px",
+	background: "#EBF4FE",
+	boxShadow: theme.shadows[1],
 }));
 
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
-	fontSize: "14px",
-	fontWeight: 400,
-	letterSpacing: ".1px",
-	lineHeight: "48px",
-	height: theme.spacing(4),
-	width: theme.spacing(4),
+	height: "24px",
+	width: "24px",
 	background: theme.palette.primary.main,
 }));
 
 interface InputMessageProps {
-	/** Room to render */
-	room: RoomStore;
-
 	/** Message to render */
 	message: InputMessageStore;
 }
@@ -45,16 +41,18 @@ export const InputMessage: React.FC<InputMessageProps> = observer(
 			.toUpperCase();
 
 		return (
-			<StyledUserMessage
+			<StyledInputMessage
 				direction={"row"}
 				alignItems={"flex-start"}
 				spacing={1}
 			>
-				<StyledAvatar>{initials}</StyledAvatar>
+				<StyledAvatar variant="circular">
+					<Typography variant="body3">{initials}</Typography>
+				</StyledAvatar>
 				<Typography variant="body1" sx={{ marginTop: 0.5 }}>
 					{message.text}
 				</Typography>
-			</StyledUserMessage>
+			</StyledInputMessage>
 		);
 	},
 );
