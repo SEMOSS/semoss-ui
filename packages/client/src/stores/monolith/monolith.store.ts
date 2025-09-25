@@ -1092,7 +1092,7 @@ export class MonolithStore {
 			},
 		});
 
-		return response;
+		   return response;
 	}
 
 	/**
@@ -1107,7 +1107,6 @@ export class MonolithStore {
 		description: string,
 		type?: string,
 		previousTeamName?: string,
-		previousType?: string,
 	) {
 		let url = `${Env.MODULE}/api/auth/admin/`,
 			postData = "";
@@ -1117,16 +1116,14 @@ export class MonolithStore {
 		postData += "groupId=" + encodeURIComponent(previousTeamName);
 		postData += "&newGroupId=" + encodeURIComponent(groupId);
 		postData += "&newDescription=" + encodeURIComponent(description);
-		postData += "&type=" + encodeURIComponent(previousType);
-		postData += "&newType=" + encodeURIComponent(type);
-
-		const response = await axios.post<{ success: boolean }>(url, postData, {
+		postData += "&type=" + encodeURIComponent(type);
+			const response = await axios.post<{ success: boolean }>(url, postData, {
 			headers: {
 				"content-type": "application/x-www-form-urlencoded",
 			},
-		});
+			});
 
-		return response;
+		   return response;
 	}
 
 	/**
