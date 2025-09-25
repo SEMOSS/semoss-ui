@@ -591,7 +591,7 @@ export const AppDetailPage = () => {
 				<InnerContainer>
 					<Breadcrumbs separator="/">
 						<Breadcrumbs.Item
-							href={`../../..`}
+							href="#/app"
 							underline="none"
 							color="inherit"
 							variant="body1"
