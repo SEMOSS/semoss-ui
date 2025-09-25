@@ -384,7 +384,6 @@ const duplicateCell = async () => {
         console.error(e);
     }
 };
-// ...existing code...
 
 		const deleteCell = () => {
 			try {
