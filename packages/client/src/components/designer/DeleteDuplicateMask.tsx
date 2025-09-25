@@ -318,7 +318,7 @@ export const DeleteDuplicateMask = observer(
 		// Conditionally define addBlock to avoid unnecessary creation when not needed.
 		// This ensures the function is only created if the block is an iteration or container.
 		const addBlock = isIterationOrContainer
-			?(item: {
+			? (item: {
 					name: string;
 					value: string;
 					icon: React.ReactElement;
