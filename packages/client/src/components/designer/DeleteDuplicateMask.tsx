@@ -287,19 +287,31 @@ export const DeleteDuplicateMask = observer(
 				},
 			});
 
-			// TODO: REFACTOR
-			// Add variables for all blocks that are inputs from user
-			// TODO: What about grouping of inputs
-			if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
-				state.dispatch({
-					message: ActionMessages.ADD_VARIABLE,
-					payload: {
-						id: id as string,
-						type: "block",
-						to: id as string,
-					},
-				});
-			}
+			// Recursively add variables for all input blocks in the duplicated tree
+			const addVariablesForInputBlocks = (blockId: string) => {
+				const b = state.getBlock(blockId);
+				if (!b) return;
+				if (INPUT_BLOCK_TYPES.indexOf(b.widget) > -1) {
+					state.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: blockId,
+							type: "block",
+							to: blockId,
+						},
+					});
+				}
+				if (b.slots) {
+					Object.values(b.slots).forEach((slot) => {
+						if (slot && Array.isArray(slot.children)) {
+							slot.children.forEach((childId) =>
+								addVariablesForInputBlocks(childId),
+							);
+						}
+					});
+				}
+			};
+			addVariablesForInputBlocks(id as string);
 
 			designer.setSelected(id ? (id as string) : "");
 		};
@@ -337,29 +349,32 @@ export const DeleteDuplicateMask = observer(
 						}
 					}
 
-					const id = state.dispatch({
-						message: ActionMessages.ADD_BLOCK,
-						payload: {
-							json: blockJson as BlockJSON,
-							position: {
-								parent: block.id,
-								slot: "children",
-							},
-						},
-					}) as string;
-
-					if (block.widget === "iteration") {
-						state.dispatch({
-							message: ActionMessages.SET_BLOCK_DATA,
+					// Make this function async and await the dispatch
+					(async () => {
+						const id = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
 							payload: {
-								id: block.id,
-								path: "child",
-								value: state.getBlock(id),
+								json: blockJson as BlockJSON,
+								position: {
+									parent: block.id,
+									slot: "children",
+								},
 							},
 						});
-					}
 
-					setAnchorEl(null);
+						if (block.widget === "iteration") {
+							state.dispatch({
+								message: ActionMessages.SET_BLOCK_DATA,
+								payload: {
+									id: block.id,
+									path: "child",
+									value: state.getBlock(id as string),
+								},
+							});
+						}
+
+						setAnchorEl(null);
+					})();
 				}
 			: null;
 

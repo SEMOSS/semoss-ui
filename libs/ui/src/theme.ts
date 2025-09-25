@@ -4,7 +4,7 @@ import {
 	type SimplePaletteColorOptions,
 	styled,
 	type ThemeOptions,
-	useTheme
+	useTheme,
 } from "@mui/material";
 import type { TypographyOptions } from "@mui/material/styles/createTypography";
 
@@ -30,6 +30,8 @@ declare module "@mui/material" {
 		darkBlue?: CustomPaletteColor;
 		pink?: CustomPaletteColor;
 		purple?: CustomPaletteColor;
+		lightGreen?: CustomPaletteColor;
+		red?: CustomPaletteColor;
 		orange?: CustomPaletteColor;
 	}
 
@@ -101,10 +103,12 @@ export interface CustomPaletteOptions extends PaletteOptions {
 	success: CustomSimplePaletteColorOptions;
 	text?: CustomSimplePaletteColorOptions;
 	primaryContrast?: CustomPaletteColor;
+	lightGreen?: CustomPaletteColor;
 	green?: CustomPaletteColor;
 	darkBlue?: CustomPaletteColor;
 	pink?: CustomPaletteColor;
 	purple?: CustomPaletteColor;
+	red?: CustomPaletteColor;
 	orange?: CustomPaletteColor;
 	grey?: CustomPaletteColor;
 	red?: CustomPaletteColor;
@@ -231,6 +235,18 @@ export const lightTheme: CustomThemeOptions = {
 			// "900": "#005A00",
 			// "shadow": "#E7F4E5"
 		},
+		lightGreen: {
+			"50": "#E7F4E5",
+			"100": "#C6E4BF",
+			"200": "#A1D396",
+			"300": "#7AC36B",
+			"400": "#5CB649",
+			"500": "#3EA924",
+			"600": "#349B1B",
+			"700": "#26890D",
+			"800": "#167800",
+			"900": "#005A00",
+		},
 		green: {
 			"50": "#DEF4F3",
 			"100": "#ABE4E0",
@@ -284,6 +300,18 @@ export const lightTheme: CustomThemeOptions = {
 			"700": "#6A32CE",
 			"800": "#5D2BC7",
 			"900": "#481EB8",
+		},
+		red: {
+			"50": "#FFEBEB",
+			"100": "#FFC7C7",
+			"200": "#FFA3A3",
+			"300": "#FF7F7F",
+			"400": "#FF5D5D",
+			"500": "#FF3B3B",
+			"600": "#ED2F2F",
+			"700": "#D62C2C",
+			"800": "#C02828",
+			"900": "#992222",
 		},
 		orange: {
 			"50": "#FFB428",

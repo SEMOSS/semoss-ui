@@ -15,6 +15,7 @@ import { CustomizeDendrogramSymbol } from "../dendrogram/CustomizeDendrogramSymb
 import { LabelsDendrogram } from "../dendrogram/LabelsDendrogram";
 import { LegendDendrogram } from "../dendrogram/LegendDendrogram";
 import { CustomizeSymbol } from "../Gantt/CustomizeSymbol";
+import { EditAxis as EditGanttAxis } from "../Gantt/EditAxis";
 import { GanttDisplayValueLabels } from "../Gantt/GanttDisplayValueLabels";
 //upgraded visualization tool propsimport { EditXAxisScatterPlot } from '../scatter-plot/EditXAxisScatterPlot';
 import { GanttFiscal } from "../Gantt/GanttFiscal";
@@ -346,6 +347,106 @@ const GanttToolsList = ({ id }) => {
 			{ganttSelection === "fiscalaxis" && (
 				<GanttFiscal id={id} path={"option"} />
 			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "xaxis" ? "" : "xaxis",
+						)
+					}
+					selected={ganttSelection === "xaxis"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "xaxis"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Edit X Axis" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "xaxis" && (
+				<EditGanttAxis id={id} path={"option"} axis="x" />
+			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "yaxis" ? "" : "yaxis",
+						)
+					}
+					selected={ganttSelection === "yaxis"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "yaxis"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Edit Y Axis" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "yaxis" && (
+				<EditGanttAxis id={id} path={"option"} axis="y" />
+			)}
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setGanttSelection((prevList) =>
+							prevList === "chartposition" ? "" : "chartposition",
+						)
+					}
+					selected={ganttSelection === "chartposition"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								ganttSelection === "chartposition"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Position" />
+					<InfoOutlined />
+				</List.ItemButton>
+			</StyledListItem>
+			{ganttSelection === "chartposition" && (
+				<>
+					<ResizeSetting
+						id={id}
+						label={"Left"}
+						path={"option.grid.left"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Right"}
+						path={"option.grid.right"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Top"}
+						path={"option.grid.top"}
+					/>
+					<ResizeSetting
+						id={id}
+						label={"Bottom"}
+						path={"option.grid.bottom"}
+					/>
+				</>
+			)}
+
 			<StyledListItem disablePadding>
 				<List.ItemButton
 					onClick={() =>

@@ -2154,6 +2154,7 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 							},
 						},
 					},
+					grid: {},
 					tooltip: {
 						show: true,
 					},
@@ -2162,10 +2163,12 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 						splitLine: {
 							show: false,
 						},
+						axisLabel: {},
 					},
 					yAxis: {
 						type: "category",
 						data: ["Task A", "Task B", "Task C"],
+						axisLabel: {},
 					},
 					series: [
 						{
