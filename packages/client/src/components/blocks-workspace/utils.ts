@@ -11,7 +11,6 @@ const rules = `I need you to look at the code that gets ran based on above snipp
  - and ensure it is valid python variable naming syntax.
  - Should not be longer than 10 characters.
  - Suggest a new name, only if the current name is not already intuitive."
- - If the name is same as the current name, still suggest a new name.
  - Please only return the ""variable_name""
 `;
 
