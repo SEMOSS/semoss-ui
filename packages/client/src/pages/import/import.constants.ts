@@ -1,6 +1,6 @@
 //Drag and Drop Data
 
-import TerminalRoundedIcon from '@mui/icons-material/TerminalRounded';
+import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 //Add Storage
 import AMAZON_S3 from "@/assets/img/Amazon_S3.png";
 import Amazon_Titan from "@/assets/img/Amazon_Titan.png";
@@ -62,7 +62,10 @@ import NOTEBOOK from "@/assets/img/Notebook.svg";
 import NOTEBOOK_SELECTED from "@/assets/img/Notebook_Selected.svg";
 import ONEDRIVE from "@/assets/img/ONEDRIVE.png";
 //Commercial Models
-import { default as AZURE_OPEN_AI, default as OPEN_AI } from "@/assets/img/OPEN_AI.png";
+import {
+	default as AZURE_OPEN_AI,
+	default as OPEN_AI,
+} from "@/assets/img/OPEN_AI.png";
 import OPEN_SEARCH from "@/assets/img/OPEN_SEARCH.png";
 import ORACLE from "@/assets/img/ORACLE.png";
 //Embedded Models
@@ -15562,7 +15565,12 @@ export const SIDEBAR_MENU = {
 		},
 		{
 			name: "Terminal",
-			icon: { default: NOTEBOOK, active: NOTEBOOK_SELECTED, component:TerminalRoundedIcon, tooltip:"Terminal" },
+			icon: {
+				default: NOTEBOOK,
+				active: NOTEBOOK_SELECTED,
+				component: TerminalRoundedIcon,
+				tooltip: "Terminal",
+			},
 		},
 	],
 };

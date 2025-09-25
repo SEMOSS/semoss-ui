@@ -1,23 +1,23 @@
+import { GetAppRounded } from "@mui/icons-material";
+import { Typography } from "@mui/material";
+import { observer } from "mobx-react-lite";
+import { useNavigate } from "react-router-dom";
+import {
+	Container,
+	IconButton,
+	Stack,
+	styled,
+	Tooltip,
+	useNotification,
+} from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
-  MembersTable,
-  PendingMembersTable,
-  SettingsTiles,
+	MembersTable,
+	PendingMembersTable,
+	SettingsTiles,
 } from "@/components/settings";
 import { SettingsContext } from "@/contexts";
 import { useRootStore, useWorkspace } from "@/hooks";
-import { GetAppRounded } from "@mui/icons-material";
-import { Typography } from "@mui/material";
-import {
-  Container,
-  IconButton,
-  Stack,
-  styled,
-  Tooltip,
-  useNotification,
-} from "@semoss/ui";
-import { observer } from "mobx-react-lite";
-import { useNavigate } from "react-router-dom";
 import { Panel } from "./Panel";
 
 const StyledContainer = styled("div")(({ theme }) => ({
