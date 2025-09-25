@@ -1,9 +1,10 @@
-import { useDesigner, useRootStore } from "@/hooks";
 import {
 	DeleteOutline,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
 	Box,
@@ -17,8 +18,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useState } from "react";
+import { useDesigner, useRootStore } from "@/hooks";
 import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
@@ -229,7 +229,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							return;
 						}
 					}
-					id = await state.dispatch({
+					id = (await state.dispatch({
 						message: ActionMessages.ADD_BLOCK,
 						payload: {
 							json: item.json,
@@ -241,10 +241,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							},
 							isCommunity: isCommunity,
 						},
-					}) as string;
+					})) as string;
 				}
 			} else if (placeholderAction.type === "replace") {
-				id = await state.dispatch({
+				id = (await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: item.json,
@@ -254,10 +254,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 						},
 						isCommunity: isCommunity,
 					},
-				}) as string;
+				})) as string;
 
 				if (sw.widget === "iteration") {
-					state.dispatch({
+					await state.dispatch({
 						message: ActionMessages.SET_BLOCK_DATA,
 						payload: {
 							id: placeholderAction.id,
@@ -272,7 +272,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 		// TODO: REFACTOR
 		// Add variables for all blocks that are inputs from user
 		if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1 && !isCommunity) {
-			state.dispatch({
+			await state.dispatch({
 				message: ActionMessages.ADD_VARIABLE,
 				payload: {
 					id: id,

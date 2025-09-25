@@ -1,5 +1,3 @@
-import { useDesigner, useRootStore } from "@/hooks";
-import { getBlockElement, getRelativeSize } from "@/stores";
 import {
 	Add,
 	AddBox,
@@ -11,6 +9,9 @@ import {
 	SwapHoriz,
 	TextFields,
 } from "@mui/icons-material";
+import { toJS } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useLayoutEffect, useState } from "react";
 import {
 	ActionMessages,
 	type BlockJSON,
@@ -24,9 +25,8 @@ import {
 	Tooltip,
 	useNotification,
 } from "@semoss/ui";
-import { toJS } from "mobx";
-import { observer } from "mobx-react-lite";
-import { useLayoutEffect, useState } from "react";
+import { useDesigner, useRootStore } from "@/hooks";
+import { getBlockElement, getRelativeSize } from "@/stores";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { AddClientBlockModal } from "./AddClientBlockModal";
 import { QuickMenu } from "./QuickMenu";
@@ -313,8 +313,6 @@ export const DeleteDuplicateMask = observer(
 			});
 
 			// TODO: REFACTOR
-			// Add variables for all blocks that are inputs from user
-			// TODO: What about grouping of inputs
 			if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -364,34 +362,36 @@ export const DeleteDuplicateMask = observer(
 						}
 					}
 
-					const id = state.dispatch({
-						message: ActionMessages.ADD_BLOCK,
-						payload: {
-							json: blockJson as BlockJSON,
-							position: {
-								parent: block.id,
-								slot: "children",
-							},
-						},
-					}) as string;
-
-					if (block.widget === "iteration") {
-						state.dispatch({
-							message: ActionMessages.SET_BLOCK_DATA,
+					// Make this function async and await the dispatch
+					(async () => {
+						const id = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
 							payload: {
-								id: block.id,
-								path: "child",
-								value: state.getBlock(id),
+								json: blockJson as BlockJSON,
+								position: {
+									parent: block.id,
+									slot: "children",
+								},
 							},
 						});
-					}
 
-					setAnchorEl(null);
+						if (block.widget === "iteration") {
+							state.dispatch({
+								message: ActionMessages.SET_BLOCK_DATA,
+								payload: {
+									id: block.id,
+									path: "child",
+									value: state.getBlock(id as string),
+								},
+							});
+						}
+
+						setAnchorEl(null);
+					})();
 				}
 			: null;
 
 		// TODO: revisit these actions for the base page once multiple pages/routing is enabled
-
 		return (
 			<StyledContainer id="delete-duplicate-mask" style={getStyle()}>
 				<StyledButtonGroup>

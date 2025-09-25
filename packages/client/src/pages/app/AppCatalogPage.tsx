@@ -70,6 +70,11 @@ const initialState = {
 };
 const SKELETON_CARD_COUNT = 6;
 
+const skeletonKeys = Array.from(
+	{ length: SKELETON_CARD_COUNT },
+	(_, i) => `skeleton-key-${i}`,
+);
+
 const reducer = (state, action) => {
 	switch (action.type) {
 		case "field": {
@@ -230,7 +235,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		});
 	}, [getFavoritedApps.status, getFavoritedApps.data]);
 
-	const debouncedSet = debounced((newInputValue) => {
+	const debouncedSet = debounced((newInputValue: string) => {
 		setSearch(newInputValue);
 	}, 300);
 
@@ -250,13 +255,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 			.setProjectFavorite(app.project_id, favorite)
 			.then(() => {
 				if (!favorite) {
-					const newFavorites = favoritedApps;
+					// Create a new array before modifying
+					const newFavorites = [...favoritedApps];
 					for (let i = newFavorites.length - 1; i >= 0; i--) {
 						if (newFavorites[i].project_id === app.project_id) {
 							newFavorites.splice(i, 1);
 						}
 					}
-
 					dispatch({
 						type: "field",
 						field: "favoritedApps",
@@ -271,7 +276,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 				}
 			})
 			.catch((err) => {
-				// throw error if promise doesn't fulfill
 				throw Error(err);
 			});
 	};
@@ -289,22 +293,25 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	};
 
 	const removeApp = (app) => {
-		const updatedApps = apps;
-		const updatedFavoritedApps = favoritedApps;
 		const favorite = isFavorited(app.project_id);
-		if(favorite){
-			for (let i = updatedFavoritedApps.length - 1; i >= 0; i--) {
-        if (updatedFavoritedApps[i].project_id === app.project_id) {
-            updatedFavoritedApps.splice(i, 1);
-		} 
-		for (let i = updatedApps.length - 1; i >= 0; i--) {
-			if (updatedApps[i].project_id === app.project_id) {
-				updatedApps.splice(i, 1);
-			}
-		
-	}
-    }
-}
+
+		const updatedApps = apps.filter((a) => a.project_id !== app.project_id);
+
+		const updatedFavoritedApps = favorite
+			? favoritedApps.filter((a) => a.project_id !== app.project_id)
+			: favoritedApps;
+
+		dispatch({
+			type: "field",
+			field: "apps",
+			value: updatedApps,
+		});
+
+		dispatch({
+			type: "field",
+			field: "favoritedApps",
+			value: updatedFavoritedApps,
+		});
 	};
 
 	return (
@@ -404,13 +411,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</StyledToggleTabsGroup>
 						</Stack>
 
-						{mode != "System" && favoritedApps.length > 0 ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								Bookmarked
 							</StyledSectionLabel>
 						) : null}
 
-						{mode != "System" && favoritedApps.length > 0 ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSection>
 								{favoritedApps.map((app) => {
 									return (
@@ -453,13 +460,13 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</StyledSection>
 						) : null}
 
-						{mode == "System" && (
+						{mode === "System" && (
 							<StyledSectionLabel variant="subtitle1">
 								All Apps
 							</StyledSectionLabel>
 						)}
 
-						{mode == "System" && (
+						{mode === "System" && (
 							<StyledSection>
 								{"bi".includes(search.toLowerCase()) && (
 									<AppTileCard
@@ -487,13 +494,12 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								)}
 							</StyledSection>
 						)}
-						{mode != "System" && getApps.status !== "SUCCESS" ? (
+
+						{mode !== "System" && getApps.status !== "SUCCESS" ? (
 							<StyledSection>
-								{Array.from({
-									length: SKELETON_CARD_COUNT,
-								}).map((_, i) => (
+								{skeletonKeys.map((key) => (
 									<AppTileCard
-										key={`skeleton-${i}`}
+										key={key.toString()}
 										app={TERMINAL_APP}
 										systemApp={false}
 										isDiscoverable={mode !== "Mine"}
@@ -503,14 +509,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 								))}
 							</StyledSection>
 						) : null}
-						{mode != "System" && apps.length > 0 ? (
+						{mode !== "System" && apps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								All Apps
 							</StyledSectionLabel>
 						) : null}
 
 						{/* do not show favorited apps in all apps view */}
-						{mode != "System" && apps.length > 0 ? (
+						{mode !== "System" && apps.length > 0 ? (
 							<StyledSection>
 								{apps
 									.filter(
@@ -524,7 +530,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									.map((app, i) => {
 										return (
 											<AppTileCard
-												key={i}
+												key={app.project_id}
 												app={app}
 												systemApp={false}
 												isDiscoverable={mode !== "Mine"}

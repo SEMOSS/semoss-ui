@@ -1,6 +1,6 @@
-import * as BLOCK_IMAGES from "@/assets/blocks";
 import type { BlockJSON } from "@semoss/renderer";
 import { lightTheme } from "@semoss/ui";
+import * as BLOCK_IMAGES from "@/assets/blocks";
 import type { DesignerMenuItem } from "./menu-types";
 
 const SECTION_ELEMENT = "Element";
