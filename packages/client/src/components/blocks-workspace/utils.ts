@@ -15,6 +15,11 @@ const rules = `I need you to look at the code that gets ran based on above snipp
  - Please only return the ""variable_name""
 `;
 
+interface LLMResponse {
+	response?: string;
+	[key: string]: unknown;
+}
+
 export const suggestVariableRenames = async (
 	state: StateStore,
 	agentModelEngine: string,
@@ -40,12 +45,6 @@ export const suggestVariableRenames = async (
 		// Process all variables (original behavior)
 		variablesToProcess = Object.entries(state.variables);
 	}
-
-	// Define LLMResponse type locally if not imported
-	type LLMResponse = {
-		response?: string;
-		[key: string]: unknown;
-	};
 
 	const promises = variablesToProcess.map(
 		async ([key, value]: [string, Variable]) => {
