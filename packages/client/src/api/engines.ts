@@ -177,7 +177,7 @@ export const setEngineGlobal = async (
 	url += "engine/setEngineGlobal";
 	const postData: Record<string, unknown> = {
 		engineId: encodeURIComponent(engineId),
-		global: encodeURIComponent(global),
+		public: encodeURIComponent(global),
 	};
 	const postRecordData = processPostData(postData);
 	const response = await post<{
