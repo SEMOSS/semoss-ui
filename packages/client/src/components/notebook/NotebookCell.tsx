@@ -345,11 +345,12 @@ export const NotebookCell = observer(
 		/**
 		 * Create a duplicate cell
 		 */
+		console.log(cell, 'important')
 const duplicateCell = async () => {
     try {
         let parameters = { ...cell.parameters };
 
-        if (cell.widget === "query-import") {
+        if (cell.widget === "query-import" || cell.widget === "data-import" || cell.widget === "text-to-sql") {
             parameters = {
                 ...parameters,
                 frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
