@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Container, styled } from "@semoss/ui";
+import { Help } from "@/components/help";
 import { Navbar } from "./Navbar";
 import { PlatformMessages } from "./PlatformMessages";
 import { Sidebar } from "./Sidebar";
@@ -55,6 +56,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 				</StyledInner>
 			</StyledContent>
 			<PlatformMessages />
+			<Help/>
 		</StyledPage>
 	);
 });
