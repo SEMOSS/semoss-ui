@@ -704,76 +704,76 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 
-			const handleDuplicate = (
-				event: React.MouseEvent<HTMLElement>,
-				duplicateId: string,
-			) => {
-				event.preventDefault();
-				event.stopPropagation();
-				const getJsonForBlock = (id: string) => {
-					const block = state.blocks[id];
+			   const handleDuplicate = async (
+				   event: React.MouseEvent<HTMLElement>,
+				   duplicateId: string,
+			   ) => {
+				   event.preventDefault();
+				   event.stopPropagation();
+				   const getJsonForBlock = (id: string) => {
+					   const block = state.blocks[id];
 
-					const blockJson = {
-						widget: toJS(block.widget),
-						data: toJS(block.data),
-						listeners: toJS(block.listeners),
-						slots: {},
-					};
+					   const blockJson = {
+						   widget: toJS(block.widget),
+						   data: toJS(block.data),
+						   listeners: toJS(block.listeners),
+						   slots: {},
+					   };
 
-					// generate the slots
-					for (const slot in block.slots) {
-						if (block.slots[slot]) {
-							blockJson.slots[slot] = block.slots[
-								slot
-							].children.map((childId) => {
-								return getJsonForBlock(childId);
-							});
-						}
-					}
+					   // generate the slots
+					   for (const slot in block.slots) {
+						   if (block.slots[slot]) {
+							   blockJson.slots[slot] = block.slots[
+								   slot
+							   ].children.map((childId) => {
+								   return getJsonForBlock(childId);
+							   });
+						   }
+					   }
 
-					// return it
-					return blockJson;
-				};
+					   // return it
+					   return blockJson;
+				   };
 
-				const parentBlock = state.getBlock(block.parent.id);
-				if (parentBlock.widget === "iteration") {
-					notification.add({
-						color: "error",
-						message: `Unable to duplicate ${block.widget} within an Iterator Block`,
-					});
-					return;
-				}
+				   const parentBlock = state.getBlock(block.parent.id);
+				   if (parentBlock.widget === "iteration") {
+					   notification.add({
+						   color: "error",
+						   message: `Unable to duplicate ${block.widget} within an Iterator Block`,
+					   });
+					   return;
+				   }
 
-				const position = block?.parent?.id
-					? {
-							parent: block.parent.id,
-							slot: block.parent.slot,
-							sibling: block.id,
-							type: "after",
-						}
-					: undefined;
+				   const position = block?.parent?.id
+					   ? {
+							   parent: block.parent.id,
+							   slot: block.parent.slot,
+							   sibling: block.id,
+							   type: "after",
+						   }
+					   : undefined;
 
-				const id = state.dispatch({
-					message: ActionMessages.ADD_BLOCK,
-					payload: {
-						json: getJsonForBlock(duplicateId) as BlockJSON,
-						position: position,
-					},
-				});
-				setSelectedLayers([]); // Clear first
+				   const id = await state.dispatch({
+					   message: ActionMessages.ADD_BLOCK,
+					   payload: {
+						   json: getJsonForBlock(duplicateId) as BlockJSON,
+						   position: position,
+					   },
+				   });
+				   setSelectedLayers([]); // Clear first
 
-				// Apply selection and hover
-				designer.setSelected(id as string);
-				designer.setHovered(id as string);
+				   // Apply selection and hover
+				   designer.setSelected(id as string);
+				   designer.setHovered(id as string);
 
-				// Ensure visual selection state is fully synced
-				const nodeIds = [id as string];
-				setSelectedLayers(nodeIds);
+				   // Ensure visual selection state is fully synced
+				   const nodeIds = [id as string];
+				   setSelectedLayers(nodeIds);
 
-				// Render and scroll to the new block (if your system supports it)
-				renderBlock(id as string);
-				handleMenuClose();
-			};
+				   // Render and scroll to the new block (if your system supports it)
+				   renderBlock(id as string);
+				   handleMenuClose();
+			   };
 
 			return (
 				<>

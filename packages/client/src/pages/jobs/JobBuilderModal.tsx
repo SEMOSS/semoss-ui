@@ -79,19 +79,19 @@ export const JobBuilderModal = (props: {
 		}
 
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			cronValues[5] == "*"
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			cronValues[5] === "*"
 		) {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[5] == "*") {
+		} else if (cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
 		} else {
@@ -257,12 +257,13 @@ export const JobBuilderModal = (props: {
 				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
-				notification.add({
-					color: "error",
-					message: response.errors.length[0],
-				});
+				throw new Error(response.errors[0]);
 			}
-		} catch (e) {
+				notification.add({
+					color: "success",
+					message: "Job added successfully",
+				});
+		} catch{
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
