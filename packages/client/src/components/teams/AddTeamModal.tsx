@@ -191,64 +191,66 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 		if (isEdit) {
 			// Logic for editing the team
 			try {
-				   const response = await monolithStore.editTeam(
-					   data.TEAM_NAME,
-					   data.TEAM_DESCRIPTION,
-					   data.TEAM_TYPE,
-					   previousTeamName,
-				   );
-				   if (response.status === 200 && response.data) {
-					   onClose({
-						   id: data.TEAM_NAME,
-						   type: data.TEAM_TYPE,
-						   description: data.TEAM_DESCRIPTION,
-						   previousTeamName: previousTeamName,
-					   });
-					   reset();
-					   notification.add({
-						   color: "success",
-						   message: "Successfully updated team",
-					   });
-				   } else {
-					   throw new Error("Failed to update team");
-				   }
-			   } catch (e) {
+				const response = await monolithStore.editTeam(
+					data.TEAM_NAME,
+					data.TEAM_DESCRIPTION,
+					data.TEAM_TYPE,
+					previousTeamName,
+				);
+				if (response.status === 200 && response.data) {
+					onClose({
+						id: data.TEAM_NAME,
+						type: data.TEAM_TYPE,
+						description: data.TEAM_DESCRIPTION,
+						previousTeamName: previousTeamName,
+					});
+					reset();
+					notification.add({
+						color: "success",
+						message: "Successfully updated team",
+					});
+				} else {
+					throw new Error("Failed to update team");
+				}
+			} catch (e) {
 				console.error(e);
-				   notification.add({
-					   color: "error",
+				notification.add({
+					color: "error",
 					message: "Error updating team",
-				   });
-			   }
+				});
+			}
 		} else {
 			// Logic for creating a new team
 			try {
-				   const response = await monolithStore.addTeam(
-					   data.TEAM_NAME,
-					   data.TEAM_DESCRIPTION,
-					   data.TEAM_TYPE,
-				   );
-				   if (response.status === 200 && response.data) {
-					   onClose({
-						   id: data.TEAM_NAME,
-						   type: data.TEAM_TYPE,
-						   description: data.TEAM_DESCRIPTION,
-					   });
-					   reset();
-					   notification.add({
-						   color: "success",
-						   message: "Successfully added group",
-					   });
-					navigate(`${encodeURIComponent(data.TEAM_TYPE)}/${encodeURIComponent(data.TEAM_NAME)}`);
-				   } else {
-					   throw new Error("Failed to add team");
-				   }
-			   } catch (e) {
-				   console.error(e);
-				   notification.add({
-					   color: "error",
+				const response = await monolithStore.addTeam(
+					data.TEAM_NAME,
+					data.TEAM_DESCRIPTION,
+					data.TEAM_TYPE,
+				);
+				if (response.status === 200 && response.data) {
+					onClose({
+						id: data.TEAM_NAME,
+						type: data.TEAM_TYPE,
+						description: data.TEAM_DESCRIPTION,
+					});
+					reset();
+					notification.add({
+						color: "success",
+						message: "Successfully added group",
+					});
+					navigate(
+						`${encodeURIComponent(data.TEAM_TYPE)}/${encodeURIComponent(data.TEAM_NAME)}`,
+					);
+				} else {
+					throw new Error("Failed to add team");
+				}
+			} catch (e) {
+				console.error(e);
+				notification.add({
+					color: "error",
 					message: "Error adding team",
-				   });
-			   }
+				});
+			}
 		}
 	});
 
@@ -286,8 +288,12 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											label={"Type*"}
 											fullWidth={true}
 											error={!!error}
-											value={field.value ? field.value : ""}
-											onChange={(value) => field.onChange(value)}
+											value={
+												field.value ? field.value : ""
+											}
+											onChange={(value) =>
+												field.onChange(value)
+											}
 											disabled={isEdit}
 										>
 											{loginTypes
@@ -368,10 +374,20 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 										<>
 											<TextField
 												label="Name*"
-												value={field.value ? field.value : ""}
-												onChange={(value) => field.onChange(value)}
+												value={
+													field.value
+														? field.value
+														: ""
+												}
+												onChange={(value) =>
+													field.onChange(value)
+												}
 												fullWidth={true}
-												disabled={isEdit && selectedTeamType !== "CUSTOM"}
+												disabled={
+													isEdit &&
+													selectedTeamType !==
+														"CUSTOM"
+												}
 											/>
 											{selectedTeamType !== "CUSTOM" &&
 											selectedTeamType !== "" ? (
@@ -397,8 +413,12 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 									return (
 										<TextField
 											label="Description"
-											value={field.value ? field.value : ""}
-											onChange={(value) => field.onChange(value)}
+											value={
+												field.value ? field.value : ""
+											}
+											onChange={(value) =>
+												field.onChange(value)
+											}
 											fullWidth={true}
 											multiline
 											minRows={2}

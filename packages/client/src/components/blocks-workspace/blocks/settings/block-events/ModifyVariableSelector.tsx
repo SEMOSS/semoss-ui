@@ -1,8 +1,8 @@
+import { toJS } from "mobx";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
+import { useBlocks } from "@semoss/renderer";
 import { Select, Stack, TextField } from "@semoss/ui";
-import {useBlocks} from "@semoss/renderer";
-import { toJS } from "mobx";
 
 interface ModifyVariableSelectorProps {
 	id: string;
@@ -28,10 +28,12 @@ export const ModifyVariableSelector = ({
 
 	// Only allow variables of type string, number, array, date, or json
 	const allowedTypes = ["string", "number", "array", "date", "JSON"];
-	const filteredVariableEntries = variableEntries.filter(([key, variable]) => {
-		const type = variable?.type;
-		return allowedTypes.includes(type);
-	});
+	const filteredVariableEntries = variableEntries.filter(
+		([key, variable]) => {
+			const type = variable?.type;
+			return allowedTypes.includes(type);
+		},
+	);
 
 	return (
 		<Stack>
@@ -69,6 +71,6 @@ export const ModifyVariableSelector = ({
 					</>
 				)}
 			/>
-		</ Stack>
+		</Stack>
 	);
 };

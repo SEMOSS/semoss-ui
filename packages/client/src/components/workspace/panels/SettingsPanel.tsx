@@ -1,23 +1,23 @@
-import { GetAppRounded } from "@mui/icons-material";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-	Container,
-	IconButton,
-	Stack,
-	styled,
-	ToggleTabsGroup,
-	Tooltip,
-	useNotification,
-} from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
-	MembersTable,
-	PendingMembersTable,
-	SettingsTiles,
+  MembersTable,
+  PendingMembersTable,
+  SettingsTiles,
 } from "@/components/settings";
 import { SettingsContext } from "@/contexts";
 import { useRootStore, useWorkspace } from "@/hooks";
+import { GetAppRounded } from "@mui/icons-material";
+import { Typography } from "@mui/material";
+import {
+  Container,
+  IconButton,
+  Stack,
+  styled,
+  Tooltip,
+  useNotification,
+} from "@semoss/ui";
+import { observer } from "mobx-react-lite";
+import { useNavigate } from "react-router-dom";
 import { Panel } from "./Panel";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -27,7 +27,7 @@ const StyledContainer = styled("div")(({ theme }) => ({
 	flexDirection: "column",
 	alignItems: "flex-start",
 	gap: theme.spacing(2),
-	paddingTop: theme.spacing(5),
+	paddingTop: theme.spacing(2),
 }));
 
 const StyledContent = styled("div")(({ theme }) => ({
@@ -41,13 +41,12 @@ const StyledContent = styled("div")(({ theme }) => ({
 
 type VIEW = "CURRENT" | "PENDING" | "APP";
 
-export const SettingsPanel = () => {
+export const SettingsPanel = observer(({ value }: { value: string }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { workspace } = useWorkspace();
 	const navigate = useNavigate();
-
-	const [view, setView] = useState<VIEW>("CURRENT");
+	const view = value;
 
 	/**
 	 * Method that is called to export the app
@@ -106,8 +105,9 @@ export const SettingsPanel = () => {
 					}}
 				>
 					<StyledContainer>
-						{workspace.role === "EDITOR" ||
-						workspace.role === "OWNER" ? (
+						{view !== "GENERAL" &&
+						(workspace.role === "EDITOR" ||
+							workspace.role === "OWNER") ? (
 							<Stack
 								sx={{ width: "100%" }}
 								justifyContent={"flex-end"}
@@ -127,62 +127,57 @@ export const SettingsPanel = () => {
 								</div>
 							</Stack>
 						) : null}
-						{workspace.role === "OWNER" ? (
-							<SettingsTiles
-								type={"APP"}
-								id={workspace.appId}
-								name={workspace.metadata?.project_name || "app"}
-								direction="row"
-								onDelete={() => {
-									if (
-										location.pathname.startsWith(
-											"/settings/app/",
-										)
-									) {
-										// If in app settings
-										navigate("/settings/app");
-									} else {
-										// If in App Library
-										navigate("/");
-									}
-								}}
-							/>
-						) : null}
 						<StyledContent>
-							<ToggleTabsGroup
-								value={view}
-								onChange={(e, v) => setView(v as VIEW)}
-							>
-								<ToggleTabsGroup.Item
-									label="Member"
-									value={"CURRENT"}
-								/>
-								<ToggleTabsGroup.Item
-									label="Pending Requests"
-									disabled={workspace.role === "READ_ONLY"}
-									value={"PENDING"}
-								/>
-								<ToggleTabsGroup.Item
-									label="Data Apps"
-									disabled={workspace.role === "READ_ONLY"}
-									value={"APP"}
-								/>
-							</ToggleTabsGroup>
 							{view === "CURRENT" && (
-								<MembersTable
-									type={"APP"}
-									id={workspace.appId}
-									onChange={() => console.log("TODO")}
-								/>
-							)}
-							{view === "PENDING" && (
-								<PendingMembersTable
-									type={"APP"}
-									id={workspace.appId}
-								/>
+								<>
+									<PendingMembersTable
+										type={"APP"}
+										id={workspace.appId}
+									/>
+									<MembersTable
+										type={"APP"}
+										id={workspace.appId}
+										onChange={() => console.log("TODO")}
+									/>
+								</>
 							)}
 							{view === "APP" && (
 								<AppSettings id={workspace.appId} />
+							)}
+							{view === "GENERAL" && (
+								<>
+									<Typography
+										variant="subtitle1"
+										gutterBottom
+									>
+										Privacy & Access Control
+										<Typography variant="body2">
+											Configure who can access your apps
+											and how it appears to others
+										</Typography>
+									</Typography>
+									<SettingsTiles
+										type={"APP"}
+										id={workspace.appId}
+										name={
+											workspace.metadata?.project_name ||
+											"app"
+										}
+										onDelete={() => {
+											if (
+												location.pathname.startsWith(
+													"/settings/app/",
+												)
+											) {
+												// If in app settings
+												navigate("/settings/app");
+											} else {
+												// If in App Library
+												navigate("/");
+											}
+										}}
+									/>
+								</>
 							)}
 						</StyledContent>
 					</StyledContainer>
@@ -190,4 +185,4 @@ export const SettingsPanel = () => {
 			</SettingsContext.Provider>
 		</Panel>
 	);
-};
+});

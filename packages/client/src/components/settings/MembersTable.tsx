@@ -685,99 +685,109 @@ export const MembersTable = (props: MembersTableProps) => {
 		);
 	};
 
-  return (
-    <StyledMemberContent>
-      <StyledMemberInnerContent>
-        <StyledTableContainer>
-          <StyledTableTitleContainer>
-            <StyledTableTitleDiv>
-              <Typography variant={"h6"}>Permissions</Typography>
-            </StyledTableTitleDiv>
-            <StyledTableTitleMemberContainer>
-              {Avatars.length > 0 ? (
-                <StyledAvatarGroupContainer>
-                  <AvatarGroup
-                    spacing={"small"}
-                    variant={"circular"}
-                    max={4}
-                    total={totalMembers}
-                  >
-                    {Avatars.map((el) => {
-                      return el;
-                    })}
-                  </AvatarGroup>
-                </StyledAvatarGroupContainer>
-              ) : null}
-              <StyledTableTitleMemberCountContainer>
-                <StyledTableTitleMemberCount>
-                  <Typography variant={"caption"}>
-                    {totalMembers} member
-                  </Typography>
-                </StyledTableTitleMemberCount>
-              </StyledTableTitleMemberCountContainer>
-            </StyledTableTitleMemberContainer>
-            <IconButton
-              onClick={() => {
-                //setIsSearch(!isSearch);
-              }}
-            >
-              <img src={FilteredIcon} alt="Filter" />
-            </IconButton>
-            <StyledSearchButtonContainer>
-              {isSearch ? (
-                <Search
-                  autoFocus={true}
-                  inputRef={memberSearchRef}
-                  placeholder="Search Members"
-                  size="small"
-                  value={search}
-				  data-testid={`membersTables-searchMembers-searchBar}`}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                  }}
-                />
-              ) : (
-                <IconButton
-                  onClick={() => {
-                    setIsSearch(!isSearch);
-                  }}
-                >
-                  <SearchIcon />
-                </IconButton>
-              )}
-            </StyledSearchButtonContainer>
-            {configStore.isEngineOperationAvailable(type, "access") && (
-              <>
-                <StyledDeleteSelectedContainer>
-                  {selectedMembers.length > 0 && (
-                    <Button
-                      disabled={isLoading}
-                      variant={"outlined"}
-                      color="error"
-                      onClick={() => openDeleteMembersModal(selectedMembers)}
-                    >
-                      Delete Selected
-                    </Button>
-                  )}
-                </StyledDeleteSelectedContainer>
-                <StyledAddMemberContainer>
-                  <Button
-                    disabled={isLoading || userPermission === "Read-Only"}
-                    variant={"contained"}
-					data-testid={`membersTables-addMembers-btn`}
-                    onClick={() => {
-                      openAddMembersModal();
-                    }}
-                  >
-                    <StyledCenteredBox>
-                      <Add />
-                      Add Members
-                    </StyledCenteredBox>
-                  </Button>
-                </StyledAddMemberContainer>
-              </>
-            )}
-          </StyledTableTitleContainer>
+	return (
+		<StyledMemberContent>
+			<StyledMemberInnerContent>
+				<StyledTableContainer>
+					<StyledTableTitleContainer>
+						<StyledTableTitleDiv>
+							<Typography variant={"h6"}>Permissions</Typography>
+						</StyledTableTitleDiv>
+						<StyledTableTitleMemberContainer>
+							{Avatars.length > 0 ? (
+								<StyledAvatarGroupContainer>
+									<AvatarGroup
+										spacing={"small"}
+										variant={"circular"}
+										max={4}
+										total={totalMembers}
+									>
+										{Avatars.map((el) => {
+											return el;
+										})}
+									</AvatarGroup>
+								</StyledAvatarGroupContainer>
+							) : null}
+							<StyledTableTitleMemberCountContainer>
+								<StyledTableTitleMemberCount>
+									<Typography variant={"caption"}>
+										{totalMembers} member
+									</Typography>
+								</StyledTableTitleMemberCount>
+							</StyledTableTitleMemberCountContainer>
+						</StyledTableTitleMemberContainer>
+						<IconButton
+							onClick={() => {
+								//setIsSearch(!isSearch);
+							}}
+						>
+							<img src={FilteredIcon} alt="Filter" />
+						</IconButton>
+						<StyledSearchButtonContainer>
+							{isSearch ? (
+								<Search
+									autoFocus={true}
+									inputRef={memberSearchRef}
+									placeholder="Search Members"
+									size="small"
+									value={search}
+									data-testid={`membersTables-searchMembers-searchBar}`}
+									onChange={(e) => {
+										setSearch(e.target.value);
+									}}
+								/>
+							) : (
+								<IconButton
+									onClick={() => {
+										setIsSearch(!isSearch);
+									}}
+								>
+									<SearchIcon />
+								</IconButton>
+							)}
+						</StyledSearchButtonContainer>
+						{configStore.isEngineOperationAvailable(
+							type,
+							"access",
+						) && (
+							<>
+								<StyledDeleteSelectedContainer>
+									{selectedMembers.length > 0 && (
+										<Button
+											disabled={isLoading}
+											variant={"outlined"}
+											color="error"
+											onClick={() =>
+												openDeleteMembersModal(
+													selectedMembers,
+												)
+											}
+										>
+											Delete Selected
+										</Button>
+									)}
+								</StyledDeleteSelectedContainer>
+								<StyledAddMemberContainer>
+									<Button
+										disabled={
+											isLoading ||
+											userPermission === "Read-Only"
+										}
+										variant={"contained"}
+										data-testid={`membersTables-addMembers-btn`}
+										onClick={() => {
+											openAddMembersModal();
+										}}
+									>
+										<StyledCenteredBox>
+											<Add />
+											Add Members
+										</StyledCenteredBox>
+									</Button>
+								</StyledAddMemberContainer>
+							</>
+						)}
+					</StyledTableTitleContainer>
 
 					{isLoading ? (
 						<StyledMemberLoading>
@@ -1203,78 +1213,96 @@ export const MembersTable = (props: MembersTableProps) => {
 													);
 												}
 
-                        return null;
-                      })}
-                    </Table.Body>
-                    <Table.Footer>
-                      <Table.Row>
-                        <Table.Pagination
-                          disabled={isLoading}
-                          onPageChange={(_e, v) => {
-                            setPage(v);
-                            setSelectedMembers([]);
-                          }}
-                          page={page}
-                          rowsPerPage={rowsPerPage}
-                          rowsPerPageOptions={[5, 10, 20]}
-                          onRowsPerPageChange={(e) => {
-                            // set the new limit
-                            setRowsPerPage(parseInt(e.target.value, 10));
-                          }}
-                          count={totalMembers}
-                        />
-                      </Table.Row>
-                    </Table.Footer>
-                  </StyledMemberTable>
-                  <UserPopover
-                    hoveredUser={
-                      hoveredUser
-                        ? {
-                            id: hoveredUser.id,
-                            name: hoveredUser.name || "Unknown",
-                            email: hoveredUser.email || "",
-                          }
-                        : null
-                    }
-                    isPopoverOpen={Boolean(anchorEl)}
-                    anchorEl={anchorEl}
-                    handlePopoverClose={handlePopoverClose}
-                  />
-                </>
-              ) : (
-                <StyledNoMembersDiv>
-                  <Typography variant={"body2"}>No members</Typography>
-                  {configStore.isEngineOperationAvailable(type, "access") && (
-                    <Button
-                      disabled={isLoading}
-                      variant={"contained"}
-					  data-testid={`membersTables-addMembers-btn`}
-                      onClick={() => {
-                        setAddModalUser(null);
-                        openAddMembersModal();
-                      }}
-                    >
-                      Add Members
-                    </Button>
-                  )}
-                </StyledNoMembersDiv>
-              )}
-            </Box>
-          )}
-        </StyledTableContainer>
-      </StyledMemberInnerContent>
-      <MembersDeleteOverlay
-        type={type}
-        id={id}
-        members={pendingDeletedMembers}
-        open={deleteMembersModal}
-        onClose={(success) => {
-          // clear out the deleted members
-          setPendingDeletedMembers([]);
-          // clear out the deleted members
-          setSelectedMembers([]);
-          // close the model
-          setDeleteMembersModal(false);
+												return null;
+											})}
+										</Table.Body>
+										<Table.Footer>
+											<Table.Row>
+												<Table.Pagination
+													disabled={isLoading}
+													onPageChange={(_e, v) => {
+														setPage(v);
+														setSelectedMembers([]);
+													}}
+													page={page}
+													rowsPerPage={rowsPerPage}
+													rowsPerPageOptions={[
+														5, 10, 20,
+													]}
+													onRowsPerPageChange={(
+														e,
+													) => {
+														// set the new limit
+														setRowsPerPage(
+															parseInt(
+																e.target.value,
+																10,
+															),
+														);
+													}}
+													count={totalMembers}
+												/>
+											</Table.Row>
+										</Table.Footer>
+									</StyledMemberTable>
+									<UserPopover
+										hoveredUser={
+											hoveredUser
+												? {
+														id: hoveredUser.id,
+														name:
+															hoveredUser.name ||
+															"Unknown",
+														email:
+															hoveredUser.email ||
+															"",
+													}
+												: null
+										}
+										isPopoverOpen={Boolean(anchorEl)}
+										anchorEl={anchorEl}
+										handlePopoverClose={handlePopoverClose}
+									/>
+								</>
+							) : (
+								<StyledNoMembersDiv>
+									<Typography variant={"body2"}>
+										No members
+									</Typography>
+									{configStore.isEngineOperationAvailable(
+										type,
+										"access",
+									) && (
+										<Button
+											disabled={isLoading}
+											variant={"contained"}
+											data-testid={`membersTables-addMembers-btn`}
+											onClick={() => {
+												setAddModalUser(null);
+												openAddMembersModal();
+											}}
+										>
+											Add Members
+										</Button>
+									)}
+								</StyledNoMembersDiv>
+							)}
+						</Box>
+					)}
+				</StyledTableContainer>
+			</StyledMemberInnerContent>
+			<MembersDeleteOverlay
+				type={type}
+				id={id}
+				members={pendingDeletedMembers}
+				open={deleteMembersModal}
+				onClose={(success) => {
+					// clear out the deleted members
+					setPendingDeletedMembers([]);
+					// clear out the deleted members
+					setSelectedMembers([]);
+					// close the model
+					setDeleteMembersModal(false);
 
 					// refresh if successful
 					if (success) {

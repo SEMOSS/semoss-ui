@@ -287,30 +287,31 @@ export const DeleteDuplicateMask = observer(
 				},
 			});
 
-
-			   // Recursively add variables for all input blocks in the duplicated tree
-			   const addVariablesForInputBlocks = (blockId: string) => {
-				   const b = state.getBlock(blockId);
-				   if (!b) return;
-				   if (INPUT_BLOCK_TYPES.indexOf(b.widget) > -1) {
-					   state.dispatch({
-						   message: ActionMessages.ADD_VARIABLE,
-						   payload: {
-							   id: blockId,
-							   type: "block",
-							   to: blockId,
-						   },
-					   });
-				   }
-				   if (b.slots) {
-					   Object.values(b.slots).forEach(slot => {
-						   if (slot && Array.isArray(slot.children)) {
-							   slot.children.forEach(childId => addVariablesForInputBlocks(childId));
-						   }
-					   });
-				   }
-			   };
-			   addVariablesForInputBlocks(id as string);
+			// Recursively add variables for all input blocks in the duplicated tree
+			const addVariablesForInputBlocks = (blockId: string) => {
+				const b = state.getBlock(blockId);
+				if (!b) return;
+				if (INPUT_BLOCK_TYPES.indexOf(b.widget) > -1) {
+					state.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: blockId,
+							type: "block",
+							to: blockId,
+						},
+					});
+				}
+				if (b.slots) {
+					Object.values(b.slots).forEach((slot) => {
+						if (slot && Array.isArray(slot.children)) {
+							slot.children.forEach((childId) =>
+								addVariablesForInputBlocks(childId),
+							);
+						}
+					});
+				}
+			};
+			addVariablesForInputBlocks(id as string);
 
 			designer.setSelected(id ? (id as string) : "");
 		};
@@ -348,29 +349,29 @@ export const DeleteDuplicateMask = observer(
 						}
 					}
 
-					   // Make this function async and await the dispatch
-					   (async () => {
-						   const id = await state.dispatch({
-							   message: ActionMessages.ADD_BLOCK,
-							   payload: {
-								   json: blockJson as BlockJSON,
-								   position: {
-									   parent: block.id,
-									   slot: "children",
-								   },
-							   },
-						   });
+					// Make this function async and await the dispatch
+					(async () => {
+						const id = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
+							payload: {
+								json: blockJson as BlockJSON,
+								position: {
+									parent: block.id,
+									slot: "children",
+								},
+							},
+						});
 
-						   if (block.widget === "iteration") {
-							   state.dispatch({
-								   message: ActionMessages.SET_BLOCK_DATA,
-								   payload: {
-									   id: block.id,
-									   path: "child",
-									   value: state.getBlock(id as string),
-								   },
-							   });
-						   }
+						if (block.widget === "iteration") {
+							state.dispatch({
+								message: ActionMessages.SET_BLOCK_DATA,
+								payload: {
+									id: block.id,
+									path: "child",
+									value: state.getBlock(id as string),
+								},
+							});
+						}
 
 						setAnchorEl(null);
 					})();

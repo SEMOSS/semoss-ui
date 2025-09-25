@@ -1092,7 +1092,7 @@ export class MonolithStore {
 			},
 		});
 
-		   return response;
+		return response;
 	}
 
 	/**
@@ -1117,13 +1117,13 @@ export class MonolithStore {
 		postData += "&newGroupId=" + encodeURIComponent(groupId);
 		postData += "&newDescription=" + encodeURIComponent(description);
 		postData += "&type=" + encodeURIComponent(type);
-			const response = await axios.post<{ success: boolean }>(url, postData, {
+		const response = await axios.post<{ success: boolean }>(url, postData, {
 			headers: {
 				"content-type": "application/x-www-form-urlencoded",
 			},
-			});
+		});
 
-		   return response;
+		return response;
 	}
 
 	/**
