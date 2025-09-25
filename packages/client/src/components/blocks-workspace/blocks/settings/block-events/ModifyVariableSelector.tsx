@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
-import { Select, TextField } from "@semoss/ui";
+import { Select, Stack, TextField } from "@semoss/ui";
 import {useBlocks} from "@semoss/renderer";
 import { toJS } from "mobx";
 
@@ -34,8 +34,7 @@ export const ModifyVariableSelector = ({
 	});
 
 	return (
-		<>
-			Send hidden block id with event so it can parse iterator
+		<Stack>
 			<Controller
 				name="payload.variable"
 				control={control}
@@ -70,6 +69,6 @@ export const ModifyVariableSelector = ({
 					</>
 				)}
 			/>
-		</>
+		</ Stack>
 	);
 };
