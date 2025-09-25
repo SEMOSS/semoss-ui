@@ -1,0 +1,131 @@
+/* Modern CSS Variables for theming */
+:root {
+    /* Color Palette */
+    --color-primary: #007acc;
+    --color-primary-hover: #005ba3;
+    --color-primary-light: #4da3d9;
+    --color-secondary: #6c757d;
+    --color-success: #28a745;
+    --color-danger: #dc3545;
+    --color-warning: #ffc107;
+    --color-info: #17a2b8;
+
+    /* Background Colors */
+    --bg-primary: #1e1e1e;
+    --bg-secondary: #252526;
+    --bg-tertiary: #2d2d2d;
+    --bg-elevated: #333333;
+    --bg-input: #3c3c3c;
+    --bg-hover: #404040;
+
+    /* Text Colors */
+    --text-primary: #d4d4d4;
+    --text-secondary: #858585;
+    --text-muted: #6a6a6a;
+    --text-inverse: #ffffff;
+    --text-accent: #569cd6;
+
+    /* Border Colors */
+    --border-primary: #333333;
+    --border-secondary: #404040;
+    --border-accent: #007acc;
+
+    /* Spacing */
+    --space-xs: 0.25rem;
+    --space-sm: 0.5rem;
+    --space-md: 1rem;
+    --space-lg: 1.5rem;
+    --space-xl: 2rem;
+    --space-xxl: 3rem;
+
+    /* Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-xl: 1rem;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+
+    /* Transitions */
+    --transition-fast: 0.15s ease-in-out;
+    --transition-normal: 0.25s ease-in-out;
+    --transition-slow: 0.4s ease-in-out;
+
+    /* Typography */
+    --font-family-primary: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+    --font-family-mono: 'Cascadia Code', 'Fira Code', 'Monaco', 'Consolas', monospace;
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --line-height-tight: 1.25;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+}
+
+/* Modern CSS Reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+body {
+    font-family: var(--font-family-primary);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: var(--line-height-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    margin: 0;
+    padding: 0;
+}
+
+/* Focus management for accessibility */
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* Main App Container */
+.semoss-chatbot-app {
+    min-height: 100vh;
+    position: relative;
+    isolation: isolate;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.chat-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    max-width: 100%;
+    border-right: 1px solid var(--border-primary);
+    overflow-x: hidden;
+    overflow-y: auto;
+    position: relative;
+    box-sizing: border-box;
+}
