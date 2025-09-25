@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { styled, Table, Typography } from "@semoss/ui";
-import { getTeamsByEngineId } from "@/api/teams";
+import { getTeamsByEngineId, getTeamsByProjectId } from "@/api/teams";
 import { AddTeamModal } from "@/components/teams/AddTeamModal";
-import { useEngine } from "@/hooks";
 
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	borderRadius: "12px",
@@ -28,22 +27,26 @@ const StyledTableTitleDiv = styled("div")({
 	gap: "10px",
 });
 
-export const TeamsTable = () => {
-	const [teams, setTeams] = useState([]);
-	const { type, active } = useEngine();
-	const engineId = active?.id;
-
+export const TeamsTable = ({ type, id }) => {
+	const [teams, setTeams] = useState<any[]>([]);
 	useEffect(() => {
-		if (!engineId) return;
+		if (!type || !id) return;
 		const fetchTeams = async () => {
 			try {
-				const data = await getTeamsByEngineId(engineId, 10, 0);
+				let data: any[] = [];
+				if (type === "ENGINE") {
+					const result = await getTeamsByEngineId(String(id), 100, 0);
+					data = Array.isArray(result) ? result : [];
+				} else if (type === "PROJECT") {
+					const result = await getTeamsByProjectId(String(id), 100, 0);
+					data = Array.isArray(result) ? result : [];
+				}
 				const permissionMap = {
-					1: 'Author',
-					2: 'Editor',
-					3: 'Read-Only',
+					1: "Author",
+					2: "Editor",
+					3: "Read-Only",
 				};
-				const mappedTeams = (Array.isArray(data) ? data : []).map(
+				const mappedTeams = data.map(
 					(team, idx) => ({
 						id: team.id || idx,
 						name: team.id,
@@ -59,32 +62,38 @@ export const TeamsTable = () => {
 			}
 		};
 		fetchTeams();
-	}, [engineId]);
+	}, [type, id]);
 	const [addModal, setAddModal] = useState(false);
 	const [nameOrder, setNameOrder] = useState<"asc" | "desc">("asc");
-	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">("asc");
+	const [permissionOrder, setPermissionOrder] = useState<"asc" | "desc">(
+		"asc",
+	);
 	const [page, setPage] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(5);
 
 	const handleNameSort = () => {
 		setNameOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 		setTeams((prevTeams) =>
-			[...prevTeams].sort((a, b) =>
-				nameOrder === "asc"
-					? a.name.localeCompare(b.name)
-					: b.name.localeCompare(a.name),
-			),
+			[...prevTeams].sort((a, b) => {
+				const nameA = String(a.name);
+				const nameB = String(b.name);
+				return nameOrder === "asc"
+					? nameA.localeCompare(nameB)
+					: nameB.localeCompare(nameA);
+			}),
 		);
 	};
 
 	const handlePermissionSort = () => {
 		setPermissionOrder((prev) => (prev === "asc" ? "desc" : "asc"));
 		setTeams((prevTeams) =>
-			[...prevTeams].sort((a, b) =>
-				permissionOrder === "asc"
-					? a.permission.localeCompare(b.permission)
-					: b.permission.localeCompare(a.permission),
-			),
+			[...prevTeams].sort((a, b) => {
+				const permA = String(a.permission);
+				const permB = String(b.permission);
+				return permissionOrder === "asc"
+					? permA.localeCompare(permB)
+					: permB.localeCompare(permA);
+			}),
 		);
 	};
 
@@ -130,7 +139,10 @@ export const TeamsTable = () => {
 					</Table.Head>
 					<Table.Body>
 						{teams
-							.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+							.slice(
+								page * rowsPerPage,
+								page * rowsPerPage + rowsPerPage,
+							)
 							.map((team) => (
 								<Table.Row key={team.id}>
 									<Table.Cell>{team.name}</Table.Cell>
@@ -148,8 +160,10 @@ export const TeamsTable = () => {
 								rowsPerPageOptions={[5, 10, 20]}
 								count={teams.length}
 								onPageChange={(_, newPage) => setPage(newPage)}
-								onRowsPerPageChange={e => {
-									setRowsPerPage(parseInt(e.target.value, 10));
+								onRowsPerPageChange={(e) => {
+									setRowsPerPage(
+										parseInt(e.target.value, 10),
+									);
 									setPage(0);
 								}}
 							/>

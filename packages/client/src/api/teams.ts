@@ -298,3 +298,24 @@ export const getTeamsByEngineId = async (
 	}
 	return response.data;
 };
+
+// Get teams by projectId (for apps)
+export const getTeamsByProjectId = async (
+	projectId: string,
+	limit?: number,
+	offset?: number,
+) => {
+	let url = `${Env.MODULE}/api/auth/admin/group/getGroupsByProjectId?`;
+	const params = [];
+	if (projectId) params.push(`projectId=${projectId}`);
+	if (typeof limit === "number") params.push(`limit=${limit}`);
+	if (typeof offset === "number") params.push(`offset=${offset}`);
+	url += params.join("&");
+	const response = await get(url).catch((error) => {
+		throw Error(error);
+	});
+	if (!response) {
+		throw Error("No Response to get teams by projectId");
+	}
+	return response.data;
+};

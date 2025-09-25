@@ -42,7 +42,7 @@ export const EngineSettingsPage = () => {
 				<MembersTable type={type} id={active.id} />
 			</StyledContainer>
 			<div style={{ marginTop: 24 }}>
-				<TeamsTable />
+				<TeamsTable type="ENGINE" id={active.id} />
 			</div>
 		</SettingsContext.Provider>
 	);

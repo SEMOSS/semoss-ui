@@ -5,6 +5,7 @@ import {
   PendingMembersTable,
   SettingsTiles,
 } from "@/components/settings";
+import { TeamsTable } from "@/components/settings/TeamsTable";
 import { SettingsContext } from "@/contexts";
 
 // Styled components
@@ -71,6 +72,9 @@ export const AccessControl = ({
               id={appId}
               onChange={fetchUserSpecificData}
             />
+             <div style={{ marginTop: 24 }}>
+				<TeamsTable type="PROJECT" id={appId} />
+			</div>
           </Stack>
         </SettingsContext.Provider>
       </StyledSection>
