@@ -1,6 +1,12 @@
-import { ContentCopy, Delete, Edit, MoreVert } from "@mui/icons-material";
+import {
+	AutoFixHighOutlined,
+	ContentCopy,
+	Delete,
+	Edit,
+	MoreVert,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import React, { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks, type Variable } from "@semoss/renderer";
 import {
 	Box,
@@ -86,6 +92,10 @@ const StyledTextField = styled(TextField)(() => ({
 	padding: "0px",
 }));
 
+const StyledEmptyDiv = styled("div")(() => ({
+	padding: "0px",
+}));
+
 interface NotebookTokenProps {
 	/** Id of the variable */
 	id: string;
@@ -144,6 +154,9 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 	// Auto-rename state
 	const [isAutoRenameModalOpen, setIsAutoRenameModalOpen] = useState(false);
 	const [suggestedNewName, setSuggestedNewName] = useState<string>("");
+	const [suggestedNewNameRecords, setSuggestedNewNameRecords] = useState<
+		Record<string, string>
+	>({});
 	const [isProcessing, setIsProcessing] = useState(false);
 
 	const spanRef = useRef();
@@ -164,6 +177,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 				changes !== null &&
 				changes[id]
 			) {
+				setSuggestedNewNameRecords(changes);
 				setSuggestedNewName(changes[id]);
 				setIsAutoRenameModalOpen(true);
 			} else {
@@ -212,7 +226,80 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 		}
 
 		setIsProcessing(true);
+
 		try {
+			const out = JSON.parse(JSON.stringify(state.queries));
+
+			const placeholderRegex = /{{\s*([^{}\s]+)\s*}}/g;
+
+			Object.keys(out).forEach((topKey) => {
+				const obj = out[topKey];
+				if (!obj || !Array.isArray(obj.cells)) return;
+				const qID = obj.id;
+
+				obj.cells.forEach((cell) => {
+					if (!cell) return;
+					const params = cell.parameters || {};
+
+					// For code widget → replace inside params.code
+					if (
+						cell.widget === "code" &&
+						typeof params.code === "string"
+					) {
+						params.code = params.code.replace(
+							placeholderRegex,
+							(match, varName) => {
+								if (
+									Object.hasOwn(
+										suggestedNewNameRecords,
+										varName,
+									)
+								) {
+									return `{{${suggestedNewNameRecords[varName]}}}`;
+								}
+								return match;
+							},
+						);
+					}
+
+					// For query widget → replace inside params.selectQuery
+					if (
+						cell.widget === "query-import" &&
+						typeof params.selectQuery === "string"
+					) {
+						params.selectQuery = params.selectQuery.replace(
+							placeholderRegex,
+							(match, varName) => {
+								if (
+									Object.hasOwn(
+										suggestedNewNameRecords,
+										varName,
+									)
+								) {
+									return `{{${suggestedNewNameRecords[varName]}}}`;
+								}
+								return match;
+							},
+						);
+					}
+
+					state.dispatch({
+						message: ActionMessages.UPDATE_CELL,
+						payload: {
+							cellId: cell.id,
+							queryId: qID,
+							path:
+								cell.widget === "code"
+									? "parameters.code"
+									: "parameters.selectQuery",
+							value:
+								cell.widget === "code"
+									? params.code
+									: params.selectQuery,
+						},
+					});
+				});
+			});
 			const success = await state.dispatch({
 				message: ActionMessages.RENAME_VARIABLE,
 				payload: {
@@ -295,105 +382,101 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 			<StyledListItem
 				key={id}
 				secondaryAction={
-					<>
-						<Stack
-							direction="row"
-							spacing={1}
-							alignItems="center"
-							paddingY="8px"
+					<Stack
+						direction="row"
+						spacing={1}
+						alignItems="center"
+						paddingY="8px"
+					>
+						<IconButton
+							onClick={() => {
+								copyAlias(id);
+								setAnchorEl(null);
+							}}
 						>
-							<IconButton
-								onClick={() => {
-									copyAlias(id);
-									setAnchorEl(null);
-								}}
-							>
-								<ContentCopy />
-							</IconButton>
-							<IconButton
-								title="Open Menu"
+							<ContentCopy />
+						</IconButton>
+						<IconButton
+							title="Open Menu"
+							onClick={(e) => {
+								e.preventDefault();
+								setAnchorEl(e.currentTarget);
+							}}
+						>
+							<MoreVert />
+						</IconButton>
+						<StyledAnchorSpan ref={spanRef} />
+						<Menu
+							anchorEl={anchorEl}
+							open={Boolean(anchorEl)}
+							onClose={() => {
+								setAnchorEl(null);
+							}}
+						>
+							<Menu.Item
+								value="Edit"
 								onClick={(e) => {
-									e.preventDefault();
-									setAnchorEl(e.currentTarget);
-								}}
-							>
-								<MoreVert />
-							</IconButton>
-							<StyledAnchorSpan ref={spanRef} />
-							<Menu
-								anchorEl={anchorEl}
-								open={Boolean(anchorEl)}
-								onClose={() => {
+									setPopoverAnchorEl(spanRef.current);
 									setAnchorEl(null);
 								}}
 							>
-								<Menu.Item
-									value="Edit"
-									onClick={(e) => {
-										setPopoverAnchorEl(spanRef.current);
-										setAnchorEl(null);
-									}}
-								>
-									<Stack direction="row" alignItems="center">
-										<StyledIcon color="secondary">
-											<Edit />
-										</StyledIcon>
-										<Typography variant="body2">
-											Edit
-										</Typography>
-									</Stack>
-								</Menu.Item>
-								<Menu.Item
-									value="AutoRename"
-									onClick={() => {
-										handleAutoRename();
-										setAnchorEl(null);
-									}}
-									disabled={
-										isProcessing ||
-										!workspace.agentModelEngine
-									}
-								>
-									<Stack direction="row" alignItems="center">
-										<StyledIcon color="primary">
-											<Edit />
-										</StyledIcon>
-										<Typography variant="body2">
-											{isProcessing
-												? "Processing..."
-												: "Auto Rename"}
-										</Typography>
-									</Stack>
-								</Menu.Item>
-								<Menu.Item
-									value="Delete"
-									onClick={() => {
-										state.dispatch({
-											message:
-												ActionMessages.DELETE_VARIABLE,
-											payload: {
-												id: id,
-											},
-										});
+								<Stack direction="row" alignItems="center">
+									<StyledIcon color="secondary">
+										<Edit />
+									</StyledIcon>
+									<Typography variant="body2">
+										Edit
+									</Typography>
+								</Stack>
+							</Menu.Item>
+							<Menu.Item
+								value="AutoRename"
+								onClick={() => {
+									handleAutoRename();
+									setAnchorEl(null);
+								}}
+								disabled={
+									isProcessing || !workspace.agentModelEngine
+								}
+							>
+								<Stack direction="row" alignItems="center">
+									<StyledIcon color="primary">
+										<AutoFixHighOutlined />
+									</StyledIcon>
+									<Typography variant="body2">
+										{isProcessing
+											? "Processing..."
+											: "Auto Rename"}
+									</Typography>
+								</Stack>
+							</Menu.Item>
+							<Menu.Item
+								value="Delete"
+								onClick={() => {
+									state.dispatch({
+										message: ActionMessages.DELETE_VARIABLE,
+										payload: {
+											id: id,
+										},
+									});
 
-										notification.add({
-											color: "warning",
-											message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
-										});
+									notification.add({
+										color: "warning",
+										message: `Successfully deleted ${id}, please be aware this likely will affect your data notebook.`,
+									});
 
-										setAnchorEl(null);
-									}}
-								>
-									<Stack direction="row" alignItems="center">
-										<Delete color="error" />
-										<StyledErrorTypography variant="body2">
-											Delete
-										</StyledErrorTypography>
-									</Stack>
-								</Menu.Item>
-							</Menu>
-						</Stack>
-					</>
+									setAnchorEl(null);
+								}}
+							>
+								<Stack direction="row" alignItems="center">
+									<Delete color="error" />
+									<StyledErrorTypography variant="body2">
+										Delete
+									</StyledErrorTypography>
+								</Stack>
+							</Menu.Item>
+						</Menu>
+					</Stack>
 				}
 			>
 				<StyledListItemText
@@ -527,7 +610,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 										</StyledStack>
 									)}
 									{isPopoverOpen && (
-										<div
+										<StyledEmptyDiv
 											onMouseOver={(e) => {
 												e.stopPropagation();
 												e.preventDefault();
@@ -549,7 +632,7 @@ export const NotebookVariable = observer((props: NotebookTokenProps) => {
 												}}
 												engines={engines}
 											/>
-										</div>
+										</StyledEmptyDiv>
 									)}
 								</StyledButton>
 							</StyledTooltip>

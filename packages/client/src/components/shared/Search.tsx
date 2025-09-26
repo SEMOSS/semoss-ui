@@ -270,7 +270,7 @@ export const Search = observer(({ renderInput }: SearchProps) => {
 				// Add the category
 				return [...prev, category];
 			}
-		}); 
+		});
 	};
 
 	const limitOptionsPerGroup = (options, maxPerGroup = 3) => {

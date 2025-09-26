@@ -1,4 +1,6 @@
-import { useBlockSettings } from "@/hooks";
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
 	type BlockDef,
 	type EchartVisualizationBlockConfig,
@@ -9,14 +11,12 @@ import {
 import {
 	Button,
 	Slider,
-	styled,
 	Switch,
+	styled,
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { computed } from "mobx";
-import { observer } from "mobx-react-lite";
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useBlockSettings } from "@/hooks";
 
 //Axis div for switch type fields
 const StyledAxisDiv = styled("div")<{
