@@ -75,7 +75,6 @@ const skeletonKeys = Array.from(
   (_, i) => `skeleton-key-${i}`
 );
 
-
 const reducer = (state, action) => {
   switch (action.type) {
     case "field": {
@@ -140,7 +139,6 @@ const TERMINAL_APP: AppMetadata = {
   description: "Execute commands and see a response",
 };
 
-
 /**
  * App page
  */
@@ -155,7 +153,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
   const [inputValue, setInputValue] = useState("");
   const [search, setSearch] = useState("");
-	const appCatalogPageStatus = useRef({ removalChanges: false });
+  const appCatalogPageStatus = useRef({ removalChanges: false });
 
   // get a list of the keys
   const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -251,36 +249,36 @@ export const AppCatalogPage = observer((): JSX.Element => {
    * @desc action to favorite app
    * @param app
    */
-const favoriteApp = (app) => {
-  const favorite = !isFavorited(app.project_id);
-  monolithStore
-    .setProjectFavorite(app.project_id, favorite)
-    .then(() => {
-      if (!favorite) {
-        // Create a new array before modifying
-        const newFavorites = [...favoritedApps];
-        for (let i = newFavorites.length - 1; i >= 0; i--) {
-          if (newFavorites[i].project_id === app.project_id) {
-            newFavorites.splice(i, 1);
+  const favoriteApp = (app) => {
+    const favorite = !isFavorited(app.project_id);
+    monolithStore
+      .setProjectFavorite(app.project_id, favorite)
+      .then(() => {
+        if (!favorite) {
+          // Create a new array before modifying
+          const newFavorites = [...favoritedApps];
+          for (let i = newFavorites.length - 1; i >= 0; i--) {
+            if (newFavorites[i].project_id === app.project_id) {
+              newFavorites.splice(i, 1);
+            }
           }
+          dispatch({
+            type: "field",
+            field: "favoritedApps",
+            value: newFavorites,
+          });
+        } else {
+          dispatch({
+            type: "field",
+            field: "favoritedApps",
+            value: [...favoritedApps, app],
+          });
         }
-        dispatch({
-          type: "field",
-          field: "favoritedApps",
-          value: newFavorites,
-        });
-      } else {
-        dispatch({
-          type: "field",
-          field: "favoritedApps",
-          value: [...favoritedApps, app],
-        });
-      }
-    })
-    .catch((err) => {
-      throw Error(err);
-    });
-};
+      })
+      .catch((err) => {
+        throw Error(err);
+      });
+  };
 
   /**
    * @name isFavorited
@@ -298,34 +296,63 @@ const favoriteApp = (app) => {
     const favorite = isFavorited(app.project_id);
 
     const updatedApps = apps.filter((a) => a.project_id !== app.project_id);
-
     const updatedFavoritedApps = favorite
       ? favoritedApps.filter((a) => a.project_id !== app.project_id)
       : favoritedApps;
 
-    dispatch({
-      type: "field",
-      field: "apps",
-      value: updatedApps,
-    });
-
+    dispatch({ type: "field", field: "apps", value: updatedApps });
     dispatch({
       type: "field",
       field: "favoritedApps",
       value: updatedFavoritedApps,
     });
+
+    const toArr = (v) =>
+      v == null
+        ? []
+        : Array.isArray(v)
+        ? v.map((x) => String(x).trim())
+        : [String(v).trim()];
+
+    const removedTags = toArr(app?.tag);
+
+    if (removedTags.length > 0) {
+      const nextFilters = { ...(metaFilters || {}) };
+
+      if (nextFilters.tag != null) {
+        let selected = toArr(nextFilters.tag);
+
+        removedTags.forEach((tag) => {
+          if (!selected.includes(tag)) return;
+
+          const stillExists = updatedApps.some((a) =>
+            toArr(a?.tag).includes(tag)
+          );
+          if (!stillExists) {
+            selected = selected.filter((t) => t !== tag);
+          }
+        });
+
+        if (selected.length === 0) {
+          delete nextFilters.tag;
+        } else {
+          nextFilters.tag = selected.length === 1 ? selected[0] : selected;
+        }
+      }
+
+      setMetaFilters(nextFilters);
+    }
     appCatalogPageStatus.current.removalChanges = true;
   };
-
   // to limit the apps that are sent to filterbox for performance
-	let renderedAppIds = [];
-	if (inputValue) {
-		renderedAppIds.push(...apps.map((app) => app.project_id));
-		renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
-		if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
-	} else{
-		renderedAppIds = [];
-	}
+  let renderedAppIds = [];
+  if (inputValue) {
+    renderedAppIds.push(...apps.map((app) => app.project_id));
+    renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
+    if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
+  } else {
+    renderedAppIds = [];
+  }
 
   return (
     <>
@@ -374,10 +401,10 @@ const favoriteApp = (app) => {
                     setMetaFilters(filters);
                   }}
                   filteredCatalogIds={renderedAppIds}
-									filterBoxRefresh={appCatalogPageStatus.current.removalChanges}
-									onfilterBoxRefreshCompleted={() => {
-										appCatalogPageStatus.current.removalChanges = false;
-									}}
+                  filterBoxRefresh={appCatalogPageStatus.current.removalChanges}
+                  onfilterBoxRefreshCompleted={() => {
+                    appCatalogPageStatus.current.removalChanges = false;
+                  }}
                 />
               </div>
             )}
