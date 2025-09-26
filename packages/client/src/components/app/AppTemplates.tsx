@@ -7,6 +7,7 @@ import {
 	CreateDiabetesRecordTemplate,
 	CustomFrameToVisualizationTemplate,
 	DeleteDiabetesRecordTemplate,
+	GmailTemplate,
 	LandingPageTemplate,
 	MultiPageTemplate,
 	NLPToGridTemplate,
@@ -30,6 +31,7 @@ const DEFAULT_TEMPLATE = [
 	ReadDiabetesRecordTemplate,
 	UpdateDiabetesRecordTemplate,
 	DeleteDiabetesRecordTemplate,
+	GmailTemplate,
 	// AskCSVTemplate,
 ];
 

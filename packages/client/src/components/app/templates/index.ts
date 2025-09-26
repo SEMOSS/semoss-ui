@@ -12,3 +12,4 @@ export { RowToNotebookTemplate } from "./RowToNotebookTemplate";
 export * from "./templates.types";
 export { UpdateDiabetesRecordTemplate } from "./UpdateDiabetesRecordTemplate";
 export { VisualizeCSVTemplate } from "./VisualizeCSVTemplate";
+export { GmailTemplate } from "./GmailTemplate";
