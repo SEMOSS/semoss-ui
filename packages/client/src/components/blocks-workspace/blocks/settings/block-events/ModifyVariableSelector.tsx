@@ -1,6 +1,7 @@
+import { toJS } from "mobx";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
-import { Select, TextField } from "@semoss/ui";
+import { Select, Stack, TextField } from "@semoss/ui";
 import { useBlocks } from "@semoss/renderer";
 
 interface ModifyVariableSelectorProps {
@@ -21,14 +22,14 @@ export const ModifyVariableSelector = ({
 		setValue("payload.blockId", id);
 	}, [id]);
 
-	const primitiveVarTypes = ["string", "number", "boolean", "array", "object"];
+	// get all primitive variables from state
+	const primitiveVarTypes = ["string", "number", "boolean", "array", "object", "json"];
 	const primitiveVariables = Object.entries(state.variables)
 		?.filter(([_, v]) => primitiveVarTypes.includes(v.type))
 		?.map(([k]) => k);
 
 	return (
-		<>
-			Send hidden block id with event so it can parse iterator
+		<Stack>
 			<Controller
 				name="payload.variable"
 				control={control}
@@ -64,6 +65,6 @@ export const ModifyVariableSelector = ({
 					</>
 				)}
 			/>
-		</>
+		</Stack>
 	);
 };

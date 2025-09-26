@@ -259,11 +259,11 @@ export const JobBuilderModal = (props: {
 			if (response.errors.length) {
 				throw new Error(response.errors[0]);
 			}
-				notification.add({
-					color: "success",
-					message: "Job added successfully",
-				});
-		} catch{
+			notification.add({
+				color: "success",
+				message: "Job added successfully",
+			});
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
@@ -355,7 +355,7 @@ export const JobBuilderModal = (props: {
 						</ToggleButton>
 					</ToggleButtonGroup>
 					<Autocomplete
-                        multiple={false}
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>

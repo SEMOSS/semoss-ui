@@ -203,6 +203,31 @@ export const DeleteDuplicateMask = observer(
 			designer.setSelected("");
 		};
 
+		const addVariable = (id: string) => {
+			const block = state.getBlock(id as string);
+			if (block.slots) {
+				if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+					state.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: id as string,
+							type: "block",
+							to: id as string,
+						},
+					});
+				}
+				Object.keys(block.slots).forEach((slot) => {
+					const children = block.slots[slot].children;
+					if (children?.length) {
+						children.forEach((childId) => {
+							//   const childBlock = state.getBlock(childId);
+							addVariable(childId);
+						});
+					}
+				});
+			}
+		};
+
 		/**
 		 * Delete the block
 		 */
@@ -287,30 +312,19 @@ export const DeleteDuplicateMask = observer(
 				},
 			});
 
-
-			   // Recursively add variables for all input blocks in the duplicated tree
-			   const addVariablesForInputBlocks = (blockId: string) => {
-				   const b = state.getBlock(blockId);
-				   if (!b) return;
-				   if (INPUT_BLOCK_TYPES.indexOf(b.widget) > -1) {
-					   state.dispatch({
-						   message: ActionMessages.ADD_VARIABLE,
-						   payload: {
-							   id: blockId,
-							   type: "block",
-							   to: blockId,
-						   },
-					   });
-				   }
-				   if (b.slots) {
-					   Object.values(b.slots).forEach(slot => {
-						   if (slot && Array.isArray(slot.children)) {
-							   slot.children.forEach(childId => addVariablesForInputBlocks(childId));
-						   }
-					   });
-				   }
-			   };
-			   addVariablesForInputBlocks(id as string);
+			// TODO: REFACTOR
+			if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+				state.dispatch({
+					message: ActionMessages.ADD_VARIABLE,
+					payload: {
+						id: id as string,
+						type: "block",
+						to: id as string,
+					},
+				});
+			} else {
+				addVariable(id as string);
+			}
 
 			designer.setSelected(id ? (id as string) : "");
 		};
@@ -348,29 +362,29 @@ export const DeleteDuplicateMask = observer(
 						}
 					}
 
-					   // Make this function async and await the dispatch
-					   (async () => {
-						   const id = await state.dispatch({
-							   message: ActionMessages.ADD_BLOCK,
-							   payload: {
-								   json: blockJson as BlockJSON,
-								   position: {
-									   parent: block.id,
-									   slot: "children",
-								   },
-							   },
-						   });
+					// Make this function async and await the dispatch
+					(async () => {
+						const id = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
+							payload: {
+								json: blockJson as BlockJSON,
+								position: {
+									parent: block.id,
+									slot: "children",
+								},
+							},
+						});
 
-						   if (block.widget === "iteration") {
-							   state.dispatch({
-								   message: ActionMessages.SET_BLOCK_DATA,
-								   payload: {
-									   id: block.id,
-									   path: "child",
-									   value: state.getBlock(id as string),
-								   },
-							   });
-						   }
+						if (block.widget === "iteration") {
+							state.dispatch({
+								message: ActionMessages.SET_BLOCK_DATA,
+								payload: {
+									id: block.id,
+									path: "child",
+									value: state.getBlock(id as string),
+								},
+							});
+						}
 
 						setAnchorEl(null);
 					})();
@@ -378,7 +392,6 @@ export const DeleteDuplicateMask = observer(
 			: null;
 
 		// TODO: revisit these actions for the base page once multiple pages/routing is enabled
-
 		return (
 			<StyledContainer id="delete-duplicate-mask" style={getStyle()}>
 				<StyledButtonGroup>
