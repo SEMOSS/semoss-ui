@@ -248,12 +248,10 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 	name,
 	type,
 }) => {
-	const { steps, activeStep, setSteps, setIsLoading, isLoading } =
-		useStepper();
+	const { steps, setSteps, setIsLoading, isLoading } = useStepper();
 
 	const navigate = useNavigate();
 
-	const [importSearch, setImportSearch] = React.useState("");
 	const [search, setSearch] = React.useState("");
 
 	const [connectionOptions, setConnectionOptions] =
@@ -541,10 +539,10 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						(kv: [string, any[]], i) => {
 							return (
 								<Box key={i}>
+									yoyoo
 									<StyledCategoryTitle>
 										{kv[0]}
 									</StyledCategoryTitle>
-
 									<Box>
 										<Grid
 											container
@@ -630,12 +628,14 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 
 			return (
 				<Box sx={{ width: "100%" }}>
+					jajaja
 					<Tabs
 						value={selectedTab}
 						onChange={(_, newValue) => setSelectedTab(newValue)}
 						variant="scrollable"
 						sx={{ mt: 2, borderBottom: "2px solid #E0E0E0" }}
 					>
+						sjsjs
 						{tabLabels.map((label, i) => (
 							<StyledTab
 								key={i}
@@ -655,6 +655,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 			);
 		}
 	};
+
 	return (
 		<Stack direction="column" gap={2}>
 			<StyledStack>
@@ -736,12 +737,11 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							/>
 						</StyledSearchbarContainer>
 					)}
-
+				jssjs
 				{/*  When Step changes scroll top into view */}
 				<div ref={scrollToTopRef} style={{ height: "0px" }}>
 					&nbsp;
 				</div>
-
 				{/* Step 2a: Selection for options that require more info */}
 				{/* This is shared between vector, function, database, model and storage */}
 				{steps.length === 1 &&
@@ -749,7 +749,6 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 					steps[0].title !== "Upload Database" &&
 					!isLoading &&
 					mapEngineOptions()}
-
 				{/* Step 2b: Show Form for Copy and Upload ( this is only a 2-step process) */}
 				{steps.length === 1 &&
 					(steps[0].title === "Copy Database" ||
@@ -762,10 +761,8 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							)}
 						</StyledBox>
 					)}
-
 				{/* Step 3:  Will be the form to capture specific engine connection details */}
 				{steps.length === 2 && <ImportConnectionPage />}
-
 				{/* Step 4: If there is a step in the process after inputting connection details: metamodel for example */}
 				{steps.length === 3 && <EstablishConnectionPage />}
 			</StyledContainer>
