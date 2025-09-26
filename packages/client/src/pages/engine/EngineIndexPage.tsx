@@ -488,11 +488,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
 		const nonBookmarked = databases.filter(
 			(db) =>
-				!favoritedDbs.some(
-					(fav) => fav.database_id === db.database_id
-				)
+				!favoritedDbs.some((fav) => fav.database_id === db.database_id),
 		);
-
 
 		return (
 			<Stack direction="column" gap={2}>
