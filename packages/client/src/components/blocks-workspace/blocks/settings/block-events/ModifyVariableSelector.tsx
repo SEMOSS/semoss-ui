@@ -1,6 +1,8 @@
+import { toJS } from "mobx";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
-import { Select, TextField } from "@semoss/ui";
+import { useBlocks } from "@semoss/renderer";
+import { Select, Stack, TextField } from "@semoss/ui";
 
 interface ModifyVariableSelectorProps {
 	id: string;
@@ -15,13 +17,26 @@ export const ModifyVariableSelector = ({
 }: ModifyVariableSelectorProps) => {
 	// TODO: FIX this blockId assign, inconsistent behavior
 
+	const { state } = useBlocks();
+	const variables = toJS(state.variables);
+
 	useEffect(() => {
 		setValue("payload.blockId", id);
 	}, [id]);
 
+	const variableEntries: [string, any][] = Object.entries(variables || {});
+
+	// Only allow variables of type string, number, array, date, or json
+	const allowedTypes = ["string", "number", "array", "date", "JSON"];
+	const filteredVariableEntries = variableEntries.filter(
+		([key, variable]) => {
+			const type = variable?.type;
+			return allowedTypes.includes(type);
+		},
+	);
+
 	return (
-		<>
-			Send hidden block id with event so it can parse iterator
+		<Stack>
 			<Controller
 				name="payload.variable"
 				control={control}
@@ -34,9 +49,9 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{["row-id", "Internal"].map((type, index) => (
-							<Select.Item key={`${type}-${index}`} value={type}>
-								{type}
+						{filteredVariableEntries.map(([key, variable]) => (
+							<Select.Item key={key} value={key}>
+								{key}
 							</Select.Item>
 						))}
 					</Select>
@@ -56,6 +71,6 @@ export const ModifyVariableSelector = ({
 					</>
 				)}
 			/>
-		</>
+		</Stack>
 	);
 };
