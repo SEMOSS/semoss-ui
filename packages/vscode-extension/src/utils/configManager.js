@@ -55,6 +55,38 @@ class ConfigManager {
 		try {
 			this.ensureConfigPath();
 
+			// Auto-create from example template if missing but example exists
+			if (!fs.existsSync(this.configPath)) {
+				try {
+					const examplePath = this.configPath.replace(
+						/semoss-config\.yaml$/,
+						"semoss-config.example.yaml",
+					);
+					if (fs.existsSync(examplePath)) {
+						const exampleContent = fs.readFileSync(
+							examplePath,
+							"utf8",
+						);
+						const dir = path.dirname(this.configPath);
+						if (!fs.existsSync(dir))
+							fs.mkdirSync(dir, { recursive: true });
+						fs.writeFileSync(
+							this.configPath,
+							exampleContent,
+							"utf8",
+						);
+						console.log(
+							"Semoss config created from example template.",
+						);
+					}
+				} catch (e) {
+					console.warn(
+						"Unable to auto-create semoss-config.yaml:",
+						e.message,
+					);
+				}
+			}
+
 			if (fs.existsSync(this.configPath)) {
 				const configContent = fs.readFileSync(this.configPath, "utf8");
 				this.config = yaml.load(configContent);

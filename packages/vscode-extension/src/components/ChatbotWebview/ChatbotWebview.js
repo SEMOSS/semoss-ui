@@ -3,13 +3,22 @@ const path = require("node:path");
 const fs = require("node:fs");
 const llmService = require("../../utils/llmService");
 const configManager = require("../../utils/configManager");
+// Static imports for instance management & status bar
+const {
+	getStoredInstances,
+	getCurrentInstance,
+} = require("../../utils/secrets.js");
+const { updateStatusBar } = require("../../utils/statusBar.js");
 
 /**
  * Register the chatbot webview provider
  */
 let _chatbotProviderInstance;
 function registerChatbotWebview(context) {
-	_chatbotProviderInstance = new ChatbotWebviewProvider(context.extensionUri);
+	_chatbotProviderInstance = new ChatbotWebviewProvider(
+		context.extensionUri,
+		context,
+	);
 	context.subscriptions.push(
 		vscode.window.registerWebviewViewProvider(
 			"semossChatbotView",
@@ -26,9 +35,10 @@ function getCurrentChatbotProvider() {
 }
 
 class ChatbotWebviewProvider {
-	constructor(extensionUri) {
+	constructor(extensionUri, context) {
 		this._extensionUri = extensionUri;
 		this._view = undefined;
+		this._context = context; // needed for secrets-based instance management
 	}
 
 	resolveWebviewView(webviewView) {
@@ -193,6 +203,127 @@ class ChatbotWebviewProvider {
 				case "error":
 					console.error("Webview error:", data.message);
 					break;
+				case "listInstances": {
+					try {
+						const instances = await getStoredInstances(
+							this._context,
+						);
+						const current = await getCurrentInstance(this._context);
+						const list = Object.entries(instances).map(
+							([alias, details]) => ({
+								alias,
+								semossUrl: details.semossUrl,
+							}),
+						);
+						webviewView.webview.postMessage({
+							type: "instancesList",
+							instances: list,
+							mode: data.mode,
+							currentInstance: current?.alias,
+						});
+					} catch (err) {
+						console.error("Error listing instances:", err);
+						webviewView.webview.postMessage({
+							type: "instanceActionResult",
+							feedback: `Failed to list instances: ${err.message}`,
+							currentInstance: null,
+						});
+					}
+					break;
+				}
+				case "selectInstanceWebview": {
+					try {
+						const instances = await getStoredInstances(
+							this._context,
+						);
+						if (!instances[data.alias])
+							throw new Error("Instance not found");
+						await this._context.secrets.store(
+							"CURRENT_INSTANCE_ALIAS",
+							data.alias,
+						);
+						await updateStatusBar(this._context);
+						// Return refreshed list (keepMode for continuous operations if user wants to switch again)
+						const freshInstances = await getStoredInstances(
+							this._context,
+						);
+						const list = Object.entries(freshInstances).map(
+							([alias, details]) => ({
+								alias,
+								semossUrl: details.semossUrl,
+							}),
+						);
+						webviewView.webview.postMessage({
+							type: "instanceActionResult",
+							feedback: `Switched to instance: ${data.alias}`,
+							currentInstance: data.alias,
+							keepMode: false,
+							instances: list,
+						});
+					} catch (err) {
+						webviewView.webview.postMessage({
+							type: "instanceActionResult",
+							feedback: `Failed to switch instance: ${err.message}`,
+							keepMode: true,
+						});
+					}
+					break;
+				}
+				case "removeInstanceWebview": {
+					try {
+						const instances = await getStoredInstances(
+							this._context,
+						);
+						if (!instances[data.alias])
+							throw new Error("Instance not found");
+						delete instances[data.alias];
+						await this._context.secrets.store(
+							"SEMOSS_INSTANCES",
+							JSON.stringify(instances),
+						);
+						let currentAlias = await this._context.secrets.get(
+							"CURRENT_INSTANCE_ALIAS",
+						);
+						if (currentAlias === data.alias) {
+							await this._context.secrets.delete(
+								"CURRENT_INSTANCE_ALIAS",
+							);
+							currentAlias = null;
+						}
+						await updateStatusBar(this._context);
+						// Refreshed list for potential subsequent removals
+						const refreshed = await getStoredInstances(
+							this._context,
+						);
+						const list = Object.entries(refreshed).map(
+							([alias, details]) => ({
+								alias,
+								semossUrl: details.semossUrl,
+							}),
+						);
+						webviewView.webview.postMessage({
+							type: "instanceActionResult",
+							feedback: `Instance "${data.alias}" removed successfully!`,
+							currentInstance: currentAlias,
+							keepMode: true, // stay in dialog for multiple removals
+							instances: list,
+						});
+					} catch (err) {
+						webviewView.webview.postMessage({
+							type: "instanceActionResult",
+							feedback: `Failed to remove instance: ${err.message}`,
+							keepMode: true,
+						});
+					}
+					break;
+				}
+				case "clearInstancesMode": {
+					webviewView.webview.postMessage({
+						type: "instanceActionResult",
+						feedback: null,
+					});
+					break;
+				}
 			}
 		});
 

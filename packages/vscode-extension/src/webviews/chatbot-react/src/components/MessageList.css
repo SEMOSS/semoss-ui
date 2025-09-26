@@ -65,6 +65,49 @@
     color: var(--bg-primary);
 }
 
+/* Tools message styling */
+.message.tools-message .bubble {
+    background: linear-gradient(135deg, var(--bg-elevated), var(--bg-tertiary));
+    border: 1px solid var(--border-secondary);
+}
+
+.tools-button-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+}
+
+.tool-inline-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0.4rem 0.65rem;
+    background: var(--bg-input);
+    border: 1px solid var(--border-secondary);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    cursor: pointer;
+    color: var(--text-primary);
+    transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.tool-inline-btn:hover,
+.tool-inline-btn:focus-visible {
+    background: var(--bg-hover);
+    border-color: var(--border-accent);
+}
+
+.tool-inline-btn:active { transform: translateY(1px); }
+
+.tool-inline-btn .tool-icon { font-size: 0.95em; }
+
+@media (max-width: 520px) {
+    .tools-button-group { flex-direction: column; }
+    .tool-inline-btn { width: 100%; justify-content: flex-start; }
+}
+
 /* Code blocks */
 .bubble pre.code-block {
     background: var(--bg-primary);

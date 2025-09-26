@@ -38,6 +38,7 @@
     position: absolute;
     top: 6px;
     left: 8px;
+    bottom: 6px;
     font-size: 13px;
     color: #888;
     pointer-events: none;

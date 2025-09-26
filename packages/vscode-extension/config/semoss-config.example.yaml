@@ -1,0 +1,59 @@
+# semoss-config.example.yaml
+# Copy this file to semoss-config.yaml (same folder) and adjust values.
+# The real semoss-config.yaml is gitignored to avoid committing secrets.
+
+name: semoss-agent
+version: 1.0.0
+
+# Example model entries. Add / remove as needed.
+models:
+  - name: openai-gpt4o
+    provider: openai
+    model: gpt-4o
+    enabled: true
+  - name: local-llama
+    provider: ollama
+    model: llama3:latest
+    enabled: false
+
+mcpServers: []
+
+preferences:
+  chat:
+    defaultModel: openai-gpt4o
+    autoSave: true
+    persistHistory: true
+    maxHistoryLength: 100
+    enableTypingIndicator: true
+  ui:
+    theme: auto
+    fontSize: 14
+    fontFamily: "SF Mono, Monaco, Cascadia Code, Roboto Mono, Consolas, Courier New, monospace"
+    showLineNumbers: true
+    wordWrap: true
+  code:
+    autoComplete: true
+    syntaxHighlighting: true
+    enableInlineChat: true
+    defaultLanguage: javascript
+
+shortcuts:
+  openChat: Ctrl+Shift+L
+  clearChat: Ctrl+K
+  openSettings: Ctrl+,
+  toggleModel: Ctrl+M
+  executeCommand: Enter
+  multilineInput: Shift+Enter
+
+customCommands: []
+
+integrations:
+  semoss:
+    enabled: true
+    endpoint: "https://your-semoss-url.example"
+    apiKey: "YOUR_API_KEY_HERE"
+  github:
+    enabled: false
+    token: ""
+  vscode:
+    enabled: true

@@ -21,6 +21,9 @@ export const useChatState = () => {
 		instanceUrls: {},
 		currentInstance: null,
 		hasSmssFile: false,
+		// Internal instance management UI support
+		instancesList: [], // [{alias, semossUrl}]
+		instancesMode: null, // 'select' | 'remove'
 	});
 
 	const addMessage = useCallback(
@@ -48,6 +51,24 @@ export const useChatState = () => {
 		},
 		[postMessage],
 	);
+
+	// Special message containing tool buttons (not persisted to history storage for now)
+	const addToolsMessage = useCallback((toolsArray) => {
+		if (!Array.isArray(toolsArray) || toolsArray.length === 0) return;
+		const newMessage = {
+			text: "Available actions:",
+			from: "bot",
+			status: "tools",
+			tools: toolsArray,
+			timestamp: Date.now(),
+			id: `tools_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+		};
+		setChatState((prev) => ({
+			...prev,
+			chatHistory: [...prev.chatHistory, newMessage],
+			chatStarted: true,
+		}));
+	}, []);
 
 	// Handle messages from VS Code extension
 	const handleMessage = useCallback(
@@ -153,6 +174,35 @@ export const useChatState = () => {
 					}));
 					break;
 
+				case "instancesList":
+					// Generic list for selection/removal from webview UI
+					setChatState((prev) => ({
+						...prev,
+						instancesList: message.instances || [],
+						instancesMode: message.mode || null,
+						currentInstance:
+							message.currentInstance || prev.currentInstance,
+						isLoading: false,
+					}));
+					break;
+				case "instanceActionResult": {
+					if (message.feedback) addMessage(message.feedback, "bot");
+					setChatState((prev) => ({
+						...prev,
+						currentInstance:
+							message.currentInstance ?? prev.currentInstance,
+						// keep mode & list if keepMode flag provided (for repeated removals)
+						instancesMode: message.keepMode
+							? prev.instancesMode
+							: null,
+						instancesList: message.keepMode
+							? message.instances || prev.instancesList
+							: [],
+						isLoading: false,
+					}));
+					break;
+				}
+
 				default:
 					console.warn("Unknown message type:", message.type);
 			}
@@ -237,6 +287,7 @@ export const useChatState = () => {
 	return {
 		...chatState,
 		addMessage,
+		addToolsMessage,
 		clearChat,
 		setLoading,
 		executeCommand,

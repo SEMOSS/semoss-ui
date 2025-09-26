@@ -1,4 +1,4 @@
-import React, { useId } from "react";
+import React, { useId, useRef } from "react";
 import "./MessageList.css";
 
 /**
@@ -10,114 +10,279 @@ import "./MessageList.css";
 /**
  * Component for rendering individual chat messages
  */
-const Message = ({ message, viewport }) => {
-	const { text, from, status, timestamp } = message;
+const Message = ({ message, viewport, onToolClick }) => {
+	const { text, from, status, timestamp, tools } = message;
 	const { isMobile, isSmallPhone } = viewport;
 
-	const escapeHtml = (text) => {
-		const div = document.createElement("div");
-		div.textContent = text;
-		return div.innerHTML;
-	};
+	// (Removed escapeHtml utility – constructing React nodes avoids raw HTML injection.)
 
-	const processContent = (text) => {
-		if (typeof text !== "string") return String(text);
+	// Convert raw message text into a safe React node structure (no innerHTML)
+	const renderContent = (raw) => {
+		if (typeof raw !== "string") return <>{String(raw)}</>;
 
-		let processedContent = escapeHtml(text);
-
-		// Handle code blocks for better mobile display
+		// Tokenize code blocks first
 		const codeBlockRegex = /```([\s\S]*?)```/g;
-		processedContent = processedContent.replace(
-			codeBlockRegex,
-			(_, code) => {
-				if (isMobile && isSmallPhone) {
-					return `<pre class="code-block small-device-code"><code>${escapeHtml(code.trim())}</code></pre>`;
-				} else if (isMobile) {
-					return `<pre class="code-block mobile-code"><code>${escapeHtml(code.trim())}</code></pre>`;
-				} else {
-					return `<pre class="code-block"><code>${escapeHtml(code.trim())}</code></pre>`;
+		const segments = [];
+		let lastIndex = 0;
+		let match;
+		// Extract fenced code blocks
+		match = codeBlockRegex.exec(raw);
+		while (match !== null) {
+			if (match.index > lastIndex) {
+				segments.push({
+					type: "text",
+					value: raw.slice(lastIndex, match.index),
+				});
+			}
+			segments.push({ type: "codeblock", value: match[1] });
+			lastIndex = match.index + match[0].length;
+			match = codeBlockRegex.exec(raw);
+		}
+		if (lastIndex < raw.length) {
+			segments.push({ type: "text", value: raw.slice(lastIndex) });
+		}
+
+		const elements = [];
+		let key = 0;
+
+		const makeCodeBlock = (code) => {
+			const trimmed = code.trim();
+			const cls = isMobile
+				? isSmallPhone
+					? "code-block small-device-code"
+					: "code-block mobile-code"
+				: "code-block";
+			return (
+				<pre key={`cb-${key++}`} className={cls}>
+					<code>{trimmed}</code>
+				</pre>
+			);
+		};
+
+		const processInline = (textSeg) => {
+			// Split into lines to handle list formatting
+			const lines = textSeg.split(/\n/);
+			return lines.map((line, lineIdx) => {
+				// List item detection
+				const listMatch = /^([\s]*)[-*+] (.*)/.exec(line);
+				if (listMatch) {
+					const space = listMatch[1];
+					const item = listMatch[2];
+					const indentLevel = Math.floor(space.length / 2);
+					const indentClass =
+						indentLevel > 0
+							? ` indent-${Math.min(indentLevel, 3)}`
+							: "";
+					return (
+						<div
+							key={`li-${key++}`}
+							className={`list-item${indentClass}`}
+						>
+							{renderInlineSpans(item)}
+						</div>
+					);
 				}
-			},
-		);
-
-		// Handle inline code
-		const inlineCodeRegex = /`([^`]+)`/g;
-		processedContent = processedContent.replace(
-			inlineCodeRegex,
-			(_, code) => {
-				return `<code class="inline-code">${escapeHtml(code)}</code>`;
-			},
-		);
-
-		// Convert URLs to responsive clickable links/images
-		const urlRegex = /(https?:\/\/[^\s]+)/g;
-		processedContent = processedContent.replace(urlRegex, (url) => {
-			const isImage = /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(url);
-
-			if (isImage) {
-				if (isMobile && isSmallPhone) {
-					return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="message-link compact">
-                    <div class="image-thumbnail small">
-                      <span class="thumbnail-icon">🖼️</span>
-                    </div>
-                  </a>`;
-				} else if (isMobile) {
-					return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="message-link">
-                    <div class="image-thumbnail">
-                      <span class="thumbnail-icon">🖼️</span>
-                      <span class="thumbnail-text">View Image</span>
-                    </div>
-                  </a>`;
-				} else {
-					return `<img src="${url}" alt="Image" class="message-image" loading="lazy" 
-                    onerror="this.onerror=null; this.classList.add('image-error');" />`;
+				// Normal line => inline spans (may include links, inline code)
+				const content = renderInlineSpans(line);
+				// Preserve blank lines
+				if (line.trim() === "") {
+					return <br key={`br-${key++}`} />;
 				}
+				return (
+					<React.Fragment key={`ln-${key++}`}>
+						{content}
+						{lineIdx < lines.length - 1 && <br />}
+					</React.Fragment>
+				);
+			});
+		};
+
+		const renderInlineSpans = (value) => {
+			const parts = [];
+			const remaining = value;
+			// Order: inline code then URLs
+			const inlineCodeRegex = /`([^`]+)`/g;
+			let idx = 0;
+			let m;
+			m = inlineCodeRegex.exec(remaining);
+			while (m !== null) {
+				const before = remaining.slice(idx, m.index);
+				if (before) parts.push(before);
+				parts.push(
+					<code key={`ic-${key++}`} className="inline-code">
+						{m[1]}
+					</code>,
+				);
+				idx = m.index + m[0].length;
+				m = inlineCodeRegex.exec(remaining);
+			}
+			if (idx < remaining.length) parts.push(remaining.slice(idx));
+
+			// Now process URLs inside string segments only
+			const urlRegex = /(https?:\/\/[^\s]+)/g;
+			const finalParts = [];
+			parts.forEach((p) => {
+				if (typeof p !== "string") {
+					finalParts.push(p); // already element
+					return;
+				}
+				let last = 0;
+				let urlMatch = urlRegex.exec(p);
+				while (urlMatch !== null) {
+					if (urlMatch.index > last)
+						finalParts.push(p.slice(last, urlMatch.index));
+					const url = urlMatch[0];
+					const isImage = /\.(jpg|jpeg|png|gif|svg|webp)$/i.test(url);
+					if (isImage) {
+						if (isMobile) {
+							if (isSmallPhone) {
+								finalParts.push(
+									<a
+										key={`imglnk-${key++}`}
+										href={url}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="message-link compact"
+									>
+										<div className="image-thumbnail small">
+											<span
+												className="thumbnail-icon"
+												role="img"
+												aria-label="Image"
+											>
+												🖼️
+											</span>
+										</div>
+									</a>,
+								);
+							} else {
+								finalParts.push(
+									<a
+										key={`imglnk-${key++}`}
+										href={url}
+										target="_blank"
+										rel="noopener noreferrer"
+										className="message-link"
+									>
+										<div className="image-thumbnail">
+											<span
+												className="thumbnail-icon"
+												role="img"
+												aria-label="Image"
+											>
+												🖼️
+											</span>
+											<span className="thumbnail-text">
+												View Image
+											</span>
+										</div>
+									</a>,
+								);
+							}
+						} else {
+							finalParts.push(
+								<img
+									key={`img-${key++}`}
+									src={url}
+									alt="Attached media"
+									className="message-image"
+									loading="lazy"
+									onError={(e) => {
+										e.currentTarget.classList.add(
+											"image-error",
+										);
+									}}
+								/>,
+							);
+						}
+					} else {
+						const domain = url
+							.replace(/^https?:\/\//, "")
+							.split("/")[0];
+						const displayText = isSmallPhone
+							? `${domain.split(".")[0]}...`
+							: domain;
+						finalParts.push(
+							<a
+								key={`lnk-${key++}`}
+								href={url}
+								target="_blank"
+								rel="noopener noreferrer"
+								className={`message-link ${isSmallPhone ? "compact" : ""}`}
+							>
+								{displayText}
+								<svg
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="none"
+									xmlns="http://www.w3.org/2000/svg"
+									className="external-link-icon"
+									aria-hidden="true"
+								>
+									<path
+										d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3"
+										stroke="currentColor"
+										strokeWidth="2"
+										strokeLinecap="round"
+										strokeLinejoin="round"
+									/>
+								</svg>
+							</a>,
+						);
+					}
+					last = urlMatch.index + url.length;
+					urlMatch = urlRegex.exec(p);
+				}
+				if (last < p.length) finalParts.push(p.slice(last));
+			});
+			return finalParts;
+		};
+
+		segments.forEach((seg) => {
+			if (seg.type === "codeblock") {
+				elements.push(makeCodeBlock(seg.value));
 			} else {
-				const domain = url.replace(/^https?:\/\//, "").split("/")[0];
-				const displayText = isSmallPhone
-					? domain.split(".")[0] + "..."
-					: domain;
-
-				return `<a href="${url}" target="_blank" rel="noopener noreferrer" class="message-link ${isSmallPhone ? "compact" : ""}">
-                  ${displayText}
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="external-link-icon">
-                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6M15 3h6v6M10 14L21 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </a>`;
+				elements.push(...processInline(seg.value));
 			}
 		});
 
-		// Process lists for better mobile display
-		const listRegex = /^([\s]*)[-*+] (.*)/gm;
-		processedContent = processedContent.replace(
-			listRegex,
-			(_, space, item) => {
-				const indentLevel = Math.floor(space.length / 2);
-				const indentClass =
-					indentLevel > 0
-						? ` indent-${Math.min(indentLevel, 3)}`
-						: "";
-				return `<div class="list-item${indentClass}">• ${item}</div>`;
-			},
-		);
-
-		return processedContent;
+		return <>{elements}</>;
 	};
 
-	const messageClass = `message ${from}${status ? " " + status : ""}`;
+	const messageClass = `message ${from}${status ? ` ${status}` : ""}`;
 	const bubbleClass = `bubble${text.length > 300 ? " long-text" : ""}`;
+
+	const isTools = Array.isArray(tools) && status === "tools";
 
 	return (
 		<li
-			className={messageClass}
+			className={messageClass + (isTools ? " tools-message" : "")}
 			aria-label={`${from === "user" ? "You" : "Bot"}: ${typeof text === "string" ? text.replace(/<[^>]*>/g, "") : "Message"}`}
 			data-timestamp={new Date(timestamp).toISOString()}
 		>
-			<div
-				className={bubbleClass}
-				dangerouslySetInnerHTML={{ __html: processContent(text) }}
-			/>
-			{status && (
+			<div className={bubbleClass}>
+				<div>{renderContent(text)}</div>
+				{isTools && (
+					<div className="tools-button-group">
+						{tools.map((tool) => (
+							<button
+								key={tool.command}
+								type="button"
+								className="tool-inline-btn"
+								onClick={() => onToolClick?.(tool)}
+								title={tool.label}
+							>
+								<span className="tool-icon" aria-hidden="true">
+									{tool.icon || "🔧"}
+								</span>
+								<span className="tool-label">{tool.label}</span>
+							</button>
+						))}
+					</div>
+				)}
+			</div>
+			{status && status !== "tools" && (
 				<span className={`status-indicator ${status}`}>
 					{status === "success"
 						? "✓"
@@ -135,28 +300,28 @@ const Message = ({ message, viewport }) => {
 /**
  * MessageList component that renders all chat messages
  */
-const MessageList = ({ messages, viewport, isLoading }) => {
+const MessageList = ({ messages, viewport, isLoading, onToolClick }) => {
 	const { isMobile, isLandscape } = viewport;
 	const chatId = useId();
 
+	const prevCountRef = useRef(messages.length);
 	React.useEffect(() => {
-		// Scroll to bottom when new messages arrive
+		const newCount = messages.length;
+		if (newCount === prevCountRef.current) return; // Only react to count change
+		prevCountRef.current = newCount;
 		const chatElement = document.getElementById(chatId);
-		if (chatElement) {
-			const scrollBehavior = isMobile || isLandscape ? "auto" : "smooth";
-			chatElement.scrollTo({
-				top: chatElement.scrollHeight,
-				behavior: scrollBehavior,
-			});
-
-			// On mobile landscape, ensure content is visible when keyboard appears
-			if (isMobile && isLandscape) {
-				setTimeout(() => {
-					chatElement.scrollTop = chatElement.scrollHeight;
-				}, 100);
-			}
+		if (!chatElement) return;
+		const scrollBehavior = isMobile || isLandscape ? "auto" : "smooth";
+		chatElement.scrollTo({
+			top: chatElement.scrollHeight,
+			behavior: scrollBehavior,
+		});
+		if (isMobile && isLandscape) {
+			setTimeout(() => {
+				chatElement.scrollTop = chatElement.scrollHeight;
+			}, 100);
 		}
-	}, [messages.length, isMobile, isLandscape, chatId]);
+	}, [messages, isMobile, isLandscape, chatId]);
 
 	return (
 		<ul
@@ -171,6 +336,7 @@ const MessageList = ({ messages, viewport, isLoading }) => {
 					key={message.id}
 					message={message}
 					viewport={viewport}
+					onToolClick={onToolClick}
 				/>
 			))}
 			{isLoading && (

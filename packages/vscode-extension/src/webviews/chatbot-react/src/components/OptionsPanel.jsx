@@ -1,4 +1,3 @@
-import React from "react";
 import ChatComposer from "./ChatComposer";
 // File: OptionsPanel.jsx
 // Purpose: Provides the selectable action/instance option UI, start screen and chat composer wrapper.
@@ -117,11 +116,8 @@ const OptionsPanel = ({
 	});
 
 	return (
-		<div
-			className={adjustedClass}
-			role="group"
-			aria-label="Available actions"
-		>
+		<fieldset className={adjustedClass} aria-label="Available actions">
+			<legend className="visually-hidden">Available actions</legend>
 			{enhancedOptions.map((option, index) => (
 				<OptionButton
 					key={option.command || option.id || index}
@@ -132,7 +128,7 @@ const OptionsPanel = ({
 				/>
 			))}
 			{showBack && <BackButton onClick={onBack} label={backLabel} />}
-		</div>
+		</fieldset>
 	);
 };
 
@@ -153,6 +149,7 @@ const InteractionArea = ({
 	currentInstance,
 	instanceUrls,
 	onModelChange,
+	onToolsClick,
 }) => {
 	if (!chatStarted) {
 		return <StartArea onStart={onStart} viewport={viewport} />;
@@ -181,6 +178,7 @@ const InteractionArea = ({
 					<ChatComposer
 						onSend={onSendMessage}
 						onModelChange={onModelChange}
+						onToolsClick={onToolsClick}
 					/>
 				</div>
 			</>
@@ -193,6 +191,7 @@ const InteractionArea = ({
 			<ChatComposer
 				onSend={onSendMessage}
 				onModelChange={onModelChange}
+				onToolsClick={onToolsClick}
 			/>
 		</div>
 	) : null;

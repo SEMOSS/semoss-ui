@@ -35,9 +35,11 @@ const InputDialog = ({ fields, onSubmit, onCancel, isVisible }) => {
 	if (!isVisible || !fields) return null; // after hooks
 
 	const handleInputChange = (field, value, type = "text") => {
+		// For boolean style controls (checkbox / toggle) coerce to boolean
+		const isBooleanControl = type === "checkbox" || type === "toggle";
 		setInputs((prev) => ({
 			...prev,
-			[field]: type === "checkbox" ? !!value : value,
+			[field]: isBooleanControl ? !!value : value,
 		}));
 	};
 
@@ -77,10 +79,14 @@ const InputDialog = ({ fields, onSubmit, onCancel, isVisible }) => {
 						const inputType =
 							cfg.type === "checkbox"
 								? "checkbox"
-								: cfg.type || detectSensitiveType(key);
+								: cfg.type === "toggle"
+									? "toggle"
+									: cfg.type || detectSensitiveType(key);
 						const value =
 							inputs[key] ||
-							(inputType === "checkbox" ? false : "");
+							(inputType === "checkbox" || inputType === "toggle"
+								? false
+								: "");
 						return (
 							<div key={key} className="input-group">
 								<label htmlFor={key}>
@@ -103,6 +109,39 @@ const InputDialog = ({ fields, onSubmit, onCancel, isVisible }) => {
 											)
 										}
 									/>
+								) : inputType === "toggle" ? (
+									<button
+										id={key}
+										type="button"
+										className={`toggle-switch ${value ? "on" : "off"}`}
+										role="switch"
+										aria-checked={!!value}
+										onClick={() =>
+											handleInputChange(
+												key,
+												!value,
+												"toggle",
+											)
+										}
+										onKeyDown={(e) => {
+											if (
+												e.key === "Enter" ||
+												e.key === " "
+											) {
+												e.preventDefault();
+												handleInputChange(
+													key,
+													!value,
+													"toggle",
+												);
+											}
+										}}
+									>
+										<span className="toggle-handle" />
+										<span className="visually-hidden">
+											{cfg.label} {value ? "On" : "Off"}
+										</span>
+									</button>
 								) : (
 									<input
 										id={key}
@@ -151,19 +190,25 @@ const SemossChatbotApp = () => {
 		instanceUrls,
 		currentInstance,
 		addMessage,
+		addToolsMessage,
 		clearChat,
 		executeCommand,
 		saveState,
 	} = useChatState();
 
 	// State for UI interactions
-	const [showOptions, setShowOptions] = React.useState(false);
+	// Static options panel disabled; rely on tools-injected messages
+	const [showOptions, setShowOptions] = React.useState(false); // kept for compatibility with InteractionArea but always false unless explicitly toggled (not used now)
 	const [currentOptions, setCurrentOptions] = React.useState([]);
 	const [showInputDialog, setShowInputDialog] = React.useState(false);
 	const [inputFields, setInputFields] = React.useState(null);
 	const [pendingCommand, setPendingCommand] = React.useState(null);
 	const [showSettings, setShowSettings] = React.useState(false);
+	// Instance selection/removal UI state comes from hook (instancesList, instancesMode)
+	const { instancesList, instancesMode } = useChatState();
 	const [currentModel, setCurrentModel] = React.useState(null);
+	// For inline confirm on remove instance (avoid window.confirm in webview)
+	const [pendingRemoval, setPendingRemoval] = React.useState(null);
 
 	// Update viewport classes on body
 	useEffect(() => {
@@ -221,8 +266,8 @@ const SemossChatbotApp = () => {
 			"Hello! I'm your Semoss assistant. Let me check your project setup.",
 			"bot",
 		);
-		setShowOptions(true);
-		saveState("options");
+		// Do not show static options panel; rely on tools icon per new requirement
+		saveState("started");
 
 		// Check for SMSS file
 		postMessage({ type: "checkSmssFile" });
@@ -269,18 +314,29 @@ const SemossChatbotApp = () => {
 		];
 	}, [hasSmssFile]);
 
-	// Update options when state changes
+	// Keep currentOptions in sync (used when user opens tools) but do not auto-display panel
 	useEffect(() => {
-		if (showOptions) {
-			setCurrentOptions(generateOptions());
-		}
-	}, [showOptions, generateOptions]);
+		setCurrentOptions(generateOptions());
+	}, [generateOptions]);
 
 	// Option click handler
 	const handleOptionClick = (option) => {
 		const { command, label } = option;
 
 		addMessage(label, "user");
+
+		// Intercept instance selection/removal to request list from extension for in-chat UI
+		if (
+			command === "semoss.selectInstance" ||
+			command === "semoss.removeInstance"
+		) {
+			// Ask extension for list of instances (mode select/remove)
+			postMessage({
+				type: "listInstances",
+				mode: command === "semoss.selectInstance" ? "select" : "remove",
+			});
+			return;
+		}
 
 		// Commands that need input collection
 		const inputCommands = {
@@ -304,7 +360,7 @@ const SemossChatbotApp = () => {
 				},
 				isPrivateRepo: {
 					label: "Private Repository",
-					type: "checkbox",
+					type: "toggle",
 					required: false,
 				},
 				accessToken: {
@@ -324,6 +380,17 @@ const SemossChatbotApp = () => {
 			executeCommand(command);
 			// Keep options panel visible
 		}
+	};
+
+	// Tools click handler (from toolbar icon)
+	const handleToolsClick = () => {
+		// Generate current context options and inject as a tools message
+		const tools = generateOptions();
+		if (tools?.length) {
+			addToolsMessage(tools);
+		}
+		// After first injection, hide persistent options panel to reduce duplication
+		if (showOptions) setShowOptions(false);
 	};
 
 	// Input dialog submit handler
@@ -406,15 +473,17 @@ const SemossChatbotApp = () => {
 					messages={chatHistory}
 					viewport={viewport}
 					isLoading={isLoading}
+					onToolClick={handleOptionClick}
 				/>
 
 				<InteractionArea
 					chatStarted={chatStarted}
-					showOptions={showOptions}
+					showOptions={false}
 					options={currentOptions}
 					onStart={handleStart}
 					onOptionClick={handleOptionClick}
 					onSendMessage={handleSendMessage}
+					onToolsClick={handleToolsClick}
 					viewport={viewport}
 					currentInstance={currentInstance}
 					instanceUrls={instanceUrls}
@@ -429,6 +498,88 @@ const SemossChatbotApp = () => {
 				onCancel={handleInputCancel}
 				isVisible={showInputDialog}
 			/>
+
+			{/* Instance selection/removal dialog */}
+			{instancesMode && instancesList && instancesList.length > 0 && (
+				<div className="input-dialog-overlay">
+					<div
+						className={`input-dialog instance-dialog mode-${instancesMode}`}
+					>
+						<h3>
+							{instancesMode === "select"
+								? "Select an Instance"
+								: "Remove an Instance"}
+						</h3>
+						<ul className="instance-list">
+							{instancesList.map((inst) => (
+								<li
+									key={inst.alias}
+									className={`instance-item ${currentInstance === inst.alias ? "current" : ""} ${pendingRemoval === inst.alias ? "pending" : ""}`}
+								>
+									<button
+										type="button"
+										onClick={() => {
+											if (instancesMode === "select") {
+												postMessage({
+													type: "selectInstanceWebview",
+													alias: inst.alias,
+												});
+											} else {
+												// two-click confirm for removal
+												if (
+													pendingRemoval ===
+													inst.alias
+												) {
+													postMessage({
+														type: "removeInstanceWebview",
+														alias: inst.alias,
+													});
+													setPendingRemoval(null);
+												} else {
+													setPendingRemoval(
+														inst.alias,
+													);
+												}
+											}
+										}}
+									>
+										<strong>{inst.alias}</strong>
+										<br />
+										<span className="url">
+											{inst.semossUrl}
+										</span>
+										{instancesMode === "remove" &&
+											pendingRemoval === inst.alias && (
+												<em
+													style={{
+														display: "block",
+														marginTop: 4,
+														color: "#ffb347",
+														fontSize: "0.7rem",
+													}}
+												>
+													Click again to confirm
+													removal
+												</em>
+											)}
+									</button>
+								</li>
+							))}
+						</ul>
+						<button
+							className="close-dialog"
+							type="button"
+							onClick={() => {
+								// clearing handled by sending empty mode
+								postMessage({ type: "clearInstancesMode" });
+								setPendingRemoval(null);
+							}}
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			)}
 
 			<SettingsManager
 				isOpen={showSettings}
