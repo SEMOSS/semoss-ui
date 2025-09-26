@@ -792,14 +792,6 @@ export const LayersPanel = observer(
 				event.stopPropagation();
 				const getJsonForBlock = (id: string) => {
 					const block = state.blocks[id];
-			const handleDuplicate = async (
-				event: React.MouseEvent<HTMLElement>,
-				duplicateId: string,
-			) => {
-				event.preventDefault();
-				event.stopPropagation();
-				const getJsonForBlock = (id: string) => {
-					const block = state.blocks[id];
 
 					const blockJson = {
 						widget: toJS(block.widget),
@@ -813,17 +805,6 @@ export const LayersPanel = observer(
 						listeners: toJS(block.listeners),
 						slots: {},
 					};
-
-					// generate the slots
-					for (const slot in block.slots) {
-						if (block.slots[slot]) {
-							blockJson.slots[slot] = block.slots[
-								slot
-							].children.map((childId) => {
-								return getJsonForBlock(childId);
-							});
-						}
-					}
 					// generate the slots
 					for (const slot in block.slots) {
 						if (block.slots[slot]) {
@@ -838,18 +819,7 @@ export const LayersPanel = observer(
 					// return it
 					return blockJson;
 				};
-					// return it
-					return blockJson;
-				};
 
-				const parentBlock = state.getBlock(block.parent.id);
-				if (parentBlock.widget === "iteration") {
-					notification.add({
-						color: "error",
-						message: `Unable to duplicate ${block.widget} within an Iterator Block`,
-					});
-					return;
-				}
 				const parentBlock = state.getBlock(block.parent.id);
 				if (parentBlock.widget === "iteration") {
 					notification.add({
