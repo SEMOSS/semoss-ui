@@ -672,9 +672,7 @@ export const AppDetailPage = observer(() => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"appDetail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus 
 												? "Pending Access"

@@ -1,4 +1,5 @@
 import { observer } from "mobx-react-lite";
+import { SettingsNavPanel } from "../../components/blocks-workspace/panels";
 import {
 	FileEditorPanel,
 	FileExplorerPanel,
@@ -34,6 +35,13 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						enableClose: false,
 						config: {},
 					},
+					{
+						id: "settings",
+						type: "tab",
+						name: "Settings",
+						component: "settings",
+						config: {},
+					},
 				],
 			},
 			{
@@ -47,13 +55,6 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						name: "Terminal",
 						component: "terminal",
 						enableClose: false,
-						config: {},
-					},
-					{
-						id: "settings",
-						type: "tab",
-						name: "Settings",
-						component: "settings",
 						config: {},
 					},
 				],
@@ -106,8 +107,10 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
 			return <FileEditorPanel path={config.path} />;
 		} else if (component === "renderer") {
 			return <RendererPanel />;
+		} else if (component === "settingsPanel") {
+			return <SettingsPanel value={config.value} />;
 		} else if (component === "settings") {
-			return <SettingsPanel />;
+			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
 		} else if (component === "terminal") {
 			return <TerminalPanel />;
 		}
@@ -115,13 +118,11 @@ export const CodeWorkspace = observer((props: CodeWorkspaceProps) => {
 		return <>{component}</>;
 	};
 	return (
-		<>
-			<Workspace
-				navbarActions={<CodeWorkspaceActions />}
-				options={DEFAULT_OPTIONS}
-				workspace={workspace}
-				factory={FACTORY}
-			/>
-		</>
+		<Workspace
+			navbarActions={<CodeWorkspaceActions />}
+			options={DEFAULT_OPTIONS}
+			workspace={workspace}
+			factory={FACTORY}
+		/>
 	);
 });
