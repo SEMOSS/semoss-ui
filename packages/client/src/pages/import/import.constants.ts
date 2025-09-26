@@ -6058,29 +6058,87 @@ export const CONNECTION_OPTIONS = {
 						rules: { required: true },
 					},
 					{
-						fieldName: "FUNCTION_NAME",
-						label: "Function Name (metadata)",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
-						fieldName: "FUNCTION_DESCRIPTION",
-						label: "Function Description (metadata)",
-						defaultValue: "",
-						options: {
-							component: "text-field",
-						},
-						disabled: false,
-						rules: { required: true },
-					},
-					{
 						fieldName: "FUNCTION_REQUIRED_PARAMETERS",
 						label: "Function Required Parameters",
-						defaultValue: '["isFilePresentInS3","filePath"]',
+						defaultValue: '["S3_FILE_PATH"]',
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+				],
+			},
+			{
+				name: "AWS Transcribe Custom Embeddings",
+				disable: false,
+				icon: AWS_TRANSCRIBE,
+				fields: [
+					{
+						fieldName: "FUNCTION_TYPE",
+						label: "Function Type",
+						defaultValue: "AWS_TRANSCRIBE_CUSTOM_EMBEDDINGS",
+
+						options: {
+							component: "text-field",
+						},
+						disabled: true,
+						rules: { required: true },
+					},
+					{
+						fieldName: "NAME",
+						label: "Name",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "ACCESS_KEY",
+						label: "Access Key",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "SECRET_KEY",
+						label: "Secret Key",
+						defaultValue: "",
+						options: {
+							component: "password",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "REGION",
+						label: "Region",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "S3BUCKETENGINEID",
+						label: "S3 Bucket Engine Id",
+						defaultValue: "",
+						options: {
+							component: "text-field",
+						},
+						disabled: false,
+						rules: { required: true },
+					},
+					{
+						fieldName: "STORAGE_PATH",
+						label: "Storage Path",
+						defaultValue: "",
 						options: {
 							component: "text-field",
 						},

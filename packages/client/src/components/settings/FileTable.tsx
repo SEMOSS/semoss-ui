@@ -625,15 +625,7 @@ export const FileTable = (props: FileTableProps) => {
 									<FileDropzone
 										multiple={true}
 										value={field.value}
-										extensions={[
-											".pdf",
-											".csv",
-											".txt",
-											".doc",
-											".ppt",
-											".docx",
-											".pptx",
-										]}
+										extensions={[]}
 										disabled={isLoading}
 										onChange={(newValues) => {
 											field.onChange(newValues);
