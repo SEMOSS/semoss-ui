@@ -413,38 +413,46 @@ export const NotebookCell = observer(
 		/**
 		 * Create a duplicate cell
 		 */
-		const duplicateCell = async () => {
-			try {
-				// copy and add the step to the end
-				const newCellId = (await state.dispatch({
-					message: ActionMessages.NEW_CELL,
-					payload: {
-						queryId: queryId,
-						previousCellId: cellId,
-						config: {
-							widget: cell.widget,
-							parameters: {
-								...cell.parameters,
-							},
-						},
-					},
-				})) as string;
+		console.log(cell, 'important')
+const duplicateCell = async () => {
+    try {
+        let parameters = { ...cell.parameters };
 
-				state.dispatch({
-					message: ActionMessages.ADD_VARIABLE,
-					payload: {
-						id: `${queryId}--${newCellId}`,
-						type: "cell",
-						to: queryId,
-						cellId: newCellId,
-					},
-				});
+        if (cell.widget === "query-import" || cell.widget === "data-import" || cell.widget === "text-to-sql") {
+            parameters = {
+                ...parameters,
+                frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
+            };
+        }
 
-				notebook.selectCell(queryId, newCellId);
-			} catch (e) {
-				console.error(e);
-			}
-		};
+        // copy and add the step to the end
+        const newCellId = (await state.dispatch({
+            message: ActionMessages.NEW_CELL,
+            payload: {
+                queryId: queryId,
+                previousCellId: cellId,
+                config: {
+                    widget: cell.widget,
+                    parameters,
+                },
+            },
+        })) as string;
+
+        state.dispatch({
+            message: ActionMessages.ADD_VARIABLE,
+            payload: {
+                id: `${queryId}--${newCellId}`,
+                type: "cell",
+                to: queryId,
+                cellId: newCellId,
+            },
+        });
+
+        notebook.selectCell(queryId, newCellId);
+    } catch (e) {
+        console.error(e);
+    }
+};
 
 		const deleteCell = () => {
 			try {
