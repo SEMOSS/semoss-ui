@@ -2,7 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import { Stack, styled, Tabs } from "@semoss/ui";
 import { formatToDataTestId } from "@/utility";
-import { IMPORTABLE_MODELS, type ImportableModels } from "./import.constants";
+import {
+	IMPORTABLE_MODELS,
+	type ImportableModels,
+	MODEL_VERSIONS,
+} from "./model-import.constants";
 
 const StyledTab = styled(Tabs.Item)({
 	fontSize: "14px",
@@ -23,18 +27,6 @@ export const ModelImportFlow: React.FC = () => {
 		getImportableModels();
 	}, []);
 
-	const models = useMemo(() => {
-		if (!importableModels) return [];
-		debugger;
-		const provider =
-			importableModels.providers.find((p) => p.name === selectedProvider)
-				.types || [];
-
-		console.log("prov", provider);
-
-		return provider;
-	}, [selectedProvider]);
-
 	/**
 	 * Fetch the list of importable models from the backend or a static source
 	 */
@@ -46,7 +38,15 @@ export const ModelImportFlow: React.FC = () => {
 		setSelectedProvider(IMPORTABLE_MODELS.providers[0].name);
 	};
 
-	console.log("models", models);
+	// TODO: would be ideal to have a reactor that gets me this ds
+	const models = useMemo(() => {
+		if (!importableModels) return [];
+
+		// TODO: Reactor call
+		const llms: [] = MODEL_VERSIONS[selectedProvider];
+
+		return llms;
+	}, [selectedProvider]);
 
 	return (
 		<div>
@@ -57,7 +57,6 @@ export const ModelImportFlow: React.FC = () => {
 					<Tabs
 						value={selectedProvider}
 						onChange={(_, newValue) => {
-							debugger;
 							setSelectedProvider(newValue);
 						}}
 						variant="scrollable"
@@ -80,8 +79,8 @@ export const ModelImportFlow: React.FC = () => {
 			) : null}
 			{models.map((m, i) => {
 				return (
-					<div key={JSON.stringify(m.model_types)}>
-						<p>{JSON.stringify(m.model_types)}</p>
+					<div key={JSON.stringify(m)}>
+						<p>{JSON.stringify(m)}</p>
 					</div>
 				);
 			})}

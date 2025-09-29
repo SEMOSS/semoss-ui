@@ -1,4 +1,4 @@
-import type { FieldDefinition } from "./import.constants";
+import type { FieldDefinition } from "./model-import.constants";
 
 interface ModelImportFormProps {
 	/**

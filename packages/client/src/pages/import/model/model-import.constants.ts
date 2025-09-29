@@ -1,3 +1,5 @@
+import { default as OPEN_AI } from "@/assets/img/OPEN_AI.png";
+
 export type FieldType =
 	| "text"
 	| "hidden"
@@ -34,6 +36,7 @@ export interface ImportableModels {
 	providers: ProviderDefinition[];
 }
 
+// TODO: Move to backend and fetch via API
 export const IMPORTABLE_MODELS = {
 	providers: [
 		{
@@ -905,6 +908,49 @@ export const IMPORTABLE_MODELS = {
 					],
 				},
 			],
+		},
+	],
+};
+
+// TODO: Move to backend and fetch via API
+// TODO: Can we pull icon from an image url
+export const MODEL_VERSIONS = {
+	OpenAI: [
+		{
+			name: "gpt-3.5",
+			display: "GPT 3.5",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: false,
+		},
+		{
+			name: "gpt-4",
+			display: "GPT 4",
+			icon: OPEN_AI,
+			embedding: false,
+		},
+		{
+			name: "text-davinci",
+			display: "Text Davinci",
+			icon: OPEN_AI,
+			embedding: true,
+		},
+		{
+			name: "dall-e",
+			display: "DALL·E",
+			embedding: false,
+			icon: OPEN_AI,
+		},
+	],
+	Azure: [
+		{
+			name: "azure-openai-gpt-4",
+			display: "Azure Open AI",
+			embedding: false,
+		},
+		{
+			name: "azure-openai-embedding",
+			display: "Azure Open AI Embedding",
+			embedding: true,
 		},
 	],
 };
