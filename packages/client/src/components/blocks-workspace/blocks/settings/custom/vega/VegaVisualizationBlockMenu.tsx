@@ -2,14 +2,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useEffect, useState } from "react";
 import { BlockComponent, useBlock } from "@semoss/renderer";
 import { Accordion, Stack, styled } from "@semoss/ui";
-import {
-	DEFAULT_FALSE_VARIABLE,
-	DEFAULT_TRUE_VARIABLE,
-} from "../../../block-settings/block-defaults.constants";
-import { AIGenerationSettings, JsonSettings, QueryInputSettings } from "../../";
-
-const trueSegment = DEFAULT_TRUE_VARIABLE;
-const falseSegment = DEFAULT_FALSE_VARIABLE;
+import { AIGenerationSettings, JsonSettings } from "../../";
 
 const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
 	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
@@ -27,7 +20,7 @@ const StyledSpan = styled("span")(() => ({
 }));
 export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 	const { data } = useBlock(id);
-	const [expandAccordion, setExpandAccordion] = useState(true);
+	const [expandAccordion, setExpandAccordion] = useState(false);
 	const [_aiOutputJSON, setAIOutputJSON] = useState<string | null>(null);
 	useEffect(() => {
 		console.log(
@@ -36,7 +29,7 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 		);
 	}, [_aiOutputJSON]);
 	return (
-		<Stack padding={2} height="100%">
+		<Stack padding={2} height="100%" justifyContent={"space-between"}>
 			<Accordion
 				expanded={expandAccordion}
 				onChange={() =>
@@ -44,28 +37,19 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 				}
 			>
 				<StyledAccordionTrigger expandIcon={<ExpandMoreIcon />}>
-					<StyledSpan>CONDITIONAL</StyledSpan>
+					<StyledSpan>VEGA JSON</StyledSpan>
 				</StyledAccordionTrigger>
 				<Accordion.Content>
-					<QueryInputSettings
+					<JsonSettings
 						id={id}
-						label="Show Block"
-						path="show"
-						defaultPathMap={{
-							...trueSegment,
-							...falseSegment,
-						}}
+						path="specJson"
+						aiOutputJSON={_aiOutputJSON}
+						height="300px"
 					/>
 				</Accordion.Content>
 			</Accordion>
 			{/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
 			{/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
-			<JsonSettings
-				id={id}
-				path="specJson"
-				aiOutputJSON={_aiOutputJSON}
-				height="300px"
-			/>
 
 			{/* <CodeEditorSettings id={id} path="specJson" /> */}
 			{!data.variation && (

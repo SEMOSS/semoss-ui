@@ -107,7 +107,7 @@ export const AIGenerationSettings = observer(
 		});
 
 		const inputFile = watch("inputFile");
-		const _prompt = watch("prompt");
+		const prompt = watch("prompt");
 		const selectedModel = watch("selectedModel");
 
 		const _isGenerateButtonDisabled =
@@ -175,6 +175,34 @@ export const AIGenerationSettings = observer(
 			}
 		}, [myModels.status, myModels.data]);
 
+		const stringifyOutput = (frameOutput: {
+			headers?: string[];
+			values?: (string | number | boolean)[][];
+			data?: {
+				headers?: string[];
+				values?: (string | number | boolean)[][];
+			};
+		}) => {
+			const headers =
+				frameOutput.headers || frameOutput.data?.headers || [];
+			const values = frameOutput.values || frameOutput.data?.values || [];
+
+			// Map headers to values for each row
+			const mappedData = values.map(
+				(row: (string | number | boolean)[]) => {
+					const rowObject: {
+						[key: string]: string | number | boolean;
+					} = {};
+					headers.forEach((header: string, index: number) => {
+						rowObject[header] = row[index];
+					});
+					return rowObject;
+				},
+			);
+
+			return JSON.stringify(mappedData);
+		};
+
 		const generateAIResponse = async () => {
 			try {
 				// For vega LLM prompting generation
@@ -190,25 +218,8 @@ export const AIGenerationSettings = observer(
 				const response = await monolithStore.runQuery(pixel);
 				console.log("Response from runQuery:", response);
 				const { output: frameOutput } = response.pixelReturn[0];
-				// const { output } = response2.pixelReturn[0];
-				// if (typeof output === "string") {
-				//     const stringedOutput =  output.replace(/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g, "");
-				//     console.log('stringedOutput:', stringedOutput);
-				// }
-				const transformedOutput = {
-					data: {
-						values:
-							frameOutput.values ||
-							frameOutput.data?.values ||
-							[],
-						headers:
-							frameOutput.headers ||
-							frameOutput.data?.headers ||
-							[],
-					},
-				};
-				console.log("transformedOutput:", transformedOutput);
-				const _stringifiedOutput = JSON.stringify(transformedOutput);
+
+				const _stringifiedOutput = stringifyOutput(frameOutput);
 				console.log("String:", _stringifiedOutput);
 				const frameToGraphPixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", DATA_STRING = "<encode>${_stringifiedOutput}</encode>", insightName="${configStore.store.insightID}")`;
 				const frameToGraphPixelResponse =
@@ -216,16 +227,33 @@ export const AIGenerationSettings = observer(
 				const { output: graphOutput } =
 					frameToGraphPixelResponse.pixelReturn[0];
 				if (graphOutput && setAIOutputJSON) {
-					const stringedOutput = graphOutput.replace(
+					// Remove schema and extract content between first { and last }
+					let cleanedOutput = graphOutput.replace(
 						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
 						"",
 					);
-					console.log("stringedOutput:", stringedOutput);
+
+					// Find first opening brace and last closing brace
+					const firstBraceIndex = cleanedOutput.indexOf("{");
+					const lastBraceIndex = cleanedOutput.lastIndexOf("}");
+
+					if (
+						firstBraceIndex !== -1 &&
+						lastBraceIndex !== -1 &&
+						firstBraceIndex < lastBraceIndex
+					) {
+						cleanedOutput = cleanedOutput.substring(
+							firstBraceIndex,
+							lastBraceIndex + 1,
+						);
+					}
+
+					console.log("stringedOutput:", cleanedOutput);
 					console.log(
 						"Setting AI output JSON from generationsettings:",
 						graphOutput,
 					);
-					setAIOutputJSON(stringedOutput);
+					setAIOutputJSON(cleanedOutput);
 				}
 				//Below is another previous LLM prompting code - did not work
 				// setResponseLoading(true);
