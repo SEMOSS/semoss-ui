@@ -37,6 +37,7 @@ import {
 	NotebookExplorerPanel,
 	NotebookViewerPanel,
 	SelectedBlockPanel,
+	SettingsNavPanel,
 	VariablesPanel,
 } from "./panels";
 
@@ -100,7 +101,7 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						name: "Settings",
 						component: "settings",
 						config: {},
-						maxWidth: 1,
+						// maxWidth: 1,
 						helpText: "Settings",
 						enableDrag: false,
 					},
@@ -121,6 +122,21 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 							className: "selected_block",
 						},
 						helpText: "Block Settings",
+					},
+				],
+			},
+			{
+				type: "border",
+				location: "bottom",
+				size: DEFAULT_BORDER_SIZE,
+				children: [
+					{
+						id: "terminal",
+						type: "tab",
+						name: "Terminal",
+						component: "terminal",
+						enableClose: false,
+						config: {},
 					},
 				],
 			},
@@ -147,22 +163,22 @@ const DEFAULT_OPTIONS: WorkspaceOptions = {
 						},
 					],
 				},
-				{
-					type: "tabset",
-					id: "settings-tabset",
-					weight: 0,
-					selected: 0,
-					enableMaximize: true,
-					enableTabStrip: false,
-					children: [
-						{
-							type: "tab",
-							name: "Settings",
-							component: "settingsPanel",
-							enableClose: false,
-						},
-					],
-				},
+				// {
+				// 	type: "tabset",
+				// 	id: "settings-tabset",
+				// 	weight: 0,
+				// 	selected: 0,
+				// 	enableMaximize: true,
+				// 	enableTabStrip: false,
+				// 	children: [
+				// 		{
+				// 			type: "tab",
+				// 			name: "Settings",
+				// 			component: "settingsPanel",
+				// 			enableClose: false,
+				// 		},
+				// 	],
+				// },
 			],
 		},
 	},
@@ -300,9 +316,9 @@ export const BlocksWorkspace = observer((props: BlocksWorkspaceProps) => {
 		} else if (component === "graph") {
 			return <GraphPanel />;
 		} else if (component === "settingsPanel") {
-			return <SettingsPanel />;
+			return <SettingsPanel value={config.value} />;
 		} else if (component === "settings") {
-			return null;
+			return <SettingsNavPanel />; // This is a placeholder for the settings tab, which is handled in the border layout
 		}
 		return <>{component}</>;
 	};
