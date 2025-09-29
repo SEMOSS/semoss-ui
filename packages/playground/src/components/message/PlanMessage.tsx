@@ -1,8 +1,7 @@
 import {
-	Add,
-	CopyAllOutlined,
+	Add, DeleteOutlineOutlined,
 	GridViewRounded,
-	SouthEastOutlined,
+	SouthEastOutlined
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import {
@@ -25,17 +24,15 @@ const StyledPlanMessage = styled(Stack)(({ theme }) => ({
 	boxShadow: theme.shadows[1],
 }));
 
-const StyledHover = styled("div")(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "flex-end",
-	flex: 1,
-	opacity: 0,
-	width: "100%",
-	"&:hover": {
+const StyledHover = styled(Stack)(() => ({
+	'& [data-hover="true"]': {
+		opacity: 0,
+	},
+	"&:hover [data-hover='true']": {
 		opacity: 1,
 	},
 }));
+
 
 const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
 	padding: "8px",
@@ -63,22 +60,6 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 					<SouthEastOutlined
 						sx={{ color: "#757575", fontSize: "1rem" }}
 					/>
-					<StyledHover>
-						<Stack
-							direction={"row"}
-							alignItems={"center"}
-							spacing={1}
-						>
-							<IconButton
-								size="small"
-								onClick={() => {
-									console.log("hi");
-								}}
-							>
-								<CopyAllOutlined fontSize="inherit" />
-							</IconButton>
-						</Stack>
-					</StyledHover>
 				</Stack>
 				<Typography variant="body1">
 					Here is the plan that I have created. Feel free to modify it
@@ -93,18 +74,35 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 								completed={s.status === "completed"}
 							>
 								<Stepper.StepLabel
-									// StepIconProps={{
-									// 	icon: "",
-									// }}
 									error={s.status === "failed"}
-									sx={{ alignItems: "flex-start" }}
 								>
-									<Typography
-										variant="subtitle2"
-										fontWeight={500}
-									>
-										{`Step ${s.step_number}`}
-									</Typography>
+									<StyledHover direction={"row"} spacing={1} alignItems={'center'}>
+										<Typography
+											variant="subtitle2"
+											fontWeight={500}
+										>
+											{`Step ${s.step_number}`}
+										</Typography>
+										<Stack
+											flex={1}
+											direction={"row"}
+											alignItems={"center"}
+											justifyContent={"flex-end"}
+											spacing={1}
+											data-hover={true}
+										>
+											<IconButton
+												size="small"
+												onClick={() => {
+													console.log("TODO");
+												}}
+											>
+												<DeleteOutlineOutlined color="error" fontSize="inherit" />
+											</IconButton>
+										</Stack>
+									</StyledHover>
+								</Stepper.StepLabel>
+								<Stepper.StepContent>
 									<Typography variant="caption">
 										{s.description}
 									</Typography>
@@ -144,56 +142,56 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 
 									{s.details.stepType ===
 										"human_intervention" && (
-										<Typography variant="body2">
-											Ask a {s.details.required_role} to{" "}
-											{s.details.instructions}
-										</Typography>
-									)}
+											<Typography variant="body2">
+												Ask a {s.details.required_role} to{" "}
+												{s.details.instructions}
+											</Typography>
+										)}
 									{s.details.stepType ===
 										"no_tool_available" && (
-										<StyledSidebarOpen
-											direction={"row"}
-											alignItems={"center"}
-											spacing={2}
-											onClick={() => {
-												console.log("TODO");
-											}}
-										>
-											<GridViewRounded
-												fontSize="medium"
-												sx={{ color: "#757575" }}
-											/>
-											<Stack
-												direction={"column"}
-												spacing={1}
-												flex={1}
+											<StyledSidebarOpen
+												direction={"row"}
+												alignItems={"center"}
+												spacing={2}
+												onClick={() => {
+													console.log("TODO");
+												}}
 											>
-												<Typography
-													variant="body1"
-													noWrap={true}
+												<GridViewRounded
+													fontSize="medium"
+													sx={{ color: "#757575" }}
+												/>
+												<Stack
+													direction={"column"}
+													spacing={1}
+													flex={1}
 												>
-													Missing Tool for{" "}
-													{
-														s.details
-															.missing_capability
-													}
-												</Typography>
-												<Typography variant="caption">
-													Click to Add
-												</Typography>
-											</Stack>
-										</StyledSidebarOpen>
-									)}
+													<Typography
+														variant="body1"
+														noWrap={true}
+													>
+														Missing Tool for{" "}
+														{
+															s.details
+																.missing_capability
+														}
+													</Typography>
+													<Typography variant="caption">
+														Click to Add
+													</Typography>
+												</Stack>
+											</StyledSidebarOpen>
+										)}
 
 									<Typography variant="caption">
 										{s.details.rationaleForStep}
 									</Typography>
-								</Stepper.StepLabel>
+								</Stepper.StepContent>
 							</Stepper.Step>
 						))}
 					</Stepper>
 				)}
-				<Stack>
+				<Stack direction="row">
 					<Button
 						size="small"
 						variant="text"

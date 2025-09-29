@@ -421,12 +421,8 @@ export class RoomStore {
 
 			// get the parent message
 			const parentMessage = this.tail;
-			console.log(parentMessage);
-			if (
-				parentMessage instanceof ResponseMessageStore === false &&
-				parentMessage instanceof RootMessageStore === false
-			) {
-				throw new Error("Can only ask model to a response message");
+			if (parentMessage instanceof InputMessageStore) {
+				throw new Error("Cannot respond to an input message");
 			}
 
 			// create the input message
@@ -642,11 +638,10 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 
 			// get the parent message
 			const parentMessage = this.tail;
-			if (
-				parentMessage instanceof ResponseMessageStore === false &&
-				parentMessage instanceof RootMessageStore === false
-			) {
-				throw new Error("Can only ask model to a response message");
+			if (parentMessage instanceof RootMessageStore === false) {
+				throw new Error(
+					"Can only generate the plan for the first message",
+				);
 			}
 
 			// build the context if it is there
@@ -892,7 +887,10 @@ paramValues=[${JSON.stringify({
 	 * @param inputMessage - input message to send
 	 */
 	private runMessage = async (
-		parentMessage: ResponseMessageStore | RootMessageStore,
+		parentMessage:
+			| ResponseMessageStore
+			| PlanMessageStore
+			| RootMessageStore,
 		inputMessage: InputMessageStore,
 	): Promise<void> => {
 		// connect to the parent

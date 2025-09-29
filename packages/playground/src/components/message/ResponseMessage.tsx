@@ -29,7 +29,17 @@ const StyledResponseMessage = styled(Stack)(({ theme }) => ({
 	boxShadow: theme.shadows[1],
 }));
 
-const StyledHover = styled("div")(() => ({
+const StyledHover = styled(Stack)(() => ({
+	'& [data-hover="true"]': {
+		opacity: 0,
+	},
+	"&:hover [data-hover='true']": {
+		opacity: 1,
+	},
+}));
+
+
+const StyledHover2 = styled("div")(() => ({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "flex-end",
@@ -122,97 +132,98 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 
 		return (
 			<StyledResponseMessage direction={"column"} spacing={2}>
-				<Stack direction="row" alignItems={"center"} spacing={1}>
+				<StyledHover direction="row" alignItems={"center"} spacing={1}>
 					<Typography variant="caption">Response</Typography>
 					<SouthEastOutlined
 						sx={{ color: "#757575", fontSize: "1rem" }}
 					/>
-					<StyledHover>
-						<Stack
-							direction={"row"}
-							alignItems={"center"}
-							spacing={1}
-						>
-							{inputMessage?.siblings.length > 1 && (
-								<>
-									<IconButton
-										size="small"
-										disabled={!inputMessage.previousSibling}
-										onClick={() => {
-											if (!inputMessage.previousSibling) {
-												return;
-											}
-
-											inputMessage.previousSibling.activateMessage();
-										}}
-									>
-										<ChevronLeftOutlined fontSize="inherit" />
-									</IconButton>
-									<Typography variant="caption">
-										{inputMessage.position + 1}/
-										{inputMessage.siblings.length}
-									</Typography>
-									<IconButton
-										size="small"
-										disabled={!inputMessage.nextSibling}
-										onClick={() => {
-											if (!inputMessage.nextSibling) {
-												return;
-											}
-
-											inputMessage.nextSibling.activateMessage();
-										}}
-									>
-										<ChevronRightOutlined fontSize="inherit" />
-									</IconButton>
-								</>
-							)}
-
-							{inputMessage && (
+					<Stack
+						flex={1}
+						direction={"row"}
+						alignItems={"center"}
+						justifyContent={"flex-end"}
+						spacing={1}
+						data-hover={true}
+					>
+						{inputMessage?.siblings.length > 1 && (
+							<>
 								<IconButton
 									size="small"
+									disabled={!inputMessage.previousSibling}
 									onClick={() => {
-										rewriteMessage();
+										if (!inputMessage.previousSibling) {
+											return;
+										}
+
+										inputMessage.previousSibling.activateMessage();
 									}}
 								>
-									<RefreshOutlined fontSize="inherit" />
+									<ChevronLeftOutlined fontSize="inherit" />
 								</IconButton>
-							)}
+								<Typography variant="caption">
+									{inputMessage.position + 1}/
+									{inputMessage.siblings.length}
+								</Typography>
+								<IconButton
+									size="small"
+									disabled={!inputMessage.nextSibling}
+									onClick={() => {
+										if (!inputMessage.nextSibling) {
+											return;
+										}
 
+										inputMessage.nextSibling.activateMessage();
+									}}
+								>
+									<ChevronRightOutlined fontSize="inherit" />
+								</IconButton>
+							</>
+						)}
+
+						{inputMessage && (
 							<IconButton
 								size="small"
 								onClick={() => {
-									recordFeedback(true);
+									rewriteMessage();
 								}}
 							>
-								<ThumbUpAltOutlined fontSize="inherit" />
+								<RefreshOutlined fontSize="inherit" />
 							</IconButton>
+						)}
 
-							<IconButton
-								size="small"
-								onClick={() => {
-									recordFeedback(false);
-								}}
-							>
-								<ThumbDownOffAltOutlined fontSize="inherit" />
-							</IconButton>
+						<IconButton
+							size="small"
+							onClick={() => {
+								recordFeedback(true);
+							}}
+						>
+							<ThumbUpAltOutlined fontSize="inherit" />
+						</IconButton>
 
-							<IconButton
-								size="small"
-								disabled={!message.text}
-								onClick={() => {
-									if (!message.text) {
-										return;
-									}
+						<IconButton
+							size="small"
+							onClick={() => {
+								recordFeedback(false);
+							}}
+						>
+							<ThumbDownOffAltOutlined fontSize="inherit" />
+						</IconButton>
 
-									copyMessage(message.text);
-								}}
-							>
-								<CopyAllOutlined fontSize="inherit" />
-							</IconButton>
-						</Stack>
-					</StyledHover>
-				</Stack>
+						<IconButton
+							size="small"
+							disabled={!message.text}
+							onClick={() => {
+								if (!message.text) {
+									return;
+								}
+
+								copyMessage(message.text);
+							}}
+						>
+							<CopyAllOutlined fontSize="inherit" />
+						</IconButton>
+					</Stack>
+				</StyledHover>
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
 				{message.tools.length > 0 && (
 					<Stepper orientation="vertical">
