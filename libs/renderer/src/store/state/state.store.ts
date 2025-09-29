@@ -889,6 +889,7 @@ export class StateStore {
 					? variable.value
 					: null,
 			);
+			console.log(value, 'value', this._store.variables[path[0]]);
 
 			// TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
 			if (value !== undefined && value !== null) {
@@ -908,15 +909,13 @@ export class StateStore {
 						val = value;
 					}
 				}
+				console.log(val, 'val');
 				if (val) {
-					const returnData = getValueByPath(
-						val as object,
-						path.slice(1).join("."),
-					);
-					return typeof returnData === "string" && returnData
-						? returnData
+					return val && typeof val === "string"
+						? val
 						: JSON.stringify(val);
 				} else {
+					console.log('value',value);
 					return value;
 				}
 			}
@@ -928,7 +927,57 @@ export class StateStore {
 					this._store.variables?.[pathTemp[index]] || {};
 				index++;
 				const valueBasedIndexOpt: Record<string, unknown> = {};
-				while (pathTemp[index]) {
+				while (pathTemp[index]){
+					if(valueBasedIndexOpt?.[pathTemp[index - 1]]){
+						if(typeof valueBasedIndexOpt[pathTemp[index - 1]] === "string" && (valueBasedIndexOpt[pathTemp[index - 1]] as string).trim().match(/^{{.*}}$/)){
+							const innerValue = this.parseVariable(valueBasedIndexOpt?.[pathTemp[index - 1]] as string, id, _depth + 1, _seen);
+							valueBasedIndexOpt[pathTemp[index - 1]] = typeof innerValue === "string" ? JSON.parse(innerValue as string) : innerValue;
+						}
+						valueBasedIndexOpt[pathTemp[index]] = valueBasedIndexOpt?.[pathTemp[index - 1]]?.[pathTemp[index]] ? (getValueByPath(valueBasedIndexOpt[pathTemp[index - 1]] as unknown as object, pathTemp[index]) || "") : "";
+					}
+					else{
+						if(variable?.type && (variable?.type === 'cell' || variable?.type === 'query')){
+							const cellList = this._store.queries[variable?.to]?.cellList || [];
+							const cellId = variable?.cellId;
+							let cellObj: CellState | Record<string, unknown> = {};
+							if(variable?.type === "cell"){
+								cellObj = cellList.find((c) => c.id === cellId) || {};
+							}
+							if(variable?.type === "query"){
+								cellObj = cellList[cellList.length - 1] || null;
+							}
+							if(cellObj?.[pathTemp[index]]) {
+							if (
+								typeof cellObj?.[pathTemp[index]] === "string" &&
+								cellObj?.[pathTemp[index]].trim().match(/^{{.*}}$/)
+							) {
+								cellObj[pathTemp[index]] = this.parseVariable(cellObj?.[pathTemp[index]], id, _depth + 1, _seen);
+							}
+							const pathData = typeof cellObj?.[pathTemp[index]] === "string" ? JSON.parse(cellObj?.[pathTemp[index]]) : cellObj?.[pathTemp[index]];
+							valueBasedIndexOpt[pathTemp[index]] = pathData || "";
+							}
+						} else if (variable.type && variable?.type === 'block'){
+							const blockData = this._store.blocks[variable?.to]?.data?.value || null;
+							if(typeof blockData === "string" && blockData.trim().match(/^{{.*}}$/)){
+								const innerVariable = this.parseVariable(blockData as string, id, _depth + 1, _seen);
+								const blockDataParsed = typeof innerVariable === 'string' ? JSON.parse(innerVariable) : innerVariable;
+								valueBasedIndexOpt[pathTemp[index]] = blockDataParsed?.[pathTemp[index]] || "";
+							}else{
+								if(typeof blockData === "string"){
+									const blockDataParsed = JSON.parse(blockData);
+									valueBasedIndexOpt[pathTemp[index]] = blockDataParsed[pathTemp[index]];
+								} else{
+									valueBasedIndexOpt[pathTemp[index]] = blockData || "";
+								}
+							}
+						}
+						// else{
+						// 	console.log(variable, 'variable');
+						// }
+					}
+					index++;
+				}
+				/*while (pathTemp[index]) {
 					let variableDatawithProps = {data: {}, needsParsing: false, needsParseVariable: false};
 					if (variable?.type === "cell") {
 						const cellList =
@@ -940,10 +989,11 @@ export class StateStore {
 							Object.hasOwn(cellObj, "id") &&
 							cellObj?.[pathTemp[index]]
 						) {
-							variableDatawithProps = {data: cellObj[pathTemp[index]]?.output, needsParsing: true, needsParseVariable: false};
+							variableDatawithProps = {data: cellObj[pathTemp[index]], needsParsing: true, needsParseVariable: false};
 						} else {
 							variableDatawithProps = {data: "", needsParsing: false, needsParseVariable: false};
 						}
+						console.log(cellObj[pathTemp[index]], 'cell');
 					}
 					if (variable?.type === "block") {
 						const blockData =
@@ -962,6 +1012,7 @@ export class StateStore {
 								variableDatawithProps = {data: blockData, needsParsing: false, needsParseVariable: false};
 							}
 						}
+						console.log(blockData, 'block');
 					}
 					if (variable?.type === "query") {
 						const queryData =
@@ -973,7 +1024,7 @@ export class StateStore {
 							variableDatawithProps = {data: queryData, needsParsing: true, needsParseVariable: true};
 						} else {
 								const queryOutput =
-									queryData[queryData.length - 1]?.output ||
+									queryData[queryData.length - 1] ||
 									null;
 								if (typeof queryOutput === "string") {
 									variableDatawithProps = {data: queryOutput, needsParsing: true, needsParseVariable: false};
@@ -981,11 +1032,13 @@ export class StateStore {
 									variableDatawithProps = {data: queryOutput, needsParsing: false, needsParseVariable: false};
 								}
 						}
+						console.log(queryData, queryData[queryData.length - 1], 'query');
 					}
 					let finalDataToApply = variableDatawithProps.data;
 					if(variableDatawithProps.needsParseVariable){
 						finalDataToApply = this.parseVariable(variableDatawithProps.data as string, id, _depth + 1, _seen);
 					}
+					console.log(finalDataToApply, typeof finalDataToApply, 'finalDataToApply');
 					if(typeof finalDataToApply === 'string' && finalDataToApply){
 						const valueParsed = finalDataToApply.replace(/(\w+):/g, '"$1":');
 						try {
@@ -994,10 +1047,12 @@ export class StateStore {
 							finalDataToApply = valueParsed;
 						}
 					}
-					valueBasedIndexOpt[pathTemp[index]] = finalDataToApply?.[pathTemp[index]] || "";
+					console.log(finalDataToApply, 'finalDataToApplyAFTER parse');
+					valueBasedIndexOpt[pathTemp[index]] = finalDataToApply || "";
+					console.log(valueBasedIndexOpt, 'valueBasedIndexOpt', pathTemp[index], valueBasedIndexOpt[pathTemp[index]]);
 					index++;
-				}
-				
+				}*/
+				console.log(valueBasedIndexOpt, pathTemp.slice(1).join("."), 'FINALvalueBasedIndexOpt');
 				return (
 					getValueByPath(
 						valueBasedIndexOpt,
