@@ -664,9 +664,7 @@ export const AppDetailPage = () => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"appDetail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus || pendingRequest
 												? "Pending Access"

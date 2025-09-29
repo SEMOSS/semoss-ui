@@ -139,7 +139,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	/**
 	 * Handle the mouseup event on the document
 	 */
-		const handleDocumentMouseUp = useCallback(async () => {
+	const handleDocumentMouseUp = useCallback(async () => {
 		if (!designer.drag.active) {
 			return;
 		}
@@ -230,57 +230,57 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							return;
 						}
 					}
-					   id = await state.dispatch({
-						   message: ActionMessages.ADD_BLOCK,
-						   payload: {
-							   json: item.json,
-							   position: {
-								   parent: siblingWidget.parent.id,
-								   slot: siblingWidget.parent.slot,
-								   sibling: siblingWidget.id,
-								   type: placeholderAction.type,
-							   },
-							   isCommunity: isCommunity,
-						   },
-					   }) as string;
+					id = (await state.dispatch({
+						message: ActionMessages.ADD_BLOCK,
+						payload: {
+							json: item.json,
+							position: {
+								parent: siblingWidget.parent.id,
+								slot: siblingWidget.parent.slot,
+								sibling: siblingWidget.id,
+								type: placeholderAction.type,
+							},
+							isCommunity: isCommunity,
+						},
+					})) as string;
 				}
-			   } else if (placeholderAction.type === "replace") {
-				   id = await state.dispatch({
-					   message: ActionMessages.ADD_BLOCK,
-					   payload: {
-						   json: item.json,
-						   position: {
-							   parent: placeholderAction.id,
-							   slot: placeholderAction.slot,
-						   },
-						   isCommunity: isCommunity,
-					   },
-				   }) as string;
+			} else if (placeholderAction.type === "replace") {
+				id = (await state.dispatch({
+					message: ActionMessages.ADD_BLOCK,
+					payload: {
+						json: item.json,
+						position: {
+							parent: placeholderAction.id,
+							slot: placeholderAction.slot,
+						},
+						isCommunity: isCommunity,
+					},
+				})) as string;
 
 				if (sw.widget === "iteration") {
-					   await state.dispatch({
-						   message: ActionMessages.SET_BLOCK_DATA,
-						   payload: {
-							   id: placeholderAction.id,
-							   path: "child",
-							   value: state.getBlock(id),
-						   },
-					   });
+					await state.dispatch({
+						message: ActionMessages.SET_BLOCK_DATA,
+						payload: {
+							id: placeholderAction.id,
+							path: "child",
+							value: state.getBlock(id),
+						},
+					});
 				}
 			}
 		}
 
 		// TODO: REFACTOR
 		// Add variables for all blocks that are inputs from user
-		   if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1 && !isCommunity) {
-			   await state.dispatch({
-				   message: ActionMessages.ADD_VARIABLE,
-				   payload: {
-					   id: id,
-					   type: "block",
-					   to: id,
-				   },
-			   });
+		if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1 && !isCommunity) {
+			await state.dispatch({
+				message: ActionMessages.ADD_VARIABLE,
+				payload: {
+					id: id,
+					type: "block",
+					to: id,
+				},
+			});
 		}
 
 		// clear the drag

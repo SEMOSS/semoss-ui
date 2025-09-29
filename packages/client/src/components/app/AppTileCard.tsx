@@ -201,7 +201,7 @@ const StyledIconButton = styled(IconButton)(({ theme }) => ({
 	width: "28px",
 	borderRadius: "24px",
 	zIndex: 1,
-	"&.MuiButtonBase-root:hover": {
+	"&.MuiButtonBase-root :hover": {
 		backgroundColor: theme.palette.background.paper,
 		borderRadius: "24px",
 		$icon: {
@@ -481,19 +481,20 @@ export const AppTileCard = (props: AppTileCardProps) => {
 
 	// Function to generate the API URL
 	const generateProjectImageURL = (appId: string): string => {
-		const safeId = encodeURIComponent(appId);
-		return `${Env.MODULE}/api/project-${safeId}/projectImage/download`;
+		return `${Env.MODULE}/api/project-${appId}/projectImage/download`;
 	};
 
-  useEffect(() => {
-    if (isLoading) {
-      setLoading(true);
-    } else {
-      setLoading(false);
-    }
-  }, [isLoading]);
+	useEffect(() => {
+		if (isLoading) {
+			setLoading(true);
+		} else {
+			setLoading(false);
+		}
+	}, [isLoading]);
 
-  const tags = app.tag ? (Array.isArray(app.tag) ? app.tag : [app.tag]).filter(Boolean) : [];
+	const tags = app.tag
+		? (Array.isArray(app.tag) ? app.tag : [app.tag]).filter(Boolean)
+		: [];
 
 	// Intersection Observer to detect if card is in viewport
 	useEffect(() => {
@@ -750,244 +751,267 @@ export const AppTileCard = (props: AppTileCardProps) => {
 		);
 	}
 
-  return (
-    <StyledMainDiv ref={cardRef}>
-      <StyledTileCard
-        disabled={!href}
-        style={{ position: "relative" }}
-        data-testid={formatToDataTestId(`appTileCard-${app.project_name}-tile`)}
-      >
-        {!systemApp && !isDiscoverable && (
-          <StyledContainer>
-            <StyledOverlayContent>
-              <StyledIconButton
-                size={"small"}
-                title={
-                  isFavorite
-                    ? `Unbookmark ${app.project_name ? app.project_name : ""}`
-                    : `Bookmark ${app.project_name ? app.project_name : ""}`
-                }
-                onClick={(e) => {
-                  e.stopPropagation();
-                  favorite(isFavorite);
-                }}
-              >
-                {isFavorite ? <Bookmark color="primary" /> : <BookmarkBorder />}
-              </StyledIconButton>
-            </StyledOverlayContent>
-          </StyledContainer>
-        )}
-        <Link
-          href={href}
-          rel="noopener noreferrer"
-          color="inherit"
-          underline="none"
-        >
-          {loading && isLoading ? (
-            // Show skeleton for image when loading
-            <StyledSkeletonImage>
-              <SkeletonMain variant="rectangular" width="100%" height="77px" />
-            </StyledSkeletonImage>
-          ) : (
-            <StyledTileCardMedia
-              src="img"
-              image={base64Image ? base64Image : image ? image : ""}
-              sx={StyledCardImage}
-              onError={(e) => {
-                // Fallback to default image if base64 image fails to load
-                const target = e.target as HTMLImageElement;
-                if (base64Image && image) {
-                  target.src = image;
-                }
-              }}
-            />
-          )}
-          <StyledCardContentSection>&nbsp;</StyledCardContentSection>
-          <StyledContent>
-            <StyledCardHeader
-              title={
-                <StyledName variant={"body2"}>
-                  {removeUnderscores(app.project_name)}
-                </StyledName>
-              }
-            />
-            <StyledCardContent>
-              <StyledCardDescription variant={"caption"}>
-                {app.description ? app.description : "No description available"}
-              </StyledCardDescription>
-              <Stack
-                direction="row"
-                alignItems="center"
-                spacing={0.5}
-                height={"24px"}
-              >
-                {tags.length > 0 && (
-                  <>
-                    {tags.slice(0, 3).map((tag, i) => (
-                      <StyledTagChip
-                        key={`${app.project_id}${i}`}
-                        maxWidth={
-                          tags.length === 2
-                            ? "100px"
-                            : tags.length === 1
-                            ? "200px"
-                            : "75px"
-                        }
-                        label={tag}
-                      />
-                    ))}
-                    {tags.length > 3 && (
-                      <Typography variant="caption">
-                        +{tags.length - 3}
-                      </Typography>
-                    )}
-                  </>
-                )}
-              </Stack>
-              {createdDate && (
-                <StyledPublishedByContainer>
-                  <StyledAccessTimeIcon />
-                  <StyledPublishedByLabel variant={"body2"}>
-                    {createdDate}
-                  </StyledPublishedByLabel>
-                </StyledPublishedByContainer>
-              )}
-              {lastEditedDate && (
-                <StyledPublishedByContainer>
-                  <StyledAccessTimeIcon />
-                  <StyledPublishedByLabel variant={"body2"}>
-                    {lastEditedDate}
-                  </StyledPublishedByLabel>
-                </StyledPublishedByContainer>
-              )}
-              {systemApp && !appDetails && <StyledPlaceholder />}
-            </StyledCardContent>
-            <StyledCardActions>
-              {!href ? (
-                <StyledFooter>
-                  <StyledOpenButton onClick={onAction} size="small">
-                    <StyledFooterDiv>
-                      <ButtonName>Open App</ButtonName>
-                      <OpenInNewOutlinedIcon fontSize="small" />
-                    </StyledFooterDiv>
-                  </StyledOpenButton>
-                </StyledFooter>
-              ) : (
-                <StyledFooter>
-                  <StyledOpenButton
-                    onClick={(e) => {
-                      e.preventDefault(); // Prevent <Link> navigation
-                      e.stopPropagation(); // Prevent bubbling to <Link>
-                      if (href) {
-                        window.open(href, "_blank", "noopener,noreferrer");
-                      }
-                    }}
-                    size="small"
-                  >
-                    <StyledFooterDiv>
-                      <ButtonName>Open App</ButtonName>
-                      <OpenInNewOutlinedIcon fontSize="small" />
-                    </StyledFooterDiv>
-                  </StyledOpenButton>
-                </StyledFooter>
-              )}
-              {app.project_created_by !== "SYSTEM" ? (
-                <StyledOpenButton
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigateApp(app.project_id);
-                  }}
-                  size="small"
-                >
-                  <ViewDetailsButton>
-                    <ViewDetailsButtonName>View Details</ViewDetailsButtonName>
-                  </ViewDetailsButton>
-                </StyledOpenButton>
-              ) : null}
-              {app.project_created_by !== "SYSTEM" ? (
-                <IconButton
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setAnchorEl(
-                      e.currentTarget.closest(
-                        ".MuiCard-root"
-                      ) as HTMLElement | null
-                    ); // Set the card as the anchor element
-                  }}
-                  size="small"
-                >
-                  <MoreVert />
-                </IconButton>
-              ) : null}
-            </StyledCardActions>
-          </StyledContent>
-        </Link>
-        <StyledMenu
-          anchorEl={anchorEl}
-          open={open}
-          onClose={() => {
-            setAnchorEl(null);
-          }}
-          anchorOrigin={{
-            vertical: "bottom", // Anchor to the bottom of the card
-            horizontal: "right", // Anchor to the right of the card
-          }}
-          transformOrigin={{
-            vertical: "top", // Transform from the top of the menu
-            horizontal: "right", // Transform from the right of the menu
-          }}
-        >
-          <Menu.Item
-            value="copy"
-            onClick={() => {
-              copyProjectId(app.project_id);
-              setAnchorEl(null);
-            }}
-          >
-            Copy App ID
-          </Menu.Item>
-          {app?.user_permission && app.user_permission < 2 && (
-            <Menu.Item
-              value="clone"
-              onClick={() => {
-                setIsUploadOpen(true);
-              }}
-            >
-              Clone This App
-            </Menu.Item>
-          )}
-          {app?.user_permission && app.user_permission < 2 && (
-            <Menu.Item
-              value="delete"
-              onClick={() => {
-                setIsAppDeleteModalOpen(true);
-              }}
-            >
-              Delete App
-            </Menu.Item>
-          )}
-        </StyledMenu>
-        <AppDeleteModal
-          isOpen={isAppDeleteModalOpen}
-          onClose={() => {
-            setIsAppDeleteModalOpen(false);
-            setAnchorEl(null);
-          }}
-          appId={app.project_id}
-          onDelete={() => {
-            onDelete();
-          }}
-        />
-        {isUploadOpen ? (
-          <AddAppCloneModal
-            open={isUploadOpen}
-            appId={app.project_id}
-            handleClose={(appId) => {
-              console.log("ok");
-              // if there is an appId navigate to it
-              if (appId) {
-                navigateApp(appId);
-              }
+	return (
+		<StyledMainDiv ref={cardRef}>
+			<StyledTileCard
+				disabled={!href}
+				style={{ position: "relative" }}
+				data-testid={formatToDataTestId(
+					`appTileCard-${app.project_name}-tile`,
+				)}
+			>
+				{!systemApp && !isDiscoverable && (
+					<StyledContainer>
+						<StyledOverlayContent>
+							<StyledIconButton
+								size={"small"}
+								title={
+									isFavorite
+										? `Unbookmark ${app.project_name ? app.project_name : ""}`
+										: `Bookmark ${app.project_name ? app.project_name : ""}`
+								}
+								onClick={(e) => {
+									e.stopPropagation();
+									favorite(isFavorite);
+								}}
+							>
+								{isFavorite ? (
+									<Bookmark color="primary" />
+								) : (
+									<BookmarkBorder />
+								)}
+							</StyledIconButton>
+						</StyledOverlayContent>
+					</StyledContainer>
+				)}
+				<Link
+					href={href}
+					rel="noopener noreferrer"
+					color="inherit"
+					underline="none"
+				>
+					{loading && isLoading ? (
+						// Show skeleton for image when loading
+						<StyledSkeletonImage>
+							<SkeletonMain
+								variant="rectangular"
+								width="100%"
+								height="77px"
+							/>
+						</StyledSkeletonImage>
+					) : (
+						<StyledTileCardMedia
+							src="img"
+							image={
+								base64Image ? base64Image : image ? image : ""
+							}
+							sx={StyledCardImage}
+							onError={(e) => {
+								// Fallback to default image if base64 image fails to load
+								const target = e.target as HTMLImageElement;
+								if (base64Image && image) {
+									target.src = image;
+								}
+							}}
+						/>
+					)}
+					<StyledCardContentSection>&nbsp;</StyledCardContentSection>
+					<StyledContent>
+						<StyledCardHeader
+							title={
+								<StyledName variant={"body2"}>
+									{removeUnderscores(app.project_name)}
+								</StyledName>
+							}
+						/>
+						<StyledCardContent>
+							<StyledCardDescription variant={"caption"}>
+								{app.description
+									? app.description
+									: "No description available"}
+							</StyledCardDescription>
+							<Stack
+								direction="row"
+								alignItems="center"
+								spacing={0.5}
+								height={"24px"}
+							>
+								{tags.length > 0 && (
+									<>
+										{tags.slice(0, 3).map((tag, i) => (
+											<StyledTagChip
+												key={`${app.project_id}${i}`}
+												maxWidth={
+													tags.length === 2
+														? "100px"
+														: tags.length === 1
+															? "200px"
+															: "75px"
+												}
+												label={tag}
+											/>
+										))}
+										{tags.length > 3 && (
+											<Typography variant="caption">
+												+{tags.length - 3}
+											</Typography>
+										)}
+									</>
+								)}
+							</Stack>
+							{createdDate && (
+								<StyledPublishedByContainer>
+									<StyledAccessTimeIcon />
+									<StyledPublishedByLabel variant={"body2"}>
+										{createdDate}
+									</StyledPublishedByLabel>
+								</StyledPublishedByContainer>
+							)}
+							{lastEditedDate && (
+								<StyledPublishedByContainer>
+									<StyledAccessTimeIcon />
+									<StyledPublishedByLabel variant={"body2"}>
+										{lastEditedDate}
+									</StyledPublishedByLabel>
+								</StyledPublishedByContainer>
+							)}
+							{systemApp && !appDetails && <StyledPlaceholder />}
+						</StyledCardContent>
+						<StyledCardActions>
+							{!href ? (
+								<StyledFooter>
+									<StyledOpenButton
+										onClick={onAction}
+										size="small"
+									>
+										<StyledFooterDiv>
+											<ButtonName>Open App</ButtonName>
+											<OpenInNewOutlinedIcon fontSize="small" />
+										</StyledFooterDiv>
+									</StyledOpenButton>
+								</StyledFooter>
+							) : (
+								<StyledFooter>
+									<StyledOpenButton
+										onClick={(e) => {
+											e.preventDefault(); // Prevent <Link> navigation
+											e.stopPropagation(); // Prevent bubbling to <Link>
+											if (href) {
+												window.open(
+													href,
+													"_blank",
+													"noopener,noreferrer",
+												);
+											}
+										}}
+										size="small"
+									>
+										<StyledFooterDiv>
+											<ButtonName>Open App</ButtonName>
+											<OpenInNewOutlinedIcon fontSize="small" />
+										</StyledFooterDiv>
+									</StyledOpenButton>
+								</StyledFooter>
+							)}
+							{app.project_created_by !== "SYSTEM" ? (
+								<StyledOpenButton
+									onClick={(e) => {
+										e.preventDefault();
+										navigateApp(app.project_id);
+									}}
+									size="small"
+								>
+									<ViewDetailsButton>
+										<ViewDetailsButtonName>
+											View Details
+										</ViewDetailsButtonName>
+									</ViewDetailsButton>
+								</StyledOpenButton>
+							) : null}
+							{app.project_created_by !== "SYSTEM" ? (
+								<IconButton
+									onClick={(e) => {
+										e.preventDefault();
+										setAnchorEl(
+											e.currentTarget.closest(
+												".MuiCard-root",
+											) as HTMLElement | null,
+										); // Set the card as the anchor element
+									}}
+									size="small"
+								>
+									<MoreVert />
+								</IconButton>
+							) : null}
+						</StyledCardActions>
+					</StyledContent>
+				</Link>
+				<StyledMenu
+					anchorEl={anchorEl}
+					open={open}
+					onClose={() => {
+						setAnchorEl(null);
+					}}
+					anchorOrigin={{
+						vertical: "bottom", // Anchor to the bottom of the card
+						horizontal: "right", // Anchor to the right of the card
+					}}
+					transformOrigin={{
+						vertical: "top", // Transform from the top of the menu
+						horizontal: "right", // Transform from the right of the menu
+					}}
+				>
+					<Menu.Item
+						value="copy"
+						onClick={() => {
+							copyProjectId(app.project_id);
+							setAnchorEl(null);
+						}}
+					>
+						Copy App ID
+					</Menu.Item>
+					{app?.user_permission && app.user_permission < 2 && (
+						<Menu.Item
+							value="clone"
+							onClick={() => {
+								setIsUploadOpen(true);
+							}}
+						>
+							Clone This App
+						</Menu.Item>
+					)}
+					{app?.user_permission && app.user_permission < 2 && (
+						<Menu.Item
+							value="delete"
+							onClick={() => {
+								setIsAppDeleteModalOpen(true);
+							}}
+						>
+							Delete App
+						</Menu.Item>
+					)}
+				</StyledMenu>
+				<AppDeleteModal
+					isOpen={isAppDeleteModalOpen}
+					onClose={() => {
+						setIsAppDeleteModalOpen(false);
+						setAnchorEl(null);
+					}}
+					appId={app.project_id}
+					onDelete={() => {
+						onDelete();
+					}}
+				/>
+				{isUploadOpen ? (
+					<AddAppCloneModal
+						open={isUploadOpen}
+						appId={app.project_id}
+						handleClose={(appId) => {
+							console.log("ok");
+							// if there is an appId navigate to it
+							if (appId) {
+								navigateApp(appId);
+							}
 
 							// close it
 							setIsUploadOpen(false);

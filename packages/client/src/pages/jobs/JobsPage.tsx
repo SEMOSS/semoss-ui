@@ -11,13 +11,7 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
-import {
-	Button,
-	Search,
-	Stack,
-	Tabs,
-	useNotification,
-} from "@semoss/ui";
+import { Button, Search, Stack, Tabs, useNotification } from "@semoss/ui";
 import { useRootStore, useSettings } from "@/hooks";
 import { DeleteJobModal } from "./DeleteJobModal";
 import { JobBuilderModal } from "./JobBuilderModal";
@@ -81,72 +75,72 @@ export function JobsPage() {
 			.then((response) => {
 				const type = response.pixelReturn[0].operationType[0];
 
-                if (type.indexOf('ERROR') > -1) {
-                    notification.add({
-                        color: 'error',
-                        message:
-                            'Something went wrong. Jobs could not be retrieved.',
-                    });
-                } else {
-                    const pixelJobs: Record<string, PixelReturnJob> =
-                        response.pixelReturn[0].output;
-                    const jobs: Job[] = [];
-                    Object.values(pixelJobs).forEach((job) => {
-                        // Job group is undefined for jobs made in the old ui
-                        if (!job.jobGroup || job.jobGroup === 'undefined') {
-                            // skip jobs made on the old ui since they aren't backwards compatable
-                            return;
-                        }
-                        // ui state is a legacy construct, this may not exist
-                        let uiState: JobUIState;
-                        try {
-                            if (job.uiState) {
-                                uiState = JSON.parse(job.uiState);
-                            }
-                        } catch (e) {
-                            console.log(e);
-                        }
+				if (type.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message:
+							"Something went wrong. Jobs could not be retrieved.",
+					});
+				} else {
+					const pixelJobs: Record<string, PixelReturnJob> =
+						response.pixelReturn[0].output;
+					const jobs: Job[] = [];
+					Object.values(pixelJobs).forEach((job) => {
+						// Job group is undefined for jobs made in the old ui
+						if (!job.jobGroup || job.jobGroup === "undefined") {
+							// skip jobs made on the old ui since they aren't backwards compatable
+							return;
+						}
+						// ui state is a legacy construct, this may not exist
+						let uiState: JobUIState;
+						try {
+							if (job.uiState) {
+								uiState = JSON.parse(job.uiState);
+							}
+						} catch (e) {
+							console.log(e);
+						}
 
-                        let sendEmailJob: SendEmailJob;
-                        if (job.recipe) {
-                            sendEmailJob = convertSendEmailRecipeToJob(
-                                job.recipe,
-                            );
-                        }
-                        jobs.push({
-                            id: job.jobId,
-                            name: job.jobName,
-                            type: 'Custom',
-                            cronExpression: job.cronExpression,
-                            timeZone: job.cronTz,
-                            tags: (job?.jobTags ?? '')
-                                .split(',')
-                                .filter((tag) => !!tag),
-                            lastRun: job.PREV_FIRE_TIME,
-                            nextRun: job.NEXT_FIRE_TIME,
-                            ownerId: job.USER_ID,
-                            isActive: job.NEXT_FIRE_TIME !== 'INACTIVE',
-                            group: job.jobGroup,
-                            pixel: job.recipe,
-                            smtpHost: sendEmailJob?.smtpHost,
-                            smtpPort: sendEmailJob?.smtpPort,
-                            subject: sendEmailJob?.subject,
-                            jobType: uiState?.jobType,
-                            to: (sendEmailJob?.to ?? '')
-                                .split(',')
-                                .filter((to) => !!to),
-                            cc: (sendEmailJob?.cc ?? '')
-                                .split(',')
-                                .filter((cc) => !!cc),
-                            bcc: (sendEmailJob?.bcc ?? '')
-                                .split(',')
-                                .filter((bcc) => !!bcc),
-                            from: sendEmailJob?.from,
-                            message: sendEmailJob?.message,
-                            username: sendEmailJob?.username,
-                            password: sendEmailJob?.password,
-                        });
-                    });
+						let sendEmailJob: SendEmailJob;
+						if (job.recipe) {
+							sendEmailJob = convertSendEmailRecipeToJob(
+								job.recipe,
+							);
+						}
+						jobs.push({
+							id: job.jobId,
+							name: job.jobName,
+							type: "Custom",
+							cronExpression: job.cronExpression,
+							timeZone: job.cronTz,
+							tags: (job?.jobTags ?? "")
+								.split(",")
+								.filter((tag) => !!tag),
+							lastRun: job.PREV_FIRE_TIME,
+							nextRun: job.NEXT_FIRE_TIME,
+							ownerId: job.USER_ID,
+							isActive: job.NEXT_FIRE_TIME !== "INACTIVE",
+							group: job.jobGroup,
+							pixel: job.recipe,
+							smtpHost: sendEmailJob?.smtpHost,
+							smtpPort: sendEmailJob?.smtpPort,
+							subject: sendEmailJob?.subject,
+							jobType: uiState?.jobType,
+							to: (sendEmailJob?.to ?? "")
+								.split(",")
+								.filter((to) => !!to),
+							cc: (sendEmailJob?.cc ?? "")
+								.split(",")
+								.filter((cc) => !!cc),
+							bcc: (sendEmailJob?.bcc ?? "")
+								.split(",")
+								.filter((bcc) => !!bcc),
+							from: sendEmailJob?.from,
+							message: sendEmailJob?.message,
+							username: sendEmailJob?.username,
+							password: sendEmailJob?.password,
+						});
+					});
 
 					setJobs(jobs);
 				}
@@ -157,7 +151,7 @@ export function JobsPage() {
 	};
 
 	const deleteJob = (jobId: string[], jobGroup: string[]) => {
-		let pixel : string;
+		let pixel: string;
 		if (jobId.length > 1 && jobGroup.length > 1) {
 			pixel = `META | RemoveJobFromDB(jobId=${JSON.stringify(
 				jobId,

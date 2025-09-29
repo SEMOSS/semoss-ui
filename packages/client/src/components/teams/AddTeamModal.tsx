@@ -197,7 +197,6 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 					previousTeamName,
-					previousType,
 				);
 				if (response.data) {
 					onClose({
@@ -241,7 +240,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						color: "success",
 						message: "Successfully added group",
 					});
-					navigate(encodeURIComponent(data.TEAM_NAME));
+					navigate(
+						`${encodeURIComponent(data.TEAM_TYPE)}/${encodeURIComponent(data.TEAM_NAME)}`,
+					);
 				} else {
 					throw new Error("Failed to add team");
 				}
@@ -295,6 +296,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											onChange={(value) =>
 												field.onChange(value)
 											}
+											disabled={isEdit}
 										>
 											{loginTypes
 												.sort()
@@ -386,6 +388,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 													field.onChange(value)
 												}
 												fullWidth={true}
+												disabled={
+													isEdit &&
+													selectedTeamType !==
+														"CUSTOM"
+												}
 											/>
 											{selectedTeamType !== "CUSTOM" &&
 											selectedTeamType !== "" ? (
@@ -418,6 +425,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 												field.onChange(value)
 											}
 											fullWidth={true}
+											multiline
+											minRows={2}
+											maxRows={6}
 										/>
 									);
 								}}

@@ -37,22 +37,22 @@ const AvatarWrapper = styled("div")({
 	width: "50px",
 });
 
-const StyledMemberContent = styled("div")({
+const StyledMemberContent = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	flexDirection: "column",
 	alignItems: "flex-start",
-	gap: "25px",
+	gap: theme.spacing(3.125),
 	flexShrink: "0",
-});
+}));
 
-const StyledMemberInnerContent = styled("div")({
+const StyledMemberInnerContent = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	alignItems: "flex-start",
-	gap: "20px",
+	gap: theme.spacing(2.5),
 	alignSelf: "stretch",
-});
+}));
 
 const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
 	borderRadius: "12px",
@@ -66,24 +66,24 @@ const StyledMemberLoading = styled("div")({
 	justifyContent: "center",
 });
 
-const StyledMemberTable = styled(Table)({
-	backgroundColor: "white",
-});
+const StyledMemberTable = styled(Table)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+}));
 
-const StyledTableTitleContainer = styled("div")({
+const StyledTableTitleContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	alignSelf: "stretch",
 	boxShadow: "0px -1px 0px 0px rgba(0, 0, 0, 0.12) inset",
-	backgroundColor: "white",
-});
+	backgroundColor: theme.palette.background.paper,
+}));
 
-const StyledTableTitleDiv = styled("div")({
+const StyledTableTitleDiv = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "12px 24px 12px 16px",
+	padding: theme.spacing(1.5, 3, 1.5, 2),
 	alignItems: "center",
-	gap: "10px",
-});
+	gap: theme.spacing(1.25),
+}));
 
 const StyledTableTitleMemberContainer = styled("div")({
 	display: "flex",
@@ -91,26 +91,27 @@ const StyledTableTitleMemberContainer = styled("div")({
 	flex: "1 0 0",
 });
 
-const StyledAvatarGroupContainer = styled("div")({
+const StyledAvatarGroupContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "130px",
 	height: "56px",
-	padding: "10px 16px",
+	padding: theme.spacing(1.25, 2),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
-	gap: "10px",
-});
+	gap: theme.spacing(1.25),
+}));
 
-const StyledTableTitleMemberCountContainer = styled("div")({
+const StyledTableTitleMemberCountContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	height: "56px",
-	padding: "6px 16px 6px 8px",
+	padding: theme.spacing(0.75, 2, 0.75, 1),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
-	gap: "10px",
-});
+	gap: theme.spacing(1.25),
+	backround: "red",
+}));
 
 const StyledTableTitleMemberCount = styled("div")({
 	display: "flex",
@@ -124,23 +125,23 @@ const StyledSearchButtonContainer = styled("div")({
 	// gap: '10px',
 });
 
-const StyledDeleteSelectedContainer = styled("div")({
+const StyledDeleteSelectedContainer = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "10px 8px 10px 16px",
+	padding: theme.spacing(1.25, 1, 1.25, 2),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
-	gap: "10px",
-});
+	gap: theme.spacing(1.25),
+}));
 
-const StyledAddMemberContainer = styled("div")({
+const StyledAddMemberContainer = styled("div")(({ theme }) => ({
 	display: "flex",
-	padding: "10px 24px 10px 8px",
+	padding: theme.spacing(1.25, 3, 1.25, 1),
 	flexDirection: "column",
 	justifyContent: "center",
 	alignItems: "center",
-	gap: "10px",
-});
+	gap: theme.spacing(1.25),
+}));
 
 const StyledNoMembersDiv = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -152,19 +153,19 @@ const StyledNoMembersDiv = styled("div")(({ theme }) => ({
 	alignItems: "center",
 }));
 
-const StyledTableCell = styled(Table.Cell)({
-	paddingLeft: "16px",
-});
+const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
+	paddingLeft: theme.spacing(2),
+}));
 
 const StyledCheckbox = styled(Checkbox)({
-	paddingBottom: "0px",
+	paddingBottom: 0,
 });
 
-const StyledCenteredBox = styled(Box)({
+const StyledCenteredBox = styled(Box)(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
-	gap: "8px",
-});
+	gap: theme.spacing(1),
+}));
 
 const StyledNameStack = styled(Stack)({
 	alignItems: "center",
@@ -491,9 +492,17 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await editEngineUserPermissions(adminMode, id, requests,);
+				response = await editEngineUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
 			} else if (type === "APP") {
-				response = await editProjectUserPermissions(adminMode,id,requests,);
+				response = await editProjectUserPermissions(
+					adminMode,
+					id,
+					requests,
+				);
 			}
 
 			if (!response) {
@@ -685,99 +694,109 @@ export const MembersTable = (props: MembersTableProps) => {
 		);
 	};
 
-  return (
-    <StyledMemberContent>
-      <StyledMemberInnerContent>
-        <StyledTableContainer>
-          <StyledTableTitleContainer>
-            <StyledTableTitleDiv>
-              <Typography variant={"h6"}>Permissions</Typography>
-            </StyledTableTitleDiv>
-            <StyledTableTitleMemberContainer>
-              {Avatars.length > 0 ? (
-                <StyledAvatarGroupContainer>
-                  <AvatarGroup
-                    spacing={"small"}
-                    variant={"circular"}
-                    max={4}
-                    total={totalMembers}
-                  >
-                    {Avatars.map((el) => {
-                      return el;
-                    })}
-                  </AvatarGroup>
-                </StyledAvatarGroupContainer>
-              ) : null}
-              <StyledTableTitleMemberCountContainer>
-                <StyledTableTitleMemberCount>
-                  <Typography variant={"caption"}>
-                    {totalMembers} member
-                  </Typography>
-                </StyledTableTitleMemberCount>
-              </StyledTableTitleMemberCountContainer>
-            </StyledTableTitleMemberContainer>
-            <IconButton
-              onClick={() => {
-                //setIsSearch(!isSearch);
-              }}
-            >
-              <img src={FilteredIcon} alt="Filter" />
-            </IconButton>
-            <StyledSearchButtonContainer>
-              {isSearch ? (
-                <Search
-                  autoFocus={true}
-                  inputRef={memberSearchRef}
-                  placeholder="Search Members"
-                  size="small"
-                  value={search}
-				  data-testid={`membersTables-searchMembers-searchBar}`}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                  }}
-                />
-              ) : (
-                <IconButton
-                  onClick={() => {
-                    setIsSearch(!isSearch);
-                  }}
-                >
-                  <SearchIcon />
-                </IconButton>
-              )}
-            </StyledSearchButtonContainer>
-            {configStore.isEngineOperationAvailable(type, "access") && (
-              <>
-                <StyledDeleteSelectedContainer>
-                  {selectedMembers.length > 0 && (
-                    <Button
-                      disabled={isLoading}
-                      variant={"outlined"}
-                      color="error"
-                      onClick={() => openDeleteMembersModal(selectedMembers)}
-                    >
-                      Delete Selected
-                    </Button>
-                  )}
-                </StyledDeleteSelectedContainer>
-                <StyledAddMemberContainer>
-                  <Button
-                    disabled={isLoading || userPermission === "Read-Only"}
-                    variant={"contained"}
-					data-testid={`membersTables-addMembers-btn`}
-                    onClick={() => {
-                      openAddMembersModal();
-                    }}
-                  >
-                    <StyledCenteredBox>
-                      <Add />
-                      Add Members
-                    </StyledCenteredBox>
-                  </Button>
-                </StyledAddMemberContainer>
-              </>
-            )}
-          </StyledTableTitleContainer>
+	return (
+		<StyledMemberContent>
+			<StyledMemberInnerContent>
+				<StyledTableContainer>
+					<StyledTableTitleContainer>
+						<StyledTableTitleDiv>
+							<Typography variant={"h6"}>Permissions</Typography>
+						</StyledTableTitleDiv>
+						<StyledTableTitleMemberContainer>
+							{Avatars.length > 0 ? (
+								<StyledAvatarGroupContainer>
+									<AvatarGroup
+										spacing={"small"}
+										variant={"circular"}
+										max={4}
+										total={totalMembers}
+									>
+										{Avatars.map((el) => {
+											return el;
+										})}
+									</AvatarGroup>
+								</StyledAvatarGroupContainer>
+							) : null}
+							<StyledTableTitleMemberCountContainer>
+								<StyledTableTitleMemberCount>
+									<Typography variant={"caption"}>
+										{totalMembers} member
+									</Typography>
+								</StyledTableTitleMemberCount>
+							</StyledTableTitleMemberCountContainer>
+						</StyledTableTitleMemberContainer>
+						<IconButton
+							onClick={() => {
+								//setIsSearch(!isSearch);
+							}}
+						>
+							<img src={FilteredIcon} alt="Filter" />
+						</IconButton>
+						<StyledSearchButtonContainer>
+							{isSearch ? (
+								<Search
+									autoFocus={true}
+									inputRef={memberSearchRef}
+									placeholder="Search Members"
+									size="small"
+									value={search}
+									data-testid={`membersTables-searchMembers-searchBar}`}
+									onChange={(e) => {
+										setSearch(e.target.value);
+									}}
+								/>
+							) : (
+								<IconButton
+									onClick={() => {
+										setIsSearch(!isSearch);
+									}}
+								>
+									<SearchIcon />
+								</IconButton>
+							)}
+						</StyledSearchButtonContainer>
+						{configStore.isEngineOperationAvailable(
+							type,
+							"access",
+						) && (
+							<>
+								<StyledDeleteSelectedContainer>
+									{selectedMembers.length > 0 && (
+										<Button
+											disabled={isLoading}
+											variant={"outlined"}
+											color="error"
+											onClick={() =>
+												openDeleteMembersModal(
+													selectedMembers,
+												)
+											}
+										>
+											Delete Selected
+										</Button>
+									)}
+								</StyledDeleteSelectedContainer>
+								<StyledAddMemberContainer>
+									<Button
+										disabled={
+											isLoading ||
+											userPermission === "Read-Only"
+										}
+										variant={"contained"}
+										data-testid={`membersTables-addMembers-btn`}
+										onClick={() => {
+											openAddMembersModal();
+										}}
+									>
+										<StyledCenteredBox>
+											<Add />
+											Add Members
+										</StyledCenteredBox>
+									</Button>
+								</StyledAddMemberContainer>
+							</>
+						)}
+					</StyledTableTitleContainer>
 
 					{isLoading ? (
 						<StyledMemberLoading>
@@ -981,7 +1000,6 @@ export const MembersTable = (props: MembersTableProps) => {
 																			);
 																		}
 																	}}
-																	data-testid={`checkbox-${user.id}`}
 																/>
 															</StyledTableCell>
 															<Table.Cell>
@@ -998,7 +1016,9 @@ export const MembersTable = (props: MembersTableProps) => {
 																				user,
 																			);
 																		}}
-																		onMouseLeave={handlePopoverClose}
+																		onMouseLeave={() =>
+																			handlePopoverClose
+																		}
 																		aria-owns="mouse-over-popover"
 																		aria-haspopup="true"
 																	>
@@ -1202,78 +1222,96 @@ export const MembersTable = (props: MembersTableProps) => {
 													);
 												}
 
-                        return null;
-                      })}
-                    </Table.Body>
-                    <Table.Footer>
-                      <Table.Row>
-                        <Table.Pagination
-                          disabled={isLoading}
-                          onPageChange={(_e, v) => {
-                            setPage(v);
-                            setSelectedMembers([]);
-                          }}
-                          page={page}
-                          rowsPerPage={rowsPerPage}
-                          rowsPerPageOptions={[5, 10, 20]}
-                          onRowsPerPageChange={(e) => {
-                            // set the new limit
-                            setRowsPerPage(parseInt(e.target.value, 10));
-                          }}
-                          count={totalMembers}
-                        />
-                      </Table.Row>
-                    </Table.Footer>
-                  </StyledMemberTable>
-                  <UserPopover
-                    hoveredUser={
-                      hoveredUser
-                        ? {
-                            id: hoveredUser.id,
-                            name: hoveredUser.name || "Unknown",
-                            email: hoveredUser.email || "",
-                          }
-                        : null
-                    }
-                    isPopoverOpen={Boolean(anchorEl)}
-                    anchorEl={anchorEl}
-                    handlePopoverClose={handlePopoverClose}
-                  />
-                </>
-              ) : (
-                <StyledNoMembersDiv>
-                  <Typography variant={"body2"}>No members</Typography>
-                  {configStore.isEngineOperationAvailable(type, "access") && (
-                    <Button
-                      disabled={isLoading}
-                      variant={"contained"}
-					  data-testid={`membersTables-addMembers-btn`}
-                      onClick={() => {
-                        setAddModalUser(null);
-                        openAddMembersModal();
-                      }}
-                    >
-                      Add Members
-                    </Button>
-                  )}
-                </StyledNoMembersDiv>
-              )}
-            </Box>
-          )}
-        </StyledTableContainer>
-      </StyledMemberInnerContent>
-      <MembersDeleteOverlay
-        type={type}
-        id={id}
-        members={pendingDeletedMembers}
-        open={deleteMembersModal}
-        onClose={(success) => {
-          // clear out the deleted members
-          setPendingDeletedMembers([]);
-          // clear out the deleted members
-          setSelectedMembers([]);
-          // close the model
-          setDeleteMembersModal(false);
+												return null;
+											})}
+										</Table.Body>
+										<Table.Footer>
+											<Table.Row>
+												<Table.Pagination
+													disabled={isLoading}
+													onPageChange={(_e, v) => {
+														setPage(v);
+														setSelectedMembers([]);
+													}}
+													page={page}
+													rowsPerPage={rowsPerPage}
+													rowsPerPageOptions={[
+														5, 10, 20,
+													]}
+													onRowsPerPageChange={(
+														e,
+													) => {
+														// set the new limit
+														setRowsPerPage(
+															parseInt(
+																e.target.value,
+																10,
+															),
+														);
+													}}
+													count={totalMembers}
+												/>
+											</Table.Row>
+										</Table.Footer>
+									</StyledMemberTable>
+									<UserPopover
+										hoveredUser={
+											hoveredUser
+												? {
+														id: hoveredUser.id,
+														name:
+															hoveredUser.name ||
+															"Unknown",
+														email:
+															hoveredUser.email ||
+															"",
+													}
+												: null
+										}
+										isPopoverOpen={Boolean(anchorEl)}
+										anchorEl={anchorEl}
+										handlePopoverClose={handlePopoverClose}
+									/>
+								</>
+							) : (
+								<StyledNoMembersDiv>
+									<Typography variant={"body2"}>
+										No members
+									</Typography>
+									{configStore.isEngineOperationAvailable(
+										type,
+										"access",
+									) && (
+										<Button
+											disabled={isLoading}
+											variant={"contained"}
+											data-testid={`membersTables-addMembers-btn`}
+											onClick={() => {
+												setAddModalUser(null);
+												openAddMembersModal();
+											}}
+										>
+											Add Members
+										</Button>
+									)}
+								</StyledNoMembersDiv>
+							)}
+						</Box>
+					)}
+				</StyledTableContainer>
+			</StyledMemberInnerContent>
+			<MembersDeleteOverlay
+				type={type}
+				id={id}
+				members={pendingDeletedMembers}
+				open={deleteMembersModal}
+				onClose={(success) => {
+					// clear out the deleted members
+					setPendingDeletedMembers([]);
+					// clear out the deleted members
+					setSelectedMembers([]);
+					// close the model
+					setDeleteMembersModal(false);
 
 					// refresh if successful
 					if (success) {
