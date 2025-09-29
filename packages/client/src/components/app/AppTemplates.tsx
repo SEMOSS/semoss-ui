@@ -73,10 +73,10 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 		};
 	};
 
-	const includeSMSSDriverToTemplateState = (template: Template): Template => {
-		if( template.state.queries && !template.state.queries?.["smss_driver"] &&
-			template.state.variables && !template.state.variables?.["smss_driver"] &&
-			!template.state.variables?.["smss_driver--1"]
+	const includeMCPDriverToTemplateState = (template: Template): Template => {
+		if( template.state.queries && !template.state.queries?.["mcp_driver"] &&
+			template.state.variables && !template.state.variables?.["mcp_driver"] &&
+			!template.state.variables?.["mcp_driver--1"]
 		) {
 			return {
 				...template,
@@ -84,8 +84,8 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 					...template.state,
 					queries: {
 						...template.state.queries,
-						"smss_driver": {
-							id: "smss_driver",
+						"mcp_driver": {
+							id: "mcp_driver",
 							cells: [
 								{
 									id: "1",
@@ -100,14 +100,14 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 					},
 					variables: {
 						...template.state.variables,
-						"smss_driver": {
+						"mcp_driver": {
 							type: "query",
-							to: "smss_driver",
+							to: "mcp_driver",
 							cellId: "1"
 						} as Variable,
-						"smss_driver--1": {
+						"mcp_driver--1": {
 							type: "cell",
-							to: "smss_driver",
+							to: "mcp_driver",
 							cellId: "1"
 						}
 					},
@@ -138,7 +138,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 							app={getAppMetadataFromTemplate(t)}
 							systemApp={true}
 							appType={app.project_type}
-							onAction={() => onUse(includeSMSSDriverToTemplateState(t))}
+							onAction={() => onUse(includeMCPDriverToTemplateState(t))}
 							isLoading={false}
 							showSkeleton={false}
 						/>

@@ -85,8 +85,8 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 };
 
 export const BASE_APP_QUERIES = {
-	"smss_driver": {
-		id: "smss_driver",
+	"mcp_driver": {
+		id: "mcp_driver",
 		cells: [
 			{
 				id: "1",
@@ -101,13 +101,13 @@ export const BASE_APP_QUERIES = {
 };
 
 export const BASE_APP_VARIABLES = {
-	"smss_driver": {
+	"mcp_driver": {
 		type: "query",
-		to: "smss_driver",
+		to: "mcp_driver",
 	},
-	"smss_driver--1": {
+	"mcp_driver--1": {
 		type: "cell",
-		to: "smss_driver",
+		to: "mcp_driver",
 		cellId: "1"
 	}
 };
