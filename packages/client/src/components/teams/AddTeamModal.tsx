@@ -197,6 +197,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 					previousTeamName,
+					data.TEAM_TYPE,
 				);
 				if (response.data) {
 					onClose({
