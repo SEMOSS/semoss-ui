@@ -53,7 +53,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 				</StyledInner>
 			</StyledContent>
 			<PlatformMessages />
-			<Help/>
+			<Help />
 		</StyledPage>
 	);
 });
