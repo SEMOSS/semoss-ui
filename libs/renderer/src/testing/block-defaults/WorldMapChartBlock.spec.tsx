@@ -192,7 +192,7 @@ describe("WorldMapChart Block Component", () => {
 	});
 	it("should show 'Add JSON' message when no option is provided", () => {
 		const { container } = render(
-			<VisualizationBlock id={placeholders["worldMap"]} />,
+			<VisualizationBlock id={placeholders["worldMapNoData"]} />,
 			{
 				blocks: mockWorldMapBlocks,
 			},
