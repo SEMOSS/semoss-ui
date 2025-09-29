@@ -1,4 +1,5 @@
 import { action, computed, makeObservable, observable } from "mobx";
+import type { RoomStore } from "@/stores";
 
 /**
  * Abstract Message Store
@@ -8,6 +9,11 @@ export abstract class AbstractMessageStore {
 	 * Id of the message
 	 */
 	id: string = "";
+
+	/**
+	 * Store the room
+	 */
+	room: RoomStore = null;
 
 	/**
 	 * Track if it is an root, input, or response message
@@ -38,10 +44,12 @@ export abstract class AbstractMessageStore {
 	 * Set the message
 	 * @param id
 	 */
-	constructor(id: string) {
+	constructor(room: RoomStore, id: string) {
+		this.room = room;
 		this.id = id;
 
 		makeObservable(this, {
+			room: observable,
 			id: observable,
 			parent: observable,
 			position: observable,
