@@ -628,14 +628,12 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 
 			return (
 				<Box sx={{ width: "100%" }}>
-					jajaja
 					<Tabs
 						value={selectedTab}
 						onChange={(_, newValue) => setSelectedTab(newValue)}
 						variant="scrollable"
 						sx={{ mt: 2, borderBottom: "2px solid #E0E0E0" }}
 					>
-						sjsjs
 						{tabLabels.map((label, i) => (
 							<StyledTab
 								key={i}

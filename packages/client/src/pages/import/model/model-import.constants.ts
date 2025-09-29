@@ -925,31 +925,89 @@ export const MODEL_VERSIONS = {
 		{
 			name: "gpt-4",
 			display: "GPT 4",
-			icon: OPEN_AI,
+			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: false,
 		},
 		{
 			name: "text-davinci",
 			display: "Text Davinci",
-			icon: OPEN_AI,
+			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
 		},
 		{
 			name: "dall-e",
 			display: "DALL·E",
+			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: false,
-			icon: OPEN_AI,
 		},
 	],
-	Azure: [
+	"Azure OpenAI": [
 		{
-			name: "azure-openai-gpt-4",
+			name: "azure-openai",
 			display: "Azure Open AI",
+			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: false,
 		},
 		{
 			name: "azure-openai-embedding",
 			display: "Azure Open AI Embedding",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: true,
+		},
+	],
+	"AWS Bedrock": [
+		{
+			name: "amazon.titan-embed-text-v1",
+			display: "Claude",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: true,
+		},
+	],
+	"Google Vertex AI": [
+		{
+			name: "palm-bison",
+			display: "Palm Bison",
+			icon: "/src/assets/img/GOOGLE.png",
+			embedding: false,
+		},
+		{
+			name: "palm-chat-bison",
+			display: "Palm Chat Bison",
+			icon: "/src/assets/img/GOOGLE.png",
+			embedding: false,
+		},
+		{
+			name: "palm-code-bison",
+			display: "Palm Code Bison",
+			icon: "/src/assets/img/GOOGLE.png",
+			embedding: false,
+		},
+		{
+			name: "gemini",
+			display: "Gemini",
+			icon: "/src/assets/img/GOOGLE.png",
+			embedding: false,
+		},
+	],
+	"NVIDIA NIM": [
+		{
+			name: "gemini-pro",
+			display: "NVIDIA NIM",
+			icon: "/src/assets/img/NEMO.png",
+			embedding: false,
+		},
+	],
+	"OpenAI-Compatible": [
+		{
+			name: "openai-compatible",
+			display: "OpenAI-Compatible",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: false,
+		},
+		{
+			name: "openai-compatible-embedding",
+			display: "OpenAI-Compatible Embedding",
+			icon: "/src/assets/img/OPEN_AI.png",
 			embedding: true,
 		},
 	],
