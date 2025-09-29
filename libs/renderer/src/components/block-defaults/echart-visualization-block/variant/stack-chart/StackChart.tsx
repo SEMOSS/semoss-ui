@@ -597,31 +597,33 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 							let tooltipText = `${params[0].axisValue} <br/>`;
 							const tooltipValues = [];
 							let totalTooltipValue = 0;
-							const tooltipPrefix =
-								data.option["_state"]["fields"][
-									"tooltipDataType"
-								] === "NUMBER"
-									? "Average of"
-									: "Count of";
-							params.forEach((param) => {
-								const tooltipValue = param.data.tooltipValue;
-								if (param.data.category !== "") {
-									tooltipText += `${param.marker} ${param.data.category}: ${param.value} <br/>`;
+							if(data.option["_state"]["fields"]["tooltip"].length > 0){
+								const tooltipPrefix =
+									data.option["_state"]["fields"][
+										"tooltipDataType"
+									] === "NUMBER"
+										? "Average of"
+										: "Count of";
+								params.forEach((param) => {
+									const tooltipValue = param.data.tooltipValue;
+									if (param.data.category !== "") {
+										tooltipText += `${param.marker} ${param.data.category}: ${param.value} <br/>`;
+									}
+									if (
+										tooltipValue !== "" &&
+										tooltipValue !== "NaN" &&
+										tooltipValue !== undefined
+									) {
+										tooltipValues.push(Number(tooltipValue));
+										totalTooltipValue +=
+											parseFloat(tooltipValue);
+									}
+								});
+								if (maxStackSize > 0) {
+									const average =
+										totalTooltipValue / maxStackSize;
+									tooltipText += `${tooltipPrefix} ${tooltip}: ${average} <br/>`;
 								}
-								if (
-									tooltipValue !== "" &&
-									tooltipValue !== "NaN" &&
-									tooltipValue !== undefined
-								) {
-									tooltipValues.push(Number(tooltipValue));
-									totalTooltipValue +=
-										parseFloat(tooltipValue);
-								}
-							});
-							if (maxStackSize > 0) {
-								const average =
-									totalTooltipValue / maxStackSize;
-								tooltipText += `${tooltipPrefix} ${tooltip}: ${average} <br/>`;
 							}
 							return tooltipText.trim();
 						};

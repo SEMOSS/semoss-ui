@@ -158,11 +158,6 @@ export const FrameOperations = observer(
 		useEffect(() => {
 			const filteredColumnsString = JSON.stringify(filteredColumns);
 			const columnsSelectorString = JSON.stringify(columnsSelector);
-			console.log(
-				filteredColumnsString,
-				columnsSelectorString,
-				"string comparision",
-			);
 			if (
 				columnsSelector.length > 0 &&
 				filteredColumnsString !== columnsSelectorString
@@ -887,9 +882,7 @@ export const FrameOperations = observer(
 					if (columns[secondColumn?.label]?.length) {
 						tempVal[secondColumn?.label] = {
 							...tempVal[secondColumn?.label],
-							["name"]:
-								axisName||
-								pixelName[0],
+							["name"]: axisName || pixelName[0],
 							["pixelname"]: pixelName,
 							["pixelvalue"]: pixelValue,
 						};
@@ -904,6 +897,7 @@ export const FrameOperations = observer(
 							},
 						};
 					}
+					tempVal["series"] = tempVal['series'].filter((_, index) => index <= (columns[secondColumn?.label]?.length-1));
 					for (
 						let i = 0;
 						i < columns[secondColumn?.label]?.length;
@@ -1026,10 +1020,10 @@ export const FrameOperations = observer(
 						XAxisDataType: firstColumn?.dataType,
 					};
 
-					tempValue["xAxis"]["name"] = firstColumn?.values;
-					tempValue["xAxis"]["pixelName"] = firstColumn?.values;
-					tempValue["xAxis"]["flipAxisName"] = firstColumn?.values;
-					tempValue["xAxis"]["axisName"] = firstColumn?.values;
+					tempValue["xAxis"]["name"] = firstColumn?.values || [];
+					tempValue["xAxis"]["pixelName"] = firstColumn?.values || [];
+					tempValue["xAxis"]["flipAxisName"] = firstColumn?.values || [];
+					tempValue["xAxis"]["axisName"] = firstColumn?.values || [];
 				}
 				if (secondColumn?.values) {
 					tempValue["_state"] =
@@ -1043,10 +1037,10 @@ export const FrameOperations = observer(
 						YAxisDataType: secondColumn?.dataType,
 					};
 
-					tempValue["yAxis"]["name"] = secondColumn?.values;
-					tempValue["yAxis"]["pixelName"] = secondColumn?.values;
-					tempValue["yAxis"]["flipAxisName"] = secondColumn?.values;
-					tempValue["yAxis"]["axisName"] = secondColumn?.values;
+					tempValue["yAxis"]["name"] = secondColumn?.values || [];
+					tempValue["yAxis"]["pixelName"] = secondColumn?.values || [];
+					tempValue["yAxis"]["flipAxisName"] = secondColumn?.values || [];
+					tempValue["yAxis"]["axisName"] = secondColumn?.values || [];
 				}
 				if (columnsDrop[2]?.values.length > 0) {
 					tempValue["_state"] =
@@ -1059,6 +1053,12 @@ export const FrameOperations = observer(
 						category: columnsDrop[2]?.values,
 						categoryDataType: columnsDrop[2]?.dataType,
 					};
+				} else{
+					tempValue["_state"]["fields"] = {
+						...tempValue["_state"]["fields"],
+						category: [],
+						categoryDataType: [],
+					};
 				}
 				if (columnsDrop[3]?.values.length > 0) {
 					tempValue["_state"] =
@@ -1070,6 +1070,12 @@ export const FrameOperations = observer(
 						...tempValue["_state"]["fields"],
 						tooltip: columnsDrop[3]?.values,
 						tooltipDataType: columnsDrop[3]?.dataType,
+					};
+				} else{
+					tempValue["_state"]["fields"] = {
+						...tempValue["_state"]["fields"],
+						tooltip: [],
+						tooltipDataType: [],
 					};
 				}
 				setValue(JSON.stringify(tempValue));
@@ -1690,27 +1696,42 @@ export const FrameOperations = observer(
 			const dropCol = filteredColumns.find(
 				(col) => col?.name === draggableId,
 			);
-			updated[dropId] = {
-				...updated[dropId],
-				values: [...updated[dropId]?.values, draggableId],
-				dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
-			};
+			const dropIndex: number = Number(
+				dropId.replace("data-tab-drop-area-", ""),
+			);
+			if (chart[dropIndex]?.multiLabel) {
+				if (updated[dropId]?.values?.indexOf(draggableId) > -1) return;
+				updated[dropId] = {
+					...updated[dropId],
+					values: [...updated[dropId]?.values, draggableId],
+					dataType: [...updated[dropId]?.dataType, dropCol?.dataType],
+				};
+			} else {
+				updated[dropId] = {
+					...updated[dropId],
+					values: [draggableId],
+					dataType: [dropCol?.dataType],
+				};
+			}
 			setDroppedColumns(updated);
 		};
-		const deleteDroppedColumn = (columnName: string) => {
+		const deleteDroppedColumn = (columnName: string, keyToDrop: string) => {
 			setDroppedColumns((prev) => {
 				const updated = { ...prev };
 				for (const key in updated) {
+					if (key !== keyToDrop) continue;
 					const index = updated[key]["values"].indexOf(columnName);
 					updated[key] = {
 						...updated[key],
 						values: [
-							...updated[key]["values"]?.slice(0, index),
-							...updated[key]["values"].slice(index + 1),
+							...updated[key]["values"]?.filter(
+								(item, indexItem) => indexItem !== index,
+							),
 						],
 						dataType: [
-							...updated[key]["dataType"]?.slice(0, index),
-							...updated[key]["dataType"].slice(index + 1),
+							...updated[key]["dataType"]?.filter(
+								(item, indexItem) => indexItem !== index,
+							),
 						],
 					};
 				}
@@ -1728,6 +1749,7 @@ export const FrameOperations = observer(
 				{accordionSection.map((item, index) => (
 					<Accordion
 						expanded={item[accordionList[index]].expanded}
+						key={item[accordionList[index]].id}
 						onChange={(e) => {
 							const accordionSectionToUp = accordionSection;
 							const indexToUpdate =
@@ -1795,283 +1817,300 @@ export const FrameOperations = observer(
 			setSelectedColumn([]);
 		};
 		return (
-			<>
-				<DragDropContext onDragEnd={handleDragEnd}>
-					<StyledDropDownSection>
-						<StyledSubSection>
-							<StyledSpanDimension>Dimension</StyledSpanDimension>
-							<Stack paddingTop={2} width={"95%"}>
-								<TextField
-									placeholder="Search"
-									size="small"
-									sx={{
-										"& .MuiOutlinedInput-root": {
-											borderRadius: "7px",
-										},
-									}}
-									value={search}
-									onChange={(e) =>
-										handleSearch(e.target.value)
-									}
-									InputProps={{
-										startAdornment: (
-											<InputAdornment position="start">
-												<Search />
-											</InputAdornment>
-										),
-										endAdornment: (
-											<InputAdornment position="end">
-												<IconButton
-													size="small"
-													// onClick={(e) =>
-													//     setMenuAnchorEl(e.currentTarget)
-													// }
-												></IconButton>
-											</InputAdornment>
-										),
-									}}
-								/>
-							</Stack>
-							<Droppable droppableId="column-list">
-								{(provided) => (
-									<div
-										ref={provided.innerRef}
-										{...provided.droppableProps}
-									>
-										{filteredColumns.map((col, index) => (
-											<Draggable
-												key={col.name}
-												draggableId={col.name}
-												index={index}
-											>
-												{(provided, snapshot) => (
+			<DragDropContext onDragEnd={handleDragEnd}>
+				<StyledDropDownSection>
+					<StyledSubSection>
+						<StyledSpanDimension>Dimension</StyledSpanDimension>
+						<Stack paddingTop={2} width={"95%"}>
+							<TextField
+								placeholder="Search"
+								size="small"
+								sx={{
+									"& .MuiOutlinedInput-root": {
+										borderRadius: "7px",
+									},
+								}}
+								value={search}
+								onChange={(e) => handleSearch(e.target.value)}
+								InputProps={{
+									startAdornment: (
+										<InputAdornment position="start">
+											<Search />
+										</InputAdornment>
+									),
+									endAdornment: (
+										<InputAdornment position="end">
+											<IconButton
+												size="small"
+												// onClick={(e) =>
+												//     setMenuAnchorEl(e.currentTarget)
+												// }
+											></IconButton>
+										</InputAdornment>
+									),
+								}}
+							/>
+						</Stack>
+						<Droppable droppableId="column-list">
+							{(provided) => (
+								<div
+									ref={provided.innerRef}
+									{...provided.droppableProps}
+								>
+									{filteredColumns.map((col, index) => (
+										<Draggable
+											key={col.name}
+											draggableId={col.name}
+											index={index}
+										>
+											{(provided, snapshot) => (
+												<div
+													ref={provided.innerRef}
+													{...provided.draggableProps}
+													{...provided.dragHandleProps}
+													style={{
+														display: "flex",
+														alignItems: "center",
+														justifyContent:
+															"space-between",
+														gap: "12px",
+														padding: "8px",
+														marginBottom: "8px",
+														marginTop: "2px",
+														background:
+															snapshot.isDragging
+																? "#f0f0f0"
+																: "#fff",
+														borderRadius: "4px",
+														maxWidth: "100%",
+														boxShadow:
+															snapshot.isDragging
+																? "0 2px 5px rgba(0,0,0,0.2)"
+																: "none",
+														...provided
+															.draggableProps
+															.style,
+													}}
+												>
 													<div
-														ref={provided.innerRef}
-														{...provided.draggableProps}
-														{...provided.dragHandleProps}
 														style={{
+															flex: "0 0 auto",
 															display: "flex",
 															alignItems:
 																"center",
-															justifyContent:
-																"space-between",
-															gap: "12px",
-															padding: "8px",
-															marginBottom: "8px",
-															marginTop: "2px",
-															background:
-																snapshot.isDragging
-																	? "#f0f0f0"
-																	: "#fff",
-															borderRadius: "4px",
-															maxWidth: "100%",
-															boxShadow:
-																snapshot.isDragging
-																	? "0 2px 5px rgba(0,0,0,0.2)"
-																	: "none",
-															...provided
-																.draggableProps
-																.style,
 														}}
 													>
-														<div
-															style={{
-																flex: "0 0 auto",
-																display: "flex",
-																alignItems:
-																	"center",
-															}}
-														>
-															{col.dataType ===
-															"STRING" ? (
-																<StyledLabelIcon
-																	src={String(
-																		StringIcon,
-																	)}
-																/>
-															) : (
-																<StyledLabelIcon
-																	src={String(
-																		NumberIcon,
-																	)}
-																/>
-															)}
-														</div>
-														<div
-															style={{
-																flex: "1 1 auto",
-																display: "flex",
-																alignItems:
-																	"center",
-															}}
-														>
-															{col.name.length >
-															7 ? (
-																<Tooltip
-																	title={
-																		col.name
-																	}
-																>
-																	<span
-																		style={{
-																			lineHeight:
-																				"1.5",
-																		}}
-																	>
-																		{col.name.slice(
-																			0,
-																			7,
-																		)}
-																		...
-																	</span>
-																</Tooltip>
-															) : (
+														{col.dataType ===
+														"STRING" ? (
+															<StyledLabelIcon
+																src={String(
+																	StringIcon,
+																)}
+															/>
+														) : (
+															<StyledLabelIcon
+																src={String(
+																	NumberIcon,
+																)}
+															/>
+														)}
+													</div>
+													<div
+														style={{
+															flex: "1 1 auto",
+															display: "flex",
+															alignItems:
+																"center",
+														}}
+													>
+														{col.name.length > 7 ? (
+															<Tooltip
+																title={col.name}
+															>
 																<span
 																	style={{
 																		lineHeight:
 																			"1.5",
 																	}}
 																>
-																	{col.name}
+																	{col.name.slice(
+																		0,
+																		7,
+																	)}
+																	...
 																</span>
-															)}
-														</div>
-														{isAdd && (
-															<div
+															</Tooltip>
+														) : (
+															<span
 																style={{
-																	flex: "1 1 auto",
-																	display:
-																		"flex",
-																	justifyContent:
-																		"flex-end",
+																	lineHeight:
+																		"1.5",
 																}}
 															>
-																<Checkbox
-																	onChange={(
-																		e,
-																	) => {
-																		setDroppedColumns(
-																			(
-																				prev,
-																			) => {
-																				const updated =
-																					{
-																						...prev,
-																					};
+																{col.name}
+															</span>
+														)}
+													</div>
+													{isAdd && (
+														<div
+															style={{
+																flex: "1 1 auto",
+																display: "flex",
+																justifyContent:
+																	"flex-end",
+															}}
+														>
+															<Checkbox
+																onChange={(
+																	e,
+																) => {
+																	setDroppedColumns(
+																		(
+																			prev,
+																		) => {
+																			const updated =
+																				{
+																					...prev,
+																				};
+																			if (
+																				(
+																					e.target as HTMLInputElement
+																				)
+																					.checked
+																			) {
+																				// Add the column name if checked
 																				if (
-																					(e.target as HTMLInputElement).checked
-																				) {
-																					// Add the column name if checked
-																					if (
-																						!updated[
-																							addedColumnName
-																						]
-																					)
-																						updated[
-																							addedColumnName
-																						] =
-																							{
-																								values: [],
-																								dataType:
-																									[],
-																							};
+																					!updated[
+																						addedColumnName
+																					]
+																				)
 																					updated[
 																						addedColumnName
 																					] =
 																						{
-																							values: [
+																							values: [],
+																							dataType:
+																								[],
+																						};
+																				updated[
+																					addedColumnName
+																				] =
+																					{
+																						values: [
+																							...updated[
+																								addedColumnName
+																							]
+																								.values,
+																							col.name,
+																						],
+																						dataType:
+																							[
 																								...updated[
 																									addedColumnName
 																								]
-																									.values,
-																								col.name,
+																									.dataType,
+																								col.dataType,
 																							],
-																							dataType:
-																								[
-																									...updated[
-																										addedColumnName
-																									]
-																										.dataType,
-																									col.dataType,
-																								],
-																						};
-																				} else {
-																					// Remove the column name if unchecked
+																					};
+																			} else {
+																				// Remove the column name if unchecked
+																				if (
+																					updated[
+																						addedColumnName
+																					]
+																				) {
+																					const index =
+																						updated[
+																							addedColumnName
+																						][
+																							"values"
+																						].indexOf(
+																							col.name,
+																						);
+																					updated[
+																						addedColumnName
+																					].values =
+																						updated[
+																							addedColumnName
+																						].values?.filter(
+																							(
+																								_,
+																								i,
+																							) =>
+																								i !==
+																								index,
+																						);
+																					updated[
+																						addedColumnName
+																					].dataType =
+																						updated[
+																							addedColumnName
+																						].dataType?.filter(
+																							(
+																								_,
+																								i,
+																							) =>
+																								i !==
+																								index,
+																						);
+																					// If the array becomes empty, you can optionally delete the key
 																					if (
 																						updated[
 																							addedColumnName
 																						]
+																							?.values
+																							?.length ===
+																						0
 																					) {
-																						const index =
-																							updated[
-																								addedColumnName
-																							][
-																								"values"
-																							].indexOf(
-																								col.name,
-																							);
-																						updated[
+																						delete updated[
 																							addedColumnName
-																						] =
-																							updated[
-																								addedColumnName
-																							].values.splice(
-																								index,
-																								1,
-																							);
-																						// If the array becomes empty, you can optionally delete the key
-																						if (
-																							updated[
-																								addedColumnName
-																							]
-																								?.values
-																								?.length ===
-																							0
-																						) {
-																							delete updated[
-																								addedColumnName
-																							];
-																						}
+																						];
 																					}
 																				}
-																				return updated;
-																			},
-																		);
-																	}}
-																/>
-															</div>
-														)}
-													</div>
-												)}
-											</Draggable>
-										))}
-										{provided.placeholder}
-									</div>
-								)}
-							</Droppable>
-						</StyledSubSection>
-						<StyledSubSection>
-							<DataTabStyling
-								id={id}
-								updateFrame={updateFrame}
-								syncHeader={syncHeaders}
-								path="option"
-								dragdropColumns={droppedColumns}
-								deleteColumns={deleteDroppedColumn}
-								formmattedColumns={formattedColumns}
-								isAdd={onClickAdd}
-								chart={chart}
-								storedColumns={selectedColumn}
-								visual={handleChangeVisual}
-								selectedItem={handleSelectedItem}
-							></DataTabStyling>
-						</StyledSubSection>
-					</StyledDropDownSection>
-					<StyledDropDownSection>
-						{renderAccordion}
-					</StyledDropDownSection>
-				</DragDropContext>
-			</>
+																			}
+																			return updated;
+																		},
+																	);
+																}}
+																checked={droppedColumns[
+																	addedColumnName
+																]?.values?.some(
+																	(dropcol) =>
+																		dropcol?.includes(
+																			col.name,
+																		),
+																)}
+															/>
+														</div>
+													)}
+												</div>
+											)}
+										</Draggable>
+									))}
+									{provided.placeholder}
+								</div>
+							)}
+						</Droppable>
+					</StyledSubSection>
+					<StyledSubSection>
+						<DataTabStyling
+							id={id}
+							updateFrame={updateFrame}
+							syncHeader={syncHeaders}
+							path="option"
+							dragdropColumns={droppedColumns}
+							deleteColumns={deleteDroppedColumn}
+							formmattedColumns={formattedColumns}
+							isAdd={onClickAdd}
+							chart={chart}
+							storedColumns={selectedColumn}
+							visual={handleChangeVisual}
+							selectedItem={handleSelectedItem}
+						></DataTabStyling>
+					</StyledSubSection>
+				</StyledDropDownSection>
+				<StyledDropDownSection>{renderAccordion}</StyledDropDownSection>
+			</DragDropContext>
 		);
 	},
 );

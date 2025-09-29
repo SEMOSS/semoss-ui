@@ -54,7 +54,7 @@ export const DendrogramChartField = observer(
 		useEffect(() => {
 			setFacetList((prevList: string[]) =>
 				facetListData.map((item) =>
-					item instanceof Array ? item[0] : item,
+					Array.isArray(item) ? item[0] : item,
 				),
 			);
 			setDendrogramFacetUpdated(false);
@@ -83,7 +83,7 @@ export const DendrogramChartField = observer(
 
 		function findAndUpdateNavigationDetails(value) {
 			const index = facetList.findIndex((item) =>
-				isNaN(parseInt(value))
+				Number.isNaN(parseInt(value))
 					? item == value
 					: parseInt(item) == parseInt(value),
 			);
@@ -100,10 +100,10 @@ export const DendrogramChartField = observer(
 		function updateField(e) {
 			setDendrogramFacetUpdated(true);
 			const newvalue =
-				e.target.value instanceof Array
+				Array.isArray(e.target.value)
 					? e.target.value[0]
 					: e.target.value;
-			if (e.target.value == "" || e.target.value == null) return;
+			if (e.target.value === "" || e.target.value === null) return;
 			const prevValue = dropDownValue;
 			try {
 				let facetData = JSON.parse(computedValue);
@@ -113,14 +113,14 @@ export const DendrogramChartField = observer(
 						value: newvalue,
 					},
 				];
-				setData("facet.facetSelected", facetData);
+				setData("facet.facetSelected", facetData, true);
 				setDropDownValue((prevValue) =>
-					e.target.value instanceof Array
+					Array.isArray(e.target.value)
 						? e.target.value[0]
 						: e.target.value,
 				);
 				findAndUpdateNavigationDetails(
-					e.target.value instanceof Array
+					Array.isArray(e.target.value)
 						? e.target.value[0]
 						: e.target.value,
 				);
@@ -153,8 +153,8 @@ export const DendrogramChartField = observer(
 						onChange={(e) => updateField(e)}
 					>
 						{facetList.length > 0 &&
-							facetList.map((item, index) => (
-								<Menu.Item key={index} value={item.toString()}>
+							facetList.map((item) => (
+								<Menu.Item key={`${item}`} value={item.toString()}>
 									{item}
 								</Menu.Item>
 							))}
