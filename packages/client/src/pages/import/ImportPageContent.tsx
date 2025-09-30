@@ -542,8 +542,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						(kv: [string, any[]], i) => {
 							return (
 								<Box key={i}>
-									yoyoo
-									<StyledCategoryTitle>
+=									<StyledCategoryTitle>
 										{kv[0]}
 									</StyledCategoryTitle>
 									<Box>
@@ -738,7 +737,6 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 							/>
 						</StyledSearchbarContainer>
 					)}
-				jssjs
 				{/*  When Step changes scroll top into view */}
 				<div ref={scrollToTopRef} style={{ height: "0px" }}>
 					&nbsp;
