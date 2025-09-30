@@ -244,6 +244,9 @@ interface ImportPageContentProps {
 	type: ENGINE_TYPES;
 }
 
+/**
+ * @deprecated
+ */
 export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 	name,
 	type,

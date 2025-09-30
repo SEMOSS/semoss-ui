@@ -1,9 +1,9 @@
 import { useMemo } from "react";
 import { Stack } from "@semoss/ui";
 import type { ENGINE_TYPES } from "@/types";
+import { ModelImport } from "../../components/import/model/ModelImport";
 import { ImportLayout } from "./ImportLayout";
 import { ImportPageContent } from "./ImportPageContent";
-import { ModelImportFlow } from "./model/ModelImportFlow";
 
 /** TODO: Refactor */
 interface ImportPageProps {
@@ -18,7 +18,7 @@ interface ImportPageProps {
 	type: ENGINE_TYPES;
 }
 export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
-	// TODO: Start With Model Import Flow, utilize old component for other flows for now
+	// TODO: Start With Model Import Flow, utilize old component for other flows refactor and replace
 	const EngineImportFlow = useMemo(() => {
 		switch (type) {
 			case "DATABASE":
@@ -26,7 +26,7 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 			case "MODEL":
 				return (
 					<Stack>
-						<ModelImportFlow />
+						<ModelImport />
 						<ImportPageContent name={name} type={type} />
 					</Stack>
 				);
@@ -41,9 +41,5 @@ export const ImportPage: React.FC<ImportPageProps> = ({ name, type }) => {
 		}
 	}, [type]);
 
-	return (
-		<div>
-			<ImportLayout>{EngineImportFlow}</ImportLayout>
-		</div>
-	);
+	return <ImportLayout>{EngineImportFlow}</ImportLayout>;
 };

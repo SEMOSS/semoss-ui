@@ -13,7 +13,9 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { formatToDataTestId } from "@/utility";
+import { ModelImportForm } from "./ModelImportForm";
 import { ModelTileCard } from "./ModelTileCard";
+import type { FieldDefinition } from "./model-import.constants";
 import {
 	IMPORTABLE_MODELS,
 	type ImportableModels,
@@ -40,7 +42,7 @@ const StyledTab = styled(Tabs.Item)({
 	color: "rgba(0, 0, 0, 0.60)",
 });
 
-export const ModelImportFlow: React.FC = () => {
+export const ModelImport: React.FC = () => {
 	const navigate = useNavigate();
 
 	const [search, setSearch] = useState("");
@@ -50,22 +52,19 @@ export const ModelImportFlow: React.FC = () => {
 	const [selectedModel, setSelectedModel] = useState<string>("");
 
 	/**
-	 * Any initialization logic for the model import flow
+	 * Any initialization logic for the model import flow - fetch importable models
 	 */
 	useEffect(() => {
-		getImportableModels();
+		const fetch = async () => {
+			// TODO: Get importable models from backend
+			await runPixel("1+1");
+
+			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
+			setSelectedProvider(IMPORTABLE_MODELS.providers[0].name);
+		};
+
+		fetch();
 	}, []);
-
-	/**
-	 * Fetch the list of importable models from the backend or a static source
-	 */
-	const getImportableModels = async () => {
-		// TODO: Get importable models from backend
-		const { pixelReturn } = await runPixel("1+1");
-
-		setImportableModels(IMPORTABLE_MODELS as ImportableModels);
-		setSelectedProvider(IMPORTABLE_MODELS.providers[0].name);
-	};
 
 	// TODO: would be ideal to have a reactor that gets me this ds
 	const models = useMemo(() => {
@@ -114,18 +113,16 @@ export const ModelImportFlow: React.FC = () => {
 									}}
 								>
 									{importableModels.providers.map(
-										(provider, i) => {
-											return (
-												<StyledTab
-													key={provider.name}
-													label={provider.name}
-													value={provider.name}
-													data-tesId={formatToDataTestId(
-														`connect-to-${provider.name}-tab`,
-													)}
-												/>
-											);
-										},
+										(provider) => (
+											<StyledTab
+												key={provider.name}
+												label={provider.name}
+												value={provider.name}
+												data-tesId={formatToDataTestId(
+													`connect-to-${provider.name}-tab`,
+												)}
+											/>
+										),
 									)}
 								</Tabs>
 
@@ -137,9 +134,9 @@ export const ModelImportFlow: React.FC = () => {
 										columnSpacing={2}
 										rowSpacing={2}
 									>
-										{models.map((model, idx) => (
+										{models.map((model) => (
 											<Grid
-												key={idx}
+												key={model.name}
 												item
 												lg={1}
 												md={1}
@@ -149,9 +146,9 @@ export const ModelImportFlow: React.FC = () => {
 											>
 												<ModelTileCard
 													model={model}
-													onModelSelect={(model) => {
+													onModelSelect={(m) => {
 														setSelectedModel(
-															model.name,
+															m.name,
 														);
 													}}
 												/>
@@ -163,10 +160,50 @@ export const ModelImportFlow: React.FC = () => {
 						) : null}
 					</Stack>
 				);
-			default:
-				return <div>Model Details View</div>;
+			default: {
+				// Find the provider definition for the selected provider
+				const providerDef = importableModels?.providers.find(
+					(p) => p.name === selectedProvider,
+				);
+
+				// selectedModel is the model name from MODEL_VERSIONS; we need to map that to a model_types entry
+				// Find a type entry whose 'model_types' matches the model metadata (embedding vs llm)
+				let fields: FieldDefinition[] = [];
+				let advanced: FieldDefinition[] = [];
+
+				if (providerDef) {
+					// Try to determine whether the selected model is an embedding or llm by checking MODEL_VERSIONS
+					const providerModels =
+						MODEL_VERSIONS[selectedProvider] || [];
+					const modelMeta = providerModels.find(
+						(m) => m.name === selectedModel,
+					);
+
+					// Default to 'llm' if not found
+					const targetType = modelMeta?.embedding
+						? "embedding"
+						: "llm";
+
+					const typeDef = providerDef.types.find((t) =>
+						t.model_types.includes(targetType),
+					);
+
+					if (typeDef) {
+						fields = typeDef.fields || [];
+						advanced = typeDef.advanced || [];
+					}
+				}
+
+				return (
+					<ModelImportForm
+						name={selectedModel}
+						fields={fields}
+						advanced={advanced}
+					/>
+				);
+			}
 		}
-	}, [selectedModel, importableModels, search]);
+	}, [selectedModel, importableModels, search, models, selectedProvider]);
 
 	return (
 		<div>
