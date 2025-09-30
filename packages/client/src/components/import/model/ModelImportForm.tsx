@@ -58,6 +58,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 
 	const onSubmit = (data: Record<string, unknown>) => {
 		console.log("Submission Pixel")
+		console.log(data)
+
+		// TODO: move to DEFAULT VALUE in react hook form
+		const details = {
+			"MODEL": name
+		}
+		
+		console.log(details)
 		// CreateModelEngine(
         //     model=["CATALOG_NAME"], 
         //     modelDetails=[

@@ -49,7 +49,7 @@ export const ModelImport: React.FC = () => {
 	const [importableModels, setImportableModels] =
 		useState<ImportableModels | null>(null);
 	const [selectedProvider, setSelectedProvider] = useState("");
-	const [selectedModel, setSelectedModel] = useState<string>("");
+	const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
@@ -84,7 +84,7 @@ export const ModelImport: React.FC = () => {
 	 */
 	const view = useMemo(() => {
 		switch (selectedModel) {
-			case "":
+			case null:
 				return (
 					<Stack>
 						<StyledSearchbarContainer>
@@ -154,12 +154,40 @@ export const ModelImport: React.FC = () => {
 												/>
 											</Grid>
 										))}
+										<Grid
+												key={""}
+												item
+												lg={1}
+												md={1}
+												xs={1}
+												xl={1}
+												sm={1}
+											>
+												<ModelTileCard
+													model={{
+														name: "custom",
+														display: "Custom",
+														icon: "/src/assets/img/SEMOSS_BLACK_LOGO.png",
+														embedding: false,
+														disable: false,
+													}}
+													onModelSelect={(m) => {
+														setSelectedModel(
+															"",
+														);
+													}}
+												/>
+											</Grid>
 									</Grid>
 								</Box>
 							</Stack>
 						) : null}
 					</Stack>
 				);
+			case "": 
+				return (
+					<div>emlyty string</div>
+				)
 			default: {
 				// Find the provider definition for the selected provider
 				const providerDef = importableModels?.providers.find(
@@ -232,7 +260,7 @@ export const ModelImport: React.FC = () => {
 						color="inherit"
 						variant="body1"
 						onClick={() => {
-							setSelectedModel("");
+							setSelectedModel(null);
 						}}
 					>
 						Connect to Model
