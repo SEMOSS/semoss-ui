@@ -52,7 +52,8 @@ export interface IterationBlockDef extends BlockDef<"iteration"> {
 }
 
 export const IterationBlock: BlockComponent = observer(({ id }) => {
-	const { attrs, data, slots, listeners, setData } = useBlock<IterationBlockDef>(id);
+	const { attrs, data, slots, listeners, setData } =
+		useBlock<IterationBlockDef>(id);
 	const { state } = useBlocks();
 
 	const [blocksToRemove, setBlocksToRemove] = useState([]);
@@ -82,7 +83,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 		if (state.mode === "interactive") {
 			if (Array.isArray(list)) {
 				const newIds = [];
-				 (data.removeIds || []).forEach(async (b) => {
+				(data.removeIds || []).forEach(async (b) => {
 					await state.dispatch({
 						message: ActionMessages.REMOVE_BLOCK,
 						payload: {
@@ -92,22 +93,22 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 					});
 				});
 				const jsonData = state.getBlock(slots.children.children[0]);
-				const listLoop = async(list) => {
+				const listLoop = async (list) => {
 					// biome-ignore lint/correctness/noUnusedFunctionParameters: though it is not used, to extract index we need it
-					await list.forEach(async (j, i) => {
+					for (let i = 0; i < list.length; i++) {
 						// Skip the first
-						if (i === 0) return;
-	
+						if (i === 0) continue;
+
 						const getJsonForBlock = (id: string) => {
 							const block = state.blocks[id];
-	
+
 							const blockJson = {
 								widget: toJS(block.widget),
 								data: toJS(block.data),
 								listeners: toJS(block.listeners),
 								slots: {},
 							};
-	
+
 							// generate the slots
 							for (const slot in block.slots) {
 								if (block.slots[slot]) {
@@ -155,7 +156,7 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 											) {
 												// Update the blockId in the payload
 												message.payload.blockId = id;
-	
+
 												await state.dispatch({
 													message:
 														ActionMessages.SET_LISTENER,
@@ -187,13 +188,12 @@ export const IterationBlock: BlockComponent = observer(({ id }) => {
 								}
 							}
 						};
-						await fixListeners(newBlockId as string);					
-					});
+						await fixListeners(newBlockId as string);
+					}
 					setBlocksToRemove(newIds);
-					await setData('removeIds', newIds);
-				}
+					await setData("removeIds", newIds);
+				};
 				listLoop(list);
-				
 			}
 		}
 		// TODO: FIx Dependency array
