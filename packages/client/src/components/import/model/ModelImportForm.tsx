@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Controller as RHFController, useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import {
 	Button,
 	Select,
@@ -23,9 +23,6 @@ interface ModelImportFormProps {
 	 */
 	advanced: FieldDefinition[];
 	/**
-	 * react-hook-form control passed from parent
-	 */
-	/**
 	 * callback invoked when form is submitted with values
 	 */
 	onComplete?: (data: Record<string, unknown>) => void;
@@ -38,8 +35,15 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	const { control, handleSubmit, reset } = useForm({
 		defaultValues: [...fields, ...advanced].reduce<Record<string, unknown>>(
 			(acc, f) => {
-				acc[f.key] =
-					f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+				// if a name was supplied for the model, lock the MODEL field to that name
+				if (f.key === "MODEL" && name) {
+					acc[f.key] = name;
+				} else {
+					acc[f.key] =
+						f.default ??
+						f.value ??
+						(f.type === "boolean" ? false : "");
+				}
 				return acc;
 			},
 			{},
@@ -50,25 +54,23 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	useEffect(() => {
 		const defaults: Record<string, unknown> = {};
 		[...fields, ...advanced].forEach((f) => {
-			defaults[f.key] =
-				f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+			if (f.key === "MODEL" && name) {
+				defaults[f.key] = name;
+			} else {
+				defaults[f.key] =
+					f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+			}
 		});
 		reset(defaults);
-	}, [fields, advanced, reset]);
+	}, [fields, advanced, reset, name]);
 
 	const onSubmit = (data: Record<string, unknown>) => {
-		console.log("Submission Pixel")
-		console.log(data)
+		console.log("Submission Pixel");
+		console.log(data);
 
-		// TODO: move to DEFAULT VALUE in react hook form
-		const details = {
-			"MODEL": name
-		}
-		
-		console.log(details)
 		// CreateModelEngine(
-        //     model=["CATALOG_NAME"], 
-        //     modelDetails=[
+		//     model=["CATALOG_NAME"],
+		//     modelDetails=[
 		// 		{
 		// 			"NAME":"getet",
 		// 			"MODEL_TYPE":"OPEN_AI",
@@ -83,20 +85,23 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		// 			"MAX_INPUT_TOKENS":""
 		// 		}
 		// 	]
-    	// )
+		// )
 
 		if (onComplete) onComplete(data);
 	};
 
 	const renderField = (f: FieldDefinition) => {
 		const defaultVal =
-			f.default ?? f.value ?? (f.type === "boolean" ? false : "");
+			f.key === "MODEL" && name
+				? name
+				: (f.default ?? f.value ?? (f.type === "boolean" ? false : ""));
+		const isLockedModel = f.key === "MODEL" && !!name;
 
 		// TODO: add rules here based on field.key
 
 		if (f.type === "hidden") {
 			return (
-				<RHFController
+				<Controller
 					key={f.key}
 					name={f.key}
 					control={control}
@@ -120,7 +125,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 		}
 
 		return (
-			<RHFController
+			<Controller
 				key={f.key}
 				name={f.key}
 				control={control}
@@ -136,6 +141,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									variant="outlined"
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
+									disabled={isLockedModel}
 								/>
 							);
 						case "password":
@@ -146,6 +152,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									type="password"
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
+									disabled={isLockedModel}
 								/>
 							);
 						case "number":
@@ -163,6 +170,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 												: asNumber,
 										);
 									}}
+									disabled={isLockedModel}
 								/>
 							);
 						case "textarea":
@@ -173,6 +181,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
 									rows={4}
+									disabled={isLockedModel}
 								/>
 							);
 						case "select":
@@ -192,6 +201,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											).target?.value ?? e,
 										)
 									}
+									disabled={isLockedModel}
 								>
 									{(f.options || []).map((opt) => (
 										<Select.Item key={opt} value={opt}>
@@ -221,6 +231,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 											);
 											field.onChange(checked);
 										}}
+										disabled={isLockedModel}
 									/>
 									<Typography variant="body1">
 										{f.label}

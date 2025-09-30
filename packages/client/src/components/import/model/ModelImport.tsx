@@ -1,10 +1,13 @@
+import { FileUploadOutlined } from "@mui/icons-material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk";
 import {
 	Box,
 	Breadcrumbs,
+	Button,
 	Grid,
+	IconButton,
 	Link,
 	Search,
 	Stack,
@@ -33,6 +36,14 @@ const StyledStack = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	gap: theme.spacing(1),
+}));
+
+const UploadButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.text.primary,
+	borderRadius: "12px",
+	padding: theme.spacing(1.25, 2),
+	alignSelf: "flex-start",
 }));
 
 const StyledTab = styled(Tabs.Item)({
@@ -96,6 +107,9 @@ export const ModelImport: React.FC = () => {
 								}}
 								fullWidth
 							/>
+							<UploadButton size="small" variant="outlined">
+								<FileUploadOutlined fontSize="small" />
+							</UploadButton>
 						</StyledSearchbarContainer>
 
 						{/* Add your model import flow components and logic here */}
@@ -155,39 +169,33 @@ export const ModelImport: React.FC = () => {
 											</Grid>
 										))}
 										<Grid
-												key={""}
-												item
-												lg={1}
-												md={1}
-												xs={1}
-												xl={1}
-												sm={1}
-											>
-												<ModelTileCard
-													model={{
-														name: "custom",
-														display: "Custom",
-														icon: "/src/assets/img/SEMOSS_BLACK_LOGO.png",
-														embedding: false,
-														disable: false,
-													}}
-													onModelSelect={(m) => {
-														setSelectedModel(
-															"",
-														);
-													}}
-												/>
-											</Grid>
+											key={""}
+											item
+											lg={1}
+											md={1}
+											xs={1}
+											xl={1}
+											sm={1}
+										>
+											<ModelTileCard
+												model={{
+													name: "custom",
+													display: "Custom",
+													icon: "/src/assets/img/SEMOSS_BLACK_LOGO.png",
+													embedding: false,
+													disable: false,
+												}}
+												onModelSelect={(m) => {
+													setSelectedModel("");
+												}}
+											/>
+										</Grid>
 									</Grid>
 								</Box>
 							</Stack>
 						) : null}
 					</Stack>
 				);
-			case "": 
-				return (
-					<div>emlyty string</div>
-				)
 			default: {
 				// Find the provider definition for the selected provider
 				const providerDef = importableModels?.providers.find(
@@ -265,7 +273,7 @@ export const ModelImport: React.FC = () => {
 					>
 						Connect to Model
 					</Breadcrumbs.Item>
-					{selectedModel && (
+					{selectedModel !== null && (
 						<Breadcrumbs.Item
 							//@ts-expect-error:
 							as={Link}
@@ -274,7 +282,9 @@ export const ModelImport: React.FC = () => {
 							variant="body1"
 							onClick={() => {}}
 						>
-							{selectedModel.toUpperCase()}
+							{selectedModel
+								? selectedModel.toUpperCase()
+								: `Custom ${selectedProvider} Model`}
 						</Breadcrumbs.Item>
 					)}
 				</Breadcrumbs>
@@ -298,7 +308,6 @@ export const ModelImport: React.FC = () => {
 					LLM landscape.
 				</Typography>
 			</StyledStack>
-			{selectedModel}
 			{view}
 		</div>
 	);

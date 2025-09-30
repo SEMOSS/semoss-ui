@@ -921,6 +921,12 @@ export const MODEL_VERSIONS = {
 			embedding: false,
 		},
 		{
+			name: "gpt-.5",
+			display: "GPT 3.5",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: false,
+		},
+		{
 			name: "gpt-4",
 			display: "GPT 4",
 			icon: "/src/assets/img/OPEN_AI.png",
