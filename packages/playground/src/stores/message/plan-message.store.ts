@@ -12,6 +12,7 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 */
 	steps: {
 		step_number: number;
+		step_name: string;
 		description: string;
 		type:
 			| "tool_call"
@@ -56,5 +57,25 @@ export class PlanMessageStore extends AbstractMessageStore {
 		makeObservable(this, {
 			steps: observable,
 		});
+	}
+
+	/***
+	 * Add a new step to the plan
+	 * @param step
+	 */
+	addStep(step: Omit<PlanMessageStore["steps"][number], "step_number">) {
+		this.steps.push({
+			// increment it
+			step_number: this.steps.length,
+			...step,
+		});
+	}
+
+	/**
+	 * Delete a step from the plan
+	 * @param step_number
+	 */
+	removeStep(step_number: number) {
+		this.steps = this.steps.filter((s) => s.step_number !== step_number);
 	}
 }

@@ -249,7 +249,7 @@ export const RoomPage = observer(() => {
 							maxWidth="xl"
 							sx={{ padding: "0 !important" }}
 						>
-							{room.history.map((m) => (
+							{room.history.map((m, mIdx) => (
 								<Stack
 									key={m.id}
 									direction="column"
@@ -265,7 +265,12 @@ export const RoomPage = observer(() => {
 										<ResponseMessage message={m} />
 									)}
 									{m.type === "PLAN" && (
-										<PlanMessage message={m} />
+										<PlanMessage
+											message={m}
+											isLast={
+												mIdx === room.history.length - 1
+											}
+										/>
 									)}
 								</Stack>
 							))}

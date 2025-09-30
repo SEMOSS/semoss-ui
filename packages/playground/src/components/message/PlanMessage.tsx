@@ -1,19 +1,23 @@
 import {
-	Add, DeleteOutlineOutlined,
-	GridViewRounded,
-	SouthEastOutlined
+	Add,
+	Check,
+	DeleteOutlineOutlined,
+	Link,
+	SouthEastOutlined,
+	Warning,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
+import { useState } from "react";
 import {
 	Button,
 	IconButton,
-	Markdown,
 	Stack,
 	Stepper,
 	styled,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { AddStepOverlay, LinkStepOverlay } from "@/components";
 import type { PlanMessageStore } from "@/stores";
 
 const StyledPlanMessage = styled(Stack)(({ theme }) => ({
@@ -33,7 +37,6 @@ const StyledHover = styled(Stack)(() => ({
 	},
 }));
 
-
 const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
 	padding: "8px",
 	borderRadius: "12px",
@@ -46,12 +49,46 @@ const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
 interface PlanMessageProps {
 	/** Message to render */
 	message: PlanMessageStore;
+
+	/** Track if it is the last message */
+	isLast: boolean;
 }
 
 export const PlanMessage: React.FC<PlanMessageProps> = observer(
-	({ message }) => {
+	({ message, isLast }) => {
 		const notification = useNotification();
-		console.log(notification);
+
+		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
+		const [isLinkOpen, setIsLinkOpen] = useState(false);
+
+		/**
+		 * Remove a step from the plan
+		 * @param step_number Step number to remove
+		 */
+		const removeStep = (step_number: number) => {
+			try {
+				message.removeStep(step_number);
+
+				notification.add({
+					color: "success",
+					message: `Successfully removed step ${step_number} from plan`,
+				});
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: String(e),
+				});
+			}
+		};
+
+		// only accept if all tools are there
+		let canAccept = true;
+		for (const step of message.steps) {
+			if (step.details.stepType === "no_tool_available") {
+				canAccept = false;
+				break;
+			}
+		}
 
 		return (
 			<StyledPlanMessage direction={"column"} spacing={2}>
@@ -75,13 +112,18 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 							>
 								<Stepper.StepLabel
 									error={s.status === "failed"}
+									sx={{ paddingBottom: 0 }}
 								>
-									<StyledHover direction={"row"} spacing={1} alignItems={'center'}>
+									<StyledHover
+										direction={"row"}
+										spacing={1}
+										alignItems={"center"}
+									>
 										<Typography
 											variant="subtitle2"
 											fontWeight={500}
 										>
-											{`Step ${s.step_number}`}
+											{s.step_name}
 										</Typography>
 										<Stack
 											flex={1}
@@ -91,73 +133,39 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											spacing={1}
 											data-hover={true}
 										>
-											<IconButton
-												size="small"
-												onClick={() => {
-													console.log("TODO");
-												}}
-											>
-												<DeleteOutlineOutlined color="error" fontSize="inherit" />
-											</IconButton>
+											{isLast && (
+												<IconButton
+													size="small"
+													onClick={() => {
+														removeStep(
+															s.step_number,
+														);
+													}}
+												>
+													<DeleteOutlineOutlined
+														color="error"
+														fontSize="inherit"
+													/>
+												</IconButton>
+											)}
 										</Stack>
 									</StyledHover>
 								</Stepper.StepLabel>
 								<Stepper.StepContent>
-									<Typography variant="caption">
-										{s.description}
-									</Typography>
-									{s.details.stepType === "tool_call" && (
-										<StyledSidebarOpen
-											direction={"row"}
-											alignItems={"center"}
-											spacing={2}
-											onClick={() => {
-												console.log("TODO");
-											}}
-										>
-											<GridViewRounded
-												fontSize="medium"
-												sx={{ color: "#757575" }}
-											/>
-											<Stack
-												direction={"column"}
-												spacing={1}
-												flex={1}
-											>
-												<Typography
-													variant="subtitle2"
-													noWrap={true}
-												>
-													{s.details.tool_name}
-												</Typography>
-												<Typography variant="caption">
-													Click to Open
-												</Typography>
-											</Stack>
-										</StyledSidebarOpen>
-									)}
-									{s.details.stepType === "llm_reasoning" && (
-										<Markdown>{s.details.prompt}</Markdown>
-									)}
-
-									{s.details.stepType ===
-										"human_intervention" && (
-											<Typography variant="body2">
-												Ask a {s.details.required_role} to{" "}
-												{s.details.instructions}
-											</Typography>
-										)}
-									{s.details.stepType ===
-										"no_tool_available" && (
+									<Stack direction="column" spacing={1}>
+										<Typography variant="caption">
+											{s.description}
+										</Typography>
+										{s.details.stepType === "tool_call" && (
 											<StyledSidebarOpen
 												direction={"row"}
 												alignItems={"center"}
 												spacing={2}
 												onClick={() => {
-													console.log("TODO");
+													setIsLinkOpen(true);
 												}}
 											>
-												<GridViewRounded
+												<Warning
 													fontSize="medium"
 													sx={{ color: "#757575" }}
 												/>
@@ -167,42 +175,106 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 													flex={1}
 												>
 													<Typography
-														variant="body1"
+														variant="subtitle2"
 														noWrap={true}
 													>
-														Missing Tool for{" "}
-														{
-															s.details
-																.missing_capability
-														}
+														{s.details.tool_name}
 													</Typography>
 													<Typography variant="caption">
-														Click to Add
+														Click to Open
 													</Typography>
 												</Stack>
 											</StyledSidebarOpen>
 										)}
+										{s.details.stepType ===
+											"llm_reasoning" &&
+											// <Markdown>{s.details.prompt}</Markdown>
+											null}
 
-									<Typography variant="caption">
+										{s.details.stepType ===
+											"human_intervention" &&
+											// <Typography variant="body2">
+											// 	Ask a {s.details.required_role} to{" "}
+											// 	{s.details.instructions}
+											// </Typography>
+											null}
+										{s.details.stepType ===
+											"no_tool_available" && (
+											<Stack
+												direction={"row"}
+												justifyContent={"center"}
+											>
+												<Button
+													size="small"
+													variant="outlined"
+													color="warning"
+													startIcon={<Link />}
+													onClick={() => {
+														setIsLinkOpen(true);
+													}}
+												>
+													Link Tool
+												</Button>
+											</Stack>
+										)}
+
+										{/* <Typography variant="caption">
 										{s.details.rationaleForStep}
-									</Typography>
+									</Typography> */}
+									</Stack>
 								</Stepper.StepContent>
 							</Stepper.Step>
 						))}
 					</Stepper>
 				)}
-				<Stack direction="row">
-					<Button
-						size="small"
-						variant="text"
-						startIcon={<Add />}
-						onClick={() => {
-							console.log("TODO");
+				{isLast && (
+					<Stack direction="row" justifyContent={"space-between"}>
+						<Button
+							size="small"
+							variant="text"
+							startIcon={<Add />}
+							onClick={() => {
+								setIsAddStepOpen(true);
+							}}
+						>
+							Add
+						</Button>
+						<Button
+							size="small"
+							variant="contained"
+							disabled={!canAccept}
+							startIcon={<Check />}
+							onClick={() => {
+								setIsAddStepOpen(true);
+							}}
+						>
+							Accept
+						</Button>
+					</Stack>
+				)}
+
+				{isAddStepOpen && (
+					<AddStepOverlay
+						onClose={(success, step) => {
+							// update the plan if successful
+							if (success) {
+								message.addStep(step);
+							}
+
+							// close it
+							setIsAddStepOpen(false);
 						}}
-					>
-						Add Task
-					</Button>
-				</Stack>
+					/>
+				)}
+
+				{isLinkOpen && (
+					<LinkStepOverlay
+						onClose={(success, step) => {
+							// close it
+							setIsLinkOpen(false);
+						}}
+					/>
+				)}
 			</StyledPlanMessage>
 		);
 	},

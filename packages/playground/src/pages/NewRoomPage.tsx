@@ -73,7 +73,7 @@ export const NewRoomPage = observer(() => {
 		autoExecute: false,
 	});
 
-	const [isComplex, setIsComplex] = useState(false);
+	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
@@ -97,12 +97,16 @@ export const NewRoomPage = observer(() => {
 		// initialize it
 		await room.initialize();
 
-		// ask the room
-		if (isComplex) {
-			await room.generatePlan(prompt, files, options);
+		// set the room to plan if it is planning
+		if (isPlanning) {
+			room.setMode("plan");
 		} else {
-			await room.askMessage(prompt, files, options);
+			room.setMode("chat");
 		}
+
+		// ask the room
+		await room.askMessage(prompt, files, options);
+
 		// turn the loading screen off
 		setIsLoading(false);
 
@@ -182,12 +186,12 @@ export const NewRoomPage = observer(() => {
 											aria-label="Generate plan"
 											disabled={isLoading}
 											color={
-												isComplex
+												isPlanning
 													? "primary"
 													: "default"
 											}
 											onClick={() => {
-												setIsComplex(!isComplex);
+												setIsPlanning(!isPlanning);
 											}}
 										>
 											<FormatListNumbered color="inherit" />

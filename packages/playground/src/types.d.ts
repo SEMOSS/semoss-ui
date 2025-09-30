@@ -79,9 +79,6 @@ interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
-	ornaments: {
-		chunks: unknown[];
-	};
 }
 
 interface InputTextPixelMessage extends AbstractPixelMessage {
@@ -110,6 +107,9 @@ interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
 	visible: true;
 	content: string;
+	ornaments: {
+		PLAYGROUND_MESSAGE_TYPE?: "COT";
+	};
 }
 
 interface ResponseToolPixelMessage extends AbstractPixelMessage {

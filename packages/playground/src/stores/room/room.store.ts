@@ -3,9 +3,11 @@ import { download, runPixel, upload } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import type {
+	InputTextPixelMessage,
 	Knowledge,
 	PixelMessage,
 	ResponseTextPixelMessage,
+	ResponseToolPixelMessage,
 	Tool,
 } from "@/types";
 import {
@@ -33,6 +35,11 @@ interface RoomStoreInterface {
 	 *  Track if the room is loading
 	 */
 	isLoading: boolean;
+
+	/**
+	 *  Track the mode of the room.
+	 */
+	mode: "plan" | "chat";
 
 	/**
 	 * Metadata associated with the room
@@ -125,6 +132,7 @@ export class RoomStore {
 		roomId: "",
 		isInitialized: false,
 		isLoading: false,
+		mode: "chat",
 		metadata: {
 			name: "",
 			dateCreated: "",
@@ -186,6 +194,13 @@ export class RoomStore {
 	 */
 	get isLoading() {
 		return this._store.isLoading;
+	}
+
+	/**
+	 * Get the mode of the room
+	 */
+	get mode() {
+		return this._store.mode;
 	}
 
 	/**
@@ -266,6 +281,14 @@ export class RoomStore {
 
 	/** Setters */
 	/**
+	 * Set the mode
+	 * @param mode - mode of the room
+	 */
+	setMode = (mode: "plan" | "chat") => {
+		this._store.mode = mode;
+	};
+
+	/**
 	 * Set the model
 	 * @param modelId - model to use in the room
 	 */
@@ -325,7 +348,10 @@ export class RoomStore {
 				string,
 				{
 					parentMessageId: string;
-					message: InputMessageStore | ResponseMessageStore;
+					message:
+						| InputMessageStore
+						| ResponseMessageStore
+						| PlanMessageStore;
 				}
 			> = {};
 
@@ -438,9 +464,6 @@ export class RoomStore {
 					temperature: this._store.options.temperature,
 				},
 				dateCreated: "",
-				ornaments: {
-					chunks: [],
-				},
 			}) as InputMessageStore;
 
 			// ask it
@@ -490,9 +513,6 @@ export class RoomStore {
 					temperature: this._store.options.temperature,
 				},
 				dateCreated: "",
-				ornaments: {
-					chunks: [],
-				},
 			}) as InputMessageStore;
 
 			await this.runMessage(grandParentMessage, rewrittenMessage);
@@ -597,137 +617,6 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 			const responseMessage = this.createMessage(output.responseMessage);
 
 			message.addChild(responseMessage);
-		} finally {
-			// turn off the loading screen
-			this.setIsLoading(false);
-		}
-	};
-
-	/**
-	 * Generate a plan for complex prompts
-	 * @param prompt - user message
-	 * @param files - files to upload
-	 * @param options - options to override
-	 */
-	generatePlan = async (
-		prompt: string,
-		files: File[],
-		options?: Partial<RoomStoreInterface["options"]>,
-	): Promise<void> => {
-		try {
-			if (!this._store.modelId) {
-				throw new Error("Model is required");
-			}
-
-			if (!prompt) {
-				throw new Error("Prompt is required");
-			}
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// options to use with the ask
-			if (options) {
-				this.setOptions(options);
-			}
-
-			// upload the files
-			let uploaded = [];
-			if (files.length > 0) {
-				uploaded = await this.upload(files, "");
-			}
-
-			// get the parent message
-			const parentMessage = this.tail;
-			if (parentMessage instanceof RootMessageStore === false) {
-				throw new Error(
-					"Can only generate the plan for the first message",
-				);
-			}
-
-			// build the context if it is there
-			let context = "";
-			if (this._store.options?.instructions) {
-				context = this._store.options?.instructions;
-			}
-
-			// get a list of tool ids
-			const tools: string[] = this._store.options.tools.map(
-				(t) => t.id,
-				[],
-			);
-
-			// create the input message
-			const inputMessage = this.createMessage({
-				messageId: TEMP_MESSAGE_ID,
-				type: "INPUT_TEXT",
-				visible: true,
-				inputUIPrompt: prompt,
-				files: uploaded,
-				modelId: this._store.modelId,
-				paramMap: {
-					max_new_tokens: this._store.options.tokenLength,
-					temperature: this._store.options.temperature,
-				},
-				dateCreated: "",
-				ornaments: {
-					chunks: [],
-				},
-			}) as InputMessageStore;
-
-			// connect to the parent
-			parentMessage.addChild(inputMessage);
-
-			// wait for the pixel to run
-			const response = await this.runPixel<
-				[
-					{
-						inputMessage: PixelMessage;
-						responseMessage: ResponseTextPixelMessage;
-					},
-				]
-			>(
-				`AskCOTRoom(
-engine=["${this._store.modelId}"],
-roomId=["${this._store.roomId}"],
-command=["<encode>${prompt}</encode>"],
-${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${uploaded.length ? `images=${JSON.stringify(uploaded.map((file) => file.fileLocation))},` : "images=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
-${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
-paramValues=[${JSON.stringify({
-					max_new_tokens: this._store.options.tokenLength,
-					temperature: this._store.options.temperature,
-				})}]
-);`,
-			);
-
-			// throw errors
-			if (response.errors.length > 0) {
-				throw new Error(JSON.stringify(response.errors));
-			}
-
-			const { output } = response.pixelReturn[0];
-
-			// update the input's id
-			inputMessage.updateId(output.inputMessage.messageId);
-
-			// create the response and link to the input
-			// TODO: Utilize a PLAN type
-
-			let steps = [];
-			try {
-				const content = JSON.parse(output.responseMessage.content);
-				steps = content.steps;
-			} catch {
-				console.error("ERROR Parsing Plan");
-			}
-
-			const responseMessage = new PlanMessageStore(
-				this,
-				output.responseMessage.messageId,
-				steps,
-			);
-			inputMessage.addChild(responseMessage);
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -841,7 +730,7 @@ paramValues=[${JSON.stringify({
 	 */
 	private createMessage = (
 		pixelMessage: PixelMessage,
-	): ResponseMessageStore | InputMessageStore => {
+	): ResponseMessageStore | InputMessageStore | PlanMessageStore => {
 		// set data based on type
 		if (pixelMessage.type === "INPUT_TEXT") {
 			return new InputMessageStore(
@@ -858,6 +747,22 @@ paramValues=[${JSON.stringify({
 				[],
 			);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
+			if (pixelMessage.ornaments.PLAYGROUND_MESSAGE_TYPE === "COT") {
+				let steps = [];
+				try {
+					const content = JSON.parse(pixelMessage.content);
+					steps = content.steps;
+				} catch {
+					console.error("ERROR Parsing Plan");
+				}
+
+				return new PlanMessageStore(
+					this,
+					pixelMessage.messageId,
+					steps,
+				);
+			}
+
 			return new ResponseMessageStore(
 				this,
 				pixelMessage.messageId,
@@ -905,16 +810,9 @@ paramValues=[${JSON.stringify({
 		// get a list of tool ids
 		const tools: string[] = this._store.options.tools.map((t) => t.id, []);
 
-		// wait for the pixel to run
-		const response = await this.runPixel<
-			[
-				{
-					inputMessage: PixelMessage;
-					responseMessage: PixelMessage;
-				},
-			]
-		>(
-			`AskPlayground(
+		let pixel = "";
+		if (this._store.mode === "plan") {
+			pixel = `AskCOTRoom(
 engine=["${this._store.modelId}"],
 roomId=["${this._store.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
@@ -926,8 +824,37 @@ paramValues=[${JSON.stringify({
 				max_new_tokens: this._store.options.tokenLength,
 				temperature: this._store.options.temperature,
 			})}]
-);`,
-		);
+);`;
+		} else if (this._store.mode === "chat") {
+			pixel = `AskPlayground(
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+command=["<encode>${inputMessage.text}</encode>"],
+${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
+${inputMessage.files.length ? `images=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "images=[],"}
+${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
+${parentMessage.id ? `parentMessageId=["${parentMessage.id}"],` : ""}
+paramValues=[${JSON.stringify({
+				max_new_tokens: this._store.options.tokenLength,
+				temperature: this._store.options.temperature,
+			})}]
+);`;
+		} else {
+			throw new Error("Pixel is required");
+		}
+
+		// wait for the pixel to run
+		const response =
+			await this.runPixel<
+				[
+					{
+						inputMessage: InputTextPixelMessage;
+						responseMessage:
+							| ResponseTextPixelMessage
+							| ResponseToolPixelMessage;
+					},
+				]
+			>(pixel);
 
 		// throw errors
 		if (response.errors.length > 0) {
@@ -943,7 +870,7 @@ paramValues=[${JSON.stringify({
 		const responseMessage = this.createMessage(output.responseMessage);
 		inputMessage.addChild(responseMessage);
 
-		// auto execute if AK
+		// auto execute if able to
 		if (this._store.options.autoExecute) {
 			if (!(responseMessage instanceof ResponseMessageStore)) {
 				return;

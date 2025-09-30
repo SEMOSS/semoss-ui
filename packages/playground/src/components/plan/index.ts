@@ -1,2 +1,2 @@
 export { AddStepOverlay } from "./AddStepOverlay";
-export { RemoveStepOverlay } from "./RemoveStepOverlay";
+export { LinkStepOverlay } from "./LinkStepOverlay";
