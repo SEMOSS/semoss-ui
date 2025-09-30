@@ -889,7 +889,6 @@ export class StateStore {
 					? variable.value
 					: null,
 			);
-			console.log(value, 'value', this._store.variables[path[0]]);
 
 			// TODO: Check this, protects for false values -- (query.isLoading tied to a block.label **bad use-case)
 			if (value !== undefined && value !== null) {
@@ -909,13 +908,17 @@ export class StateStore {
 						val = value;
 					}
 				}
-				console.log(val, 'val');
 				if (val) {
-					return val && typeof val === "string"
-						? val
-						: JSON.stringify(val);
+					if (typeof val === "string") {
+						return val;
+					}
+					if (!["cell", "query", "block"].includes(variable.type)) {
+						return getValueByPath(
+							val as object,
+							path.slice(1).join("."),
+						);
+					}
 				} else {
-					console.log('value',value);
 					return value;
 				}
 			}
@@ -927,132 +930,113 @@ export class StateStore {
 					this._store.variables?.[pathTemp[index]] || {};
 				index++;
 				const valueBasedIndexOpt: Record<string, unknown> = {};
-				while (pathTemp[index]){
-					if(valueBasedIndexOpt?.[pathTemp[index - 1]]){
-						if(typeof valueBasedIndexOpt[pathTemp[index - 1]] === "string" && (valueBasedIndexOpt[pathTemp[index - 1]] as string).trim().match(/^{{.*}}$/)){
-							const innerValue = this.parseVariable(valueBasedIndexOpt?.[pathTemp[index - 1]] as string, id, _depth + 1, _seen);
-							valueBasedIndexOpt[pathTemp[index - 1]] = typeof innerValue === "string" ? JSON.parse(innerValue as string) : innerValue;
+				while (pathTemp[index]) {
+					const prevKey = pathTemp[index - 1];
+					const currKey = pathTemp[index];
+					if (valueBasedIndexOpt?.[prevKey]) {
+						if (
+							typeof valueBasedIndexOpt[prevKey] === "string" &&
+							(valueBasedIndexOpt[prevKey] as string)
+								.trim()
+								.match(/^{{.*}}$/)
+						) {
+							const innerValue = this.parseVariable(
+								valueBasedIndexOpt?.[prevKey] as string,
+								id,
+								_depth + 1,
+								_seen,
+							);
+							valueBasedIndexOpt[prevKey] =
+								typeof innerValue === "string"
+									? JSON.parse(innerValue as string)
+									: innerValue;
 						}
-						valueBasedIndexOpt[pathTemp[index]] = valueBasedIndexOpt?.[pathTemp[index - 1]]?.[pathTemp[index]] ? (getValueByPath(valueBasedIndexOpt[pathTemp[index - 1]] as unknown as object, pathTemp[index]) || "") : "";
-					}
-					else{
-						if(variable?.type && (variable?.type === 'cell' || variable?.type === 'query')){
-							const cellList = this._store.queries[variable?.to]?.cellList || [];
+						valueBasedIndexOpt[currKey] = valueBasedIndexOpt?.[
+							prevKey
+						]?.[currKey]
+							? getValueByPath(
+									valueBasedIndexOpt[
+										prevKey
+									] as unknown as object,
+									currKey,
+								) || ""
+							: "";
+					} else {
+						if (
+							variable?.type &&
+							(variable?.type === "cell" ||
+								variable?.type === "query")
+						) {
+							const cellList =
+								this._store.queries[variable?.to]?.cellList ||
+								[];
 							const cellId = variable?.cellId;
-							let cellObj: CellState | Record<string, unknown> = {};
-							if(variable?.type === "cell"){
-								cellObj = cellList.find((c) => c.id === cellId) || {};
+							let cellObj: CellState | Record<string, unknown> =
+								{};
+							if (variable?.type === "cell") {
+								cellObj =
+									cellList.find((c) => c.id === cellId) || {};
 							}
-							if(variable?.type === "query"){
+							if (variable?.type === "query") {
 								cellObj = cellList[cellList.length - 1] || null;
 							}
-							if(cellObj?.[pathTemp[index]]) {
+							if (cellObj?.[currKey]) {
+								let cellValue = cellObj?.[currKey];
+								if (
+									typeof cellValue === "string" &&
+									cellValue.trim().match(/^{{.*}}$/)
+								) {
+									cellValue = this.parseVariable(
+										cellValue,
+										id,
+										_depth + 1,
+										_seen,
+									);
+								}
+								const pathData =
+									typeof cellValue === "string"
+										? JSON.parse(cellValue)
+										: cellValue;
+								valueBasedIndexOpt[currKey] = pathData || "";
+							}
+						} else if (
+							variable.type &&
+							variable?.type === "block"
+						) {
+							const blockData =
+								this._store.blocks[variable?.to]?.data?.value ||
+								null;
 							if (
-								typeof cellObj?.[pathTemp[index]] === "string" &&
-								cellObj?.[pathTemp[index]].trim().match(/^{{.*}}$/)
+								typeof blockData === "string" &&
+								blockData.trim().match(/^{{.*}}$/)
 							) {
-								cellObj[pathTemp[index]] = this.parseVariable(cellObj?.[pathTemp[index]], id, _depth + 1, _seen);
-							}
-							const pathData = typeof cellObj?.[pathTemp[index]] === "string" ? JSON.parse(cellObj?.[pathTemp[index]]) : cellObj?.[pathTemp[index]];
-							valueBasedIndexOpt[pathTemp[index]] = pathData || "";
-							}
-						} else if (variable.type && variable?.type === 'block'){
-							const blockData = this._store.blocks[variable?.to]?.data?.value || null;
-							if(typeof blockData === "string" && blockData.trim().match(/^{{.*}}$/)){
-								const innerVariable = this.parseVariable(blockData as string, id, _depth + 1, _seen);
-								const blockDataParsed = typeof innerVariable === 'string' ? JSON.parse(innerVariable) : innerVariable;
-								valueBasedIndexOpt[pathTemp[index]] = blockDataParsed?.[pathTemp[index]] || "";
-							}else{
-								if(typeof blockData === "string"){
-									const blockDataParsed = JSON.parse(blockData);
-									valueBasedIndexOpt[pathTemp[index]] = blockDataParsed[pathTemp[index]];
-								} else{
-									valueBasedIndexOpt[pathTemp[index]] = blockData || "";
+								const innerVariable = this.parseVariable(
+									blockData as string,
+									id,
+									_depth + 1,
+									_seen,
+								);
+								const blockDataParsed =
+									typeof innerVariable === "string"
+										? JSON.parse(innerVariable)
+										: innerVariable;
+								valueBasedIndexOpt[currKey] =
+									blockDataParsed?.[currKey] || "";
+							} else {
+								if (typeof blockData === "string") {
+									const blockDataParsed =
+										JSON.parse(blockData);
+									valueBasedIndexOpt[currKey] =
+										blockDataParsed[currKey];
+								} else {
+									valueBasedIndexOpt[currKey] =
+										blockData || "";
 								}
 							}
 						}
-						// else{
-						// 	console.log(variable, 'variable');
-						// }
 					}
 					index++;
 				}
-				/*while (pathTemp[index]) {
-					let variableDatawithProps = {data: {}, needsParsing: false, needsParseVariable: false};
-					if (variable?.type === "cell") {
-						const cellList =
-							this._store.queries[variable?.to]?.cellList;
-						const cellObj =
-							cellList.find((c) => c.id === variable.cellId) ||
-							{};
-						if (
-							Object.hasOwn(cellObj, "id") &&
-							cellObj?.[pathTemp[index]]
-						) {
-							variableDatawithProps = {data: cellObj[pathTemp[index]], needsParsing: true, needsParseVariable: false};
-						} else {
-							variableDatawithProps = {data: "", needsParsing: false, needsParseVariable: false};
-						}
-						console.log(cellObj[pathTemp[index]], 'cell');
-					}
-					if (variable?.type === "block") {
-						const blockData =
-							this._store.blocks[variable?.to]?.data?.value ||
-							null;
-						const blockDataParsed = blockData;
-						if (
-							typeof blockDataParsed === "string" &&
-							blockDataParsed.trim().match(/^{{.*}}$/)
-						) {
-							variableDatawithProps = {data: blockDataParsed, needsParsing: false, needsParseVariable: true};
-						} else {
-							if (typeof blockData === "string") {
-								variableDatawithProps = {data: blockData, needsParsing: true, needsParseVariable: true};
-							} else {
-								variableDatawithProps = {data: blockData, needsParsing: false, needsParseVariable: false};
-							}
-						}
-						console.log(blockData, 'block');
-					}
-					if (variable?.type === "query") {
-						const queryData =
-							this._store.queries[variable?.to]?.cellList || [];
-						if (
-							typeof queryData === "string" &&
-							(queryData as string).trim().match(/^{{.*}}$/)
-						) {
-							variableDatawithProps = {data: queryData, needsParsing: true, needsParseVariable: true};
-						} else {
-								const queryOutput =
-									queryData[queryData.length - 1] ||
-									null;
-								if (typeof queryOutput === "string") {
-									variableDatawithProps = {data: queryOutput, needsParsing: true, needsParseVariable: false};
-								} else {
-									variableDatawithProps = {data: queryOutput, needsParsing: false, needsParseVariable: false};
-								}
-						}
-						console.log(queryData, queryData[queryData.length - 1], 'query');
-					}
-					let finalDataToApply = variableDatawithProps.data;
-					if(variableDatawithProps.needsParseVariable){
-						finalDataToApply = this.parseVariable(variableDatawithProps.data as string, id, _depth + 1, _seen);
-					}
-					console.log(finalDataToApply, typeof finalDataToApply, 'finalDataToApply');
-					if(typeof finalDataToApply === 'string' && finalDataToApply){
-						const valueParsed = finalDataToApply.replace(/(\w+):/g, '"$1":');
-						try {
-							finalDataToApply = JSON.parse(valueParsed);
-						}catch{
-							finalDataToApply = valueParsed;
-						}
-					}
-					console.log(finalDataToApply, 'finalDataToApplyAFTER parse');
-					valueBasedIndexOpt[pathTemp[index]] = finalDataToApply || "";
-					console.log(valueBasedIndexOpt, 'valueBasedIndexOpt', pathTemp[index], valueBasedIndexOpt[pathTemp[index]]);
-					index++;
-				}*/
-				console.log(valueBasedIndexOpt, pathTemp.slice(1).join("."), 'FINALvalueBasedIndexOpt');
 				return (
 					getValueByPath(
 						valueBasedIndexOpt,
