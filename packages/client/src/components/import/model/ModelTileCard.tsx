@@ -62,7 +62,7 @@ const StyledCardModelText = styled("p")({
 	color: "#212121",
 });
 
-const StyledTypographyText = styled(Typography)((theme) => ({
+const StyledTypographyText = styled(Typography)(() => ({
 	display: "flex",
 	alignItems: "center",
 	padding: "0 10px",
@@ -73,15 +73,36 @@ const StyledTypographyText = styled(Typography)((theme) => ({
 	color: "#212121",
 }));
 
+const EmbeddingTile = styled(Typography)(() => ({
+	display: "flex",
+	alignItems: "center",
+	padding: "0 10px",
+	backgroundColor: "#E8F4FF",
+	borderRadius: "16px",
+	marginLeft: "auto !important",
+	fontSize: "13px",
+	color: "#0471F0",
+	fontWeight: 600,
+}));
+
+const TitleRow = styled("div")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	width: "100%",
+	gap: theme.spacing(1),
+}));
+
+interface Model {
+	name: string;
+	display: string;
+	icon: string;
+	embedding: boolean;
+	disable?: boolean;
+}
+
 interface ModelTileCardProps {
-	model: {
-		name: string;
-		display: string;
-		icon: string;
-		embedding: boolean;
-		disable?: boolean;
-	};
-	onModelSelect?: (model: any) => void;
+	model: Model;
+	onModelSelect?: (model: Model) => void;
 }
 
 export const ModelTileCard: React.FC<ModelTileCardProps> = ({
@@ -90,13 +111,25 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 }) => {
 	const textRef = useRef<HTMLParagraphElement>(null);
 	const [isTruncated, setIsTruncated] = useState(false);
+ const label = model.display || model.name;
 
-	useEffect(() => {
-		const el = textRef.current;
-		if (el) {
-			setIsTruncated(el.scrollWidth > el.clientWidth);
-		}
-	}, [model.name]);
+		useEffect(() => {
+			const checkTruncated = () => {
+				const el = textRef.current;
+				if (el) {
+					setIsTruncated(el.scrollWidth > el.clientWidth);
+				}
+			};
+
+			// initial check
+			checkTruncated();
+
+			// recheck on window resize
+			window.addEventListener("resize", checkTruncated);
+			return () => {
+				window.removeEventListener("resize", checkTruncated);
+			};
+		}, []);
 
 	const cardContent = (
 		<StyledFormTypeModelBox
@@ -122,16 +155,28 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 					<StyledCardImage isModel={true} src={model.icon} />
 				)}
 
-				<StyledCardModelText ref={textRef}>
-					{model.display || model.name}
-				</StyledCardModelText>
+								<TitleRow>
+									<StyledCardModelText ref={textRef}>
+										{model.display || model.name}
+									</StyledCardModelText>
+									{!model.disable && model.embedding ? (
+										<EmbeddingTile
+											variant="body1"
+											data-testId={formatToDataTestId(
+												`importPageContent-${model.name}-embeddings-tag`,
+											)}
+										>
+											Embeddings
+										</EmbeddingTile>
+									) : null}
+								</TitleRow>
 			</StyledInnerBox>
 		</StyledFormTypeModelBox>
 	);
 
 	return isTruncated ? (
 		<Tooltip
-			title={model.display || model.name}
+			title={label}
 			placement="bottom"
 			arrow
 			componentsProps={{
