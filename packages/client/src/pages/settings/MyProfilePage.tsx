@@ -456,7 +456,7 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
+													disabled
 												></TextField>
 											);
 										}}
@@ -483,7 +483,7 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
+													disabled
 												></TextField>
 											);
 										}}
