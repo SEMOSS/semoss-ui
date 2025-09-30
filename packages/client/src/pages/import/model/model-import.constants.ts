@@ -1,5 +1,3 @@
-import { default as OPEN_AI } from "@/assets/img/OPEN_AI.png";
-
 export type FieldType =
 	| "text"
 	| "hidden"

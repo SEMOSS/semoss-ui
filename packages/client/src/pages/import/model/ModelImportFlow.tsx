@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk";
 import {
 	Box,
@@ -40,10 +41,13 @@ const StyledTab = styled(Tabs.Item)({
 });
 
 export const ModelImportFlow: React.FC = () => {
+	const navigate = useNavigate();
+
+	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =
 		useState<ImportableModels | null>(null);
 	const [selectedProvider, setSelectedProvider] = useState("");
-	const [search, setSearch] = useState("");
+	const [selectedModel, setSelectedModel] = useState<string>("");
 
 	/**
 	 * Any initialization logic for the model import flow
@@ -51,6 +55,17 @@ export const ModelImportFlow: React.FC = () => {
 	useEffect(() => {
 		getImportableModels();
 	}, []);
+
+	/**
+	 * Fetch the list of importable models from the backend or a static source
+	 */
+	const getImportableModels = async () => {
+		// TODO: Get importable models from backend
+		const { pixelReturn } = await runPixel("1+1");
+
+		setImportableModels(IMPORTABLE_MODELS as ImportableModels);
+		setSelectedProvider(IMPORTABLE_MODELS.providers[0].name);
+	};
 
 	// TODO: would be ideal to have a reactor that gets me this ds
 	const models = useMemo(() => {
@@ -66,66 +81,143 @@ export const ModelImportFlow: React.FC = () => {
 	}, [selectedProvider, importableModels, search]);
 
 	/**
-	 * Fetch the list of importable models from the backend or a static source
+	 * Determines view
 	 */
-	const getImportableModels = async () => {
-		// TODO: Get importable models from backend
-		const { pixelReturn } = await runPixel("1+1");
+	const view = useMemo(() => {
+		switch (selectedModel) {
+			case "":
+				return (
+					<Stack>
+						<StyledSearchbarContainer>
+							<Search
+								size="small"
+								value={search}
+								onChange={(e) => {
+									setSearch(e.target.value);
+								}}
+								fullWidth
+							/>
+						</StyledSearchbarContainer>
 
-		setImportableModels(IMPORTABLE_MODELS as ImportableModels);
-		setSelectedProvider(IMPORTABLE_MODELS.providers[0].name);
-	};
+						{/* Add your model import flow components and logic here */}
+						{importableModels ? (
+							<Stack>
+								<Tabs
+									value={selectedProvider}
+									onChange={(_, newValue) => {
+										setSelectedProvider(newValue);
+									}}
+									variant="scrollable"
+									sx={{
+										mt: 2,
+										borderBottom: "2px solid #E0E0E0",
+									}}
+								>
+									{importableModels.providers.map(
+										(provider, i) => {
+											return (
+												<StyledTab
+													key={provider.name}
+													label={provider.name}
+													value={provider.name}
+													data-tesId={formatToDataTestId(
+														`connect-to-${provider.name}-tab`,
+													)}
+												/>
+											);
+										},
+									)}
+								</Tabs>
 
-	const handleModelSelect = (model: any) => {
-		console.log("Model selected:", model);
-		// TODO: Implement model selection logic
-	};
+								{/* Models Grid */}
+								<Box sx={{ mt: 4 }}>
+									<Grid
+										container
+										columns={6}
+										columnSpacing={2}
+										rowSpacing={2}
+									>
+										{models.map((model, idx) => (
+											<Grid
+												key={idx}
+												item
+												lg={1}
+												md={1}
+												xs={1}
+												xl={1}
+												sm={1}
+											>
+												<ModelTileCard
+													model={model}
+													onModelSelect={(model) => {
+														setSelectedModel(
+															model.name,
+														);
+													}}
+												/>
+											</Grid>
+										))}
+									</Grid>
+								</Box>
+							</Stack>
+						) : null}
+					</Stack>
+				);
+			default:
+				return <div>Model Details View</div>;
+		}
+	}, [selectedModel, importableModels, search]);
 
 	return (
 		<div>
 			<StyledStack>
 				<Breadcrumbs separator="/">
 					<Breadcrumbs.Item
-						//@ts-expect-error: TODO FIX Type
+						//@ts-expect-error:
 						as={Link}
 						underline="none"
 						color="inherit"
 						variant="body1"
 						onClick={() => {
-							// setSteps([], -1);
-							// if (window.history.length > 1) {
-							// 	navigate(-1);
-							// } else {
-							// 	navigate("/");
-							// }
+							if (window.history.length > 1) {
+								navigate(-1);
+							} else {
+								navigate("/");
+							}
 						}}
 					>
 						Model Catalog
 					</Breadcrumbs.Item>
 					<Breadcrumbs.Item
-						//@ts-expect-error: TODO FIX Type
+						//@ts-expect-error:
 						as={Link}
 						underline="none"
 						color="inherit"
 						variant="body1"
 						onClick={() => {
-							// setSteps([], -1);
-							// if (window.history.length > 1) {
-							// 	navigate(-1);
-							// } else {
-							// 	navigate("/");
-							// }
+							setSelectedModel("");
 						}}
 					>
 						Connect to Model
 					</Breadcrumbs.Item>
+					{selectedModel && (
+						<Breadcrumbs.Item
+							//@ts-expect-error:
+							as={Link}
+							underline="none"
+							color="inherit"
+							variant="body1"
+							onClick={() => {}}
+						>
+							{selectedModel.toUpperCase()}
+						</Breadcrumbs.Item>
+					)}
 				</Breadcrumbs>
 
 				<Typography
 					variant="h4"
 					// sx={isModelPage ? { fontWeight: 500 } : undefined}
 				>
-					{/* {steps.length && steps[steps.length - 1].title} */}
 					Connect to Model
 				</Typography>
 				<Typography
@@ -141,70 +233,8 @@ export const ModelImportFlow: React.FC = () => {
 					LLM landscape.
 				</Typography>
 			</StyledStack>
-
-			<StyledSearchbarContainer>
-				<Search
-					size="small"
-					value={search}
-					onChange={(e) => {
-						setSearch(e.target.value);
-					}}
-					fullWidth
-				/>
-			</StyledSearchbarContainer>
-			{/* Add your model import flow components and logic here */}
-			{importableModels ? (
-				<Stack>
-					<Tabs
-						value={selectedProvider}
-						onChange={(_, newValue) => {
-							setSelectedProvider(newValue);
-						}}
-						variant="scrollable"
-						sx={{ mt: 2, borderBottom: "2px solid #E0E0E0" }}
-					>
-						{importableModels.providers.map((provider, i) => {
-							return (
-								<StyledTab
-									key={provider.name}
-									label={provider.name}
-									value={provider.name}
-									data-tesId={formatToDataTestId(
-										`connect-to-${provider.name}-tab`,
-									)}
-								/>
-							);
-						})}
-					</Tabs>
-
-					{/* Models Grid */}
-					<Box sx={{ mt: 4 }}>
-						<Grid
-							container
-							columns={6}
-							columnSpacing={2}
-							rowSpacing={2}
-						>
-							{models.map((model, idx) => (
-								<Grid
-									key={idx}
-									item
-									lg={1}
-									md={1}
-									xs={1}
-									xl={1}
-									sm={1}
-								>
-									<ModelTileCard
-										model={model}
-										onModelSelect={handleModelSelect}
-									/>
-								</Grid>
-							))}
-						</Grid>
-					</Box>
-				</Stack>
-			) : null}
+			{selectedModel}
+			{view}
 		</div>
 	);
 };
