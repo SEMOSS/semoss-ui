@@ -26,6 +26,7 @@ import {
 import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
+import { ChangePasswordModal } from "./ChangePasswordModel";
 
 const StyledAvatar = styled(Avatar)(({ theme }) => ({
 	display: "flex",
@@ -112,17 +113,6 @@ const CustomGridItem = styled(GridItem)(({ theme }) => ({
 	zIndex: 8,
 }));
 
-const StyledCodeBlock = styled("pre")(({ theme }) => ({
-	display: "flex",
-	alignItems: "center",
-	gap: theme.spacing(5),
-	background: theme.palette.background.default,
-	borderRadius: theme.shape.borderRadius,
-	padding: theme.spacing(2),
-	overflowX: "scroll",
-	margin: "0px",
-}));
-
 const StyledCodeContent = styled("code", {
 	shouldForwardProp: (prop) => prop !== "maxWidth",
 })<{
@@ -149,6 +139,18 @@ const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
 	padding: theme.spacing(1),
 }));
 
+const StyledLink = styled("a")(({ theme }) => ({
+	textDecoration: "underline",
+    cursor: "pointer",
+    color: "#0471F0",
+	fontFamily: "Inter",
+	fontStyle: "normal",
+	fontWeight: 500,
+	fontSize: "16px",
+	lineHeight: "24px",
+	letterSpacing: "0.15px",
+}));
+
 interface CreateAccessKeyForm {
 	TOKENNAME: string;
 	TOKENDESCRIPTION?: string;
@@ -167,11 +169,12 @@ interface EditUserInfoForm {
 export const MyProfilePage = () => {
 	const notification = useNotification();
 	const { configStore, monolithStore } = useRootStore();
-	const { email, id, name, admin, loggedIn } = configStore.store.user;
+	const { email, id, name, admin } = configStore.store.user;
 
 	// track the models
 	const [addModal, setAddModal] = useState(false);
 	const [profileImgModal, setProfileImgModal] = useState(false);
+	const [passwordModal, setPasswordModal] = useState(false);
 
 	// get the keys
 	const getUserAccessKeys = useAPI(["getUserAccessKeys"]);
@@ -349,7 +352,7 @@ export const MyProfilePage = () => {
 				color: "success",
 				message: "Successfully copied code",
 			});
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
 				message: "Unable to copy code",
@@ -514,8 +517,15 @@ export const MyProfilePage = () => {
 										}}
 									/>
 								</StyledStack>
+								<Stack direction = "row">
+								<StyledLink
+                                    onClick={() => setPasswordModal(true)}
+                                >
+                                    Change Password
+                                </StyledLink>
+								</Stack>
 
-								<Stack direction="row">
+								<Stack direction="row" sx={{marginTop:"6px"}}>
 									<Button
 										variant="contained"
 										color="primary"
@@ -1073,6 +1083,10 @@ export const MyProfilePage = () => {
 					</Stack>
 				</Modal.Content>
 			</Modal>
+			<ChangePasswordModal
+							open={passwordModal}
+							onClose={() => setPasswordModal(false)}
+						/>
 		</Stack>
 	);
 };
