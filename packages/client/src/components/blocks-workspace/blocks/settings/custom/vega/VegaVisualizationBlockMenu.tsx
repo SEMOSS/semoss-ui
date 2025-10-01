@@ -1,5 +1,5 @@
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { BlockComponent, useBlock } from "@semoss/renderer";
 import { Accordion, Stack, styled } from "@semoss/ui";
 import { AIGenerationSettings, JsonSettings } from "../../";
@@ -21,13 +21,6 @@ const StyledSpan = styled("span")(() => ({
 export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 	const { data } = useBlock(id);
 	const [expandAccordion, setExpandAccordion] = useState(false);
-	const [_aiOutputJSON, setAIOutputJSON] = useState<string | null>(null);
-	useEffect(() => {
-		console.log(
-			"aiOutputJSON from VegaVisualizationBlockMenu: ",
-			_aiOutputJSON,
-		);
-	}, [_aiOutputJSON]);
 	return (
 		<Stack padding={2} height="100%" justifyContent={"space-between"}>
 			<Accordion
@@ -40,18 +33,10 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 					<StyledSpan>VEGA JSON</StyledSpan>
 				</StyledAccordionTrigger>
 				<Accordion.Content>
-					<JsonSettings
-						id={id}
-						path="specJson"
-						aiOutputJSON={_aiOutputJSON}
-						height="300px"
-					/>
+					<JsonSettings id={id} path="specJson" height="300px" />
 				</Accordion.Content>
 			</Accordion>
-			{/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
-			{/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
 
-			{/* <CodeEditorSettings id={id} path="specJson" /> */}
 			{!data.variation && (
 				<AIGenerationSettings
 					id={id}
@@ -60,8 +45,6 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 						'Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure "data" is a top-level key in the JSON object.'
 					}
 					placeholder="Ex: Generate a bar graph."
-					valueAsObject
-					setAIOutputJSON={setAIOutputJSON}
 				/>
 			)}
 		</Stack>

@@ -47,16 +47,6 @@ interface JsonSettingsProps<D extends BlockDef = BlockDef> {
 	 * Width of the editor
 	 */
 	width?: string;
-
-	/**
-	 * Callback to run after save
-	 */
-	callback?: () => void;
-
-	/**
-	 *
-	 */
-	aiOutputJSON?: string;
 }
 
 export const JsonSettings = observer(
@@ -65,8 +55,6 @@ export const JsonSettings = observer(
 		path,
 		height = "100%",
 		width = "100%",
-		callback = null,
-		aiOutputJSON,
 	}: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
 		const { state, notebook } = useBlocks();
@@ -103,33 +91,6 @@ export const JsonSettings = observer(
 				setValue(computedValue);
 			}
 		}, [computedValue]);
-		useEffect(() => {
-			if (aiOutputJSON) {
-				console.log("Setting AI output JSON:", aiOutputJSON);
-				setValue(aiOutputJSON);
-			}
-		}, [aiOutputJSON]);
-		/**
-		 * Used to re-render the vega block after re-generating from AI output
-		 */
-		useEffect(() => {
-			if (aiOutputJSON && validJson) {
-				try {
-					const specJson = JSON.parse(aiOutputJSON);
-					setData(
-						path,
-						specJson as PathValue<D["data"], typeof path>,
-					);
-					callback && callback();
-				} catch (_e) {
-					setData(
-						path,
-						aiOutputJSON as PathValue<D["data"], typeof path>,
-					);
-					callback && callback();
-				}
-			}
-		}, [aiOutputJSON, validJson, setData, path, callback]);
 		/**
 		 * Sync the data on save
 		 */
@@ -156,8 +117,6 @@ export const JsonSettings = observer(
 								value as PathValue<D["data"], typeof path>,
 							);
 						}
-
-						callback && callback();
 					} catch (e) {
 						console.log(e);
 					}

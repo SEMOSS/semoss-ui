@@ -1,9 +1,9 @@
 import { AutoAwesome } from "@mui/icons-material";
 import { Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Block, BlockDef, Paths } from "@semoss/renderer";
+import { Block, BlockDef, Paths, PathValue } from "@semoss/renderer";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	AutocompleteTwo,
@@ -14,7 +14,8 @@ import {
 	TextField,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import { useBlockSettings, useRootStore } from "@/hooks";
+import { BaseSettingSection } from "../BaseSettingSection";
 
 type CfgLibraryEngineState = {
 	loading: boolean;
@@ -44,19 +45,9 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	placeholder?: string;
 
 	/**
-	 * Set path value as object instead of string
-	 */
-	valueAsObject?: boolean;
-
-	/**
 	 * Append additional context to the end of the prompt
 	 */
 	appendPrompt?: string;
-
-	/**
-	 * Set the AI output JSON
-	 */
-	setAIOutputJSON?: (output: string) => void;
 }
 const StyledUploadSection = styled(Stack)(({ theme }) => ({
 	height: "250px",
@@ -64,33 +55,15 @@ const StyledUploadSection = styled(Stack)(({ theme }) => ({
 export const AIGenerationSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
-		label = "AI",
-		placeholder = null,
+		label = "AI Generation",
+		placeholder = "Ex: Generate a bar graph.",
 		path,
-		valueAsObject = false,
 		appendPrompt = "",
-		setAIOutputJSON,
 	}: AIGenerationSettingsProps<D>) => {
 		const notification = useNotification();
 		const { monolithStore, configStore } = useRootStore();
-		// const [prompt, setPrompt] = useState("");
+		const { setData } = useBlockSettings<D>(id);
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
-
-		const modelIdRef = useRef("");
-		const [modelId, setModelId] = useState<string>("");
-
-		const [_fileForFrameData, _setFileForFrameData] = useState<
-			File[] | null
-		>(null);
-
-		// const [selectedModel, setSelectedModel] = useState<string>("");
-		const [_models, setModels] = useState<
-			{ app_id: string; app_name: string }[]
-		>([]);
-
-		useEffect(() => {
-			modelIdRef.current = modelId;
-		}, [modelId]);
 
 		const [cfgLibraryModels, setCfgLibraryModels] =
 			useState<CfgLibraryEngineState>({
@@ -143,38 +116,6 @@ export const AIGenerationSettings = observer(
 			}
 		}, [myModels.status, myModels.data, setValue]);
 
-		useEffect(() => {
-			if (myModels.status !== "SUCCESS") {
-				return;
-			}
-
-			setModels(
-				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d.app_id,
-				})),
-			);
-			if (myModels.data.length) {
-				setModelId(myModels.data[0].app_id);
-			}
-		}, [myModels.status, myModels.data]);
-
-		useEffect(() => {
-			if (myModels.status !== "SUCCESS") {
-				return;
-			}
-
-			setModels(
-				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d.app_id,
-				})),
-			);
-			if (myModels.data.length) {
-				setModelId(myModels.data[0].app_id);
-			}
-		}, [myModels.status, myModels.data]);
-
 		const stringifyOutput = (frameOutput: {
 			headers?: string[];
 			values?: (string | number | boolean)[][];
@@ -205,7 +146,6 @@ export const AIGenerationSettings = observer(
 
 		const generateAIResponse = async () => {
 			try {
-				// For vega LLM prompting generation
 				setResponseLoading(true);
 				const upload = await monolithStore.uploadFile(
 					inputFile,
@@ -213,20 +153,18 @@ export const AIGenerationSettings = observer(
 					null,
 					null,
 				);
-				// const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) | FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", insightName="${configStore.store.insightID}")`;
 				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) ;`;
 				const response = await monolithStore.runQuery(pixel);
-				console.log("Response from runQuery:", response);
 				const { output: frameOutput } = response.pixelReturn[0];
 
-				const _stringifiedOutput = stringifyOutput(frameOutput);
-				console.log("String:", _stringifiedOutput);
-				const frameToGraphPixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", DATA_STRING = "<encode>${_stringifiedOutput}</encode>", insightName="${configStore.store.insightID}")`;
+				const stringifiedOutput = stringifyOutput(frameOutput);
+				const frameToGraphPixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", DATA_STRING = "<encode>${stringifiedOutput}</encode>", insightName="${configStore.store.insightID}")`;
 				const frameToGraphPixelResponse =
 					await monolithStore.runQuery(frameToGraphPixel);
 				const { output: graphOutput } =
 					frameToGraphPixelResponse.pixelReturn[0];
-				if (graphOutput && setAIOutputJSON) {
+
+				if (graphOutput) {
 					// Remove schema and extract content between first { and last }
 					let cleanedOutput = graphOutput.replace(
 						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
@@ -248,71 +186,21 @@ export const AIGenerationSettings = observer(
 						);
 					}
 
-					console.log("stringedOutput:", cleanedOutput);
-					console.log(
-						"Setting AI output JSON from generationsettings:",
-						graphOutput,
-					);
-					setAIOutputJSON(cleanedOutput);
+					try {
+						const specJson = JSON.parse(cleanedOutput);
+						setData(
+							path,
+							specJson as PathValue<D["data"], typeof path>,
+						);
+					} catch {
+						setData(
+							path,
+							cleanedOutput as PathValue<D["data"], typeof path>,
+						);
+					}
 				}
-				//Below is another previous LLM prompting code - did not work
-				// setResponseLoading(true);
-
-				// // re-wrote LLM prompting section previous approach was throwing error
-				// let flattenedPrompt = `${state.flattenVariable(
-				//     prompt,
-				// )} ${appendPrompt}`;
-				// flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
-				// const pixel = `LLM(engine = "${modelIdRef.current}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
-				// const res = await runPixel(pixel);
-				// const LLMResponse = res.pixelReturn[0].output['response'];
-
-				// let trimmedStarterCode = LLMResponse;
-				// trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ''); // trims off any triple quotes from backend
-
-				// trimmedStarterCode = trimmedStarterCode.substring(
-				//     trimmedStarterCode.indexOf('\n') + 1,
-				// );
-
-				// setData(
-				//     path,
-				//     trimmedStarterCode as PathValue<D['data'], typeof path>,
-				// );
-
-				// below is the previos LLM prompting code - not sure if we want or need any of this
-				// const flattenedPrompt = state.flattenVariable(prompt);
-				// const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
-				//     {
-				//         max_new_tokens: 4000,
-				//     },
-				// )}]);`;
-				// const { errors, pixelReturn } = await monolithStore.runQuery(
-				//     pixel,
-				// );
-				// let valueToSet = pixelReturn[0]?.output?.response;
-				// if (errors.length > 0 || typeof valueToSet !== 'string') {
-				//     throw new Error(errors.join(''));
-				// }
-				// if (valueAsObject) {
-				//     valueToSet = !!pixelReturn[0].output?.response
-				//         ? JSON.parse(
-				//               pixelReturn[0].output?.response
-				//                   .replaceAll('\\"', '"')
-				//                   .replaceAll('\\n', ''),
-				//           )
-				//         : undefined;
-				//     if (valueToSet === undefined) {
-				//         notification.add({
-				//             color: 'error',
-				//             message:
-				//                 'There was an issue parsing the JSON in your response.',
-				//         });
-				//     }
-				// }
-				// setData(path, "valueToSet" as PathValue<D['data'], typeof path>);
 			} catch (e) {
 				console.error(e);
-
 				notification.add({
 					color: "error",
 					message: e.message,
@@ -322,96 +210,103 @@ export const AIGenerationSettings = observer(
 			}
 		};
 		return (
-			<form onSubmit={handleSubmit(generateAIResponse)}>
-				<Stack spacing={1} width="100%">
-					<StyledUploadSection spacing={2}>
-						<Typography variant="body1">
-							Upload CSV{" "}
-							<Typography component="span" color="error">
-								*
+			<BaseSettingSection label={label}>
+				<form
+					onSubmit={handleSubmit(generateAIResponse)}
+					style={{ width: "100%" }}
+				>
+					<Stack spacing={1}>
+						<StyledUploadSection spacing={2}>
+							<Typography variant="body1">
+								Upload CSV{" "}
+								<Typography component="span" color="error">
+									*
+								</Typography>
 							</Typography>
-						</Typography>
+							<Controller
+								name="inputFile"
+								control={control}
+								render={({ field }) => (
+									<FileDropzone
+										extensions={[".csv"]}
+										onChange={(file: File) =>
+											field.onChange([file])
+										}
+										disabled={responseLoading}
+									/>
+								)}
+							/>
+						</StyledUploadSection>
 						<Controller
-							name="inputFile"
+							name="prompt"
 							control={control}
 							render={({ field }) => (
-								<FileDropzone
-									extensions={[".csv"]}
-									onChange={(file: File) =>
-										field.onChange([file])
+								<TextField
+									disabled={
+										!cfgLibraryModels.ids.length ||
+										responseLoading
 									}
-									disabled={responseLoading}
+									fullWidth
+									multiline
+									rows={5}
+									{...field}
+									size="small"
+									variant="outlined"
+									autoComplete="off"
+									placeholder={placeholder}
+									label="AI Generator"
+									InputLabelProps={{
+										shrink: true,
+									}}
+									onChange={(e) =>
+										setValue("prompt", e.target.value)
+									}
 								/>
 							)}
 						/>
-					</StyledUploadSection>
-					<Controller
-						name="prompt"
-						control={control}
-						render={({ field }) => (
-							<TextField
-								disabled={
-									!cfgLibraryModels.ids.length ||
-									responseLoading
-								}
-								fullWidth
-								multiline
-								rows={5}
-								{...field}
-								size="small"
-								variant="outlined"
-								autoComplete="off"
-								placeholder={placeholder}
-								label="AI Generator"
-								InputLabelProps={{
-									shrink: true,
-								}}
-								onChange={(e) =>
-									setValue("prompt", e.target.value)
-								}
-								// required
-							/>
-						)}
-					/>
-					<Controller
-						name="selectedModel"
-						control={control}
-						render={({ field }) => (
-							<AutocompleteTwo
-								disabled={
-									!cfgLibraryModels.ids.length ||
-									responseLoading
-								}
-								disableClearable
-								fullWidth
-								id="model-autocomplete"
-								loading={cfgLibraryModels.loading}
-								options={cfgLibraryModels.ids}
-								value={field.value}
-								size="small"
-								getOptionLabel={(modelId: string) =>
-									cfgLibraryModels.display[modelId] ?? ""
-								}
-								onChange={(_, newModelId) =>
-									field.onChange(newModelId)
-								}
-								renderInput={(params) => (
-									<TextField {...params} variant="outlined" />
-								)}
-							/>
-						)}
-					/>
-					<Button
-						disabled={_isGenerateButtonDisabled}
-						loading={responseLoading}
-						variant="outlined"
-						endIcon={<AutoAwesome />}
-						type="submit"
-					>
-						Generate with AI
-					</Button>
-				</Stack>
-			</form>
+						<Controller
+							name="selectedModel"
+							control={control}
+							render={({ field }) => (
+								<AutocompleteTwo
+									disabled={
+										!cfgLibraryModels.ids.length ||
+										responseLoading
+									}
+									disableClearable
+									fullWidth
+									id="model-autocomplete"
+									loading={cfgLibraryModels.loading}
+									options={cfgLibraryModels.ids}
+									value={field.value}
+									size="small"
+									getOptionLabel={(modelId: string) =>
+										cfgLibraryModels.display[modelId] ?? ""
+									}
+									onChange={(_, newModelId) =>
+										field.onChange(newModelId)
+									}
+									renderInput={(params) => (
+										<TextField
+											{...params}
+											variant="outlined"
+										/>
+									)}
+								/>
+							)}
+						/>
+						<Button
+							disabled={_isGenerateButtonDisabled}
+							loading={responseLoading}
+							variant="outlined"
+							endIcon={<AutoAwesome />}
+							type="submit"
+						>
+							Generate with AI
+						</Button>
+					</Stack>
+				</form>
+			</BaseSettingSection>
 		);
 	},
 );
