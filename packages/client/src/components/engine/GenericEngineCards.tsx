@@ -384,7 +384,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 											);
 										}
 									})}
-									{tag.length > 3 && (
+									{tag.length > 3 ? (
 										<Typography variant="caption">
 											+{tag.length - 3}
 										</Typography>
@@ -576,7 +576,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 										);
 									}
 								})}
-								{tag.length > 3 && (
+								{tag.length > 3 ? (
 									<Typography variant="caption">
 										+{tag.length - 3}
 									</Typography>
