@@ -913,10 +913,11 @@ export class StateStore {
 						return val;
 					}
 					if (!["cell", "query", "block"].includes(variable.type)) {
-						return getValueByPath(
+						const valueReceived = getValueByPath(
 							val as object,
 							path.slice(1).join("."),
 						);
+						return typeof valueReceived === 'string' ? valueReceived : JSON.stringify(valueReceived);
 					}
 				} else {
 					return value;
