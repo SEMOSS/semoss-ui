@@ -371,8 +371,6 @@ export const UserTable = (props: UserTableProps) => {
 						});
 
 						onChange();
-						// refresh the users
-						getUsers.refresh();
 					} else {
 						notification.add({
 							color: "error",
@@ -388,6 +386,8 @@ export const UserTable = (props: UserTableProps) => {
 			}
 		} finally {
 			setSelectedMembers([]);
+			// refresh the users
+			getUsers.refresh();
 		}
 	};
 	/**
