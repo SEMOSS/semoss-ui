@@ -45,6 +45,7 @@ export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 						'Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure "data" is a top-level key in the JSON object.'
 					}
 					placeholder="Ex: Generate a bar graph."
+					showFileUpload
 				/>
 			)}
 		</Stack>

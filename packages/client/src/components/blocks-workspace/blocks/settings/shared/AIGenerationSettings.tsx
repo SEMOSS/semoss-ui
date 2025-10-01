@@ -3,8 +3,14 @@ import { Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { Block, BlockDef, Paths, PathValue } from "@semoss/renderer";
-import { usePixel } from "@semoss/sdk/react";
+import {
+	type Block,
+	type BlockDef,
+	type Paths,
+	type PathValue,
+	useBlocks,
+} from "@semoss/renderer";
+import { runPixel, usePixel } from "@semoss/sdk/react";
 import {
 	AutocompleteTwo,
 	Button,
@@ -45,9 +51,19 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	placeholder?: string;
 
 	/**
+	 * Set path value as object instead of string
+	 */
+	valueAsObject?: boolean;
+
+	/**
 	 * Append additional context to the end of the prompt
 	 */
 	appendPrompt?: string;
+
+	/**
+	 * Control to show fileUpload for Vega Visualizations
+	 */
+	showFileUpload?: boolean;
 }
 const StyledUploadSection = styled(Stack)(({ theme }) => ({
 	height: "250px",
@@ -59,10 +75,12 @@ export const AIGenerationSettings = observer(
 		placeholder = "Ex: Generate a bar graph.",
 		path,
 		appendPrompt = "",
+		showFileUpload = false,
 	}: AIGenerationSettingsProps<D>) => {
 		const notification = useNotification();
 		const { monolithStore, configStore } = useRootStore();
 		const { setData } = useBlockSettings<D>(id);
+		const { state } = useBlocks();
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
 
 		const [cfgLibraryModels, setCfgLibraryModels] =
@@ -86,7 +104,7 @@ export const AIGenerationSettings = observer(
 		const _isGenerateButtonDisabled =
 			!cfgLibraryModels.ids.length ||
 			cfgLibraryModels.loading ||
-			!inputFile ||
+			(showFileUpload && !inputFile) ||
 			!selectedModel;
 
 		const myModels = usePixel<
@@ -143,8 +161,76 @@ export const AIGenerationSettings = observer(
 
 			return JSON.stringify(mappedData);
 		};
-
+		// original AI function
 		const generateAIResponse = async () => {
+			try {
+				setResponseLoading(true);
+
+				// re-wrote LLM prompting section previous approach was throwing error
+				let flattenedPrompt = `${state.flattenVariable(
+					prompt,
+				)} ${appendPrompt}`;
+				flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
+				const pixel = `LLM(engine = "${selectedModel}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
+				const res = await runPixel(pixel);
+				const LLMResponse = res.pixelReturn[0].output["response"];
+
+				let trimmedStarterCode = LLMResponse;
+				trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
+
+				trimmedStarterCode = trimmedStarterCode.substring(
+					trimmedStarterCode.indexOf("\n") + 1,
+				);
+
+				setData(
+					path,
+					trimmedStarterCode as PathValue<D["data"], typeof path>,
+				);
+
+				// below is the previos LLM prompting code - not sure if we want or need any of this
+				// const flattenedPrompt = state.flattenVariable(prompt);
+				// const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
+				//     {
+				//         max_new_tokens: 4000,
+				//     },
+				// )}]);`;
+				// const { errors, pixelReturn } = await monolithStore.runQuery(
+				//     pixel,
+				// );
+				// let valueToSet = pixelReturn[0]?.output?.response;
+				// if (errors.length > 0 || typeof valueToSet !== 'string') {
+				//     throw new Error(errors.join(''));
+				// }
+				// if (valueAsObject) {
+				//     valueToSet = !!pixelReturn[0].output?.response
+				//         ? JSON.parse(
+				//               pixelReturn[0].output?.response
+				//                   .replaceAll('\\"', '"')
+				//                   .replaceAll('\\n', ''),
+				//           )
+				//         : undefined;
+				//     if (valueToSet === undefined) {
+				//         notification.add({
+				//             color: 'error',
+				//             message:
+				//                 'There was an issue parsing the JSON in your response.',
+				//         });
+				//     }
+				// }
+				// setData(path, "valueToSet" as PathValue<D['data'], typeof path>);
+			} catch (e) {
+				console.error(e);
+
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			} finally {
+				setResponseLoading(false);
+			}
+		};
+
+		const generateAIVegaResponse = async () => {
 			try {
 				setResponseLoading(true);
 				const upload = await monolithStore.uploadFile(
@@ -209,34 +295,41 @@ export const AIGenerationSettings = observer(
 				setResponseLoading(false);
 			}
 		};
+
+		const generateResponse = showFileUpload
+			? generateAIVegaResponse
+			: generateAIResponse;
+
 		return (
 			<BaseSettingSection label={label}>
 				<form
-					onSubmit={handleSubmit(generateAIResponse)}
+					onSubmit={handleSubmit(generateResponse)}
 					style={{ width: "100%" }}
 				>
 					<Stack spacing={1}>
-						<StyledUploadSection spacing={2}>
-							<Typography variant="body1">
-								Upload CSV{" "}
-								<Typography component="span" color="error">
-									*
+						{showFileUpload && (
+							<StyledUploadSection spacing={2}>
+								<Typography variant="body1">
+									Upload CSV{" "}
+									<Typography component="span" color="error">
+										*
+									</Typography>
 								</Typography>
-							</Typography>
-							<Controller
-								name="inputFile"
-								control={control}
-								render={({ field }) => (
-									<FileDropzone
-										extensions={[".csv"]}
-										onChange={(file: File) =>
-											field.onChange([file])
-										}
-										disabled={responseLoading}
-									/>
-								)}
-							/>
-						</StyledUploadSection>
+								<Controller
+									name="inputFile"
+									control={control}
+									render={({ field }) => (
+										<FileDropzone
+											extensions={[".csv"]}
+											onChange={(file: File) =>
+												field.onChange([file])
+											}
+											disabled={responseLoading}
+										/>
+									)}
+								/>
+							</StyledUploadSection>
+						)}
 						<Controller
 							name="prompt"
 							control={control}
