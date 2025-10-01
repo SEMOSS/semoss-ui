@@ -3,6 +3,9 @@ import { Outlet } from "react-router-dom";
 import { LoadingScreen } from "@/components/ui";
 import { StepperContext, type StepperContextType } from "@/contexts";
 
+/**
+ * @deprecated Handle steps at engine level
+ */
 export const ImportLayout = (props) => {
 	const { children } = props;
 
