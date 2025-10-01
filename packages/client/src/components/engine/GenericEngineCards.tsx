@@ -85,46 +85,6 @@ const StyledLandscapeCardHeaderDiv = styled("div")({
 	gap: "6px",
 });
 
-// const StyledLandscapeCardDescriptionContainer = styled("div")({
-// 	display: "flex",
-// 	flexDirection: "column",
-// 	alignItems: "flex-start",
-// 	alignSelf: "stretch",
-// });
-
-// const StyledLandscapeCardRow = styled("div")({
-// 	display: "flex",
-// 	alignItems: "center",
-// 	alignSelf: "stretch",
-// });
-
-// const StyledLandscapeCardRowContainer = styled("div")({
-// 	display: "flex",
-// 	alignItems: "center",
-// 	gap: "8px",
-// 	flex: "1 0 0",
-// });
-
-// const StyledLandscapeCardRowDiv = styled("div")({
-// 	display: "flex",
-// 	flexDirection: "column",
-// 	alignItems: "flex-start",
-// 	gap: "8px",
-// 	flex: "1 0 0",
-// });
-
-// const StyledLandscapeCardDescription = styled(Typography)(({ theme }) => ({
-// 	display: "flex",
-// 	flexDirection: "column",
-// 	alignSelf: "stretch",
-// 	minHeight: "24px",
-// 	maxHeight: "24px",
-// 	overflow: "hidden",
-// 	whiteSpace: "pre-wrap",
-// 	textOverflow: "ellipsis",
-// 	color: theme.palette.text.secondary,
-// }));
-
 const StyledAvatar = styled(Avatar)({
 	display: "flex",
 	width: "20px",
@@ -267,7 +227,6 @@ const findDBImage = (appType: string, appSubType: string) => {
 	const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name == appSubType);
 
 	if (!obj) {
-		console.warn("No image found:", appType, appSubType);
 		return BRAIN;
 	}
 
@@ -331,11 +290,18 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		isDiscoverable = false,
 		type,
 		sub_type,
-		// views = 'N/A',
-		// trending = 'N/A',
 		date,
 		onClick,
 		favorite,
+		// isUpvoted,
+		// isGlobal,
+		// description,
+		// owner = "N/A",
+		// votes = "0",
+		// views = 'N/A',
+		// trending = 'N/A',
+		// upvote,
+		// global,
 	} = props;
 
 	/** Menu toggle state */
@@ -400,6 +366,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 						{tag !== undefined &&
 							(Array.isArray(tag) ? (
 								<>
+									{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 									{tag.map((t, i) => {
 										if (i <= 2) {
 											return (
@@ -421,7 +388,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 										<Typography variant="caption">
 											+{tag.length - 3}
 										</Typography>
-									)}
+									) : null}
 								</>
 							) : (
 								<StyledTagChip key={`${id}0`} label={tag} />
@@ -491,19 +458,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					</Stack>
 				</StyledCardIconsDiv>
 			</StyledLandscapeCardHeader>
-			{/* <StyledLandscapeCardDescriptionContainer>
-                <StyledLandscapeCardRow>
-                    <StyledLandscapeCardRowContainer>
-                        <StyledLandscapeCardRowDiv>
-                            <StyledLandscapeCardDescription variant={'body2'}>
-                                {description
-                                    ? description
-                                    : 'No description available'}
-                            </StyledLandscapeCardDescription>
-                        </StyledLandscapeCardRowDiv>
-                    </StyledLandscapeCardRowContainer>
-                </StyledLandscapeCardRow>
-            </StyledLandscapeCardDescriptionContainer> */}
 		</StyledLandscapeCard>
 	);
 };
@@ -604,6 +558,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 					{tag !== undefined &&
 						(Array.isArray(tag) ? (
 							<>
+								{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 								{tag.map((t, i) => {
 									if (i <= 2) {
 										return (
@@ -625,7 +580,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 									<Typography variant="caption">
 										+{tag.length - 3}
 									</Typography>
-								)}
+								) : null}
 							</>
 						) : (
 							<StyledTagChip key={`${id}0`} label={tag} />
@@ -670,18 +625,6 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							{votes}
 						</UnstyledVoteCount>
 					</StyledButtonGroup>
-					{/* <StyledViewsTrendingDiv>
-                        <StyledEyeIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {views}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv>
-                    <StyledViewsTrendingDiv>
-                        <StyledTrendingIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {trending}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv> */}
 				</StyledLeftActions>
 				<StyledLockButton
 					title={
