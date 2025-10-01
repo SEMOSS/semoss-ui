@@ -653,7 +653,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{teamMembers.length > 0 ? teamMembers?.map((user, i) => {
+								{Array.isArray(teamMembers) && teamMembers.length > 0 ? 
+									(teamMembers?.map((user, i) => {
 										let isSelected = false;
 
 										if (user) {
@@ -773,7 +774,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												</Table.Row>
 											);
 										}
-									}) : (
+									})) : (
 										<Table.Row key={'no-members-found'}>
 													<Table.Cell colSpan={5} align="center">No Members found.</Table.Cell>
 										</Table.Row>
