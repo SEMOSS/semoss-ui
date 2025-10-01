@@ -83,6 +83,13 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 
 	const mode = data.displayType.toLowerCase();
 	const handleApply = async (selected, type?: string) => {
+		if (selected.length === 0) {
+			notification.add({
+				color: "warning",
+				message: "No options selected.",
+			});
+			return;
+		}
 		//set initial value of valuesString -- will change based off mode and array length
 		let valuesString = "";
 		// Update the selected values in the block's data

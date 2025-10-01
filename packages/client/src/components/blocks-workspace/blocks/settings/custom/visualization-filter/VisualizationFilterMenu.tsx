@@ -327,9 +327,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 		}
 	};
 
-	const allChecked = checked.length === options.length;
-	const indeterminate = checked.length > 0 && !allChecked;
-
 	return (
 		<StyledStack>
 			<StyledToggleTabsGroup
@@ -450,9 +447,18 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 													<List.Icon>
 														<Checkbox
 															edge="start"
-															checked={allChecked}
+															checked={
+																localState.frame
+																	.length ===
+																options.length
+															}
 															indeterminate={
-																indeterminate
+																localState.frame
+																	.length >
+																	0 &&
+																localState.frame
+																	.length <
+																	options.length
 															}
 															tabIndex={-1}
 															disableRipple
@@ -471,7 +477,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 														<List.Icon>
 															<Checkbox
 																edge="start"
-																checked={checked.includes(
+																checked={localState.frame.includes(
 																	option,
 																)}
 																tabIndex={-1}

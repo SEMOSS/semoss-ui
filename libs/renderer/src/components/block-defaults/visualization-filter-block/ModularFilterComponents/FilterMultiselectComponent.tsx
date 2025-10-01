@@ -129,6 +129,10 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 
 	const handleDropdownChange = (event: SelectChangeEvent<string[]>) => {
 		const value = event.target.value as string[];
+		// Prevent unchecking the last item
+		if (value.length === 0) {
+			return;
+		}
 		setSelectedDropdown(value);
 
 		// Add chips for newly selected, remove chips for deselected
@@ -139,6 +143,17 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 				label,
 			}));
 		setChipData(newChips);
+	};
+
+	const handleChipDelete = (chipToDelete: ChipData) => {
+		if (chipData.length === 1) {
+			// Prevent deleting the last chip
+			return;
+		}
+		const updated = chipData.filter(
+			(chip) => chip.key !== chipToDelete.key,
+		);
+		setChipData(updated);
 	};
 
 	return (
@@ -182,16 +197,11 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 								.includes(searchText.toLowerCase()),
 						)}
 						ref={chipsRef}
-						onDelete={(chipToDelete) => {
-							const updated = chipData.filter(
-								(chip) => chip.key !== chipToDelete.key,
-							);
-							setChipData(updated);
-						}}
+						onDelete={handleChipDelete}
 					/>
 				</Box>
 				<FormControl sx={{ minWidth: "100%" }}>
-					{/** biome-ignore lint/correctness/useUniqueElementIds: <the id should be sufficient> */}
+					{/** biome-ignore lint/correctness/useUniqueElementIds: <ignore> */}
 					<InputLabel id="filter-multiselect-dropdown-label">
 						Select Options
 					</InputLabel>
@@ -211,6 +221,10 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 								<Checkbox
 									checked={
 										selectedDropdown.indexOf(option) > -1
+									}
+									disabled={
+										selectedDropdown.length === 1 &&
+										selectedDropdown[0] === option
 									}
 								/>
 								<ListItemText primary={option} />
