@@ -376,8 +376,8 @@ export const MyProfilePage = () => {
 					<GridItem sm={4}>
 						<Typography variant="h6">
 							{nativeLogin
-								? "Edit profile information Alan"
-								: "Profile Info ALan"}
+								? "Edit profile information"
+								: "Profile Info"}
 						</Typography>
 					</GridItem>
 
