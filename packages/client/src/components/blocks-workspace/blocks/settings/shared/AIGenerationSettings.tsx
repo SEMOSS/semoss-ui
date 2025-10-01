@@ -1,22 +1,21 @@
 import { AutoAwesome } from "@mui/icons-material";
+import { Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { useEffect, useMemo, useRef, useState } from "react";
-import {
-	type Block,
-	type BlockDef,
-	type Paths,
-	type PathValue,
-	useBlocks,
-} from "@semoss/renderer";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { useMemo, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import type { Block, BlockDef, Paths, PathValue } from "@semoss/renderer";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
+	FileDropzone,
 	Stack,
+	styled,
 	TextField,
 	useNotification,
 } from "@semoss/ui";
-import { useBlockSettings } from "@/hooks";
+import { useBlockSettings, useRootStore } from "@/hooks";
+import { BaseSettingSection } from "../BaseSettingSection";
 
 type CfgLibraryEngineState = {
 	loading: boolean;
@@ -55,33 +54,21 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	appendPrompt?: string;
 }
-
+const StyledUploadSection = styled(Stack)(() => ({
+	height: "250px",
+}));
 export const AIGenerationSettings = observer(
 	<D extends BlockDef = BlockDef>({
 		id,
-		label = "AI",
-		placeholder = null,
+		label = "AI Generation",
+		placeholder = "Ex: Generate a bar graph.",
 		path,
-		valueAsObject = false,
-		appendPrompt = "",
+		// appendPrompt = "",
 	}: AIGenerationSettingsProps<D>) => {
-		const { setData } = useBlockSettings<D>(id);
-		const { state } = useBlocks();
 		const notification = useNotification();
-
-		const [prompt, setPrompt] = useState("");
+		const { monolithStore, configStore } = useRootStore();
+		const { setData } = useBlockSettings<D>(id);
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
-
-		const modelIdRef = useRef("");
-		const [modelId, setModelId] = useState<string>("");
-
-		const [models, setModels] = useState<
-			{ app_id: string; app_name: string }[]
-		>([]);
-
-		useEffect(() => {
-			modelIdRef.current = modelId;
-		}, [modelId]);
 
 		const [cfgLibraryModels, setCfgLibraryModels] =
 			useState<CfgLibraryEngineState>({
@@ -89,7 +76,24 @@ export const AIGenerationSettings = observer(
 				ids: [],
 				display: {},
 			});
-		const [selectedModel, setSelectedModel] = useState<string>("");
+		const { control, handleSubmit, watch, setValue } = useForm({
+			defaultValues: {
+				inputFile: null,
+				prompt: "",
+				selectedModel: "",
+			},
+		});
+
+		const inputFile = watch("inputFile");
+		const prompt = watch("prompt");
+		const selectedModel = watch("selectedModel");
+
+		const _isGenerateButtonDisabled =
+			!cfgLibraryModels.ids.length ||
+			cfgLibraryModels.loading ||
+			!inputFile ||
+			!selectedModel;
+
 		const myModels = usePixel<
 			{ app_id: string; app_name: string; tag: string }[]
 		>(`MyEngines(engineTypes=['MODEL']);`);
@@ -113,101 +117,95 @@ export const AIGenerationSettings = observer(
 				display: modelDisplay,
 			});
 			if (modelIds.length) {
-				setSelectedModel(modelIds[0]);
+				setValue("selectedModel", modelIds[0]);
 			}
-		}, [myModels.status, myModels.data]);
+		}, [myModels.status, myModels.data, setValue]);
 
-		useEffect(() => {
-			if (myModels.status !== "SUCCESS") {
-				return;
-			}
+		const stringifyOutput = (frameOutput: {
+			headers?: string[];
+			values?: (string | number | boolean)[][];
+			data?: {
+				headers?: string[];
+				values?: (string | number | boolean)[][];
+			};
+		}) => {
+			const headers =
+				frameOutput.headers || frameOutput.data?.headers || [];
+			const values = frameOutput.values || frameOutput.data?.values || [];
 
-			setModels(
-				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d.app_id,
-				})),
+			// Map headers to values for each row
+			const mappedData = values.map(
+				(row: (string | number | boolean)[]) => {
+					const rowObject: {
+						[key: string]: string | number | boolean;
+					} = {};
+					headers.forEach((header: string, index: number) => {
+						rowObject[header] = row[index];
+					});
+					return rowObject;
+				},
 			);
-			if (myModels.data.length) {
-				setModelId(myModels.data[0].app_id);
-			}
-		}, [myModels.status, myModels.data]);
 
-		useEffect(() => {
-			if (myModels.status !== "SUCCESS") {
-				return;
-			}
-
-			setModels(
-				myModels.data.map((d) => ({
-					app_name: d.app_name ? d.app_name.replace(/_/g, " ") : "",
-					app_id: d.app_id,
-				})),
-			);
-			if (myModels.data.length) {
-				setModelId(myModels.data[0].app_id);
-			}
-		}, [myModels.status, myModels.data]);
+			return JSON.stringify(mappedData);
+		};
 
 		const generateAIResponse = async () => {
 			try {
 				setResponseLoading(true);
-
-				// re-wrote LLM prompting section previous approach was throwing error
-				let flattenedPrompt = `${state.flattenVariable(
-					prompt,
-				)} ${appendPrompt}`;
-				flattenedPrompt = flattenedPrompt.replace(/"/g, "'");
-				const pixel = `LLM(engine = "${modelIdRef.current}", command = "${flattenedPrompt}", paramValues = [ {} ] );`;
-				const res = await runPixel(pixel);
-				const LLMResponse = res.pixelReturn[0].output["response"];
-
-				let trimmedStarterCode = LLMResponse;
-				trimmedStarterCode = LLMResponse.replace(/^```|```$/g, ""); // trims off any triple quotes from backend
-
-				trimmedStarterCode = trimmedStarterCode.substring(
-					trimmedStarterCode.indexOf("\n") + 1,
+				const upload = await monolithStore.uploadFile(
+					inputFile,
+					configStore.store.insightID,
+					null,
+					null,
 				);
+				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) ;`;
+				const response = await monolithStore.runQuery(pixel);
+				const { output: frameOutput } = response.pixelReturn[0];
 
-				setData(
-					path,
-					trimmedStarterCode as PathValue<D["data"], typeof path>,
-				);
+				const stringifiedOutput = stringifyOutput(frameOutput);
+				const frameToGraphPixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", DATA_STRING = "<encode>${stringifiedOutput}</encode>", insightName="${configStore.store.insightID}")`;
+				const frameToGraphPixelResponse =
+					await monolithStore.runQuery(frameToGraphPixel);
+				const { output: graphOutput } =
+					frameToGraphPixelResponse.pixelReturn[0];
 
-				// below is the previos LLM prompting code - not sure if we want or need any of this
-				// const flattenedPrompt = state.flattenVariable(prompt);
-				// const pixel = `LLM(engine=["${selectedModel}"],command=["<encode>${flattenedPrompt} ${appendPrompt}</encode>"], paramValues=[${JSON.stringify(
-				//     {
-				//         max_new_tokens: 4000,
-				//     },
-				// )}]);`;
-				// const { errors, pixelReturn } = await monolithStore.runQuery(
-				//     pixel,
-				// );
-				// let valueToSet = pixelReturn[0]?.output?.response;
-				// if (errors.length > 0 || typeof valueToSet !== 'string') {
-				//     throw new Error(errors.join(''));
-				// }
-				// if (valueAsObject) {
-				//     valueToSet = !!pixelReturn[0].output?.response
-				//         ? JSON.parse(
-				//               pixelReturn[0].output?.response
-				//                   .replaceAll('\\"', '"')
-				//                   .replaceAll('\\n', ''),
-				//           )
-				//         : undefined;
-				//     if (valueToSet === undefined) {
-				//         notification.add({
-				//             color: 'error',
-				//             message:
-				//                 'There was an issue parsing the JSON in your response.',
-				//         });
-				//     }
-				// }
-				// setData(path, "valueToSet" as PathValue<D['data'], typeof path>);
+				if (graphOutput) {
+					// Remove schema and extract content between first { and last }
+					let cleanedOutput = graphOutput.replace(
+						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
+						"",
+					);
+
+					// Find first opening brace and last closing brace
+					const firstBraceIndex = cleanedOutput.indexOf("{");
+					const lastBraceIndex = cleanedOutput.lastIndexOf("}");
+
+					if (
+						firstBraceIndex !== -1 &&
+						lastBraceIndex !== -1 &&
+						firstBraceIndex < lastBraceIndex
+					) {
+						cleanedOutput = cleanedOutput.substring(
+							firstBraceIndex,
+							lastBraceIndex + 1,
+						);
+					}
+
+					try {
+						const specJson = JSON.parse(cleanedOutput);
+						setData(
+							path,
+							specJson as PathValue<D["data"], typeof path>,
+						);
+					} catch {
+						setData(
+							path,
+							cleanedOutput as PathValue<D["data"], typeof path>,
+						);
+					}
+				}
 			} catch (e) {
 				console.error(e);
-
 				notification.add({
 					color: "error",
 					message: e.message,
@@ -216,60 +214,104 @@ export const AIGenerationSettings = observer(
 				setResponseLoading(false);
 			}
 		};
-
 		return (
-			<Stack spacing={1} width="100%">
-				<TextField
-					disabled={!cfgLibraryModels.ids.length || responseLoading}
-					fullWidth
-					multiline
-					rows={5}
-					value={prompt}
-					onChange={(e) => {
-						// sync the data on change
-						setPrompt(e.target.value);
-					}}
-					size="small"
-					variant="outlined"
-					autoComplete="off"
-					placeholder={placeholder}
-					label="AI Generator"
-					InputLabelProps={{
-						shrink: true,
-					}}
-				/>
-				<Autocomplete
-					disabled={!cfgLibraryModels.ids.length || responseLoading}
-					disableClearable
-					fullWidth
-                    multiple={false}
-					id="model-autocomplete"
-					loading={cfgLibraryModels.loading}
-					options={cfgLibraryModels.ids}
-					value={selectedModel}
-					size="small"
-					getOptionLabel={(modelId: string) =>
-						cfgLibraryModels.display[modelId] ?? ""
-					}
-					onChange={(_, newModelId) => {
-						setSelectedModel(newModelId);
-					}}
-					renderInput={(params) => (
-						<TextField {...params} variant="outlined" />
-					)}
-				/>
-				<Button
-					disabled={
-						!cfgLibraryModels.ids.length || cfgLibraryModels.loading
-					}
-					loading={responseLoading}
-					variant="outlined"
-					endIcon={<AutoAwesome />}
-					onClick={generateAIResponse}
+			<BaseSettingSection label={label}>
+				<form
+					onSubmit={handleSubmit(generateAIResponse)}
+					style={{ width: "100%" }}
 				>
-					Generate
-				</Button>
-			</Stack>
+					<Stack spacing={1}>
+						<StyledUploadSection spacing={2}>
+							<Typography variant="body1">
+								Upload CSV{" "}
+								<Typography component="span" color="error">
+									*
+								</Typography>
+							</Typography>
+							<Controller
+								name="inputFile"
+								control={control}
+								render={({ field }) => (
+									<FileDropzone
+										extensions={[".csv"]}
+										onChange={(file: File) =>
+											field.onChange([file])
+										}
+										disabled={responseLoading}
+									/>
+								)}
+							/>
+						</StyledUploadSection>
+						<Controller
+							name="prompt"
+							control={control}
+							render={({ field }) => (
+								<TextField
+									disabled={
+										!cfgLibraryModels.ids.length ||
+										responseLoading
+									}
+									fullWidth
+									multiline
+									rows={5}
+									{...field}
+									size="small"
+									variant="outlined"
+									autoComplete="off"
+									placeholder={placeholder}
+									label="AI Generator"
+									InputLabelProps={{
+										shrink: true,
+									}}
+									onChange={(e) =>
+										setValue("prompt", e.target.value)
+									}
+								/>
+							)}
+						/>
+						<Controller
+							name="selectedModel"
+							control={control}
+							render={({ field }) => (
+								<Autocomplete
+									disabled={
+										!cfgLibraryModels.ids.length ||
+										responseLoading
+									}
+									disableClearable
+									fullWidth
+									// id="model-autocomplete"
+									loading={cfgLibraryModels.loading}
+									options={cfgLibraryModels.ids}
+									value={field.value ? [field.value] : []}
+									size="small"
+									getOptionLabel={(modelId: string) =>
+										cfgLibraryModels.display[modelId] ?? ""
+									}
+									onChange={(_, newModelId) =>
+										field.onChange(newModelId)
+									}
+									renderInput={(params) => (
+										<TextField
+											{...params}
+											variant="outlined"
+										/>
+									)}
+								/>
+							)}
+						/>
+						<Button
+							disabled={_isGenerateButtonDisabled}
+							loading={responseLoading}
+							variant="outlined"
+							endIcon={<AutoAwesome />}
+							type="submit"
+						>
+							Generate with AI
+						</Button>
+					</Stack>
+				</form>
+			</BaseSettingSection>
 		);
 	},
 );

@@ -36,7 +36,7 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
 	if (!data.specJson) {
 		return (
 			<StyledNoDataContainer {...attrs}>
-				Add JSON to render your visualization
+				Upload a CSV and prompt the LLM to render a visualization
 			</StyledNoDataContainer>
 		);
 	}
@@ -55,7 +55,7 @@ export const VegaVisualizationBlock: BlockComponent = observer(({ id }) => {
 					<Chart actions={false} />
 				</StyledChartContainer>
 			);
-		} catch (e) {
+		} catch (_e) {
 			return (
 				<StyledNoDataContainer error {...attrs}>
 					There was an issue parsing your JSON.

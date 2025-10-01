@@ -60,7 +60,7 @@ export const JsonSettings = observer(
 		path,
 		height = "100%",
 		width = "100%",
-		callback = null,
+		// callback = null,
 	}: JsonSettingsProps<D>) => {
 		const { data, setData } = useBlockSettings<D>(id);
 		const { state, notebook } = useBlocks();
@@ -93,9 +93,10 @@ export const JsonSettings = observer(
 
 		// update the value whenever the computed one changes
 		useEffect(() => {
-			setValue(computedValue);
-		}, [computedValue, data]);
-
+			if (computedValue) {
+				setValue(computedValue);
+			}
+		}, [computedValue]);
 		/**
 		 * Sync the data on save
 		 */
@@ -116,14 +117,12 @@ export const JsonSettings = observer(
 								path,
 								specJson as PathValue<D["data"], typeof path>,
 							);
-						} catch (e) {
+						} catch (_e) {
 							setData(
 								path,
 								value as PathValue<D["data"], typeof path>,
 							);
 						}
-
-						callback && callback();
 					} catch (e) {
 						console.log(e);
 					}
@@ -139,7 +138,7 @@ export const JsonSettings = observer(
 			setValue(value);
 		};
 
-		const handleMount = (editor, monaco) => {
+		const handleMount = (monaco) => {
 			const exposedQueryParameterDescription = (
 				exposedParameter: string,
 				queryId: string,
@@ -261,8 +260,8 @@ export const JsonSettings = observer(
 					const replaceRangeEndBuffer =
 						followingTwoCharacters === "}}"
 							? 2
-							: followingTwoCharacters == "} " ||
-									followingTwoCharacters == "}"
+							: followingTwoCharacters === "} " ||
+									followingTwoCharacters === "}"
 								? 1
 								: 0;
 
@@ -284,7 +283,9 @@ export const JsonSettings = observer(
 		const handleEditorValidation = (markers) => {
 			// model markers
 			const errorSet = [];
-			markers.forEach((marker) => errorSet.push(marker.message));
+			markers.forEach((marker) => {
+				errorSet.push(marker.message);
+			});
 			setErrors(errorSet);
 			setValidJson(!markers?.length);
 		};
@@ -321,9 +322,9 @@ export const JsonSettings = observer(
 					/>
 					{!!errors.length && (
 						<StyledErrorContainer>
-							{errors.map((error, id) => (
+							{errors.map((error) => (
 								<Typography
-									key={id}
+									key={error}
 									variant="caption"
 									color="error"
 								>
