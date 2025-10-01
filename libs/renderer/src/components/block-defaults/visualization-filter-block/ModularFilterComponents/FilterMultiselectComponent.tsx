@@ -1,4 +1,13 @@
-import Paper from "@mui/material/Paper";
+import {
+	Checkbox,
+	FormControl,
+	InputLabel,
+	ListItemText,
+	MenuItem,
+	Paper,
+} from "@mui/material";
+import type { SelectChangeEvent } from "@mui/material/Select";
+import Select from "@mui/material/Select";
 import type React from "react";
 import {
 	forwardRef,
@@ -42,7 +51,6 @@ const ChipsArray = forwardRef<ChipsArrayHandle, ChipsArrayProps>(
 							display: "inline-block",
 							margin: 4,
 							listStyle: "none",
-							// maxHeight: "50%",
 						}}
 					>
 						<Chip
@@ -79,9 +87,20 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 	);
 	const [chipData, setChipData] = useState<ChipData[]>(initialChips);
 
+	// Dropdown state
+	const [dropdownOpen, setDropdownOpen] = useState(false);
+	const [selectedDropdown, setSelectedDropdown] = useState<string[]>(
+		chipData.map((chip) => chip.label),
+	);
+
 	useEffect(() => {
 		setSearchText("");
 	}, [resetKey]);
+
+	// Keep dropdown selection in sync with chips
+	useEffect(() => {
+		setSelectedDropdown(chipData.map((chip) => chip.label));
+	}, [chipData]);
 
 	const handleApply = () => {
 		let selected: string[] = [];
@@ -102,12 +121,26 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 
 	const handleReset = () => {
 		setSearchText("");
-
 		if (onReset) {
 			onReset();
 			setChipData(initialChips);
 		}
 	};
+
+	const handleDropdownChange = (event: SelectChangeEvent<string[]>) => {
+		const value = event.target.value as string[];
+		setSelectedDropdown(value);
+
+		// Add chips for newly selected, remove chips for deselected
+		const newChips = listOptions
+			.filter((label) => value.includes(label))
+			.map((label, idx) => ({
+				key: idx,
+				label,
+			}));
+		setChipData(newChips);
+	};
+
 	return (
 		<Box
 			sx={{
@@ -141,20 +174,50 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 					overflowY: "auto",
 				}}
 			>
-				<ChipsArray
-					chips={chipData.filter((chip) =>
-						chip.label
-							.toLowerCase()
-							.includes(searchText.toLowerCase()),
-					)}
-					ref={chipsRef}
-					onDelete={(chipToDelete) => {
-						const updated = chipData.filter(
-							(chip) => chip.key !== chipToDelete.key,
-						);
-						setChipData(updated);
-					}}
-				/>
+				<Box sx={{ paddingBottom: "8px" }}>
+					<ChipsArray
+						chips={chipData.filter((chip) =>
+							chip.label
+								.toLowerCase()
+								.includes(searchText.toLowerCase()),
+						)}
+						ref={chipsRef}
+						onDelete={(chipToDelete) => {
+							const updated = chipData.filter(
+								(chip) => chip.key !== chipToDelete.key,
+							);
+							setChipData(updated);
+						}}
+					/>
+				</Box>
+				<FormControl sx={{ minWidth: "100%" }}>
+					{/** biome-ignore lint/correctness/useUniqueElementIds: <the id should be sufficient> */}
+					<InputLabel id="filter-multiselect-dropdown-label">
+						Select Options
+					</InputLabel>
+					<Select
+						labelId="filter-multiselect-dropdown-label"
+						multiple
+						open={dropdownOpen}
+						onOpen={() => setDropdownOpen(true)}
+						onClose={() => setDropdownOpen(false)}
+						value={selectedDropdown}
+						onChange={handleDropdownChange}
+						renderValue={(selected) => selected.join(", ")}
+						label="Select Options"
+					>
+						{listOptions.map((option) => (
+							<MenuItem key={option} value={option}>
+								<Checkbox
+									checked={
+										selectedDropdown.indexOf(option) > -1
+									}
+								/>
+								<ListItemText primary={option} />
+							</MenuItem>
+						))}
+					</Select>
+				</FormControl>
 			</Box>
 			<Box
 				sx={{

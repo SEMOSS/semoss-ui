@@ -311,7 +311,13 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const handleToggle = (value: string) => () => {
 		// setChecked(checked.includes(value) ? [] : [value]);
 		if (value === "Select All") {
-			setChecked(checked.length === options.length ? [] : [...options]);
+			if (checked.length === options.length) {
+				setChecked([]);
+				updateField("frame", []);
+			} else {
+				setChecked([...options]);
+				updateField("frame", [...options]);
+			}
 		} else {
 			const newChecked = checked.includes(value)
 				? checked.filter((c) => c !== value)

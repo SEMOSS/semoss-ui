@@ -121,13 +121,12 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 				valuesString = `[${selected}]`;
 			}
 		}
-
 		// Create a string representation of the selected numbers array
-
 		try {
+			// if no items are selected, do not use the value string
 			for (let i = 0; i < data.frame.length; i++) {
 				// Construct the command to set a filter on the frame based on the selected column and values
-				const pixelCommand = `META | ${data.frame[i]} | AddFrameFilter(((${data.column} == ${valuesString})));`;
+				const pixelCommand = `META | ${data.frame[i]} | AddFrameFilter(((${data.column} == ${selected.length > 0 ? valuesString : "[]"})));`;
 
 				// Execute the command as a side effect in the application state
 				// biome-ignore lint/correctness/noUnusedVariables: <does not need to be used>
