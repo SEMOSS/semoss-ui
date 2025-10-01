@@ -86,7 +86,9 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 		//set initial value of valuesString -- will change based off mode and array length
 		let valuesString = "";
 		// Update the selected values in the block's data
-		setData("selectedValues", selected);
+		if (mode !== "slider" && mode !== "multiselect") {
+			setData("selectedValues", selected);
+		}
 
 		try {
 			for (let i = 0; i < data.frame.length; i++) {
