@@ -21,6 +21,9 @@ const StyledBox = styled(Box)({
 	marginBottom: "32px",
 });
 
+/**
+ * @deprecated
+ */
 export const EstablishConnectionPage = () => {
 	// Right now this is purposed for the DB Connectors;
 	const { configStore, monolithStore } = useRootStore();
