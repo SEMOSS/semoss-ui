@@ -344,6 +344,99 @@ export const VisualMapConstant = {
 			icon: <img src={String(KPIIcon)} alt="KPI Icon" />,
 			name: "kpi",
 			label: "KPI",
+			title: "echart-kpi",
+			option: {
+				series: [
+					{
+						type: "gauge",
+						startAngle: 90,
+						endAngle: 90,
+						pointer: {
+							show: false,
+						},
+						progress: {
+							show: false,
+						},
+						axisLine: {
+							show: false,
+						},
+						axisTick: {
+							show: false,
+						},
+						splitLine: {
+							show: false,
+						},
+						axisLabel: {
+							show: false,
+						},
+						detail: {
+							valueAnimation: true,
+							fontSize: 64,
+							fontWeight: "bold",
+							fontFamily: "",
+							color: "#0471F0",
+							offsetCenter: [0, "-20%"], // Move value up (negative = up)
+							formatter: (value) => {
+								// Handle single dimension value
+								return value;
+							},
+						},
+						title: {
+							show: true,
+							fontSize: 32,
+							fontWeight: "normal",
+							fontFamily: "",
+							color: "#000000",
+							offsetCenter: [0, "20%"], // Position name text below the value
+						},
+						data: [
+							{
+								value: 1234,
+								name: "Sample KPI",
+							},
+						],
+					},
+				],
+				tooltip: {
+					show: false,
+				},
+				customSettings: {
+					multiDimension: false,
+					displayType: "grid",
+				},
+				reset: {
+					title: {
+						text: "KPI Title",
+						show: true,
+						left: "center",
+						top: "10%",
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial",
+							fontSize: 32,
+						},
+					},
+					series: {
+						detail: {
+							fontSize: 64,
+							fontWeight: "bold",
+							fontFamily: "",
+							color: "#0471F0",
+							offsetCenter: [0, "-20%"],
+							valueAnimation: true,
+							formatter: (value) => {
+								// Handle single dimension value
+								return value;
+							},
+						},
+					},
+					customSettings: {
+						multiDimension: false,
+						displayType: "single",
+					},
+				},
+			},
 		},
 	],
 	Map: [

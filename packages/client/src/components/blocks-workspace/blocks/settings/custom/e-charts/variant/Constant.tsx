@@ -13,6 +13,15 @@ export const Bar = [
 	},
 ];
 
+export const Kpi = [
+	{
+		name: "Dimension",
+		multiLabel: false,
+		label: "dimension",
+		aggregate: true,
+	},
+];
+
 export const Pie = [
 	{
 		name: "Label",

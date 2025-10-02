@@ -73,7 +73,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 		const [showPopover, setShowPopover] =
 			useState<HTMLButtonElement | null>(null); //show and hide the color picker
 		const [color, setColor] = useState(colorValue); //default color and state to maintain color value
-		const { data, setData } = useBlockSettings<any>(id); //data to update the color of the chart
+		const { data, setData } = useBlockSettings<D>(id); //data to update the color of the chart
 		const [value, setValue] = useState<string | null>(null); //local state to store a copy of main state
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null); //timeout ref to delay update of state
 		const optiontimeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
@@ -122,11 +122,20 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 		}
 		//update the local state value, when computed value is changed
 		useEffect(() => {
-			setValue(computedValue);
+			// Prioritize colorValue prop over computedValue (for external control like reset)
+			const displayValue = colorValue || computedValue;
+			setValue(displayValue);
 			if (colorPickerState === "updated") {
 				updateLatestChartDetail();
 			}
-		}, [computedValue]);
+		}, [computedValue, colorValue, colorPickerState]);
+
+		// Sync internal color state with external colorValue prop
+		useEffect(() => {
+			if (colorValue && colorValue !== color) {
+				setColor(colorValue);
+			}
+		}, [colorValue, color]);
 
 		function updateLatestChartDetail() {
 			if (optiontimeoutRef.current) {
@@ -169,11 +178,11 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 				</Typography>
 				<OutlinedInput
 					size="small"
-					id="outlined-adornment-password"
+					id={`colorPickerInput-${id}`}
 					placeholder="Select Colour"
 					aria-label="Select Colour"
 					type={"text"}
-					value={value}
+					value={value || colorValue}
 					style={{ width: "100%" }}
 					onChange={(e) => {
 						setColor(e.target.value);
@@ -191,7 +200,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 								edge="end"
 							>
 								<StyledSpanSection
-									color={value}
+									color={value || colorValue}
 								></StyledSpanSection>
 							</IconButton>
 						</InputAdornment>
@@ -215,7 +224,7 @@ export const ColorPickerSettings = observer<ColorPickerSettingProps>(
 							onChange(newColor.hex);
 							setColorPickerState("updated");
 						}}
-						color={value}
+						color={value || colorValue}
 					></StyledSketchContainer>
 				</Popover>
 			</StyledMainContainer>

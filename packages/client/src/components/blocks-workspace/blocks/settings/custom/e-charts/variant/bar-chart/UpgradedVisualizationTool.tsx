@@ -22,6 +22,8 @@ import { GanttFiscal } from "../Gantt/GanttFiscal";
 import { GanttGroupView } from "../Gantt/GanttGroupView";
 import { GanttLegend } from "../Gantt/GanttLegend";
 import { GanttTargetLine } from "../Gantt/GanttTargetLine";
+import { KPIDetailLabel } from "../kpi/KPIDetailLabel";
+import { KPIDetailTitle } from "../kpi/KPIDetailTitle";
 import { LineLegend } from "../line-chart/LineLegend";
 import { LineStyling } from "../line-chart/LineStyling";
 import { LineTooltip } from "../line-chart/LineTooltip";
@@ -1705,6 +1707,68 @@ const PieChartTools = ({ id }) => {
 	);
 };
 
+const KPIChartTools = ({ id }) => {
+	const [KPISelection, setKPISelection] = useState("");
+
+	return (
+		<>
+			<ResizingTool id={id} />
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setKPISelection((prevList) =>
+							prevList === "detailTitle" ? "" : "detailTitle",
+						)
+					}
+					selected={KPISelection === "detailTitle"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								KPISelection === "detailTitle"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Detail Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{KPISelection === "detailTitle" && (
+					<KPIDetailTitle id={id} path="option" />
+				)}
+			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setKPISelection((prevList) =>
+							prevList === "detailLabel" ? "" : "detailLabel",
+						)
+					}
+					selected={KPISelection === "detailLabel"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								KPISelection === "detailLabel"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Detail Label" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{KPISelection === "detailLabel" && (
+					<KPIDetailLabel id={id} path="option" />
+				)}
+			</StyledListItem>
+		</>
+	);
+};
+
 export const UpgradedVisualizationTool =
 	observer<UpgradedVisualizationToolProps>(({ id }) => {
 		const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
@@ -1756,6 +1820,7 @@ export const UpgradedVisualizationTool =
 				{data.variation === "echart-pie-chart" && (
 					<PieChartTools id={id} />
 				)}
+				{data.variation === "echart-kpi" && <KPIChartTools id={id} />}
 				{data.variation === "echart-line-graph" && (
 					<LineChartTools id={id} />
 				)}

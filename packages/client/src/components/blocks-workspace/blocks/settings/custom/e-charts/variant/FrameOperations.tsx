@@ -259,6 +259,12 @@ export const FrameOperations = observer(
 						["fields"]: {},
 					},
 				};
+			} else if (data.variation === "echart-kpi") {
+				// Reset KPI-specific data when frame changes
+				parsedValue = {
+					...parsedValue,
+					// Keep the gauge configuration but reset any data-specific settings
+				};
 			} else {
 				//to be used for special case if nothing matches
 			}
@@ -421,6 +427,41 @@ export const FrameOperations = observer(
 					});
 					tempStoredColumnsForDropped = tempStoredColumns;
 					setSelectedColumn((preVCol) => tempStoredColumns);
+				}
+			}
+			if (data.variation === "echart-kpi") {
+				// KPI uses data.aggregate to store dimension information
+				if (data.aggregate && Object.keys(data.aggregate).length > 0) {
+					// Extract dimension data from aggregate
+					const dimensionData = data.aggregate.dimension || {};
+
+					// Build tempStoredColumns from the aggregate data
+					const tempStoredColumns = chart.map((item) => {
+						const fieldNames = Object.keys(dimensionData);
+						const fieldSelectors = fieldNames.map((fieldName) => {
+							const columnInfo = columnsSelector.find(
+								(col) => col.name === fieldName,
+							);
+							return columnInfo?.selector || fieldName;
+						});
+						const fieldDataTypes = fieldNames.map((fieldName) => {
+							const columnInfo = columnsSelector.find(
+								(col) => col.name === fieldName,
+							);
+							return columnInfo?.dataType || "STRING";
+						});
+
+						return {
+							name: item.name,
+							label: item.label,
+							values: fieldNames,
+							selectors: fieldSelectors,
+							dataType: fieldDataTypes,
+						};
+					});
+
+					tempStoredColumnsForDropped = tempStoredColumns;
+					setSelectedColumn(tempStoredColumns);
 				}
 			}
 			if (data.variation === "echart-line-graph") {
@@ -1959,7 +2000,10 @@ export const FrameOperations = observer(
 																						...prev,
 																					};
 																				if (
-																					(e.target as HTMLInputElement).checked
+																					(
+																						e.target as HTMLInputElement
+																					)
+																						.checked
 																				) {
 																					// Add the column name if checked
 																					if (

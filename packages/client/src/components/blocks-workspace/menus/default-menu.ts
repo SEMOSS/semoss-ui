@@ -1248,6 +1248,96 @@ export const DEFAULT_MENU: DesignerMenuItem[] = [
 	},
 	{
 		section: SECTION_CHARTS,
+		name: "KPI",
+		helperText: "Display key performance indicators with prominent values",
+		activeImage: BLOCK_IMAGES["RADIAL_PLOT_ACTIVE"],
+		hoverImage: BLOCK_IMAGES["RADIAL_PLOT_HOVER"],
+		json: {
+			widget: "e-chart",
+			data: {
+				variation: "echart-kpi",
+				frame: {
+					name: "",
+				},
+				style: {
+					display: "flex",
+					flexDirection: "column",
+					padding: "4px",
+					gap: "8px",
+					flexWrap: "wrap",
+					width: "450px",
+					height: "350px",
+				},
+				option: {
+					series: [
+						{
+							type: "gauge",
+							startAngle: 90,
+							endAngle: 90,
+							pointer: {
+								show: false,
+							},
+							progress: {
+								show: false,
+							},
+							axisLine: {
+								show: false,
+							},
+							axisTick: {
+								show: false,
+							},
+							splitLine: {
+								show: false,
+							},
+							axisLabel: {
+								show: false,
+							},
+							detail: {
+								valueAnimation: true,
+								fontSize: 64,
+								fontWeight: "bold",
+								color: "#0471F0",
+								offsetCenter: [0, "-20%"],
+								formatter: (value) => {
+									// Handle single dimension value
+									return value;
+								},
+							},
+							title: {
+								show: true,
+								offsetCenter: [0, "20%"],
+								fontSize: 32,
+								color: "#000000",
+								fontWeight: "normal",
+							},
+							data: [
+								{
+									value: 1234,
+									name: "Sample KPI",
+								},
+							],
+						},
+					],
+					tooltip: {
+						show: false,
+					},
+					customSettings: {
+						multiDimension: false,
+						displayType: "grid",
+					},
+				},
+				show: "true",
+				loading: false,
+				loadType: "Skeleton",
+			},
+			listeners: {
+				preProcess: { type: "sync", order: [] },
+			},
+			slots: {} as BlockJSON["slots"],
+		},
+	},
+	{
+		section: SECTION_CHARTS,
 		name: "Bar Chart",
 		helperText:
 			"Compare cumulative totals and individual segments across categories",

@@ -7,6 +7,7 @@ import type { PathValue } from "../../../types";
 import { Bar } from "./variant/bar-chart/Bar";
 import { Dendrogram } from "./variant/dendrogram/Dendrogram";
 import { Gantt } from "./variant/Gantt/Gantt";
+import { KPI } from "./variant/kpi/KPI";
 import { Line } from "./variant/line-chart/Line";
 import { Map as MapChart } from "./variant/map-chart/Map";
 import { Pie } from "./variant/pie-chart/Pie";
@@ -92,7 +93,7 @@ export const VisualizationBlock: BlockComponent = observer(
 			if (listeners.preProcess) {
 				listeners.preProcess();
 			}
-		}, []);
+		}, [listeners.preProcess]);
 		/**
 		 *
 		 * @param data
@@ -181,6 +182,9 @@ export const VisualizationBlock: BlockComponent = observer(
 						{data.variation === "echart-dendrogram-chart" && (
 							<Dendrogram id={id} updateJson={updateChartJson} />
 						)}
+						{data.variation === "echart-kpi" && (
+							<KPI id={id} updateJson={updateChartJson} />
+						)}
 					</StyledNoDataContainer>
 				);
 			} catch {
@@ -216,6 +220,9 @@ export const VisualizationBlock: BlockComponent = observer(
 				)}
 				{data.variation === "echart-dendrogram-chart" && (
 					<Dendrogram id={id} updateJson={updateChartJson} />
+				)}
+				{data.variation === "echart-kpi" && (
+					<KPI id={id} updateJson={updateChartJson} />
 				)}
 			</StyledDataContainer>
 		);

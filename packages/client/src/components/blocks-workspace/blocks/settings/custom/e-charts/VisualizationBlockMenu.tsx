@@ -1,3 +1,4 @@
+/** biome-ignore-all lint/suspicious/noExplicitAny: <explanation> */
 import { useEffect, useState } from "react";
 import type {
 	BlockComponent,
@@ -11,6 +12,7 @@ import {
 	Bar,
 	Dendrogram,
 	Gantt,
+	Kpi,
 	Line,
 	Pie,
 	ScatterPlot,
@@ -18,7 +20,6 @@ import {
 	WorldMap,
 } from "./variant/Constant";
 import { FrameOperations } from "./variant/FrameOperations";
-import { GanttFrameSection } from "./variant/Gantt/GanttFrameSection";
 
 const StyledContainer = styled("div")(() => ({
 	height: "100%",
@@ -84,10 +85,10 @@ const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 }));
 
 export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
-	const { data, setData } = useBlockSettings<EchartVisualizationBlockDef>(id);
+	const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 	const [selectedTab, setSelectedTab] = useState("Data");
 	const [selectedColumn, setSelectedColumn] = useState<string[]>([]);
-	const [forceRender, setForceRender] = useState(false);
+	const [_forceRender, setForceRender] = useState(false);
 	function updateFrame() {}
 
 	function handleStoreData(storeData: any[]) {
@@ -152,6 +153,17 @@ export const VisualizationBlockMenu: BlockComponent = ({ id }) => {
 								updateFrame={updateFrame}
 								path="option"
 								chart={Line}
+								storedColumns={selectedColumn}
+								handleStoreData={handleStoreData}
+								selectedItem={handleSelectedItem}
+							/>
+						)}
+						{data.variation === "echart-kpi" && (
+							<FrameOperations
+								id={id}
+								updateFrame={updateFrame}
+								path="option"
+								chart={Kpi}
 								storedColumns={selectedColumn}
 								handleStoreData={handleStoreData}
 								selectedItem={handleSelectedItem}
