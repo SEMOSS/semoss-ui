@@ -41,7 +41,7 @@ const DropdownList = styled("ul")(({ theme }) => ({
 	margin: 0,
 	padding: 0,
 	listStyle: "none",
-	zIndex: 10,
+	zIndex: 1305,
 }));
 
 const DropdownItem = styled("li")(({ theme }) => ({
@@ -53,6 +53,7 @@ const DropdownItem = styled("li")(({ theme }) => ({
 	"&:hover": {
 		background: theme.palette.action.hover,
 	},
+	zIndex: theme.zIndex.modal + 1,
 }));
 
 const SearchInput = styled("input")({
@@ -88,7 +89,8 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 
 	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setInputValue(e.target.value);
-		setDropdownOpen(true); // Ensure dropdown stays open while typing
+		// Ensure dropdown stays open while typing
+		setDropdownOpen(true);
 	};
 
 	const handleToggleOption = (option: string) => {
@@ -97,7 +99,8 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 				? prev.filter((item) => item !== option)
 				: [...prev, option],
 		);
-		setDropdownOpen(true); // Keep dropdown open after selection
+		// Keep dropdown open after selection
+		setDropdownOpen(true);
 	};
 
 	const handleRemoveChip = (option: string) => {
