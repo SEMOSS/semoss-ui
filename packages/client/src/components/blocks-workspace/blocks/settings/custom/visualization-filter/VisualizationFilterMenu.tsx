@@ -143,11 +143,29 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const notification = useNotification();
 	const getFrames = useBlocksPixel<string[]>("GetFrames();", { data: [] });
 	const options = getFrames.status === "SUCCESS" ? getFrames.data : [];
-	const frameHeaders = useFrameHeaders(localState.frame);
 	const [checked, setChecked] = useState<string[]>([]);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
 	const toggleDropdown = () => setDropdownOpen((prev) => !prev);
 	const closeDropdown = () => setDropdownOpen(false);
+
+	// At the top of your component, after localState is defined:
+	const frames = Array.isArray(localState.frame)
+		? localState.frame
+		: localState.frame
+			? [localState.frame]
+			: [];
+
+	// Use a single hook call for the first selected frame (or empty string if none)
+	const frameHeader = useFrameHeaders(frames[0] || "");
+
+	// Merge all column names (aliases) from the selected frame, removing duplicates
+	const columnNames = useMemo(() => {
+		const allHeaders = frameHeader?.data?.list || [];
+		const uniqueAliases = Array.from(
+			new Set(allHeaders.map((item) => item.alias)),
+		);
+		return uniqueAliases;
+	}, [frameHeader?.data?.list]);
 
 	// Effect to initialize local state from block data
 	useEffect(() => {
@@ -220,10 +238,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 		}
 	};
 
-	const columnNames = useMemo(() => {
-		return frameHeaders?.data?.list?.map((item) => item.alias) || [];
-	}, [frameHeaders, localState, handleOnChange]);
-
 	/**
 	 * This function is a higher order function that takes a field name
 	 * and returns a function that will update the local state with
@@ -248,6 +262,10 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const isApplyDisabled =
 		!localState.displayType || !localState.frame || !localState.column;
 
+	console.log("displayType", localState.displayType);
+	console.log("frame", localState.frame);
+	console.log("column", localState.column);
+	console.log(isApplyDisabled);
 	/**
 	 * Updates the block's data store with the current local state
 	 */
@@ -309,7 +327,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	};
 
 	const handleToggle = (value: string) => () => {
-		// setChecked(checked.includes(value) ? [] : [value]);
 		if (value === "Select All") {
 			if (checked.length === options.length) {
 				setChecked([]);
@@ -494,19 +511,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 									)}
 								</Box>
 							</ClickAwayListener>
-
-							{/* <Autocomplete
-								options={options}
-								value={localState.frame}
-								onChange={handleOnChange("frame")}
-								size="small"
-								fullWidth={true}
-								multiple={false}
-								renderInput={(params) => (
-									<TextField {...params} size="small" />
-								)}
-							/> */}
-							{/* <Checkbox>Select All</Checkbox> */}
 						</StyledSubSection>
 						<StyledSubSection>
 							<StyledTypography variant="body2">
