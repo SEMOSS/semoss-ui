@@ -2,6 +2,7 @@ import { makeAutoObservable, runInAction } from 'mobx';
 
 // TODO: Pull from sdk
 import { runPixelTwo } from '../../runPixelTwo';
+import { Env } from "@semoss/sdk/react";
 import { RootStore, WorkspaceStore, WorkspaceConfigInterface } from '@/stores';
 import { AppMetadata } from '@/components/app';
 import { ALL_TYPES } from '@/types';
@@ -292,6 +293,9 @@ export class ConfigStore {
 
         // get the user information
         await this.getUser();
+
+        // set CSRF in sdk import
+		Env.update({ CSRF: this.store.config.csrf });
 
         //set the reactors
         await this.setGeneralReactors();

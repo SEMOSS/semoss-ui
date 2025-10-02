@@ -165,38 +165,26 @@ export const runPixelAsync = async (pixel: string, insightId?: string) => {
         throw Error("No Pixel To Execute");
     }
 
-    // build the expression
-    let postData = "";
+    const body: Record<string, unknown> = {
+        expression: pixel,
+    };
 
-    postData += "expression=" + encodeURIComponent(pixel);
     if (insightId) {
-        postData += "&insightId=" + encodeURIComponent(insightId);
+        body.insightId = insightId;
     }
 
     try {
-        const response = await fetch(`${Env.MODULE}/api/engine/runPixelAsync`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRF-Token": CSRF.token,
-            },
-            body: postData,
-        });
+        const response = await post<{
+            jobId:string;
+        }>(`${Env.MODULE}/api/engine/runPixelAsync`, body, {});
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw Error(errorData.errorMessage || "Failed to run pixel");
-        }
-
-        const data = await response.json();
-
-        if (!data) {
-            throw Error("No Pixel Response");
+        if (!response.data) {
+            throw Error("Failed to run pixel");
         }
 
         return {
-            jobId: data.jobId,
-        };
+            jobId: response.data.jobId,
+        }
     } catch (error) {
         if (error instanceof Error) {
             throw error;
@@ -216,27 +204,18 @@ export const getPixelAsyncResult = async <O extends unknown[] | []>(
         throw Error("No job id provided to get pixel response");
     }
 
-    const body = new URLSearchParams();
-    body.append("jobId", jobId);
+    const body: Record<string, unknown> = {
+        jobId: jobId,
+    };
 
     try {
-        const response = await fetch(`${Env.MODULE}/api/engine/result`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-CSRF-Token": CSRF.token,
-            },
-            body: body,
-        });
+        const response = await post(`${Env.MODULE}/api/engine/result`, body, {});
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw Error(
-                errorData.errorMessage || "Failed to get pixel response",
-            );
+        if (!response.data) {
+            throw Error("Failed to get pixel response");
         }
 
-        const data = (await response.json()) as {
+        const data = response.data as {
             insightID: string;
             pixelReturn: {
                 operationType: string[];
@@ -372,8 +351,10 @@ export const oauth = async (
  * @returns true if successful
  */
 export const logout = async (): Promise<boolean> => {
+    // clear the CSRF token
+    CSRF.token = "";
     // try to logout
-    await get(`${Env.MODULE}/api/auth/logout/all`);
+    await get(`${Env.MODULE}/api/auth/logout/all?disableRedirect=true`);
 
     return true;
 };

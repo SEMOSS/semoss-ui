@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { makeAutoObservable } from 'mobx';
 
-import { Env } from '@semoss/sdk/react';
-
+import { Env, logout as sdkLogout } from '@semoss/sdk/react';
+import { CSRF as appAxiosCsrf } from '../../App';
 import { Role } from '@/types';
 import { RootStore } from '@/stores';
 
@@ -357,16 +357,8 @@ export class MonolithStore {
      * @returns true if successful
      */
     async logout(): Promise<boolean> {
-        await axios
-            .get(`${Env.MODULE}/api/auth/logout/all`, {
-                validateStatus: function (status) {
-                    return true;
-                },
-            })
-            .catch((err) => {
-                throw Error(err);
-            });
-
+        await sdkLogout();
+        appAxiosCsrf.token = '';
         return true;
     }
 

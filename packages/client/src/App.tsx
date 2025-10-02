@@ -12,7 +12,7 @@ Env.update({
     MODULE: process.env.MODULE || '',
 });
 
-const CSRF = {
+export const CSRF = {
     isEnabled: false,
     token: '',
 };
