@@ -1,5 +1,6 @@
 import { action, computed, makeObservable, observable } from "mobx";
 import type { RoomStore } from "@/stores";
+import type { AbstractPixelMessage } from "@/types";
 
 /**
  * Abstract Message Store
@@ -9,6 +10,11 @@ export abstract class AbstractMessageStore {
 	 * Id of the message
 	 */
 	id: string = "";
+
+	/**
+	 * Is the message visible to the user
+	 */
+	visible: boolean = false;
 
 	/**
 	 * Store the room
@@ -44,9 +50,11 @@ export abstract class AbstractMessageStore {
 	 * Set the message
 	 * @param id
 	 */
-	constructor(room: RoomStore, id: string) {
+	constructor(room: RoomStore, message: AbstractPixelMessage) {
 		this.room = room;
-		this.id = id;
+
+		this.id = message.messageId;
+		this.visible = message.visible;
 
 		makeObservable(this, {
 			room: observable,

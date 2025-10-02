@@ -249,31 +249,39 @@ export const RoomPage = observer(() => {
 							maxWidth="xl"
 							sx={{ padding: "0 !important" }}
 						>
-							{room.history.map((m, mIdx) => (
-								<Stack
-									key={m.id}
-									direction="column"
-									sx={{
-										paddingTop: "8px",
-										paddingBottom: "8px",
-									}}
-								>
-									{m.type === "INPUT" && (
-										<InputMessage message={m} />
-									)}
-									{m.type === "RESPONSE" && (
-										<ResponseMessage message={m} />
-									)}
-									{m.type === "PLAN" && (
-										<PlanMessage
-											message={m}
-											isLast={
-												mIdx === room.history.length - 1
-											}
-										/>
-									)}
-								</Stack>
-							))}
+							{room.history.map((m, mIdx) => {
+								if (!m.visible) {
+									return null;
+								}
+
+								return (
+									<Stack
+										key={m.id}
+										direction="column"
+										sx={{
+											paddingTop: "8px",
+											paddingBottom: "8px",
+										}}
+									>
+										{m.type === "INPUT" && (
+											<InputMessage message={m} />
+										)}
+										{m.type === "RESPONSE" && (
+											<ResponseMessage message={m} />
+										)}
+										{m.type === "PLAN" && (
+											<PlanMessage
+												room={room}
+												message={m}
+												isLast={
+													mIdx ===
+													room.history.length - 1
+												}
+											/>
+										)}
+									</Stack>
+								);
+							})}
 						</Container>
 					</StyledScroll>
 					<Stack

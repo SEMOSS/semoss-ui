@@ -2,9 +2,9 @@ import {
 	Add,
 	Check,
 	DeleteOutlineOutlined,
+	Hardware,
 	Link,
 	SouthEastOutlined,
-	Warning,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
@@ -18,7 +18,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { AddStepOverlay, LinkStepOverlay } from "@/components";
-import type { PlanMessageStore } from "@/stores";
+import type { PlanMessageStore, RoomStore } from "@/stores";
 
 const StyledPlanMessage = styled(Stack)(({ theme }) => ({
 	width: "100%",
@@ -37,16 +37,18 @@ const StyledHover = styled(Stack)(() => ({
 	},
 }));
 
-const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
+const StyledTool = styled(Stack)(({ theme }) => ({
 	padding: "8px",
 	borderRadius: "12px",
 	borderWidth: "1px",
 	borderStyle: "solid",
 	borderColor: theme.palette.secondary.border,
-	cursor: "pointer",
 }));
 
 interface PlanMessageProps {
+	/** Room to render */
+	room: RoomStore;
+
 	/** Message to render */
 	message: PlanMessageStore;
 
@@ -55,11 +57,25 @@ interface PlanMessageProps {
 }
 
 export const PlanMessage: React.FC<PlanMessageProps> = observer(
-	({ message, isLast }) => {
+	({ room, message, isLast }) => {
 		const notification = useNotification();
 
 		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
 		const [isLinkOpen, setIsLinkOpen] = useState(false);
+
+		/**
+		 * Accept the plan
+		 */
+		const acceptPlan = () => {
+			try {
+				room.confirmPlan(message);
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: String(e),
+				});
+			}
+		};
 
 		/**
 		 * Remove a step from the plan
@@ -83,7 +99,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 
 		// only accept if all tools are there
 		let canAccept = true;
-		for (const step of message.steps) {
+		for (const step of message.plan.steps) {
 			if (step.details.stepType === "no_tool_available") {
 				canAccept = false;
 				break;
@@ -102,9 +118,9 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 					Here is the plan that I have created. Feel free to modify it
 					as needed.
 				</Typography>
-				{message.steps.length > 0 && (
+				{message.plan.steps.length > 0 && (
 					<Stepper orientation="vertical">
-						{message.steps.map((s) => (
+						{message.plan.steps.map((s) => (
 							<Stepper.Step
 								key={s.step_number}
 								active={true}
@@ -157,34 +173,22 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											{s.description}
 										</Typography>
 										{s.details.stepType === "tool_call" && (
-											<StyledSidebarOpen
+											<StyledTool
 												direction={"row"}
 												alignItems={"center"}
 												spacing={2}
-												onClick={() => {
-													setIsLinkOpen(true);
-												}}
 											>
-												<Warning
+												<Hardware
 													fontSize="medium"
 													sx={{ color: "#757575" }}
 												/>
-												<Stack
-													direction={"column"}
-													spacing={1}
-													flex={1}
+												<Typography
+													variant="subtitle2"
+													noWrap={true}
 												>
-													<Typography
-														variant="subtitle2"
-														noWrap={true}
-													>
-														{s.details.tool_name}
-													</Typography>
-													<Typography variant="caption">
-														Click to Open
-													</Typography>
-												</Stack>
-											</StyledSidebarOpen>
+													{s.details.tool_name}
+												</Typography>
+											</StyledTool>
 										)}
 										{s.details.stepType ===
 											"llm_reasoning" &&
@@ -245,7 +249,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 							disabled={!canAccept}
 							startIcon={<Check />}
 							onClick={() => {
-								setIsAddStepOpen(true);
+								acceptPlan();
 							}}
 						>
 							Accept
@@ -269,7 +273,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 
 				{isLinkOpen && (
 					<LinkStepOverlay
-						onClose={(success, step) => {
+						onClose={(success) => {
 							// close it
 							setIsLinkOpen(false);
 						}}

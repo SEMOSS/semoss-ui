@@ -1,11 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { download, runPixel, upload } from "@semoss/sdk/react";
 import { FlexLayout } from "@semoss/shared";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { AUTO_EXECUTE, TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import type {
 	InputTextPixelMessage,
 	Knowledge,
 	PixelMessage,
+	PlanStep,
 	ResponseTextPixelMessage,
 	ResponseToolPixelMessage,
 	Tool,
@@ -145,7 +146,7 @@ export class RoomStore {
 			tools: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
-			autoExecute: false,
+			autoExecute: AUTO_EXECUTE,
 		},
 		sidebar: {
 			isOpen: false,
@@ -408,6 +409,65 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+		} finally {
+			// turn off the loading screen
+			this.setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Confirm the plan and execute it
+	 */
+	confirmPlan = async (message: PlanMessageStore) => {
+		try {
+			if (!this._store.modelId) {
+				throw new Error("Model is required");
+			}
+
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// set to chat mode
+			this._store.mode = "chat";
+
+			// wait for the pixel to run
+			const response = await this.runPixel<
+				[
+					{
+						inputMessage: ResponseTextPixelMessage;
+						responseMessage:
+							| ResponseTextPixelMessage
+							| ResponseToolPixelMessage;
+					},
+				]
+			>(
+				`
+ConfirmCOT(
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+cotPlan=["<encode>${JSON.stringify(message.plan)}</encode>"]
+);`,
+			);
+
+			// throw errors
+			if (response.errors.length > 0) {
+				throw new Error(JSON.stringify(response.errors));
+			}
+
+			const { output } = response.pixelReturn[0];
+
+			// get the input from COT
+			const inputMessage = this.createMessage(output.inputMessage);
+			message.addChild(inputMessage);
+
+			// add the response
+			const responseMessage = this.createMessage(output.responseMessage);
+			inputMessage.addChild(responseMessage);
+
+			// run the step
+			for (const step of message.plan.steps) {
+				await this.runPlanStep(step);
+			}
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
@@ -725,6 +785,82 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 	};
 
 	/**
+	 * Confirm the plan and execute it
+	 */
+	private runPlanStep = async (step: PlanStep) => {
+		if (step.details.stepType === "tool_call") {
+			// run the tool for the step
+			await this.runPlanTool(step.step_number, step.details.tool_name);
+		} else if (step.details.stepType === "llm_reasoning") {
+			// ask it
+			await this.askMessage(step.details.prompt, []);
+		} else if (step.details.stepType === "human_intervention") {
+			throw new Error("Error");
+		} else if (step.details.stepType === "no_tool_available") {
+			throw new Error("Error");
+		}
+	};
+
+	/**
+	 *
+	 * @param stepNumber
+	 * @param toolName
+	 */
+	private runPlanTool = async (
+		stepNumber: number,
+		toolName: string,
+	): Promise<void> => {
+		// wait for the pixel to run
+		const response = await this.runPixel<
+			[
+				{
+					inputMessage: InputTextPixelMessage;
+					responseMessage:
+						| ResponseTextPixelMessage
+						| ResponseToolPixelMessage;
+				},
+			]
+		>(
+			`GetCOTToolResponse(
+engine=["${this._store.modelId}"],
+roomId=["${this._store.roomId}"],
+stepNumber=["${stepNumber}"],
+toolName=["${toolName}"]
+);`,
+		);
+
+		// throw errors
+		if (response.errors.length > 0) {
+			throw new Error(JSON.stringify(response.errors));
+		}
+
+		const { output } = response.pixelReturn[0];
+
+		// get the input from COT
+		const inputMessage = this.createMessage(
+			output.inputMessage,
+		) as InputMessageStore;
+		this.tail.addChild(inputMessage);
+
+		// add the response
+		const responseMessage = this.createMessage(
+			output.responseMessage,
+		) as ResponseMessageStore;
+		inputMessage.addChild(responseMessage);
+
+		// run the tools
+		for (const tool of responseMessage.tools) {
+			await this.runTool(
+				responseMessage,
+				tool._meta.map.SMSS_PROJECT_ID,
+				tool.id,
+				tool.name,
+				tool.parameters,
+			);
+		}
+	};
+
+	/**
 	 * Create an AgentMessage or UserMessage from a pixelMessage
 	 * @param pixelMessage - message from backend that needs to be converted
 	 */
@@ -733,56 +869,17 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 	): ResponseMessageStore | InputMessageStore | PlanMessageStore => {
 		// set data based on type
 		if (pixelMessage.type === "INPUT_TEXT") {
-			return new InputMessageStore(
-				this,
-				pixelMessage.messageId,
-				pixelMessage.inputUIPrompt,
-				pixelMessage.files || [],
-			);
+			return new InputMessageStore(this, pixelMessage);
 		} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-			return new ResponseMessageStore(
-				this,
-				pixelMessage.messageId,
-				"",
-				[],
-			);
+			return new ResponseMessageStore(this, pixelMessage);
 		} else if (pixelMessage.type === "RESPONSE_TEXT") {
 			if (pixelMessage.ornaments.PLAYGROUND_MESSAGE_TYPE === "COT") {
-				let steps = [];
-				try {
-					const content = JSON.parse(pixelMessage.content);
-					steps = content.steps;
-				} catch {
-					console.error("ERROR Parsing Plan");
-				}
-
-				return new PlanMessageStore(
-					this,
-					pixelMessage.messageId,
-					steps,
-				);
+				return new PlanMessageStore(this, pixelMessage);
 			}
 
-			return new ResponseMessageStore(
-				this,
-				pixelMessage.messageId,
-				pixelMessage.content,
-				[],
-			);
+			return new ResponseMessageStore(this, pixelMessage);
 		} else if (pixelMessage.type === "RESPONSE_TOOL") {
-			return new ResponseMessageStore(
-				this,
-				pixelMessage.messageId,
-				"",
-				pixelMessage.tool_responses.map((t) => ({
-					id: t.id,
-					_meta: t._meta,
-					title: t.title,
-					name: t.name,
-					parameters: t.arguments,
-					response: "",
-				})),
-			);
+			return new ResponseMessageStore(this, pixelMessage);
 		}
 	};
 

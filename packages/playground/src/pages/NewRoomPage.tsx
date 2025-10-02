@@ -17,7 +17,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
-import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { AUTO_EXECUTE, TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
@@ -70,7 +70,7 @@ export const NewRoomPage = observer(() => {
 		tools: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
-		autoExecute: false,
+		autoExecute: AUTO_EXECUTE,
 	});
 
 	const [isPlanning, setIsPlanning] = useState(false);

@@ -11,7 +11,12 @@ export class RootMessageStore extends AbstractMessageStore {
 	readonly type = "ROOT";
 
 	constructor() {
-		super(null, "");
+		super(null, {
+			messageId: "root",
+			type: "ROOT",
+			visible: false,
+			dateCreated: new Date().toString(),
+		});
 
 		makeObservable(this, {
 			history: computed,

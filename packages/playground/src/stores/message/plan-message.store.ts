@@ -1,4 +1,5 @@
 import { makeObservable, observable } from "mobx";
+import type { Plan, PlanStep, ResponseTextPixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**
@@ -10,52 +11,26 @@ export class PlanMessageStore extends AbstractMessageStore {
 	/**
 	 * Text associated with the message
 	 */
-	steps: {
-		step_number: number;
-		step_name: string;
-		description: string;
-		type:
-			| "tool_call"
-			| "llm_reasoning"
-			| "human_intervention"
-			| "no_tool_available";
-		status: "pending" | "in_progress" | "completed" | "failed";
-		details:
-			| {
-					stepType: "tool_call";
-					tool_name: string;
-					parameters: Record<string, unknown>;
-					rationaleForStep: string;
-			  }
-			| {
-					stepType: "llm_reasoning";
-					prompt: string;
-					rationaleForStep: string;
-			  }
-			| {
-					stepType: "human_intervention";
-					required_role: string;
-					instructions: string;
-					rationaleForStep: string;
-			  }
-			| {
-					stepType: "no_tool_available";
-					missing_capability: string;
-					rationaleForStep: string;
-			  };
-	}[] = [];
+	plan: Plan = {
+		user_prompt: "",
+		plan_id: "",
+		steps: [],
+	};
 
 	constructor(
 		room: AbstractMessageStore["room"],
-		id: string,
-		steps: PlanMessageStore["steps"],
+		message: ResponseTextPixelMessage,
 	) {
-		super(room, id);
+		super(room, message);
 
-		this.steps = steps;
+		try {
+			this.plan = JSON.parse(message.content);
+		} catch {
+			console.error("ERROR Parsing Plan");
+		}
 
 		makeObservable(this, {
-			steps: observable,
+			plan: observable,
 		});
 	}
 
@@ -63,10 +38,10 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 * Add a new step to the plan
 	 * @param step
 	 */
-	addStep(step: Omit<PlanMessageStore["steps"][number], "step_number">) {
-		this.steps.push({
+	addStep(step: Omit<PlanStep, "step_number">) {
+		this.plan.steps.push({
 			// increment it
-			step_number: this.steps.length,
+			step_number: this.plan.steps.length,
 			...step,
 		});
 	}
@@ -76,6 +51,8 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 * @param step_number
 	 */
 	removeStep(step_number: number) {
-		this.steps = this.steps.filter((s) => s.step_number !== step_number);
+		this.plan.steps = this.plan.steps.filter(
+			(s) => s.step_number !== step_number,
+		);
 	}
 }

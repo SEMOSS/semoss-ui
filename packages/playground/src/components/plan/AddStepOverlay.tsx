@@ -11,9 +11,9 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import type { PlanMessageStore } from "@/stores";
+import type { PlanStep } from "@/types";
 
-type NewStep = Omit<PlanMessageStore["steps"][number], "step_number">;
+type NewStep = Omit<PlanStep, "step_number">;
 
 interface AddStepOverlayProps {
 	/** Callback triggered when the tool model is closed */

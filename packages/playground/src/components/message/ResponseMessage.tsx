@@ -9,7 +9,6 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import {
-	Chip,
 	IconButton,
 	Markdown,
 	Stack,
@@ -38,19 +37,6 @@ const StyledHover = styled(Stack)(() => ({
 	},
 }));
 
-
-const StyledHover2 = styled("div")(() => ({
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "flex-end",
-	flex: 1,
-	opacity: 0,
-	width: "100%",
-	"&:hover": {
-		opacity: 1,
-	},
-}));
-
 interface ResponseMessageProps {
 	/** Message to render */
 	message: ResponseMessageStore;
@@ -67,8 +53,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		if (message.parent instanceof InputMessageStore) {
 			inputMessage = message.parent;
 		}
-
-		console.log(inputMessage);
 
 		/**
 		 * Copy the text
@@ -250,16 +234,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						))}
 					</Stepper>
 				)}
-				{message.sources.length > 0 ? (
-					<Stack direction={"row"} spacing={1} flexWrap={"wrap"}>
-						{message.sources.map((s, sIdx) => {
-							return (
-								// biome-ignore lint/suspicious/noArrayIndexKey: Array of sources is returned
-								<Chip key={sIdx} label={s} color={"default"} />
-							);
-						})}
-					</Stack>
-				) : null}
 			</StyledResponseMessage>
 		);
 	},

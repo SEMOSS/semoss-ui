@@ -1,4 +1,9 @@
 import { makeObservable, observable } from "mobx";
+import type {
+	InputToolExecPixelMessage,
+	ResponseTextPixelMessage,
+	ResponseToolPixelMessage,
+} from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**
@@ -38,12 +43,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 		/** Response for the tool */
 		response: string;
-	}[];
-
-	/**
-	 * Sources in the response
-	 */
-	sources: string[] = [];
+	}[] = [];
 
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
@@ -58,19 +58,31 @@ export class ResponseMessageStore extends AbstractMessageStore {
 
 	constructor(
 		room: AbstractMessageStore["room"],
-		id: string,
-		text: string,
-		tools: ResponseMessageStore["tools"],
+		message:
+			| ResponseTextPixelMessage
+			| ResponseToolPixelMessage
+			| InputToolExecPixelMessage,
 	) {
-		super(room, id);
+		super(room, message);
 
-		this.text = text;
-		this.tools = tools;
+		if (message.type === "RESPONSE_TEXT") {
+			this.text = message.content;
+		}
+
+		if (message.type === "RESPONSE_TOOL") {
+			this.tools = message.tool_responses.map((t) => ({
+				id: t.id,
+				_meta: t._meta,
+				title: t.title,
+				name: t.name,
+				parameters: t.arguments,
+				response: "",
+			}));
+		}
 
 		makeObservable(this, {
 			text: observable,
 			tools: observable,
-			sources: observable,
 			rating: observable,
 		});
 	}
