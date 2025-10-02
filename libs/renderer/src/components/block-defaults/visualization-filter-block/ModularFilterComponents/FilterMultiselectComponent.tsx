@@ -1,72 +1,70 @@
-import {
-	Checkbox,
-	FormControl,
-	InputLabel,
-	ListItemText,
-	MenuItem,
-	Paper,
-} from "@mui/material";
-import type { SelectChangeEvent } from "@mui/material/Select";
-import Select from "@mui/material/Select";
-import type React from "react";
-import {
-	forwardRef,
-	useEffect,
-	useImperativeHandle,
-	useMemo,
-	useRef,
-	useState,
-} from "react";
-import { Box, Button, Chip } from "@semoss/ui";
-import type {
-	ChipData,
-	ChipsArrayHandle,
-	ChipsArrayProps,
-	FilterComponentProps,
-} from "../filter";
+import CheckIcon from "@mui/icons-material/Check";
+import Chip from "@mui/material/Chip";
+import ClickAwayListener from "@mui/material/ClickAwayListener";
+import { styled } from "@mui/material/styles";
+import type * as React from "react";
+import { useMemo, useState } from "react";
+import { Box, Button } from "@semoss/ui";
+import type { FilterComponentProps } from "../filter";
 import FilterIconComponent from "./FilterIconComponent";
 
-const ChipsArray = forwardRef<ChipsArrayHandle, ChipsArrayProps>(
-	({ chips, onDelete }, ref) => {
-		useImperativeHandle(ref, () => ({
-			getChips: () => chips,
-		}));
+const Root = styled("div")(({ theme }) => ({
+	color: theme.palette.text.primary,
+	fontSize: 14,
+	width: "100%",
+}));
 
-		return (
-			<Paper
-				component="ul"
-				sx={{
-					display: "flex",
-					justifyContent: "center",
-					flexWrap: "wrap",
-					listStyle: "none",
-					p: 0.5,
-					m: 0,
-				}}
-			>
-				{chips.map((chip) => (
-					<li
-						key={chip.key}
-						style={{
-							display: "inline-block",
-							margin: 4,
-							listStyle: "none",
-						}}
-					>
-						<Chip
-							sx={{ m: 0.5 }}
-							label={chip.label}
-							onDelete={() => onDelete(chip)}
-						/>
-					</li>
-				))}
-			</Paper>
-		);
+const InputArea = styled("div")(({ theme }) => ({
+	width: "100%",
+	border: `1px solid ${theme.palette.divider}`,
+	backgroundColor: theme.palette.background.paper,
+	borderRadius: 4,
+	padding: 2,
+	display: "flex",
+	flexWrap: "wrap",
+	alignItems: "center",
+	"&:focus-within": {
+		borderColor: theme.palette.primary.main,
+		boxShadow: `0 0 0 2px ${theme.palette.primary.light}33`,
 	},
-);
+}));
+
+const DropdownList = styled("ul")(({ theme }) => ({
+	position: "absolute",
+	width: "100%",
+	maxHeight: 220,
+	overflowY: "auto",
+	background: theme.palette.background.paper,
+	border: `1px solid ${theme.palette.divider}`,
+	borderRadius: 4,
+	boxShadow: theme.shadows[2],
+	margin: 0,
+	padding: 0,
+	listStyle: "none",
+	zIndex: 10,
+}));
+
+const DropdownItem = styled("li")(({ theme }) => ({
+	fontFamily: "Inter, sans-serif",
+	display: "flex",
+	alignItems: "center",
+	padding: "6px 12px",
+	cursor: "pointer",
+	"&:hover": {
+		background: theme.palette.action.hover,
+	},
+}));
+
+const SearchInput = styled("input")({
+	border: "none",
+	outline: "none",
+	flex: 1,
+	fontSize: 14,
+	background: "transparent",
+	padding: "8.5px 14px",
+});
 
 const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
-	resetKey,
 	mode,
 	listOptions = [],
 	onApply,
@@ -74,93 +72,56 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 	color = "primary",
 	size = "medium",
 }) => {
-	const [searchText, setSearchText] = useState("");
-	const chipsRef = useRef<ChipsArrayHandle>(null);
-
-	const initialChips = useMemo(
-		() =>
-			listOptions.map((label, index) => ({
-				key: index,
-				label,
-			})),
-		[listOptions],
-	);
-	const [chipData, setChipData] = useState<ChipData[]>(initialChips);
-
-	// Dropdown state
+	const [inputValue, setInputValue] = useState("");
+	const [selected, setSelected] = useState<string[]>([]);
 	const [dropdownOpen, setDropdownOpen] = useState(false);
-	const [selectedDropdown, setSelectedDropdown] = useState<string[]>(
-		chipData.map((chip) => chip.label),
+
+	const filteredOptions = useMemo(
+		() =>
+			listOptions.filter((opt) =>
+				opt.toLowerCase().includes(inputValue.toLowerCase()),
+			),
+		[inputValue, listOptions],
 	);
 
-	useEffect(() => {
-		setSearchText("");
-	}, [resetKey]);
+	const handleInputFocus = () => setDropdownOpen(true);
 
-	// Keep dropdown selection in sync with chips
-	useEffect(() => {
-		setSelectedDropdown(chipData.map((chip) => chip.label));
-	}, [chipData]);
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		setInputValue(e.target.value);
+		setDropdownOpen(true); // Ensure dropdown stays open while typing
+	};
+
+	const handleToggleOption = (option: string) => {
+		setSelected((prev) =>
+			prev.includes(option)
+				? prev.filter((item) => item !== option)
+				: [...prev, option],
+		);
+		setDropdownOpen(true); // Keep dropdown open after selection
+	};
+
+	const handleRemoveChip = (option: string) => {
+		setSelected((prev) => prev.filter((item) => item !== option));
+	};
 
 	const handleApply = () => {
-		let selected: string[] = [];
-
-		const remaining = chipsRef.current?.getChips() || [];
-
-		const safeChipData = remaining.map((chip, index) => ({
-			key: index,
-			label: chip.label,
-		}));
-
-		selected = safeChipData.map((chip) => chip.label);
-
-		setChipData(safeChipData);
-
 		onApply(selected, mode);
 	};
 
 	const handleReset = () => {
-		setSearchText("");
-		if (onReset) {
-			onReset();
-			setChipData(initialChips);
-		}
+		setSelected([]);
+		setInputValue("");
+		if (onReset) onReset();
 	};
 
-	const handleDropdownChange = (event: SelectChangeEvent<string[]>) => {
-		const value = event.target.value as string[];
-		// Prevent unchecking the last item
-		if (value.length === 0) {
-			return;
-		}
-		setSelectedDropdown(value);
-
-		// Add chips for newly selected, remove chips for deselected
-		const newChips = listOptions
-			.filter((label) => value.includes(label))
-			.map((label, idx) => ({
-				key: idx,
-				label,
-			}));
-		setChipData(newChips);
-	};
-
-	const handleChipDelete = (chipToDelete: ChipData) => {
-		if (chipData.length === 1) {
-			// Prevent deleting the last chip
-			return;
-		}
-		const updated = chipData.filter(
-			(chip) => chip.key !== chipToDelete.key,
-		);
-		setChipData(updated);
+	const handleClickAway = () => {
+		setDropdownOpen(false);
 	};
 
 	return (
 		<Box
 			sx={{
 				width: "100%",
-				height: "100%",
 				border: "1px solid #ccc",
 				borderRadius: 1,
 				p: 2,
@@ -169,70 +130,57 @@ const FilterMultiselectComponent: React.FC<FilterComponentProps> = ({
 				gap: 2,
 			}}
 		>
-			<Box
-				sx={{
-					display: "flex",
-					gap: 1,
-					alignItems: "center",
-					width: "100%",
-				}}
-			>
+			<Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
 				<FilterIconComponent handleReset={handleReset} />
 			</Box>
-
-			<Box
-				sx={{
-					display: "flex",
-					flexDirection: "column",
-					gap: 1,
-					maxHeight: 200,
-					overflowY: "auto",
-				}}
-			>
-				<Box sx={{ paddingBottom: "8px" }}>
-					<ChipsArray
-						chips={chipData.filter((chip) =>
-							chip.label
-								.toLowerCase()
-								.includes(searchText.toLowerCase()),
-						)}
-						ref={chipsRef}
-						onDelete={handleChipDelete}
-					/>
-				</Box>
-				<FormControl sx={{ minWidth: "100%" }}>
-					{/** biome-ignore lint/correctness/useUniqueElementIds: <ignore> */}
-					<InputLabel id="filter-multiselect-dropdown-label">
-						Select Options
-					</InputLabel>
-					<Select
-						labelId="filter-multiselect-dropdown-label"
-						multiple
-						open={dropdownOpen}
-						onOpen={() => setDropdownOpen(true)}
-						onClose={() => setDropdownOpen(false)}
-						value={selectedDropdown}
-						onChange={handleDropdownChange}
-						renderValue={(selected) => selected.join(", ")}
-						label="Select Options"
-					>
-						{listOptions.map((option) => (
-							<MenuItem key={option} value={option}>
-								<Checkbox
-									checked={
-										selectedDropdown.indexOf(option) > -1
-									}
-									disabled={
-										selectedDropdown.length === 1 &&
-										selectedDropdown[0] === option
-									}
+			<Root>
+				<Box sx={{ position: "relative" }}>
+					<ClickAwayListener onClickAway={handleClickAway}>
+						<div>
+							<InputArea>
+								{selected.map((option) => (
+									<Chip
+										key={option}
+										label={option}
+										onDelete={() =>
+											handleRemoveChip(option)
+										}
+										sx={{ m: 0.5 }}
+									/>
+								))}
+								<SearchInput
+									value={inputValue}
+									onChange={handleInputChange}
+									onFocus={handleInputFocus}
+									placeholder="Search or select options..."
 								/>
-								<ListItemText primary={option} />
-							</MenuItem>
-						))}
-					</Select>
-				</FormControl>
-			</Box>
+							</InputArea>
+							{dropdownOpen && (
+								<DropdownList>
+									{filteredOptions.map((option) => (
+										<DropdownItem
+											key={option}
+											onMouseDown={() =>
+												handleToggleOption(option)
+											}
+										>
+											<span style={{ flex: 1 }}>
+												{option}
+											</span>
+											{selected.includes(option) && (
+												<CheckIcon
+													fontSize="small"
+													color="primary"
+												/>
+											)}
+										</DropdownItem>
+									))}
+								</DropdownList>
+							)}
+						</div>
+					</ClickAwayListener>
+				</Box>
+			</Root>
 			<Box
 				sx={{
 					display: "flex",
