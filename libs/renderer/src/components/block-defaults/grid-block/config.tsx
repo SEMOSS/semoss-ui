@@ -30,6 +30,7 @@ export const config: BlockConfig<GridBlockDef> = {
 			hideUnfilter: false,
 		},
 		show: true,
+		source: "",
 	},
 
 	listeners: {},

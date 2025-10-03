@@ -26,6 +26,7 @@ import {
 import { useBlockSettings } from "@/hooks";
 import { BaseSettingSection } from "../../../settings/BaseSettingSection";
 import { GridBlockColumnSettingsItem } from "./GridBlockColumnSettingsItem";
+import { QueryInputSettings } from "../QueryInputSettings";
 
 interface GridBlockColumnSettingsProps {
 	/** Id of the block */
@@ -201,6 +202,11 @@ export const GridBlockColumnSettings = observer(
                                     >
                                         <List.ItemText primary={'Add Column'} />
                                     </List.Item> */}
+								<QueryInputSettings
+									id={id}
+									label="Source"
+									path="source"
+								/>
 							</List>
 						</SortableContext>
 					</DndContext>

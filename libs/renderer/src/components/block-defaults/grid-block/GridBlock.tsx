@@ -2,7 +2,7 @@ import { styled } from "@mui/material";
 import { DataGrid, GridToolbarContainer } from "@mui/x-data-grid";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { useBlock, useFrame, useFrameHeaders } from "../../../hooks";
+import { useBlock, useBlocks, useFrame, useFrameHeaders } from "../../../hooks";
 import type { BlockComponent, BlockDef } from "../../../store";
 import { GridBlockContextMenu } from "./GridBlockContextMenu";
 import type { GridBlockColumn } from "./grid-block.types";
@@ -113,16 +113,59 @@ export interface GridBlockDef extends BlockDef<"grid"> {
 			/** Enable the pagination */
 			pagination: boolean;
 		};
+		source?: string | any[][];
 	};
 }
 
 export const GridBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, setData } = useBlock<GridBlockDef>(id);
+	const { state } = useBlocks();
 	const [paginationModel, setPaginationModel] = useState({
 		page: 0,
 		pageSize: 50,
 	});
+	
+	let maxColCount = 0;
+	if (
+		Array.isArray(data.source) &&
+		data.source.length > 0 &&
+		Array.isArray(data.source[0])
+	) {
+		maxColCount = data.source.reduce(
+			(max, row) => (Array.isArray(row) ? Math.max(max, row.length) : max),
+			0
+		);
+		// Generate columns if not present
+		if (data.columns.length === 0) {
+			const generatedColumns = [];
+			for (let i = 0; i < maxColCount; i++) {
+			generatedColumns.push({ name: `col${i}` });
+			}
+			data.columns = generatedColumns;
+		}
+	}
 
+	// Now, map variableRows, padding each row to maxColCount
+	let variableRows: any[] | null = null;
+	if (
+		Array.isArray(data.source) &&
+		data.source.length > 0 &&
+		Array.isArray(data.source[0])
+	) {
+	variableRows = data.source.map((rowArr, idx) => {
+		const obj: Record<string, unknown> = { id: idx };
+		// Pad the row to maxColCount
+		const paddedRow = [...rowArr];
+		while (paddedRow.length < maxColCount) {
+		paddedRow.push(""); // or null, or undefined, as you prefer
+		}
+		data.columns.forEach((col, cIdx) => {
+		obj[col.name] = paddedRow[cIdx];
+		});
+		return obj;
+	});
+	} 
+	
 	const [contextMenu, setContextMenu] = useState<{
 		mouseX: number;
 		mouseY: number;
@@ -240,6 +283,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		field: col.name,
 		headerName: col.name,
 		sortable: false,
+		editable: data.source ? true : false,
 		renderHeader: () => (
 			<div
 				style={{
@@ -342,13 +386,44 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		},
 	}));
 
-	const rows = frame.data.values.map((r, idx) => {
-		const obj: Record<string, unknown> = { id: idx };
-		columns.forEach((c, cIdx) => {
-			obj[c.field] = r[cIdx];
-		});
-		return obj;
-	});
+	const rows = variableRows !== null
+    ? variableRows
+    : frame.data.values.map((r, idx) => {
+        const obj: Record<string, unknown> = { id: idx };
+        columns.forEach((c, cIdx) => {
+            obj[c.field] = r[cIdx];
+        });
+        return obj;
+    });
+
+	const [localRows, setLocalRows] = useState(rows);
+	useEffect(() => {
+		setLocalRows(rows);
+	}, [JSON.stringify(rows)]);
+
+	const handleProcessRowUpdate = (newRow, oldRow) => {
+		const updatedRows = localRows.map(row => row.id === newRow.id ? newRow : row);
+		setLocalRows(updatedRows);
+		const updatedSource = updatedRows.map(row =>
+			data.columns.map(col => row[col.name])
+		);
+		setData("source", updatedSource);
+		state.variables[id] = {
+			type: "array",
+			value: updatedRows.map(row => data.columns.map(col => row[col.name])),
+		};
+
+		return newRow;
+	};
+
+	useEffect(() => {
+		if (localRows && id) {
+			state.variables[id] = {
+				type: "array",
+				value: localRows.map(row => data.columns.map(col => row[col.name])),
+			};
+		}
+	}, [id, localRows, data.columns]);
 
 	const handlePaginationModalChange = (newmodel) => {
 		// if the page size has changed reset the page
@@ -418,7 +493,8 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		<StyledBlock sx={data.style} {...attrs}>
 			<StyledDataGridContainer>
 				<DataGrid
-					rows={rows}
+					rows={localRows}
+					processRowUpdate={handleProcessRowUpdate}
 					columns={columns}
 					pagination
 					density="compact"
