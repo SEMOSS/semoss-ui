@@ -72,6 +72,9 @@ const reducer = (state, action) => {
 	return state;
 };
 
+/**
+ * @deprecated
+ */
 export const ImportForm = (props) => {
 	const { submitFunc, fields } = props;
 
