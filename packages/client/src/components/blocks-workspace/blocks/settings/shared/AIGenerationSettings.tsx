@@ -10,7 +10,7 @@ import {
 	type PathValue,
 	useBlocks,
 } from "@semoss/renderer";
-import { runPixel, usePixel } from "@semoss/sdk/react";
+import { runPixel, upload, usePixel } from "@semoss/sdk/react";
 import {
 	AutocompleteTwo,
 	Button,
@@ -65,8 +65,12 @@ interface AIGenerationSettingsProps<D extends BlockDef = BlockDef> {
 	 */
 	showFileUpload?: boolean;
 }
-const StyledUploadSection = styled(Stack)(({ theme }) => ({
-	height: "250px",
+const StyledDropzoneField = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+	width: "100%",
+	height: "100%",
 }));
 export const AIGenerationSettings = observer(
 	<D extends BlockDef = BlockDef>({
@@ -78,7 +82,7 @@ export const AIGenerationSettings = observer(
 		showFileUpload = false,
 	}: AIGenerationSettingsProps<D>) => {
 		const notification = useNotification();
-		const { monolithStore, configStore } = useRootStore();
+		const { configStore } = useRootStore();
 		const { setData } = useBlockSettings<D>(id);
 		const { state } = useBlocks();
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
@@ -233,26 +237,31 @@ export const AIGenerationSettings = observer(
 		const generateAIVegaResponse = async () => {
 			try {
 				setResponseLoading(true);
-				const upload = await monolithStore.uploadFile(
+				const uploadResult = await upload(
 					inputFile,
 					configStore.store.insightID,
 					null,
-					null,
+					"",
 				);
-				const pixel = `FileRead ( filePath = ["${upload[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) ;`;
-				const response = await monolithStore.runQuery(pixel);
+				const pixel = `FileRead ( filePath = ["${uploadResult[0].fileLocation}"], delimiter=",") | Import ( frame = [ CreateFrame ( frameType = [ GRID ] , override = [ true ] ) .as ( [ "AI_VEGA_FRAME" ] ) ] ) | QueryAll ( ) | CollectAll ( ) ;`;
+				const response = await runPixel(
+					pixel,
+					configStore.store.insightID,
+				);
 				const { output: frameOutput } = response.pixelReturn[0];
 
 				const stringifiedOutput = stringifyOutput(frameOutput);
 				const frameToGraphPixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", DATA_STRING = "<encode>${stringifiedOutput}</encode>", insightName="${configStore.store.insightID}")`;
-				const frameToGraphPixelResponse =
-					await monolithStore.runQuery(frameToGraphPixel);
+				const frameToGraphPixelResponse = await runPixel(
+					frameToGraphPixel,
+					configStore.store.insightID,
+				);
 				const { output: graphOutput } =
 					frameToGraphPixelResponse.pixelReturn[0];
 
 				if (graphOutput) {
 					// Remove schema and extract content between first { and last }
-					let cleanedOutput = graphOutput.replace(
+					let cleanedOutput = (graphOutput as string).replace(
 						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
 						"",
 					);
@@ -306,9 +315,44 @@ export const AIGenerationSettings = observer(
 					onSubmit={handleSubmit(generateResponse)}
 					style={{ width: "100%" }}
 				>
-					<Stack spacing={1}>
+					<Stack spacing={2}>
+						<Stack>
+							<Typography>Model</Typography>
+							<Controller
+								name="selectedModel"
+								control={control}
+								render={({ field }) => (
+									<AutocompleteTwo
+										disabled={
+											!cfgLibraryModels.ids.length ||
+											responseLoading
+										}
+										disableClearable
+										fullWidth
+										id="model-autocomplete"
+										loading={cfgLibraryModels.loading}
+										options={cfgLibraryModels.ids}
+										value={field.value}
+										size="small"
+										getOptionLabel={(modelId: string) =>
+											cfgLibraryModels.display[modelId] ??
+											""
+										}
+										onChange={(_, newModelId) =>
+											field.onChange(newModelId)
+										}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												variant="outlined"
+											/>
+										)}
+									/>
+								)}
+							/>
+						</Stack>
 						{showFileUpload && (
-							<StyledUploadSection spacing={2}>
+							<StyledDropzoneField>
 								<Typography variant="body1">
 									Upload CSV{" "}
 									<Typography component="span" color="error">
@@ -328,66 +372,39 @@ export const AIGenerationSettings = observer(
 										/>
 									)}
 								/>
-							</StyledUploadSection>
+							</StyledDropzoneField>
 						)}
-						<Controller
-							name="prompt"
-							control={control}
-							render={({ field }) => (
-								<TextField
-									disabled={
-										!cfgLibraryModels.ids.length ||
-										responseLoading
-									}
-									fullWidth
-									multiline
-									rows={5}
-									{...field}
-									size="small"
-									variant="outlined"
-									autoComplete="off"
-									placeholder={placeholder}
-									label="AI Generator"
-									InputLabelProps={{
-										shrink: true,
-									}}
-									onChange={(e) =>
-										setValue("prompt", e.target.value)
-									}
-								/>
-							)}
-						/>
-						<Controller
-							name="selectedModel"
-							control={control}
-							render={({ field }) => (
-								<AutocompleteTwo
-									disabled={
-										!cfgLibraryModels.ids.length ||
-										responseLoading
-									}
-									disableClearable
-									fullWidth
-									id="model-autocomplete"
-									loading={cfgLibraryModels.loading}
-									options={cfgLibraryModels.ids}
-									value={field.value}
-									size="small"
-									getOptionLabel={(modelId: string) =>
-										cfgLibraryModels.display[modelId] ?? ""
-									}
-									onChange={(_, newModelId) =>
-										field.onChange(newModelId)
-									}
-									renderInput={(params) => (
-										<TextField
-											{...params}
-											variant="outlined"
-										/>
-									)}
-								/>
-							)}
-						/>
+						<Stack>
+							<Typography>Prompt</Typography>
+							<Controller
+								name="prompt"
+								control={control}
+								render={({ field }) => (
+									<TextField
+										disabled={
+											!cfgLibraryModels.ids.length ||
+											responseLoading
+										}
+										fullWidth
+										multiline
+										rows={5}
+										{...field}
+										size="small"
+										variant="outlined"
+										autoComplete="off"
+										placeholder={placeholder}
+										label="AI Generator"
+										InputLabelProps={{
+											shrink: true,
+										}}
+										onChange={(e) =>
+											setValue("prompt", e.target.value)
+										}
+									/>
+								)}
+							/>
+						</Stack>
+
 						<Button
 							disabled={_isGenerateButtonDisabled}
 							loading={responseLoading}
