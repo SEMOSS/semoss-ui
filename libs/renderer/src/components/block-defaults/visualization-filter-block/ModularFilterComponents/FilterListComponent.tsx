@@ -26,9 +26,20 @@ const FilterListComponent = ({
 		}
 
 		if (value === "Select All") {
-			setChecked(
-				checked.length === listOptions.length ? [] : [...listOptions],
+			// Select all filtered options, not all listOptions
+			const allFilteredChecked = filteredOptions.every((opt) =>
+				checked.includes(opt),
 			);
+			if (allFilteredChecked) {
+				// Uncheck all filtered options
+				setChecked(checked.filter((c) => !filteredOptions.includes(c)));
+			} else {
+				// Add all filtered options to checked (avoid duplicates)
+				const newChecked = Array.from(
+					new Set([...checked, ...filteredOptions]),
+				);
+				setChecked(newChecked);
+			}
 		} else {
 			const newChecked = checked.includes(value)
 				? checked.filter((c) => c !== value)
@@ -45,8 +56,12 @@ const FilterListComponent = ({
 		}
 	}, [resetChecked]);
 
-	const allChecked = checked.length === listOptions.length;
-	const indeterminate = checked.length > 0 && !allChecked;
+	// Select All should reflect only filteredOptions
+	const allFilteredChecked =
+		filteredOptions.length > 0 &&
+		filteredOptions.every((opt) => checked.includes(opt));
+	const indeterminate =
+		checked.some((c) => filteredOptions.includes(c)) && !allFilteredChecked;
 
 	return (
 		<List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
@@ -58,7 +73,7 @@ const FilterListComponent = ({
 					<List.Icon>
 						<Checkbox
 							edge="start"
-							checked={allChecked}
+							checked={allFilteredChecked}
 							indeterminate={indeterminate}
 							tabIndex={-1}
 							disableRipple
