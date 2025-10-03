@@ -17,12 +17,12 @@ const StyledBlock = styled("div")(() => ({
 	width: DEFAULT_WIDTH,
 }));
 
-const StyledHeader = styled("div")(() => ({
-	padding: "8px",
+const StyledHeader = styled("div")(({ theme }) => ({
+	padding: theme.spacing(1),
 }));
 
-const StyledRow = styled("div")(() => ({
-	padding: "8px",
+const StyledRow = styled("div")(({ theme }) => ({
+	padding: theme.spacing(1),
 }));
 
 export interface GridDynamicFrameBlockDef
@@ -180,7 +180,7 @@ export const GridDynamicFrameBlock: BlockComponent = observer(({ id }) => {
 	}));
 
 	const rows = frame.data.values.map((r, idx) => {
-		const obj: Record<string, any> = { id: idx };
+		const obj: Record<string, unknown> = { id: idx };
 		columns.forEach((c, cIdx) => {
 			obj[c.field] = r[cIdx];
 		});
