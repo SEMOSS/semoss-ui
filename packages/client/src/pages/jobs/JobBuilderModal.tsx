@@ -79,19 +79,19 @@ export const JobBuilderModal = (props: {
 		}
 
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			cronValues[5] == "*"
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			cronValues[5] === "*"
 		) {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[5] == "*") {
+		} else if (cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
 		} else {
@@ -252,17 +252,16 @@ export const JobBuilderModal = (props: {
 					builder.jobType
 				}","jobName":"${builder.name}", "cronExpression":"${
 					builder.cronExpression
-				}","cronTimeZone":"${builder.cronTz}","recipe":"${
-					builder.pixel
-				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
-				notification.add({
-					color: "error",
-					message: response.errors.length[0],
-				});
+				throw new Error(response.errors[0]);
 			}
-		} catch (e) {
+			notification.add({
+				color: "success",
+				message: "Job added successfully",
+			});
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
@@ -354,7 +353,7 @@ export const JobBuilderModal = (props: {
 						</ToggleButton>
 					</ToggleButtonGroup>
 					<Autocomplete
-                        multiple={false}
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>
