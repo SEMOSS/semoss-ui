@@ -49,7 +49,7 @@ const outputConstraints: Constraints = [
 
 const initialConstraintSettings: ConstraintSettings = {
 	restrictInput: false,
-	filterHateSpeech: true,
+	filterHateSpeech: false,
 	limitResponseWords: false,
 	limitResponseCharacters: false,
 	setTone: false,
@@ -120,8 +120,9 @@ export const PromptBuilderConstraint = (props: {
 	constraintSettings: ConstraintSettings;
 	setBuilderValue: (
 		builderStepKey: string,
-		value: ConstraintSettings,
+		value: ConstraintSettings | string,
 	) => void;
+	contextValue: string;
 }) => {
 	return (
 		// <StyledBox onClick={() => alert(props.constraintSettings[props.constraint.key])}>
@@ -136,15 +137,28 @@ export const PromptBuilderConstraint = (props: {
 
 					// copy the constraint settings
 					// these are probably specific to this options page
-					const copy = props.constraintSettings;
+					const copy = { ...props.constraintSettings };
 
 					// key into the copy and flip the value for the switch
 					copy[props.constraint.key] = !copy[props.constraint.key];
 
 					// reset the whole builder value with two args
-					// 'constraints' indicates this page, can this be anything?
-					// the copy, does this have all values for all pages?
 					props.setBuilderValue("constraints", copy);
+					// If this is an output constraint, update the prompt context accordingly
+					if (["filterHateSpeech", "limitResponseWords", "limitResponseCharacters", "setTone", "bulletpoints"].includes(props.constraint.key)) {
+						const basePrompt = typeof props.contextValue === 'string' ? props.contextValue.split("\n")[0] : "";
+						const constraints: string[] = [];
+						if (copy.filterHateSpeech) constraints.push("Do not include hate speech.");
+						if (copy.limitResponseWords) constraints.push("Limit response to 100 words.");
+						if (copy.limitResponseCharacters) constraints.push("Limit response to 150 characters.");
+						if (copy.setTone) constraints.push("Use the specified tone of voice.");
+						if (copy.bulletpoints) constraints.push("Format response as bullet points.");
+						let newPrompt = basePrompt;
+						if (constraints.length > 0) {
+							newPrompt += "\n\nConstraints:\n" + constraints.map(c => `- ${c}`).join("\n");
+						}
+						props.setBuilderValue("context", newPrompt.trim());
+					}
 				}}
 			/>
 			<Stack direction="column" ml="12px">
@@ -201,24 +215,26 @@ export function PromptBuilderConstraintsStep(props: {
 				<Typography variant="h6">Input Constraints</Typography>
 				{Array.from(
 					Object.values(inputConstraints),
-					(constraint: Constraint, i) => (
+					(constraint: Constraint) => (
 						<PromptBuilderConstraint
 							key={constraint.key}
 							constraint={constraint}
 							constraintSettings={constraintSettings}
 							setBuilderValue={props.setBuilderValue}
+							contextValue={typeof props.builder.context.value === 'string' ? props.builder.context.value : ""}
 						/>
 					),
 				)}
 				<Typography variant="h6">Ouput Constraints</Typography>
 				{Array.from(
 					Object.values(outputConstraints),
-					(constraint: Constraint, i) => (
+					(constraint: Constraint) => (
 						<PromptBuilderConstraint
 							key={constraint.key}
 							constraint={constraint}
 							constraintSettings={constraintSettings}
 							setBuilderValue={props.setBuilderValue}
+							contextValue={typeof props.builder.context.value === 'string' ? props.builder.context.value : ""}
 						/>
 					),
 				)}

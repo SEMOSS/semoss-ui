@@ -664,10 +664,19 @@ export async function setBlocksAndOpenUIBuilder(
 		...state.blocks[PROMPT_CONTAINER_BLOCK_ID].slots.children.children,
 	];
 
-	state.queries = getQueryForPrompt(
-		builder.inputs.value as Token[],
-		builder.inputTypes.value as object,
-	);
+       // Always use builder.context.value (with constraints) as the prompt for the model
+       const promptText = typeof builder.context.value === 'string' ? builder.context.value : '';
+       state.queries = getQueryForPrompt(
+	       [{
+		       index: 0,
+		       key: 'prompt',
+		       display: promptText,
+		       type: 'text',
+		       isHiddenPhraseInputToken: false,
+		       linkedInputToken: undefined
+	       }],
+	       builder.inputTypes.value as object,
+       );
 
 	const pixel = `CreateAppFromBlocks ( project = [ "${
 		builder.title.value

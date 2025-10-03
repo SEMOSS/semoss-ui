@@ -20,14 +20,10 @@ export const PromptBuilderPreviewStep = (props: {
 				</Typography>
 			</Box>
 			<StyledTextPaper>
-				<PromptPreview
-					tokens={getBuilderTokens(props.builder)}
-					inputTypes={
-						props.builder.inputTypes.value
-							? (props.builder.inputTypes.value as object)
-							: {}
-					}
-				/>
+				{/* Show the actual prompt from builder.context.value */}
+				<div style={{whiteSpace: 'pre-wrap', fontSize: '1.2rem', padding: '16px', background: '#fff', borderRadius: '16px', minHeight: '120px'}}>
+					{typeof props.builder.context.value === 'string' ? props.builder.context.value : ''}
+				</div>
 			</StyledTextPaper>
 		</StyledStepPaper>
 	);

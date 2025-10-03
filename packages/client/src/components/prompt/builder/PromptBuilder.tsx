@@ -130,6 +130,18 @@ export const PromptBuilder = () => {
 					monolithStore,
 					navigate,
 				);
+				// Reset builder state to initialBuilder after app creation, and force constraints to initialConstraintSettings
+				setBuilder({
+					...initialBuilder,
+					constraints: { ...initialBuilder.constraints, value: {
+						restrictInput: false,
+						filterHateSpeech: false,
+						limitResponseWords: false,
+						limitResponseCharacters: false,
+						setTone: false,
+						bulletpoints: false,
+					}},
+				});
 			} catch (e) {
 				notification.add({
 					color: "error",
