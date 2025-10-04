@@ -1,4 +1,7 @@
 node_modules
+.nx
+.husky
+.turbo
 target
 .DS_Store
 dist
