@@ -4,7 +4,7 @@ import { Env,
 	fetchCsrfTokenIfNeeded,
 	getCsrfToken,
 	resetCsrfToken,
-  logout
+  	logout,
 	runPixel,
 } from "@semoss/sdk/react";
 import { AppMetadata } from "@/components/app";
