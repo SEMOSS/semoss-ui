@@ -1026,6 +1026,12 @@ const duplicateCell = async () => {
 																						output={
 																							cell.output
 																						}
+																						cellData={
+																							({
+																								cellId: cell.id.toString(),
+																								queryId: queryId.toString()
+																							})
+																						}
 																					/>
 																				);
 																			},

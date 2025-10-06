@@ -159,7 +159,7 @@ const ModalContent: FC<{
 });
 
 export const ModalBlock: BlockComponent = observer(({ id }) => {
-	const { attrs, data, slots, setData, listeners } =
+	const { attrs, data, slots, listeners } =
 		useBlock<ModalBlockDef>(id);
 	const { state } = useBlocks();
 	const isStatic = state.mode === "static";
@@ -196,7 +196,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 
 	const handleClose = () => {
 		if (!isStatic) {
-			setData("open", "false");
+			listeners.onClose();
 		}
 	};
 
@@ -206,7 +206,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 		: open; // In interactive mode, show when query returns true
 
 	if (!shouldShowModal && !isStatic) {
-		return <></>;
+		return null;
 	}
 
 	// In static mode with design mode on, show as modal but without portal
@@ -231,7 +231,7 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 
 	// Non-Design Mode View - Simple view with preview button
 	return (
-		<>
+		<div>
 			<Box {...attrs}>
 				<MuiModal
 					open={shouldShowModal}
@@ -256,6 +256,6 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 					/>
 				</MuiModal>
 			</Box>
-		</>
+		</div>
 	);
 });
