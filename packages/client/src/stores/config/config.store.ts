@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { Env, runPixel } from "@semoss/sdk/react";
-import { AppMetadata } from "@/components/app";
+import { Env, logout, runPixel } from "@semoss/sdk/react";
+import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
 	type RootStore,
@@ -743,12 +743,8 @@ export class ConfigStore {
 	 * @returns true if successful
 	 */
 	async logout() {
-		const { monolithStore } = this._root;
-
+		await logout();
 		try {
-			// wait for logout
-			await monolithStore.logout();
-
 			runInAction(() => {
 				// clear the info and reset the user
 				this._store.user = {
@@ -758,7 +754,6 @@ export class ConfigStore {
 					name: "",
 					email: "",
 				};
-
 				this._store.status = "MISSING AUTHENTICATION";
 			});
 		} catch (error) {
