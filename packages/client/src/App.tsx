@@ -1,6 +1,6 @@
 import axios, { isAxiosError } from 'axios';
 import { useEffect } from 'react';
-import { Env, fetchCsrfTokenIfNeeded, getCsrfToken} from "@semoss/sdk/react";
+import { Env, CSRF, fetchCsrfTokenIfNeeded, getCsrfToken} from "@semoss/sdk/react";
 import { RootStoreContext } from '@/contexts';
 import { RootStore } from '@/stores';
 import { AppWrapper } from './AppWrapper';
@@ -9,11 +9,6 @@ import { AppWrapper } from './AppWrapper';
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
 });
-
-const CSRF = {
-	isEnabled: false,
-	// token: "",
-};
 
 // add interceptors
 axios.interceptors.request.use(

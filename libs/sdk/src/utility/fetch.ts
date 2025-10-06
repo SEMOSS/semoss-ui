@@ -115,6 +115,7 @@ const interceptors: {
 		return options;
 	},
 	response: async ({ response }) => {
+		// TODO: maybe we shouldn't just throw unauthorized error for 302 and actually honor the redirect?
 		if (response.status === 302) {
 			throw new UnauthorizedError("Unauthorized");
 		}

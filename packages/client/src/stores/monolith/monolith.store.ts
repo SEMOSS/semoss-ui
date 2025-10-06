@@ -1,6 +1,6 @@
 import axios from "axios";
 import { makeAutoObservable } from "mobx";
-import { Env } from "@semoss/sdk/react";
+import { Env, logout } from "@semoss/sdk/react";
 import type { RootStore } from "@/stores";
 import type { Role } from "@/types";
 
@@ -368,14 +368,7 @@ export class MonolithStore {
 	 * @returns true if successful
 	 */
 	async logout(): Promise<boolean> {
-		await axios
-			.get(`${Env.MODULE}/api/auth/logout/all`, {
-				validateStatus: (status) => true,
-			})
-			.catch((err) => {
-				throw Error(err);
-			});
-
+		await logout()
 		return true;
 	}
 
