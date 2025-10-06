@@ -7,6 +7,7 @@ import {
 	CreateDiabetesRecordTemplate,
 	CustomFrameToVisualizationTemplate,
 	DeleteDiabetesRecordTemplate,
+	GmailTemplate,
 	LandingPageTemplate,
 	MultiPageTemplate,
 	NLPToGridTemplate,
@@ -30,6 +31,7 @@ const DEFAULT_TEMPLATE = [
 	ReadDiabetesRecordTemplate,
 	UpdateDiabetesRecordTemplate,
 	DeleteDiabetesRecordTemplate,
+	GmailTemplate,
 	// AskCSVTemplate,
 ];
 
@@ -89,13 +91,9 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 					const app = getAppMetadataFromTemplate(t);
 					return (
 						<BrowseTemplateTileCard
-							key={`default-template-${idx}`}
+							key={`default-template-${app.project_name}`}
 							app={getAppMetadataFromTemplate(t)}
-							systemApp={true}
-							appType={app.project_type}
 							onAction={() => onUse(t)}
-							isLoading={false}
-							showSkeleton={false}
 						/>
 					);
 				})}
