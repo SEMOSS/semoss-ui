@@ -6,7 +6,6 @@ import {
 	KeyboardArrowUp,
 	MoreVert,
 	SearchOutlined,
-	TextFields,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useMemo, useState } from "react";
@@ -64,9 +63,11 @@ const StyledMenu = styled((props: MenuProps) => (
 	},
 }));
 
-const StyledMenuItem = styled(Menu.Item)(() => ({
+const StyledMenuItem = styled(Menu.Item)(({ theme }) => ({
 	textTransform: "capitalize",
 	fontSize: "16px",
+	display: "flex",
+	gap: theme.spacing(1),
 }));
 
 const StyledBorderDiv = styled("div")(({ theme }) => ({
@@ -131,6 +132,10 @@ const DataOptions = [
 		display: "Unfilter Data",
 		defaultCellType: `unfilter-data`,
 	},
+	{
+		display: "Text to SQL",
+		defaultCellType: "text-to-sql",
+	},
 ];
 
 const AddCellOptions: Record<string, AddCellOption> = {
@@ -149,12 +154,14 @@ const AddCellOptions: Record<string, AddCellOption> = {
 		display: "Data Filters",
 		icon: (
 			<svg
+				role="img"
 				xmlns="http://www.w3.org/2000/svg"
 				width="18"
 				height="18"
 				viewBox="0 0 24 24"
 				fill="none"
 			>
+				<title>data-filter-icon</title>
 				<g clipPath="url(#clip0_2378_103062)">
 					<path
 						fillRule="evenodd"
@@ -182,6 +189,7 @@ const AddCellOptions: Record<string, AddCellOption> = {
 				fill="none"
 				xmlns="http://www.w3.org/2000/svg"
 			>
+				<title>transformation-icon</title>
 				<path
 					d="M9.9987 3.33203V0.832031L6.66536 4.16536L9.9987 7.4987V4.9987C12.757 4.9987 14.9987 7.24036 14.9987 9.9987C14.9987 10.8404 14.7904 11.6404 14.4154 12.332L15.632 13.5487C16.282 12.5237 16.6654 11.307 16.6654 9.9987C16.6654 6.31536 13.682 3.33203 9.9987 3.33203ZM9.9987 14.9987C7.24036 14.9987 4.9987 12.757 4.9987 9.9987C4.9987 9.15703 5.20703 8.35703 5.58203 7.66536L4.36536 6.4487C3.71536 7.4737 3.33203 8.69036 3.33203 9.9987C3.33203 13.682 6.31536 16.6654 9.9987 16.6654V19.1654L13.332 15.832L9.9987 12.4987V14.9987Z"
 					fill="#757575"
@@ -290,7 +298,7 @@ export const NotebookAddCell = observer(
 		 * @description - Create a New Cell and Add to Notebook
 		 *
 		 */
-		const appendCell = (widget: string) => {
+		const appendCell = async (widget: string) => {
 			try {
 				const config: NewCellAction["payload"]["config"] = {
 					widget: DefaultCells[widget].widget,
@@ -322,14 +330,14 @@ export const NotebookAddCell = observer(
 				}
 
 				// copy and add the step
-				const newCellId = state.dispatch({
+				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
 					payload: {
 						queryId: query.id,
 						previousCellId: previousCellId,
 						config: config as Omit<CellStateConfig, "id">,
 					},
-				}) as string;
+				})) as string;
 
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -361,7 +369,7 @@ export const NotebookAddCell = observer(
 								const value = add[1];
 								return (
 									<StyledButton
-										key={i}
+										key={`${query.id}-${previousCellId}-${value.display}`}
 										title={`${value.display}`}
 										variant="contained"
 										size="small"
@@ -425,7 +433,7 @@ export const NotebookAddCell = observer(
 								({ display, defaultCellType }, index) => {
 									return (
 										<StyledMenuItem
-											key={index}
+											key={`${query.id}-${previousCellId}-${display}`}
 											value={display}
 											onClick={() => {
 												appendCell(defaultCellType); // Append selected cell
@@ -482,7 +490,9 @@ export const NotebookAddCell = observer(
 											{ category, transformations },
 											index,
 										) => (
-											<MenuSectionRoot key={index}>
+											<MenuSectionRoot
+												key={`${query.id}-${previousCellId}-${category}`}
+											>
 												<StyledMenuItem
 													value={category}
 													disabled
@@ -505,7 +515,7 @@ export const NotebookAddCell = observer(
 															value={
 																transformation.display
 															}
-															key={tIndex}
+															key={`${query.id}-${previousCellId}-${transformation.display}`}
 															onClick={() => {
 																appendCell(
 																	transformation.defaultCellType,
@@ -536,7 +546,7 @@ export const NotebookAddCell = observer(
 								({ display, defaultCellType }, index) => {
 									return (
 										<StyledMenuItem
-											key={index}
+											key={`${query.id}-${previousCellId}-${display}`}
 											value={display}
 											onClick={() => {
 												appendCell(defaultCellType);
@@ -550,7 +560,7 @@ export const NotebookAddCell = observer(
 							)}
 
 						{selectedAddCell === "import-data" && (
-							<>
+							<div>
 								{Array.from(
 									AddCellOptions[selectedAddCell]?.options ||
 										[],
@@ -560,7 +570,7 @@ export const NotebookAddCell = observer(
 									) => {
 										return (
 											<StyledMenuItem
-												key={index}
+												key={`${query.id}-${previousCellId}-${display}`}
 												value={display}
 												disabled={disabled}
 												onClick={() => {
@@ -581,7 +591,7 @@ export const NotebookAddCell = observer(
 										);
 									},
 								)}
-							</>
+							</div>
 						)}
 					</StyledMenu>
 				</Stack>

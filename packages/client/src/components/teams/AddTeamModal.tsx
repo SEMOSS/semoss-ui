@@ -196,7 +196,6 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 					previousTeamName,
-					previousType,
 				);
 				if (response.status === 200 && response.data) {
 					onClose({
@@ -228,7 +227,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 				);
-				if (response.status === 200 && !response.data) {
+				if (response.status === 200 && response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
@@ -240,15 +239,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						message: "Successfully added group",
 					});
 					navigate(
-						`${data.TEAM_NAME.toLowerCase()
-							.replace(/['"]+/g, "")
-							.replace(/\s/g, "-")}`,
-						{
-							state: {
-								name: data.TEAM_NAME,
-								type: data.TEAM_TYPE,
-							},
-						},
+						`${encodeURIComponent(data.TEAM_TYPE)}/${encodeURIComponent(data.TEAM_NAME)}`,
 					);
 				} else {
 					throw new Error("Failed to add team");
@@ -271,7 +262,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 						Edit Team
 					</Typography>
 				) : (
-					<>Create New Team</>
+					"Create New Team"
 				)}
 				<IconButton
 					onClick={() => {
@@ -303,6 +294,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 											onChange={(value) =>
 												field.onChange(value)
 											}
+											disabled={isEdit}
 										>
 											{loginTypes
 												.sort()
@@ -349,7 +341,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																) : (
 																	<StyledIcon />
 																)}
-																<>{p.name}</>
+																{p.name}
 																{p.description && (
 																	<StyledMenuItemDesc
 																		variant={
@@ -391,6 +383,11 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 													field.onChange(value)
 												}
 												fullWidth={true}
+												disabled={
+													isEdit &&
+													selectedTeamType !==
+														"CUSTOM"
+												}
 											/>
 											{selectedTeamType !== "CUSTOM" &&
 											selectedTeamType !== "" ? (
@@ -423,6 +420,9 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 												field.onChange(value)
 											}
 											fullWidth={true}
+											multiline
+											minRows={2}
+											maxRows={6}
 										/>
 									);
 								}}

@@ -170,6 +170,9 @@ export const TeamsSettingsPage = observer(() => {
 		return JSON.stringify(filteredTeams) === JSON.stringify(sorted);
 	};
 
+	// Build a URL-safe slug for a team id WITHOUT mutating case or removing characters (just encode)
+	const teamSlug = useCallback((id: string) => encodeURIComponent(id), []);
+
 	return (
 		<StyledContainer>
 			<StyledSearchbarContainer>
@@ -196,7 +199,7 @@ export const TeamsSettingsPage = observer(() => {
 						variant="contained"
 						startIcon={<Add />}
 						onClick={() => setAddModal(true)}
-						data-testid={"teams-settings-add-btn"}
+						data-testid={"teamsSettings-add-btn"}
 					>
 						Add Team
 					</StyledAddButton>
@@ -213,7 +216,7 @@ export const TeamsSettingsPage = observer(() => {
 				>
 					<IconButton
 						onClick={handleMenuClick}
-						data-testid={"teams-settings-sort-btn"}
+						data-testid={"teamsSettings-sort-btn"}
 					>
 						<Typography
 							sx={{ color: "#212121", borderRadius: "0px" }}
@@ -282,20 +285,11 @@ export const TeamsSettingsPage = observer(() => {
 								description={team.description}
 								dispatch={dispatch}
 								teams={teams}
-								onClick={() => {
+								onClick={() =>
 									navigate(
-										team.id
-											.toLowerCase()
-											.replace(/['"]+/g, "")
-											.replace(/\s/g, "-"),
-										{
-											state: {
-												name: team.id,
-												type: team.type,
-											},
-										},
-									);
-								}}
+										`${teamSlug(team.type)}/${teamSlug(team.id)}`,
+									)
+								}
 							/>
 						</Grid>
 					))}

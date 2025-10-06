@@ -1,19 +1,13 @@
 import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
-import { Env } from "@semoss/sdk/react";
+import { Env, CSRF} from "@semoss/sdk/react";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
 import { AppWrapper } from "./AppWrapper";
-
 // use the environment variable to set the module
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
 });
-
-const CSRF = {
-	isEnabled: false,
-	token: "",
-};
 
 /**
  * Get the CSRF Token

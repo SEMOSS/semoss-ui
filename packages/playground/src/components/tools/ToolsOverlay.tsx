@@ -1,6 +1,6 @@
 import { Close } from "@mui/icons-material";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -10,12 +10,10 @@ import {
 	Grid,
 	IconButton,
 	Link,
-	Menu,
 	Modal,
 	Search,
 	Stack,
 	styled,
-	TextField,
 	Typography,
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
@@ -23,6 +21,9 @@ import type { App, Engine, Tool } from "@/types";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
 const MODULE = import.meta.env.MODULE;
+const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
+	? import.meta.env.VITE_PLATFORM_URL
+	: "";
 
 const StyledHolder = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -36,9 +37,7 @@ const StyledHolder = styled("div")(({ theme }) => ({
 	overflow: "auto",
 }));
 
-const StyledItem = styled("div", {
-	shouldForwardProp: (prop) => prop !== "disabled",
-})<{ disabled: boolean }>(({ theme, disabled }) => ({
+const StyledItem = styled("div")(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	gap: theme.spacing(1),
@@ -50,8 +49,7 @@ const StyledItem = styled("div", {
 	borderStyle: "solid",
 	borderColor: "transparent",
 	borderRadius: theme.shape.borderRadius,
-	cursor: disabled ? undefined : "pointer",
-	pointerEvents: disabled ? "none" : undefined,
+	cursor: "pointer",
 }));
 
 const StyledItemImageHolder = styled("div")(({ theme }) => ({
@@ -75,24 +73,6 @@ const StyledItemDescription = styled(Typography)(({ theme }) => ({
 	WebkitLineClamp: 3,
 }));
 
-// TODO: Remove
-/**
- * Generate a temp unique identifier for the tool because we are merging two lists on the frontend
- * @param tool
- * @returns
- */
-const getToolKey = (tool: Tool) => {
-	return `${tool.id}--${tool.type}`;
-};
-
-interface AvailbleTools {
-	type: Tool["type"];
-	id: string;
-	name: string;
-	description: string;
-	image: string;
-}
-
 interface ToolsOverlayProps {
 	/** Knowledge loaded into the room */
 	tools: Tool[];
@@ -101,13 +81,43 @@ interface ToolsOverlayProps {
 	onClose: (success: boolean, tools?: Tool[]) => void;
 }
 
+/**
+ * Get a unique key for a tool
+ * @param tool The tool to get the key for
+ * @returns The unique key for the tool
+ */
+const getTool = (item: Engine | App): Tool => {
+	let id = "";
+	let name = "";
+	let type: Tool["type"] = "DATABASE";
+
+	// Type guard to check if item is App
+	if ("project_id" in item && "project_name" in item) {
+		id = item.project_id;
+		type = "APP";
+		name = item.project_name;
+	} else if ("app_id" in item && "app_name" in item) {
+		id = item.app_id;
+		name = item.app_name;
+		type = item.app_type;
+	}
+
+	return {
+		id: id,
+		type: type,
+		name: name,
+		description: "",
+		tags: [],
+	};
+};
+
 export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	const { tools, onClose } = props;
 
 	const [updatedTools, setUpdatedTools] = useState<Record<string, Tool>>(
 		() => {
 			return tools.reduce((acc, val) => {
-				acc[getToolKey(val)] = val;
+				acc[val.id] = val;
 
 				return acc;
 			}, {});
@@ -119,7 +129,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	// update when tools change
 	useEffect(() => {
 		const toolsMap = tools.reduce((acc, val) => {
-			acc[getToolKey(val)] = val;
+			acc[val.id] = val;
 
 			return acc;
 		}, {});
@@ -128,107 +138,40 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	}, [tools]);
 
 	const [search, setSearch] = useState<string>("");
-	const [filter, setFilter] = useState<"ALL" | Tool["type"]>("ALL");
 
 	// debounce the input
 	const debouncedSearch = useDebouncedValue(search);
 
-	//TODO: Move to backend and Infinite Load
-	let enginePixel = "";
-	if (filter === "ALL") {
-		enginePixel = `MyEngines ( engineTypes = [ 'DATABASE', 'FUNCTION' ], metaKeys = ["description"], filterWord=["${debouncedSearch}"])`;
-	} else if (filter === "DATABASE") {
-		enginePixel = `MyEngines ( engineTypes = [ 'DATABASE' ], metaKeys = ["description"], filterWord=["${debouncedSearch}"])`;
-	} else if (filter === "FUNCTION") {
-		enginePixel = `MyEngines ( engineTypes = [ 'FUNCTION' ], metaKeys = ["description"], filterWord=["${debouncedSearch}"])`;
-	}
-
 	/**
 	 * Get all of the groups
 	 */
-	const getEngines = usePixel<Engine[]>(enginePixel, {
-		data: [],
-	});
-	const getApps = usePixel<App[]>(
-		filter === "ALL" || filter === "APP"
-			? `MyProjects (metaKeys = ["description"], filterWord=["${debouncedSearch}"])`
-			: "",
+	const getApps = usePixel<(Engine | App)[]>(
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
 		{
 			data: [],
 		},
 	);
 
-	const availableTools: AvailbleTools[] = useMemo(() => {
-		// merge it
-		const merged: AvailbleTools[] = [];
-
-		getEngines.data?.forEach((e) => {
-			if (e.app_type !== "KNOWLEDGE") {
-				merged.push({
-					type: e.app_type,
-					id: e.app_id,
-					name: e.app_name,
-					description: e.description || "",
-					image: `${ENDPOINT}${MODULE}/api/app-${e.app_id}/appImage/download`,
-				});
-			}
-		});
-
-		getApps.data?.forEach((a) => {
-			merged.push({
-				type: "APP",
-				id: a.project_id,
-				name: a.project_name,
-				description: a.description || "",
-				image: `${ENDPOINT}${MODULE}/api/app-${a.project_id}/appImage/download`,
-			});
-		});
-
-		return merged.sort((a, b) => {
-			if (a.name < b.name) {
-				return -1;
-			}
-			if (a.name > b.name) {
-				return 1;
-			}
-			return 0;
-		});
-	}, [getEngines.data, getApps.data]);
-
-	const isLoading =
-		getEngines.status === "LOADING" || getApps.status === "LOADING";
-
 	/**
 	 * Track if the tool is selected
 	 */
-	const IsToolSelected = (t: AvailbleTools): boolean => {
-		const toolKey = getToolKey(t);
-		return Object.hasOwn(updatedTools, toolKey);
+	const isToolSelected = (toolId: string): boolean => {
+		return Object.hasOwn(updatedTools, toolId);
 	};
 
 	/**
 	 * Select a tool and update the arraw
 	 */
-	const onToolSelect = (t: AvailbleTools) => {
-		if (t.type === "DATABASE") {
-			return;
-		}
-
-		// get the key
-		const toolKey = getToolKey(t);
-
+	const onToolSelect = (tool: Tool) => {
 		// copy for react
 		const updated = { ...updatedTools };
-		if (IsToolSelected(t)) {
+
+		if (isToolSelected(tool.id)) {
 			// remove it
-			delete updated[toolKey];
+			delete updated[tool.id];
 		} else {
 			// add it
-			updated[toolKey] = {
-				type: t.type,
-				id: t.id,
-				name: t.name,
-			};
+			updated[tool.id] = tool;
 		}
 
 		setUpdatedTools(updated);
@@ -238,14 +181,11 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	 * Select a tool and update the arraw
 	 */
 	const onToolDelete = (t: Tool) => {
-		// get the key
-		const toolKey = getToolKey(t);
-
 		// copy for react
 		const updated = { ...updatedTools };
 
 		// remove it
-		delete updated[toolKey];
+		delete updated[t.id];
 
 		setUpdatedTools(updated);
 	};
@@ -275,7 +215,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 						<Link
 							variant="inherit"
 							target="_blank"
-							href={`../../client/dist/#/engine/function`}
+							href={`${PLATFORM_URL}/#/app/new`}
 						>
 							new
 						</Link>{" "}
@@ -296,35 +236,12 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 								flex: 1,
 							}}
 						/>
-
-						<TextField
-							label={"Filter"}
-							color="primary"
-							variant={"outlined"}
-							size="small"
-							select
-							value={filter}
-							sx={{
-								width: "194px",
-							}}
-							onChange={(e) =>
-								setFilter(
-									e.target.value as "ALL" | Tool["type"],
-								)
-							}
-						>
-							<Menu.Item value={"ALL"}>All</Menu.Item>
-							<Menu.Item value={"APP"}>App</Menu.Item>
-							<Menu.Item value={"FUNCTION"}>Function</Menu.Item>
-							<Menu.Item value={"DATABASE"}>Database</Menu.Item>
-						</TextField>
 					</Stack>
-					<Typography variant="body1" fontWeight={"medium"}>
-						{search && filter !== "ALL" ? "Results" : "All"}
-					</Typography>
 					<StyledHolder>
-						{isLoading && <CircularProgress color="primary" />}
-						{!isLoading && (
+						{getApps.status === "LOADING" && (
+							<CircularProgress color="primary" />
+						)}
+						{getApps.status === "SUCCESS" && (
 							<Grid
 								container
 								spacing={2}
@@ -333,21 +250,14 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 								// overflow={'auto'}
 								height={"100%"}
 							>
-								{availableTools.map((t) => {
-									let label = "";
-									if (t.type === "APP") {
-										label = "App";
-									} else if (t.type === "FUNCTION") {
-										label = "Function";
-									} else if (t.type === "DATABASE") {
-										label = "Database";
-									}
+								{getApps.data.map((item) => {
+									const tool = getTool(item);
+
 									return (
-										<Grid key={t.id} item xs={6}>
+										<Grid key={tool.id} item xs={6}>
 											<StyledItem
-												disabled={t.type === "DATABASE"}
 												onClick={() => {
-													onToolSelect(t);
+													onToolSelect(tool);
 												}}
 											>
 												<Stack
@@ -355,10 +265,11 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 													spacing={1}
 												>
 													<StyledItemImageHolder>
-														{t.image && (
+														{tool.type ===
+															"APP" && (
 															<img
 																alt=""
-																src={t.image}
+																src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}
 																onError={({
 																	currentTarget,
 																}) => {
@@ -370,39 +281,41 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 															/>
 														)}
 													</StyledItemImageHolder>
-													<Stack
-														direction={"column"}
-														flex={1}
-														spacing={0.25}
+													<Typography
+														variant="subtitle2"
+														sx={{
+															flex: 1,
+														}}
 													>
-														<Typography variant="subtitle2">
-															{t.name}
-														</Typography>
-
-														<div>
-															<Chip
-																color="default"
-																size="small"
-																label={label}
-															/>
-														</div>
-													</Stack>
+														{tool.name}
+													</Typography>
 													<Checkbox
-														disabled={
-															t.type ===
-															"DATABASE"
-														}
-														checked={IsToolSelected(
-															t,
+														checked={isToolSelected(
+															tool.id,
 														)}
 														onChange={() => {
-															onToolSelect(t);
+															onToolSelect(tool);
 														}}
 													/>
 												</Stack>
 												<StyledItemDescription variant="caption">
-													{t.description}
+													{tool.description}
 												</StyledItemDescription>
+												<Stack
+													direction="row"
+													alignItems="center"
+													spacing={0.5}
+													height={"24px"}
+												>
+													{tool.tags.map((tag) => (
+														<Chip
+															key={tag}
+															color="default"
+															size="small"
+															label={tag}
+														/>
+													))}
+												</Stack>
 											</StyledItem>
 										</Grid>
 									);

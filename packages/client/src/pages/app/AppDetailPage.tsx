@@ -587,7 +587,7 @@ export const AppDetailPage = () => {
 				<InnerContainer>
 					<Breadcrumbs separator="/">
 						<Breadcrumbs.Item
-							href={`../../..`}
+							href="#/app"
 							underline="none"
 							color="inherit"
 							variant="body1"
@@ -632,9 +632,7 @@ export const AppDetailPage = () => {
 											}
 											variant="outlined"
 											onClick={() => exportApp()}
-											data-testid={
-												"app-detail-export-btn"
-											}
+											data-testid={"appDetail-export-btn"}
 										>
 											Export
 										</Button>
@@ -662,9 +660,7 @@ export const AppDetailPage = () => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"app-detail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus || pendingRequest
 												? "Pending Access"
@@ -685,7 +681,7 @@ export const AppDetailPage = () => {
 														true,
 													);
 												}}
-												data-testid="app-detail-open-btn"
+												data-testid="appDetail-edit-btn"
 											>
 												Edit
 											</Button>
@@ -816,7 +812,7 @@ export const AppDetailPage = () => {
 																true,
 															)
 														}
-														data-testid="app-detail-edit-btn"
+														data-testid="appDetail-edit-btn"
 													>
 														<Edit />
 													</IconButton>

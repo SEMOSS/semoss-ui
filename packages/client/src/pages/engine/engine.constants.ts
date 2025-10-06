@@ -8,6 +8,7 @@ import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
 import { EngineFilePage } from "./EngineFilePage";
 import { EngineMetadataPage } from "./EngineMetadataPage";
+import { EngineModelChatPage } from "./EngineModelChatPage";
 import { EngineOverviewPage } from "./EngineOverviewPage";
 import { EngineQAPage } from "./EngineQAPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
@@ -94,6 +95,12 @@ export const ENGINE_ROUTES: {
 				path: "",
 				component: EngineOverviewPage,
 				restrict: false,
+			},
+			{
+				name: "Chat",
+				path: "chat",
+				component: EngineModelChatPage,
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
 				name: "Usage",
@@ -234,8 +241,8 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
-				name: "Settings",
-				path: "settings",
+				name: "Access Control",
+				path: "access-control",
 				component: EngineSettingsPage,
 				restrict: ["EDIT", "OWNER"],
 			},

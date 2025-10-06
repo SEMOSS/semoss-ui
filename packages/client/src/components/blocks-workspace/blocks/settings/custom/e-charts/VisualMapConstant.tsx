@@ -48,10 +48,15 @@ export const VisualMapConstant = {
 			option: {
 				xAxis: {
 					type: "category",
-					data: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+					data: [],
+					nameLocation: "middle",
+					nameGap: 25,
 				},
 				yAxis: {
 					type: "value",
+					nameLocation: "middle",
+					nameGap: 25,
+					axisLabel: {},
 				},
 				color: [
 					"#5470c6",
@@ -67,17 +72,7 @@ export const VisualMapConstant = {
 				series: [
 					{
 						name: "Category",
-						data: [
-							{
-								value: 120,
-							},
-							200,
-							150,
-							80,
-							70,
-							110,
-							130,
-						],
+						data: [],
 						type: "bar",
 						labelLine: {
 							show: true,
@@ -124,6 +119,19 @@ export const VisualMapConstant = {
 						fontSize: 12,
 					},
 				},
+				reset: {
+					title: {
+						text: "Bar Graph",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+				},
 			},
 		},
 		{
@@ -155,13 +163,15 @@ export const VisualMapConstant = {
 			title: "echart-line-graph",
 			option: {
 				title: {
-					text: "ECharts Line Chart",
-					left: "center",
+					text: "Line Chart",
 					top: 20,
+					left: "left",
+					show: true,
 					textStyle: {
-						fontSize: 18,
-						fontWeight: "normal",
 						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
 					},
 				},
 				tooltip: {
@@ -185,7 +195,7 @@ export const VisualMapConstant = {
 					nameTextStyle: {
 						fontSize: 10,
 					},
-					data: ["A", "B", "C", "D", "E"],
+					data: [],
 					show: true,
 				},
 				axisTick: {
@@ -193,7 +203,7 @@ export const VisualMapConstant = {
 				},
 				yAxis: {
 					type: "value",
-					name: "b",
+					name: "",
 					nameLocation: "middle",
 					nameGap: 40,
 					axisLabel: {
@@ -228,9 +238,9 @@ export const VisualMapConstant = {
 				],
 				series: [
 					{
-						name: "a",
+						name: "",
 						type: "line",
-						data: [28, 30, 22, 35, 30],
+						data: [],
 						lineStyle: {
 							type: "solid",
 							width: 1,
@@ -246,14 +256,14 @@ export const VisualMapConstant = {
 				],
 				reset: {
 					title: {
-						text: "",
-						left: "center",
+						text: "Line Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
-							fontFamily: "",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					xAxis: {
@@ -421,13 +431,26 @@ export const VisualMapConstant = {
 				},
 				title: {
 					text: "Map Graph",
-					show: true,
 					left: "left",
+					show: true,
 					textStyle: {
 						color: "#000000",
 						fontWeight: "bold",
 						fontFamily: "Arial Narrow",
 						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Map Graph",
+						left: "left",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
 					},
 				},
 			},
@@ -456,7 +479,6 @@ export const VisualMapConstant = {
 						{ name: "b", value: 79 },
 					],
 				},
-				// color: ['#40A0FF','#9A74B6','#FBB83A','#F18630','#51ACA8','#187687','#CD5498','#364A90'],
 				color: [
 					"#ff6f61",
 					"#6b5b95",
@@ -468,13 +490,14 @@ export const VisualMapConstant = {
 					"#deeaee",
 				],
 				title: {
-					text: "",
-					left: "center",
+					text: "Pie Chart",
+					left: "left",
 					show: true,
 					textStyle: {
-						fontSize: 18,
-						color: "#ff6f61",
-						fontWeight: "normal",
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
 					},
 				},
 				tooltip: {
@@ -507,13 +530,7 @@ export const VisualMapConstant = {
 						labelLine: {
 							length: 30,
 						},
-						data: [
-							{ value: 1048, name: "Search Engine" },
-							{ value: 735, name: "Direct" },
-							{ value: 580, name: "Email" },
-							{ value: 484, name: "Union Ads" },
-							{ value: 300, name: "Video Ads" },
-						],
+						data: [],
 						emphasis: {
 							itemStyle: {
 								shadowBlur: 10,
@@ -526,14 +543,14 @@ export const VisualMapConstant = {
 				reset: {
 					radius: "50%",
 					title: {
-						text: "",
-						left: "center",
+						text: "Pie Chart",
+						left: "left",
 						show: true,
 						textStyle: {
-							fontSize: 18,
-							color: "#ff6f61",
-							fontWeight: "normal",
-							fontFamily: "",
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
 						},
 					},
 					label: {
@@ -573,9 +590,16 @@ export const VisualMapConstant = {
 			title: "echart-stack-chart",
 			option: {
 				title: {
-					text: "",
-					left: "center",
+					text: "Stacked Bar Chart",
+					left: "left",
 					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
 				},
 				tooltip: {
 					show: false,
@@ -757,6 +781,18 @@ export const VisualMapConstant = {
 						fontSize: 12,
 						color: "#000000",
 					},
+					title: {
+						text: "Stacked Bar Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 					barWidth: 10,
 				},
 			},
@@ -795,9 +831,16 @@ export const VisualMapConstant = {
 			title: "echart-scatter-plots",
 			option: {
 				title: {
-					text: "",
-					left: "center",
+					text: "Scatter Plot",
+					left: "left",
 					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
 				},
 				tooltip: {
 					show: true,
@@ -946,6 +989,18 @@ export const VisualMapConstant = {
 						fontSize: 12,
 						color: "#000000",
 					},
+					title: {
+						text: "Scatter Plot",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 				},
 			},
 		},
@@ -1019,6 +1074,32 @@ export const VisualMapConstant = {
 				tooltip: {
 					trigger: "item",
 					triggerOn: "mousemove",
+				},
+				title: {
+					text: "Dendrogram Chart",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Dendrogram Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
 				},
 				toolbox: {
 					show: true,
@@ -1130,6 +1211,32 @@ export const VisualMapConstant = {
 			label: "Gantt",
 			title: "echart-gantt-chart",
 			option: {
+				title: {
+					text: "Gantt Chart",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				reset: {
+					title: {
+						text: "Gantt Chart",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+				},
 				tooltip: {
 					show: true,
 				},
@@ -1141,50 +1248,13 @@ export const VisualMapConstant = {
 				},
 				yAxis: {
 					type: "category",
-					data: ["Task A", "Task B", "Task C"],
+					data: [],
 				},
 				series: [
 					{
 						type: "custom",
 
-						data: [
-							{
-								task: "Task A",
-								start: "2024-02-01",
-								end: "2024-02-05",
-								resource: "A",
-							},
-							{
-								task: "Task B",
-								start: "2024-02-03",
-								end: "2024-02-08",
-								resource: "B",
-							},
-							{
-								task: "Task C",
-								start: "2024-02-06",
-								end: "2024-02-12",
-								resource: "C",
-							},
-							{
-								task: "Task D",
-								start: "2024-02-02",
-								end: "2024-02-11",
-								resource: "B",
-							},
-							{
-								task: "Task E",
-								start: "2024-02-03",
-								end: "2024-02-10",
-								resource: "A",
-							},
-							{
-								task: "Task F",
-								start: "2024-02-07",
-								end: "2024-02-11",
-								resource: "C",
-							},
-						],
+						data: [],
 					},
 				],
 				customSettings: {

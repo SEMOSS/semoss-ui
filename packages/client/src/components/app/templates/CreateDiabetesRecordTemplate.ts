@@ -1061,15 +1061,11 @@ export const CreateDiabetesRecordTemplate: Template = {
 				type: "query",
 			},
 			response: {
-				isInput: false,
-				isOutput: false,
 				to: "insert-diabetes-record",
 				type: "cell",
 				cellId: "81570",
 			},
 			model: {
-				isInput: true,
-				isOutput: false,
 				type: "model",
 				value: "4acbe913-df40-4ac0-b28a-daa5ad91b172",
 			},
@@ -1086,107 +1082,86 @@ export const CreateDiabetesRecordTemplate: Template = {
 			ID: {
 				type: "block",
 				to: "input--2410",
-				isInput: true,
 			},
 			AGE: {
 				type: "block",
 				to: "input--5402",
-				isInput: true,
 			},
 			LOCATION: {
 				type: "block",
 				to: "input--1170",
-				isInput: true,
 			},
 			GLYHB: {
 				type: "block",
 				to: "input--6259",
-				isInput: true,
 			},
 			BP_1D: {
 				type: "block",
 				to: "input--1140",
-				isInput: true,
 			},
 			BP_2D: {
 				type: "block",
 				to: "input--965",
-				isInput: true,
 			},
 			WAIST: {
 				type: "block",
 				to: "input--4210",
-				isInput: true,
 			},
 			RATIO: {
 				type: "block",
 				to: "input--6205",
-				isInput: true,
 			},
 			HEIGHT: {
 				type: "block",
 				to: "input--9801",
-				isInput: true,
 			},
 			FRAME: {
 				type: "block",
 				to: "input--4335",
-				isInput: true,
 			},
 			HIP: {
 				type: "block",
 				to: "input--1592",
-				isInput: true,
 			},
 			HDL: {
 				type: "block",
 				to: "input--8650",
-				isInput: true,
 			},
 			BP_1S: {
 				type: "block",
 				to: "input--282",
-				isInput: true,
 			},
 			BP_2S: {
 				type: "block",
 				to: "input--9548",
-				isInput: true,
 			},
 			STAB_GLU: {
 				type: "block",
 				to: "input--635",
-				isInput: true,
 			},
 			GENDER: {
 				type: "block",
 				to: "input--5427",
-				isInput: true,
 			},
 			TIME_PPN: {
 				type: "block",
 				to: "input--5626",
-				isInput: true,
 			},
 			WEIGHT: {
 				type: "block",
 				to: "input--3394",
-				isInput: true,
 			},
 			CHOL: {
 				type: "block",
 				to: "input--4379",
-				isInput: true,
 			},
 			DRUG: {
 				type: "block",
 				to: "input--1541",
-				isInput: true,
 			},
 			dtype: {
 				type: "block",
 				to: "input--2836",
-				isInput: true,
 			},
 		},
 		executionOrder: ["insert-diabetes-record"],

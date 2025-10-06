@@ -7,6 +7,7 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
+import { formatToDataTestId } from "@/utility";
 
 // Reduce Initial Bundle
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -71,8 +72,14 @@ export const MarkdownEditor = (props: MarkdownEditorProps) => {
 					setView(val);
 				}}
 			>
-				<ToggleTabsGroup.Item label="Edit"></ToggleTabsGroup.Item>
-				<ToggleTabsGroup.Item label="View"></ToggleTabsGroup.Item>
+				<ToggleTabsGroup.Item
+					label="Edit"
+					data-testid={`markdownEditor-Edit-toggle`}
+				></ToggleTabsGroup.Item>
+				<ToggleTabsGroup.Item
+					label="View"
+					data-testid={`markdownEditor-View-toggle`}
+				></ToggleTabsGroup.Item>
 			</ToggleTabsGroup>
 			<StyledTabPanel>
 				{view === 0 ? (

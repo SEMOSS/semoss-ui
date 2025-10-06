@@ -11,10 +11,12 @@ import {
 	Pending,
 	PlayArrowRounded,
 	PlayCircle,
+	SmartToy,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
 import { ActionMessages, useBlocks } from "@semoss/renderer";
+import { runPixel } from "@semoss/sdk";
 import {
 	ButtonGroup,
 	Card,
@@ -340,56 +342,49 @@ export const NotebookCell = observer(
 			}
 		}, [cellPlayCounter]);
 
-		// const cellOrderNumber = useMemo(() => {
-		// 	const nbCellList = state.queries[cell.query.id].cellList;
-
-		// 	let matchIndex = 0;
-		// 	nbCellList.forEach((c, i) => {
-		// 		if (c.id === cell.id) matchIndex = i;
-		// 	});
-
-		// 	return matchIndex + 1;
-		// }, [
-		// 	cell.id,
-		// 	cell.query.list.indexOf(cell.id),
-		// 	cell.query.cellList.length,
-		// ]);
-
 		/**
 		 * Create a duplicate cell
 		 */
-		const duplicateCell = () => {
-			try {
-				// copy and add the step to the end
-				const newCellId = state.dispatch({
-					message: ActionMessages.NEW_CELL,
-					payload: {
-						queryId: queryId,
-						previousCellId: cellId,
-						config: {
-							widget: cell.widget,
-							parameters: {
-								...cell.parameters,
-							},
-						},
-					},
-				}) as string;
+		console.log(cell, 'important')
+const duplicateCell = async () => {
+    try {
+        let parameters = { ...cell.parameters };
 
-				state.dispatch({
-					message: ActionMessages.ADD_VARIABLE,
-					payload: {
-						id: `${queryId}--${newCellId}`,
-						type: "cell",
-						to: queryId,
-						cellId: newCellId,
-					},
-				});
+        if (cell.widget === "query-import" || cell.widget === "data-import" || cell.widget === "text-to-sql") {
+            parameters = {
+                ...parameters,
+                frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
+            };
+        }
 
-				notebook.selectCell(queryId, newCellId);
-			} catch (e) {
-				console.error(e);
-			}
-		};
+        // copy and add the step to the end
+        const newCellId = (await state.dispatch({
+            message: ActionMessages.NEW_CELL,
+            payload: {
+                queryId: queryId,
+                previousCellId: cellId,
+                config: {
+                    widget: cell.widget,
+                    parameters,
+                },
+            },
+        })) as string;
+
+        state.dispatch({
+            message: ActionMessages.ADD_VARIABLE,
+            payload: {
+                id: `${queryId}--${newCellId}`,
+                type: "cell",
+                to: queryId,
+                cellId: newCellId,
+            },
+        });
+
+        notebook.selectCell(queryId, newCellId);
+    } catch (e) {
+        console.error(e);
+    }
+};
 
 		const deleteCell = () => {
 			try {
@@ -512,8 +507,92 @@ export const NotebookCell = observer(
 			}
 		};
 
-		const generateWithAIHandler = () => {
-			console.log("generateWithAIHandler");
+		/**
+		 * @description
+		 * 1. make pixel call to generate python tool for cell
+		 * 2. Swap cell config in place for mcp config
+		 */
+		const makeCellMCP = async () => {
+			try {
+				workspace.setLoading(true);
+				// Make pixel call to generate MCP tool
+				const { errors, pixelReturn } = await runPixel(
+					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
+				);
+
+				// Handle pixel call errors
+				if (errors?.length) {
+					notification.add({
+						message: errors[0],
+						color: "error",
+					});
+					return;
+				}
+
+				// Validate pixel return
+				if (!pixelReturn?.[0]?.output) {
+					throw new Error("Invalid response from pixel call");
+				}
+
+				const output = pixelReturn[0].output as {
+					tools: {
+						name: string;
+						title: string;
+						description: string;
+						inputSchema: {
+							properties: {
+								[key: string]: {
+									title: string;
+									description: string;
+									type: string;
+								};
+							};
+							required: string[];
+							title: string;
+							type: string;
+						};
+					}[];
+				};
+
+				// Validate output structure
+				if (!output.tools?.[0]) {
+					throw new Error("No tools found in pixel response");
+				}
+
+				const tool = output.tools[0];
+				const toolName = tool.name;
+				const properties = tool.inputSchema?.properties || {};
+
+				// Build parameters object from schema properties
+				const params = Object.keys(properties).reduce((acc, key) => {
+					acc[key] = null;
+					return acc;
+				}, {});
+
+				// Dispatch action to update cell configuration
+				state.dispatch({
+					message: ActionMessages.MAKE_CELL_MCP,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						parameters: {
+							name: toolName,
+							projectId: workspace.appId,
+							originalParams: { ...cell.parameters },
+							params,
+						},
+					},
+				});
+				workspace.setLoading(false);
+			} catch (error) {
+				console.error("Error in makeCellMCP:", error);
+				workspace.setLoading(false);
+
+				notification.add({
+					message: error.message || "Failed to create MCP cell",
+					color: "error",
+				});
+			}
 		};
 
 		return (
@@ -554,6 +633,25 @@ export const NotebookCell = observer(
 					<StyledCellActions in={showCellActions}>
 						<Stack gap={1} direction={"row"} alignItems={"center"}>
 							<StyledButtonGroup variant="outlined">
+								<StyledButtonGroupButton
+									title="Make Available through MCP"
+									size="small"
+									disabled={
+										cell.isLoading ||
+										!workspace.agentModelEngine ||
+										cell.config.widget !== "code"
+									}
+									onClick={(e) => {
+										// stop propogation to card parent so newly created cell will be selected
+										e.stopPropagation();
+										// helper fn to make the cell mcp
+										makeCellMCP();
+									}}
+								>
+									<StyledButtonLabel>
+										<SmartToy />
+									</StyledButtonLabel>
+								</StyledButtonGroupButton>
 								<StyledButtonGroupButton
 									title="Run this cell and below"
 									size="small"
@@ -664,11 +762,6 @@ export const NotebookCell = observer(
 									</StyledButtonLabel>
 								</StyledButtonGroupButton>
 							</StyledButtonGroup>
-
-							{/**
-							 * more options menu
-							 * only showing one option currently with no attached function
-							 **/}
 							<StyledMenu
 								anchorEl={anchorEl}
 								open={open}
@@ -681,7 +774,6 @@ export const NotebookCell = observer(
 									value={"generate-with-ai"}
 									onClick={() => {
 										setAnchorEl(null);
-										generateWithAIHandler();
 									}}
 								>
 									Generate with AI
@@ -933,6 +1025,12 @@ export const NotebookCell = observer(
 																						}
 																						output={
 																							cell.output
+																						}
+																						cellData={
+																							({
+																								cellId: cell.id.toString(),
+																								queryId: queryId.toString()
+																							})
 																						}
 																					/>
 																				);
