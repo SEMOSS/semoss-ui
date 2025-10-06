@@ -60,7 +60,7 @@ export type Variable =
 			to: string;
 			type: "cell"; // Specific case when type is 'cell'
 			cellId: string;
-			value?: any; // value can be optional here in this specific case when type is 'cell'
+			value?: any;
 	  };
 
 export type VariableWithId =
