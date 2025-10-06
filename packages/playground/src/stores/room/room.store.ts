@@ -282,14 +282,6 @@ export class RoomStore {
 
 	/** Setters */
 	/**
-	 * Set isInitialized
-	 * @param isInitialized - is it initialized
-	 */
-	setInitialized = (isInitialized: boolean) => {
-		this._store.isInitialized = isInitialized;
-	};
-
-	/**
 	 * Set the mode
 	 * @param mode - mode of the room
 	 */

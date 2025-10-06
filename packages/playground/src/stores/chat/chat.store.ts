@@ -187,8 +187,10 @@ export class ChatStore {
 			// register the room
 			const room = this.newRoom(roomId);
 
+			// initialize the room to get the insightId
+			await room.initialize();
+
 			// set the initial data
-			room.setInitialized(true);
 			room.setMetadata({
 				name: name,
 				dateCreated: new Date().toDateString(),
