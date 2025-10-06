@@ -159,7 +159,15 @@ export const JobsTable = (props: {
 			field: "isActive",
 			flex: 1,
 			renderCell: (params) => {
-				return params.value ? "Active" : "Paused";
+				return (
+						<Chip
+							label={params.value ? "Active" : "Inactive"}
+							sx={{
+								backgroundColor: params.value ? "#4CAF50" : "#F44336",
+								color: "#fff",
+							}}
+						/>
+					);
 			},
 		},
 		{

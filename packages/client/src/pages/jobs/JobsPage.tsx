@@ -3,6 +3,7 @@ import {
 	AvTimer,
 	Bedtime,
 	Delete,
+	DeleteOutline,
 	ErrorRounded,
 	NotStartedOutlined,
 	Pause,
@@ -11,7 +12,8 @@ import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
-import { Button, Search, Stack, Tabs, useNotification } from "@semoss/ui";
+import { Button, Search, Stack, Tabs, useNotification, styled, Box, ToggleTabsGroup } from "@semoss/ui";
+import AlarmOnIcon from '@mui/icons-material/AlarmOn';
 import { useRootStore, useSettings } from "@/hooks";
 import { DeleteJobModal } from "./DeleteJobModal";
 import { JobBuilderModal } from "./JobBuilderModal";
@@ -33,15 +35,46 @@ import {
 	convertTimetoDate,
 } from "./job.utils";
 
+const StyledBox = styled(Box)(({ theme }) => ({
+	borderRadius: theme.spacing(1),
+	backgroundColor: theme.palette.background.paper,
+	padding: theme.spacing(2),
+}));
+
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+	border: "1px",
+	minHeight: "42px",
+	borderRadius: theme.shape.borderRadius,
+	alignItems: "center",
+	padding: "0px 3px",
+	color: theme.palette.primary.main,
+}));
+
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+	height: "38px",
+	padding: "8px 11px",
+	color: theme.palette.primary.main,
+	"&.MuiTab-root": {
+		borderRadius: theme.shape.borderRadius,
+	},
+	"&.Mui-selected": {
+		boxShadow: theme.palette.primary.light,
+	},
+}));
+
 export function JobsPage() {
 	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 
-	const tabs = ["All", "Active", "Inactive"];
+	const jobsTabs = ["All", "Active", "Inactive"];
+	const historyTabs = ["All", "Success", "Failed"];
+	const tables = ["Jobs", "History"];
 
 	const [searchValue, setSearchValue] = useState("");
-	const [selectedTab, setSelectedTab] = useState(tabs[0]);
 
+	const [selectedJobTab, setSelectedJobTab] = useState(jobsTabs[0]);
+	const [selectedHistoryTab, setSelectedHistoryTab] = useState(historyTabs[0]);
+	const [selectedTable, setSelectedTable] = useState(tables[0]);
 	const [failedJobCount, setFailedJobCount] = useState<number>(0);
 
 	const [initalBuilderState, setInitialBuilderState] =
@@ -472,13 +505,13 @@ export function JobsPage() {
 
 	const filteredJobs = useMemo(() => {
 		const searchJobs = jobs.filter((job) => job.name.includes(searchValue));
-		if (selectedTab === "Active") {
+		if (selectedJobTab === "Active") {
 			return searchJobs.filter((job) => job.isActive);
-		} else if (selectedTab === "Inactive") {
+		} else if (selectedJobTab === "Inactive") {
 			return searchJobs.filter((job) => !job.isActive);
 		}
 		return searchJobs;
-	}, [jobs, searchValue, selectedTab]);
+	}, [jobs, searchValue, selectedJobTab]);
 
 	const selectedPausedJobs = useMemo(() => {
 		return jobs.filter((job) => {
@@ -521,148 +554,202 @@ export function JobsPage() {
 
 	return (
 		<Stack spacing={2}>
+			<hr style={{ border: "1px solid #E0E0E0"}}/>
 			<Stack direction="row" spacing={3}>
 				<JobCard
 					title="Active Jobs"
-					icon={<AvTimer fontSize="medium" />}
+					icon={<AlarmOnIcon fontSize="medium" />}
 					count={
 						jobs.filter((job) => {
 							return job.isActive;
 						}).length
 					}
-					avatarColor="#E2F2FF"
-					iconColor="#0471F0"
+					avatarColor={["#C6E4BF", "#66BB6A", "#6D7E6A"]}
+					iconColor="#FFFFFF"
 				/>
 				<JobCard
 					title="Inactive Jobs"
-					icon={<Bedtime fontSize="medium" />}
+					icon={<AlarmOnIcon fontSize="medium" />}
 					count={
 						jobs.filter((job) => {
 							return !job.isActive;
 						}).length
 					}
-					avatarColor="#F1E9FB"
-					iconColor="#8340DE"
+					avatarColor={["#FFF59D", "#FBC02D"]}
+					iconColor="#FFFFFF"
 				/>
 				<JobCard
-					title="Failed Jobs"
-					icon={<ErrorRounded fontSize="medium" />}
+					title="Failed"
+					icon={<AlarmOnIcon fontSize="medium" />}
 					count={failedJobCount}
-					avatarColor="#DEF4F3"
-					iconColor="#00A593"
+					avatarColor={["#FFCCBC", "#E64A19"]}
+					iconColor="#FFFFFF"
 				/>
 			</Stack>
-			<Stack direction="row" width="100%" justifyContent="space-between">
-				<Tabs
-					value={selectedTab}
-					onChange={(_, value: string) => {
-						setSelectedTab(value);
-					}}
-					color="primary"
-				>
-					<Tabs.Item value="All" label="All" />
-					<Tabs.Item value="Active" label="Active" />
-					<Tabs.Item value="Inactive" label="Inactive" />
-				</Tabs>
-				<Stack direction="row" spacing={2}>
-					<Search
-						size="small"
-						value={searchValue}
-						onChange={(e) => setSearchValue(e.target.value)}
-					/>
-					<span>
-						<Button
-							disabled={selectedActiveJobs.length === 0}
-							variant="outlined"
-							startIcon={<Pause />}
-							size="medium"
-							onClick={() => pauseJobs()}
-							data-testid={"jobsPage-pause-btn"}
-						>
-							Pause
-						</Button>
-					</span>
-					<span>
-						<Button
-							disabled={selectedPausedJobs.length === 0}
-							variant="outlined"
-							startIcon={<NotStartedOutlined />}
-							size="medium"
-							onClick={() => resumeJobs()}
-							data-testid={"jobsPage-resume-btn"}
-						>
-							Resume
-						</Button>
-					</span>
-					<span>
-						<Button
-							size="medium"
-							variant="contained"
-							startIcon={<Add />}
-							onClick={() =>
-								setInitialBuilderState({
-									id: null,
-									name: "",
-									pixel: "",
-									tags: [],
-									cronExpression: "0 0 12 * * *",
-									cronTz: "Eastern Standard Time",
-									smtpHost: "",
-									smtpPort: "",
-									subject: "",
-									jobType: "",
-									to: [],
-									cc: [],
-									bcc: [],
-									from: "",
-									message: "",
-									username: "",
-									password: "",
-								})
-							}
-							data-testid={"jobsPage-add-btn"}
-						>
-							Add
-						</Button>
-					</span>
-					{rowSelectionModel.length > 1 ? (
+			<StyledBox>
+				<Stack direction="row" width="100%" justifyContent="space-between">
+					<StyledToggleTabsGroup
+						value={selectedTable}
+						onChange={(_, value: string) => {
+							setSelectedTable(value);
+						}}
+					>
+						<StyledToggleTabsGroupItem
+							label="Jobs"
+							value={"Jobs"}
+							data-testid={`jobsSettingsPage-jobs-btn`}
+						/>
+						<StyledToggleTabsGroupItem
+							label="History"
+							value={"History"}
+							data-testid={`jobsSettingsPage-history-btn`}
+						/>
+					</StyledToggleTabsGroup>
+					<Stack direction="row" spacing={2}>
+						{/* <Search
+							size="small"
+							value={searchValue}
+							onChange={(e) => setSearchValue(e.target.value)}
+						/> */}
 						<span>
 							<Button
-								disabled={false}
-								variant="contained"
-								startIcon={<Delete />}
+								disabled={selectedActiveJobs.length === 0}
+								variant="outlined"
+								startIcon={<Pause />}
 								size="medium"
-								onClick={() => deleteMutlipleJobs()}
+								onClick={() => pauseJobs()}
+								data-testid={"jobsPage-pause-btn"}
 							>
-								Delete Selected
+								Pause
 							</Button>
 						</span>
-					) : (
-						""
-					)}
+						<span>
+							<Button
+								disabled={selectedPausedJobs.length === 0}
+								variant="outlined"
+								startIcon={<NotStartedOutlined />}
+								size="medium"
+								onClick={() => resumeJobs()}
+								data-testid={"jobsPage-resume-btn"}
+							>
+								Resume
+							</Button>
+						</span>
+						<span>
+							<Button
+								disabled={rowSelectionModel.length === 0}
+								variant="outlined"
+								startIcon={<DeleteOutline />}
+								size="medium"
+								onClick={() => deleteMutlipleJobs()}
+								data-testid={"jobsPage-delete-btn"}
+							>
+								Delete
+							</Button>
+						</span>
+						<span>
+							<Button
+								size="medium"
+								variant="contained"
+								startIcon={<Add />}
+								onClick={() =>
+									setInitialBuilderState({
+										id: null,
+										name: "",
+										pixel: "",
+										tags: [],
+										cronExpression: "0 0 12 * * *",
+										cronTz: "Eastern Standard Time",
+										smtpHost: "",
+										smtpPort: "",
+										subject: "",
+										jobType: "",
+										to: [],
+										cc: [],
+										bcc: [],
+										from: "",
+										message: "",
+										username: "",
+										password: "",
+									})
+								}
+								data-testid={"jobsPage-add-btn"}
+							>
+								Add New
+							</Button>
+						</span>
+						{rowSelectionModel.length > 1 ? (
+							<span>
+								<Button
+									disabled={false}
+									variant="contained"
+									startIcon={<Delete />}
+									size="medium"
+									onClick={() => deleteMutlipleJobs()}
+								>
+									Delete Selected
+								</Button>
+							</span>
+						) : (
+							""
+						)}
+					</Stack>
 				</Stack>
-			</Stack>
-			<JobsTable
-				jobs={filteredJobs}
-				jobsLoading={jobsLoading}
-				rowSelectionModel={rowSelectionModel}
-				setRowSelectionModel={setRowSelectionModel}
-				getHistory={() => getHistory({ reload: true })}
-				setInitialBuilderState={setInitialBuilderState}
-				showDeleteJobModal={(job: Job) => setJobToDelete(job)}
-			/>
-			<JobHistory
-				history={history}
-				historyLoading={historyLoading}
-				historyCount={historyCount}
-				historyPage={historyPage}
-				historyRowsPerPage={historyRowsPerPage}
-				onPageChange={(page) => getHistory({ page })}
-				onRowsPerPageChange={(rowsPerPage) =>
-					getHistory({ rowsPerPage })
-				}
-				onSearchChange={setHistorySearchBuffer}
-			/>
+				<Stack border={"1px solid #E0E0E0"} borderRadius="8px 8px 0 0" mt={2}>
+					{selectedTable === "Jobs" && (
+						<Tabs
+							value={selectedJobTab}
+							onChange={(_, value: string) => {
+								setSelectedJobTab(value);
+							}}
+							color="primary"
+					    >
+							<Tabs.Item value="All" label="All" />
+							<Tabs.Item value="Active" label="Active" />
+							<Tabs.Item value="Inactive" label="Inactive" />
+						</Tabs>
+					)}
+					{selectedTable === "History" && (
+						<Tabs
+							value={selectedHistoryTab}
+							onChange={(_, value: string) => {
+								setSelectedHistoryTab(value);
+							}}
+							color="primary"
+					    >
+							<Tabs.Item value="All" label="All" />
+							<Tabs.Item value="Success" label="Success" />
+							<Tabs.Item value="Failed" label="Failed" />
+						</Tabs>
+					)}
+					
+				</Stack>
+				{selectedTable === "Jobs" && (
+					<JobsTable
+						jobs={filteredJobs}
+						jobsLoading={jobsLoading}
+						rowSelectionModel={rowSelectionModel}
+						setRowSelectionModel={setRowSelectionModel}
+						getHistory={() => getHistory({ reload: true })}
+						setInitialBuilderState={setInitialBuilderState}
+						showDeleteJobModal={(job: Job) => setJobToDelete(job)}
+					/>
+				)}
+				{selectedTable === "History" && (
+					<JobHistory
+						history={history}
+						historyLoading={historyLoading}
+						historyCount={historyCount}
+						historyPage={historyPage}
+						historyRowsPerPage={historyRowsPerPage}
+						onPageChange={(page) => getHistory({ page })}
+						onRowsPerPageChange={(rowsPerPage) =>
+							getHistory({ rowsPerPage })
+						}
+						onSearchChange={setHistorySearchBuffer}
+					/>	
+				)}
+			</StyledBox>
 			<DeleteJobModal
 				job={deleteMutliple ? jobsToDelete : [jobToDelete]}
 				isOpen={

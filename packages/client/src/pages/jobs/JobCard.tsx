@@ -8,10 +8,10 @@ const StyledBox = styled(Box)(({ theme }) => ({
 }));
 const StyledAvatar = styled(Avatar, {
 	shouldForwardProp: (prop) => prop !== "avatarColor" && prop !== "iconColor",
-})<{ avatarColor: string; iconColor: string }>(
+})<{ avatarColor: string[]; iconColor: string }>(
 	({ theme, avatarColor, iconColor }) => ({
 		borderRadius: theme.spacing(0.5),
-		backgroundColor: avatarColor,
+		background: `linear-gradient(45deg, ${avatarColor.join(", ")})`,
 		svg: {
 			fill: iconColor,
 		},
@@ -23,7 +23,7 @@ export const JobCard = (props: {
 	icon: ReactElement;
 	count: number;
 	iconColor: string;
-	avatarColor: string;
+	avatarColor: string[];
 }) => {
 	const { title, icon, count, iconColor, avatarColor } = props;
 
@@ -33,9 +33,9 @@ export const JobCard = (props: {
 				<StyledAvatar avatarColor={avatarColor} iconColor={iconColor}>
 					{icon}
 				</StyledAvatar>
-				<Stack spacing={1} justifyContent="start" alignItems="center">
+				<Stack spacing={1} justifyContent="start" alignItems="flex-start">
 					<Typography variant="body1">{title}</Typography>
-					<Typography variant="caption">{count}</Typography>
+					<Typography variant="caption" color="secondary">{count}</Typography>
 				</Stack>
 			</Stack>
 		</StyledBox>

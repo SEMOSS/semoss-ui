@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Accordion, LinearProgress, Search, styled, Table } from "@semoss/ui";
 import { HistoryRow } from "./HistoryRow";
 import type { HistoryJob } from "./job.types";
+import { Stack } from "@mui/material";
 
 const StyledAccordion = styled(Accordion)(() => ({
 	"&:before": {
@@ -43,24 +44,8 @@ export const JobHistory = (props: {
 		onSearchChange,
 	} = props;
 
-	const [historyExpanded, setHistoryExpanded] = useState(false);
-
 	return (
-		<StyledAccordion
-			expanded={historyExpanded}
-			onChange={(e) => {
-				setHistoryExpanded(!historyExpanded);
-			}}
-		>
-			<StyledAccordionTrigger expandIcon={<ChevronRight />}>
-				History
-			</StyledAccordionTrigger>
-			<Accordion.Content>
-				<Search
-					fullWidth
-					size="small"
-					onChange={(e) => onSearchChange(e.target.value)}
-				/>
+			<Stack spacing={2}>
 				<Table.Container>
 					<Table>
 						<Table.Head>
@@ -112,7 +97,6 @@ export const JobHistory = (props: {
 						</Table.Footer>
 					</Table>
 				</Table.Container>
-			</Accordion.Content>
-		</StyledAccordion>
+			</Stack>
 	);
 };
