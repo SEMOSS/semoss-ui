@@ -17,7 +17,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
-import { AUTO_EXECUTE, TEMPERATURE, TOKEN_LENGTH } from "@/constants";
+import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
@@ -70,7 +70,6 @@ export const NewRoomPage = observer(() => {
 		tools: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
-		autoExecute: AUTO_EXECUTE,
 	});
 
 	const [isPlanning, setIsPlanning] = useState(false);
@@ -92,20 +91,15 @@ export const NewRoomPage = observer(() => {
 		setIsLoading(true);
 
 		// create a new room
-		const room = await chat.createRoom(chat.models.selected, prompt);
-
-		// initialize it
-		await room.initialize();
-
-		// set the room to plan if it is planning
-		if (isPlanning) {
-			room.setMode("plan");
-		} else {
-			room.setMode("chat");
-		}
+		const room = await chat.createRoom(
+			prompt,
+			isPlanning ? "planning" : "chat",
+			chat.models.selected,
+			options,
+		);
 
 		// ask the room
-		await room.askMessage(prompt, files, options);
+		await room.askMessage(prompt, files);
 
 		// turn the loading screen off
 		setIsLoading(false);

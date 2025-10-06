@@ -44,8 +44,6 @@ interface ResponseMessageProps {
 
 export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 	({ message }) => {
-		const { room } = message;
-
 		const notification = useNotification();
 
 		// get the parent input message
@@ -80,7 +78,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 */
 		const recordFeedback = async (rating: boolean) => {
 			try {
-				await room.recordFeedback(message, rating);
+				await message.recordFeedback(rating);
 
 				notification.add({
 					color: "success",
@@ -100,7 +98,7 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		 */
 		const rewriteMessage = async () => {
 			try {
-				await room.rewriteMessage(message);
+				await message.rewriteMessage();
 
 				notification.add({
 					color: "success",
@@ -225,7 +223,6 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 								>
 									<ResponseMessageTool
 										key={`tool-${t.id}`}
-										room={room}
 										message={message}
 										tool={t}
 									/>

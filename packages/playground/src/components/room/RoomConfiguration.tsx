@@ -3,8 +3,6 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
 	Button,
-	Checkbox,
-	FormControlLabel,
 	IconButton,
 	List,
 	Menu,
@@ -247,21 +245,6 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 									</List.Item>
 								)}
 							</List>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={options.autoExecute}
-										onChange={(_e, _vall) =>
-											setOptions({
-												...options,
-												autoExecute:
-													!options.autoExecute,
-											})
-										}
-									/>
-								}
-								label="Auto-execute"
-							/>
 						</RightMenuContent>
 					</>
 				)}

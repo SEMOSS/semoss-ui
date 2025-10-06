@@ -180,7 +180,21 @@ export const RoomPage = observer(() => {
 					return;
 				}
 
-				room.saveTool(message, tool.id, tool.name, tool.response);
+				// save the response with the tool
+				await message.saveTool(
+					tool.id,
+					tool.name,
+					tool.response,
+					room.mode !== "executing",
+				);
+
+				// TODO: Fix. This works because we only execute one step at a time.
+				// if it is executing, continue the plan
+				if (room.mode === "executing") {
+					if (room.plan) {
+						room.plan.saveTool();
+					}
+				}
 			} catch {
 				// noop
 			}
@@ -271,7 +285,6 @@ export const RoomPage = observer(() => {
 										)}
 										{m.type === "PLAN" && (
 											<PlanMessage
-												room={room}
 												message={m}
 												isLast={
 													mIdx ===
@@ -295,7 +308,7 @@ export const RoomPage = observer(() => {
 						>
 							<RoomInput
 								isLoading={room.isLoading}
-								isDisabled={false}
+								isDisabled={room.mode === "executing"}
 								minRows={3}
 								maxRows={8}
 								actions={

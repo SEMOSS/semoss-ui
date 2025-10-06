@@ -153,7 +153,12 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	createRoom = async (modelId: string, name: string): Promise<RoomStore> => {
+	createRoom = async (
+		name: string,
+		mode: RoomStore["mode"],
+		modelId: string,
+		options: RoomStore["options"],
+	): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -183,11 +188,14 @@ export class ChatStore {
 			const room = this.newRoom(roomId);
 
 			// set the initial data
-			room.setModel(modelId);
+			room.setInitialized(true);
 			room.setMetadata({
 				name: name,
 				dateCreated: new Date().toDateString(),
 			});
+			room.setMode(mode);
+			room.setOptions(options);
+			room.setModel(modelId);
 
 			runInAction(() => {
 				// add to the front

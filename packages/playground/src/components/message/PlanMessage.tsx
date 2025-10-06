@@ -18,7 +18,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { AddStepOverlay, LinkStepOverlay } from "@/components";
-import type { PlanMessageStore, RoomStore } from "@/stores";
+import type { PlanMessageStore } from "@/stores";
 
 const StyledPlanMessage = styled(Stack)(({ theme }) => ({
 	width: "100%",
@@ -46,9 +46,6 @@ const StyledTool = styled(Stack)(({ theme }) => ({
 }));
 
 interface PlanMessageProps {
-	/** Room to render */
-	room: RoomStore;
-
 	/** Message to render */
 	message: PlanMessageStore;
 
@@ -57,7 +54,7 @@ interface PlanMessageProps {
 }
 
 export const PlanMessage: React.FC<PlanMessageProps> = observer(
-	({ room, message, isLast }) => {
+	({ message, isLast }) => {
 		const notification = useNotification();
 
 		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
@@ -68,7 +65,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 		 */
 		const acceptPlan = () => {
 			try {
-				room.confirmPlan(message);
+				message.confirmPlan();
 			} catch (e) {
 				notification.add({
 					color: "error",
@@ -180,8 +177,11 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											>
 												<Hardware
 													fontSize="medium"
-													sx={{ color: "#757575" }}
+													sx={{
+														color: "#757575",
+													}}
 												/>
+
 												<Typography
 													variant="subtitle2"
 													noWrap={true}

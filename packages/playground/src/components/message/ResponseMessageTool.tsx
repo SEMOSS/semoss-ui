@@ -2,7 +2,7 @@ import { GridViewRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { FlexLayout } from "@semoss/shared";
 import { Stack, styled, Typography } from "@semoss/ui";
-import type { ResponseMessageStore, RoomStore } from "@/stores";
+import type { ResponseMessageStore } from "@/stores";
 
 const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
 	padding: "8px",
@@ -14,9 +14,6 @@ const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
 }));
 
 interface ResponseMessageToolProps {
-	/** Room to render */
-	room: RoomStore;
-
 	/** Message to render */
 	message: ResponseMessageStore;
 
@@ -25,7 +22,9 @@ interface ResponseMessageToolProps {
 }
 
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
-	({ room, message, tool }) => {
+	({ message, tool }) => {
+		const { room } = message;
+
 		return (
 			<Stack direction={"column"} spacing={1} width={"100%"}>
 				<Stack>
