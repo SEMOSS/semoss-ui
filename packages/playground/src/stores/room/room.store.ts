@@ -611,7 +611,7 @@ toolExecutionResponse=["<encode>${toolResponse}</encode>"]
 		try {
 			// wait for the pixel to run
 			const response = await this.runPixel<[boolean]>(
-				`SubmitLlmFeedback(messageId = ["${message.id}"], feedbackText=["${comment}"], rating=[${rating}]);`,
+				`SubmitLlmFeedback(messageId = ["${message.id}"], feedbackText=["${comment}"], rating=[${rating}], roomId=["${this._store.roomId}"]);`,
 			);
 
 			// throw errors
