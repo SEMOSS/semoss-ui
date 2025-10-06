@@ -262,10 +262,6 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 	const isApplyDisabled =
 		!localState.displayType || !localState.frame || !localState.column;
 
-	console.log("displayType", localState.displayType);
-	console.log("frame", localState.frame);
-	console.log("column", localState.column);
-	console.log(isApplyDisabled);
 	/**
 	 * Updates the block's data store with the current local state
 	 */
