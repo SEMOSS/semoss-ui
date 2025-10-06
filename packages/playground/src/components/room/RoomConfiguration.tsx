@@ -12,7 +12,6 @@ import {
 	Typography,
 } from "@semoss/ui";
 import {
-	KnowledgeOverlay,
 	RightMenu,
 	RightMenuContent,
 	RightMenuTitle,
@@ -22,7 +21,6 @@ import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
-const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -55,7 +53,6 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 		const { chat } = useChat();
 		const { options, setOptions, onClose } = props;
 
-		const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
 		const [isToolsOpen, setIsToolsOpen] = useState(false);
 
 		return (
@@ -108,67 +105,6 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 						}}
 					/>
 				</RightMenuContent>
-				{ENABLE_KNOWLEDGE && (
-					<>
-						<RightMenuTitle
-							name={"Knowledge"}
-							actions={
-								<Button
-									variant="outlined"
-									color="inherit"
-									size="small"
-									onClick={() => {
-										setIsKnowledgeOpen(true);
-									}}
-								>
-									Add
-								</Button>
-							}
-						/>
-
-						<RightMenuContent direction={"column"} spacing={1}>
-							<List dense={true}>
-								{options.knowledge ? (
-									<List.Item
-										dense={true}
-										secondaryAction={
-											<IconButton
-												edge="end"
-												aria-label="delete"
-												size="small"
-												onClick={() => {
-													// update the tools
-													setOptions({
-														...options,
-														knowledge: null,
-													});
-												}}
-											>
-												<Delete fontSize={"small"} />
-											</IconButton>
-										}
-									>
-										<List.ItemText
-											primary={options.knowledge.name}
-										/>
-									</List.Item>
-								) : (
-									<List.Item dense={true}>
-										<Typography
-											variant="caption"
-											sx={{
-												width: "100%",
-												textAlign: "center",
-											}}
-										>
-											No knowledge added
-										</Typography>
-									</List.Item>
-								)}
-							</List>
-						</RightMenuContent>
-					</>
-				)}
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
@@ -300,23 +236,6 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 						marks={marks}
 					/>
 				</RightMenuContent>
-				{isKnowledgeOpen && (
-					<KnowledgeOverlay
-						knowledge={options.knowledge}
-						onClose={(success, knowledge) => {
-							// if its successful, update the options
-							if (success) {
-								setOptions({
-									...options,
-									knowledge: knowledge,
-								});
-							}
-
-							// close the modal
-							setIsKnowledgeOpen(false);
-						}}
-					/>
-				)}
 				{isToolsOpen && (
 					<ToolsOverlay
 						tools={options.tools}
