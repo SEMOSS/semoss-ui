@@ -79,19 +79,19 @@ export const JobBuilderModal = (props: {
 		}
 
 		if (
-			cronValues[3] == "*" &&
-			cronValues[4] == "*" &&
-			cronValues[5] == "*"
+			cronValues[3] === "*" &&
+			cronValues[4] === "*" &&
+			cronValues[5] === "*"
 		) {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[3] == "*" && cronValues[4] == "*") {
+		} else if (cronValues[3] === "*" && cronValues[4] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[4] == "*" && cronValues[5] == "*") {
+		} else if (cronValues[4] === "*" && cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
-		} else if (cronValues[5] == "*") {
+		} else if (cronValues[5] === "*") {
 			setFrequencyType("standard");
 			return;
 		} else {
@@ -252,17 +252,16 @@ export const JobBuilderModal = (props: {
 					builder.jobType
 				}","jobName":"${builder.name}", "cronExpression":"${
 					builder.cronExpression
-				}","cronTimeZone":"${builder.cronTz}","recipe":"${
-					builder.pixel
-				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
-				notification.add({
-					color: "error",
-					message: response.errors.length[0],
-				});
+				throw new Error(response.errors[0]);
 			}
-		} catch (e) {
+			notification.add({
+				color: "success",
+				message: "Job added successfully",
+			});
+		} catch {
 			notification.add({
 				color: "error",
 				message: "Unable to add job",
@@ -317,7 +316,7 @@ export const JobBuilderModal = (props: {
 					<IconButton
 						aria-label="close"
 						onClick={closeModal}
-						data-testid={"job-builder-close-btn"}
+						data-testid={"jobBuilder-close-btn"}
 					>
 						<Close />
 					</IconButton>
@@ -341,20 +340,20 @@ export const JobBuilderModal = (props: {
 						<ToggleButton
 							value="standard"
 							onClick={() => setFrequencyType("standard")}
-							data-testid={"job-builder-standard-btn"}
+							data-testid={"jobBuilder-standard-btn"}
 						>
 							Standard
 						</ToggleButton>
 						<ToggleButton
 							value="custom"
 							onClick={() => setFrequencyType("custom")}
-							data-testid={"job-builder-custom-btn"}
+							data-testid={"jobBuilder-custom-btn"}
 						>
 							Custom
 						</ToggleButton>
 					</ToggleButtonGroup>
 					<Autocomplete
-                        multiple={false}
+						multiple={false}
 						value={builder.cronTz}
 						options={timezones}
 						onChange={(_, value) =>
@@ -396,7 +395,7 @@ export const JobBuilderModal = (props: {
 						type="button"
 						disabled={isLoading}
 						onClick={closeModal}
-						data-testid={"job-builder-cancel-btn"}
+						data-testid={"jobBuilder-cancel-btn"}
 					>
 						Cancel
 					</Button>
@@ -413,7 +412,7 @@ export const JobBuilderModal = (props: {
 							isEditMode ? updateJob() : addJob();
 						}}
 						loading={isLoading}
-						data-testid={"job-builder-add-save-btn"}
+						data-testid={"jobBuilder-add-save-btn"}
 					>
 						{isEditMode ? "Save" : "Add"}
 					</Button>

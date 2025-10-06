@@ -1,6 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatPostcssSourceMap } from "vite";
 import { debounced } from "@semoss/sdk/react";
 import {
 	Button,
@@ -16,7 +17,7 @@ import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
 import { ENGINE_TYPES } from "@/types";
-import { removeUnderscores } from "@/utility";
+import { formatToDataTestId, removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -468,6 +469,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			return <>ERROR</>;
 		}
 
+		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
+		const nonBookmarked = databases.filter(
+			(db) =>
+				!favoritedDbs.some((fav) => fav.database_id === db.database_id),
+		);
+
 		return (
 			<Stack direction="column" gap={2}>
 				<Stack>
@@ -501,7 +508,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 									aria-label={`Navigate to import ${
 										route ? route.name : "Engine"
 									}`}
-									data-testid={"engine-catalog-add-btn"}
+									data-testid={formatToDataTestId(
+										`engineIndex-add-${route ? route.name : "Engine"}-btn`,
+									)}
 								>
 									Add {route ? route.name : "Engine"}
 								</Button>
@@ -524,6 +533,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 					size="small"
 					label="Search"
 					value={inputValue}
+					data-testid={`engineIndexPage-searchBar-${route.name}`}
 					onChange={(e) => handleInputChange(e.target.value)}
 				/>
 				<StyledContainer>
@@ -559,12 +569,18 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							>
 								<StyledToggleTabsGroupItem
 									value="Mine"
+									data-testid={formatToDataTestId(
+										`engineIndexPage-${route ? `${route.name}s` : "Engines"}-my-switch`,
+									)}
 									label={`My ${
 										route ? `${route.name}s` : "Engines"
 									}`}
 								/>
 								<StyledToggleTabsGroupItem
 									value="Discoverable"
+									data-testid={formatToDataTestId(
+										`engineIndexPage-${route ? `${route.name}s` : "Engines"}-discoverable-switch`,
+									)}
 									label={`Discoverable ${
 										route ? `${route.name}s` : "Engines"
 									}`}
@@ -572,9 +588,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							</StyledToggleTabsGroup>
 						</Stack>
 
-						{"bi".includes(search.toLowerCase()) &&
-							Object.entries(metaFilters).length === 0 &&
-							"terminal".includes(search.toLowerCase()) &&
+						{Object.entries(metaFilters).length === 0 &&
 							!isDiscoverable &&
 							favoritedDbs.length > 0 && (
 								<StyledSectionLabel variant="subtitle1">
@@ -638,10 +652,9 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							</Grid>
 						) : null}
 
-						{"bi".includes(search.toLowerCase()) &&
-							Object.entries(metaFilters).length === 0 &&
-							"terminal".includes(search.toLowerCase()) &&
-							databases.length > 0 && (
+						{Object.entries(metaFilters).length === 0 &&
+							databases.length > 0 &&
+							nonBookmarked.length > 0 && (
 								<StyledSectionLabel variant="subtitle1">
 									All {route.name}s
 								</StyledSectionLabel>
@@ -649,55 +662,80 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 						{databases.length ? (
 							<Grid container spacing={3}>
-								{databases.map((db) => {
-									return (
-										<Grid item key={db.database_id} sm={12}>
-											<EngineLandscapeCard
-												name={removeUnderscores(
-													db.database_name,
-												)}
-												type={db.database_type}
-												id={db.database_id}
-												tag={db.tag}
-												date={db.database_date_created}
-												owner={db.database_created_by}
-												description={db.description}
-												votes={db.upvotes}
-												views={db.views}
-												sub_type={db.database_subtype}
-												trending={db.trending}
-												isGlobal={db.database_global}
-												isUpvoted={db.hasUpvoted}
-												isFavorite={
-													isDiscoverable
-														? false
-														: isFavorited(
-																db.database_id,
-															)
-												}
-												isDiscoverable={isDiscoverable}
-												onClick={() => {
-													navigate(
-														`${db.database_id}`,
-													);
-												}}
-												favorite={() => {
-													favoriteDb(db);
-												}}
-												upvote={() => {
-													upvoteDb(db);
-												}}
-												global={
-													db.user_permission === 1
-														? () => {
-																setGlobal(db);
-															}
-														: null
-												}
-											/>
-										</Grid>
-									);
-								})}
+								{databases
+									.filter(
+										(db) =>
+											!favoritedDbs.some(
+												(fav) =>
+													fav.database_id ===
+													db.database_id,
+											),
+									)
+									.map((db) => {
+										return (
+											<Grid
+												item
+												key={db.database_id}
+												sm={12}
+											>
+												<EngineLandscapeCard
+													name={removeUnderscores(
+														db.database_name,
+													)}
+													type={db.database_type}
+													id={db.database_id}
+													tag={db.tag}
+													date={
+														db.database_date_created
+													}
+													owner={
+														db.database_created_by
+													}
+													description={db.description}
+													votes={db.upvotes}
+													views={db.views}
+													sub_type={
+														db.database_subtype
+													}
+													trending={db.trending}
+													isGlobal={
+														db.database_global
+													}
+													isUpvoted={db.hasUpvoted}
+													isFavorite={
+														isDiscoverable
+															? false
+															: isFavorited(
+																	db.database_id,
+																)
+													}
+													isDiscoverable={
+														isDiscoverable
+													}
+													onClick={() => {
+														navigate(
+															`${db.database_id}`,
+														);
+													}}
+													favorite={() => {
+														favoriteDb(db);
+													}}
+													upvote={() => {
+														upvoteDb(db);
+													}}
+													global={
+														db.user_permission === 1
+															? () => {
+																	setGlobal(
+																		db,
+																	);
+																}
+															: null
+													}
+												/>
+											</Grid>
+										);
+									})}
 							</Grid>
 						) : null}
 					</StyledContent>

@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Actions, DockLocation, Layout, TabNode } from "@semoss/shared";
+import { FlexLayout } from "@semoss/shared";
 import {
 	Breadcrumbs,
 	IconButton,
@@ -17,11 +17,10 @@ import SEMOSS_BLACK_LOGO from "@/assets/img/SEMOSS_BLACK_LOGO.png";
 import { WorkspaceContext } from "@/contexts";
 import { SIDEBAR_MENU } from "@/pages/import/import.constants";
 import type { WorkspaceOptions, WorkspaceStore } from "@/stores";
+import { formatToDataTestId } from "@/utility";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../shared";
 import { WorkspaceLoading } from "./WorkspaceLoading";
 import { WorkspaceOverlay } from "./WorkspaceOverlay";
-
-type LayoutType = React.ElementRef<typeof Layout>;
 
 const StyledMain = styled("div")(() => ({
 	position: "relative",
@@ -79,8 +78,8 @@ const StyledHeaderLogo = styled(Link)(({ theme }) => ({
 
 const StyledActions = styled(Stack)(({ theme }) => ({
 	position: "absolute",
-	bottom: "8px",
-	left: "8px",
+	bottom: "36px",
+	left: "5px",
 	width: "32px", // from flexlayout
 	zIndex: 1,
 }));
@@ -109,12 +108,15 @@ type WorkspaceProps = {
 	options: WorkspaceOptions;
 
 	/** Factor method */
-	factory: (node: TabNode, layout: LayoutType) => React.ReactNode;
+	factory: (
+		node: FlexLayout.TabNode,
+		layout: FlexLayout.Layout,
+	) => React.ReactNode;
 };
 
 export const Workspace = observer((props: WorkspaceProps) => {
 	const { navbarActions, workspace, options, factory = () => null } = props;
-	const layoutRef = useRef<LayoutType | null>(null);
+	const layoutRef = useRef<FlexLayout.Layout | null>(null);
 	const model = workspace.model;
 
 	// build the model from the layout
@@ -129,12 +131,12 @@ export const Workspace = observer((props: WorkspaceProps) => {
 					throw new Error("Missing model");
 				}
 
-				let selectedNode: TabNode | null = null;
+				let selectedNode: FlexLayout.TabNode | null = null;
 
 				// visit the notes, and see if it exists
 				model.visitNodes((node) => {
 					// check if it is a tabNode
-					if (node instanceof TabNode) {
+					if (node instanceof FlexLayout.TabNode) {
 						// it needs to be a notebook-viewer
 						const component = node.getComponent();
 						if (component !== "designer") {
@@ -164,7 +166,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 
 					// create and select the panel
 					model.doAction(
-						Actions.addNode(
+						FlexLayout.Actions.addNode(
 							{
 								type: "tab",
 								name: name,
@@ -175,7 +177,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 								enableClose: true,
 							},
 							addId,
-							DockLocation.CENTER,
+							FlexLayout.DockLocation.CENTER,
 							-1,
 							true,
 						),
@@ -183,7 +185,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 				}
 
 				const selectedNodeId = selectedNode.getId();
-				model.doAction(Actions.selectTab(selectedNodeId));
+				model.doAction(FlexLayout.Actions.selectTab(selectedNodeId));
 			}
 		};
 		window.addEventListener("OPEN_EVENT", handler as EventListener);
@@ -232,7 +234,13 @@ export const Workspace = observer((props: WorkspaceProps) => {
 			.getBorderSet()
 			.getBorders()
 			.forEach((border) => {
-				border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				// border.setSelected(isSettingsTab ? -1 : border.getSelected());
+				border.setSelected(
+					action.data.tabNode === "block-settings" &&
+						mainTabsetWeight === 0
+						? 1
+						: border.getSelected(),
+				);
 			});
 
 		if (isSettingsTab || mainTabsetWeight === 0) {
@@ -246,7 +254,7 @@ export const Workspace = observer((props: WorkspaceProps) => {
 							? 100
 							: 0;
 					model.doAction(
-						Actions.updateNodeAttributes(node.getId(), {
+						FlexLayout.Actions.updateNodeAttributes(node.getId(), {
 							weight: newWeight,
 						}),
 					);
@@ -305,9 +313,12 @@ export const Workspace = observer((props: WorkspaceProps) => {
 					<StyledSpacer>
 						{workspace.model ? (
 							<>
-								<Layout
+								<FlexLayout.Layout
 									ref={layoutRef}
 									model={workspace.model}
+									classNameMapper={(defaultClassName) =>
+										`${defaultClassName} workspace_layout`
+									}
 									factory={(node) => {
 										return factory(node, layoutRef.current);
 									}}
@@ -329,7 +340,32 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												tabNode.getName(),
 										);
 										const isSelected = tabNode.isSelected();
-										if (item && item.icon) {
+										if (item?.icon?.component) {
+											const Icon = item.icon.component;
+
+											renderValues.content = (
+												<Tooltip
+													title={item.icon.tooltip}
+												>
+													<IconButton
+														size={"small"}
+														color="default"
+														data-testId={formatToDataTestId(
+															`workspace-${tabNode.getName()}`,
+														)}
+													>
+														<Icon
+															color={
+																isSelected
+																	? "primary"
+																	: "inherit"
+															}
+															fontSize="inherit"
+														/>
+													</IconButton>
+												</Tooltip>
+											);
+										} else if (item?.icon) {
 											const iconSrc = isSelected
 												? item.icon.active
 												: item.icon.default;
@@ -337,6 +373,9 @@ export const Workspace = observer((props: WorkspaceProps) => {
 												<StyledLetTabImage
 													src={iconSrc}
 													alt={tabNode.getName()}
+													data-testId={formatToDataTestId(
+														`workspace-${tabNode.getName()}`,
+													)}
 												/>
 											);
 										}

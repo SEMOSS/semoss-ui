@@ -1,8 +1,7 @@
 import { Add, ClearRounded, DeleteRounded } from "@mui/icons-material";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { debounced } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Avatar,
@@ -213,11 +212,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [selectedNonCredentialedUsers, setSelectedNonCredentialedUsers] =
 		useState([]);
 
-	const [teamMembers, setTeamMembers] = useState(null);
-	const [memberCount, setMemberCount] = useState(null);
+	const [teamMembers, setTeamMembers] = useState([]);
+	const [memberCount, setMemberCount] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(5);
+	const [allTeamMembers, setAllTeamMembers] = useState([]);
 	const [hasMembers, setHasMembers] = useState(false);
 
-	const limit = 5;
 	const [searchMemberInput, setSearchMemberInput] = useState<string>("");
 	const [offset, setOffset] = useState(AUTOCOMPLETE_OFFSET);
 	const [isScrollBottom, setIsScrollBottom] = useState(false);
@@ -244,6 +244,18 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	};
 
 	const memberSearchRef = useRef(undefined);
+	const filteredNonCredentialedUsers = Array.from(
+		new Map(
+			nonCredentialedUsers
+				.filter(
+					(user) =>
+						!allTeamMembers.some(
+							(member) => member.userid === user.id,
+						),
+				)
+				.map((user) => [user.id, user]),
+		).values(),
+	);
 
 	const { watch, setValue } = useForm<{
 		SEARCH_FILTER: string;
@@ -261,19 +273,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 * @desc - sets members in react hook form
 	 */
 	useEffect(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				limit,
-				membersPage * limit - limit, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(data?.length > 0);
-			});
-	}, []);
-
+		filter();
+	}, [groupId, count, membersPage, searchFilter, rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -428,7 +429,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				color: "success",
 				message: `Successfully removed users`,
 			});
-			setCount(count + 1);
+			setCount((prevCount) => {return prevCount + 1;});
 			setDeleteMembersModal(false);
 			setSelectedMembers([]);
 		}
@@ -484,14 +485,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 
 	/** HELPERS */
 	const Avatars = useMemo(() => {
-		if (!teamMembers) return [];
+		if (!allTeamMembers) return [];
 
 		let i = 0;
 		const avatarList = [];
-		while (i < 5 && i < teamMembers.length) {
+		while (i < 5 && i < allTeamMembers.length) {
 			avatarList.push(
 				<Avatar key={i}>
-					{teamMembers[i].name.charAt(0).toUpperCase()}
+					{allTeamMembers[i].name.charAt(0).toUpperCase()}
 				</Avatar>,
 			);
 
@@ -499,28 +500,28 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 
 		return avatarList;
-	}, [teamMembers]);
+	}, [allTeamMembers]);
 
 	const paginationOptions = {
 		membersPageCounts: [5],
 	};
 
-	teamMembers > 9 && paginationOptions.membersPageCounts.push(10);
-	teamMembers > 19 && paginationOptions.membersPageCounts.push(20);
+	memberCount > 9 && paginationOptions.membersPageCounts.push(10);
+	memberCount > 19 && paginationOptions.membersPageCounts.push(20);
 
 	const filterUsers = useCallback(() => {
 		monolithStore
 			.getTeamUsers(
 				groupId,
-				limit,
-				membersPage * limit - limit, // offset
+				rowsPerPage,
+				membersPage * rowsPerPage - rowsPerPage, // offset
 				searchFilter,
 			)
 			.then((data) => {
 				setTeamMembers(data);
 				setHasMembers(data?.length > 0);
 			});
-	}, [count, membersPage, searchFilter]);
+	}, [count, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
 		monolithStore
@@ -530,7 +531,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				0, // offset
 				searchFilter,
 			)
-			.then((data) => setMemberCount(data.length));
+			.then((data) => {
+				setMemberCount(data.length);
+				setAllTeamMembers(data);
+			});
 	}, [count, membersPage, searchFilter]);
 
 	const filter = () => {
@@ -538,11 +542,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		filterUsersTwo();
 	};
 
-	const debouncedFilterTeams = debounced(filter, 400);
+	// const debouncedFilterTeams = debounced(filter, 400);
 
 	const handleInputChange = (newInputValue) => {
 		setValue("SEARCH_FILTER", newInputValue);
-		debouncedFilterTeams();
 	};
 
 	return (
@@ -550,7 +553,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			<StyledMemberInnerContent>
 				{(teamMembers && teamMembers.length > 0) ||
 				memberCount > 0 ||
-				hasMembers ? (
+				hasMembers || searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>Members</StyledTableTitleDiv>
@@ -562,8 +565,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											variant={"circular"}
 											max={5}
 											total={
-												teamMembers &&
-												teamMembers.length
+												teamMembers?.length
 											}
 										>
 											{Avatars.map((el) => {
@@ -575,7 +577,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								<StyledTableTitleMemberCountContainer>
 									<StyledTableTitleMemberCount>
 										<Typography variant={"body1"}>
-											{teamMembers.length} Members
+											{memberCount} Members
 										</Typography>
 									</StyledTableTitleMemberCount>
 								</StyledTableTitleMemberCountContainer>
@@ -597,11 +599,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								{selectedMembers.length > 0 && (
 									<Button
 										variant={"outlined"}
+										color="error"
 										onClick={() =>
 											setDeleteMembersModal(true)
 										}
 									>
-										Delete
+										Delete Selected
 									</Button>
 								)}
 							</StyledDeleteSelectedContainer>
@@ -621,7 +624,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						<StyledMemberTable>
 							<Table.Head>
 								<Table.Row>
-									<NameTableCell size="small">
+									<Table.Cell size="small">
 										<Checkbox
 											checked={
 												selectedMembers.length ===
@@ -641,8 +644,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												}
 											}}
 										/>
-										Name
-									</NameTableCell>
+									</Table.Cell>
+									<Table.Cell size="small">Name</Table.Cell>
 									<Table.Cell size="small">
 										Added Date
 									</Table.Cell>
@@ -650,8 +653,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{teamMembers &&
-									teamMembers.map((user, i) => {
+								{Array.isArray(teamMembers) && teamMembers.length > 0 ? 
+									(teamMembers?.map((user, i) => {
 										let isSelected = false;
 
 										if (user) {
@@ -733,6 +736,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 															</Stack>
 														</Stack>
 													</Table.Cell>
+													<Table.Cell size="medium">
+														{user.dateadded}
+													</Table.Cell>
 
 													<DateTableCell size="small">
 														{user.dateadded}
@@ -768,7 +774,12 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												</Table.Row>
 											);
 										}
-									})}
+									})) : (
+										<Table.Row key={'no-members-found'}>
+													<Table.Cell colSpan={5} align="center">No Members found.</Table.Cell>
+										</Table.Row>
+									)
+								}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -780,11 +791,15 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											setMembersPage(v + 1);
 											setSelectedMembers([]);
 										}}
+										onRowsPerPageChange={(e) => {
+											setRowsPerPage(
+												parseInt(e.target.value, 10),
+											);
+											setMembersPage(1);
+										}}
 										page={membersPage - 1}
-										rowsPerPage={5}
-										count={
-											teamMembers ? teamMembers.length : 0
-										}
+										rowsPerPage={rowsPerPage}
+										count={memberCount}
 									/>
 								</Table.Row>
 							</Table.Footer>
@@ -825,7 +840,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							multiple={true}
 							freeSolo={false}
 							filterOptions={(x) => x}
-							options={nonCredentialedUsers}
+							options={filteredNonCredentialedUsers}
 							includeInputInList={true}
 							limitTags={2}
 							getLimitTagsText={() =>
@@ -860,8 +875,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}}
 						/>
 
-						{selectedNonCredentialedUsers &&
-							selectedNonCredentialedUsers.map((user, idx) => {
+						{selectedNonCredentialedUsers?.map((user, idx) => {
 								const space = user.name.indexOf(" ");
 								const initial = user.name
 									? space > -1
@@ -872,7 +886,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 									: user.id[0].toUpperCase();
 								return (
 									<Box
-										key={idx}
+										key={`${user.name} - ${idx}`}
 										sx={{
 											display: "flex",
 											justifyContent: "left",

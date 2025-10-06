@@ -2,8 +2,6 @@ import {
 	Add,
 	AddBox,
 	AddCard,
-	ContentCopy,
-	Delete,
 	DeleteOutline,
 	Image,
 	List,
@@ -21,7 +19,6 @@ import {
 	useBlocks,
 } from "@semoss/renderer";
 import {
-	Button,
 	ButtonGroup,
 	IconButton,
 	styled,
@@ -144,7 +141,7 @@ export const DeleteDuplicateMask = observer(
 		}, [designer.selected, isVisible]);
 
 		if (!size || !isVisible) {
-			return <></>;
+			return null;
 		}
 
 		const getStyle = () => {
@@ -204,6 +201,31 @@ export const DeleteDuplicateMask = observer(
 
 			// clear the selected value
 			designer.setSelected("");
+		};
+
+		const addVariable = (id: string) => {
+			const block = state.getBlock(id as string);
+			if (block.slots) {
+				if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
+					state.dispatch({
+						message: ActionMessages.ADD_VARIABLE,
+						payload: {
+							id: id as string,
+							type: "block",
+							to: id as string,
+						},
+					});
+				}
+				Object.keys(block.slots).forEach((slot) => {
+					const children = block.slots[slot].children;
+					if (children?.length) {
+						children.forEach((childId) => {
+							//   const childBlock = state.getBlock(childId);
+							addVariable(childId);
+						});
+					}
+				});
+			}
 		};
 
 		/**
@@ -291,8 +313,6 @@ export const DeleteDuplicateMask = observer(
 			});
 
 			// TODO: REFACTOR
-			// Add variables for all blocks that are inputs from user
-			// TODO: What about grouping of inputs
 			if (INPUT_BLOCK_TYPES.indexOf(block.widget) > -1) {
 				state.dispatch({
 					message: ActionMessages.ADD_VARIABLE,
@@ -300,9 +320,10 @@ export const DeleteDuplicateMask = observer(
 						id: id as string,
 						type: "block",
 						to: id as string,
-						isInput: true,
 					},
 				});
+			} else {
+				addVariable(id as string);
 			}
 
 			designer.setSelected(id ? (id as string) : "");
@@ -341,34 +362,36 @@ export const DeleteDuplicateMask = observer(
 						}
 					}
 
-					const id = state.dispatch({
-						message: ActionMessages.ADD_BLOCK,
-						payload: {
-							json: blockJson as BlockJSON,
-							position: {
-								parent: block.id,
-								slot: "children",
-							},
-						},
-					}) as string;
-
-					if (block.widget === "iteration") {
-						state.dispatch({
-							message: ActionMessages.SET_BLOCK_DATA,
+					// Make this function async and await the dispatch
+					(async () => {
+						const id = await state.dispatch({
+							message: ActionMessages.ADD_BLOCK,
 							payload: {
-								id: block.id,
-								path: "child",
-								value: state.getBlock(id),
+								json: blockJson as BlockJSON,
+								position: {
+									parent: block.id,
+									slot: "children",
+								},
 							},
 						});
-					}
 
-					setAnchorEl(null);
+						if (block.widget === "iteration") {
+							state.dispatch({
+								message: ActionMessages.SET_BLOCK_DATA,
+								payload: {
+									id: block.id,
+									path: "child",
+									value: state.getBlock(id as string),
+								},
+							});
+						}
+
+						setAnchorEl(null);
+					})();
 				}
 			: null;
 
 		// TODO: revisit these actions for the base page once multiple pages/routing is enabled
-
 		return (
 			<StyledContainer id="delete-duplicate-mask" style={getStyle()}>
 				<StyledButtonGroup>
