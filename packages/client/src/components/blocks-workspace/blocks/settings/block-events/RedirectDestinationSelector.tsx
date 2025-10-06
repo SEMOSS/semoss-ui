@@ -58,9 +58,9 @@ export const RedirectDestinationSelector = ({
 									{pages.map((page: any, index: number) => (
 										<Select.Item
 											key={`${page.id}-${index}`}
-											value={page.route}
+											value={page.id}   // page.route is empty for page-1 so using page.id here
 										>
-											{page.route as string}
+											{page.id as string}
 										</Select.Item>
 									))}
 								</Select>
