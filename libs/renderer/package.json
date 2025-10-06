@@ -17,7 +17,8 @@
         "build": "rollup -c --environment NODE_ENV:production",
         "build:dev": "rollup -c",
         "test": "vitest run",
-        "test:watch": "vitest --watch"
+        "test:watch": "vitest --watch",
+        "test:coverage": "vitest --coverage --watch=false"
     },
     "keywords": [],
     "author": "",
@@ -56,6 +57,7 @@
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
         "vitest": "^3.2.4",
+        "@vitest/coverage-v8": "^3.2.4",
         "@vitejs/plugin-react": "^4.6.0"
     },
     "peerDependencies": {

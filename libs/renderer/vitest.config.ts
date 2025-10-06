@@ -27,6 +27,18 @@ export default defineConfig({
 		environment: "jsdom",
 		globals: true,
 		setupFiles: ["./vitest.setup.ts"],
+		reporters: ["default"],
+		coverage: {
+			provider: "v8",
+			reporter: ["text", "html"],
+			reportsDirectory: "./coverage/packages/renderer",
+			// thresholds: {
+			//     statements: 60,
+			//     functions: 60,
+			//     branches: 60,
+			//     lines: 60,
+			// },
+		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
 			inline: [
