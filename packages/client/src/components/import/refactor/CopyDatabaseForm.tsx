@@ -1,6 +1,9 @@
 import { Controller, useForm } from "react-hook-form";
 import { Button, Stack, TextField } from "@semoss/ui";
 
+/**
+ * @deprecated
+ */
 export const CopyDatabaseForm = () => {
 	const { control } = useForm();
 
