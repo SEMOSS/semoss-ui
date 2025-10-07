@@ -6,6 +6,7 @@ import {
 	Button,
 	Grid,
 	InputAdornment,
+	Skeleton,
 	Stack,
 	styled,
 	TextField,
@@ -51,8 +52,13 @@ export const AgentPage = observer(() => {
 	 * Constants
 	 */
 	const isLoading = fetchStatus === "LOADING";
-	const fetchedAgents = workspaceResponse?.workspaces || [];
-	console.log(isLoading, fetchedAgents);
+	const agentsToRender = isLoading
+		? Array(12).fill(null)
+		: workspaceResponse.workspaces.filter((agent) =>
+				search
+					? agent.name.toLowerCase().includes(search.toLowerCase())
+					: true,
+			);
 
 	return (
 		<Stack
@@ -123,53 +129,43 @@ export const AgentPage = observer(() => {
 			<Stack overflow="auto" paddingRight={2} paddingTop={3}>
 				<div>
 					<Grid container columnSpacing={2} rowSpacing={4}>
-						{fetchedAgents
-							.filter((agent) => {
-								const searchText = search
-									? search.toLowerCase()
-									: null;
-								if (searchText) {
-									return agent.name
-										.toLowerCase()
-										.includes(searchText);
-								} else {
-									return true;
-								}
-							})
-							.map((agentInfo) => (
-								<Grid
-									item
-									xs={12}
-									sm={6}
-									md={3}
-									key={agentInfo.workspace_id}
-								>
-									<Stack
-										width="100%"
-										spacing={1}
-										height="100%"
-									>
-										<AgentCard
-											agent={agentInfo}
-											onSecondaryClick={() => {
-												setAgentInfo(agentInfo);
-												setIsAgentModalOpen(true);
-											}}
-											onPrimaryClick={() => {
-												createRoom(
-													agentInfo.workspace_id,
-												);
-											}}
-										/>
-										<Stack paddingLeft={1}>
-											<Typography
-												variant="caption"
-												color="text.secondary"
-											>{`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`}</Typography>
-										</Stack>
+						{agentsToRender.map((agentInfo, index) => (
+							<Grid
+								item
+								xs={12}
+								sm={6}
+								md={3}
+								key={isLoading ? index : agentInfo.workspace_id}
+							>
+								<Stack width="100%" spacing={1} height="100%">
+									<AgentCard
+										agent={agentInfo}
+										onSecondaryClick={() => {
+											setAgentInfo(agentInfo);
+											setIsAgentModalOpen(true);
+										}}
+										onPrimaryClick={() => {
+											createRoom(agentInfo.workspace_id);
+										}}
+									/>
+									<Stack paddingLeft={1}>
+										<Typography
+											variant="caption"
+											color="text.secondary"
+										>
+											{isLoading ? (
+												<Skeleton
+													width="100%"
+													height="100%"
+												/>
+											) : (
+												`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`
+											)}
+										</Typography>
 									</Stack>
-								</Grid>
-							))}
+								</Stack>
+							</Grid>
+						))}
 					</Grid>
 				</div>
 			</Stack>
