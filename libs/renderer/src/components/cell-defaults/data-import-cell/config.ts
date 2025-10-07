@@ -15,6 +15,7 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
 		columnAliases: [],
 		tableNames: [],
 		joins: [],
+        dataLimit: null,
 		// TODO add filters and summaries
 		// filters: [],
 		// summaries: [],

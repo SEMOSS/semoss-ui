@@ -252,9 +252,7 @@ export const JobBuilderModal = (props: {
 					builder.jobType
 				}","jobName":"${builder.name}", "cronExpression":"${
 					builder.cronExpression
-				}","cronTimeZone":"${builder.cronTz}","recipe":"${
-					builder.pixel
-				}","recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
+				}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
 				throw new Error(response.errors[0]);
