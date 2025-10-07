@@ -17,6 +17,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
+import { AgentChip } from "@/components/agent";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useLoadingPixel } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -67,7 +68,6 @@ export const NewRoomPage = observer(() => {
 		null,
 		!agentId,
 	);
-	console.log(agent, isLoadingAgent);
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -167,28 +167,35 @@ export const NewRoomPage = observer(() => {
 							minRows={4}
 							maxRows={8}
 							actions={
-								<>
-									<Tooltip
-										title={"Open Configuration Menu"}
-										placement="top"
-									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={isLoading}
-											color={
-												isMenuOpen
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												setIsMenuOpen(!isMenuOpen);
-											}}
+								<Stack direction="row" alignItems="center">
+									{agentId ? (
+										<AgentChip
+											agent={agent}
+											loading={isLoadingAgent}
+										/>
+									) : (
+										<Tooltip
+											title={"Open Configuration Menu"}
+											placement="top"
 										>
-											<Tune color="inherit" />
-										</IconButton>
-									</Tooltip>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={isLoading}
+												color={
+													isMenuOpen
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsMenuOpen(!isMenuOpen);
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
 									{ENABLE_PLANNING && (
 										<Tooltip
 											title={
@@ -214,7 +221,7 @@ export const NewRoomPage = observer(() => {
 											</IconButton>
 										</Tooltip>
 									)}
-								</>
+								</Stack>
 							}
 							onPrompt={async (prompt, files) => {
 								await askMessage(prompt, files);
