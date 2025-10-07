@@ -1,34 +1,59 @@
+import { ArrowForward, LightbulbOutlined } from "@mui/icons-material";
+import { Button, Stack, styled, Typography } from "@semoss/ui";
+
 export interface AgentCardProps {
 	name: string;
+	description: string;
+	onPrimaryClick?: () => void;
+	onSecondaryClick?: () => void;
 }
 
-// const StyledCardItem = styled(Stack)(({ theme }) => ({
-// 	display: "flex",
-// 	width: "100%",
-// 	backgroundColor: theme.palette.background.paper,
-// 	borderWidth: "1px",
-// 	borderStyle: "solid",
-// 	borderColor: "rgba(64, 160, 255, 0.50)",
-// 	borderRadius: theme.shape.borderRadius,
-// 	cursor: "pointer",
-// 	padding: theme.spacing(3),
-// 	flexDirection: "column",
-// 	alignItems: "flex-start",
-// 	gap: theme.spacing(1),
-// 	minWidth: "0",
-// }));
-
-// const StyledGridCard = styled(Grid)(({ theme }) => ({
-// 	background: theme.palette.background.paper,
-// 	paddingLeft: "0",
-// 	paddingTop: "0",
-// }));
+const StyledCardItem = styled(Stack)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper,
+	borderWidth: "1px",
+	borderStyle: "solid",
+	borderColor: theme.palette.secondary.border,
+	borderRadius: theme.shape.borderRadius,
+	cursor: "pointer",
+}));
 
 /**
  * Renders a card representing an agent
  *
  * @component
  */
-export const AgentCard = ({ name }: AgentCardProps) => {
-	return <div>{name}</div>;
+export const AgentCard = ({
+	name,
+	onPrimaryClick,
+	onSecondaryClick,
+	description,
+}: AgentCardProps) => {
+	return (
+		<StyledCardItem
+			onClick={onPrimaryClick}
+			padding={2}
+			height="100%"
+			spacing={1.5}
+		>
+			<Stack>
+				<LightbulbOutlined />
+				<Typography variant="body1">{name}</Typography>
+				<Typography variant="body2" color="text.secondary">
+					{description}
+				</Typography>
+			</Stack>
+			<Stack justifyContent="flex-end">
+				<div>
+					<Button
+						onClick={onSecondaryClick}
+						endIcon={<ArrowForward />}
+						size="small"
+						variant="text"
+					>
+						View Details
+					</Button>
+				</div>
+			</Stack>
+		</StyledCardItem>
+	);
 };

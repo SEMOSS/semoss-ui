@@ -140,8 +140,11 @@ export const DiscoverPage = observer(() => {
 								md={3}
 								key={agentInfo.NAME}
 							>
-								<Stack width="100%" spacing={1}>
-									<AgentCard name={agentInfo.NAME} />
+								<Stack width="100%" spacing={1} height="100%">
+									<AgentCard
+										name={agentInfo.NAME}
+										description="description"
+									/>
 									<Stack paddingLeft={1}>
 										<Typography
 											variant="caption"
