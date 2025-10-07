@@ -113,6 +113,9 @@ const StyledTableCell = styled(Table.Cell)<{ $isBoolean?: boolean }>(
     textAlign: $isBoolean ? "center" : "left",
   })
 );
+const StyledButton = styled(Button)({
+  marginTop: "16px",
+});
 
 const DATABASE_OPTIONS = [
   "LocalMasterDatabase",
@@ -368,12 +371,11 @@ export const AdminQueryPage = () => {
                 <Field>
                   <Label htmlFor="rows-input">Max # Rows to Collect</Label>
                   <TextField
+                    fullWidth
                     size="small"
                     value={field.value ?? ""}
                     onChange={(e) => field.onChange(e.target.value)}
                     type="number"
-                    sx={{ width: "100%" }}
-                    // no label prop here
                     placeholder="100"
                   />
                 </Field>
@@ -432,8 +434,8 @@ export const AdminQueryPage = () => {
 
                     <Modal.Content>
                       <StyledTextArea
-                        minRows={16}
-                        maxRows={30}
+                        minRows={10}
+                        maxRows={16}
                         value={draft}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                           setDraft(e.target.value)
@@ -455,17 +457,16 @@ export const AdminQueryPage = () => {
               );
             }}
           />
-          <Button
+          <StyledButton
             size="large"
             variant={"contained"}
             onClick={() => submitQuery()}
             disabled={!disableButton}
             data-testid={"adminQueryPage-run-btn"}
-            sx={{ mt: 2 }}
             endIcon={<ArrowForward />}
           >
             Run Query
-          </Button>
+          </StyledButton>
           <StyledRight>
             {!output.type
               ? "Execute a query to display the results here."
