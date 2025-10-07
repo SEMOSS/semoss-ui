@@ -9,7 +9,7 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { AgentCard } from "@/components/discover/AgentCard";
+import { AgentCard } from "@/components/agent/AgentCard";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
@@ -57,7 +57,7 @@ const ALL_AGENTS = [
  *
  * @component
  */
-export const DiscoverPage = observer(() => {
+export const AgentPage = observer(() => {
 	/**
 	 * Library hooks
 	 */
@@ -79,7 +79,7 @@ export const DiscoverPage = observer(() => {
 			<Stack paddingRight={2} spacing={3}>
 				<Stack width="100%" alignItems="center" spacing={2}>
 					<Typography variant="h4" fontWeight="bold">
-						Discover Agent
+						Discover Agents
 					</Typography>
 					<Typography
 						variant="body1"
