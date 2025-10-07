@@ -3,12 +3,12 @@ import {
 	SwitchAccessShortcutOutlined,
 	TokenOutlined,
 } from "@mui/icons-material";
+import React from "react";
 import { Database } from "@/assets/img/Database";
 import { ModelBrain } from "@/assets/img/ModelBrain";
 import type { ENGINE_TYPES, Role } from "@/types";
 import { EngineFilePage } from "./EngineFilePage";
 import { EngineMetadataPage } from "./EngineMetadataPage";
-import { EngineModelChatPage } from "./EngineModelChatPage";
 import { EngineOverviewPage } from "./EngineOverviewPage";
 import { EngineQAPage } from "./EngineQAPage";
 import { EngineSettingsPage } from "./EngineSettingsPage";
@@ -16,6 +16,16 @@ import { EngineSmssPage } from "./EngineSmssPage";
 // import { EngineQueryDataPage } from './EngineQueryDataPage';
 // import { EngineReplaceDataPage } from './EngineReplaceDataPage';
 import { EngineUsagePage } from "./EngineUsagePage";
+
+const withEngineType = <T extends Record<string, unknown>>(
+	WrappedComponent: React.FunctionComponent<
+		T & { engineType?: ENGINE_TYPES }
+	>,
+	engineType: ENGINE_TYPES,
+): React.FunctionComponent<T> => {
+	return (props: T) =>
+		React.createElement(WrappedComponent, { ...props, engineType });
+};
 
 export const ENGINE_ROUTES: {
 	/** Name of the route */
@@ -53,7 +63,7 @@ export const ENGINE_ROUTES: {
 		path: "function",
 		type: "FUNCTION",
 		description:
-			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
+			"Expose and reuse LLM functionality in the form of functions to promote efficiency across app development. These functions include LLM Guard scanners to ensure the secure use of LLMs. ",
 		icon: SwitchAccessShortcutOutlined,
 		specific: [
 			{
@@ -95,12 +105,6 @@ export const ENGINE_ROUTES: {
 				path: "",
 				component: EngineOverviewPage,
 				restrict: false,
-			},
-			{
-				name: "Chat",
-				path: "chat",
-				component: EngineModelChatPage,
-				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
 				name: "Usage",
@@ -179,7 +183,7 @@ export const ENGINE_ROUTES: {
 		path: "vector",
 		type: "VECTOR",
 		description:
-			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
+			"Knowledge repositories, also known as vector databases, enable fast retrieval of information and semantic search. Create knowledge repositories on the fly and connect them for simplified reuse across apps.  ",
 		icon: TokenOutlined,
 		specific: [
 			{
@@ -197,7 +201,7 @@ export const ENGINE_ROUTES: {
 			{
 				name: "Files",
 				path: "files",
-				component: EngineFilePage,
+				component: withEngineType(EngineFilePage, "VECTOR"),
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
@@ -241,8 +245,8 @@ export const ENGINE_ROUTES: {
 				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 			{
-				name: "Access Control",
-				path: "access-control",
+				name: "Settings",
+				path: "settings",
 				component: EngineSettingsPage,
 				restrict: ["EDIT", "OWNER"],
 			},
@@ -251,6 +255,12 @@ export const ENGINE_ROUTES: {
 				path: "smss",
 				component: EngineSmssPage,
 				restrict: ["OWNER"],
+			},
+			{
+				name: "Files",
+				path: "files",
+				component: withEngineType(EngineFilePage, "STORAGE"),
+				restrict: ["EDIT", "OWNER", "READ_ONLY"],
 			},
 		],
 	},
