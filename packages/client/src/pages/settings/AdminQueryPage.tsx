@@ -90,7 +90,16 @@ const StyledSelect = styled(Select)(() => ({
 const StyledTextArea = styled(TextArea)({
 	width: "100%",
 	overflow: "none",
+  '& .MuiInputBase-root.MuiOutlinedInput-root': {
+      alignItems: 'flex-start'
+    },
 });
+
+const StyledTextAreaPopup = styled(TextArea)({
+	width: "100%",
+	overflow: "none",
+});
+
 const StyledIconButton = styled(IconButton)({
 	padding: 0,
 	color: "text.secondary",
@@ -428,9 +437,6 @@ export const AdminQueryPage = () => {
 														<OpenInFullSharp />
 													</StyledIconButton>
 												),
-												sx: {
-													alignItems: "flex-start",
-												},
 											}}
 										/>
 									</Field>
@@ -453,8 +459,8 @@ export const AdminQueryPage = () => {
 										</ModalTitle>
 
 										<Modal.Content>
-											<StyledTextArea
-												minRows={10}
+											<StyledTextAreaPopup
+												minRows={16}
 												maxRows={16}
 												value={draft}
 												onChange={(
