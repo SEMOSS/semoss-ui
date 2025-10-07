@@ -140,13 +140,25 @@ export const AgentPage = observer(() => {
 								<Stack width="100%" spacing={1} height="100%">
 									<AgentCard
 										agent={agentInfo}
-										onSecondaryClick={() => {
-											setAgentInfo(agentInfo);
-											setIsAgentModalOpen(true);
-										}}
-										onPrimaryClick={() => {
-											createRoom(agentInfo.workspace_id);
-										}}
+										onSecondaryClick={
+											isLoading
+												? () => {}
+												: () => {
+														setAgentInfo(agentInfo);
+														setIsAgentModalOpen(
+															true,
+														);
+													}
+										}
+										onPrimaryClick={
+											isLoading
+												? () => {}
+												: () => {
+														createRoom(
+															agentInfo.workspace_id,
+														);
+													}
+										}
 									/>
 									<Stack paddingLeft={1}>
 										<Typography
