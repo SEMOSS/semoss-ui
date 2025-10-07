@@ -1,9 +1,9 @@
 import { ArrowForward, LightbulbOutlined } from "@mui/icons-material";
 import { Button, Stack, styled, Typography } from "@semoss/ui";
+import type { Agent } from "@/types";
 
 export interface AgentCardProps {
-	name: string;
-	description: string;
+	agent: Agent;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
 }
@@ -23,10 +23,9 @@ const StyledCardItem = styled(Stack)(({ theme }) => ({
  * @component
  */
 export const AgentCard = ({
-	name,
 	onPrimaryClick,
 	onSecondaryClick,
-	description,
+	agent,
 }: AgentCardProps) => {
 	return (
 		<StyledCardItem
@@ -37,9 +36,9 @@ export const AgentCard = ({
 		>
 			<Stack>
 				<LightbulbOutlined />
-				<Typography variant="body1">{name}</Typography>
+				<Typography variant="body1">{agent.name}</Typography>
 				<Typography variant="body2" color="text.secondary">
-					{description}
+					{agent.description}
 				</Typography>
 			</Stack>
 			<Stack justifyContent="flex-end">

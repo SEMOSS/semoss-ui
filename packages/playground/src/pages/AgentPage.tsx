@@ -1,6 +1,7 @@
 import { Search } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Grid,
@@ -18,56 +19,19 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 }));
 
-// Thomas TODO: Pull from backend
-const ALL_AGENTS: Agent[] = [
-	{
-		project_id: "1",
-		project_name: "Weather Forecaster",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_name: "Create Meeting Minutes",
-		project_id: "2",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_id: "3",
-		project_name: "Plan Your Next Vacation",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_id: "4",
-		project_name: "Financial Analyst",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_id: "5",
-		project_name: "Weather Forecaster",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_id: "6",
-		project_name: "Create Meeting Minutes",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_id: "7",
-		project_name: "Plan Your Next Vacation",
-		project_date_created: "2025-03-01",
-	},
-	{
-		project_id: "8",
-		project_name: "Financial Analyst",
-		project_date_created: "2025-03-01",
-	},
-];
-
 /**
  * Renders the Discover Page, allowing users to discover and create agents
  *
  * @component
  */
 export const AgentPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
+	const { data: workspaceResponse, status: fetchStatus } = usePixel<{
+		workspaces: Agent[];
+	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
+
 	/**
 	 * State
 	 */
@@ -82,6 +46,13 @@ export const AgentPage = observer(() => {
 		// Thomas TODO: Implement create room logic
 		console.log("Create room with agent ID:", agentId);
 	};
+
+	/**
+	 * Constants
+	 */
+	const isLoading = fetchStatus === "LOADING";
+	const fetchedAgents = workspaceResponse?.workspaces || [];
+	console.log(isLoading, fetchedAgents);
 
 	return (
 		<Stack
@@ -152,46 +123,53 @@ export const AgentPage = observer(() => {
 			<Stack overflow="auto" paddingRight={2} paddingTop={3}>
 				<div>
 					<Grid container columnSpacing={2} rowSpacing={4}>
-						{ALL_AGENTS.filter((agent) => {
-							const searchText = search
-								? search.toLowerCase()
-								: null;
-							if (searchText) {
-								return agent.project_name
-									.toLowerCase()
-									.includes(searchText);
-							} else {
-								return true;
-							}
-						}).map((agentInfo) => (
-							<Grid
-								item
-								xs={12}
-								sm={6}
-								md={3}
-								key={agentInfo.project_id}
-							>
-								<Stack width="100%" spacing={1} height="100%">
-									<AgentCard
-										name={agentInfo.project_name}
-										description="description"
-										onSecondaryClick={() => {
-											setAgentInfo(agentInfo);
-											setIsAgentModalOpen(true);
-										}}
-										onPrimaryClick={() => {
-											createRoom(agentInfo.project_id);
-										}}
-									/>
-									<Stack paddingLeft={1}>
-										<Typography
-											variant="caption"
-											color="text.secondary"
-										>{`Published ${agentInfo.project_date_created}`}</Typography>
+						{fetchedAgents
+							.filter((agent) => {
+								const searchText = search
+									? search.toLowerCase()
+									: null;
+								if (searchText) {
+									return agent.name
+										.toLowerCase()
+										.includes(searchText);
+								} else {
+									return true;
+								}
+							})
+							.map((agentInfo) => (
+								<Grid
+									item
+									xs={12}
+									sm={6}
+									md={3}
+									key={agentInfo.workspace_id}
+								>
+									<Stack
+										width="100%"
+										spacing={1}
+										height="100%"
+									>
+										<AgentCard
+											agent={agentInfo}
+											onSecondaryClick={() => {
+												setAgentInfo(agentInfo);
+												setIsAgentModalOpen(true);
+											}}
+											onPrimaryClick={() => {
+												createRoom(
+													agentInfo.workspace_id,
+												);
+											}}
+										/>
+										<Stack paddingLeft={1}>
+											<Typography
+												variant="caption"
+												color="text.secondary"
+											>{`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`}</Typography>
+										</Stack>
 									</Stack>
-								</Stack>
-							</Grid>
-						))}
+								</Grid>
+							))}
 					</Grid>
 				</div>
 			</Stack>
