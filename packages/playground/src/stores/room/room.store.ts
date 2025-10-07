@@ -10,7 +10,7 @@ import {
 	type ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { Knowledge, PixelMessage, Tool } from "@/types";
+import type { PixelMessage, Tool } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -68,11 +68,6 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * Vector databases loaded into the room
-		 */
-		knowledge: Knowledge | null;
-
-		/*
 		 * Tools loaded into the room
 		 */
 		tools: Tool[];
@@ -128,7 +123,6 @@ export class RoomStore {
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			knowledge: null,
 			tools: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,

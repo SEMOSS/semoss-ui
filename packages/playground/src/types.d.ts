@@ -25,14 +25,6 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Knowledge {
-	/** Id of the tool */
-	id: string;
-
-	/** Name of the tool */
-	name: string;
-}
-
 export interface Tool {
 	/** Type of the tool */
 	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
