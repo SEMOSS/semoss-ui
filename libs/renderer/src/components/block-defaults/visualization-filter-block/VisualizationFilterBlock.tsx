@@ -158,7 +158,7 @@ export const VisualizationFilterBlock: BlockComponent = observer(({ id }) => {
 	 */
 	const handleReset = async () => {
 		// Update the block's data by removing any selected values
-		setData("selectedValues", []);
+		setData("selectedValues", [...data.listOptions]);
 
 		// Reset the resetChecked state to true to indicate that the reset action has been performed
 		setResetChecked(true);
