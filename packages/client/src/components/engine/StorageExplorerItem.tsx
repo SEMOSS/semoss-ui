@@ -1,0 +1,264 @@
+import { useCallback, useState } from 'react';
+import {
+    DeleteOutline,
+    FolderOutlined,
+    InsertDriveFileOutlined,
+    CloudUploadOutlined,
+    CloudDownloadOutlined,
+    CheckBoxOutlineBlank,
+    CheckBox,
+} from '@mui/icons-material';
+import {
+    CircularProgress,
+    Icon,
+    IconButton,
+    styled,
+    TreeView,
+    Typography,
+} from '@semoss/ui';
+import { usePixel, useRootStore } from '@/hooks';
+
+const StyledNode = styled(TreeView.Item)(({ theme }) => ({
+    '.MuiCollapse-wrapperInner': {
+        height: 'auto',
+        overflow: 'none',
+    },
+}));
+
+const StyledLabel = styled('div', {
+    shouldForwardProp: (prop) => prop !== 'isDragging',
+})<{
+    isDragging: boolean;
+}>(({ theme, isDragging }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: theme.spacing(3),
+    width: '100%',
+    gap: theme.spacing(1),
+    opacity: isDragging ? 0.5 : 1,
+}));
+
+const StyledTypography = styled(Typography)(() => ({
+    overflow: 'hidden',
+    whiteSpace: 'nowrap',
+    textOverflow: 'ellipsis',
+    flex: '1',
+}));
+
+const StyledActionContainer = styled('div')(({ theme }) => ({
+    display: 'flex',
+    alignItems: 'center',
+    gap: theme.spacing(0.5),
+}));
+
+interface StorageExplorerItemProps {
+
+    storageId: string;
+
+    name: string;
+    path: string;
+    isDirectory: boolean;
+    lastModified: string;
+
+    expanded: string[];
+    selected: string[];
+
+    onDragStart?: (
+        event: React.DragEvent<HTMLDivElement>,
+        path: string,
+    ) => void;
+
+    onDragEnd?: (event: React.DragEvent<HTMLDivElement>, path: string) => void;
+
+    onTrashClick?: (
+        event: React.MouseEvent<HTMLButtonElement>,
+        path: string,
+    ) => void;
+
+    onDownload?: (path: string) => void;
+    
+    onSelect?: (path: string, isSelected: boolean) => void;
+}
+
+export const StorageExplorerItem = (props: StorageExplorerItemProps) => {
+    const {
+        storageId,
+        path,
+        name,
+        isDirectory,
+        expanded,
+        selected,
+        onDragStart = () => null,
+        onDragEnd = () => null,
+        onTrashClick = () => null,
+        onDownload = () => null,
+        onSelect = () => null,
+    } = props;
+    const [isHovered, setIsHovered] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const { monolithStore } = useRootStore();
+
+    const isOpen = expanded.indexOf(path) > -1;
+
+    const getStorageFiles = usePixel<string[]>(
+        isDirectory && isOpen
+            ? `Storage(storage = "${storageId}") | ListStoragePath(storagePath='${path}');`
+            : '',
+    );
+
+    const nodeRef = useCallback((ele) => {
+        ele?.addEventListener('focusin', (e) => {
+            e.stopImmediatePropagation();
+        });
+    }, []);
+
+    const handleDownloadClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+        e.stopPropagation();
+        onDownload(path);
+    };
+
+    const childFiles = getStorageFiles.status === 'SUCCESS'
+        ? getStorageFiles.data.map((filePath) => {
+            const pathParts = filePath.split('/').filter(Boolean);
+            const fileName = pathParts[pathParts.length - 1] || filePath;
+            const isChildDirectory = filePath.endsWith('/');
+            
+            return {
+                name: fileName,
+                path: filePath,
+                type: isChildDirectory ? 'directory' : 'file',
+                lastModified: '',
+            };
+        })
+        : [];
+
+    return (
+        <StyledNode
+            ref={nodeRef}
+            key={path}
+            nodeId={path}
+            title={name}
+            label={
+                <StyledLabel
+                    draggable={true}
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    isDragging={isDragging}
+                    onDragStart={(e) => {
+                        setIsDragging(true);
+
+                        onDragStart(e, path);
+                    }}
+                    onDragEnd={(e) => {
+                        setIsDragging(false);
+
+                        onDragEnd(e, path);
+                    }}
+                >
+                    <Icon
+                        color={'disabled'}
+                        fontSize="small"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            const isSelected = selected.includes(path);
+                            onSelect(path, !isSelected);
+                        }}
+                        style={{ cursor: 'pointer' }}
+                    >
+                        {selected.includes(path) ? (
+                            <CheckBox fontSize="inherit" />
+                        ) : (
+                            <CheckBoxOutlineBlank fontSize="inherit" />
+                        )}
+                    </Icon>
+                    <Icon color={'disabled'} fontSize="small">
+                        {isDirectory ? (
+                            <FolderOutlined fontSize="inherit" />
+                        ) : (
+                            <InsertDriveFileOutlined fontSize="inherit" />
+                        )}
+                    </Icon>
+                    <StyledTypography variant="body2">{name}</StyledTypography>
+                    {isHovered ? (
+                        <StyledActionContainer>
+                            {isDirectory && (
+                                <IconButton
+                                    title={`Upload to ${name}`}
+                                    size="small"
+                                    color={'default'}
+                                >
+                                    <CloudUploadOutlined fontSize="inherit" />
+                                </IconButton>
+                            )}
+                            {!isDirectory && (
+                                <IconButton
+                                    title={`Download ${name}`}
+                                    onClick={handleDownloadClick}
+                                    size="small"
+                                    color={'default'}
+                                >
+                                    <CloudDownloadOutlined fontSize="inherit" />
+                                </IconButton>
+                            )}
+                            <IconButton
+                                title={`Delete ${name}`}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+
+                                    onTrashClick(e, path);
+                                }}
+                                size="small"
+                                color={'default'}
+                            >
+                                <DeleteOutline fontSize="inherit" />
+                            </IconButton>
+                        </StyledActionContainer>
+                    ) : null}
+                </StyledLabel>
+            }
+        >
+            {isDirectory ? (
+                <>
+                    {getStorageFiles.status === 'INITIAL' ||
+                    getStorageFiles.status === 'LOADING' ? (
+                        <Icon color="disabled">
+                            <CircularProgress color="inherit" size={'small'} />
+                        </Icon>
+                    ) : null}
+                    {getStorageFiles.status === 'SUCCESS'
+                        ? childFiles.map((n) => {
+                               return (
+                                   <StorageExplorerItem
+                                       key={n.path}
+                                       storageId={storageId}
+                                       isDirectory={n.type === 'directory'}
+                                       name={n.name}
+                                       path={n.path}
+                                       lastModified={n.lastModified}
+                                       expanded={expanded}
+                                       selected={selected}
+                                       onTrashClick={(e, path) => {
+                                           onTrashClick(e, path);
+                                       }}
+                                       onDragStart={(e, path) => {
+                                           onDragStart(e, path);
+                                       }}
+                                       onDragEnd={(e, path) => {
+                                           onDragEnd(e, path);
+                                       }}
+                                       onDownload={(path) => {
+                                           onDownload(path);
+                                       }}
+                                       onSelect={(path, isSelected) => {
+                                           onSelect(path, isSelected);
+                                       }}
+                                   />
+                               );
+                           })
+                        : null}
+                </>
+            ) : null}
+        </StyledNode>
+    );
+}; 
