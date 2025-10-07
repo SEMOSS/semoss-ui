@@ -29,14 +29,6 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Knowledge {
-	/** Id of the tool */
-	id: string;
-
-	/** Name of the tool */
-	name: string;
-}
-
 export interface Tool {
 	/** Type of the tool */
 	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
@@ -83,14 +75,10 @@ interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
-	ornaments: {
-		chunks: unknown[];
-	};
 }
 
 interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
-	visible: true;
 	inputUIPrompt: string;
 	files: {
 		fileName: string;
@@ -112,13 +100,14 @@ interface InputToolExecPixelMessage extends AbstractPixelMessage {
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
-	visible: true;
 	content: string;
+	ornaments: {
+		PLAYGROUND_MESSAGE_TYPE?: "COT";
+	};
 }
 
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
-	visible: true;
 	tool_responses: {
 		/** tool execution id */
 		id: string;
@@ -141,4 +130,48 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
 	}[];
+}
+
+/**
+ * Plan
+ */
+export interface Plan {
+	user_prompt: string;
+	plan_id: string;
+	steps: PlanStep[];
+}
+
+export interface PlanStep {
+	step_number: number;
+	step_name: string;
+	description: string;
+	type:
+		| "tool_call"
+		| "llm_reasoning"
+		| "human_intervention"
+		| "no_tool_available";
+	status: "pending" | "in_progress" | "completed" | "failed";
+	details:
+		| {
+				stepType: "tool_call";
+				tool_name: string;
+				parameters: Record<string, unknown>;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "llm_reasoning";
+				prompt: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "human_intervention";
+				required_role: string;
+				instructions: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "no_tool_available";
+				missing_capability: string;
+				rationaleForStep: string;
+		  };
 }
