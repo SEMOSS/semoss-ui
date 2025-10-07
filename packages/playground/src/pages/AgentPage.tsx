@@ -9,7 +9,8 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { AgentCard } from "@/components/agent/AgentCard";
+import { AgentCard, AgentModal } from "@/components/agent";
+import type { Agent } from "@/types";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
@@ -17,38 +18,46 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 // TODO: Pull from backend
-const ALL_AGENTS = [
+const ALL_AGENTS: Agent[] = [
 	{
-		NAME: "Weather Forecaster1",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "1",
+		project_name: "Weather Forecaster",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Create Meeting Minutes2",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_name: "Create Meeting Minutes",
+		project_id: "2",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Plan Your Next Vacation3",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "3",
+		project_name: "Plan Your Next Vacation",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Financial Analyst4",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "4",
+		project_name: "Financial Analyst",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Weather Forecaster5",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "5",
+		project_name: "Weather Forecaster",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Create Meeting Minutes6",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "6",
+		project_name: "Create Meeting Minutes",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Plan Your Next Vacation7",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "7",
+		project_name: "Plan Your Next Vacation",
+		project_date_created: "2025-03-01",
 	},
 	{
-		NAME: "Financial Analyst8",
-		PUBLISH_DATE: "Mar. 01, 2025",
+		project_id: "8",
+		project_name: "Financial Analyst",
+		project_date_created: "2025-03-01",
 	},
 ];
 
@@ -67,6 +76,8 @@ export const AgentPage = observer(() => {
 	 * State
 	 */
 	const [search, setSearch] = useState("");
+	const [isAgentModalOpen, setIsAgentModalOpen] = useState<boolean>(false);
+	const [agentInfo, setAgentInfo] = useState<Agent | null>(null);
 
 	return (
 		<Stack
@@ -126,9 +137,9 @@ export const AgentPage = observer(() => {
 								? search.toLowerCase()
 								: null;
 							if (searchText) {
-								return agent.NAME.toLowerCase().includes(
-									searchText,
-								);
+								return agent.project_name
+									.toLowerCase()
+									.includes(searchText);
 							} else {
 								return true;
 							}
@@ -138,18 +149,22 @@ export const AgentPage = observer(() => {
 								xs={12}
 								sm={6}
 								md={3}
-								key={agentInfo.NAME}
+								key={agentInfo.project_id}
 							>
 								<Stack width="100%" spacing={1} height="100%">
 									<AgentCard
-										name={agentInfo.NAME}
+										name={agentInfo.project_name}
 										description="description"
+										onSecondaryClick={() => {
+											setAgentInfo(agentInfo);
+											setIsAgentModalOpen(true);
+										}}
 									/>
 									<Stack paddingLeft={1}>
 										<Typography
 											variant="caption"
 											color="text.secondary"
-										>{`Published ${agentInfo.PUBLISH_DATE}`}</Typography>
+										>{`Published ${agentInfo.project_date_created}`}</Typography>
 									</Stack>
 								</Stack>
 							</Grid>
@@ -157,6 +172,11 @@ export const AgentPage = observer(() => {
 					</Grid>
 				</div>
 			</Stack>
+			<AgentModal
+				open={isAgentModalOpen}
+				onClose={() => setIsAgentModalOpen(false)}
+				agentInfo={agentInfo}
+			/>
 		</Stack>
 	);
 });

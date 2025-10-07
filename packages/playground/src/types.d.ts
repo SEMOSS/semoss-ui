@@ -9,7 +9,11 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
+	project_date_created: string;
 }
+
+// TODO: define properly
+export interface Agent extends App {}
 
 /**
  * Instructions from the backend
