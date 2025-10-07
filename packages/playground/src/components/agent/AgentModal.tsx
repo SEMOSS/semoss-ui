@@ -29,7 +29,7 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 	};
 
 	return (
-		<Modal open={open} onClose={onClose}>
+		<Modal open={open} onClose={() => onClose()}>
 			<div>
 				{isCreatingNew
 					? "Create Agent Modal"
