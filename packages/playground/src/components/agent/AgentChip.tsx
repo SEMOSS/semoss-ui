@@ -1,4 +1,5 @@
-import { Tooltip } from "@semoss/ui";
+import { ErrorOutline, LightbulbOutlined } from "@mui/icons-material";
+import { Chip, Skeleton, Tooltip } from "@semoss/ui";
 import type { Agent } from "@/types";
 
 export interface AgentChipProps {
@@ -12,6 +13,11 @@ export interface AgentChipProps {
  * @component
  */
 export const AgentChip = ({ agent, loading }: AgentChipProps) => {
+	/**
+	 * Constants
+	 **/
+	const isAgentValid = agent && !loading;
+
 	return (
 		<Tooltip
 			title={
@@ -23,7 +29,24 @@ export const AgentChip = ({ agent, loading }: AgentChipProps) => {
 			}
 			placement="top"
 		>
-			<div>TODO</div>
+			<Chip
+				icon={
+					loading || isAgentValid ? (
+						<LightbulbOutlined />
+					) : (
+						<ErrorOutline />
+					)
+				}
+				label={
+					loading ? (
+						<Skeleton width="36px" height="100%" />
+					) : isAgentValid ? (
+						agent.name
+					) : (
+						"Error loading agent"
+					)
+				}
+			/>
 		</Tooltip>
 	);
 };
