@@ -126,17 +126,6 @@ export const ListenerSettings = observer(
 			}
 		};
 
-		const getCellNumber = (qId, cId) => {
-			try {
-				const query = state.getQuery(qId);
-				if (query) {
-					return query.list.indexOf(cId) + 1;
-				}
-			} catch (e) {
-				return "unknown";
-			}
-		};
-
 		/**
 		 * Open the overlay to create a edit action
 		 *
@@ -246,6 +235,8 @@ export const ListenerSettings = observer(
 				} else if (item.payload["destinationType"]) {
 					if (item.payload["destination"])
 						display = item.payload["destination"];
+				} else if (item.payload["variable"]) {
+					display = item.payload["variable"];
 				} else {
 					if (item.payload["name"]) {
 						display = item.payload["name"];
