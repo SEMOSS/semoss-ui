@@ -97,7 +97,6 @@ export const useAutoScroll = <T>(dependency: T) => {
 		let ticking = false;
 
 		const throttledHandleScroll = () => {
-			console.log("scrolling");
 			if (!ticking) {
 				requestAnimationFrame(() => {
 					handleScroll();

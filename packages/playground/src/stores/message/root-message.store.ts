@@ -83,7 +83,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.files.length ? `images=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "images=[],"}
+${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
 ${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
@@ -96,7 +96,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.files.length ? `images=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "images=[],"}
+${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
 ${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,

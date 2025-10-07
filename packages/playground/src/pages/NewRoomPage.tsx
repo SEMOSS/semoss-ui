@@ -174,7 +174,9 @@ export const NewRoomPage = observer(() => {
 									</Tooltip>
 									{ENABLE_PLANNING && (
 										<Tooltip
-											title={"Generate plan"}
+											title={
+												"Note: This is a beta feature. Use this to generate plan"
+											}
 											placement="top"
 										>
 											<IconButton
