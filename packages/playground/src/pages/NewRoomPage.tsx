@@ -25,6 +25,8 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
 	: "";
 
+const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
+
 const StyledPage = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
@@ -170,27 +172,29 @@ export const NewRoomPage = observer(() => {
 											<Tune color="inherit" />
 										</IconButton>
 									</Tooltip>
-									<Tooltip
-										title={"Generate plan"}
-										placement="top"
-									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Generate plan"
-											disabled={isLoading}
-											color={
-												isPlanning
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												setIsPlanning(!isPlanning);
-											}}
+									{ENABLE_PLANNING && (
+										<Tooltip
+											title={"Generate plan"}
+											placement="top"
 										>
-											<FormatListNumbered color="inherit" />
-										</IconButton>
-									</Tooltip>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Generate plan"
+												disabled={isLoading}
+												color={
+													isPlanning
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsPlanning(!isPlanning);
+												}}
+											>
+												<FormatListNumbered color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
 								</>
 							}
 							onPrompt={async (prompt, files) => {

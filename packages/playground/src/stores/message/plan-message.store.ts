@@ -168,7 +168,14 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 	 */
 	saveTool = () => {
 		const step = this.plan.steps[this.executionIdx];
-		step.status = "completed";
+
+		runInAction(() => {
+			step.status = "completed";
+		});
+
+		// move forward and execute the next one
+		this.executionIdx++;
+		this.executeStep();
 	};
 
 	/**
