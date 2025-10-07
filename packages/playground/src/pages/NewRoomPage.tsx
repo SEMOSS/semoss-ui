@@ -21,6 +21,7 @@ import { AgentChip } from "@/components/agent";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat, useLoadingPixel } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import type { Agent } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
@@ -63,7 +64,7 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const { system } = useInsight();
 	const { agentId } = useParams() as { agentId?: string };
-	const [agent, isLoadingAgent] = useLoadingPixel(
+	const [agent, isLoadingAgent] = useLoadingPixel<Agent>(
 		`GetWorkspace("${agentId}");`,
 		null,
 		!agentId,
@@ -114,7 +115,15 @@ export const NewRoomPage = observer(() => {
 			prompt,
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
-			options,
+			agentId && agent !== null
+				? {
+						instructions: agent.system_prompt,
+						// knowledge: null,
+						tools: [],
+						tokenLength: TOKEN_LENGTH,
+						temperature: TEMPERATURE,
+					}
+				: options,
 		);
 
 		// ask the room
@@ -162,7 +171,7 @@ export const NewRoomPage = observer(() => {
 							{APP_DESCRIPTION}
 						</Typography>
 						<RoomInput
-							isLoading={isLoading}
+							isLoading={isLoading || isLoadingAgent}
 							isDisabled={false}
 							minRows={4}
 							maxRows={8}
