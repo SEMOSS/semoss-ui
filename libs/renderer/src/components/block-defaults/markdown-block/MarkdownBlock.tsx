@@ -1,0 +1,50 @@
+import { observer } from "mobx-react-lite";
+import { type CSSProperties, useEffect } from "react";
+import { Markdown } from "@semoss/ui";
+import { useBlock, useTypeWriter } from "../../../hooks";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+
+export interface MarkdownBlockDef extends BlockDef<"markdown"> {
+	widget: "markdown";
+	data: {
+		style: CSSProperties;
+		markdown: string;
+		isStreaming: boolean;
+		show: string;
+	};
+	slots: never;
+	listeners: {
+		preProcess: {
+			type: "sync" | "async";
+			order: ListenerActions[];
+		};
+	};
+}
+
+export const MarkdownBlock: BlockComponent = observer(({ id }) => {
+	const { attrs, data, listeners } = useBlock<MarkdownBlockDef>(id);
+	const markdownTxt =
+		typeof data.markdown == "string"
+			? data.markdown
+			: JSON.stringify(data.markdown);
+	let displayTxt = useTypeWriter(data.isStreaming ? markdownTxt : "");
+
+	if (!data.isStreaming) displayTxt = markdownTxt;
+
+	useEffect(() => {
+		if (listeners.preProcess) {
+			listeners.preProcess();
+		}
+	}, []);
+
+	return (
+		<div
+			style={{
+				...data.style,
+			}}
+			{...attrs}
+		>
+			<Markdown>{displayTxt}</Markdown>
+		</div>
+	);
+});

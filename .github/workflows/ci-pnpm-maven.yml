@@ -1,0 +1,509 @@
+name: CI
+on:
+    push:
+        branches:
+            - dev
+            - main
+    pull_request:
+        branches:
+            - dev
+            - main
+    workflow_dispatch:
+
+env:
+    MAVEN_OPTS: '-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true'
+    MAVEN_CLI_OPTS: '-s ./settings.xml --batch-mode'
+    FF_USE_FASTZIP: 'true'
+    GPG_PASS_PHRASE: ${{ secrets.GPG_PASS_PHRASE }}
+    RELEASE: ${{ vars.RELEASE }}
+    MAVEN_REPO_TOKEN: ${{ vars.MAVEN_REPO_TOKEN }}
+    MAVEN_REPO_TOKEN_PASS: ${{ vars.MAVEN_REPO_TOKEN_PASS }}
+    MAVEN_CENTRAL_PORTAL_REPO_USERNAME: ${{ vars.MAVEN_CENTRAL_PORTAL_REPO_USERNAME }}
+    MAVEN_CENTRAL_PORTAL_REPO_PASSWORD: ${{ vars.MAVEN_CENTRAL_PORTAL_REPO_PASSWORD }}
+    
+jobs:
+    pnpm_build_dev:
+        runs-on: self-hosted
+        if: ${{ vars.RELEASE != 'TRUE'  && (github.event_name =='push' || github.event_name =='pull_request')  }}
+        container:
+            image: node:24-bullseye
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Install maven
+              run: |
+                  apt-get update
+                  apt-get install -y maven
+            
+            - name: Install n (Node version manager)
+              run: npm install -g n
+
+            # ---------- Build semoss-ui (Node 24) -----------                
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                version: 10.13.1
+
+            - name: Install pnpm dependencies
+              run: |
+                node -v
+                pnpm install --ignore-scripts
+
+            - name: Build Component Library
+              run: |
+                cd libs/ui
+                pnpm run build
+
+            - name: Build SDK
+              run: |
+                cd libs/sdk
+                pnpm run build    
+
+            - name: Build Renderer Library
+              run: |
+                cd libs/renderer
+                pnpm run build
+
+            - name: Build semoss-ui
+              run: |
+                cd packages/client
+                pnpm run build
+
+            - name: Build playground
+              run: |
+                cd packages/playground
+                pnpm run build
+
+            # ---------- Download and Set Up semoss/bi -----------
+            
+            - name: Remove previous legacy folder
+              run: rm -rf packages/legacy
+
+            - name: Install jq
+              run: apt-get update && apt-get install -y jq
+            
+            - name: Download workflow artifact from another repo
+              env:
+                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+              run: |
+                # Set variables
+                REPO="SEMOSS/bi"
+                ARTIFACT_NAME="bi-build"        
+                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
+                
+                # 1. Find the latest successful workflow run (customize as needed)
+                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
+                  | jq -r '.workflow_runs[0].id')
+                
+                # 2. List artifacts for that run
+                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
+                
+                # 3. Download the artifact
+                curl -L -H "Authorization: token $GH_TOKEN" \
+                  -o artifact.zip \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+                
+            - name: Move SEMOSS/bi to packages/legacy
+              run: |
+                unzip artifact.zip -d ./packages/legacy
+                ls -als packages/legacy
+
+            - name: Maven clean install
+              run: |
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  rm -rf .m2/repository/org/semoss
+
+            - name: Prepare artifact folder structure
+              run: |
+                mkdir -p semoss-ui-build/packages
+                mkdir -p semoss-ui-build/packages/client
+                mkdir -p semoss-ui-build/packages/playground
+                cp -r packages/client/dist semoss-ui-build/packages/client
+                cp -r packages/playground/dist semoss-ui-build/packages/playground
+                cp -r packages/legacy semoss-ui-build/packages
+                cp -r index.html semoss-ui-build/
+            
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                name: semoss-ui-build
+                path: | 
+                    semoss-ui-build/
+
+
+            # - name: Save artifacts
+            #   if: success()
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #       name: semossweb-artifact
+            #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
+
+            # - name: Delete old artifacts
+            #   run: |
+            #     echo "Deleting old artifacts..."
+            #     ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #       "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" | jq -r '.artifacts | sort_by(.created_at) | reverse | .[1:] | .[].id')
+            #     for ARTIFACT_ID in $ARTIFACTS; do
+            #       curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #         "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
+            #     done
+            #   env:
+            #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    pnpm_build_deploy:
+        runs-on: self-hosted
+        if: ${{ vars.RELEASE != 'TRUE'  && github.event_name =='workflow_dispatch' }}
+        container:
+            image: node:24-bullseye
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # - name: Cache node modules and Maven repository
+            #   uses: actions/cache@v4
+            #   with:
+            #       path: |
+            #           node_modules
+            #           .m2/repository
+            #           dist
+            #           index.html
+            #       key: ${{ github.ref_name }}
+
+            # - name: Delete contents of legacy folder
+            #   run: |
+            #       echo "Remove and recreate the legacy folder"
+            #       rm -rf legacy
+            #       mkdir legacy
+            #       ls -als
+
+            # - name: Download contents of SEMOSS/bi project
+            #   run: |
+            #       echo "Download SEMOSS/bi as a zip file"
+            #       mkdir -p tmp
+            #       curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+            #       echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+            #       unzip tmp/main.zip -d tmp/
+            #       echo "Delete the playsheet folder from semoss/bi files"
+            #       rm -rf tmp/bi-main/playsheet/
+            #       ls -als tmp/bi-main/
+            #       echo "Remove zip file"
+            #       rm tmp/main.zip
+            
+            # - name: Move SEMOSS/bi files into the legacy folder
+            #   run: |
+            #       echo "Move contents of SEMOSS/bi into legacy folder"
+            #       cp -r tmp/bi-main/. legacy/
+            #       echo "Delete tmp folder"
+            #       rm -rf tmp/
+            #       echo "list files under legacy folder"
+            #       ls -als legacy
+
+            - name: Install maven
+              run: |
+                  apt-get update
+                  apt-get install -y maven
+            
+            - name: Install n (Node version manager)
+              run: npm install -g n
+
+            # ---------- Build semoss-ui (Node 24) -----------                
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                version: 10.13.1
+
+            - name: Install npm dependencies
+              run: |
+                node -v
+                pnpm install --ignore-scripts
+
+            - name: Build Component Library
+              run: |
+                cd libs/ui
+                pnpm run build
+
+            - name: Build SDK
+              run: |
+                cd libs/sdk
+                pnpm run build    
+
+            - name: Build Renderer Library
+              run: |
+                cd libs/renderer
+                pnpm run build
+
+            - name: Build semoss-ui
+              run: |
+                cd packages/client
+                pnpm run build
+
+            - name: Build playground
+              run: |
+                cd packages/playground
+                pnpm run build
+
+            # ---------- Download and Set Up semoss/bi -----------
+            
+            - name: Remove previous legacy folder
+              run: rm -rf packages/legacy
+
+            - name: Install jq
+              run: apt-get update && apt-get install -y jq
+            
+            - name: Download workflow artifact from another repo
+              env:
+                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+              run: |
+                # Set variables
+                REPO="SEMOSS/bi"
+                ARTIFACT_NAME="bi-build"        
+                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
+                
+                # 1. Find the latest successful workflow run (customize as needed)
+                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
+                  | jq -r '.workflow_runs[0].id')
+                
+                # 2. List artifacts for that run
+                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
+                
+                # 3. Download the artifact
+                curl -L -H "Authorization: token $GH_TOKEN" \
+                  -o artifact.zip \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+                
+            - name: Move SEMOSS/bi to packages/legacy
+              run: |
+                unzip artifact.zip -d ./packages/legacy
+                ls -als packages/legacy
+            
+            - name: Maven clean install
+              run: |
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  rm -rf .m2/repository/org/semoss
+
+            # ---------- Install Dependencies and build -----------
+             
+            # - name: Install dependencies
+            #   run: |
+            #       echo "Event Name: ${{ github.event_name }}"
+            #       echo "Release: ${{ vars.RELEASE }}"
+            #       apt-get update
+            #       apt-get install -y maven
+            #       npm install -g pnpm@10.10
+            #       pnpm install --ignore-scripts
+
+            # - name: Build
+            #   env:
+            #       NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
+            #   run: npx nx run-many -t build -p @semoss/client @semoss/legacy --verbose
+
+            - name: Deploy with Maven
+              shell: bash
+              run: |
+                  REF_NAME=$( echo $GITHUB_REF | sed 's|refs/heads/||')
+                  if [[ "$REF_NAME" != 'dev' && "$REF_NAME" != 'main' ]]; then
+                    mvn clean install -DfailIfNoTests=false -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  elif [[ "$REF_NAME" == 'dev' || "$REF_NAME" == 'main' ]]; then
+                    mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  fi
+              env:
+                  GITHUB_REF: ${{ github.ref }}
+
+            - name: Remove cache to save space
+              run: rm -rf .m2/repository/org/semoss
+
+            - name: Upload WAR to Nexus
+              if: github.ref_name != 'dev' && github.ref_name != 'main'
+              env:
+                  NEXUS_USERNAME: ${{ secrets.NEXUS_USERNAME }}
+                  NEUXS_PASSWORD: ${{secrets.NEUXS_PASSWORD }}
+                  GITHUB_REF: ${{ github.ref }}
+              run: |
+                  REF_NAME=$( echo $GITHUB_REF | sed 's|refs/heads/||')
+                  WAR_FILE=$(ls target/*.war | head -n 1)
+                  if [ -f "$WAR_FILE" ]; then
+                    echo "Uploading WAR file: (basename $WAR_FILE)"
+                    curl -v -u "$NEXUS_USERNAME:$NEUXS_PASSWORD" \
+                    --upload-file "$WAR_FILE" \
+                    "https://artifact.semoss.org/repository/semoss-ui-hosted-repo/$REF_NAME/$(basename $WAR_FILE)"
+                  else
+                    echo "No WAR file found in the target directory."
+                  fi
+
+            # - name: Save artifacts
+            #   if: success()
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #       name: semossweb-artifact
+            #       path: target/semossweb-${{ vars.VERSION }}-SNAPSHOT.war
+
+            # - name: Delete old artifacts
+            #   run: |
+            #     echo "Deleting old artifacts..."
+            #     ARTIFACTS=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #       "https://api.github.com/repos/${{ github.repository }}/actions/artifacts" | jq -r '.artifacts | sort_by(.created_at) | reverse | .[1:] | .[].id')
+            #     for ARTIFACT_ID in $ARTIFACTS; do
+            #       curl -s -X DELETE -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            #         "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID"
+            #     done
+            #   env:
+            #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    pnpm_build_release:
+        runs-on: self-hosted
+        if: ${{ vars.RELEASE == 'TRUE' && github.event_name == 'workflow_dispatch' && (github.ref_name == 'main' || github.ref_name == 'dev') }}
+        container:
+            image: node:24-bullseye
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            # - name: Install dependencies
+            #   run: |
+            #       echo "Event Name: ${{ github.event_name }}"
+            #       echo "Release: ${{ vars.RELEASE }}"
+            #       apt-get update
+            #       apt-get install -y maven
+            #       npm install -g pnpm@10.10
+            #       pnpm install --ignore-scripts
+
+            # - name: Build
+            #   env:
+            #       NX_REJECT_UNKNOWN_LOCAL_CACHE: 0
+            #   run: npx nx run-many -t build -p @semoss/client @semoss/legacy --verbose
+
+            # - name: Download contents of SEMOSS/bi project
+            #   run: |
+            #       echo "Download SEMOSS/bi as a zip file"
+            #       mkdir -p tmp
+            #       curl -L -u "${{ secrets.SEMOSS_GITHUB_USERNAME }}:${{ secrets.SEMOSS_GITHUB_PAT }}" -o tmp/main.zip https://github.com/SEMOSS/bi/archive/refs/heads/main.zip
+            #       echo "Unzip contents of the SEMOSS/bi to the tmp folder"
+            #       unzip tmp/main.zip -d tmp/
+            #       echo "Delete the playsheet folder from semoss/bi files"
+            #       rm -rf tmp/bi-main/playsheet/
+            #       ls -als tmp/bi-main/
+            #       echo "Remove zip file"
+            #       rm tmp/main.zip
+            
+            # - name: Move SEMOSS/bi files into the legacy folder
+            #   run: |
+            #       echo "Move contents of SEMOSS/bi into legacy folder"
+            #       cp -r tmp/bi-main/. legacy/
+            #       echo "Delete tmp folder"
+            #       rm -rf tmp/
+            #       echo "list files under legacy folder"
+            #       ls -als legacy
+
+            - name: Install maven
+              run: |
+                  apt-get update
+                  apt-get install -y maven
+            
+            - name: Install n (Node version manager)
+              run: npm install -g n
+
+            # ---------- Build semoss-ui (Node 24) -----------                
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+              with:
+                version: 10.13.1
+
+            - name: Install npm dependencies
+              run: |
+                node -v
+                pnpm install --ignore-scripts
+
+            - name: Build Component Library
+              run: |
+                cd libs/ui
+                pnpm run build
+
+            - name: Build SDK
+              run: |
+                cd libs/sdk
+                pnpm run build    
+
+            - name: Build Renderer Library
+              run: |
+                cd libs/renderer
+                pnpm run build
+
+            - name: Build semoss-ui
+              run: |
+                cd packages/client
+                pnpm run build
+
+            - name: Build playground
+              run: |
+                cd packages/playground
+                pnpm run build
+
+            # ---------- Download and Set Up semoss/bi -----------
+            
+            - name: Remove previous legacy folder
+              run: rm -rf packages/legacy
+
+            - name: Install jq
+              run: apt-get update && apt-get install -y jq
+            
+            - name: Download workflow artifact from another repo
+              env:
+                GH_TOKEN: ${{ secrets.SEMOSS_GITHUB_PAT }}
+              run: |
+                # Set variables
+                REPO="SEMOSS/bi"
+                ARTIFACT_NAME="bi-build"        
+                GH_TOKEN="${{ secrets.SEMOSS_GITHUB_PAT }}"  
+                
+                # 1. Find the latest successful workflow run (customize as needed)
+                RUN_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs?status=success&per_page=1" \
+                  | jq -r '.workflow_runs[0].id')
+                
+                # 2. List artifacts for that run
+                ARTIFACT_ID=$(curl -s -H "Authorization: token $GH_TOKEN" \
+                  "https://api.github.com/repos/$REPO/actions/runs/$RUN_ID/artifacts" \
+                  | jq -r --arg NAME "$ARTIFACT_NAME" '.artifacts[] | select(.name == $NAME) | .id')
+                
+                # 3. Download the artifact
+                curl -L -H "Authorization: token $GH_TOKEN" \
+                  -o artifact.zip \
+                  "https://api.github.com/repos/$REPO/actions/artifacts/$ARTIFACT_ID/zip"
+                
+            - name: Move SEMOSS/bi to packages/legacy
+              run: |
+                unzip artifact.zip -d ./packages/legacy
+                ls -als packages/legacy
+            
+            - name: Maven clean install
+              run: |
+                  /usr/share/maven/bin/mvn $MAVEN_CLI_OPTS clean install -Dci.version=${{ vars.VERSION }}-SNAPSHOT
+                  rm -rf .m2/repository/org/semoss
+                   
+            # ---------- Install Dependencies and build -----------
+
+            # - name: Install dependencies
+            #   run: |
+            #       echo "Event Name: ${{ github.event_name }}"
+            #       echo "Release: ${{ vars.RELEASE }}"
+            #       apt-get update
+            #       apt-get install -y maven
+            #       npm install -g pnpm@10.10
+            #       pnpm install --ignore-scripts
+                  
+            - name: Deploy with Maven
+              shell: bash
+              run: |
+                  mvn $MAVEN_CLI_OPTS deploy -P deploy -Dci.version=${{ vars.VERSION }}
+              env:
+                  GITHUB_REF: ${{ github.ref }}
+
+            - name: Remove cache to save space
+              run: rm -rf .m2/repository/org/semoss
