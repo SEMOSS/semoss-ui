@@ -1,6 +1,7 @@
 import { Search } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -32,6 +33,7 @@ export const AgentPage = observer(() => {
 	const { data: workspaceResponse, status: fetchStatus } = usePixel<{
 		workspaces: Agent[];
 	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
+	const navigate = useNavigate();
 
 	/**
 	 * State
@@ -44,8 +46,7 @@ export const AgentPage = observer(() => {
 	 * Functions
 	 */
 	const createRoom = (agentId: string) => {
-		// Thomas TODO: Implement create room logic
-		console.log("Create room with agent ID:", agentId);
+		navigate(`/agent/${agentId}/new`);
 	};
 
 	/**

@@ -6,7 +6,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Container,
@@ -18,7 +18,7 @@ import {
 } from "@semoss/ui";
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat } from "@/hooks";
+import { useChat, useLoadingPixel } from "@/hooks";
 import type { RoomStore } from "@/stores";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
@@ -55,9 +55,19 @@ const StyledButton = styled("button")(({ theme }) => ({
 }));
 
 export const NewRoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
+	const { agentId } = useParams() as { agentId?: string };
+	const [agent, isLoadingAgent] = useLoadingPixel(
+		`GetWorkspace("${agentId}");`,
+		null,
+		!agentId,
+	);
+	console.log(agent, isLoadingAgent);
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -65,6 +75,9 @@ export const NewRoomPage = observer(() => {
 			? (system.config.logins[loginType] as unknown as string)
 			: "";
 
+	/**
+	 * State
+	 */
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
@@ -77,6 +90,10 @@ export const NewRoomPage = observer(() => {
 	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+	/**
+	 * Functions
+	 */
 
 	/**
 	 * Ask the model
