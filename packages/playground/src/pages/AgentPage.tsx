@@ -2,6 +2,7 @@ import { Search } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
+	Button,
 	Grid,
 	InputAdornment,
 	Stack,
@@ -17,7 +18,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 }));
 
-// TODO: Pull from backend
+// Thomas TODO: Pull from backend
 const ALL_AGENTS: Agent[] = [
 	{
 		project_id: "1",
@@ -68,16 +69,19 @@ const ALL_AGENTS: Agent[] = [
  */
 export const AgentPage = observer(() => {
 	/**
-	 * Library hooks
-	 */
-	// const navigate = useNavigate();
-
-	/**
 	 * State
 	 */
 	const [search, setSearch] = useState("");
 	const [isAgentModalOpen, setIsAgentModalOpen] = useState<boolean>(false);
 	const [agentInfo, setAgentInfo] = useState<Agent | null>(null);
+
+	/**
+	 * Functions
+	 */
+	const createRoom = (agentId: string) => {
+		// Thomas TODO: Implement create room logic
+		console.log("Create room with agent ID:", agentId);
+	};
 
 	return (
 		<Stack
@@ -102,7 +106,23 @@ export const AgentPage = observer(() => {
 						processes.
 					</Typography>
 				</Stack>
-				<div>todo: build your own agent section</div>
+				<Stack
+					direction="row"
+					justifyContent="space-between"
+					alignItems="center"
+					sx={{ backgroundColor: "#d13784ff" }}
+				>
+					<div>Travon TODO: build your own agent section</div>
+					<Button
+						onClick={() => {
+							setAgentInfo(null);
+							setIsAgentModalOpen(true);
+						}}
+						variant="contained"
+					>
+						Start Building
+					</Button>
+				</Stack>
 				<Stack
 					direction="row"
 					width="100%"
@@ -159,6 +179,9 @@ export const AgentPage = observer(() => {
 											setAgentInfo(agentInfo);
 											setIsAgentModalOpen(true);
 										}}
+										onPrimaryClick={() => {
+											createRoom(agentInfo.project_id);
+										}}
 									/>
 									<Stack paddingLeft={1}>
 										<Typography
@@ -174,7 +197,12 @@ export const AgentPage = observer(() => {
 			</Stack>
 			<AgentModal
 				open={isAgentModalOpen}
-				onClose={() => setIsAgentModalOpen(false)}
+				onClose={(newAgentId) => {
+					setIsAgentModalOpen(false);
+					if (newAgentId) {
+						createRoom(newAgentId);
+					}
+				}}
 				agentInfo={agentInfo}
 			/>
 		</Stack>
