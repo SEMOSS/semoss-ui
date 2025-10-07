@@ -3,8 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const THRESHOLD = 100;
 
 /**
- * Custom hook for auto-scrolling to bottom when new content is added
- * Only scrolls if user hasn't manually scrolled up
+ * Auto scroll to bottom when new content is added. This only scrolls if the user hasn't scrolled up.
  */
 export const useAutoScroll = <T>(dependency: T) => {
 	const [scrollEle, setScrollEle] = useState<HTMLDivElement | null>(null);

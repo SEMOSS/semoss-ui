@@ -59,7 +59,7 @@ const StyledScroll = styled("div")(() => ({
 	position: "relative",
 }));
 
-const StyledScrollToBottomButton = styled(IconButton)(({ theme }) => ({
+const StyledScrollButton = styled(IconButton)(({ theme }) => ({
 	position: "absolute",
 	bottom: "16px",
 	right: "16px",
@@ -322,13 +322,14 @@ export const RoomPage = observer(() => {
 						</StyledScroll>
 						{isUserScrolled && (
 							<Tooltip title="Scroll to bottom" placement="top">
-								<StyledScrollToBottomButton
-									size="medium"
+								<StyledScrollButton
+									size="small"
+									color="primary"
 									onClick={() => scrollToBottom()}
 									aria-label="Scroll to bottom"
 								>
 									<KeyboardArrowDown fontSize="medium" />
-								</StyledScrollToBottomButton>
+								</StyledScrollButton>
 							</Tooltip>
 						)}
 					</StyledScrollContainer>
