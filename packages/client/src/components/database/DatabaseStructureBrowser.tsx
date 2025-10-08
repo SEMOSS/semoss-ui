@@ -72,6 +72,9 @@ const StyledTableHeaderCell = styled("td")(({ theme }) => ({
 	"&.col-4": {
 		width: "20%",
 	},
+	"&.center": {
+		textAlign: "center",
+	},
 }));
 
 const StyledColumnRow = styled("tr")<{ selected: boolean }>(({ theme, selected }) => ({
@@ -90,6 +93,13 @@ const StyledTableCell = styled("td")(({ theme }) => ({
 	"&.col-4": {
 		width: "20%",
 	},
+	"&.center": {
+		textAlign: "center",
+	},
+}));
+
+const StyledTableContainer = styled("div")(({ theme }) => ({
+	padding: theme.spacing(1),
 }));
 
 interface Column {
@@ -305,7 +315,7 @@ export const DatabaseStructureBrowser: React.FC<
 				)}
 
 				{searchedStructure.map((table: Table) => (
-					<div key={table.table} style={{ padding: "8px" }}>
+					<StyledTableContainer key={table.table}>
 						<StyledTable>
 							<thead>
 								<StyledTableHeaderRow
@@ -319,15 +329,14 @@ export const DatabaseStructureBrowser: React.FC<
 											: ""
 									}
 								>
-									<StyledTableHeaderCell
-										className="col-4"
-										style={{ textAlign: "center" }}
-									>
-										<Storage
-											fontSize="small"
-											sx={{ color: "#666666" }}
-										/>
-									</StyledTableHeaderCell>
+								<StyledTableHeaderCell
+									className="col-4 center"
+								>
+									<Storage
+										fontSize="small"
+										sx={{ color: "#666666" }}
+									/>
+								</StyledTableHeaderCell>
 									<StyledTableHeaderCell>
 										<Typography
 											variant="subtitle2"
@@ -339,16 +348,15 @@ export const DatabaseStructureBrowser: React.FC<
 											{table.table}
 										</Typography>
 									</StyledTableHeaderCell>
-									<StyledTableHeaderCell
-										className="col-4"
-										style={{ textAlign: "center" }}
+								<StyledTableHeaderCell
+									className="col-4 center"
+								>
+									<IconButton
+										size="small"
+										onClick={(e) => handleExpandClick(table.table, e)}
+										title={expandedTables[table.table] ? "Collapse table" : "Expand table"}
+										sx={{ p: 0.5 }}
 									>
-										<IconButton
-											size="small"
-											onClick={(e) => handleExpandClick(table.table, e)}
-											title={expandedTables[table.table] ? "Collapse table" : "Expand table"}
-											sx={{ p: 0.5 }}
-										>
 											{expandedTables[table.table] ? (
 												<ExpandMore fontSize="small" />
 											) : (
@@ -377,12 +385,9 @@ export const DatabaseStructureBrowser: React.FC<
 														)
 													}
 												>
-													<StyledTableCell
-														className="col-4"
-														style={{
-															textAlign: "center",
-														}}
-													>
+												<StyledTableCell
+													className="col-4 center"
+												>
 													</StyledTableCell>
 													<StyledTableCell>
 														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -408,7 +413,7 @@ export const DatabaseStructureBrowser: React.FC<
 								</tbody>
 							)}
 						</StyledTable>
-					</div>
+					</StyledTableContainer>
 				))}
 			</StyledTablesList>
 		</StyledCard>
