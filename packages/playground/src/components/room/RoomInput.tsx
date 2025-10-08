@@ -487,6 +487,20 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							// turn off dragging
 							setIsDragging(false);
 						}}
+						onPaste={(e) => {
+							// Only handle file pasting if attachments are enabled
+							if (!ENABLE_ATTACHMENT) {
+								return;
+							}
+
+							// set the new files
+							const updated = Array.from(e.clipboardData.files);
+
+							if (updated.length > 0) {
+								e.preventDefault();
+								setFiles((prev) => [...prev, ...updated]);
+							}
+						}}
 						onKeyDown={(e) => {
 							if (e.key === "Enter") {
 								promptModel(input);
