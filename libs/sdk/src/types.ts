@@ -17,12 +17,12 @@ export type Role =
 	| "DISCOVERABLE"
 	| "EDITOR";
 
-export interface Column {
+export interface ColumnInterface {
 	column: string;
 	type: string;
 }
 
-export interface Table {
+export interface TableInterface {
 	table: string;
-	columns: Column[];
+	columns: ColumnInterface[];
 }
