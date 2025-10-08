@@ -1,21 +1,22 @@
-import React, { useEffect } from "react";
+import {
+	ChevronRight,
+	Clear,
+	ExpandMore,
+	Refresh,
+	Search,
+	Storage,
+} from "@mui/icons-material";
+import type React from "react";
+import { useEffect } from "react";
 import {
 	Box,
-	Typography,
-	TextField,
-	Stack,
-	IconButton,
 	Button,
+	IconButton,
+	Stack,
 	styled,
+	TextField,
+	Typography,
 } from "@semoss/ui";
-import {
-	Search,
-	Clear,
-	Refresh,
-	Storage,
-	ExpandMore,
-	ChevronRight,
-} from "@mui/icons-material";
 import { DatabaseColumnIcon } from "@/components/database";
 
 const StyledCard = styled("div")(({ theme }) => ({
@@ -77,16 +78,18 @@ const StyledTableHeaderCell = styled("td")(({ theme }) => ({
 	},
 }));
 
-const StyledColumnRow = styled("tr")<{ selected: boolean }>(({ theme, selected }) => ({
-	cursor: "pointer",
-	backgroundColor: selected ? theme.palette.primary.light : "transparent",
-	color: "inherit",
-	"&:hover": {
-		backgroundColor: selected 
-			? theme.palette.primary.light 
-			: theme.palette.grey[50],
-	},
-}));
+const StyledColumnRow = styled("tr")<{ selected: boolean }>(
+	({ theme, selected }) => ({
+		cursor: "pointer",
+		backgroundColor: selected ? theme.palette.primary.light : "transparent",
+		color: "inherit",
+		"&:hover": {
+			backgroundColor: selected
+				? theme.palette.primary.light
+				: theme.palette.grey[50],
+		},
+	}),
+);
 
 const StyledTableCell = styled("td")(({ theme }) => ({
 	padding: theme.spacing(1.5),
@@ -165,10 +168,7 @@ export const DatabaseStructureBrowser: React.FC<
 		}
 	};
 
-	const handleExpandClick = (
-		tableName: string,
-		event: React.MouseEvent,
-	) => {
+	const handleExpandClick = (tableName: string, event: React.MouseEvent) => {
 		event.preventDefault();
 		event.stopPropagation();
 		toggleTable(tableName);
@@ -191,13 +191,20 @@ export const DatabaseStructureBrowser: React.FC<
 		return selectedColumns[tableName] || [];
 	};
 
-	const isColumnSelected = (tableName: string, columnName: string): boolean => {
+	const isColumnSelected = (
+		tableName: string,
+		columnName: string,
+	): boolean => {
 		const tableColumns = getSelectedColumnsForTable(tableName);
 		return tableColumns.includes(columnName);
 	};
 
 	useEffect(() => {
-		if (activeTable && selectedColumns[activeTable] && selectedColumns[activeTable].length > 0) {
+		if (
+			activeTable &&
+			selectedColumns[activeTable] &&
+			selectedColumns[activeTable].length > 0
+		) {
 			if (generateSelectedColumnsQuery && onGenerateQuery) {
 				const query = generateSelectedColumnsQuery();
 				if (query) {
@@ -205,7 +212,12 @@ export const DatabaseStructureBrowser: React.FC<
 				}
 			}
 		}
-	}, [selectedColumns, activeTable, generateSelectedColumnsQuery, onGenerateQuery]);
+	}, [
+		selectedColumns,
+		activeTable,
+		generateSelectedColumnsQuery,
+		onGenerateQuery,
+	]);
 
 	return (
 		<StyledCard>
@@ -214,16 +226,17 @@ export const DatabaseStructureBrowser: React.FC<
 				<Typography variant="h6" sx={{ fontWeight: 600 }}>
 					Data Columns
 				</Typography>
-				<Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-					{activeTable && getSelectedColumnsForTable(activeTable).length > 0 && (
-						<Button
-							size="small"
-							onClick={onClearColumnSelection}
-							sx={{ textTransform: 'none', minWidth: 'auto' }}
-						>
-							Clear
-						</Button>
-					)}
+				<Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
+					{activeTable &&
+						getSelectedColumnsForTable(activeTable).length > 0 && (
+							<Button
+								size="small"
+								onClick={onClearColumnSelection}
+								sx={{ textTransform: "none", minWidth: "auto" }}
+							>
+								Clear
+							</Button>
+						)}
 					<IconButton
 						size="small"
 						onClick={refreshDatabaseStructure}
@@ -329,14 +342,12 @@ export const DatabaseStructureBrowser: React.FC<
 											: ""
 									}
 								>
-								<StyledTableHeaderCell
-									className="col-4 center"
-								>
-									<Storage
-										fontSize="small"
-										sx={{ color: "#666666" }}
-									/>
-								</StyledTableHeaderCell>
+									<StyledTableHeaderCell className="col-4 center">
+										<Storage
+											fontSize="small"
+											sx={{ color: "#666666" }}
+										/>
+									</StyledTableHeaderCell>
 									<StyledTableHeaderCell>
 										<Typography
 											variant="subtitle2"
@@ -348,15 +359,22 @@ export const DatabaseStructureBrowser: React.FC<
 											{table.table}
 										</Typography>
 									</StyledTableHeaderCell>
-								<StyledTableHeaderCell
-									className="col-4 center"
-								>
-									<IconButton
-										size="small"
-										onClick={(e) => handleExpandClick(table.table, e)}
-										title={expandedTables[table.table] ? "Collapse table" : "Expand table"}
-										sx={{ p: 0.5 }}
-									>
+									<StyledTableHeaderCell className="col-4 center">
+										<IconButton
+											size="small"
+											onClick={(e) =>
+												handleExpandClick(
+													table.table,
+													e,
+												)
+											}
+											title={
+												expandedTables[table.table]
+													? "Collapse table"
+													: "Expand table"
+											}
+											sx={{ p: 0.5 }}
+										>
 											{expandedTables[table.table] ? (
 												<ExpandMore fontSize="small" />
 											) : (
@@ -369,47 +387,56 @@ export const DatabaseStructureBrowser: React.FC<
 
 							{expandedTables[table.table] && (
 								<tbody>
-									{table.columns.map(
-										(column: Column) => {
-											const isSelected = isColumnSelected(table.table, column.column);
-											return (
-												<StyledColumnRow
-													key={`${table.table}-${column.column}`}
-													selected={isSelected}
-													title={`Click to ${isSelected ? 'deselect' : 'select'} ${column.column} (${column.type})`}
-													onClick={(e) =>
-														handleColumnClick(
-															table.table,
-															column.column,
-															e
-														)
-													}
-												>
-												<StyledTableCell
-													className="col-4 center"
-												>
-													</StyledTableCell>
-													<StyledTableCell>
-														<Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-															<DatabaseColumnIcon
-																type={column.type}
-															/>
-															<Typography
-																variant="body2"
-																sx={{
-																	fontSize: "0.875rem",
-																	fontWeight: isSelected ? 600 : 400,
-																}}
-															>
-																{column.column}
-															</Typography>
-														</Box>
-													</StyledTableCell>
-													<StyledTableCell className="col-4"></StyledTableCell>
-												</StyledColumnRow>
-											);
-										},
-									)}
+									{table.columns.map((column: Column) => {
+										const isSelected = isColumnSelected(
+											table.table,
+											column.column,
+										);
+										return (
+											<StyledColumnRow
+												key={`${table.table}-${column.column}`}
+												selected={isSelected}
+												title={`Click to ${isSelected ? "deselect" : "select"} ${column.column} (${column.type})`}
+												onClick={(e) =>
+													handleColumnClick(
+														table.table,
+														column.column,
+														e,
+													)
+												}
+											>
+												<StyledTableCell className="col-4 center"></StyledTableCell>
+												<StyledTableCell>
+													<Box
+														sx={{
+															display: "flex",
+															alignItems:
+																"center",
+															gap: 1,
+														}}
+													>
+														<DatabaseColumnIcon
+															type={column.type}
+														/>
+														<Typography
+															variant="body2"
+															sx={{
+																fontSize:
+																	"0.875rem",
+																fontWeight:
+																	isSelected
+																		? 600
+																		: 400,
+															}}
+														>
+															{column.column}
+														</Typography>
+													</Box>
+												</StyledTableCell>
+												<StyledTableCell className="col-4"></StyledTableCell>
+											</StyledColumnRow>
+										);
+									})}
 								</tbody>
 							)}
 						</StyledTable>
