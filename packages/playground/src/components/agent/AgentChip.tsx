@@ -29,24 +29,26 @@ export const AgentChip = ({ agent, loading }: AgentChipProps) => {
 			}
 			placement="top"
 		>
-			<Chip
-				icon={
-					loading || isAgentValid ? (
-						<LightbulbOutlined />
-					) : (
-						<ErrorOutline />
-					)
-				}
-				label={
-					loading ? (
-						<Skeleton width="36px" height="100%" />
-					) : isAgentValid ? (
-						agent.name
-					) : (
-						"Error loading agent"
-					)
-				}
-			/>
+			<span>
+				<Chip
+					icon={
+						loading || isAgentValid ? (
+							<LightbulbOutlined />
+						) : (
+							<ErrorOutline />
+						)
+					}
+					label={
+						loading ? (
+							<Skeleton width="36px" height="100%" />
+						) : isAgentValid ? (
+							agent.name
+						) : (
+							"Error loading agent"
+						)
+					}
+				/>
+			</span>
 		</Tooltip>
 	);
 };
