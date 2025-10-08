@@ -110,20 +110,23 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
+		const usingAgent = agentId && agent !== null;
+
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
-			agentId && agent !== null
+			usingAgent
 				? {
-						instructions: agent.system_prompt,
+						instructions: "",
 						// knowledge: null,
 						tools: [],
 						tokenLength: TOKEN_LENGTH,
 						temperature: TEMPERATURE,
 					}
 				: options,
+			usingAgent ? agent : undefined,
 		);
 
 		// ask the room

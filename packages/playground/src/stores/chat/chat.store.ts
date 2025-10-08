@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { Engine } from "@/types";
+import type { Agent, Engine } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -158,6 +158,7 @@ export class ChatStore {
 		mode: RoomStore["mode"],
 		modelId: string,
 		options: RoomStore["options"],
+		agent?: Agent,
 	): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
@@ -189,6 +190,9 @@ export class ChatStore {
 
 			// initialize the room to get the insightId
 			await room.initialize();
+
+			// set the agent if it exists
+			if (agent) await room.linkAgent(agent);
 
 			// set the initial data
 			room.setMetadata({

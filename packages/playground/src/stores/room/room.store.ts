@@ -10,7 +10,7 @@ import {
 	type ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { PixelMessage, Tool } from "@/types";
+import type { Agent, PixelMessage, Tool } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -300,6 +300,30 @@ export class RoomStore {
 			...this._store.options,
 			...options,
 		};
+	};
+
+	/**
+	 * Set Agent
+	 * @param options - options
+	 */
+	linkAgent = async (agent: Agent) => {
+		try {
+			const { errors } = await this.runRoomPixel<
+				[
+					{
+						roomId: string;
+					},
+				]
+			>(
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agent.workspace_id)});`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+		} catch (e) {
+			throw new Error(e.message || "Error linking agent");
+		}
 	};
 
 	/**
