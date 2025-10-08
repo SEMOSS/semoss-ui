@@ -229,7 +229,7 @@ export class ChatStore {
 
 			// wait for the pixel to run
 			await this._actions.run<[boolean]>(
-				`CloseRoom(roomId=["${roomId}"]);`,
+				`RemoveUserRoom(roomId=["${roomId}"]);`,
 			);
 
 			// throw errors
