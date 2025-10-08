@@ -2,6 +2,7 @@ import { Search } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
+	Box,
 	Button,
 	Grid,
 	InputAdornment,
@@ -106,23 +107,42 @@ export const AgentPage = observer(() => {
 						processes.
 					</Typography>
 				</Stack>
-				<Stack
-					direction="row"
-					justifyContent="space-between"
-					alignItems="center"
-					sx={{ backgroundColor: "#d13784ff" }}
+				<Box
+					sx={{
+						padding: "16px",
+						borderRadius: "var(--Shape-borderRadiusMd, 8px)",
+						background:
+							"linear-gradient(270deg, #E9F5FD 19.69%, #DBD6F9 106.54%)",
+						boxShadow: "0 1px 8px 0 rgba(0, 0, 0, 0.08)",
+					}}
 				>
-					<div>Travon TODO: build your own agent section</div>
-					<Button
-						onClick={() => {
-							setAgentInfo(null);
-							setIsAgentModalOpen(true);
-						}}
-						variant="contained"
+					<Stack
+						direction="row"
+						justifyContent="space-between"
+						alignItems="center"
 					>
-						Start Building
-					</Button>
-				</Stack>
+						<Box>
+							<Stack>
+								<Typography variant="h6">
+									Build Your Own Agent
+								</Typography>
+								<Typography variant="body1" color="secondary">
+									Create a personalized AI agent tailored to
+									your goals with just a few steps.
+								</Typography>
+							</Stack>
+						</Box>
+						<Button
+							onClick={() => {
+								setAgentInfo(null);
+								setIsAgentModalOpen(true);
+							}}
+							variant="contained"
+						>
+							Start Building
+						</Button>
+					</Stack>
+				</Box>
 				<Stack
 					direction="row"
 					width="100%"
