@@ -17,7 +17,8 @@ import {
 	Typography,
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
-import type { App, Engine, Tool } from "@/types";
+import type { App, Engine, Toolbox } from "@/types";
+import { getToolbox } from "./utility";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
 const MODULE = import.meta.env.MODULE;
@@ -73,48 +74,18 @@ const StyledItemDescription = styled(Typography)(({ theme }) => ({
 	WebkitLineClamp: 3,
 }));
 
-interface ToolsOverlayProps {
+interface ToolboxOverlayProps {
 	/** Tools loaded into the room */
-	tools: Tool[];
+	tools: Toolbox[];
 
 	/** Callback triggered when the tool model is closed */
-	onClose: (success: boolean, tools?: Tool[]) => void;
+	onClose: (success: boolean, tools?: Toolbox[]) => void;
 }
 
-/**
- * Get a unique key for a tool
- * @param tool The tool to get the key for
- * @returns The unique key for the tool
- */
-const getTool = (item: Engine | App): Tool => {
-	let id = "";
-	let name = "";
-	let type: Tool["type"] = "DATABASE";
-
-	// Type guard to check if item is App
-	if ("project_id" in item && "project_name" in item) {
-		id = item.project_id;
-		type = "APP";
-		name = item.project_name;
-	} else if ("app_id" in item && "app_name" in item) {
-		id = item.app_id;
-		name = item.app_name;
-		type = item.app_type;
-	}
-
-	return {
-		id: id,
-		type: type,
-		name: name,
-		description: "",
-		tags: [],
-	};
-};
-
-export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
+export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	const { tools, onClose } = props;
 
-	const [updatedTools, setUpdatedTools] = useState<Record<string, Tool>>(
+	const [updatedTools, setUpdatedTools] = useState<Record<string, Toolbox>>(
 		() => {
 			return tools.reduce((acc, val) => {
 				acc[val.id] = val;
@@ -162,7 +133,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	/**
 	 * Select a tool and update the arraw
 	 */
-	const onToolSelect = (tool: Tool) => {
+	const onToolSelect = (tool: Toolbox) => {
 		// copy for react
 		const updated = { ...updatedTools };
 
@@ -180,7 +151,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	/**
 	 * Select a tool and update the arraw
 	 */
-	const onToolDelete = (t: Tool) => {
+	const onToolDelete = (t: Toolbox) => {
 		// copy for react
 		const updated = { ...updatedTools };
 
@@ -202,7 +173,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 		>
 			<Modal.Title>
 				<Stack direction="row" justifyContent="space-between">
-					<Typography variant="h6">Add Tools</Typography>
+					<Typography variant="h6">Add Toolbox</Typography>
 					<IconButton size="small" onClick={() => onClose(false)}>
 						<Close />
 					</IconButton>
@@ -251,7 +222,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 								height={"100%"}
 							>
 								{getApps.data.map((item) => {
-									const tool = getTool(item);
+									const tool = getToolbox(item);
 
 									return (
 										<Grid key={tool.id} item xs={6}>

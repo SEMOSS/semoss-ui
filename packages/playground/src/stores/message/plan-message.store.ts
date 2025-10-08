@@ -58,6 +58,17 @@ export class PlanMessageStore extends AbstractMessageStore {
 		});
 	}
 
+	/***
+	 * Update a step in the plan
+	 * @param step
+	 */
+	updateStep(stepNumber: number, step: Partial<PlanStep>) {
+		this.plan.steps[stepNumber] = {
+			...this.plan.steps[stepNumber],
+			...step,
+		};
+	}
+
 	/**
 	 * Delete a step from the plan
 	 * @param step_number

@@ -4,6 +4,8 @@ import {
 	DeleteOutlineOutlined,
 	Hardware,
 	Link,
+	Person,
+	SmartToy,
 	SouthEastOutlined,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
@@ -17,8 +19,9 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { AddStepOverlay, LinkStepOverlay } from "@/components";
+import { EditStepOverlay } from "@/components";
 import type { PlanMessageStore } from "@/stores";
+import type { PlanStep } from "@/types";
 
 const StyledPlanMessage = styled(Stack)(({ theme }) => ({
 	width: "100%",
@@ -37,7 +40,7 @@ const StyledHover = styled(Stack)(() => ({
 	},
 }));
 
-const StyledTool = styled(Stack)(({ theme }) => ({
+const StyledAction = styled(Stack)(({ theme }) => ({
 	padding: "8px",
 	borderRadius: "12px",
 	borderWidth: "1px",
@@ -58,7 +61,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 		const notification = useNotification();
 
 		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
-		const [isLinkOpen, setIsLinkOpen] = useState(false);
+		const [editStep, setEditStep] = useState<PlanStep | null>(null);
 
 		/**
 		 * Accept the plan
@@ -170,7 +173,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											{s.description}
 										</Typography>
 										{s.details.stepType === "tool_call" && (
-											<StyledTool
+											<StyledAction
 												direction={"row"}
 												alignItems={"center"}
 												spacing={2}
@@ -186,22 +189,55 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 													variant="subtitle2"
 													noWrap={true}
 												>
-													{s.details.tool_name}
+													{s.details.title}
 												</Typography>
-											</StyledTool>
+											</StyledAction>
 										)}
 										{s.details.stepType ===
-											"llm_reasoning" &&
-											// <Markdown>{s.details.prompt}</Markdown>
-											null}
+											"llm_reasoning" && (
+											<StyledAction
+												direction={"row"}
+												alignItems={"center"}
+												spacing={2}
+											>
+												<SmartToy
+													fontSize="medium"
+													sx={{
+														color: "#757575",
+													}}
+												/>
+
+												<Typography
+													variant="subtitle2"
+													noWrap={true}
+												>
+													Ask AI
+												</Typography>
+											</StyledAction>
+										)}
 
 										{s.details.stepType ===
-											"human_intervention" &&
-											// <Typography variant="body2">
-											// 	Ask a {s.details.required_role} to{" "}
-											// 	{s.details.instructions}
-											// </Typography>
-											null}
+											"human_intervention" && (
+											<StyledAction
+												direction={"row"}
+												alignItems={"center"}
+												spacing={2}
+											>
+												<Person
+													fontSize="medium"
+													sx={{
+														color: "#757575",
+													}}
+												/>
+
+												<Typography
+													variant="subtitle2"
+													noWrap={true}
+												>
+													Ask User
+												</Typography>
+											</StyledAction>
+										)}
 										{s.details.stepType ===
 											"no_tool_available" && (
 											<Stack
@@ -214,10 +250,10 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 													color="warning"
 													startIcon={<Link />}
 													onClick={() => {
-														setIsLinkOpen(true);
+														setEditStep(s);
 													}}
 												>
-													Link Tool
+													Fix Step
 												</Button>
 											</Stack>
 										)}
@@ -258,7 +294,8 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 				)}
 
 				{isAddStepOpen && (
-					<AddStepOverlay
+					<EditStepOverlay
+						mode="Add"
 						onClose={(success, step) => {
 							// update the plan if successful
 							if (success) {
@@ -271,11 +308,18 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 					/>
 				)}
 
-				{isLinkOpen && (
-					<LinkStepOverlay
-						onClose={(success) => {
+				{editStep !== null && (
+					<EditStepOverlay
+						mode="Edit"
+						current={editStep}
+						onClose={(success, step) => {
+							// update the plan if successful
+							if (success) {
+								message.updateStep(step.step_number, step);
+							}
+
 							// close it
-							setIsLinkOpen(false);
+							setEditStep(null);
 						}}
 					/>
 				)}
