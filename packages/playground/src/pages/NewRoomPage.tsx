@@ -56,6 +56,11 @@ const StyledButton = styled("button")(({ theme }) => ({
 	},
 }));
 
+/**
+ * The page to create a new room
+ *
+ * @component
+ */
 export const NewRoomPage = observer(() => {
 	/**
 	 * Library Hooks

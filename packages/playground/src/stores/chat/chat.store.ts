@@ -191,9 +191,6 @@ export class ChatStore {
 			// initialize the room to get the insightId
 			await room.initialize();
 
-			// set the agent if it exists
-			if (agent) await room.linkAgent(agent);
-
 			// set the initial data
 			room.setMetadata({
 				name: name,
@@ -202,6 +199,9 @@ export class ChatStore {
 			room.setMode(mode);
 			room.setOptions(options);
 			room.setModel(modelId);
+			if (agent) {
+				room.linkAgent(agent);
+			}
 
 			runInAction(() => {
 				// add to the front
@@ -284,6 +284,7 @@ export class ChatStore {
 						ROOM_ID: string;
 						ROOM_NAME: string;
 						DATE_CREATED: string;
+						WORKSPACE_ID?: string;
 					}[],
 				]
 			>(`GetUserConversationRooms();`);
@@ -312,6 +313,10 @@ export class ChatStore {
 					name: r.ROOM_NAME,
 					dateCreated: r.DATE_CREATED,
 				});
+
+				if (r.WORKSPACE_ID) {
+					room.setAgentId(r.WORKSPACE_ID);
+				}
 
 				// store the order
 				order.push(r.ROOM_ID);

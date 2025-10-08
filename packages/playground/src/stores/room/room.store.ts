@@ -53,6 +53,11 @@ interface RoomStoreInterface {
 	 */
 	modelId: string;
 
+	/*
+	 * Id of the agent linked to the room
+	 */
+	agentId?: string;
+
 	/**
 	 * Root message
 	 */
@@ -120,6 +125,7 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		modelId: "",
+		agentId: undefined,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
@@ -195,6 +201,13 @@ export class RoomStore {
 	 */
 	get modelId() {
 		return this._store.modelId;
+	}
+
+	/**
+	 * Agent that the user is interacting with
+	 */
+	getAgentId() {
+		return this._store.agentId;
 	}
 
 	/**
@@ -292,6 +305,14 @@ export class RoomStore {
 	};
 
 	/**
+	 * Set the agentId
+	 * @param agentId - agent to use in the room
+	 */
+	setAgentId = (agentId: string) => {
+		this._store.agentId = agentId;
+	};
+
+	/**
 	 * Set options
 	 * @param options - options
 	 */
@@ -321,6 +342,7 @@ export class RoomStore {
 			if (errors?.length > 0) {
 				throw new Error(errors?.join(", ") || undefined);
 			}
+			this.setAgentId(agent.workspace_id);
 		} catch (e) {
 			throw new Error(e.message || "Error linking agent");
 		}

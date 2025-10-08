@@ -23,8 +23,10 @@ import {
 	RoomConfiguration,
 	RoomInput,
 } from "@/components";
-import { useAutoScroll, useChat } from "@/hooks";
+import { AgentChip } from "@/components/agent";
+import { useAutoScroll, useChat, useLoadingPixel } from "@/hooks";
 import { ResponseMessageStore } from "@/stores";
+import type { Agent } from "@/types";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -136,7 +138,15 @@ const getDateTitle = (d: string) => {
 	return message;
 };
 
+/**
+ * The page for a room
+ *
+ * @component
+ */
 export const RoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 
 	const notification = useNotification();
@@ -148,10 +158,22 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
+	// get the agent if there is one
+	const agentId = room?.getAgentId();
+	const [agent, isLoadingAgent] = useLoadingPixel<Agent>(
+		`GetWorkspace("${agentId}");`,
+		null,
+		!agentId,
+	);
+
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
 	);
+
+	/**
+	 * Effects
+	 */
 
 	// load the room
 	useEffect(() => {
@@ -345,40 +367,47 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									<Tooltip
-										title={"Open Configuration Menu"}
-										placement="top"
-									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={room.isLoading}
-											color={
-												room.sidebar.isOpen &&
-												room.sidebar.type ===
-													"CONFIGURATION"
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												// toggle open / closed based on the state
-												if (
+									agentId ? (
+										<AgentChip
+											agent={agent}
+											loading={isLoadingAgent}
+										/>
+									) : (
+										<Tooltip
+											title={"Open Configuration Menu"}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={room.isLoading}
+												color={
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-												) {
-													room.closeSidebar();
-												} else {
-													room.openSidebar(
-														"CONFIGURATION",
-													);
+														? "primary"
+														: "default"
 												}
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
-									</Tooltip>
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
