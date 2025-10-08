@@ -173,7 +173,6 @@ export const AdminQueryPage = () => {
 
 	const closeModal = useCallback(() => setOpen(false), []);
 
-	// ⚠️ handleDone needs `field.onChange`, so we’ll pass it down
 	const handleDone = useCallback(
 		(onChange: (v: string) => void) => {
 			onChange(draft);
@@ -243,7 +242,6 @@ export const AdminQueryPage = () => {
 					return;
 				}
 
-				// if we have a select query returning data
 				else if (output instanceof Object) {
 					setOutput({
 						type: "table",
@@ -254,7 +252,6 @@ export const AdminQueryPage = () => {
 					});
 				}
 
-				// if we have a non-select query
 				else {
 					setOutput({
 						type: "success",
