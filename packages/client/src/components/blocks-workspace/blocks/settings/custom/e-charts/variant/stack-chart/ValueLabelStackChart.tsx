@@ -339,7 +339,7 @@ export const ValueLabelStackChart = observer(
 								Select Font Size
 							</Typography>
 							<TextField
-								id="Select Font Size"
+								id={"Select Font Size"}
 								size="small"
 								value={labelFontSize}
 								onChange={handleLabelSize}

@@ -243,7 +243,7 @@ export const AIGenerationSettings = observer(
 					disableClearable
 					fullWidth
 					multiple={false}
-					id="model-autocomplete"
+					id={"model-autocomplete"}
 					loading={cfgLibraryModels.loading}
 					options={cfgLibraryModels.ids}
 					value={selectedModel}

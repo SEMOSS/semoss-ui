@@ -35,6 +35,8 @@ const StyledBox = styled(Box)(() => ({
 	gap: "10px",
 }));
 
+const StyledGridBlockTool = styled("div")();
+
 export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 	const { data, setData } = useBlockSettings<GridBlockDef>(id);
 	const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
@@ -53,7 +55,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 	};
 
 	return (
-		<>
+		<StyledGridBlockTool>
 			<List style={{ width: "100%" }}>
 				{/* Header Styling Section  */}
 				<List.Item disablePadding style={{ display: "block" }}>
@@ -320,6 +322,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 					)}
 				</List.Item>
 			</List>
-		</>
+		</StyledGridBlockTool>
 	);
 });

@@ -243,7 +243,7 @@ export const SelectInputSettings = observer(
 						) : null}
 						{Array.from(options, (option, i) => {
 							return (
-								<Menu.Item key={i} value={option.value}>
+								<Menu.Item key={option.value} value={option.value}>
 									{option.display}
 								</Menu.Item>
 							);

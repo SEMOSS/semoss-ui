@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import type { getUserProjectPermission as getUserProjectLevelPermission, registerUser } from "@/api";
+import { getUserProjectPermission as getUserProjectLevelPermission, registerUser } from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {

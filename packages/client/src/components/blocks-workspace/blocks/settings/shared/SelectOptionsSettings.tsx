@@ -179,7 +179,6 @@ export const SelectOptionsSettings = observer(
 				}
 			}
 			return (
-				<>
 					<QuerySelectionSettings
 						id={id}
 						label="Options"
@@ -201,7 +200,6 @@ export const SelectOptionsSettings = observer(
 							});
 						}}
 					/>
-				</>
 			);
 		}
 
