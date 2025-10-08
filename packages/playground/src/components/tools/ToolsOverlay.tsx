@@ -74,7 +74,7 @@ const StyledItemDescription = styled(Typography)(({ theme }) => ({
 }));
 
 interface ToolsOverlayProps {
-	/** Knowledge loaded into the room */
+	/** Tools loaded into the room */
 	tools: Tool[];
 
 	/** Callback triggered when the tool model is closed */
