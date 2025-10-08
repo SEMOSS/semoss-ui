@@ -11,6 +11,7 @@ const StyledMuiChip = styled(MuiChip, {
 		darkBlue: Record<string, string>;
 		primaryContrast: Record<string, string>;
         red: Record<string, string>;
+		yellow: Record<string, string>;
 	};
 	return {
 		...(chipColor === "default" && {
@@ -181,6 +182,20 @@ const StyledMuiChip = styled(MuiChip, {
                 backgroundColor: theme.palette.error.main,
             },
         }),
+		...(chipColor === "yellow" && {
+            backgroundColor: theme.palette.warning.main,
+            color: palette.text.white,
+            borderColor: "",
+            ".MuiSvgIcon-root": {
+                color: palette.text.white,
+            },
+            "& .MuiChip-deleteIcon": {
+                color: palette.text.white,
+            },
+            "&&:hover": {
+                backgroundColor: theme.palette.warning.main,
+            },
+        }),
 	};
 });
 
@@ -222,7 +237,8 @@ export interface ChipProps {
 		| "lcpurple"
 		| "lcindigo"
 		| "lcprimary"
-        | "red";
+        | "red"
+		| "yellow";
 
 	/**
 	 * If `true`, the component is disabled.

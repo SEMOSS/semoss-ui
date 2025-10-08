@@ -74,7 +74,6 @@ const ActionBar = styled("div")(({ theme }) => ({
 }));
 
 const PageBody = styled("div")({
-	//marginLeft: '200px',
 	display: "flex",
 	flexDirection: "column",
 });
@@ -239,11 +238,9 @@ export const AppDetailPage = observer(() => {
 	const [values, setValues] = useState<DetailsForm>(
 		AppDetailsFormValues.detailsForm,
 	);
-	//const [pendingRequest, setPendingRequest] = useState(false);
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const { appId } = useParams();
-	//const { page } = usePage();
 	const [isEditDependenciesModalOpen, setIsEditDependenciesModalOpen] =
 		useState(false);
 	const [selectedTab, setSelectedTab] = useState("Overview");
@@ -257,10 +254,6 @@ export const AppDetailPage = observer(() => {
 	}, [appId]);
 
 	useEffect(() => {
-		// if(page.fromNotification) {
-		// 	setSelectedTab("Access Control");
-		// 	page.setFromNotification(false);
-		// }
 		if (tab === "accesscontrol") {
 			setSelectedTab("Access Control");
 			setSearchParams({});
@@ -276,25 +269,6 @@ export const AppDetailPage = observer(() => {
 			fetchSimilarApps();
 		}
 	};
-	// useEffect(() => {
-	// 	if (appId) {
-	// 		const requested = `GetProjectUserAccessRequest(project='${appId}', isSpecificUser=true)`;
-
-	// 		monolithStore
-	// 			.runQuery(requested)
-	// 			.then((response) => {
-	// 				const output = response?.pixelReturn?.[0]?.output;
-	// 				if (Array.isArray(output) && output.length > 0) {
-	// 					setPendingRequest(true);
-	// 				} else {
-	// 					setPendingRequest(false);
-	// 				}
-	// 			})
-	// 			.catch((_error) => {
-	// 				setPendingRequest(false);
-	// 			});
-	// 	}
-	// }, [appId]);
 
 	async function getPermission() {
 		const { permission: role } =
@@ -659,7 +633,6 @@ export const AppDetailPage = observer(() => {
 											}
 											disabled={
 												responseStatus 
-												// || pendingRequest
 											}
 											variant={
 												responseStatus

@@ -259,49 +259,45 @@ function parseAsUTC(input: string): Date | null {
   return new Date(ms);
 }
 
-export const FormatData = {
-  format(createdAt: string): string {
-	const dateUTC = parseAsUTC(createdAt);
-	if (!dateUTC) return "";
+export function formatDate(createdAt: string): string {
+  const dateUTC = parseAsUTC(createdAt);
+  if (!dateUTC) return "";
 
-	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 
-	// Day keys in the user's timezone for Today/Yesterday check
-	const dayKey = (d: Date) =>
-	  new Intl.DateTimeFormat("en-CA", {
-		timeZone,
-		year: "numeric",
-		month: "2-digit",
-		day: "2-digit",
-	  }).format(d);
+  const dayKey = (d: Date) =>
+    new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(d);
 
-	const now = new Date();
-	const todayKey = dayKey(now);
-	const yesterdayKey = dayKey(new Date(now.getTime() - 24 * 60 * 60 * 1000));
-	const itemKey = dayKey(dateUTC);
+  const now = new Date();
+  const todayKey = dayKey(now);
+  const yesterdayKey = dayKey(new Date(now.getTime() - 24 * 60 * 60 * 1000));
+  const itemKey = dayKey(dateUTC);
 
-	const timeStr = new Intl.DateTimeFormat("en-US", {
-	  timeZone,
-	  hour: "numeric",
-	  minute: "2-digit",
-	  hour12: true,
-	}).format(dateUTC);
+  const timeStr = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(dateUTC);
 
-	if (itemKey === todayKey) return `Today, ${timeStr}`;
-	if (itemKey === yesterdayKey) return `Yesterday, ${timeStr}`;
+  if (itemKey === todayKey) return `Today, ${timeStr}`;
+  if (itemKey === yesterdayKey) return `Yesterday, ${timeStr}`;
 
-	return new Intl.DateTimeFormat("en-US", {
-	  timeZone,
-	  month: "short",
-	  day: "numeric",
-	  hour: "numeric",
-	  minute: "2-digit",
-	  hour12: true,
-	}).format(dateUTC);
-  },
-};
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(dateUTC);
+}
 
-export const formatDate = FormatData.format;
 
 export const formatToDataTestId = (text: string) => {
 	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
