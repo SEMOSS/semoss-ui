@@ -1,8 +1,9 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Fragment, useEffect, useReducer, useState } from "react";
+import { useEffect, useReducer, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
 	Avatar,
+	Button,
 	Collapse,
 	Divider,
 	List,
@@ -90,6 +91,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
+	const [createdByMeSelected, setCreatedByMeSelected] = useState(false);
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { filterSearch } = state;
 	const [showCollapsible, setShowCollapsible] = useState({});
@@ -126,6 +128,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	// get metakeys to the ones we want
 	const metaKeys = metaKeyList.map((k) => {
 		if (!k.display_values) return k.metakey;
+		return null;
 	});
 
 	// Filter out nulls
@@ -150,6 +153,18 @@ export const Filterbox = (props: FilterboxProps) => {
 			return prev;
 		}, {});
 	});
+	const handleCreatedByMeClick = async () => {
+		if (createdByMeSelected) {
+			// Deselect: show all apps
+			setCreatedByMeSelected(false);
+			onChange({});
+			setSearchParams({});
+		} else {
+			setCreatedByMeSelected(true);
+			onChange({ createdByMe: true });
+			setSearchParams({ createdByMe: "true" });
+		}
+	};
 	const [filterByVisibility, setFilterByVisibility] = useState(true);
 
 	const getCatalogFilters = usePixel<
@@ -171,6 +186,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	);
 
 	// Apply the URL's query params to the filters' state on component mount.
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentionally run only on mount
 	useEffect(() => {
 		if (searchParams.size > 0) {
 			searchParams.forEach((value, key) => {
@@ -183,6 +199,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	/**
 	 * @desc Catalog filters
 	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: only run when catalog filters change
 	useEffect(() => {
 		if (getCatalogFilters.status !== "SUCCESS") {
 			return;
@@ -338,6 +355,20 @@ export const Filterbox = (props: FilterboxProps) => {
 						</StyledFilterSearchContainer>
 					) : null}
 
+					{/* Created By Me button below search bar */}
+					<StyledFilterSearchContainer>
+						<Button
+							variant={
+								createdByMeSelected ? "contained" : "outlined"
+							}
+							size="small"
+							fullWidth
+							onClick={handleCreatedByMeClick}
+							data-testid="filterbox-createdByMe-btn"
+						>
+							Created By Me
+						</Button>
+					</StyledFilterSearchContainer>
 					{type !== "BROWSETEMPLATES" &&
 						Object.entries(filterOptions).map((entries, i) => {
 							const totalFilters =
@@ -345,7 +376,7 @@ export const Filterbox = (props: FilterboxProps) => {
 							const list = entries[1];
 							let shownListItems = 0; // for show more
 							return (
-								<div key={i}>
+								<div key={entries[0]}>
 									<List.Item
 										secondaryAction={
 											<List.ItemButton
@@ -383,16 +414,16 @@ export const Filterbox = (props: FilterboxProps) => {
 										/>
 									</List.Item>
 									<Collapse
-										key={i}
+										key={entries[0]}
 										in={showCollapsible[entries[0]]}
 									>
-										{list.map((filterOption, i) => {
+										{list.map((filterOption, _i) => {
 											if (
 												shownListItems > 4 &&
 												!filterVisibility[entries[0]]
 													.open
 											) {
-												return;
+												return null;
 											} else {
 												if (
 													filterOption.value
@@ -405,7 +436,9 @@ export const Filterbox = (props: FilterboxProps) => {
 													return (
 														<List.Item
 															disableGutters
-															key={i}
+															key={
+																filterOption.value
+															}
 														>
 															<List.ItemButton
 																disableGutters
@@ -485,11 +518,13 @@ export const Filterbox = (props: FilterboxProps) => {
 														</List.Item>
 													);
 												}
+												return null;
 											}
 										})}
 										{shownListItems > 4 && (
 											<List.Item>
-												<div
+												<button
+													type="button"
 													onClick={() => {
 														const visibleFilters = {
 															...filterVisibility,
@@ -512,6 +547,12 @@ export const Filterbox = (props: FilterboxProps) => {
 															visibleFilters,
 														);
 													}}
+													style={{
+														background: "none",
+														border: "none",
+														padding: 0,
+														cursor: "pointer",
+													}}
 												>
 													<StyledShowMore
 														variant={"body1"}
@@ -523,7 +564,7 @@ export const Filterbox = (props: FilterboxProps) => {
 															? "Less"
 															: "More"}
 													</StyledShowMore>
-												</div>
+												</button>
 											</List.Item>
 										)}
 									</Collapse>
