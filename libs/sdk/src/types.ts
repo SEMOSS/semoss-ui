@@ -16,3 +16,13 @@ export type Role =
 	| "READ_ONLY"
 	| "DISCOVERABLE"
 	| "EDITOR";
+
+export interface Column {
+	column: string;
+	type: string;
+}
+
+export interface Table {
+	table: string;
+	columns: Column[];
+}
