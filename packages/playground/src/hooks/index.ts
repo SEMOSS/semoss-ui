@@ -1,3 +1,4 @@
+import { useAutoScroll } from "./useAutoScroll";
 import { useCacheState } from "./useCacheState";
 import { useChat } from "./useChat";
-export { useChat, useCacheState };
+export { useAutoScroll, useChat, useCacheState };
