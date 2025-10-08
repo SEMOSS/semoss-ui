@@ -1,4 +1,8 @@
-import { LightbulbOutlined, Tune } from "@mui/icons-material";
+import {
+	FormatListNumbered,
+	LightbulbOutlined,
+	Tune,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
@@ -20,6 +24,8 @@ import type { RoomStore } from "@/stores";
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
 	: "";
+
+const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
 
 const StyledPage = styled(Stack)(() => ({
 	height: "100%",
@@ -66,8 +72,9 @@ export const NewRoomPage = observer(() => {
 		tools: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
-		autoExecute: false,
 	});
+
+	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
 
@@ -86,13 +93,15 @@ export const NewRoomPage = observer(() => {
 		setIsLoading(true);
 
 		// create a new room
-		const room = await chat.createRoom(chat.models.selected, prompt);
-
-		// initialize it
-		await room.initialize();
+		const room = await chat.createRoom(
+			prompt,
+			isPlanning ? "planning" : "chat",
+			chat.models.selected,
+			options,
+		);
 
 		// ask the room
-		await room.askMessage(prompt, files, options);
+		await room.askMessage(prompt, files);
 
 		// turn the loading screen off
 		setIsLoading(false);
@@ -141,25 +150,54 @@ export const NewRoomPage = observer(() => {
 							minRows={4}
 							maxRows={8}
 							actions={
-								<Tooltip
-									title={"Open Configuration Menu"}
-									placement="top"
-								>
-									<IconButton
-										size={"medium"}
-										type="button"
-										aria-label="Open Configuration Menu"
-										disabled={isLoading}
-										color={
-											isMenuOpen ? "primary" : "default"
-										}
-										onClick={() => {
-											setIsMenuOpen(!isMenuOpen);
-										}}
+								<>
+									<Tooltip
+										title={"Open Configuration Menu"}
+										placement="top"
 									>
-										<Tune color="inherit" />
-									</IconButton>
-								</Tooltip>
+										<IconButton
+											size={"medium"}
+											type="button"
+											aria-label="Open Configuration Menu"
+											disabled={isLoading}
+											color={
+												isMenuOpen
+													? "primary"
+													: "default"
+											}
+											onClick={() => {
+												setIsMenuOpen(!isMenuOpen);
+											}}
+										>
+											<Tune color="inherit" />
+										</IconButton>
+									</Tooltip>
+									{ENABLE_PLANNING && (
+										<Tooltip
+											title={
+												"Note: This is a beta feature. Use this to generate plan"
+											}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Generate plan"
+												disabled={isLoading}
+												color={
+													isPlanning
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsPlanning(!isPlanning);
+												}}
+											>
+												<FormatListNumbered color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
+								</>
 							}
 							onPrompt={async (prompt, files) => {
 								await askMessage(prompt, files);
