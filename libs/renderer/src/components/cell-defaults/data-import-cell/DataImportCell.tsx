@@ -188,7 +188,7 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
 		columnAliases: string[];
 		tableNames: string[];
 		joins: JoinObject[];
-
+        dataLimit: number;
 		// TODO add filters and summaries
 		// filters: FilterObject[];
 		// summaries: FilterObject[];
@@ -210,6 +210,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			display: {},
 			ids: [],
 		});
+        const [dataLimit, setDataLimit] = useState(cell.parameters.dataLimit || null);
 
 		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
@@ -364,6 +365,58 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			setIsDataImportModalOpen(true);
 		};
 
+        const updateDataLimit  = (query: string) :string => {
+            return query.replace(/Limit\s*\(\s*-*\d+\s*\)/, `Limit ( ${cell.parameters.dataLimit || -1} )`);
+        }
+
+		const handleDataLimitUpdate = (e: React.ChangeEvent<HTMLInputElement>) => {
+			let value = parseInt(e.target.value);
+			if (Number.isNaN(value)) {
+				value = -1;
+			} else {
+				if (value <= 0) {
+					value = 1;
+				}
+				if (value >= 10000) {
+					value = 10000;
+				}
+			}
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.dataLimit",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: value,
+				},
+			});
+			const updatedSelectQuery = updateDataLimit(
+				cell.parameters.selectQuery,
+			);
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.selectQuery",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: updatedSelectQuery,
+				},
+			});
+			setDataLimit(value === -1 ? null : value);
+		};
+		const updateFrameType = (e: React.ChangeEvent<HTMLInputElement>) => {
+			const value = e.target.value;
+			state.dispatch({
+				message: ActionMessages.UPDATE_CELL,
+				payload: {
+					path: "parameters.frameType",
+					queryId: cell.query.id,
+					cellId: cell.id,
+					value: value,
+				},
+			});
+		};
+
 		return (
 			<StyledContent>
 				<Stack direction="column" spacing={1}>
@@ -397,6 +450,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 											},
 										});
 									}}
+									key={`database-${cell.parameters.databaseId}`}
 								>
 									{Array.from(
 										cfgLibraryDatabases.ids,
@@ -419,6 +473,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 										openEditModal();
 									}}
 									startIcon={<Edit />}
+									key={`cell-edit-data-import-${cell.id}`}
 								>
 									Edit
 								</Button>
@@ -428,12 +483,11 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 					{showStyledView ? (
 						<>
 							<StyledFlexDiv>
-								{cell.parameters.tableNames &&
-									cell.parameters.tableNames.map(
-										(tableName, tableIdx) => (
+								{cell.parameters.tableNames?.map(
+										(tableName) => (
 											<Tooltip
 												title={`${tableName} Table`}
-												key={tableIdx}
+												key={`table-key-${tableName}`}
 											>
 												<StyledTableTitleBubble>
 													<StyledCalendarViewMonth fontSize="small" />
@@ -446,11 +500,11 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 
 							{isExpanded &&
 								cell.parameters.joins &&
-								cell.parameters.joins.map((join, joinIdx) => (
+								cell.parameters.joins.map((join) => (
 									<StyledBlockStack
 										direction="column"
 										spacing={1}
-										key={joinIdx}
+										key={`column-${join.leftTable}-${join.joinType}}`}
 									>
 										<StyledModalTitleWrapper>
 											<StyledPaddedFlexDiv>
@@ -546,6 +600,14 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							paddingTop={"0px"}
 							direction="row"
 						>
+                            <TextField 
+                                type="number"
+                                size="small"
+                                label="Data Limit"
+                                value={dataLimit}
+                                onChange={handleDataLimitUpdate}
+								key={`data-limit-number`}
+                            />
 							<Button
 								variant={"text"}
 								color={"primary"}
@@ -553,6 +615,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 								onClick={() => {
 									setShowStyledView(!showStyledView);
 								}}
+								key={`show-hide-pixel-button`}
 							>
 								{showStyledView ? "Show" : "Hide"} Pixel
 							</Button>
@@ -574,18 +637,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 										</InputAdornment>
 									),
 								}}
-								onChange={(e) => {
-									const value = e.target.value;
-									state.dispatch({
-										message: ActionMessages.UPDATE_CELL,
-										payload: {
-											path: "parameters.frameType",
-											queryId: cell.query.id,
-											cellId: cell.id,
-											value: value,
-										},
-									});
-								}}
+								onChange={updateFrameType}
 							>
 								{Object.values(DATA_FRAME_TYPES).map(
 									(frame, i) => (
@@ -601,6 +653,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							<StyledTextField
 								title="Set Frame Variable Name"
 								value={cell.parameters.frameVariableName}
+								key={`frame-variable-name-${cell.id}`}
 								disabled={cell.isLoading}
 								InputProps={{
 									startAdornment: (

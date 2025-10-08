@@ -23,6 +23,12 @@ const StyledTitle = styled("div")(() => ({
 	justifyContent: "center",
 }));
 
+const StyledDataGridContainer = styled("div")(() => ({
+	flex: 1,
+	width: "100%",
+	height: "100%",
+}));
+
 export interface HeaderBackgroundSettings {
 	backgroundColor: string;
 	fontSize: string;
@@ -214,9 +220,9 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		const b = typeof target === "number" ? target : parseFloat(target);
 		switch (comparator) {
 			case "==":
-				return a == b;
+				return a === b;
 			case "!=":
-				return a != b;
+				return a !== b;
 			case ">":
 				return a > b;
 			case "<":
@@ -322,7 +328,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			}
 
 			return (
-				<div
+				<td
 					onContextMenu={(e) =>
 						handleTableCellOnContextMenu(e, col, params.value)
 					}
@@ -331,13 +337,13 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 					}}
 				>
 					{params.value}
-				</div>
+				</td>
 			);
 		},
 	}));
 
 	const rows = frame.data.values.map((r, idx) => {
-		const obj: Record<string, any> = { id: idx };
+		const obj: Record<string, unknown> = { id: idx };
 		columns.forEach((c, cIdx) => {
 			obj[c.field] = r[cIdx];
 		});
@@ -386,7 +392,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	const colorRules: ColorRule[] = data.option?.colorByValue || [];
 
-	const getRowHeight = (params: any) => {
+	const getRowHeight = () => {
 		if (data.option?.rowSpanning) {
 			return 50;
 		}
@@ -410,13 +416,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 
 	return (
 		<StyledBlock sx={data.style} {...attrs}>
-			<div
-				style={{
-					flex: 1,
-					width: "100%",
-					height: "100%",
-				}}
-			>
+			<StyledDataGridContainer>
 				<DataGrid
 					rows={rows}
 					columns={columns}
@@ -458,7 +458,7 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 						},
 					}}
 				/>
-			</div>
+			</StyledDataGridContainer>
 			<GridBlockContextMenu
 				id={id}
 				frame={frame}

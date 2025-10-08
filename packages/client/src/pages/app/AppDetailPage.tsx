@@ -589,7 +589,7 @@ export const AppDetailPage = () => {
 				<InnerContainer>
 					<Breadcrumbs separator="/">
 						<Breadcrumbs.Item
-							href={`../../..`}
+							href="#/app"
 							underline="none"
 							color="inherit"
 							variant="body1"
@@ -662,9 +662,7 @@ export const AppDetailPage = () => {
 											onClick={() =>
 												setIsChangeAccessModalOpen(true)
 											}
-											data-testid={
-												"appDetail-access-btn"
-											}
+											data-testid={"appDetail-access-btn"}
 										>
 											{responseStatus || pendingRequest
 												? "Pending Access"

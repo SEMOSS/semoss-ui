@@ -704,7 +704,7 @@ export const LayersPanel = observer(
 				handleMenuClose();
 			};
 
-			const handleDuplicate = (
+			const handleDuplicate = async (
 				event: React.MouseEvent<HTMLElement>,
 				duplicateId: string,
 			) => {
@@ -753,7 +753,7 @@ export const LayersPanel = observer(
 						}
 					: undefined;
 
-				const id = state.dispatch({
+				const id = await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: getJsonForBlock(duplicateId) as BlockJSON,

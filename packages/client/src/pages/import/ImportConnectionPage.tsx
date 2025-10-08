@@ -11,6 +11,9 @@ const StyledBox = styled(Box)(({ theme }) => ({
 	marginBottom: "32px",
 }));
 
+/**
+ * @deprecated
+ */
 export const ImportConnectionPage = () => {
 	const { monolithStore, configStore } = useRootStore();
 	const navigate = useNavigate();

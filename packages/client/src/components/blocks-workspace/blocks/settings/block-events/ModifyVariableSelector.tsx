@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
-import { Select, TextField } from "@semoss/ui";
+import { useBlocks } from "@semoss/renderer";
+import { Select, Stack, TextField } from "@semoss/ui";
 
 interface ModifyVariableSelectorProps {
 	id: string;
@@ -14,14 +15,27 @@ export const ModifyVariableSelector = ({
 	setValue,
 }: ModifyVariableSelectorProps) => {
 	// TODO: FIX this blockId assign, inconsistent behavior
+	const { state } = useBlocks();
 
 	useEffect(() => {
 		setValue("payload.blockId", id);
 	}, [id]);
 
+	// get all primitive variables from state
+	const primitiveVarTypes = [
+		"string",
+		"number",
+		"boolean",
+		"array",
+		"object",
+		"json",
+	];
+	const primitiveVariables = Object.entries(state.variables)
+		?.filter(([_, v]) => primitiveVarTypes.includes(v.type))
+		?.map(([k]) => k);
+
 	return (
-		<>
-			Send hidden block id with event so it can parse iterator
+		<Stack>
 			<Controller
 				name="payload.variable"
 				control={control}
@@ -34,8 +48,11 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{["row-id", "Internal"].map((type, index) => (
-							<Select.Item key={`${type}-${index}`} value={type}>
+						{primitiveVariables?.map((type) => (
+							<Select.Item
+								key={`update-var--${type}`}
+								value={type}
+							>
 								{type}
 							</Select.Item>
 						))}
@@ -49,6 +66,7 @@ export const ModifyVariableSelector = ({
 					<>
 						<TextField
 							label={"Update Value"}
+							value={field.value || ""}
 							onChange={(value) => {
 								field.onChange(value);
 							}}
@@ -56,6 +74,6 @@ export const ModifyVariableSelector = ({
 					</>
 				)}
 			/>
-		</>
+		</Stack>
 	);
 };

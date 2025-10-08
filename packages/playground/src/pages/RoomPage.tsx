@@ -1,4 +1,4 @@
-import { QueryBuilder, Tune } from "@mui/icons-material";
+import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
@@ -16,13 +16,15 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
+	InputMessage,
+	PlanMessage,
+	ResponseMessage,
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
-	RoomMessage,
 } from "@/components";
-import { useChat } from "@/hooks";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { useAutoScroll, useChat } from "@/hooks";
+import { ResponseMessageStore } from "@/stores";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -42,13 +44,33 @@ const StyledContent = styled(Stack)(() => ({
 	paddingBottom: "16px",
 }));
 
-const StyledScroll = styled("div")(() => ({
-	display: "flex",
-	// flexDirection: "column-reverse",
+const StyledScrollContainer = styled("div")(() => ({
+	position: "relative",
 	flex: 1,
+	width: "100%",
+	overflow: "hidden",
+}));
+
+const StyledScroll = styled("div")(() => ({
+	height: "100%",
 	width: "100%",
 	overflowX: "hidden",
 	overflowY: "auto",
+	position: "relative",
+}));
+
+const StyledScrollButton = styled(IconButton)(({ theme }) => ({
+	position: "absolute",
+	bottom: "16px",
+	right: "16px",
+	backgroundColor: theme.palette.primary.main,
+	color: theme.palette.primary.contrastText,
+	boxShadow: theme.shadows[4],
+	zIndex: 1000,
+	"&:hover": {
+		backgroundColor: theme.palette.primary.dark,
+		boxShadow: theme.shadows[6],
+	},
 }));
 
 const getDateTitle = (d: string) => {
@@ -126,6 +148,11 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
+	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
+	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
+		room?.history?.length || 0,
+	);
+
 	// load the room
 	useEffect(() => {
 		if (!room || room.isInitialized) {
@@ -142,7 +169,7 @@ export const RoomPage = observer(() => {
 
 			navigate("/");
 		}
-	}, [room, notification.add]);
+	}, [room, notification.add, navigate]);
 
 	// create a listener to process messages from the room
 	useEffect(() => {
@@ -178,7 +205,21 @@ export const RoomPage = observer(() => {
 					return;
 				}
 
-				room.saveTool(message, tool.id, tool.name, tool.response);
+				// save the response with the tool
+				await message.saveTool(
+					tool.id,
+					tool.name,
+					tool.response,
+					room.mode !== "executing",
+				);
+
+				// TODO: Fix. This works because we only execute one step at a time.
+				// if it is executing, continue the plan
+				if (room.mode === "executing") {
+					if (room.plan) {
+						room.plan.saveTool();
+					}
+				}
 			} catch {
 				// noop
 			}
@@ -242,37 +283,65 @@ export const RoomPage = observer(() => {
 					flex={1}
 					alignItems={"center"}
 				>
-					<StyledScroll>
-						<Container
-							maxWidth="xl"
-							sx={{ padding: "0 !important" }}
-						>
-							{room.history.map((m) => (
-								<Stack
-									key={m.id}
-									direction="column"
-									sx={{
-										paddingTop: "8px",
-										paddingBottom: "8px",
-									}}
+					<StyledScrollContainer>
+						<StyledScroll ref={scrollRef}>
+							<Container maxWidth="xl" disableGutters={true}>
+								{room.history.map((m, mIdx) => {
+									if (!m.visible) {
+										return null;
+									}
+
+									return (
+										<Stack
+											key={m.id}
+											direction="column"
+											sx={{
+												paddingTop: "8px",
+												paddingBottom: "8px",
+											}}
+										>
+											{m.type === "INPUT" && (
+												<InputMessage message={m} />
+											)}
+											{m.type === "RESPONSE" && (
+												<ResponseMessage message={m} />
+											)}
+											{m.type === "PLAN" && (
+												<PlanMessage
+													message={m}
+													isLast={
+														mIdx ===
+														room.history.length - 1
+													}
+												/>
+											)}
+										</Stack>
+									);
+								})}
+							</Container>
+						</StyledScroll>
+						{isUserScrolled && (
+							<Tooltip title="Scroll to bottom" placement="top">
+								<StyledScrollButton
+									size="small"
+									color="primary"
+									onClick={() => scrollToBottom()}
+									aria-label="Scroll to bottom"
 								>
-									<RoomMessage room={room} message={m} />
-								</Stack>
-							))}
-						</Container>
-					</StyledScroll>
+									<KeyboardArrowDown fontSize="medium" />
+								</StyledScrollButton>
+							</Tooltip>
+						)}
+					</StyledScrollContainer>
 					<Stack
 						direction={"row"}
 						justifyContent={"center"}
 						width={"100%"}
 					>
-						<Container
-							maxWidth="xl"
-							sx={{ padding: "0 !important" }}
-						>
+						<Container maxWidth="xl" disableGutters={true}>
 							<RoomInput
 								isLoading={room.isLoading}
-								isDisabled={false}
+								isDisabled={room.mode === "executing"}
 								minRows={3}
 								maxRows={8}
 								actions={
@@ -312,7 +381,7 @@ export const RoomPage = observer(() => {
 									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
-									await room.askModel(prompt, files);
+									await room.askMessage(prompt, files);
 
 									return true;
 								}}
