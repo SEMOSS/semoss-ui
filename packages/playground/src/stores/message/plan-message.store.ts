@@ -303,9 +303,13 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 
 		const { output } = response.pixelReturn[0];
 
+		console.error(
+			"TODO: Validate if this is correct. Shold I search by messageId and then add it there?",
+		);
+
 		// Get the input from COT
 		const inputMessage = createMessageStore(room, output.inputMessage);
-		this.addChild(inputMessage);
+		room.tail.addChild(inputMessage);
 
 		// Add the response
 		const responseMessage = createMessageStore(
