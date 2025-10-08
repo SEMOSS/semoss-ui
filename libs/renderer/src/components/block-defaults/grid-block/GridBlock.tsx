@@ -135,13 +135,14 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 			(max, row) => (Array.isArray(row) ? Math.max(max, row.length) : max),
 			0
 		);
-		// Generate columns if not present
+		//Generate columns if not present
 		if (data.columns.length === 0) {
 			const generatedColumns = [];
 			for (let i = 0; i < maxColCount; i++) {
 			generatedColumns.push({ name: `col${i}` });
 			}
 			data.columns = generatedColumns;
+			
 		}
 	}
 
@@ -401,18 +402,22 @@ export const GridBlock: BlockComponent = observer(({ id }) => {
 		setLocalRows(rows);
 	}, [JSON.stringify(rows)]);
 
-	const handleProcessRowUpdate = (newRow, oldRow) => {
-		const updatedRows = localRows.map(row => row.id === newRow.id ? newRow : row);
-		setLocalRows(updatedRows);
-		const updatedSource = updatedRows.map(row =>
-			data.columns.map(col => row[col.name])
-		);
-		setData("source", updatedSource);
-		state.variables[id] = {
-			type: "array",
-			value: updatedRows.map(row => data.columns.map(col => row[col.name])),
-		};
-
+	const handleProcessRowUpdate = (newRow, _oldRow) => {
+	  setLocalRows(prev => {
+			const updatedRows = prev.map(row => (row.id === newRow.id ? newRow : row));
+			const hasColumns = Array.isArray(data.columns) && data.columns.length > 0;
+			if (hasColumns) {
+				const updatedSource = updatedRows.map(row => data.columns.map(col => row[col.name]));
+				setData("source", updatedSource);
+				if (id) {
+					state.variables[id] = {
+						type: "array",
+						value: updatedSource,
+					};
+				}
+			}
+			return updatedRows;
+		});
 		return newRow;
 	};
 
