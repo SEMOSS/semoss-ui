@@ -32,10 +32,15 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, listeners } = block;
 
 	const textContent =
-		typeof data.text == "string" ? data.text : JSON.stringify(data.text);
+		typeof data.text === "string" ? data.text : JSON.stringify(data.text);
 	let displayTxt = useTypeWriter(data.isStreaming ? textContent : "");
 
 	if (!data.isStreaming) displayTxt = textContent;
+
+	// Show fallback if no value
+	if (!displayTxt || displayTxt.trim() === "") {
+		displayTxt = "Waiting for value...";
+	}
 
 	useEffect(() => {
 		if (listeners.preProcess) {
