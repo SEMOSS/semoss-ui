@@ -50,7 +50,7 @@ const StyledStack = styled("div")(() => ({
 	marginBottom: "20px",
 }));
 
-const Field = styled("div")(() => ({
+const Field = styled(Box)(() => ({
 	display: "flex",
 	flexDirection: "column",
 	width: "100%",
@@ -166,12 +166,14 @@ export const AdminQueryPage = () => {
 	const [open, setOpen] = useState(false);
 	const [draft, setDraft] = useState("");
 
-	const openModal = useCallback((value: string) => {
+	const openModal = (value: string) => {
 		setDraft(value ?? "");
 		setOpen(true);
-	}, []);
+	};
 
-	const closeModal = useCallback(() => setOpen(false), []);
+	const closeModal = () => {
+		setOpen(false);
+	}
 
 	const handleDone = useCallback(
 		(onChange: (v: string) => void) => {
@@ -221,10 +223,10 @@ export const AdminQueryPage = () => {
 			.runQuery(pixelString)
 			.then((response) => {
 				let output: string | { data: { headers: string[]; values } };
-				let type: string = response.pixelReturn[0].operationType[0];
+				let type: string = response?.pixelReturn[0]?.operationType[0];
 
-				output = response.pixelReturn[0].output;
-				type = response.pixelReturn[0].operationType[0];
+				output = response?.pixelReturn[0]?.output;
+				type = response?.pixelReturn[0]?.operationType[0];
 
 				if (type.indexOf("ERROR") > -1) {
 					setOutput({
@@ -246,8 +248,8 @@ export const AdminQueryPage = () => {
 					setOutput({
 						type: "table",
 						value: {
-							headers: output.data.headers,
-							values: output.data.values,
+							headers: output?.data?.headers,
+							values: output?.data?.values,
 						},
 					});
 				}
@@ -271,16 +273,13 @@ export const AdminQueryPage = () => {
 				});
 			});
 	});
-	const toBool = (v: unknown): boolean | null => {
-		if (v === true || v === "true") return true;
-		if (v === false || v === "false") return false;
-		return null;
-	};
+
+	const toBool = (v: unknown): boolean | null => v === true || v === "true" ? true : v === false || v === "false" ? false : null;
 
 	const isBooleanColumn = (colIndex: number): boolean => {
 		const response = output?.value?.headerInfo?.[colIndex];
-		if (response && typeof response.dataType === "string") {
-			const dt = response.dataType.toUpperCase();
+		if (response && typeof response?.dataType === "string") {
+			const dt = response?.dataType?.toUpperCase();
 			if (dt === "BOOLEAN" || dt === "BOOL") return true;
 		}
 		return false;
@@ -313,24 +312,24 @@ export const AdminQueryPage = () => {
 		} else if (output.type === "error") {
 			return <Alert color={"error"}>{output.value}</Alert>;
 		} else if (output.type === "table") {
-			const headers = output.value.headers;
-			const rows = output.value.values;
+			const headers = output?.value?.headers;
+			const rows = output?.value?.values;
 			return (
 				<Table>
 					<TableHeader>
 						<Table.Row>
-							{headers.map((header: string, index: number) => (
-								<TableHeaderCell key={header}>
+							{headers?.map((header: string, index: number) => (
+								<TableHeaderCell key={header} data-testid={`adminQueryPage-table-header-c${index}`}>
 									{header}
 								</TableHeaderCell>
 							))}
 						</Table.Row>
 					</TableHeader>
 					<Table.Body>
-						{rows.map((row, rIdx: number) => (
+						{rows?.map((row, rIdx: number) => (
 							<Table.Row key={row}>
-								{row.map((col, cIdx) => (
-									<StyledTableCell key={col}>
+								{row?.map((col, cIdx) => (
+									<StyledTableCell key={col} data-testid={`adminQueryPage-table-r${rIdx}-c${cIdx}`}>
 										{renderCell(col, cIdx)}
 									</StyledTableCell>
 								))}
@@ -363,10 +362,11 @@ export const AdminQueryPage = () => {
 											field.onChange(e.target.value)
 										}
 									>
-										{DATABASE_OPTIONS.map((option, i) => (
+										{DATABASE_OPTIONS?.map((option, i) => (
 											<Select.Item
 												value={option}
 												key={option}
+												data-testid={`adminQueryPage-db-option-${i}`}
 											>
 												{option}
 											</Select.Item>
@@ -467,7 +467,7 @@ export const AdminQueryPage = () => {
 										</Modal.Content>
 
 										<ModalActions>
-											<Button onClick={closeModal}>
+											<Button onClick={closeModal} data-testid="adminQueryPage-modal-cancel-btn">
 												Cancel
 											</Button>
 											<Button
@@ -475,6 +475,7 @@ export const AdminQueryPage = () => {
 												onClick={() =>
 													handleDone(field.onChange)
 												}
+												data-testid="adminQueryPage-modal-done-btn"
 											>
 												Done
 											</Button>
