@@ -17,6 +17,7 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
+import type { Column, Table } from "@semoss/sdk";
 import { DatabaseColumnIcon } from "@/components/database";
 
 const StyledCard = styled("div")(({ theme }) => ({
@@ -104,16 +105,6 @@ const StyledTableCell = styled("td")(({ theme }) => ({
 const StyledTableContainer = styled("div")(({ theme }) => ({
 	padding: theme.spacing(1),
 }));
-
-interface Column {
-	column: string;
-	type: string;
-}
-
-interface Table {
-	table: string;
-	columns: Column[];
-}
 
 interface DatabaseStructureBrowserProps {
 	searchTerm: string;
