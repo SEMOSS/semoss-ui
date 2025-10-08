@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
 	Box,
 	Typography,
@@ -370,11 +370,11 @@ export const DatabaseStructureBrowser: React.FC<
 							{expandedTables[table.table] && (
 								<tbody>
 									{table.columns.map(
-										(column: Column, index: number) => {
+										(column: Column) => {
 											const isSelected = isColumnSelected(table.table, column.column);
 											return (
 												<StyledColumnRow
-													key={index}
+													key={`${table.table}-${column.column}`}
 													selected={isSelected}
 													title={`Click to ${isSelected ? 'deselect' : 'select'} ${column.column} (${column.type})`}
 													onClick={(e) =>
