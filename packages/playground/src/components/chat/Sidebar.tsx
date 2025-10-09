@@ -30,7 +30,7 @@ const APP_NAME = import.meta.env.VITE_APP_NAME
 const LOGO_FULL_PATH = import.meta.env.VITE_LOGO_FULL_PATH
 	? import.meta.env.VITE_LOGO_FULL_PATH
 	: "";
-const ENABLE_DISCOVER = import.meta.env.VITE_ENABLE_DISCOVER === "true";
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
 const DRAWER_OPEN_WIDTH = 320;
 
@@ -253,11 +253,11 @@ export const Sidebar = observer(() => {
 							path={"/new"}
 						/>
 
-						{ENABLE_DISCOVER && (
+						{ENABLE_AGENT && (
 							<SidebarLink
-								name={"Discover"}
+								name={"Agents"}
 								icon={<PublicOutlined color="inherit" />}
-								path={"/discover"}
+								path={"/agent"}
 							/>
 						)}
 					</Stack>

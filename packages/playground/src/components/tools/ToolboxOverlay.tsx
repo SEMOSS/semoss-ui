@@ -17,7 +17,8 @@ import {
 	Typography,
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
-import type { App, Tool } from "@/types";
+import type { App, Engine, Toolbox } from "@/types";
+import { getToolbox } from "./utility";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
 const MODULE = import.meta.env.MODULE;
@@ -73,18 +74,18 @@ const StyledItemDescription = styled(Typography)(({ theme }) => ({
 	WebkitLineClamp: 3,
 }));
 
-interface ToolsOverlayProps {
-	/** Knowledge loaded into the room */
-	tools: Tool[];
+interface ToolboxOverlayProps {
+	/** Tools loaded into the room */
+	tools: Toolbox[];
 
 	/** Callback triggered when the tool model is closed */
-	onClose: (success: boolean, tools?: Tool[]) => void;
+	onClose: (success: boolean, tools?: Toolbox[]) => void;
 }
 
-export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
+export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	const { tools, onClose } = props;
 
-	const [updatedTools, setUpdatedTools] = useState<Record<string, Tool>>(
+	const [updatedTools, setUpdatedTools] = useState<Record<string, Toolbox>>(
 		() => {
 			return tools.reduce((acc, val) => {
 				acc[val.id] = val;
@@ -115,8 +116,8 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	/**
 	 * Get all of the groups
 	 */
-	const getApps = usePixel<App[]>(
-		`MyProjects (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], filterWord=["${debouncedSearch}"])`,
+	const getApps = usePixel<(Engine | App)[]>(
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
 		{
 			data: [],
 		},
@@ -125,25 +126,23 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	/**
 	 * Track if the tool is selected
 	 */
-	const isToolSelected = (a: App): boolean => {
-		return Object.hasOwn(updatedTools, a.project_id);
+	const isToolSelected = (toolId: string): boolean => {
+		return Object.hasOwn(updatedTools, toolId);
 	};
 
 	/**
 	 * Select a tool and update the arraw
 	 */
-	const onToolSelect = (a: App) => {
+	const onToolSelect = (tool: Toolbox) => {
 		// copy for react
 		const updated = { ...updatedTools };
-		if (isToolSelected(a)) {
+
+		if (isToolSelected(tool.id)) {
 			// remove it
-			delete updated[a.project_id];
+			delete updated[tool.id];
 		} else {
 			// add it
-			updated[a.project_id] = {
-				id: a.project_id,
-				name: a.project_name,
-			};
+			updated[tool.id] = tool;
 		}
 
 		setUpdatedTools(updated);
@@ -152,7 +151,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 	/**
 	 * Select a tool and update the arraw
 	 */
-	const onToolDelete = (t: Tool) => {
+	const onToolDelete = (t: Toolbox) => {
 		// copy for react
 		const updated = { ...updatedTools };
 
@@ -174,7 +173,7 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 		>
 			<Modal.Title>
 				<Stack direction="row" justifyContent="space-between">
-					<Typography variant="h6">Add Tools</Typography>
+					<Typography variant="h6">Add Toolbox</Typography>
 					<IconButton size="small" onClick={() => onClose(false)}>
 						<Close />
 					</IconButton>
@@ -222,12 +221,14 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 								// overflow={'auto'}
 								height={"100%"}
 							>
-								{getApps.data.map((a) => {
+								{getApps.data.map((item) => {
+									const tool = getToolbox(item);
+
 									return (
-										<Grid key={a.project_id} item xs={6}>
+										<Grid key={tool.id} item xs={6}>
 											<StyledItem
 												onClick={() => {
-													onToolSelect(a);
+													onToolSelect(tool);
 												}}
 											>
 												<Stack
@@ -235,18 +236,21 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 													spacing={1}
 												>
 													<StyledItemImageHolder>
-														<img
-															alt=""
-															src={`${ENDPOINT}${MODULE}/api/app-${a.project_id}/appImage/download`}
-															onError={({
-																currentTarget,
-															}) => {
-																currentTarget.onerror =
-																	null; // prevents looping
-																currentTarget.src =
-																	LOGO;
-															}}
-														/>
+														{tool.type ===
+															"APP" && (
+															<img
+																alt=""
+																src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}
+																onError={({
+																	currentTarget,
+																}) => {
+																	currentTarget.onerror =
+																		null; // prevents looping
+																	currentTarget.src =
+																		LOGO;
+																}}
+															/>
+														)}
 													</StyledItemImageHolder>
 													<Typography
 														variant="subtitle2"
@@ -254,19 +258,19 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 															flex: 1,
 														}}
 													>
-														{a.project_name}
+														{tool.name}
 													</Typography>
 													<Checkbox
 														checked={isToolSelected(
-															a,
+															tool.id,
 														)}
 														onChange={() => {
-															onToolSelect(a);
+															onToolSelect(tool);
 														}}
 													/>
 												</Stack>
 												<StyledItemDescription variant="caption">
-													{a.description}
+													{tool.description}
 												</StyledItemDescription>
 												<Stack
 													direction="row"
@@ -274,26 +278,14 @@ export const ToolsOverlay: React.FC<ToolsOverlayProps> = (props) => {
 													spacing={0.5}
 													height={"24px"}
 												>
-													{a.tag &&
-														Array.isArray(a.tag) &&
-														a.tag.map((tag) => (
-															<Chip
-																key={tag}
-																color="default"
-																size="small"
-																label={tag}
-															/>
-														))}
-
-													{a.tag &&
-														typeof a.tag ===
-															"string" && (
-															<Chip
-																color="default"
-																size="small"
-																label={a.tag}
-															/>
-														)}
+													{tool.tags.map((tag) => (
+														<Chip
+															key={tag}
+															color="default"
+															size="small"
+															label={tag}
+														/>
+													))}
 												</Stack>
 											</StyledItem>
 										</Grid>

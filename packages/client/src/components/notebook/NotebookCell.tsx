@@ -345,8 +345,22 @@ export const NotebookCell = observer(
 		/**
 		 * Create a duplicate cell
 		 */
+		console.log(cell, "important");
 		const duplicateCell = async () => {
 			try {
+				let parameters = { ...cell.parameters };
+
+				if (
+					cell.widget === "query-import" ||
+					cell.widget === "data-import" ||
+					cell.widget === "text-to-sql"
+				) {
+					parameters = {
+						...parameters,
+						frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
+					};
+				}
+
 				// copy and add the step to the end
 				const newCellId = (await state.dispatch({
 					message: ActionMessages.NEW_CELL,
@@ -355,9 +369,7 @@ export const NotebookCell = observer(
 						previousCellId: cellId,
 						config: {
 							widget: cell.widget,
-							parameters: {
-								...cell.parameters,
-							},
+							parameters,
 						},
 					},
 				})) as string;
@@ -1018,6 +1030,11 @@ export const NotebookCell = observer(
 																						output={
 																							cell.output
 																						}
+																						cellData={{
+																							cellId: cell.id.toString(),
+																							queryId:
+																								queryId.toString(),
+																						}}
 																					/>
 																				);
 																			},

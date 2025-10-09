@@ -224,7 +224,6 @@ const findDBImage = (appType: string, appSubType: string) => {
 	const obj = ENGINE_IMAGES[appType]?.find((ele) => ele.name === appSubType);
 
 	if (!obj) {
-		console.warn("No image found:", appType, appSubType);
 		return BRAIN;
 	}
 
@@ -291,6 +290,15 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		date,
 		onClick,
 		favorite,
+		// isUpvoted,
+		// isGlobal,
+		// description,
+		// owner = "N/A",
+		// votes = "0",
+		// views = 'N/A',
+		// trending = 'N/A',
+		// upvote,
+		// global,
 	} = props;
 
 	/** Menu toggle state */
@@ -355,6 +363,7 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 						{tag !== undefined &&
 							(Array.isArray(tag) ? (
 								<>
+									{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 									{tag.map((t, i) => {
 										if (i <= 2) {
 											return (
@@ -441,19 +450,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 					</Stack>
 				</StyledCardIconsDiv>
 			</StyledLandscapeCardHeader>
-			{/* <StyledLandscapeCardDescriptionContainer>
-                <StyledLandscapeCardRow>
-                    <StyledLandscapeCardRowContainer>
-                        <StyledLandscapeCardRowDiv>
-                            <StyledLandscapeCardDescription variant={'body2'}>
-                                {description
-                                    ? description
-                                    : 'No description available'}
-                            </StyledLandscapeCardDescription>
-                        </StyledLandscapeCardRowDiv>
-                    </StyledLandscapeCardRowContainer>
-                </StyledLandscapeCardRow>
-            </StyledLandscapeCardDescriptionContainer> */}
 		</StyledLandscapeCard>
 	);
 };
@@ -554,6 +550,7 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 					{tag !== undefined &&
 						(Array.isArray(tag) ? (
 							<>
+								{/** biome-ignore lint/suspicious/useIterableCallbackReturn: <explanation> */}
 								{tag.map((t, i) => {
 									if (i <= 2) {
 										return (
@@ -625,18 +622,6 @@ export const EngineTileCard = (props: DatabaseCardProps) => {
 							{votes}
 						</UnstyledVoteCount>
 					</StyledButtonGroup>
-					{/* <StyledViewsTrendingDiv>
-                        <StyledEyeIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {views}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv>
-                    <StyledViewsTrendingDiv>
-                        <StyledTrendingIcon />
-                        <StyledStatisticCaption variant="caption">
-                            {trending}
-                        </StyledStatisticCaption>
-                    </StyledViewsTrendingDiv> */}
 				</StyledLeftActions>
 				<StyledLockButton
 					title={

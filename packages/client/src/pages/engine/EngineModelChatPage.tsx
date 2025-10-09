@@ -212,7 +212,7 @@ export const EngineModelChatPage = () => {
 		};
 		setMessages((prev) => [...prev, userMessage]);
 		try {
-			const pixel = `LLM(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
+			const pixel = `LLM2(engine="${selectedModel.model_id}", command=["<encode>${data.prompt}</encode>"], paramValues=[{"temperature":${temperature}, "max_tokens":${maxTokens}}])`;
 			const response = await runPixel(pixel, insightId);
 			const { output, operationType } = response.pixelReturn[0];
 			if (operationType.indexOf("ERROR") > -1) {
@@ -264,7 +264,7 @@ export const EngineModelChatPage = () => {
 
 	//Call LLM Feedback reactor to save user's feedback on a message
 	const sendFeedback = async (messageId: string, rating: string) => {
-		const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}")`;
+		const pixel = `SubmitLlmFeedback(messageId="${messageId}", feedbackText="", rating="${rating}", roomId=${JSON.stringify(insightId)})`;
 		try {
 			const response = await runPixel(pixel);
 			const { output, operationType } = response.pixelReturn[0];

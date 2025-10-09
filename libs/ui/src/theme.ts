@@ -122,6 +122,18 @@ declare module "@mui/material/styles" {
 			900: string;
 			shadow: string;
 		};
+		lightGreen?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
 		green?: {
 			50: string;
 			100: string;
@@ -159,6 +171,18 @@ declare module "@mui/material/styles" {
 			900: string;
 		};
 		purple?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		red?: {
 			50: string;
 			100: string;
 			200: string;
@@ -295,6 +319,18 @@ export const lightTheme: ThemeOptions = {
 			"900": "#1C3FBE",
 			shadow: "#D6EAFF",
 		},
+		lightGreen: {
+			"50": "#E7F4E5",
+			"100": "#C6E4BF",
+			"200": "#A1D396",
+			"300": "#7AC36B",
+			"400": "#5CB649",
+			"500": "#3EA924",
+			"600": "#349B1B",
+			"700": "#26890D",
+			"800": "#167800",
+			"900": "#005A00",
+		},
 		green: {
 			"50": "#DEF4F3",
 			"100": "#ABE4E0",
@@ -342,6 +378,18 @@ export const lightTheme: ThemeOptions = {
 			"700": "#6A32CE",
 			"800": "#5D2BC7",
 			"900": "#481EB8",
+		},
+		red: {
+			"50": "#FFEBEB",
+			"100": "#FFC7C7",
+			"200": "#FFA3A3",
+			"300": "#FF7F7F",
+			"400": "#FF5D5D",
+			"500": "#FF3B3B",
+			"600": "#ED2F2F",
+			"700": "#D62C2C",
+			"800": "#C02828",
+			"900": "#992222",
 		},
 		orange: {
 			"50": "#FFB428",

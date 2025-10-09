@@ -71,6 +71,9 @@ const reducer = (state, action) => {
 	return state;
 };
 
+/**
+ * @deprecated
+ */
 export const ImportForm = (props) => {
 	const { submitFunc, fields } = props;
 
@@ -511,7 +514,9 @@ export const ImportForm = (props) => {
 					message: `ZIP uploaded successfully`,
 				});
 
-				navigate(`/engine/${(steps[0].data as string).toLowerCase()}/${output.database_id}`);
+				navigate(
+					`/engine/${(steps[0].data as string).toLowerCase()}/${output.database_id}`,
+				);
 				return;
 			}
 			setFormLoading(false);
@@ -762,8 +767,11 @@ export const ImportForm = (props) => {
 																	_lastField
 																		.current
 																		.lastFocussedField ===
-																	val.fieldName &&
-																	_lastField.current.lastValidatedValue !== fieldVal
+																		val.fieldName &&
+																	_lastField
+																		.current
+																		.lastValidatedValue !==
+																		fieldVal
 																) {
 																	validStatus =
 																		validateFormField(
@@ -857,15 +865,21 @@ export const ImportForm = (props) => {
 																		val.fieldName,
 																	lastFocussedValue:
 																		field.value,
-																	lastValidatedValue: field.value
+																	lastValidatedValue:
+																		field.value,
 																};
 														},
 														onBlur: () => {
-															if(val.rules?.custom){
+															if (
+																val.rules
+																	?.custom
+															) {
 																_lastField.current.runValidate = true;
-																trigger(val.fieldName);
-															} 
-														}
+																trigger(
+																	val.fieldName,
+																);
+															}
+														},
 													}}
 													{...field}
 												></TextField>

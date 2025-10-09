@@ -1,10 +1,10 @@
-import { useBlockSettings } from "@/hooks";
 import { InfoOutlined } from "@mui/icons-material";
 import ImageIcon from "@mui/icons-material/Image";
-import type { EchartVisualizationBlockDef } from "@semoss/renderer";
-import { List, Stack, styled } from "@semoss/ui";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import type { EchartVisualizationBlockDef } from "@semoss/renderer";
+import { List, Stack, styled } from "@semoss/ui";
+import { useBlockSettings } from "@/hooks";
 import { getShowFieldOptions } from "../../../../../block-settings/block-defaults.shared";
 import { SelectInputSettings } from "../../../../../settings";
 import { ResizeSetting } from "../../../../shared";

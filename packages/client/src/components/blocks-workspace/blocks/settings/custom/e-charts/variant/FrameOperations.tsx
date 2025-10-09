@@ -201,7 +201,7 @@ export const FrameOperations = observer(
 					},
 					["yAxis"]: {
 						...parsedValue["yAxis"],
-						name: "",
+						name: [],
 						pixelname: [],
 						pixelvalue: [],
 					},
@@ -813,7 +813,7 @@ export const FrameOperations = observer(
 					columns[secondColumn?.label] = [];
 					secondColumn.values.forEach((item, index) => {
 						columns[secondColumn?.label].push({
-							["name"]: item,
+							["name"]: secondColumn.values[index] || "",
 							["selector"]: secondColumn.selectors[index],
 							["width"]: undefined,
 						});
@@ -872,9 +872,11 @@ export const FrameOperations = observer(
 					];
 					const pixelName = [],
 						pixelValue = [];
+					const axisName = [];
 					columns[secondColumn?.label].forEach(
 						(columItem, columIndex) => {
 							pixelName.push(columItem?.name);
+							axisName.push(columItem?.name);
 							pixelValue.push(columItem?.selector);
 							columnsmerged.push({
 								name: columItem?.name,
@@ -885,9 +887,7 @@ export const FrameOperations = observer(
 					if (columns[secondColumn?.label]?.length) {
 						tempVal[secondColumn?.label] = {
 							...tempVal[secondColumn?.label],
-							["name"]:
-								columns[secondColumn?.label][0]?.name ||
-								pixelName[0],
+							["name"]: axisName || pixelName[0],
 							["pixelname"]: pixelName,
 							["pixelvalue"]: pixelValue,
 						};
@@ -1957,7 +1957,10 @@ export const FrameOperations = observer(
 																						...prev,
 																					};
 																				if (
-																					(e.target as HTMLInputElement).checked
+																					(
+																						e.target as HTMLInputElement
+																					)
+																						.checked
 																				) {
 																					// Add the column name if checked
 																					if (

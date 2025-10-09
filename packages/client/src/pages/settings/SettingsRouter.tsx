@@ -11,6 +11,7 @@ import { InsightSettingsPage } from "./InsightSettingsPage";
 import { MemberSettingsPage } from "./MemberSettingsPage";
 import { MyProfilePage } from "./MyProfilePage";
 import { ProjectSettingsPage } from "./ProjectSettingsPage";
+import { RDFMapPage } from "./RDFMapPage";
 import { SettingsIndexPage } from "./SettingsIndexPage";
 import { SettingsLayout } from "./SettingsLayout";
 import { SETTINGS_ROUTES } from "./settings.constants";
@@ -31,6 +32,7 @@ const SETTINGS_COMPONETS = {
 	jobs: JobsPage,
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
+	"view-rdf-map": RDFMapPage,
 
 	// engine
 	database: () => <EngineSettingsIndexPage type="DATABASE" />,

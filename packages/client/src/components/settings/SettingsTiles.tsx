@@ -380,7 +380,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Box>
 									<Typography
 										variant="body1"
-										fontWeight="500"
+										fontWeight="medium"
 									>
 										Private
 									</Typography>
@@ -435,13 +435,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										<Box>
 											<Typography
 												variant="body1"
-												fontWeight="500"
+												fontWeight="medium"
 											>
 												Non Discoverable
 											</Typography>
 											<Typography variant="body2">
-												Users cannot request access to
-												this database if private
+												{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 											</Typography>
 										</Box>
 									</StyledBlock>
@@ -491,13 +490,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											Non Discoverable
 										</Typography>
 										<Typography variant="body2">
-											Users cannot request access to this
-											database if private
+											{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 										</Typography>
 									</Box>
 								</StyledBlock>
@@ -542,15 +540,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 								{/* Text Stack on the right */}
 								<Box>
-									<Typography
-										variant="body1"
-										fontWeight="500"
-									>
-										Delete Database
-									</Typography>
 									<Typography variant="body2">
 										Users cannot request access to this
 										database if private
+										{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
+									</Typography>
+									<Typography variant="body2">
+										{`Delete ${name} from catalog.`}
 									</Typography>
 								</Box>
 							</StyledBlock>
@@ -661,7 +657,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Box>
 									<Typography
 										variant="body1"
-										fontWeight="500"
+										fontWeight="medium"
 									>
 										Private
 									</Typography>
@@ -718,13 +714,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										<Box>
 											<Typography
 												variant="body1"
-												fontWeight="500"
+												fontWeight="medium"
 											>
 												Non Discoverable
 											</Typography>
 											<Typography variant="body2">
-												Users cannot request access to
-												this database if private
+												{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 											</Typography>
 										</Box>
 									</StyledBlock>
@@ -772,13 +767,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											Non Discoverable
 										</Typography>
 										<Typography variant="body2">
-											Users cannot request access to this
-											database if private
+											{`Users cannot discover ${name}, view its details, or request access when it is non-discoverable.`}
 										</Typography>
 									</Box>
 								</StyledBlock>
@@ -827,13 +821,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
-											Delete Database
+											{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 										</Typography>
 										<Typography variant="body2">
-											Users cannot request access to this
-											database if private
+											{`Delete ${name} from catalog.`}
 										</Typography>
 									</Box>
 								</StyledBlock>
