@@ -153,7 +153,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
-  const appCatalogPageStatus = useRef({ removalChanges: false });
+	const appCatalogPageStatus = useRef({ removalChanges: false });
 
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -236,6 +236,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		});
 	}, [getFavoritedApps.status, getFavoritedApps.data]);
 
+	const [updatedNewApps, setUpdatedNewApps] = useState([]);
+	useEffect(() => {
+		if (Object.keys(metaFilters).length === 0 && getApps.data?.length > 0) {
+			setUpdatedNewApps(getApps.data);
+		}
+		console.log(metaFilters, getApps.data, "metaFilters");
+	}, [metaFilters, getApps.status, getApps.data]);
+	console.log(updatedNewApps, "updatedApps outside");
+
 	const debouncedSet = debounced((newInputValue: string) => {
 		setSearch(newInputValue);
 	}, 300);
@@ -293,68 +302,135 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		return favorites.some((el) => el.project_id === id);
 	};
 
+	/**
+	 * @desc Remove an app from the app list and the filters accordingly
+	 * @param app the app to be removed
+	 */
 	const removeApp = (app) => {
+		// Check if the app is favorited
 		const favorite = isFavorited(app.project_id);
-
+		// Filter out the app to be removed from the apps array
 		const updatedApps = apps.filter((a) => a.project_id !== app.project_id);
-
+		// Filter out the app to be removed from the newApps array
+		const newApps = updatedNewApps.filter(
+			(a) => a.project_id !== app.project_id,
+		);
+		// Filter out the app to be removed from the favoritedApps array
+		setUpdatedNewApps(newApps);
 		const updatedFavoritedApps = favorite
 			? favoritedApps.filter((a) => a.project_id !== app.project_id)
 			: favoritedApps;
+		// Dispatch actions to update the state with the updated arrays
+		dispatch({ type: "field", field: "apps", value: updatedApps });
+		dispatch({
+			type: "field",
+			field: "favoritedApps",
+			value: updatedFavoritedApps,
+		});
 
-    dispatch({ type: "field", field: "apps", value: updatedApps });
-    dispatch({
-      type: "field",
-      field: "favoritedApps",
-      value: updatedFavoritedApps,
-    });
+		/**
+		 * @desc toArr takes a value v and returns an array.
+		 * If v is null, return an empty array.
+		 * If v is an array, map each element to a string and trim the string.
+		 * If v is not an array, return an array with a single element, which is the value of v converted to a string and trimmed.
+		 * @param v
+		 * @returns {Array<string>}
+		 */
+		const toArr = (v) =>
+			v == null
+				? []
+				: Array.isArray(v)
+					? v.map((x) => String(x).trim())
+					: [String(v).trim()];
+		/**
+		 * @desc readTags extracts tags from an object.
+		 * It uses optional chaining and nullish coalescing to handle cases where the tag or tags properties are null or undefined.
+		 * @param a
+		 * @returns {Array<string>}
+		 */
+		const readTags = (a) => toArr(a?.tag ?? a?.tags ?? []);
+		/**
+		 * @desc readDomains extracts domains from an object.
+		 * It uses optional chaining and nullish coalescing to handle cases where the domain property is null or undefined.
+		 * @param a
+		 * @returns {Array<string>}
+		 */
+		const readDomains = (a) => toArr(a?.domain ?? []);
 
-    const toArr = (v) =>
-      v == null
-        ? []
-        : Array.isArray(v)
-        ? v.map((x) => String(x).trim())
-        : [String(v).trim()];
+		// Check if metaFilters is falsy or if it has no keys
+		if (!metaFilters || Object.keys(metaFilters).length === 0) {
+			// Set appCatalogPageStatus.current.removalChanges to true if no filters are present
+			appCatalogPageStatus.current.removalChanges = true;
+			return;
+		}
+		// Create a new object nextFilters by spreading the properties of metaFilters into it
+		const nextFilters = { ...(metaFilters || {}) };
 
-    const removedTags = toArr(app?.tag);
+		// Check if the tag property of metaFilters is not null
+		if (metaFilters.tag != null) {
+			// Convert the tag value to an array using the toArr function
+			const selectedTags = toArr(metaFilters.tag);
 
-    if (removedTags.length > 0) {
-      const nextFilters = { ...(metaFilters || {}) };
+			// Filter the newApps array to find tags that are still present
+			const stillPresentTags = selectedTags.filter((tag) =>
+				newApps.some((remainingApp) =>
+					readTags(remainingApp).some((t) => t === tag),
+				),
+			);
 
-      if (nextFilters.tag != null) {
-        let selected = toArr(nextFilters.tag);
+			// If no tags are still present, delete the tag property from nextFilters
+			if (stillPresentTags.length === 0) {
+				delete nextFilters.tag;
+			} else if (stillPresentTags.length > 0) {
+				// If tags are still present, set the tag property of nextFilters to each tag
+				stillPresentTags.forEach((t) => {
+					nextFilters.tag = t;
+					console.log(nextFilters, "nextFilters.tag");
+				});
+			}
+		}
 
-        removedTags.forEach((tag) => {
-          if (!selected.includes(tag)) return;
+		// Check if the domain property of metaFilters is not null
+		if (metaFilters.domain != null) {
+			// Convert the domain value to an array using the toArr function
+			const selectedDomains = toArr(metaFilters.domain);
+			// Filter the newApps array to find domains that are still present
+			const stillPresentDomains = selectedDomains.filter((domain) =>
+				newApps.some((remainingApp) =>
+					readDomains(remainingApp).some((d) => d === domain),
+				),
+			);
+			// If no domains are still present, delete the domain property from nextFilters
+			if (stillPresentDomains.length === 0) {
+				delete nextFilters.domain;
+			} else if (stillPresentDomains.length > 0) {
+				// If domains are still present, set the domain property of nextFilters to each domain
+				stillPresentDomains.forEach((t) => {
+					nextFilters.domain = t;
+					console.log(nextFilters, "nextFilters.domain");
+				});
+			}
+		}
+		// Check if the nextFilters object is different from the metaFilters object by comparing their JSON strings
+		const filtersChanged =
+			JSON.stringify(nextFilters) !== JSON.stringify(metaFilters);
+		// If the filters have changed, update the metaFilters state with the nextFilters object
+		if (filtersChanged) {
+			setMetaFilters(nextFilters);
+		}
 
-          const stillExists = updatedApps.some((a) =>
-            toArr(a?.tag).includes(tag)
-          );
-          if (!stillExists) {
-            selected = selected.filter((t) => t !== tag);
-          }
-        });
+		appCatalogPageStatus.current.removalChanges = true;
+	};
 
-        if (selected.length === 0) {
-          delete nextFilters.tag;
-        } else {
-          nextFilters.tag = selected.length === 1 ? selected[0] : selected;
-        }
-      }
-
-      setMetaFilters(nextFilters);
-    }
-    appCatalogPageStatus.current.removalChanges = true;
-  };
-  // to limit the apps that are sent to filterbox for performance
-  let renderedAppIds = [];
-  if (inputValue) {
-    renderedAppIds.push(...apps.map((app) => app.project_id));
-    renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
-    if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
-  } else {
-    renderedAppIds = [];
-  }
+	// to limit the apps that are sent to filterbox for performance
+	let renderedAppIds = [];
+	if (inputValue) {
+		renderedAppIds.push(...apps.map((app) => app.project_id));
+		renderedAppIds.push(...favoritedApps.map((app) => app.project_id));
+		if (renderedAppIds.length === 0) renderedAppIds = ["dummy-id"]; //dummy id to avoid empty array in query
+	} else {
+		renderedAppIds = [];
+	}
 
 	return (
 		<>
@@ -414,6 +490,14 @@ export const AppCatalogPage = observer((): JSX.Element => {
 										filters: Record<string, unknown>,
 									) => {
 										setMetaFilters(filters);
+									}}
+									filteredCatalogIds={renderedAppIds}
+									filterBoxRefresh={
+										appCatalogPageStatus.current
+											.removalChanges
+									}
+									onfilterBoxRefreshCompleted={() => {
+										appCatalogPageStatus.current.removalChanges = false;
 									}}
 								/>
 							</div>
