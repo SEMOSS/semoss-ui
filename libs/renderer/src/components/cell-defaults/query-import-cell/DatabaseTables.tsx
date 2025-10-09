@@ -103,9 +103,9 @@ export const DatabaseTables = (props: { databaseId: string }) => {
 						return (
 							<StyledCard key={`${tableName}-${index}`}>
 								<List.Item>
-									<List.Icon>
+									<List.ItemIcon>
 										<TableChartOutlined />
-									</List.Icon>
+									</List.ItemIcon>
 									<List.ItemText primary={tableName} />
 								</List.Item>
 								<Divider />
@@ -117,14 +117,14 @@ export const DatabaseTables = (props: { databaseId: string }) => {
 												<List.Item
 													key={`${columnName}-${index}`}
 												>
-													<List.Icon>
+													<List.ItemIcon>
 														{getIconForDataType(
 															tables[tableName]
 																.columnTypes[
 																`${tableName}__${columnName}`
 															],
 														)}
-													</List.Icon>
+													</List.ItemIcon>
 													<List.ItemText
 														primary={`${columnName}`}
 													/>

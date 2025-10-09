@@ -1,9 +1,4 @@
-import {
-	Divider as MuiDivider,
-	type DividerProps as MuiDividerProps,
-	type SxProps,
-	styled,
-} from "@mui/material";
+import { Divider as MuiDivider, type SxProps, styled } from "@mui/material";
 
 const StyledDivider = styled(MuiDivider)<{ light?: boolean }>(
 	({ theme, light }) => ({
@@ -13,7 +8,7 @@ const StyledDivider = styled(MuiDivider)<{ light?: boolean }>(
 	}),
 );
 
-export interface DividerProps extends MuiDividerProps {
+export interface DividerProps {
 	/**
 	 * Absolutely position the element.
 	 * @default false
@@ -61,7 +56,6 @@ export interface DividerProps extends MuiDividerProps {
 	variant?: "fullWidth" | "inset" | "middle";
 }
 
-export const Divider = (props: DividerProps) => {
-	const { sx } = props;
-	return <StyledDivider sx={sx} {...props} />;
+export const Divider: React.FC<DividerProps> = ({ sx, ...otherProps }) => {
+	return <StyledDivider sx={sx} {...otherProps} />;
 };
