@@ -5,8 +5,6 @@ import SearchIcon from "@mui/icons-material/Search";
 import {
 	Checkbox,
 	ClickAwayListener,
-	ListItem,
-	ListItemText,
 	Slider,
 } from "@mui/material";
 import Paper from "@mui/material/Paper";
@@ -26,7 +24,6 @@ import {
 	IconButton,
 	InputAdornment,
 	List,
-	ListItemIcon,
 	TextField,
 	Typography,
 } from "@semoss/ui";
@@ -189,7 +186,7 @@ const FilterListComponent = ({
 		<List sx={{ maxHeight: 200, overflowY: "auto" }} dense>
 			{multi && (
 				<List.Item key="select-all" onClick={handleToggle("Select All")}>
-					<List.Icon>
+					<List.ItemIcon>
 						<Checkbox
 							edge="start"
 							checked={allChecked}
@@ -197,21 +194,21 @@ const FilterListComponent = ({
 							tabIndex={-1}
 							disableRipple
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Select All" />
 				</List.Item>
 			)}
 
 			{filteredOptions.map((option) => (
 				<List.Item key={option} onClick={handleToggle(option)}>
-					<List.Icon>
+					<List.ItemIcon>
 						<Checkbox
 							edge="start"
 							checked={checked.includes(option)}
 							tabIndex={-1}
 							disableRipple
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary={option} />
 				</List.Item>
 			))}
