@@ -344,7 +344,7 @@ export const AdminQueryPage = () => {
 			return (
 				<>
 					<TableContainer>
-						<Table>
+						<Table stickyHeader aria-label="sticky table">
 							<TableHeader>
 								<Table.Row>
 									{headers.map(
