@@ -23,9 +23,9 @@ export const AgentChip = ({ agent, loading }: AgentChipProps) => {
 			title={
 				loading
 					? "Loading Agent Configuration"
-					: agent
-						? "Error Loading Agent Configuration"
-						: "Using Agent Configuration"
+					: isAgentValid
+						? "Using Agent Configuration"
+						: "Error Loading Agent Configuration"
 			}
 			placement="top"
 		>
