@@ -15,7 +15,7 @@ import {
 	RightMenu,
 	RightMenuContent,
 	RightMenuTitle,
-	ToolsOverlay,
+	ToolboxOverlay,
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -237,7 +237,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					/>
 				</RightMenuContent>
 				{isToolsOpen && (
-					<ToolsOverlay
+					<ToolboxOverlay
 						tools={options.tools}
 						onClose={(success, tools) => {
 							// update the tools if successful
