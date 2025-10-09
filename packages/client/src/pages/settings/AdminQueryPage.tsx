@@ -39,6 +39,11 @@ const StyledRight = styled("div")(() => ({
 	width: "100%",
 	marginTop: "20px",
 }));
+const PaginationContainer = styled(Box)(() => ({
+	display: "flex",
+	justifyContent: "flex-end",
+	width: "100%",
+}));
 const Styledform = styled("div")(() => ({
 	width: "100%",
 }));
@@ -61,6 +66,14 @@ const Label = styled("label")(({ theme }) => ({
 	fontSize: "0.875rem",
 	lineHeight: 1.4,
 	color: theme.palette.text.secondary,
+}));
+const TableContainer = styled(Table.Container)(() => ({
+	maxHeight: "400px",
+	overflow: "auto",
+}));
+const Pagination = styled(Table.Pagination)(() => ({
+	border: "none",
+	width: "auto",
 }));
 const TableHeader = styled(Table.Head)(({ theme }) => ({
 	backgroundColor: theme.palette.primary.hover,
@@ -90,9 +103,9 @@ const StyledSelect = styled(Select)(() => ({
 const StyledTextArea = styled(TextArea)({
 	width: "100%",
 	overflow: "none",
-  '& .MuiInputBase-root.MuiOutlinedInput-root': {
-      alignItems: 'flex-start'
-    },
+	"& .MuiInputBase-root.MuiOutlinedInput-root": {
+		alignItems: "flex-start",
+	},
 });
 
 const StyledTextAreaPopup = styled(TextArea)({
@@ -163,8 +176,11 @@ export const AdminQueryPage = () => {
 			ROWS: 100,
 		},
 	});
+
 	const [open, setOpen] = useState(false);
 	const [draft, setDraft] = useState("");
+	const [page, setPage] = useState<number>(0);
+	const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
 	const openModal = (value: string) => {
 		setDraft(value ?? "");
@@ -173,7 +189,7 @@ export const AdminQueryPage = () => {
 
 	const closeModal = () => {
 		setOpen(false);
-	}
+	};
 
 	const handleDone = useCallback(
 		(onChange: (v: string) => void) => {
@@ -202,6 +218,11 @@ export const AdminQueryPage = () => {
 		verifySelectQuery();
 	}, [verifySelectQuery]);
 
+	useEffect(() => {
+		setPage(0);
+		setRowsPerPage(10);
+	}, [output]);
+
 	if (!adminMode) {
 		return <Navigate to={"/settings"} />;
 	}
@@ -216,7 +237,6 @@ export const AdminQueryPage = () => {
 		if (showRowsField) {
 			pixelString += `| Collect(${data.ROWS});`;
 		} else {
-			// No collect
 			pixelString += "| AdminExecQuery();";
 		}
 		monolithStore
@@ -242,9 +262,7 @@ export const AdminQueryPage = () => {
 					});
 
 					return;
-				}
-
-				else if (output instanceof Object) {
+				} else if (output instanceof Object) {
 					setOutput({
 						type: "table",
 						value: {
@@ -252,9 +270,7 @@ export const AdminQueryPage = () => {
 							values: output?.data?.values,
 						},
 					});
-				}
-
-				else {
+				} else {
 					setOutput({
 						type: "success",
 						value: "",
@@ -274,8 +290,6 @@ export const AdminQueryPage = () => {
 			});
 	});
 
-	const toBool = (v: unknown): boolean | null => v === true || v === "true" ? true : v === false || v === "false" ? false : null;
-
 	const isBooleanColumn = (colIndex: number): boolean => {
 		const response = output?.value?.headerInfo?.[colIndex];
 		if (response && typeof response?.dataType === "string") {
@@ -287,7 +301,7 @@ export const AdminQueryPage = () => {
 
 	const renderCell = (val, colIndex: number) => {
 		const isBool = isBooleanColumn(colIndex);
-		const normalized = toBool(val);
+		const normalized = typeof val === "boolean" ? Boolean(val) : null;
 
 		if (isBool || normalized !== null) {
 			const b = normalized;
@@ -301,42 +315,92 @@ export const AdminQueryPage = () => {
 		return String(val ?? "");
 	};
 
-	/**
-	 * @name displayQueryOutput
-	 * @desc return alert or table based on the queryOutputType
-	 * @returns JSX.Element
-	 */
-	const displayQueryOutput = (): JSX.Element => {
+	const handleChangePage = (_event: unknown, newPage: number) => {
+		setPage(newPage);
+	};
+
+	const handleChangeRowsPerPage = (
+		event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+	) => {
+		const next = parseInt(event.target.value, 10);
+		setRowsPerPage(next);
+		setPage(0);
+	};
+
+	const displayQueryOutput = (): JSX.Element | null => {
 		if (output.type === "success") {
 			return <Alert color={"success"}>Successful query!</Alert>;
 		} else if (output.type === "error") {
 			return <Alert color={"error"}>{output.value}</Alert>;
 		} else if (output.type === "table") {
-			const headers = output?.value?.headers;
-			const rows = output?.value?.values;
+			const headers = output?.value?.headers ?? [];
+			const rows = output?.value?.values ?? [];
+
+			// slice rows for current page
+			const start = page * rowsPerPage;
+			const end = start + rowsPerPage;
+			const paginatedRows = rows.slice(start, end);
+
 			return (
-				<Table>
-					<TableHeader>
-						<Table.Row>
-							{headers?.map((header: string, index: number) => (
-								<TableHeaderCell key={header} data-testid={`adminQueryPage-table-header-c${index}`}>
-									{header}
-								</TableHeaderCell>
-							))}
-						</Table.Row>
-					</TableHeader>
-					<Table.Body>
-						{rows?.map((row, rIdx: number) => (
-							<Table.Row key={row}>
-								{row?.map((col, cIdx) => (
-									<StyledTableCell key={col} data-testid={`adminQueryPage-table-r${rIdx}-c${cIdx}`}>
-										{renderCell(col, cIdx)}
-									</StyledTableCell>
-								))}
-							</Table.Row>
-						))}
-					</Table.Body>
-				</Table>
+				<>
+					<TableContainer>
+						<Table>
+							<TableHeader>
+								<Table.Row>
+									{headers.map(
+										(header: string, index: number) => (
+											<TableHeaderCell
+												key={header || index}
+												data-testid={`adminQueryPage-table-header-c${index}`}
+											>
+												{header}
+											</TableHeaderCell>
+										),
+									)}
+								</Table.Row>
+							</TableHeader>
+							<Table.Body>
+								{paginatedRows?.length > 0 ? (
+									paginatedRows?.map((row, rIdx: number) => (
+										<Table.Row key={row}>
+											{row?.map((col, cIdx) => (
+												<StyledTableCell
+													key={col}
+													data-testid={`adminQueryPage-table-r${rIdx}-c${cIdx}`}
+												>
+													{renderCell(col, cIdx)}
+												</StyledTableCell>
+											))}
+										</Table.Row>
+									))
+								) : (
+									<Table.Row>
+										<Table.Cell
+											colSpan={Math.max(
+												headers.length,
+												1,
+											)}
+											align="center"
+										>
+											No data
+										</Table.Cell>
+									</Table.Row>
+								)}
+							</Table.Body>
+						</Table>
+					</TableContainer>
+
+					<PaginationContainer>
+						<Pagination
+							count={rows.length}
+							page={page}
+							rowsPerPage={rowsPerPage}
+							onPageChange={handleChangePage}
+							onRowsPerPageChange={handleChangeRowsPerPage}
+							rowsPerPageOptions={[5, 10, 25]}
+						/>
+					</PaginationContainer>
+				</>
 			);
 		}
 
@@ -467,7 +531,10 @@ export const AdminQueryPage = () => {
 										</Modal.Content>
 
 										<ModalActions>
-											<Button onClick={closeModal} data-testid="adminQueryPage-modal-cancel-btn">
+											<Button
+												onClick={closeModal}
+												data-testid="adminQueryPage-modal-cancel-btn"
+											>
 												Cancel
 											</Button>
 											<Button
