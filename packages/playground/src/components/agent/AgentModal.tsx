@@ -125,7 +125,7 @@ export const AgentModal = (props: AgentModalProps) => {
 			target: { value },
 		} = event;
 		let newSelection = typeof value === "string" ? value.split(",") : value;
-		if (value.includes("select-all")) {
+		if (newSelection.includes("select-all")) {
 			// if tools length doesn't match selected check all boxes. else deselect all
 			newSelection =
 				tools.length === selectedTools.length
@@ -287,9 +287,13 @@ export const AgentModal = (props: AgentModalProps) => {
 												renderValue: (
 													selectedValue,
 												) => {
-													return Array.isArray(
-														selectedValue,
-													) ? (
+													if (
+														!Array.isArray(
+															selectedValue,
+														)
+													)
+														return null;
+													return (
 														<Stack
 															spacing={1}
 															direction="row"
@@ -304,6 +308,8 @@ export const AgentModal = (props: AgentModalProps) => {
 																				tool.id ===
 																				value,
 																		);
+																	if (!t)
+																		return null;
 																	return (
 																		<span
 																			key={
@@ -344,7 +350,7 @@ export const AgentModal = (props: AgentModalProps) => {
 																},
 															)}
 														</Stack>
-													) : null;
+													);
 												},
 											}}
 										>
