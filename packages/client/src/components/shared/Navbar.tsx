@@ -1,12 +1,9 @@
-import {
-	Notifications,
-	Search as SearchIcon,
-} from "@mui/icons-material";
+import { Notifications, Search as SearchIcon } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
 import {
-  Badge,
+	Badge,
 	Container,
 	IconButton,
 	InputAdornment,

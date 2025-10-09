@@ -234,8 +234,17 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 			}
 		}, [selectedTab, notifications, unread, read]);
 
-		const handleTabChange = (_e: React.SyntheticEvent, v: string) => {
-			setSelectedTab(v as "all" | "unread" | "read");
+		/**
+		 * Handle tab change event.
+		 * @param {React.SyntheticEvent} _e - Event object.
+		 * @param {("all" | "unread" | "read")} v - New tab value.
+		 * @returns {void}
+		 */
+		const handleTabChange = (
+			_e: React.SyntheticEvent,
+			v: "all" | "unread" | "read",
+		) => {
+			setSelectedTab(v);
 		};
 
 		/**

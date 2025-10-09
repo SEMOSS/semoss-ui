@@ -631,9 +631,7 @@ export const AppDetailPage = observer(() => {
 													<StyledLockReset />
 												) : null
 											}
-											disabled={
-												responseStatus 
-											}
+											disabled={responseStatus}
 											variant={
 												responseStatus
 													? "outlined"
@@ -647,7 +645,7 @@ export const AppDetailPage = observer(() => {
 											}
 											data-testid={"appDetail-access-btn"}
 										>
-											{responseStatus 
+											{responseStatus
 												? "Pending Access"
 												: permission === "discoverable"
 													? "Request Access"
