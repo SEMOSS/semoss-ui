@@ -29,7 +29,7 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Tool {
+export interface Toolbox {
 	/** Type of the tool */
 	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
 
@@ -157,6 +157,13 @@ export interface PlanStep {
 				tool_name: string;
 				parameters: Record<string, unknown>;
 				rationaleForStep: string;
+				title: string;
+				_meta: {
+					map: {
+						SMSS_PROJECT_NAME: string;
+						SMSS_PROJECT_ID: string;
+					};
+				};
 		  }
 		| {
 				stepType: "llm_reasoning";
@@ -174,4 +181,28 @@ export interface PlanStep {
 				missing_capability: string;
 				rationaleForStep: string;
 		  };
+}
+
+export interface MCP {
+	_meta: {
+		SMSS_PROJECT_NAME: string;
+		SMSS_PROJECT_ID: string;
+	};
+	tools: MCPTool[];
+}
+
+export interface MCPTool {
+	description?: string;
+	inputSchema: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	name: string;
+	outputSchema?: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	title?: string;
 }
