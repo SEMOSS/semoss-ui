@@ -53,8 +53,6 @@ export const ToolArtifact: React.FC<ToolArtifactProps> = observer(
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
 
-		console.log(isLoading);
-
 		// get the metadata
 		const getAppInfo = usePixel<{
 			project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
