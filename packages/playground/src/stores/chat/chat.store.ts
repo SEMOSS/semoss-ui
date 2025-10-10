@@ -270,11 +270,12 @@ export class ChatStore {
 			const name = esc(data.AGENT_NAME ?? "");
 			const desc = esc(data.AGENT_DESCRIPTION ?? "");
 			const prompt = esc(data.AGENT_CONTEXT ?? "");
+			const tools =
+				data.AGENT_TOOLS && data.AGENT_TOOLS.length > 0
+					? data.AGENT_TOOLS
+					: [];
 
-			//TODO: add tools and the params when reactor implemented
-			// const tools = JSON.stringify(data.AGENT_TOOLS);
-			// ${tools && tools.length > 0 ? `, function=['${tools}']` : ""})`,
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'])`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=[${JSON.stringify(tools)}])`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
