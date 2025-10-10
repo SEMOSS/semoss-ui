@@ -3,7 +3,6 @@ import { useEffect, useReducer, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
 	Avatar,
-	Button,
 	Collapse,
 	Divider,
 	List,
@@ -91,7 +90,6 @@ export const Filterbox = (props: FilterboxProps) => {
 	const { configStore } = useRootStore();
 	const [searchParams, setSearchParams] = useSearchParams();
 
-	const [createdByMeSelected, setCreatedByMeSelected] = useState(false);
 	const [state, dispatch] = useReducer(reducer, initialState);
 	const { filterSearch } = state;
 	const [showCollapsible, setShowCollapsible] = useState({});
@@ -153,18 +151,6 @@ export const Filterbox = (props: FilterboxProps) => {
 			return prev;
 		}, {});
 	});
-	const handleCreatedByMeClick = async () => {
-		if (createdByMeSelected) {
-			// Deselect: show all apps
-			setCreatedByMeSelected(false);
-			onChange({});
-			setSearchParams({});
-		} else {
-			setCreatedByMeSelected(true);
-			onChange({ createdByMe: true });
-			setSearchParams({ createdByMe: "true" });
-		}
-	};
 	const [filterByVisibility, setFilterByVisibility] = useState(true);
 
 	const getCatalogFilters = usePixel<
@@ -355,20 +341,6 @@ export const Filterbox = (props: FilterboxProps) => {
 						</StyledFilterSearchContainer>
 					) : null}
 
-					{/* Created By Me button below search bar */}
-					<StyledFilterSearchContainer>
-						<Button
-							variant={
-								createdByMeSelected ? "contained" : "outlined"
-							}
-							size="small"
-							fullWidth
-							onClick={handleCreatedByMeClick}
-							data-testid="filterbox-createdByMe-btn"
-						>
-							Created By Me
-						</Button>
-					</StyledFilterSearchContainer>
 					{type !== "BROWSETEMPLATES" &&
 						Object.entries(filterOptions).map((entries, i) => {
 							const totalFilters =

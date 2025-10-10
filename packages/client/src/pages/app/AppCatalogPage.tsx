@@ -154,8 +154,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
 
-	const [createdByMeActive, setCreatedByMeActive] = useState(false);
-
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
 		(k) => {
@@ -316,25 +314,6 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		});
 	};
 
-	const getMyApps = (appsArray) => {
-		if (createdByMeActive) {
-			return appsArray.filter(
-				(app) => app.project_created_by === configStore.store.user.id,
-			);
-		}
-		// For All Apps, exclude favorited apps
-		if (appsArray === apps) {
-			return appsArray.filter(
-				(app) =>
-					!favoritedApps.some(
-						(fav) => fav.project_id === app.project_id,
-					),
-			);
-		}
-		// For Bookmarked, just return as is
-		return appsArray;
-	};
-
 	return (
 		<>
 			<NavbarLeft>
@@ -392,14 +371,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									onChange={(
 										filters: Record<string, unknown>,
 									) => {
-										// Separate "Created By Me" logic from other filters
-										const { createdByMe, ...otherFilters } =
-											filters;
-
-										// Update metaFilters only for other filters (tags, domains, etc.)
-										setMetaFilters(otherFilters);
-
-										setCreatedByMeActive(!!createdByMe);
+										setMetaFilters(filters);
 									}}
 								/>
 							</div>
@@ -439,19 +411,15 @@ export const AppCatalogPage = observer((): JSX.Element => {
 							</StyledToggleTabsGroup>
 						</Stack>
 
-						{mode !== "System" &&
-						favoritedApps.length > 0 &&
-						!createdByMeActive ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSectionLabel variant="subtitle1">
 								Bookmarked
 							</StyledSectionLabel>
 						) : null}
 
-						{mode !== "System" &&
-						favoritedApps.length > 0 &&
-						!createdByMeActive ? (
+						{mode !== "System" && favoritedApps.length > 0 ? (
 							<StyledSection>
-								{getMyApps(favoritedApps).map((app) => {
+								{favoritedApps.map((app) => {
 									return (
 										<AppTileCard
 											key={app.project_id}
@@ -490,6 +458,68 @@ export const AppCatalogPage = observer((): JSX.Element => {
 									);
 								})}
 							</StyledSection>
+						) : null}
+
+						{mode !== "System" && apps.length > 0 ? (
+							<>
+								<StyledSectionLabel variant="subtitle1">
+									Created By Me
+								</StyledSectionLabel>
+								<StyledSection>
+									{apps
+										.filter(
+											(app) =>
+												app.project_created_by ===
+												configStore.store.user.id,
+										)
+										.filter(
+											(app) =>
+												!favoritedApps.some(
+													(fav) =>
+														fav.project_id ===
+														app.project_id,
+												),
+										)
+										.map((app) => (
+											<AppTileCard
+												key={app.project_id}
+												app={app}
+												systemApp={false}
+												isDiscoverable={mode !== "Mine"}
+												href={
+													mode === "Discoverable"
+														? `#/app/${app.project_id}/detail`
+														: `#/app/${app.project_id}/view`
+												}
+												onAction={() => {
+													if (
+														mode === "Discoverable"
+													) {
+														navigate(
+															`/app/${app.project_id}/detail`,
+														);
+													} else {
+														navigate(
+															`/app/${app.project_id}/view`,
+														);
+													}
+												}}
+												appType={app.project_type}
+												isFavorite={isFavorited(
+													app.project_id,
+												)}
+												favorite={() => {
+													favoriteApp(app);
+												}}
+												onDelete={() => {
+													removeApp(app);
+												}}
+												isLoading={true}
+												showSkeleton={false}
+											/>
+										))}
+								</StyledSection>
+							</>
 						) : null}
 
 						{mode === "System" && (
@@ -550,44 +580,55 @@ export const AppCatalogPage = observer((): JSX.Element => {
 						{/* do not show favorited apps in all apps view */}
 						{mode !== "System" && apps.length > 0 ? (
 							<StyledSection>
-								{getMyApps(apps).map((app, _i) => {
-									return (
-										<AppTileCard
-											key={app.project_id}
-											app={app}
-											systemApp={false}
-											isDiscoverable={mode !== "Mine"}
-											href={
-												mode === "Discoverable"
-													? `#/app/${app.project_id}/detail`
-													: `#/app/${app.project_id}/view`
-											}
-											onAction={() => {
-												if (mode === "Discoverable") {
-													navigate(
-														`/app/${app.project_id}/detail`,
-													);
-												} else {
-													navigate(
-														`/app/${app.project_id}/view`,
-													);
+								{apps
+									.filter(
+										(app) =>
+											!favoritedApps.some(
+												(filterApp) =>
+													filterApp.project_id ===
+													app.project_id,
+											),
+									)
+									.map((app, _i) => {
+										return (
+											<AppTileCard
+												key={app.project_id}
+												app={app}
+												systemApp={false}
+												isDiscoverable={mode !== "Mine"}
+												href={
+													mode === "Discoverable"
+														? `#/app/${app.project_id}/detail`
+														: `#/app/${app.project_id}/view`
 												}
-											}}
-											appType={app.project_type}
-											isFavorite={isFavorited(
-												app.project_id,
-											)}
-											favorite={() => {
-												favoriteApp(app);
-											}}
-											onDelete={() => {
-												removeApp(app);
-											}}
-											isLoading={true}
-											showSkeleton={false}
-										/>
-									);
-								})}
+												onAction={() => {
+													if (
+														mode === "Discoverable"
+													) {
+														navigate(
+															`/app/${app.project_id}/detail`,
+														);
+													} else {
+														navigate(
+															`/app/${app.project_id}/view`,
+														);
+													}
+												}}
+												appType={app.project_type}
+												isFavorite={isFavorited(
+													app.project_id,
+												)}
+												favorite={() => {
+													favoriteApp(app);
+												}}
+												onDelete={() => {
+													removeApp(app);
+												}}
+												isLoading={true}
+												showSkeleton={false}
+											/>
+										);
+									})}
 							</StyledSection>
 						) : null}
 					</StyledContentContainer>
