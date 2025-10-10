@@ -66,7 +66,7 @@ export const StackChart: BlockComponent = observer(({ id }) => {
 	let category = "";
 	let tooltip = "";
 	if (Object.hasOwn(data.option, "_state")) {
-		fields = data.option["_state"]["fields"]; 
+		fields = data.option["_state"]["fields"];
 		xAxis = fields["XAxis"];
 		yAxis = fields["YAxis"];
 		category = fields["category"];

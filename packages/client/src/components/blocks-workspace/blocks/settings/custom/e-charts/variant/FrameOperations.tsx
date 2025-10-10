@@ -887,9 +887,7 @@ export const FrameOperations = observer(
 					if (columns[secondColumn?.label]?.length) {
 						tempVal[secondColumn?.label] = {
 							...tempVal[secondColumn?.label],
-							["name"]:
-								axisName||
-								pixelName[0],
+							["name"]: axisName || pixelName[0],
 							["pixelname"]: pixelName,
 							["pixelvalue"]: pixelValue,
 						};
@@ -1959,7 +1957,10 @@ export const FrameOperations = observer(
 																						...prev,
 																					};
 																				if (
-																					(e.target as HTMLInputElement).checked
+																					(
+																						e.target as HTMLInputElement
+																					)
+																						.checked
 																				) {
 																					// Add the column name if checked
 																					if (
