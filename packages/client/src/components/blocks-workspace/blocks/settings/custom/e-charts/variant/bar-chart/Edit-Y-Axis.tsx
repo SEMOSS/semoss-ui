@@ -117,7 +117,11 @@ export const EditYAxis = observer(
 		//update the value when computed value is updated
 		useEffect(() => {
 			try {
-				setValue(typeof computedValue === "string" ? JSON.parse(computedValue) : computedValue);
+				setValue(
+					typeof computedValue === "string"
+						? JSON.parse(computedValue)
+						: computedValue,
+				);
 			} catch {
 				setValue({});
 			}
@@ -248,17 +252,17 @@ export const EditYAxis = observer(
 						option[axis] = {
 							...option[axis],
 							nameTruncate: {
-							...option[axis]?.nameTruncate,
-							maxWidth: Number(axisData.truncateCharCount) || undefined,
+								...option[axis]?.nameTruncate,
+								maxWidth:
+									Number(axisData.truncateCharCount) ||
+									undefined,
 							},
 						};
 					}
 					if (Object.hasOwn(axisData, "axisGap")) {
 						option[axis] = {
 							...option[axis],
-							["nameGap"]:
-								Number(axisData.axisGap) ||
-								undefined,
+							["nameGap"]: Number(axisData.axisGap) || undefined,
 						};
 					}
 				} else {
@@ -472,13 +476,11 @@ export const EditYAxis = observer(
 							size="small"
 							type="number"
 							value={yaxisState.axisGap}
-							onChange={(e) =>
-								handleInputChange(e, "axisGap")
-							}
+							onChange={(e) => handleInputChange(e, "axisGap")}
 						/>
 					</StyledAxisColDiv>
 				)}
-							
+
 				<StyledAxisDiv
 					display="flex"
 					justifyContent="flex-start"
