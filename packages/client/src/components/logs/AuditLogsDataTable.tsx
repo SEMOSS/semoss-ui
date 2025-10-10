@@ -16,7 +16,6 @@ import {
 	IconButton,
 	InputAdornment,
 	List,
-	ListItemText,
 	Paper,
 	Popover,
 	Stack,
@@ -567,7 +566,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 										!allSelected,
 								}}
 							/>
-							<ListItemText
+							<List.ItemText
 								primary="Select All"
 								primaryTypographyProps={{
 									fontSize: "14px",
@@ -596,7 +595,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											option.value,
 										)}
 									/>
-									<ListItemText
+									<List.ItemText
 										primary={option.label}
 										primaryTypographyProps={{
 											fontSize: "14px",

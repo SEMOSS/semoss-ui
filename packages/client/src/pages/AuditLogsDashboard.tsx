@@ -2,7 +2,7 @@ import { Refresh } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import {
 	Button,
-	MenuItem,
+	Menu,
 	Select,
 	Skeleton,
 	Stack,
@@ -97,13 +97,13 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 							sx={{ minWidth: 120 }}
 							value={"Last 30 Days"}
 						>
-							<MenuItem value="Last 30 Days">
+							<Menu.Item value="Last 30 Days">
 								Last 30 Days
-							</MenuItem>
-							<MenuItem value="Last 90 Days">
+							</Menu.Item>
+							<Menu.Item value="Last 90 Days">
 								Last 90 Days
-							</MenuItem>
-							<MenuItem value="Last Year">Last Year</MenuItem>
+							</Menu.Item>
+							<Menu.Item value="Last Year">Last Year</Menu.Item>
 						</Select>
 						<Button
 							variant="contained"
