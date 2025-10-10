@@ -217,7 +217,7 @@ export class ChatStore {
 
 			// push options to BE
 			if (Object.keys(options).length > 0) {
-				room.updateRoomOptions(options);
+				await room.updateRoomOptions(options);
 			}
 
 			runInAction(() => {
