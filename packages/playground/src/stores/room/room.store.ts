@@ -324,21 +324,7 @@ export class RoomStore {
 	 * Initialize the room and load messages and options if they are there
 	 */
 	initialize = async () => {
-		try {
-			// only load messages once
-			if (this._store.isInitialized) {
-				return;
-			}
-
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// get the room options
-			const optionsResponse = await this.runRoomPixel<
-				RoomStoreInterface["options"][]
-			>(`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`);
-			const { output: roomOptions } = optionsResponse.pixelReturn[0];
-
+		const loadMessages = async () => {
 			// get all of the messages in historical order (sorted)
 			const response = await this.runRoomPixel<[PixelMessage[]]>(
 				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
@@ -388,20 +374,46 @@ export class RoomStore {
 					root.addChild(m.message);
 				}
 			}
-
 			runInAction(() => {
-				// set the model + options based on the history
+				// set the model based on the history
 				this.setModel(activeModelId);
-				this.setOptions(roomOptions);
 
 				// store it
 				this._store.root = root;
+			});
+		};
+
+		const loadOptions = async () => {
+			const response = await this.runRoomPixel<
+				RoomStoreInterface["options"][]
+			>(`GetRoomOptions1(roomId=${JSON.stringify(this._store.roomId)});`);
+			const { output } = response.pixelReturn[0];
+
+			runInAction(() => {
+				// set the options based on the history
+				this.setOptions(output);
 
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+		};
+
+		try {
+			// only load messages once
+			if (this._store.isInitialized) {
+				return;
+			}
+
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			await Promise.all([loadMessages(), loadOptions()]);
+
+			runInAction(() => {
+				// mark as initialized
+				this._store.isInitialized = true;
+			});
 		} finally {
-			// turn off the loading screen
 			this.setIsLoading(false);
 		}
 	};
