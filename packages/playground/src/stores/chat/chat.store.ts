@@ -178,6 +178,7 @@ export class ChatStore {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
+			console.log("creating room");
 
 			// wait for the pixel to run
 			const { pixelReturn } =
@@ -200,11 +201,10 @@ export class ChatStore {
 			// get the roomId
 			const roomId = output.roomId;
 
+			console.log("created room", roomId);
+
 			// register the room
 			const room = this.newRoom(roomId);
-
-			// initialize the room to get the insightId
-			await room.initialize();
 
 			// set the initial data
 			room.setMetadata({

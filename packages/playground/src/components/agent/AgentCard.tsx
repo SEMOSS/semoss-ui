@@ -59,7 +59,10 @@ export const AgentCard = ({
 			<Stack justifyContent="flex-end">
 				<div>
 					<Button
-						onClick={onSecondaryClick}
+						onClick={(e) => {
+							e.stopPropagation();
+							onSecondaryClick?.();
+						}}
 						endIcon={<ArrowForward />}
 						size="small"
 						variant="text"
