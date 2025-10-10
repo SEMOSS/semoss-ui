@@ -2,7 +2,8 @@ import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	Container,
@@ -24,7 +25,7 @@ import {
 	RoomInput,
 } from "@/components";
 import { AgentChip } from "@/components/agent";
-import { useAutoScroll, useChat, useLoadingPixel } from "@/hooks";
+import { useAutoScroll, useChat } from "@/hooks";
 import { ResponseMessageStore } from "@/stores";
 import type { Agent } from "@/types";
 
@@ -160,11 +161,10 @@ export const RoomPage = observer(() => {
 
 	// get the agent if there is one
 	const agentId = room?.getAgentId();
-	const [agent, isLoadingAgent] = useLoadingPixel<Agent>(
-		`GetWorkspace("${agentId}");`,
-		null,
-		!agentId,
+	const { data: agent, status } = usePixel<Agent>(
+		agentId ? `GetWorkspace("${agentId}");` : null,
 	);
+	const isLoadingAgent = status === "LOADING";
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -254,7 +254,13 @@ export const RoomPage = observer(() => {
 		};
 	}, [room]);
 
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
 	}
 

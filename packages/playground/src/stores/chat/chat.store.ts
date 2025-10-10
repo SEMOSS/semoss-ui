@@ -101,7 +101,7 @@ export class ChatStore {
 	 * @param roomId - message to get
 	 */
 	getRoom(roomId: string): RoomStore | null {
-		return this._store.rooms[roomId];
+		return this._store.rooms[roomId] ?? null;
 	}
 
 	/**
