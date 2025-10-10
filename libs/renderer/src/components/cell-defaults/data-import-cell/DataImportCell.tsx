@@ -188,7 +188,7 @@ export interface DataImportCellDef extends CellDef<"data-import"> {
 		columnAliases: string[];
 		tableNames: string[];
 		joins: JoinObject[];
-        dataLimit: number;
+		dataLimit: number;
 		// TODO add filters and summaries
 		// filters: FilterObject[];
 		// summaries: FilterObject[];
@@ -210,7 +210,9 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			display: {},
 			ids: [],
 		});
-        const [dataLimit, setDataLimit] = useState(cell.parameters.dataLimit || null);
+		const [dataLimit, setDataLimit] = useState(
+			cell.parameters.dataLimit || null,
+		);
 
 		const myDbs = usePixel<{ app_id: string; app_name: string }[]>(
 			`MyEngines(engineTypes=['DATABASE']);`,
@@ -365,11 +367,16 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 			setIsDataImportModalOpen(true);
 		};
 
-        const updateDataLimit  = (query: string) :string => {
-            return query.replace(/Limit\s*\(\s*-*\d+\s*\)/, `Limit ( ${cell.parameters.dataLimit || -1} )`);
-        }
+		const updateDataLimit = (query: string): string => {
+			return query.replace(
+				/Limit\s*\(\s*-*\d+\s*\)/,
+				`Limit ( ${cell.parameters.dataLimit || -1} )`,
+			);
+		};
 
-		const handleDataLimitUpdate = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const handleDataLimitUpdate = (
+			e: React.ChangeEvent<HTMLInputElement>,
+		) => {
 			let value = parseInt(e.target.value);
 			if (Number.isNaN(value)) {
 				value = -1;
@@ -484,18 +491,18 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 						<>
 							<StyledFlexDiv>
 								{cell.parameters.tableNames?.map(
-										(tableName) => (
-											<Tooltip
-												title={`${tableName} Table`}
-												key={`table-key-${tableName}`}
-											>
-												<StyledTableTitleBubble>
-													<StyledCalendarViewMonth fontSize="small" />
-													{tableName}
-												</StyledTableTitleBubble>
-											</Tooltip>
-										),
-									)}
+									(tableName) => (
+										<Tooltip
+											title={`${tableName} Table`}
+											key={`table-key-${tableName}`}
+										>
+											<StyledTableTitleBubble>
+												<StyledCalendarViewMonth fontSize="small" />
+												{tableName}
+											</StyledTableTitleBubble>
+										</Tooltip>
+									),
+								)}
 							</StyledFlexDiv>
 
 							{isExpanded &&
@@ -569,7 +576,7 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 											0,
 											-1,
 										) +
-										` | Import ( frame = [ CreateFrame ( frameType = [ \"${cell.parameters.frameType}\" ] , override = [ true ] ) .as ( [ \"${cell.parameters.frameVariableName}\" ] ) ] ) ; Frame ( frame = [ \"${cell.parameters.frameVariableName}\" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
+										` | Import ( frame = [ CreateFrame ( frameType = [ "${cell.parameters.frameType}" ] , override = [ true ] ) .as ( [ "${cell.parameters.frameVariableName}" ] ) ] ) ; Frame ( frame = [ "${cell.parameters.frameVariableName}" ] ) | QueryAll ( ) | Limit ( 20 ) | CollectAll ( ) ;`
 									}
 									language="pixel"
 									options={{
@@ -600,14 +607,14 @@ export const DataImportCell: CellComponent<DataImportCellDef> = observer(
 							paddingTop={"0px"}
 							direction="row"
 						>
-                            <TextField 
-                                type="number"
-                                size="small"
-                                label="Data Limit"
-                                value={dataLimit}
-                                onChange={handleDataLimitUpdate}
+							<TextField
+								type="number"
+								size="small"
+								label="Data Limit"
+								value={dataLimit}
+								onChange={handleDataLimitUpdate}
 								key={`data-limit-number`}
-                            />
+							/>
 							<Button
 								variant={"text"}
 								color={"primary"}

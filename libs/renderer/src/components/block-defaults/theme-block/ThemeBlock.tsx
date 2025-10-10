@@ -1,4 +1,8 @@
-import { createTheme, ThemeProvider as MuiThemeProvider } from "@mui/material";
+import {
+	createTheme,
+	ThemeProvider as MuiThemeProvider,
+	type ThemeOptions,
+} from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useMemo } from "react";
 import { useBlock } from "../../../hooks";
@@ -19,7 +23,7 @@ export const ThemeBlock: BlockComponent = observer(({ id }) => {
 	const { attrs, data, slots } = useBlock<ThemeBlockDef>(id);
 
 	const t = useMemo(() => {
-		return createTheme({ ...data.theme });
+		return createTheme({ ...(data.theme as ThemeOptions) });
 	}, [data.theme]);
 
 	return (

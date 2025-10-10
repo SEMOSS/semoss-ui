@@ -1,7 +1,6 @@
 import { ChevronRight, ExpandMore } from "@mui/icons-material";
 import React from "react";
-import { Icon, styled, TreeView } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import { Icon, LoadingScreen, styled, TreeView } from "@semoss/ui";
 import { usePixel } from "@/hooks";
 import { FileExplorerItem } from "./FileExplorerItem";
 
