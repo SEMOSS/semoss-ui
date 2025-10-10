@@ -2,7 +2,8 @@ import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	Container,
@@ -23,8 +24,10 @@ import {
 	RoomConfiguration,
 	RoomInput,
 } from "@/components";
+import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
 import { ResponseMessageStore } from "@/stores";
+import type { Agent } from "@/types";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -136,7 +139,15 @@ const getDateTitle = (d: string) => {
 	return message;
 };
 
+/**
+ * The page for a room
+ *
+ * @component
+ */
 export const RoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 
 	const notification = useNotification();
@@ -148,10 +159,21 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
+	// get the agent if there is one
+	const agentId = room?.getAgentId();
+	const { data: agent, status } = usePixel<Agent>(
+		agentId ? `GetWorkspace("${agentId}");` : null,
+	);
+	const isLoadingAgent = status === "LOADING";
+
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
 	);
+
+	/**
+	 * Effects
+	 */
 
 	// load the room
 	useEffect(() => {
@@ -232,7 +254,13 @@ export const RoomPage = observer(() => {
 		};
 	}, [room]);
 
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
 	}
 
@@ -345,40 +373,47 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									<Tooltip
-										title={"Open Configuration Menu"}
-										placement="top"
-									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={room.isLoading}
-											color={
-												room.sidebar.isOpen &&
-												room.sidebar.type ===
-													"CONFIGURATION"
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												// toggle open / closed based on the state
-												if (
+									agentId ? (
+										<AgentChip
+											agent={agent}
+											loading={isLoadingAgent}
+										/>
+									) : (
+										<Tooltip
+											title={"Open Configuration Menu"}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={room.isLoading}
+												color={
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-												) {
-													room.closeSidebar();
-												} else {
-													room.openSidebar(
-														"CONFIGURATION",
-													);
+														? "primary"
+														: "default"
 												}
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
-									</Tooltip>
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
