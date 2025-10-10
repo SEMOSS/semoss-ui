@@ -15,7 +15,7 @@ const Message = ({ children }: { children: React.ReactNode }) => (
 );
 
 const Bold = ({ children }: { children: React.ReactNode }) => (
-	<StyledTypography variant="body1" fontWeight={600}>
+	<StyledTypography variant="body1" fontWeight="bold">
 		{children}
 	</StyledTypography>
 );

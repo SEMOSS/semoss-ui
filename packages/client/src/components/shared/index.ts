@@ -3,12 +3,12 @@ import { NavbarLeft } from "./NavbarLeft";
 import { NavbarRight } from "./NavbarRight";
 import { Page } from "./Page";
 import { PlatformMessages } from "./PlatformMessages";
-import { Search } from "./Search";
+import { PlatformSearch } from "./PlatformSearch";
 
 export {
 	Page,
 	PlatformMessages,
-	Search,
+	PlatformSearch,
 	NavbarLeft,
 	NavbarRight,
 	NavbarHeader,

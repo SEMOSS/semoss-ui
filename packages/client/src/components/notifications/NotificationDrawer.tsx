@@ -13,6 +13,7 @@ import {
 	Tab,
 	Tabs,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import { NotificationItem } from "./NotificationItem";
@@ -111,6 +112,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 		const [offset, setOffset] = useState(0);
 		const [hasMore, setHasMore] = useState(true);
 		const [loading, setLoading] = useState(false);
+		const notification = useNotification();
 		const [selectedTab, setSelectedTab] = useState<
 			"all" | "read" | "unread"
 		>("all");
@@ -120,26 +122,54 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 		const notificationListId = useId();
 
 		/**
-		 * Fetch notifications from the backend.
-		 *
-		 * @param limit - The number of notifications to fetch.
-		 * @param offset - The offset to start fetching from.
-		 * @returns A promise that resolves to the fetched notifications.
-		 */
-		const fetchNotifications = async (limit: number, offset: number) => {
-			// Construct the pixel command
-			const pixel = `GetNotifications(limit = "${limit}", offset = "${offset}")`;
+				 * Fetch notifications from the backend.
+				 *
+				 * @param limit - The number of notifications to fetch.
+				 * @param offset - The offset to start fetching from.
+				 * @returns A promise that resolves to the fetched notifications.
+				 */
+				const fetchNotifications = async (
+					limit: number,
+					offset: number,
+				) => {
+					try {
+						// Construct the pixel command
+						const pixel = `GetNotifications(limit = "${limit}", offset = "${offset}")`;
 
-			// Run the pixel command
-			const res = await runPixel(pixel);
+						// Run the pixel command
+						const res = await runPixel(pixel);
 
-			// Extract the output of the pixel command
-			const notifications = res.pixelReturn[0]
-				.output as NotificationRecord[];
+						const first = res?.pixelReturn?.[0];
 
-			// Return the notifications
-			return notifications;
-		};
+						if (!first) {
+							throw new Error("No pixel return from server");
+						}
+
+						// Check for operationType error
+						if (
+							Array.isArray(first.operationType) &&
+							first.operationType.includes("ERROR")
+						) {
+							const outputMsg =
+								typeof first.output === "string"
+									? first.output
+									: JSON.stringify(first.output);
+							throw new Error(outputMsg);
+						}
+
+						// Extract the output as notifications
+						const notifications =
+							first.output as NotificationRecord[];
+						return notifications;
+					} catch (e) {
+						notification.add({
+							color: "error",
+							message:
+								e?.message ?? "Failed to fetch notifications",
+						});
+						return []; // return empty list so caller doesn’t break
+					}
+				};
 
 		useEffect(() => {
 			const listEl = document.getElementById(notificationListId);
@@ -362,7 +392,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 				ModalProps={{ keepMounted: true }}
 			>
 				<Header>
-					<Typography variant="subtitle1" fontWeight={600}>
+					<Typography variant="subtitle1" fontWeight="bold">
 						Notifications
 					</Typography>
 					<Stack direction="row" spacing={1}>

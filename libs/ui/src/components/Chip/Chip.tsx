@@ -30,158 +30,158 @@ const StyledMuiChip = styled(MuiChip, {
 		}),
 		...(chipColor === "primary" && {
 			backgroundColor: theme.palette.primary.main,
-			color: palette.text.white,
+			color: theme.palette.text.white,
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"&&:hover": {
 				backgroundColor: theme.palette.primary.main,
 			},
 		}),
 		...(chipColor === "green" && {
-			backgroundColor: palette.green["700"],
-			color: palette.text.white,
+			backgroundColor: theme.palette.green["700"],
+			color: theme.palette.text.white,
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"&&:hover": {
-				backgroundColor: palette.green["700"],
+				backgroundColor: theme.palette.green["700"],
 			},
 		}),
 		...(chipColor === "pink" && {
-			backgroundColor: palette.pink["700"],
-			color: palette.text.white,
+			backgroundColor: theme.palette.pink["700"],
+			color: theme.palette.text.white,
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"&&:hover": {
-				backgroundColor: palette.pink["700"],
+				backgroundColor: theme.palette.pink["700"],
 			},
 		}),
 		...(chipColor === "purple" && {
-			backgroundColor: palette.purple["500"],
-			color: palette.text.white,
+			backgroundColor: theme.palette.purple["500"],
+			color: theme.palette.text.white,
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"&&:hover": {
-				backgroundColor: palette.purple["500"],
+				backgroundColor: theme.palette.purple["500"],
 			},
 		}),
 		...(chipColor === "indigo" && {
-			backgroundColor: palette.darkBlue["600"],
-			color: palette.text.white,
+			backgroundColor: theme.palette.darkBlue["600"],
+			color: theme.palette.text.white,
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"&&:hover": {
-				backgroundColor: palette.darkBlue["600"],
+				backgroundColor: theme.palette.darkBlue["600"],
 			},
 		}),
 		...(chipColor === "lcprimary" && {
-			backgroundColor: palette.primaryContrast["50"],
+			backgroundColor: theme.palette.primaryContrast["50"],
 			color: "",
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.text.white,
+				color: theme.palette.text.white,
 			},
 			"&&:hover": {
-				backgroundColor: palette.primaryContrast["50"],
+				backgroundColor: theme.palette.primaryContrast["50"],
 			},
 		}),
 		...(chipColor === "turqoise" && {
-			backgroundColor: palette.green["50"],
-			color: palette.green["900"],
+			backgroundColor: theme.palette.green["50"],
+			color: theme.palette.green["900"],
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.green["900"],
+				color: theme.palette.green["900"],
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.green["900"],
+				color: theme.palette.green["900"],
 			},
 			"&&:hover": {
-				backgroundColor: palette.green["50"],
+				backgroundColor: theme.palette.green["50"],
 			},
 		}),
 		...(chipColor === "lcpink" && {
-			backgroundColor: palette.pink["50"],
-			color: palette.pink["900"],
+			backgroundColor: theme.palette.pink["50"],
+			color: theme.palette.pink["900"],
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.pink["900"],
+				color: theme.palette.pink["900"],
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.pink["900"],
+				color: theme.palette.pink["900"],
 			},
 			"&&:hover": {
-				backgroundColor: palette.pink["50"],
+				backgroundColor: theme.palette.pink["50"],
 			},
 		}),
 		...(chipColor === "lcpurple" && {
-			backgroundColor: palette.purple["50"],
-			color: palette.purple["900"],
+			backgroundColor: theme.palette.purple["50"],
+			color: theme.palette.purple["900"],
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.purple["900"],
+				color: theme.palette.purple["900"],
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.purple["900"],
+				color: theme.palette.purple["900"],
 			},
 			"&&:hover": {
-				backgroundColor: palette.purple["50"],
+				backgroundColor: theme.palette.purple["50"],
 			},
 		}),
 		...(chipColor === "lcindigo" && {
-			backgroundColor: palette.darkBlue["50"],
-			color: palette.purple["900"],
+			backgroundColor: theme.palette.darkBlue["50"],
+			color: theme.palette.purple["900"],
 			borderColor: "",
 			".MuiSvgIcon-root": {
-				color: palette.purple["900"],
+				color: theme.palette.purple["900"],
 			},
 			"& .MuiChip-deleteIcon": {
-				color: palette.purple["900"],
+				color: theme.palette.purple["900"],
 			},
 			"&&:hover": {
-				backgroundColor: palette.darkBlue["50"],
+				backgroundColor: theme.palette.darkBlue["50"],
 			},
 		}),
-        ...(chipColor === "red" && {
-            backgroundColor: theme.palette.error.main,
-            color: palette.text.white,
-            borderColor: "",
-            ".MuiSvgIcon-root": {
-                color: palette.text.white,
-            },
-            "& .MuiChip-deleteIcon": {
-                color: palette.text.white,
-            },
-            "&&:hover": {
-                backgroundColor: theme.palette.error.main,
-            },
-        }),
+		...(chipColor === "red" && {
+			backgroundColor: theme.palette.error.main,
+			color: theme.palette.text.white,
+			borderColor: "",
+			".MuiSvgIcon-root": {
+				color: theme.palette.text.white,
+			},
+			"& .MuiChip-deleteIcon": {
+				color: theme.palette.text.white,
+			},
+			"&&:hover": {
+				backgroundColor: theme.palette.error.main,
+			},
+		}),
 		...(chipColor === "yellow" && {
             backgroundColor: theme.palette.warning.main,
             color: palette.text.white,
@@ -237,7 +237,7 @@ export interface ChipProps {
 		| "lcpurple"
 		| "lcindigo"
 		| "lcprimary"
-        | "red"
+		| "red"
 		| "yellow";
 
 	/**

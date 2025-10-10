@@ -106,7 +106,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 	if (!notifications || notifications.length === 0) {
 		return (
 			<StyledBox>
-				<Typography variant="body2" color="text.secondary">
+				<Typography variant="body2" color="textSecondary">
 					No notifications yet.
 				</Typography>
 			</StyledBox>
@@ -169,7 +169,7 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 								{n.notification_createdat && (
 									<StyledTimeFormat
 										variant="caption"
-										color="text.secondary"
+										color="textSecondary"
 										title={n.notification_createdat}
 									>
 										{formatDate(n.notification_createdat)}

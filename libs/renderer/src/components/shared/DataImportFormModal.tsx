@@ -348,7 +348,9 @@ export const DataImportFormModal = observer(
 		const [rootTable, setRootTable] = useState(
 			cell ? cell.parameters.rootTable : null,
 		);
-        const [dataLimit, setDataLimit] = useState(cell ? cell.parameters.dataLimit : -1);
+		const [dataLimit, setDataLimit] = useState(
+			cell ? cell.parameters.dataLimit : -1,
+		);
 
 		const [checkedColumnsCount, setCheckedColumnsCount] = useState(0);
 		const [selectedTableNames, setSelectedTableNames] = useState(new Set());

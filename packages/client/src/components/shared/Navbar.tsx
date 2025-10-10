@@ -13,7 +13,7 @@ import {
 } from "@semoss/ui";
 import { usePage } from "@/hooks";
 import { NotificationDrawer } from "../notifications/NotificationDrawer";
-import { Search } from "./Search";
+import { PlatformSearch } from "./PlatformSearch";
 
 const StyledNavbar = styled("div")(({ theme }) => ({
 	position: "absolute",
@@ -101,7 +101,7 @@ export const Navbar: React.FC = observer(() => {
 			></StyledLeft>
 			<StyledContainer maxWidth={false}>
 				{page.navbar?.search ? (
-					<Search
+					<PlatformSearch
 						renderInput={(params) => (
 							<StyledTextField
 								{...params}
@@ -134,7 +134,13 @@ export const Navbar: React.FC = observer(() => {
 			>
 				<IconButton onClick={handleBellClick} color="secondary">
 					<Badge
-						badgeContent={hasUnread > 9 ? "9+" : hasUnread}
+						badgeContent={
+							typeof hasUnread === "number"
+								? hasUnread > 9
+									? "9+"
+									: hasUnread
+								: null
+						}
 						color="error"
 						overlap="circular"
 						variant="standard"
