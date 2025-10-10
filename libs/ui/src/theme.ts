@@ -1,38 +1,22 @@
-import {
-	alpha,
-	type PaletteOptions,
-	type SimplePaletteColorOptions,
-	styled,
-	type ThemeOptions,
-	useTheme,
-} from "@mui/material";
-import type { TypographyOptions } from "@mui/material/styles/createTypography";
+// SEE: https://www.figma.com/design/kZwcxDBSMJbOcFaCin2xbd/SEMOSS-MUI-Core-v5.4.0?node-id=4662-14&p=f&vars=1&var-id=5d601bc1d2fd3dce9adb4026d0f5157be370a25f%2F7130-62&m=dev
+import { alpha, styled, type ThemeOptions, useTheme } from "@mui/material";
 
 // export specifics from the library
-export { alpha, styled, useTheme };
-export type { ThemeOptions };
+export { alpha, styled, useTheme, type ThemeOptions };
 
-declare module "@mui/material" {
-	interface Theme {
-		shape: {
-			borderRadiusNone: number;
-			borderRadiusSm: number;
-			borderRadiusLg: number;
-			borderRadiusCircle: number;
-			borderRadiusChip: number;
-			borderRadius: number;
-		};
+// Extend the MUI theme type definitions
+declare module "@mui/material/styles" {
+	interface TypeBackground {
+		paper1?: string;
+		paper2?: string;
 	}
 
-	interface Palette {
-		primaryContrast?: CustomPaletteColor;
-		green?: CustomPaletteColor;
-		darkBlue?: CustomPaletteColor;
-		pink?: CustomPaletteColor;
-		purple?: CustomPaletteColor;
-		lightGreen?: CustomPaletteColor;
-		red?: CustomPaletteColor;
-		orange?: CustomPaletteColor;
+	interface SimplePaletteColorOptions {
+		hover?: string;
+		selected?: string;
+		border?: string;
+		disabled?: string;
+		divider?: string;
 	}
 
 	interface PaletteColor {
@@ -41,9 +25,205 @@ declare module "@mui/material" {
 		border?: string;
 		disabled?: string;
 		divider?: string;
-		text?: string;
+	}
+
+	interface TypeText {
+		main?: string;
 		white?: string;
-		backdropOverlay?: string;
+	}
+
+	interface Palette {
+		primaryContrast: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+			shadow: string;
+		};
+		green: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		darkBlue: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		pink: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		purple: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		orange: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+	}
+
+	interface PaletteOptions {
+		primaryContrast?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+			shadow: string;
+		};
+		lightGreen?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		green?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		darkBlue?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		pink?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		purple?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		red?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+		orange?: {
+			50: string;
+			100: string;
+			200: string;
+			300: string;
+			400: string;
+			500: string;
+			600: string;
+			700: string;
+			800: string;
+			900: string;
+		};
+	}
+
+	interface Shape {
+		borderRadius: number;
+		borderRadiusNone: number;
+		borderRadiusSm: number;
+		borderRadiusLg: number;
+		borderRadiusCircle: number;
+		borderRadiusChip: number;
+	}
+
+	interface ShapeOptions {
+		borderRadius: number;
+		borderRadiusNone: number;
+		borderRadiusSm: number;
+		borderRadiusLg: number;
+		borderRadiusCircle: number;
+		borderRadiusChip: number;
 	}
 
 	interface TypographyVariants {
@@ -56,117 +236,28 @@ declare module "@mui/material" {
 		body4?: React.CSSProperties;
 	}
 
+	interface Theme {
+		shape: Shape;
+	}
+	interface ThemeOptions {
+		shape: ShapeOptions;
+	}
+}
+
+declare module "@mui/material/Typography" {
 	interface TypographyPropsVariantOverrides {
 		body3: true;
 		body4: true;
 	}
 }
 
-export interface CustomPaletteColor {
-	50?: string;
-	100?: string;
-	200?: string;
-	300?: string;
-	400?: string;
-	500?: string;
-	600?: string;
-	700?: string;
-	800?: string;
-	900?: string;
-	shadow?: string;
-}
-
-export interface CustomSimplePaletteColorOptions
-	extends SimplePaletteColorOptions,
-		CustomPaletteColor {
-	secondary?: string;
-	primary?: string;
-	hover?: string;
-	selected?: string;
-	border?: string;
-	disabled?: string;
-	divider?: string;
-	white?: string;
-	backdropOverlay?: string;
-}
-
-export interface CustomTypographyOptions extends TypographyOptions {
-	body3: React.CSSProperties;
-	body4: React.CSSProperties;
-}
-
-export interface CustomPaletteOptions extends PaletteOptions {
-	primary: CustomSimplePaletteColorOptions;
-	secondary: CustomSimplePaletteColorOptions;
-	error: CustomSimplePaletteColorOptions;
-	warning: CustomSimplePaletteColorOptions;
-	success: CustomSimplePaletteColorOptions;
-	text?: CustomSimplePaletteColorOptions;
-	primaryContrast?: CustomPaletteColor;
-	lightGreen?: CustomPaletteColor;
-	green?: CustomPaletteColor;
-	darkBlue?: CustomPaletteColor;
-	pink?: CustomPaletteColor;
-	purple?: CustomPaletteColor;
-	red?: CustomPaletteColor;
-	orange?: CustomPaletteColor;
-	grey?: CustomPaletteColor;
-	red?: CustomPaletteColor;
-}
-
-export interface CustomShapeOptions {
-	borderRadiusNone: number;
-	borderRadius: number;
-	borderRadiusSm?: number;
-	borderRadiusLg?: number;
-	borderRadiusCircle?: number;
-	borderRadiusChip?: number;
-}
-
-export interface CustomThemeOptions extends ThemeOptions {
-	palette: CustomPaletteOptions;
-	shape: CustomShapeOptions;
-	typography: CustomTypographyOptions;
-	space?: {
-		auto: string;
-		full: string;
-		none: string;
-		"01": string;
-		"02": string;
-		"03": string;
-		"04": string;
-		"05": string;
-		"06": string;
-		"07": string;
-		"08": string;
-		"09": string;
-		"10": string;
-		"11": string;
-		"12": string;
-		"13": string;
-	};
-}
-
-export interface CustomPaletteTheme {
-	palette: {
-		[key: string]: {
-			[token: string]: string;
-		};
-	};
-}
-
-export const lightTheme: CustomThemeOptions = {
+export const lightTheme: ThemeOptions = {
 	palette: {
 		mode: "light",
 		primary: {
-			// SEMOSS BLUE
 			main: "#0471F0",
 			dark: "#1260DD",
 			light: "#22A4FF",
-			// DELOITTE GREEN
-			// main: "#26890D",
-			// light: "#86BC25",
-			// dark: "#046A38",
 			hover: "#F5F9FE",
 			selected: "#EBF4FE",
 			border: "#9FCFFF",
@@ -175,6 +266,9 @@ export const lightTheme: CustomThemeOptions = {
 			main: "#D9D9D9",
 			dark: "#757575",
 			light: "#F2F2F2",
+			hover: "#F5F5F5",
+			selected: "#EBEBEB",
+			disabled: "#BDBDBD",
 			border: "#C4C4C4",
 			divider: "#E6E6E6",
 		},
@@ -207,7 +301,9 @@ export const lightTheme: CustomThemeOptions = {
 		},
 		background: {
 			paper: "#FFFFFF", // Design references this color as "paper1"
-			default: "#FAFAFA", // Design references this color as "paper2"
+			default: "#FAFAFA", // Design references this color as "paper2",
+			paper1: "#FFFFFF",
+			paper2: "#FAFAFA",
 		},
 		primaryContrast: {
 			// SEMOSS BLUE
@@ -222,18 +318,6 @@ export const lightTheme: CustomThemeOptions = {
 			"800": "#1260DD",
 			"900": "#1C3FBE",
 			shadow: "#D6EAFF",
-			// DELOITTE GREEN
-			// "50": "#E7F4E5",
-			// "100": "#C6E4BF",
-			// "200": "#A1D396",
-			// "300": "#7AC36B",
-			// "400": "#5CB649",
-			// "500": "#3EA924",
-			// "600": "#349B1B",
-			// "700": "#26890D",
-			// "800": "#167800",
-			// "900": "#005A00",
-			// "shadow": "#E7F4E5"
 		},
 		lightGreen: {
 			"50": "#E7F4E5",
@@ -282,12 +366,6 @@ export const lightTheme: CustomThemeOptions = {
 			"700": "#D62C71",
 			"800": "#C0286C",
 			"900": "#992263",
-		},
-		red: {
-			"50": "#FEEBEE",
-			"100": "#FF8A80",
-			"500": "#F44336",
-			"700": "#D50000",
 		},
 		purple: {
 			"50": "#F1E9FB",
@@ -512,9 +590,7 @@ export const lightTheme: CustomThemeOptions = {
 		},
 		MuiAlertTitle: {
 			styleOverrides: {
-				root: ({ theme }) => ({
-					// color: "rgba(0, 0, 0, 0.87)",
-					/* Components/Alert Title */
+				root: () => ({
 					fontSize: "16px",
 					fontStyle: "normal",
 					fontWeight: "500",
@@ -543,18 +619,15 @@ export const lightTheme: CustomThemeOptions = {
 		MuiCard: {
 			styleOverrides: {
 				root: ({ theme }) => {
-					const shape = theme.shape as CustomShapeOptions;
-					const palette =
-						theme.palette as unknown as CustomPaletteOptions;
 					return {
 						display: "flex",
 						flexDirection: "column",
 						boxShadow:
 							"0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-						borderRadius: shape.borderRadiusLg,
+						borderRadius: theme.shape.borderRadiusLg,
 
 						"&:hover": {
-							boxShadow: `0px 5px 22px 0px ${palette.primaryContrast.shadow}`,
+							boxShadow: `0px 5px 22px 0px ${theme.palette.primaryContrast.shadow}`,
 						},
 					};
 				},
@@ -562,19 +635,19 @@ export const lightTheme: CustomThemeOptions = {
 		},
 		MuiCardHeader: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					width: "100%",
 					margin: "16px 0px 16px 0px",
 					padding: "0px 16px 0px 16px",
 				}),
-				content: ({ theme }) => ({
+				content: () => ({
 					width: "80%",
 					display: "flex",
 					flexDirection: "column",
-					gap: theme.spacing(1),
+					gap: "8px",
 				}),
-				action: ({ theme }) => ({}),
-				title: ({ theme }) => ({
+				action: () => ({}),
+				title: () => ({
 					width: "100%",
 					overflow: "hidden",
 					whiteSpace: "nowrap",
@@ -584,11 +657,11 @@ export const lightTheme: CustomThemeOptions = {
 		},
 		MuiCardContent: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					width: "100%",
 					display: "flex",
 					flexDirection: "column",
-					gap: theme.spacing(1),
+					gap: "8px",
 					margin: "0px 0px 16px 0px",
 					padding: "0px 16px 0px 16px",
 				}),
@@ -596,10 +669,10 @@ export const lightTheme: CustomThemeOptions = {
 		},
 		MuiCardActions: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					width: "100%",
 					display: "flex",
-					gap: theme.spacing(1),
+					gap: "8px",
 					margin: "0px 0px 16px 0px",
 					padding: "0px 8px 0px 16px",
 				}),
@@ -608,18 +681,17 @@ export const lightTheme: CustomThemeOptions = {
 		MuiPaper: {
 			styleOverrides: {
 				root: ({ theme }) => {
-					const shape = theme.shape as CustomShapeOptions;
 					return {
 						boxShadow:
 							"0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-						borderRadius: shape.borderRadiusLg,
+						borderRadius: theme.shape.borderRadiusLg,
 					};
 				},
 			},
 		},
 		MuiButton: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					boxShadow: "none",
 				}),
 			},
@@ -629,7 +701,7 @@ export const lightTheme: CustomThemeOptions = {
 
 // darkTheme is not currently in use or up to date with the new Color UI system from design.
 // Once the ability to use a dark theme is added, we will need to get the colors updated.
-export const darkTheme: CustomThemeOptions = {
+export const darkTheme: ThemeOptions = {
 	palette: {
 		mode: "dark",
 		primary: {
@@ -678,17 +750,7 @@ export const darkTheme: CustomThemeOptions = {
 			"700": "#0471F0",
 			"800": "#1260DD",
 			"900": "#1C3FBE",
-			// DELOITTE GREEN
-			// "50": "#E7F4E5",
-			// "100": "#C6E4BF",
-			// "200": "#A1D396",
-			// "300": "#7AC36B",
-			// "400": "#5CB649",
-			// "500": "#3EA924",
-			// "600": "#349B1B",
-			// "700": "#26890D",
-			// "800": "#167800",
-			// "900": "#005A00",
+			shadow: "#D6EAFF",
 		},
 		darkBlue: {
 			"50": "#EAE4F2",
@@ -898,9 +960,7 @@ export const darkTheme: CustomThemeOptions = {
 		},
 		MuiAlertTitle: {
 			styleOverrides: {
-				root: ({ theme }) => ({
-					// color: "rgba(0, 0, 0, 0.87)",
-					/* Components/Alert Title */
+				root: () => ({
 					fontSize: "16px",
 					fontStyle: "normal",
 					fontWeight: "500",
@@ -929,18 +989,15 @@ export const darkTheme: CustomThemeOptions = {
 		MuiCard: {
 			styleOverrides: {
 				root: ({ theme }) => {
-					const shape = theme.shape as CustomShapeOptions;
-					const palette =
-						theme.palette as unknown as CustomPaletteOptions;
 					return {
 						display: "flex",
 						flexDirection: "column",
 						boxShadow:
 							"0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-						borderRadius: shape.borderRadiusLg,
+						borderRadius: theme.shape.borderRadiusLg,
 
 						"&:hover": {
-							boxShadow: `0px 5px 22px 0px ${palette.primaryContrast.shadow}`,
+							boxShadow: `0px 5px 22px 0px ${theme.palette.primaryContrast.shadow}`,
 						},
 					};
 				},
@@ -948,19 +1005,19 @@ export const darkTheme: CustomThemeOptions = {
 		},
 		MuiCardHeader: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					width: "100%",
 					margin: "16px 0px 16px 0px",
 					padding: "0px 16px 0px 16px",
 				}),
-				content: ({ theme }) => ({
+				content: () => ({
 					width: "80%",
 					display: "flex",
 					flexDirection: "column",
-					gap: theme.spacing(1),
+					gap: "8px",
 				}),
-				action: ({ theme }) => ({}),
-				title: ({ theme }) => ({
+				action: () => ({}),
+				title: () => ({
 					width: "100%",
 					overflow: "hidden",
 					whiteSpace: "nowrap",
@@ -970,11 +1027,11 @@ export const darkTheme: CustomThemeOptions = {
 		},
 		MuiCardContent: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					width: "100%",
 					display: "flex",
 					flexDirection: "column",
-					gap: theme.spacing(1),
+					gap: "8px",
 					margin: "0px 0px 16px 0px",
 					padding: "0px 16px 0px 16px",
 				}),
@@ -982,10 +1039,10 @@ export const darkTheme: CustomThemeOptions = {
 		},
 		MuiCardActions: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					width: "100%",
 					display: "flex",
-					gap: theme.spacing(1),
+					gap: "8px",
 					margin: "0px 0px 16px 0px",
 					padding: "0px 8px 0px 16px",
 				}),
@@ -994,20 +1051,17 @@ export const darkTheme: CustomThemeOptions = {
 		MuiPaper: {
 			styleOverrides: {
 				root: ({ theme }) => {
-					const shape = theme.shape as CustomShapeOptions;
-					const _palette =
-						theme.palette as unknown as CustomPaletteOptions;
 					return {
 						boxShadow:
 							"0px 5px 22px 0px rgba(0, 0, 0, 0.04), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
-						borderRadius: shape.borderRadiusLg,
+						borderRadius: theme.shape.borderRadiusLg,
 					};
 				},
 			},
 		},
 		MuiButton: {
 			styleOverrides: {
-				root: ({ theme }) => ({
+				root: () => ({
 					boxShadow: "none",
 				}),
 			},

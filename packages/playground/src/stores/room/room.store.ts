@@ -10,7 +10,7 @@ import {
 	type ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { PixelMessage, Tool } from "@/types";
+import type { Agent, PixelMessage, Toolbox } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -53,6 +53,11 @@ interface RoomStoreInterface {
 	 */
 	modelId: string;
 
+	/*
+	 * Id of the agent linked to the room
+	 */
+	agentId?: string;
+
 	/**
 	 * Root message
 	 */
@@ -70,7 +75,7 @@ interface RoomStoreInterface {
 		/*
 		 * Tools loaded into the room
 		 */
-		tools: Tool[];
+		tools: Toolbox[];
 
 		/*
 		 * Length of the token
@@ -120,6 +125,7 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		modelId: "",
+		agentId: undefined,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
@@ -195,6 +201,13 @@ export class RoomStore {
 	 */
 	get modelId() {
 		return this._store.modelId;
+	}
+
+	/**
+	 * Agent that the user is interacting with
+	 */
+	getAgentId() {
+		return this._store.agentId;
 	}
 
 	/**
@@ -292,6 +305,14 @@ export class RoomStore {
 	};
 
 	/**
+	 * Set the agentId
+	 * @param agentId - agent to use in the room
+	 */
+	setAgentId = (agentId: string) => {
+		this._store.agentId = agentId;
+	};
+
+	/**
 	 * Set options
 	 * @param options - options
 	 */
@@ -300,6 +321,31 @@ export class RoomStore {
 			...this._store.options,
 			...options,
 		};
+	};
+
+	/**
+	 * Set Agent
+	 * @param options - options
+	 */
+	linkAgent = async (agent: Agent) => {
+		try {
+			const { errors } = await this.runRoomPixel<
+				[
+					{
+						roomId: string;
+					},
+				]
+			>(
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agent.workspace_id)});`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+			this.setAgentId(agent.workspace_id);
+		} catch (e) {
+			throw new Error(e.message || "Error linking agent");
+		}
 	};
 
 	/**
@@ -471,82 +517,6 @@ export class RoomStore {
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
 	};
-
-	// /**
-	//  * Confirm the plan and execute it
-	//  */
-	// private runPlanStep = async (step: PlanStep) => {
-	// 	if (step.details.stepType === "tool_call") {
-	// 		// run the tool for the step
-	// 		await this.runPlanTool(step.step_number, step.details.tool_name);
-	// 	} else if (step.details.stepType === "llm_reasoning") {
-	// 		// ask it
-	// 		await this.askMessage(step.details.prompt, []);
-	// 	} else if (step.details.stepType === "human_intervention") {
-	// 		throw new Error("Error");
-	// 	} else if (step.details.stepType === "no_tool_available") {
-	// 		throw new Error("Error");
-	// 	}
-	// };
-
-	// 	/**
-	// 	 *
-	// 	 * @param stepNumber
-	// 	 * @param toolName
-	// 	 */
-	// 	private runPlanTool = async (
-	// 		stepNumber: number,
-	// 		toolName: string,
-	// 	): Promise<void> => {
-	// 		// wait for the pixel to run
-	// 		const response = await this.runRoomPixel<
-	// 			[
-	// 				{
-	// 					inputMessage: InputTextPixelMessage;
-	// 					responseMessage:
-	// 						| ResponseTextPixelMessage
-	// 						| ResponseToolPixelMessage;
-	// 				},
-	// 			]
-	// 		>(
-	// 			`GetCOTToolResponse(
-	// engine=["${this._store.modelId}"],
-	// roomId=["${this._store.roomId}"],
-	// stepNumber=["${stepNumber}"],
-	// toolName=["${toolName}"]
-	// );`,
-	// 		);
-
-	// 		// throw errors
-	// 		if (response.errors.length > 0) {
-	// 			throw new Error(JSON.stringify(response.errors));
-	// 		}
-
-	// 		const { output } = response.pixelReturn[0];
-
-	// 		// get the input from COT
-	// 		const inputMessage = this.createMessage(
-	// 			output.inputMessage,
-	// 		) as InputMessageStore;
-	// 		this.tail.addChild(inputMessage);
-
-	// 		// add the response
-	// 		const responseMessage = this.createMessage(
-	// 			output.responseMessage,
-	// 		) as ResponseMessageStore;
-	// 		inputMessage.addChild(responseMessage);
-
-	// 		// run the tools
-	// 		for (const tool of responseMessage.tools) {
-	// 			await this.runTool(
-	// 				responseMessage,
-	// 				tool._meta.map.SMSS_PROJECT_ID,
-	// 				tool.id,
-	// 				tool.name,
-	// 				tool.parameters,
-	// 			);
-	// 		}
-	// 	};
 
 	/**
 	 * Ask a message to the room

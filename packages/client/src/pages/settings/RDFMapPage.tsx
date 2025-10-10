@@ -1,8 +1,7 @@
 import Editor, { useMonaco } from "@monaco-editor/react";
 import { Suspense, useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk/react";
-import { Box, styled, useTheme } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import { Box, LoadingScreen, styled, useTheme } from "@semoss/ui";
 
 export const RDFMapPage = () => {
 	const [code, setCode] = useState<string>("");

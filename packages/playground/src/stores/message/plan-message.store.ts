@@ -58,6 +58,17 @@ export class PlanMessageStore extends AbstractMessageStore {
 		});
 	}
 
+	/***
+	 * Update a step in the plan
+	 * @param step
+	 */
+	updateStep(stepNumber: number, step: Partial<PlanStep>) {
+		this.plan.steps[stepNumber] = {
+			...this.plan.steps[stepNumber],
+			...step,
+		};
+	}
+
 	/**
 	 * Delete a step from the plan
 	 * @param step_number
@@ -292,9 +303,13 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 
 		const { output } = response.pixelReturn[0];
 
+		console.error(
+			"TODO: Validate if this is correct. Shold I search by messageId and then add it there?",
+		);
+
 		// Get the input from COT
 		const inputMessage = createMessageStore(room, output.inputMessage);
-		this.addChild(inputMessage);
+		room.tail.addChild(inputMessage);
 
 		// Add the response
 		const responseMessage = createMessageStore(
