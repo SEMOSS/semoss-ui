@@ -11,10 +11,10 @@ import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 const StyledRating = styled(Rating)(({ theme }) => ({
 	"& .MuiRating-iconFilled": {
-		color: theme.palette.red[300],
+		color: theme.palette.error[300],
 	},
 	"& .MuiRating-iconHover": {
-		color: theme.palette.red[500],
+		color: theme.palette.error[500],
 	},
 }));
 

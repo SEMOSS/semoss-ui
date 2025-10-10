@@ -18,7 +18,7 @@ interface OperationProps {
 	output: CellState["output"];
 
 	/**
-	 * cell Data on 
+	 * cell Data on
 	 */
 	cellData?: {
 		cellId: string;
