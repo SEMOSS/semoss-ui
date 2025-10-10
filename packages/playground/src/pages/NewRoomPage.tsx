@@ -7,7 +7,7 @@ import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useInsight } from "@semoss/sdk/react";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Container,
 	IconButton,
@@ -19,7 +19,7 @@ import {
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
 import { AgentChip } from "@/components/agent";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat, useLoadingPixel } from "@/hooks";
+import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { Agent } from "@/types";
 
@@ -69,11 +69,10 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const { system } = useInsight();
 	const { agentId } = useParams() as { agentId?: string };
-	const [agent, isLoadingAgent] = useLoadingPixel<Agent>(
-		`GetWorkspace("${agentId}");`,
-		null,
-		!agentId,
+	const { data: agent, status } = usePixel<Agent>(
+		agentId ? `GetWorkspace("${agentId}");` : null,
 	);
+	const isLoadingAgent = status === "LOADING";
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
