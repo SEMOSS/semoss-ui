@@ -136,7 +136,7 @@ export const DatabaseSettingsPage = () => {
 	const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
 		metaKeys,
-	)}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['DATABASE']);
+	)}, filterWord=[""], onlyFavorites=[true], engineTypes=['DATABASE']);
     `);
 
 	useEffect(() => {
@@ -144,20 +144,28 @@ export const DatabaseSettingsPage = () => {
 			return;
 		}
 
+		const filteredData = getFavoritedDatabases.data.filter((db) => {
+			if (!search) return true;
+			const searchLower = search.toLowerCase();
+			const nameMatch = db.database_name?.toLowerCase().includes(searchLower);
+			const idMatch = db.database_id?.toLowerCase().includes(searchLower);
+			return nameMatch || idMatch;
+		});
+
 		dispatch({
 			type: "field",
 			field: "favoritedDbs",
-			value: getFavoritedDatabases.data,
+			value: filteredData,
 		});
 
 		searchbarRef.current?.focus();
-	}, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
+	}, [getFavoritedDatabases.status, getFavoritedDatabases.data, search]);
 
 	// All Engines -------------------------------------
 	const getEngines = useAPI([
 		"getEngines",
 		adminMode,
-		search,
+		"",
 		"DATABASE",
 		offset,
 		limit,
@@ -206,6 +214,14 @@ export const DatabaseSettingsPage = () => {
 
 		searchbarRef.current?.focus();
 	}, [getEngines.status, getEngines.data]);
+
+	const filteredDatabases = databases.filter((db) => {
+		if (!search) return true;
+		const searchLower = search.toLowerCase();
+		const nameMatch = db.database_name?.toLowerCase().includes(searchLower);
+		const idMatch = db.database_id?.toLowerCase().includes(searchLower);
+		return nameMatch || idMatch;
+	});
 
 	/**
 	 * @name favoriteDb
@@ -424,8 +440,8 @@ export const DatabaseSettingsPage = () => {
 					</ToggleButtonGroup>
 				</StyledSearchbarContainer>
 				<Grid container spacing={3}>
-					{databases.length
-						? databases.map((db, i) => {
+					{filteredDatabases.length
+						? filteredDatabases.map((db, i) => {
 								return (
 									<Grid
 										item
