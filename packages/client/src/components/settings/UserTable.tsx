@@ -9,6 +9,7 @@ import {
 	Button,
 	Checkbox,
 	IconButton,
+	LoadingScreen,
 	Popover,
 	Search,
 	Stack,
@@ -17,7 +18,6 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
 import { UserPopover } from "./UserPopover";

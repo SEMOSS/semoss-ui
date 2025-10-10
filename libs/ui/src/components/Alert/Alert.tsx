@@ -1,7 +1,7 @@
 import { Alert as MuiAlert, type SxProps, styled } from "@mui/material";
 import type { ReactNode } from "react";
 
-export type AlertColor = "success" | "info" | "warning" | "error";
+type AlertColor = "success" | "info" | "warning" | "error";
 
 const StyledAlert = styled(MuiAlert, {
 	shouldForwardProp: (prop) => prop !== "colorOverride",
@@ -11,7 +11,6 @@ const StyledAlert = styled(MuiAlert, {
 
 	...(severity === "success" && {
 		backgroundColor: theme.palette.success.light,
-		color: theme.palette.success.text,
 		"& .MuiAlert-icon": {
 			color: theme.palette.success.main,
 		},
@@ -19,7 +18,6 @@ const StyledAlert = styled(MuiAlert, {
 
 	...(severity === "info" && {
 		backgroundColor: theme.palette.primary.selected,
-		color: theme.palette.primary.main,
 		"& .MuiAlert-icon": {
 			color: theme.palette.primary.main,
 		},
@@ -27,15 +25,13 @@ const StyledAlert = styled(MuiAlert, {
 
 	...(severity === "warning" && {
 		backgroundColor: theme.palette.warning.light,
-		color: theme.palette.warning.text,
 		"& .MuiAlert-icon": {
-			color: theme.palette.warning.text,
+			color: theme.palette.warning.main,
 		},
 	}),
 
 	...(severity === "error" && {
 		backgroundColor: theme.palette.error.light,
-		color: theme.palette.error.text,
 		"& .MuiAlert-icon": {
 			color: theme.palette.error.main,
 		},
@@ -43,7 +39,6 @@ const StyledAlert = styled(MuiAlert, {
 
 	...(colorOverride === "secondary" && {
 		backgroundColor: theme.palette.secondary.light,
-		color: theme.palette.text.primary,
 		"& .MuiAlert-icon": {
 			color: theme.palette.text.primary,
 		},

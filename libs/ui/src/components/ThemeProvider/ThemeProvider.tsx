@@ -2,17 +2,18 @@ import {
 	CssBaseline,
 	createTheme,
 	ThemeProvider as MuiThemeProvider,
+	type ThemeOptions,
 } from "@mui/material";
 import deepmerge from "deepmerge";
 import { useMemo } from "react";
-import { type CustomThemeOptions, darkTheme, lightTheme } from "../../theme";
+import { darkTheme, lightTheme } from "../../theme";
 
 export interface ThemeProviderProps {
 	/** Apply the css reset */
 	reset?: boolean;
 
 	/** Theme to pass into the provider */
-	theme?: CustomThemeOptions;
+	theme?: ThemeOptions;
 
 	/** children to be rendered */
 	children?: React.ReactNode;
