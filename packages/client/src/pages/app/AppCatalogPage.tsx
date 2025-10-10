@@ -1,3 +1,4 @@
+import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useEffect, useReducer, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -153,6 +154,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 	const [inputValue, setInputValue] = useState("");
 	const [search, setSearch] = useState("");
+	const [createdByMeOpen, setCreatedByMeOpen] = useState(true);
 
 	// get a list of the keys
 	const projectMetaKeys = configStore.store.config.projectMetaKeys.filter(
@@ -462,63 +464,93 @@ export const AppCatalogPage = observer((): JSX.Element => {
 
 						{mode !== "System" && apps.length > 0 ? (
 							<>
-								<StyledSectionLabel variant="subtitle1">
-									Created By Me
-								</StyledSectionLabel>
-								<StyledSection>
-									{apps
-										.filter(
-											(app) =>
-												app.project_created_by ===
-												configStore.store.user.id,
-										)
-										.filter(
-											(app) =>
-												!favoritedApps.some(
-													(fav) =>
-														fav.project_id ===
-														app.project_id,
-												),
-										)
-										.map((app) => (
-											<AppTileCard
-												key={app.project_id}
-												app={app}
-												systemApp={false}
-												isDiscoverable={mode !== "Mine"}
-												href={
-													mode === "Discoverable"
-														? `#/app/${app.project_id}/detail`
-														: `#/app/${app.project_id}/view`
-												}
-												onAction={() => {
-													if (
-														mode === "Discoverable"
-													) {
-														navigate(
-															`/app/${app.project_id}/detail`,
-														);
-													} else {
-														navigate(
-															`/app/${app.project_id}/view`,
-														);
+								<Stack
+									direction="row"
+									alignItems="center"
+									spacing={1}
+								>
+									<StyledSectionLabel variant="subtitle1">
+										Created By Me
+									</StyledSectionLabel>
+									<Button
+										variant="text"
+										size="small"
+										onClick={() =>
+											setCreatedByMeOpen((prev) => !prev)
+										}
+										aria-label={
+											createdByMeOpen
+												? "Collapse"
+												: "Expand"
+										}
+										sx={{ minWidth: 0, padding: 0 }}
+									>
+										{createdByMeOpen ? (
+											<ExpandLess />
+										) : (
+											<ExpandMore />
+										)}
+									</Button>
+								</Stack>
+								{createdByMeOpen && (
+									<StyledSection>
+										{apps
+											.filter(
+												(app) =>
+													app.project_created_by ===
+													configStore.store.user.id,
+											)
+											.filter(
+												(app) =>
+													!favoritedApps.some(
+														(fav) =>
+															fav.project_id ===
+															app.project_id,
+													),
+											)
+											.map((app) => (
+												<AppTileCard
+													key={app.project_id}
+													app={app}
+													systemApp={false}
+													isDiscoverable={
+														mode !== "Mine"
 													}
-												}}
-												appType={app.project_type}
-												isFavorite={isFavorited(
-													app.project_id,
-												)}
-												favorite={() => {
-													favoriteApp(app);
-												}}
-												onDelete={() => {
-													removeApp(app);
-												}}
-												isLoading={true}
-												showSkeleton={false}
-											/>
-										))}
-								</StyledSection>
+													href={
+														mode === "Discoverable"
+															? `#/app/${app.project_id}/detail`
+															: `#/app/${app.project_id}/view`
+													}
+													onAction={() => {
+														if (
+															mode ===
+															"Discoverable"
+														) {
+															navigate(
+																`/app/${app.project_id}/detail`,
+															);
+														} else {
+															navigate(
+																`/app/${app.project_id}/view`,
+															);
+														}
+													}}
+													appType={app.project_type}
+													isFavorite={isFavorited(
+														app.project_id,
+													)}
+													favorite={() => {
+														favoriteApp(app);
+													}}
+													onDelete={() => {
+														removeApp(app);
+													}}
+													isLoading={true}
+													showSkeleton={false}
+												/>
+											))}
+									</StyledSection>
+								)}
 							</>
 						) : null}
 
