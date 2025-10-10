@@ -77,7 +77,7 @@ export const AgentPage = observer(() => {
 					</Typography>
 					<Typography
 						variant="body1"
-						color="text.secondary"
+						color="textSecondary"
 						align="center"
 					>
 						Explore and build custom AI agents designed to meet your
@@ -104,7 +104,10 @@ export const AgentPage = observer(() => {
 								<Typography variant="h6">
 									Build Your Own Agent
 								</Typography>
-								<Typography variant="body1" color="secondary">
+								<Typography
+									variant="body1"
+									color="textSecondary"
+								>
 									Create a personalized AI agent tailored to
 									your goals with just a few steps.
 								</Typography>
@@ -184,7 +187,7 @@ export const AgentPage = observer(() => {
 									<Stack paddingLeft={1}>
 										<Typography
 											variant="caption"
-											color="text.secondary"
+											color="textSecondary"
 										>
 											{isLoading ? (
 												<Skeleton

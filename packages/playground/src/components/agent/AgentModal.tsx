@@ -8,10 +8,10 @@ import {
 	Chip,
 	IconButton,
 	Modal,
-	SelectStack,
+	Select,
 	Stack,
 	styled,
-	TextFieldStack,
+	TextField,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
@@ -187,7 +187,7 @@ export const AgentModal = (props: AgentModalProps) => {
 								rules={{ required: true }}
 								render={({ field }) => {
 									return (
-										<TextFieldStack
+										<TextField
 											variant="outlined"
 											label="Name"
 											placeholder="Add Name"
@@ -212,7 +212,7 @@ export const AgentModal = (props: AgentModalProps) => {
 								rules={{ required: false }}
 								render={({ field }) => {
 									return (
-										<TextFieldStack
+										<TextField
 											label="Description"
 											variant="outlined"
 											placeholder="Description"
@@ -236,7 +236,7 @@ export const AgentModal = (props: AgentModalProps) => {
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<TextFieldStack
+										<TextField
 											multiline
 											label="Context"
 											variant="outlined"
@@ -267,7 +267,7 @@ export const AgentModal = (props: AgentModalProps) => {
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<SelectStack
+										<Select
 											label="Use These Tools"
 											variant="outlined"
 											disabled={isLoading}
@@ -354,7 +354,7 @@ export const AgentModal = (props: AgentModalProps) => {
 												},
 											}}
 										>
-											<SelectStack.Item
+											<Select.Item
 												value={"select-all"}
 												key={
 													"newAgentModal-tool-select-all"
@@ -367,10 +367,10 @@ export const AgentModal = (props: AgentModalProps) => {
 													}
 												/>
 												Select All
-											</SelectStack.Item>
+											</Select.Item>
 											{tools.map((tool, idx) => {
 												return (
-													<SelectStack.Item
+													<Select.Item
 														value={tool.id}
 														key={`newAgentModal-tool-${idx + 1}`}
 													>
@@ -380,39 +380,45 @@ export const AgentModal = (props: AgentModalProps) => {
 															)}
 														/>
 														{tool.name}
-													</SelectStack.Item>
+													</Select.Item>
 												);
 											})}
-										</SelectStack>
+										</Select>
 									);
 								}}
 							/>
 						</Stack>
 					) : (
 						<Stack direction="column" spacing={1}>
-							<TextFieldStack
+							<TextField
 								variant="outlined"
 								label="Name"
 								disabled
-								value={agentInfo.project_name}
+								value={agentInfo.name}
 							/>
-							<TextFieldStack
+							<TextField
 								variant="outlined"
 								label="ID"
 								disabled
-								value={agentInfo.project_id}
+								value={agentInfo.workspace_id}
 							/>
-							<TextFieldStack
+							<TextField
 								variant="outlined"
 								label="Description"
 								disabled
 								value={agentInfo.description}
 							/>
-							<TextFieldStack
+							<TextField
+								variant="outlined"
+								label="Context"
+								disabled
+								value={agentInfo.system_prompt}
+							/>
+							<TextField
 								variant="outlined"
 								label="Date Created"
 								disabled
-								value={agentInfo.project_date_created}
+								value={agentInfo.date_created}
 							/>
 						</Stack>
 					)}
