@@ -386,7 +386,7 @@ export class RoomStore {
 		const loadOptions = async () => {
 			const response = await this.runRoomPixel<
 				RoomStoreInterface["options"][]
-			>(`GetRoomOptions1(roomId=${JSON.stringify(this._store.roomId)});`);
+			>(`GetRoomOption(roomId=${JSON.stringify(this._store.roomId)});`);
 			const { output } = response.pixelReturn[0];
 
 			runInAction(() => {
