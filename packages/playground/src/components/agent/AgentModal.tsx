@@ -16,7 +16,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { Agent, App, Engine, Tool } from "@/types";
+import type { Agent, App, Engine, Toolbox } from "@/types";
 
 const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
 	display: "flex",
@@ -43,10 +43,10 @@ type NewAgentForm = {
  * @param tool The tool to get the key for
  * @returns The unique key for the tool
  */
-const getTool = (item: Engine | App): Tool => {
+const getTool = (item: Engine | App): Toolbox => {
 	let id = "";
 	let name = "";
-	let type: Tool["type"] = "DATABASE";
+	let type: Toolbox["type"] = "DATABASE";
 
 	// Type guard to check if item is App
 	if ("project_id" in item && "project_name" in item) {
