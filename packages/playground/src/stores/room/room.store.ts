@@ -321,7 +321,7 @@ export class RoomStore {
 	};
 	/** Actions */
 	/**
-	 * Initialize the room and load messages if they are there
+	 * Initialize the room and load messages and options if they are there
 	 */
 	initialize = async () => {
 		try {
@@ -332,6 +332,12 @@ export class RoomStore {
 
 			// turn on the loading screen
 			this.setIsLoading(true);
+
+			// get the room options
+			const optionsResponse = await this.runRoomPixel<
+				RoomStoreInterface["options"][]
+			>(`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`);
+			const { output: roomOptions } = optionsResponse.pixelReturn[0];
 
 			// get all of the messages in historical order (sorted)
 			const response = await this.runRoomPixel<[PixelMessage[]]>(
@@ -354,22 +360,11 @@ export class RoomStore {
 
 			// store the last model
 			let activeModelId = this._store.modelId;
-			let activeOptions: Pick<
-				RoomStoreInterface["options"],
-				"tokenLength" | "temperature"
-			> = {
-				...this._store.options,
-			};
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
 			for (const pixelMessage of output) {
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
-					activeOptions = {
-						...activeOptions,
-						temperature: pixelMessage.paramMap.temperature,
-						tokenLength: pixelMessage.paramMap.max_new_tokens,
-					};
 				}
 
 				// create the message
@@ -397,7 +392,7 @@ export class RoomStore {
 			runInAction(() => {
 				// set the model + options based on the history
 				this.setModel(activeModelId);
-				this.setOptions(activeOptions);
+				this.setOptions(roomOptions);
 
 				// store it
 				this._store.root = root;
@@ -442,7 +437,7 @@ export class RoomStore {
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
 			const { errors } = await this.runRoomPixel(
-				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, options=[${JSON.stringify(
+				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
 					options,
 				)}]);`,
 			);
