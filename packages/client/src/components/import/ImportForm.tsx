@@ -132,7 +132,7 @@ export const ImportForm = (props) => {
 					});
 				}
 			}
-			if (f.options.pixel) {
+			if (f.options?.pixel) {
 				const pixelParams = f.options.pixel.match(/<([^>]+)>/g);
 				if (pixelParams) {
 					pixelParams.forEach((p) => {
@@ -738,7 +738,7 @@ export const ImportForm = (props) => {
 	return (
 		<form onSubmit={handleSubmit(onSubmit)}>
 			<Stack rowGap={2}>
-				{defaultFields?.map((val, _i) => {
+				{defaultFields?.map((val, i) => {
 					if (!val.hidden) {
 						return (
 							<StyledKeyValue
