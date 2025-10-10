@@ -2,7 +2,7 @@ import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
@@ -254,7 +254,13 @@ export const RoomPage = observer(() => {
 		};
 	}, [room]);
 
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
 	}
 
