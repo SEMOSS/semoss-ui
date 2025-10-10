@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	Container,
@@ -27,7 +26,6 @@ import {
 import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
 import { ResponseMessageStore } from "@/stores";
-import type { Agent } from "@/types";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -161,10 +159,7 @@ export const RoomPage = observer(() => {
 
 	// get the agent if there is one
 	const agentId = room?.getAgentId();
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
+	const agent = chat.agents[agentId] ?? null;
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -374,10 +369,7 @@ export const RoomPage = observer(() => {
 								maxRows={8}
 								actions={
 									agentId ? (
-										<AgentChip
-											agent={agent}
-											loading={isLoadingAgent}
-										/>
+										<AgentChip agent={agent} />
 									) : (
 										<Tooltip
 											title={"Open Configuration Menu"}
