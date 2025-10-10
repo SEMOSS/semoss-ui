@@ -201,15 +201,13 @@ export const AdminQueryPage = () => {
 	const query = watch("QUERY");
 	const selectedDatabase = watch("SELECTED_DATABASE");
 
-	const disableButton = query && selectedDatabase ? true : false;
-
 	const verifySelectQuery = useCallback(() => {
 		if (query?.toUpperCase()?.startsWith("SELECT")) {
 			setShowRowsField(true);
 		} else {
 			if (showRowsField) {
 				setShowRowsField(false);
-				setValue("ROWS", 0);
+				setValue("ROWS", 1);
 			}
 		}
 	}, [query, showRowsField, setValue]);
@@ -217,6 +215,32 @@ export const AdminQueryPage = () => {
 	useEffect(() => {
 		verifySelectQuery();
 	}, [verifySelectQuery]);
+
+	const rowsValue = watch("ROWS");
+	const trimmedQuery = query?.trim() || "";
+
+	//  accepts subqueries, aliases, joins, distinct, group by, etc.
+	const selectRegex = /^\s*select\s+[\s\S]+?\s+from\s+[\s\S]+/i;
+
+	// Specifically for SELECT * FROM (still for your row limit rule)
+	const selectStarRegex = /^\s*select\s*\*\s*from\s+[\s\S]+/i;
+
+	// checks if it starts with SELECT and matches general SELECT shape
+	const isValidSelect = selectRegex.test(trimmedQuery);
+	const isSelectStar = selectStarRegex.test(trimmedQuery);
+
+	// Ensures query has at least one alphabet (avoid blank/garbage)
+	const hasRealContent = !!trimmedQuery && /[a-zA-Z]/.test(trimmedQuery);
+
+	// Allows SELECT * FROM only if rows are specified
+	const isRowsValid = !isSelectStar || Number(rowsValue) > 0;
+
+	// Final condition to enable Run button
+	const disableButton =
+		Boolean(selectedDatabase) &&
+		hasRealContent &&
+		isValidSelect &&
+		isRowsValid;
 
 	useEffect(() => {
 		setPage(0);
@@ -340,7 +364,7 @@ export const AdminQueryPage = () => {
 			const start = page * rowsPerPage;
 			const end = start + rowsPerPage;
 			const paginatedRows = rows.slice(start, end);
-
+			console.log(paginatedRows, "paginatedRows");
 			return (
 				<>
 					<TableContainer>
@@ -360,7 +384,8 @@ export const AdminQueryPage = () => {
 								</Table.Row>
 							</TableHeader>
 							<Table.Body>
-								{paginatedRows?.length > 0 ? (
+								{paginatedRows?.length > 0 &&
+								paginatedRows.some((row) => row.length > 0) ? (
 									paginatedRows?.map((row, rIdx: number) => (
 										<Table.Row key={row}>
 											{row?.map((col, cIdx) => (
@@ -389,17 +414,21 @@ export const AdminQueryPage = () => {
 							</Table.Body>
 						</Table>
 					</TableContainer>
-
-					<PaginationContainer>
-						<Pagination
-							count={rows.length}
-							page={page}
-							rowsPerPage={rowsPerPage}
-							onPageChange={handleChangePage}
-							onRowsPerPageChange={handleChangeRowsPerPage}
-							rowsPerPageOptions={[5, 10, 25]}
-						/>
-					</PaginationContainer>
+					{paginatedRows?.length > 0 &&
+						paginatedRows.some((row) => row.length > 0) && (
+							<PaginationContainer>
+								<Pagination
+									count={rows.length}
+									page={page}
+									rowsPerPage={rowsPerPage}
+									onPageChange={handleChangePage}
+									onRowsPerPageChange={
+										handleChangeRowsPerPage
+									}
+									rowsPerPageOptions={[5, 10, 25]}
+								/>
+							</PaginationContainer>
+						)}
 				</>
 			);
 		}
