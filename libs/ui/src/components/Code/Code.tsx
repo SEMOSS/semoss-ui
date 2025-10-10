@@ -107,6 +107,7 @@ export const Code: React.FC<CodeProps> = ({
 	return (
 		<StyledCode
 			sx={sx}
+			// biome-ignore lint/security/noDangerouslySetInnerHtml: Intended
 			dangerouslySetInnerHTML={{ __html: highlightedHtml }}
 		/>
 	);

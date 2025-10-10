@@ -1,26 +1,30 @@
-import {
-	Typography as MuiTypography,
-	type TypographyProps as MuiTypographyProps,
-	type SxProps,
-} from "@mui/material";
+import { Typography as MuiTypography, type SxProps } from "@mui/material";
 
 export interface TypographyProps {
-	/** custom style object */
+	/**
+	 * ID of the element
+	 */
+	id?: string;
+
+	/**
+	 * Title attribute
+	 */
+	title?: string;
 
 	/**
 	 * Set the text-align on the component.
 	 * @default 'inherit'
 	 */
 	align?: "inherit" | "left" | "center" | "right" | "justify";
+
 	/**
 	 * The content of the component.
 	 */
 	children?: React.ReactNode;
+
 	/**
-	 * If `true`, the element will be a paragraph element.
-	 * @default false
+	 * Variant to use. Indirectly controls the component
 	 */
-	paragraph?: boolean;
 	variant:
 		| "h1"
 		| "h2"
@@ -37,12 +41,16 @@ export interface TypographyProps {
 		| "caption"
 		| "button"
 		| "overline";
-	sx?: SxProps;
 
-	fontSize?: number;
-	//TODO:  WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM INTEGERS Ex: BOXSHADOWSETTINGS.tsx
-	fontWeight?: "light" | "regular" | "medium" | "500" | "bold" | number;
-	// TODO: WHAT ARE WE DOING HERE SOME PLACES HAVE CUSTOM COLORS Ex: BOXSHADOWSETTINGS.tsx
+	/**
+	 * Font weight to use
+	 * @default 'regular'
+	 */
+	fontWeight?: "regular" | "medium" | "bold";
+
+	/**
+	 * Set the color based on the theme palette.
+	 */
 	color?:
 		| "inherit"
 		| "primary"
@@ -53,37 +61,53 @@ export interface TypographyProps {
 		| "warning"
 		| "disabled"
 		| "textPrimary"
-		| string;
+		| "textSecondary"
+		| "textDisabled";
 
-	noWrap?: MuiTypographyProps["noWrap"];
-	title?: MuiTypographyProps["title"];
-	id?: string;
+	/**
+	 * Track if the typography element should be flex
+	 */
+	flex?: string;
+
+	/**
+	 * Track the width of the typography component
+	 */
+	width?: string | number;
+
+	/**
+	 * Track the minimum width of the typography component
+	 */
+	minWidth?: string | number;
+
+	/**
+	 * Track the maximum width of the typography component
+	 */
+	maxWidth?: string | number;
+
+	/**
+	 * Will the text be truncated with an ellipsis if it overflows the container?
+	 * @default false
+	 */
+	noWrap?: boolean;
+
+	/**
+	 * Show a default margin below the element.
+	 * @default false
+	 */
+	gutterBottom?: boolean;
+
+	/**
+	 * The component used for the root node. By default tied to the variant
+	 */
 	component?: React.ElementType;
-	gutterBottom?: MuiTypographyProps["gutterBottom"];
+
+	/** custom style object */
+	sx?: SxProps;
 }
 
-export const Typography = (props: TypographyProps) => {
-	const { sx, color, ...otherProps } = props;
-
-	return (
-		<MuiTypography
-			sx={sx}
-			color={
-				color === "success"
-					? "success.text"
-					: color === "warning"
-						? "warning.text"
-						: color === "error"
-							? "error.text"
-							: color === "primary"
-								? "primary.main"
-								: color === "secondary"
-									? "text.secondary"
-									: color === "disabled"
-										? "text.disabled"
-										: color
-			}
-			{...otherProps}
-		/>
-	);
+export const Typography: React.FC<TypographyProps> = ({
+	sx,
+	...otherProps
+}) => {
+	return <MuiTypography sx={sx} {...otherProps} />;
 };
