@@ -2,18 +2,17 @@ import { Search } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Grid,
 	InputAdornment,
-	Skeleton,
 	Stack,
 	styled,
 	TextField,
 	Typography,
 } from "@semoss/ui";
 import { AgentCard, AgentModal } from "@/components/agent";
+import { useChat } from "@/hooks";
 import type { Agent } from "@/types";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -30,9 +29,7 @@ export const AgentPage = observer(() => {
 	/**
 	 * Library Hooks
 	 */
-	const { data: workspaceResponse, status: fetchStatus } = usePixel<{
-		workspaces: Agent[];
-	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
+	const { chat } = useChat();
 	const navigate = useNavigate();
 
 	/**
@@ -52,14 +49,9 @@ export const AgentPage = observer(() => {
 	/**
 	 * Constants
 	 */
-	const isLoading = fetchStatus === "LOADING";
-	const agentsToRender = isLoading
-		? Array(12).fill(null)
-		: workspaceResponse.workspaces.filter((agent) =>
-				search
-					? agent.name.toLowerCase().includes(search.toLowerCase())
-					: true,
-			);
+	const agentsToRender = Object.values(chat.agents).filter((agent) =>
+		search ? agent.name.toLowerCase().includes(search.toLowerCase()) : true,
+	);
 
 	return (
 		<Stack
@@ -76,7 +68,7 @@ export const AgentPage = observer(() => {
 					</Typography>
 					<Typography
 						variant="body1"
-						color="text.secondary"
+						color="textSecondary"
 						align="center"
 					>
 						Explore and build custom AI agents designed to meet your
@@ -130,50 +122,31 @@ export const AgentPage = observer(() => {
 			<Stack overflow="auto" paddingRight={2} paddingTop={3}>
 				<div>
 					<Grid container columnSpacing={2} rowSpacing={4}>
-						{agentsToRender.map((agentInfo, index) => (
+						{agentsToRender.map((agentInfo) => (
 							<Grid
 								item
 								xs={12}
 								sm={6}
 								md={3}
-								key={isLoading ? index : agentInfo.workspace_id}
+								key={agentInfo.workspace_id}
 							>
 								<Stack width="100%" spacing={1} height="100%">
 									<AgentCard
 										agent={agentInfo}
-										onSecondaryClick={
-											isLoading
-												? () => {}
-												: () => {
-														setAgentInfo(agentInfo);
-														setIsAgentModalOpen(
-															true,
-														);
-													}
-										}
-										onPrimaryClick={
-											isLoading
-												? () => {}
-												: () => {
-														createRoom(
-															agentInfo.workspace_id,
-														);
-													}
-										}
+										onSecondaryClick={() => {
+											setAgentInfo(agentInfo);
+											setIsAgentModalOpen(true);
+										}}
+										onPrimaryClick={() => {
+											createRoom(agentInfo.workspace_id);
+										}}
 									/>
 									<Stack paddingLeft={1}>
 										<Typography
 											variant="caption"
-											color="text.secondary"
+											color="secondary"
 										>
-											{isLoading ? (
-												<Skeleton
-													width="100%"
-													height="100%"
-												/>
-											) : (
-												`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`
-											)}
+											{`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`}
 										</Typography>
 									</Stack>
 								</Stack>

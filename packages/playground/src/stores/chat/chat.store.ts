@@ -6,6 +6,7 @@ import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -22,6 +23,11 @@ interface ChatStoreInterface {
 	 * Map of id to channel
 	 */
 	rooms: Record<string, RoomStore>;
+
+	/**
+	 * Map of id to agent
+	 */
+	agents: Record<string, Agent>;
 
 	/**
 	 * Order of the rooms
@@ -50,6 +56,7 @@ export class ChatStore {
 		isInitialized: false,
 		isLoading: false,
 		rooms: {},
+		agents: {},
 		order: [],
 		models: {
 			options: [],
@@ -105,7 +112,14 @@ export class ChatStore {
 	}
 
 	/**
-	 * Get the active roomId
+	 * Get the agents from the store
+	 */
+	get agents() {
+		return this._store.agents;
+	}
+
+	/**
+	 * Get the models from the store
 	 */
 	get models() {
 		return this._store.models;
@@ -120,6 +134,8 @@ export class ChatStore {
 			Promise.all([
 				// get the room info
 				this.getRooms(),
+				// get the agent info
+				this.getAgents(),
 				// get the model info
 				this.getModels(),
 			]).finally(() => {
@@ -332,6 +348,55 @@ export class ChatStore {
 	};
 
 	/**
+	 * Get available agents from the backend
+	 */
+	private getAgents = async (): Promise<void> => {
+		// agents are not enabled, set it to the default
+		if (!ENABLE_AGENT) {
+			this._store.agents = {};
+			return;
+		}
+
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// clear the models
+			this._store.agents = {};
+
+			// wait for the pixel to run
+			const { pixelReturn } =
+				await this._actions.run<
+					[
+						{
+							workspaces: Agent[];
+						},
+					]
+				>(` ListWorkspaces()`);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			runInAction(() => {
+				// get the output
+				const { output } = pixelReturn[0];
+				// store the models
+				this._store.agents = output.workspaces.reduce(
+					(acc, agent) => {
+						acc[agent.workspace_id] = agent;
+						return acc;
+					},
+					{} as Record<string, Agent>,
+				);
+			});
+		} finally {
+			this.setIsLoading(false);
+		}
+	};
+
+	/**
 	 * Get available models from the backend
 	 */
 	private getModels = async (): Promise<void> => {
@@ -360,7 +425,6 @@ export class ChatStore {
 				` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
 			);
 
-			// throw errors
 			// throw errors
 			if (this._error) {
 				throw new Error(this._error.message);

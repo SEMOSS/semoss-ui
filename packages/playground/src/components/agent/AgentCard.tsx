@@ -48,7 +48,7 @@ export const AgentCard = ({
 						<Skeleton width="100%" height="100%" />
 					)}
 				</Typography>
-				<Typography variant="body2" color="text.secondary">
+				<Typography variant="body2" color="textSecondary">
 					{isAgentValid ? (
 						agent.description
 					) : (
