@@ -1,15 +1,22 @@
-import MuiButtonGroup from "@mui/material/ButtonGroup";
+import { ButtonGroup as MuiButtonGroup } from "@mui/material";
 import type { ReactNode } from "react";
-
-// import {
-//     ButtonGroupProps as MuiTextFieldProps,
-// } from "@mui/material";
 
 export interface ButtonGroupProps {
 	/**
 	 * The content of the component.
 	 */
 	children: ReactNode;
+
+	/**
+	 * Unique identifier for dom element
+	 */
+	id?: string;
+
+	/**
+	 * Title of the component
+	 */
+	title?: string;
+
 	/**
 	 * The color of the component.
 	 * It supports both default and custom theme colors, which can be added as shown in the
@@ -52,9 +59,11 @@ export interface ButtonGroupProps {
 	 * @default 'outlined'
 	 */
 	variant?: "text" | "outlined" | "contained";
-	title?: string;
 }
 
-export const ButtonGroup = (props: ButtonGroupProps) => {
-	return <MuiButtonGroup {...props}>{props.children}</MuiButtonGroup>;
+export const ButtonGroup: React.FC<ButtonGroupProps> = ({
+	children,
+	...otherProps
+}) => {
+	return <MuiButtonGroup {...otherProps}>{children}</MuiButtonGroup>;
 };

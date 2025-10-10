@@ -345,46 +345,50 @@ export const NotebookCell = observer(
 		/**
 		 * Create a duplicate cell
 		 */
-		console.log(cell, 'important')
-const duplicateCell = async () => {
-    try {
-        let parameters = { ...cell.parameters };
+		console.log(cell, "important");
+		const duplicateCell = async () => {
+			try {
+				let parameters = { ...cell.parameters };
 
-        if (cell.widget === "query-import" || cell.widget === "data-import" || cell.widget === "text-to-sql") {
-            parameters = {
-                ...parameters,
-                frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
-            };
-        }
+				if (
+					cell.widget === "query-import" ||
+					cell.widget === "data-import" ||
+					cell.widget === "text-to-sql"
+				) {
+					parameters = {
+						...parameters,
+						frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
+					};
+				}
 
-        // copy and add the step to the end
-        const newCellId = (await state.dispatch({
-            message: ActionMessages.NEW_CELL,
-            payload: {
-                queryId: queryId,
-                previousCellId: cellId,
-                config: {
-                    widget: cell.widget,
-                    parameters,
-                },
-            },
-        })) as string;
+				// copy and add the step to the end
+				const newCellId = (await state.dispatch({
+					message: ActionMessages.NEW_CELL,
+					payload: {
+						queryId: queryId,
+						previousCellId: cellId,
+						config: {
+							widget: cell.widget,
+							parameters,
+						},
+					},
+				})) as string;
 
-        state.dispatch({
-            message: ActionMessages.ADD_VARIABLE,
-            payload: {
-                id: `${queryId}--${newCellId}`,
-                type: "cell",
-                to: queryId,
-                cellId: newCellId,
-            },
-        });
+				state.dispatch({
+					message: ActionMessages.ADD_VARIABLE,
+					payload: {
+						id: `${queryId}--${newCellId}`,
+						type: "cell",
+						to: queryId,
+						cellId: newCellId,
+					},
+				});
 
-        notebook.selectCell(queryId, newCellId);
-    } catch (e) {
-        console.error(e);
-    }
-};
+				notebook.selectCell(queryId, newCellId);
+			} catch (e) {
+				console.error(e);
+			}
+		};
 
 		const deleteCell = () => {
 			try {
@@ -1026,12 +1030,11 @@ const duplicateCell = async () => {
 																						output={
 																							cell.output
 																						}
-																						cellData={
-																							({
-																								cellId: cell.id.toString(),
-																								queryId: queryId.toString()
-																							})
-																						}
+																						cellData={{
+																							cellId: cell.id.toString(),
+																							queryId:
+																								queryId.toString(),
+																						}}
 																					/>
 																				);
 																			},
