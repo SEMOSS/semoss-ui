@@ -114,7 +114,11 @@ export const EditXAxis = observer(
 		//when the computed value is changed, local state is updated
 		useEffect(() => {
 			try {
-				setValue(typeof computedValue === "string" ? JSON.parse(computedValue) : computedValue);
+				setValue(
+					typeof computedValue === "string"
+						? JSON.parse(computedValue)
+						: computedValue,
+				);
 			} catch {
 				setValue({});
 			}
@@ -300,9 +304,7 @@ export const EditXAxis = observer(
 					if (Object.hasOwn(axisData, "axisGap")) {
 						option["xAxis"] = {
 							...option["xAxis"],
-							["nameGap"]:
-								Number(axisData.axisGap) ||
-								undefined,
+							["nameGap"]: Number(axisData.axisGap) || undefined,
 						};
 					} else {
 						option = {
@@ -407,23 +409,21 @@ export const EditXAxis = observer(
 					</StyledAxisColDiv>
 				)}
 				{xaxisState.showAxisTitle && (
-									<StyledAxisColDiv
-										display="flex"
-										justifyContent="space-around"
-									>
-										<Typography variant="body2" color="secondary">
-											Axis Gap
-										</Typography>
-										<TextField
-											size="small"
-											type="number"
-											value={xaxisState.axisGap}
-											onChange={(e) =>
-												handleInputChange(e, "axisGap")
-											}
-										/>
-									</StyledAxisColDiv>
-								)}
+					<StyledAxisColDiv
+						display="flex"
+						justifyContent="space-around"
+					>
+						<Typography variant="body2" color="secondary">
+							Axis Gap
+						</Typography>
+						<TextField
+							size="small"
+							type="number"
+							value={xaxisState.axisGap}
+							onChange={(e) => handleInputChange(e, "axisGap")}
+						/>
+					</StyledAxisColDiv>
+				)}
 				<StyledAxisDiv display="flex" justifyContent="flex-start">
 					<Switch
 						size="small"
