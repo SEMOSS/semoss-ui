@@ -251,15 +251,9 @@ paramValues=[${JSON.stringify({
 	 */
 
 	/**
-	 * Start executing a tool if possible
+	 * Start executing from the first step
 	 */
 	startToolExecution = async (): Promise<void> => {
-		const tool = this.tools[0];
-		if (!tool) {
-			return;
-		}
-
-		// start executing the first step
 		this.toolExecutionIdx = 0;
 		await this.runToolExecution();
 	};
