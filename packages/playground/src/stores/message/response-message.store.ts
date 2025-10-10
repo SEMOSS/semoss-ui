@@ -34,6 +34,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** meta data from the tool */
 		_meta: {
 			map: {
+				autoExecute: boolean;
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
 			};
@@ -48,6 +49,11 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** Response for the tool */
 		response: string;
 	}[] = [];
+
+	/**
+	 * Current execution index of the tool
+	 */
+	toolExecutionIdx: number = 0;
 
 	/**
 	 * Feedback provided by the user; only applicable to messages provided via the LLM
@@ -76,7 +82,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		if (message.type === "RESPONSE_TOOL") {
 			this.tools = message.tool_responses.map((t) => ({
 				id: t.id,
-				_meta: t._meta,
+				_meta: {
+					map: {
+						...t._meta.map,
+						autoExecute: false,
+					},
+				},
 				title: t.title,
 				name: t.name,
 				parameters: t.arguments,
@@ -142,8 +153,11 @@ paramValues=[${JSON.stringify({
 		const responseMessage = createMessageStore(
 			room,
 			output.responseMessage,
-		);
+		) as ResponseMessageStore;
 		inputMessage.addChild(responseMessage);
+
+		// start running tools if there are any
+		this.startToolExecution();
 	};
 
 	/**
@@ -213,55 +227,114 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Run a tool
-	 * @param appId - id of the app
+	 * Get a tool
 	 * @param toolId - id of the tool
 	 * @param toolName - func of the tool to run
-	 * @param toolParameters - parameters to pass to the tool
 	 */
-	runTool = async (
-		appId: string,
+	getTool = (
 		toolId: string,
 		toolName: string,
-		toolParameters: Record<string, unknown>,
+	): ResponseMessageStore["tools"][number] | null => {
+		const tool = this.tools.find(
+			(tool) => tool.id === toolId && tool.name === toolName,
+		);
+
+		if (!tool) {
+			return null;
+		}
+
+		return tool;
+	};
+
+	/**
+	 * Execution
+	 */
+
+	/**
+	 * Start executing a tool if possible
+	 */
+	startToolExecution = async (): Promise<void> => {
+		const tool = this.tools[0];
+		if (!tool) {
+			return;
+		}
+
+		// start executing the first step
+		this.toolExecutionIdx = 0;
+		await this.runToolExecution();
+	};
+
+	/**
+	 * Continue executing the tools from the current tool
+	 *
+	 * @param current - current tool that was executed
+	 */
+	continueToolExecution = async (
+		current: ResponseMessageStore["tools"][number],
 	): Promise<void> => {
+		const currentIdx = this.tools.findIndex((t) => t.id === current.id);
+
+		this.toolExecutionIdx = currentIdx + 1;
+		await this.runToolExecution();
+	};
+
+	/**
+	 * Run a tool if possible
+	 */
+	private runToolExecution = async (): Promise<void> => {
 		const room = this.room;
+
+		// skip if the index is out of bounds
+		if (
+			this.toolExecutionIdx < 0 ||
+			this.toolExecutionIdx >= this.tools.length
+		) {
+			return;
+		}
+
+		const tool = this.tools[this.toolExecutionIdx];
+		if (!tool) {
+			return;
+		}
+
+		// only run if it is set to auto execute
+		if (!tool._meta.map.autoExecute) {
+			return;
+		}
 
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<[string]>(
-			`RunMCPTool(project = [ "${appId}" ], function=[ "${toolName}" ], paramValues=[ ${JSON.stringify(toolParameters)} ]);`,
+			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 		);
 
 		const { output } = response.pixelReturn[0];
 
-		this.saveTool(toolId, toolName, output, true);
+		// save the response
+		await this.saveToolExecution(tool, output, false);
 	};
 
 	/**
-	 * Save a tool response
-	 * @param toolId - id of the tool
-	 * @param toolName - func of the tool to run
+	 * Save a tool execution response
+	 * @param tool - tool to save
 	 * @param toolResponse - response of the tool
-	 * @param toolChoice - allow the model to choose the tool or not
+	 * @param disableToolChoice - if true, turn off tool choice
 	 */
-	saveTool = async (
-		toolId: string,
-		toolName: string,
+	saveToolExecution = async (
+		tool: ResponseMessageStore["tools"][number],
 		toolResponse: string,
-		toolChoice: boolean,
+		disableToolChoice: boolean,
 	): Promise<void> => {
 		const room = this.room;
 
 		// save the response
-		const tool = this.tools.find((tool) => tool.id === toolId);
-		if (tool) {
-			runInAction(() => {
-				tool.response = toolResponse;
-			});
-		}
+		runInAction(() => {
+			tool.response = toolResponse;
+		});
 
 		const paramValues: Record<string, unknown> = {};
-		if (!toolChoice) {
+
+		// turn off tool_choice
+		if (disableToolChoice) {
 			paramValues.tool_choice = { type: "none" };
 		}
 
@@ -277,8 +350,8 @@ paramValues=[${JSON.stringify({
 engine=["${room.modelId}"],
 roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
-toolId = ["${toolId}"],
-toolName=["${toolName}"],
+toolId = ["${tool.id}"],
+toolName=["${tool.name}"],
 toolExecutionResponse=["<encode>${toolResponse}</encode>"],
 paramValues=[${JSON.stringify(paramValues)}]
 );`,
@@ -297,5 +370,8 @@ paramValues=[${JSON.stringify(paramValues)}]
 			output.responseMessage,
 		);
 		this.addChild(responseMessage);
+
+		// keep going
+		await this.continueToolExecution(tool);
 	};
 }

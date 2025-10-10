@@ -4,15 +4,20 @@ import { FlexLayout } from "@semoss/shared";
 import { Stack, styled, Typography } from "@semoss/ui";
 import type { ResponseMessageStore } from "@/stores";
 
-const StyledSidebarOpen = styled(Stack)(({ theme }) => ({
+const StyledSidebarOpen = styled(Stack, {
+	shouldForwardProp: (prop) => prop !== "disabled",
+})<{
+	disabled: boolean;
+}>(({ theme, disabled }) => ({
 	padding: "8px",
 	borderRadius: "12px",
 	borderWidth: "1px",
 	borderStyle: "solid",
 	borderColor: theme.palette.secondary.border,
-	cursor: "pointer",
+	cursor: disabled ? "not-allowed" : "pointer",
+	opacity: disabled ? theme.palette.action.disabledOpacity : 1,
+	pointerEvents: disabled ? "none" : "auto",
 }));
-
 interface ResponseMessageToolProps {
 	/** Message to render */
 	message: ResponseMessageStore;
@@ -24,6 +29,16 @@ interface ResponseMessageToolProps {
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool }) => {
 		const { room } = message;
+
+		// TODO: if the plan is executing, only the execution step is enabled
+		let isDisabled = false;
+		if (room.mode === "executing") {
+			isDisabled =
+				room.plan?.step?.details.stepType !== "tool_call" ||
+				room.plan?.step?.details.tool_name !== tool.name ||
+				room.plan?.step?.details._meta.map.SMSS_PROJECT_ID !==
+					tool._meta.map.SMSS_PROJECT_ID;
+		}
 
 		return (
 			<Stack direction={"column"} spacing={1} width={"100%"}>
@@ -38,6 +53,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				<StyledSidebarOpen
 					direction={"row"}
 					alignItems={"center"}
+					disabled={isDisabled}
 					spacing={2}
 					onClick={() => {
 						// open the sidebar
