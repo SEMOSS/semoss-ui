@@ -12,14 +12,14 @@ import {
 } from "@semoss/ui";
 import { AppSettings } from "@/components/app";
 import {
-    PendingMembersTable,
-    MembersTable,
-    SettingsTiles,
-    DependencyList,
-} from '@/components/settings';
-import { SettingsContext } from '@/contexts';
-import { Panel } from './Panel';
+	DependencyList,
+	MembersTable,
+	PendingMembersTable,
+	SettingsTiles,
+} from "@/components/settings";
+import { SettingsContext } from "@/contexts";
 import { useRootStore, useWorkspace } from "@/hooks";
+import { Panel } from "./Panel";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -39,9 +39,6 @@ const StyledContent = styled("div")(({ theme }) => ({
 	gap: theme.spacing(2),
 	flexShrink: "0",
 }));
-
-type VIEW = 'CURRENT' | 'PENDING' | 'APP' | 'DEPENDENCY';
-
 
 export const SettingsPanel = observer(({ value }: { value: string }) => {
 	const { configStore, monolithStore } = useRootStore();
@@ -180,6 +177,9 @@ export const SettingsPanel = observer(({ value }: { value: string }) => {
 										}}
 									/>
 								</>
+							)}
+							{view === "DEPENDENCY" && (
+								<DependencyList id={workspace.appId} />
 							)}
 						</StyledContent>
 					</StyledContainer>

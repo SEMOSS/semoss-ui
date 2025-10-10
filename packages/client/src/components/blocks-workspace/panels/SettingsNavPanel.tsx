@@ -59,9 +59,14 @@ const SETTINGS_OPTIONS: {
 	{ label: "Members", value: "CURRENT", icon: <DvrOutlined /> },
 	{ label: "Apps", value: "APP", icon: <AppShortcut /> },
 	{ label: "General", value: "GENERAL", icon: <AssignmentOutlined /> },
+	{
+		label: "Dependencies",
+		value: "DEPENDENCY",
+		icon: <AssignmentOutlined />,
+	},
 ];
 
-type SettingValues = "CURRENT" | "GENERAL" | "APP";
+type SettingValues = "CURRENT" | "GENERAL" | "APP" | "DEPENDENCY";
 
 export const SettingsNavPanel = observer(() => {
 	const { workspace } = useWorkspace();

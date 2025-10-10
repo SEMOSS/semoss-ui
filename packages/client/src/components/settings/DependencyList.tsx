@@ -96,6 +96,11 @@ export const DependencyList = ({ id }: DependencyListProps) => {
 		}
 	};
 
+	const hasDependencies =
+		getProjectDependencies.status === "SUCCESS" &&
+		Array.isArray(getProjectDependencies.data) &&
+		getProjectDependencies.data.length > 0;
+
 	const renderDependencies = () => {
 		if (getProjectDependencies.status === "LOADING") {
 			return (
@@ -113,11 +118,7 @@ export const DependencyList = ({ id }: DependencyListProps) => {
 			);
 		}
 
-		if (
-			getProjectDependencies.status === "SUCCESS" &&
-			Array.isArray(getProjectDependencies.data) &&
-			getProjectDependencies.data.length > 0
-		) {
+		if (hasDependencies) {
 			return getProjectDependencies.data.map(
 				(dependency: ProjectDependencyEngine, index: number) => (
 					<StyledUuidItem
@@ -157,26 +158,31 @@ export const DependencyList = ({ id }: DependencyListProps) => {
 				<Typography variant="h6" sx={{ mb: 2 }}>
 					Dependencies
 				</Typography>
-				<StyledAddMemberContainer>
-					<Button
-						variant="contained"
-						onClick={openDependencyAddMembersModal}
-						disabled={
-							getProjectDependencies.status === "SUCCESS" &&
-							Array.isArray(getProjectDependencies.data) &&
-							getProjectDependencies.data.length === 0
-						}
-					>
-						<StyledCenteredBox>
-							<Add />
-							Add Members
-						</StyledCenteredBox>
-					</Button>
-				</StyledAddMemberContainer>
+				{hasDependencies && (
+					<StyledAddMemberContainer>
+						<Button
+							variant="contained"
+							onClick={openDependencyAddMembersModal}
+							disabled={
+								getProjectDependencies.status === "SUCCESS" &&
+								Array.isArray(getProjectDependencies.data) &&
+								getProjectDependencies.data.length === 0
+							}
+						>
+							<StyledCenteredBox>
+								<Add />
+								Add Members
+							</StyledCenteredBox>
+						</Button>
+					</StyledAddMemberContainer>
+				)}
 			</StyledHeader>
-			<Typography variant="body2" sx={{ mb: 2 }}>
-				The following resources are associated with this application:
-			</Typography>
+			{hasDependencies && (
+				<Typography variant="body2" sx={{ mb: 2 }}>
+					The following resources are associated with this
+					application:
+				</Typography>
+			)}
 
 			<StyledUuidList>
 				{renderDependencies()}
