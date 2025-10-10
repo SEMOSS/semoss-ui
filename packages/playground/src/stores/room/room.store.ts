@@ -413,6 +413,8 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+		} catch (e) {
+			throw new Error(e.message || "Error initializing room");
 		} finally {
 			this.setIsLoading(false);
 		}

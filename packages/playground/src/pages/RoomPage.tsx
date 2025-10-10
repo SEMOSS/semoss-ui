@@ -176,16 +176,20 @@ export const RoomPage = observer(() => {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-			navigate("/");
-		}
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
 	}, [room, notification.add, navigate]);
 
 	// create a listener to process messages from the room
