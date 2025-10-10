@@ -158,7 +158,7 @@ export const RoomPage = observer(() => {
 	const room = chat.getRoom(roomId);
 
 	// get the agent if there is one
-	const agentId = room?.getAgentId();
+	const agentId = room?.options?.agent?.agent_id ?? null;
 	const agent = chat.agents[agentId] ?? null;
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages

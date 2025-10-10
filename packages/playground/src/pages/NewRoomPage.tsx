@@ -118,15 +118,8 @@ export const NewRoomPage = observer(() => {
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
 			usingAgent
-				? {
-						instructions: "",
-						// knowledge: null,
-						tools: [],
-						tokenLength: TOKEN_LENGTH,
-						temperature: TEMPERATURE,
-					}
+				? { ...options, agent: { agent_id: agent.workspace_id } }
 				: options,
-			usingAgent ? agent : undefined,
 		);
 
 		// ask the room

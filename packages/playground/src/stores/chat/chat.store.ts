@@ -174,7 +174,6 @@ export class ChatStore {
 		mode: RoomStore["mode"],
 		modelId: string,
 		options: RoomStore["options"],
-		agent?: Agent,
 	): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
@@ -213,10 +212,15 @@ export class ChatStore {
 				dateCreated: new Date().toDateString(),
 			});
 			room.setMode(mode);
-			room.setOptions(options);
 			room.setModel(modelId);
-			if (agent) {
-				room.linkAgent(agent);
+
+			if (options.agent) {
+				room.legacyLinkAgent(options.agent?.agent_id);
+			}
+
+			// push options to BE
+			if (Object.keys(options).length > 0) {
+				room.updateRoomOptions(options);
 			}
 
 			runInAction(() => {
@@ -330,9 +334,7 @@ export class ChatStore {
 					dateCreated: r.DATE_CREATED,
 				});
 
-				if (r.WORKSPACE_ID) {
-					room.setAgentId(r.WORKSPACE_ID);
-				}
+				room.setOptions(room.options);
 
 				// store the order
 				order.push(r.ROOM_ID);

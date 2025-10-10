@@ -10,7 +10,7 @@ import {
 	type ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { Agent, PixelMessage, Toolbox } from "@/types";
+import type { PixelMessage, Toolbox } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -53,11 +53,6 @@ interface RoomStoreInterface {
 	 */
 	modelId: string;
 
-	/*
-	 * Id of the agent linked to the room
-	 */
-	agentId?: string;
-
 	/**
 	 * Root message
 	 */
@@ -86,6 +81,13 @@ interface RoomStoreInterface {
 		 * Temperature of the model
 		 */
 		temperature: number;
+
+		/*
+		 * Agents associated with the room
+		 */
+		agent?: {
+			agent_id: string;
+		};
 	};
 
 	/**
@@ -125,7 +127,6 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		modelId: "",
-		agentId: undefined,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
@@ -201,13 +202,6 @@ export class RoomStore {
 	 */
 	get modelId() {
 		return this._store.modelId;
-	}
-
-	/**
-	 * Agent that the user is interacting with
-	 */
-	getAgentId() {
-		return this._store.agentId;
 	}
 
 	/**
@@ -305,14 +299,6 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the agentId
-	 * @param agentId - agent to use in the room
-	 */
-	setAgentId = (agentId: string) => {
-		this._store.agentId = agentId;
-	};
-
-	/**
 	 * Set options
 	 * @param options - options
 	 */
@@ -321,31 +307,6 @@ export class RoomStore {
 			...this._store.options,
 			...options,
 		};
-	};
-
-	/**
-	 * Set Agent
-	 * @param options - options
-	 */
-	linkAgent = async (agent: Agent) => {
-		try {
-			const { errors } = await this.runRoomPixel<
-				[
-					{
-						roomId: string;
-					},
-				]
-			>(
-				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agent.workspace_id)});`,
-			);
-
-			if (errors?.length > 0) {
-				throw new Error(errors?.join(", ") || undefined);
-			}
-			this.setAgentId(agent.workspace_id);
-		} catch (e) {
-			throw new Error(e.message || "Error linking agent");
-		}
 	};
 
 	/**
@@ -447,6 +408,51 @@ export class RoomStore {
 		} finally {
 			// turn off the loading screen
 			this.setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Link Agent
+	 * @param agentId - Agent id to link to the room
+	 */
+	legacyLinkAgent = async (agentId: string) => {
+		try {
+			const { errors } = await this.runRoomPixel<
+				[
+					{
+						roomId: string;
+					},
+				]
+			>(
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agentId)});`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+		} catch (e) {
+			throw new Error(e.message || "Error linking agent");
+		}
+	};
+
+	/**
+	 * UpdateRoomOptions
+	 * @param options - full set of new options
+	 */
+	updateRoomOptions = async (options: RoomStore["options"]) => {
+		try {
+			const { errors } = await this.runRoomPixel(
+				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, options=[${JSON.stringify(
+					options,
+				)}]);`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+			this._store.options = options;
+		} catch (e) {
+			throw new Error(e.message || "Error updating room options");
 		}
 	};
 
