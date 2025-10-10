@@ -144,7 +144,7 @@ export const AgentPage = observer(() => {
 									<Stack paddingLeft={1}>
 										<Typography
 											variant="caption"
-											color="secondary"
+											color="textSecondary"
 										>
 											{`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`}
 										</Typography>
