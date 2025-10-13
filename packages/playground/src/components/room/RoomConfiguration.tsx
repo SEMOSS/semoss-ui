@@ -196,17 +196,16 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					</Typography>
 					<TextField
 						aria-label="Token Length"
-						type="number"
 						value={options.tokenLength ?? ""}
 						onChange={(e) =>
 							setOptions({
 								...options,
-								tokenLength: Number(e.target.value) || 0,
+								tokenLength:
+									Number(
+										e.target.value?.replace(/\D/g, ""),
+									) || null,
 							})
 						}
-						inputProps={{
-							min: 0,
-						}}
 						size="small"
 						variant="outlined"
 						fullWidth={true}
