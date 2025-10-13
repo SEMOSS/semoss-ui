@@ -2058,7 +2058,7 @@ export class StateStore {
 					const pageBlocks = this.getAllBlocksOfType("page");
 
 					const urlPageRouteMatch = pageBlocks.find(
-						(page) => page.id === destination,
+						(page) => page.data.route === destination,
 					);
 
 					if (urlPageRouteMatch) {
