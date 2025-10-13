@@ -147,7 +147,7 @@ export const EngineSettingsIndexPage = (
 	const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
 		metaKeys,
-	)}, filterWord=[""], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
+	)}, filterWord=["${search}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
     `);
 
 	useEffect(() => {
@@ -155,28 +155,20 @@ export const EngineSettingsIndexPage = (
 			return;
 		}
 
-		const filteredData = getFavoritedDatabases.data.filter((db) => {
-			if (!search) return true;
-			const searchLower = search.toLowerCase();
-			const nameMatch = db.database_name?.toLowerCase().includes(searchLower);
-			const idMatch = db.database_id?.toLowerCase().includes(searchLower);
-			return nameMatch || idMatch;
-		});
-
 		dispatch({
 			type: "field",
 			field: "favoritedDbs",
-			value: filteredData,
+			value: getFavoritedDatabases.data,
 		});
 
 		searchbarRef.current?.focus();
-	}, [getFavoritedDatabases.status, getFavoritedDatabases.data, search]);
+	}, [getFavoritedDatabases.status, getFavoritedDatabases.data]);
 
 	// All Engines -------------------------------------
 	const getEngines = useAPI([
 		"getEngines",
 		adminMode,
-		"",
+		search,
 		type,
 		offset,
 		limit,
@@ -226,13 +218,7 @@ export const EngineSettingsIndexPage = (
 		searchbarRef.current?.focus();
 	}, [getEngines.status, getEngines.data]);
 
-	const filteredDatabases = databases.filter((db) => {
-		if (!search) return true;
-		const searchLower = search.toLowerCase();
-		const nameMatch = db.database_name?.toLowerCase().includes(searchLower);
-		const idMatch = db.database_id?.toLowerCase().includes(searchLower);
-		return nameMatch || idMatch;
-	});
+	const filteredDatabases = databases;
 
 	/**
 	 * @name favoriteDb
