@@ -180,7 +180,27 @@ export interface TextFieldProps {
 	/**
 	 * Callback that is triggered when the value changes.
 	 */
-	onKeydown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+	onKeyDown?: (event: React.KeyboardEvent<HTMLInputElement>) => void;
+
+	/**
+	 * Callback that is triggered when the value changes.
+	 */
+	onDrop?: (event: React.DragEvent<HTMLInputElement>) => void;
+
+	/**
+	 * Callback that is triggered when the value changes.
+	 */
+	onDragOver?: (event: React.DragEvent<HTMLInputElement>) => void;
+
+	/**
+	 * Callback that is triggered when the value changes.
+	 */
+	onDragLeave?: (event: React.DragEvent<HTMLInputElement>) => void;
+
+	/**
+	 * Callback that is triggered when the value changes.
+	 */
+	onPaste?: (event: React.ClipboardEvent<HTMLInputElement>) => void;
 
 	/**
 	 * Custom Style
