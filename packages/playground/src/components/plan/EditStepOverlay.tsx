@@ -13,6 +13,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import type { PlanStep } from "@/types";
+import { HumanInterventionDetails } from "./HumanInterventionDetails";
 import { LLMReasoningDetails } from "./LLMReasoningDetails";
 import { ToolCallDetails } from "./ToolCallDetails";
 
@@ -51,7 +52,7 @@ const getStepDetailsDefaults = (
 
 interface EditStepOverlayProps {
 	/** Mode of the overlay */
-	mode: "Add" | "Edit";
+	mode: "Add" | "Update";
 
 	/** Current step if editing */
 	current?: PlanStep;
@@ -187,6 +188,9 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 								<Select.Item value="llm_reasoning">
 									AI
 								</Select.Item>
+								<Select.Item value="human_intervention">
+									User
+								</Select.Item>
 							</Select>
 						</Grid>
 					</Grid>
@@ -206,6 +210,17 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 						)}
 						{step.details.stepType === "llm_reasoning" && (
 							<LLMReasoningDetails
+								details={step.details}
+								onDetailsChange={(details) => {
+									setStep({
+										...step,
+										details,
+									});
+								}}
+							/>
+						)}
+						{step.details.stepType === "human_intervention" && (
+							<HumanInterventionDetails
 								details={step.details}
 								onDetailsChange={(details) => {
 									setStep({

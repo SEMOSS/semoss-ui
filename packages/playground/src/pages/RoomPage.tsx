@@ -25,7 +25,6 @@ import {
 } from "@/components";
 import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
-import { ResponseMessageStore } from "@/stores";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -218,29 +217,12 @@ export const RoomPage = observer(() => {
 
 				const tool = event.data.tool;
 
-				const message = room.getMessage(tool.message);
-				if (
-					!message ||
-					message instanceof ResponseMessageStore !== true
-				) {
-					return;
-				}
-
-				// save the response with the tool
-				await message.saveTool(
+				room.processTool(
+					tool.message,
 					tool.id,
 					tool.name,
 					tool.response,
-					room.mode !== "executing",
 				);
-
-				// TODO: Fix. This works because we only execute one step at a time.
-				// if it is executing, continue the plan
-				if (room.mode === "executing") {
-					if (room.plan) {
-						room.plan.saveTool();
-					}
-				}
 			} catch {
 				// noop
 			}
@@ -261,6 +243,12 @@ export const RoomPage = observer(() => {
 	if (!room || !room.isInitialized) {
 		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
+	}
+
+	let isDisabled = false;
+	// If the plan is executing, only the execution step is enabled
+	if (room.mode === "executing") {
+		isDisabled = room.plan?.step?.details.stepType !== "human_intervention";
 	}
 
 	return (
@@ -368,7 +356,7 @@ export const RoomPage = observer(() => {
 						<Container maxWidth="xl" disableGutters={true}>
 							<RoomInput
 								isLoading={room.isLoading}
-								isDisabled={room.mode === "executing"}
+								isDisabled={isDisabled}
 								minRows={3}
 								maxRows={8}
 								actions={
@@ -376,13 +364,13 @@ export const RoomPage = observer(() => {
 										<AgentChip agent={agent} />
 									) : (
 										<Tooltip
-											title={"Open Configuration Menu"}
+											title={"Configuration"}
 											placement="top"
 										>
 											<IconButton
 												size={"medium"}
 												type="button"
-												aria-label="Open Configuration Menu"
+												aria-label="Configuration"
 												disabled={room.isLoading}
 												color={
 													room.sidebar.isOpen &&
