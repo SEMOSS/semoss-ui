@@ -1,8 +1,4 @@
-import {
-	TableCell as MuiTableCell,
-	type TableCellBaseProps as MuiTableCellProps,
-	type SxProps,
-} from "@mui/material";
+import { TableCell as MuiTableCell, type SxProps } from "@mui/material";
 import type React from "react";
 import type { ReactNode } from "react";
 
@@ -32,7 +28,10 @@ export interface TableCellProps {
 	 * The component used for the root node.
 	 * Either a string to use a HTML element or a component.
 	 */
-	component?: React.ElementType<MuiTableCellProps>;
+	component?: React.ElementType<
+		React.ThHTMLAttributes<HTMLTableCellElement> &
+			React.TdHTMLAttributes<HTMLTableCellElement>
+	>;
 
 	/**
 	 * Sets the padding applied to the cell.

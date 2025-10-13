@@ -1,9 +1,6 @@
-import {
-	ListItemText as MuiListItemText,
-	type ListItemTextProps as MuiListItemTextProps,
-} from "@mui/material";
+import { ListItemText as MuiListItemText } from "@mui/material";
 
-export interface ListItemTextProps extends MuiListItemTextProps {
+export interface ListItemTextProps {
 	/**
 	 * The main content element.
 	 */
@@ -14,6 +11,6 @@ export interface ListItemTextProps extends MuiListItemTextProps {
 	 */
 	secondary?: React.ReactNode;
 }
-export const ListItemText = (props: ListItemTextProps) => {
+export const ListItemText: React.FC<ListItemTextProps> = (props) => {
 	return <MuiListItemText {...props} />;
 };

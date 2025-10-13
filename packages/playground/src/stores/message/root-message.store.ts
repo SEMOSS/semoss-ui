@@ -1,9 +1,8 @@
-import { computed, makeObservable } from "mobx";
 import type { PixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
-import { InputMessageStore } from "./input-message.store";
-import { PlanMessageStore } from "./plan-message.store";
-import { ResponseMessageStore } from "./response-message.store";
+import type { InputMessageStore } from "./input-message.store";
+import type { PlanMessageStore } from "./plan-message.store";
+import type { ResponseMessageStore } from "./response-message.store";
 import { createMessageStore } from "./utility";
 
 /**
@@ -19,41 +18,6 @@ export class RootMessageStore extends AbstractMessageStore {
 			visible: false,
 			dateCreated: new Date().toString(),
 		});
-
-		makeObservable(this, {
-			history: computed,
-		});
-	}
-	/**
-	 * Get the history of the room based on the active children
-	 */
-	get history(): (
-		| InputMessageStore
-		| ResponseMessageStore
-		| PlanMessageStore
-	)[] {
-		let current: AbstractMessageStore = this;
-
-		const history = [];
-		while (current) {
-			if (current.activeChild) {
-				// save it
-				if (current.activeChild instanceof InputMessageStore) {
-					history.push(current.activeChild);
-				} else if (
-					current.activeChild instanceof ResponseMessageStore
-				) {
-					history.push(current.activeChild);
-				} else if (current.activeChild instanceof PlanMessageStore) {
-					history.push(current.activeChild);
-				}
-			}
-
-			// move forward
-			current = current.activeChild;
-		}
-
-		return history;
 	}
 
 	/**
@@ -61,7 +25,9 @@ export class RootMessageStore extends AbstractMessageStore {
 	 * @param parentMessage - parent message to connect to
 	 * @param inputMessage - input message to send
 	 */
-	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+	): Promise<PlanMessageStore | ResponseMessageStore> => {
 		const room = this.room;
 
 		// connect to the parent
@@ -104,7 +70,7 @@ paramValues=[${JSON.stringify({
 			})}]
 );`;
 		} else {
-			throw new Error(`Unknown mode: ${room.mode}`);
+			throw new Error(`Cannot start with mode: ${room.mode}`);
 		}
 
 		// wait for the pixel to run
@@ -127,7 +93,9 @@ paramValues=[${JSON.stringify({
 		const responseMessage = createMessageStore(
 			room,
 			output.responseMessage,
-		);
+		) as PlanMessageStore | ResponseMessageStore;
 		inputMessage.addChild(responseMessage);
+
+		return responseMessage;
 	};
 }

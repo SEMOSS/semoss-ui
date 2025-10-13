@@ -1,10 +1,7 @@
-import {
-	ListItem as MuiListItem,
-	type ListItemProps as MuiListItemProps,
-} from "@mui/material";
-import { type ForwardedRef, forwardRef } from "react";
+import { ListItem as MuiListItem, type SxProps } from "@mui/material";
+import { forwardRef } from "react";
 
-export interface ListItemProps extends MuiListItemProps {
+export interface ListItemProps {
 	/**
 	 * Defines the `align-items` style property.
 	 * @default 'center'
@@ -68,19 +65,26 @@ export interface ListItemProps extends MuiListItemProps {
 	 * @deprecated checkout [ListItemButton](/material-ui/api/list-item-button/) instead
 	 */
 	selected?: boolean;
+
+	/**
+	 * Allow the item to be clicked
+	 */
+	onClick?: () => void;
+
+	/**
+	 * custom style object
+	 */
+	sx?: SxProps;
 }
 
-const _ListItem = (
-	props: ListItemProps,
-	ref: ForwardedRef<HTMLLIElement>,
-): JSX.Element => {
-	const { children, ...otherProps } = props;
+export const ListItem = forwardRef<HTMLLIElement, ListItemProps>(
+	(props, ref): JSX.Element => {
+		const { children, ...otherProps } = props;
 
-	return (
-		<MuiListItem ref={ref} {...otherProps}>
-			{children}
-		</MuiListItem>
-	);
-};
-
-export const ListItem = forwardRef(_ListItem);
+		return (
+			<MuiListItem ref={ref} {...otherProps}>
+				{children}
+			</MuiListItem>
+		);
+	},
+);
