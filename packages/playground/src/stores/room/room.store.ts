@@ -6,11 +6,11 @@ import {
 	type AbstractMessageStore,
 	createMessageStore,
 	InputMessageStore,
-	type PlanMessageStore,
-	type ResponseMessageStore,
+	PlanMessageStore,
+	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { PixelMessage, Toolbox } from "@/types";
+import type { Agent, PixelMessage, Toolbox } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -52,6 +52,11 @@ interface RoomStoreInterface {
 	 * Model that is being chatted against
 	 */
 	modelId: string;
+
+	/*
+	 * Id of the agent linked to the room
+	 */
+	agentId?: string;
 
 	/**
 	 * Root message
@@ -120,6 +125,7 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		modelId: "",
+		agentId: undefined,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
@@ -198,6 +204,13 @@ export class RoomStore {
 	}
 
 	/**
+	 * Agent that the user is interacting with
+	 */
+	getAgentId() {
+		return this._store.agentId;
+	}
+
+	/**
 	 * Get a message by id the model
 	 * @param messageId - model to use in the room
 	 */
@@ -224,7 +237,28 @@ export class RoomStore {
 		| ResponseMessageStore
 		| PlanMessageStore
 	)[] {
-		return this._store.root.history || [];
+		let current: AbstractMessageStore = this._store.root;
+
+		const history = [];
+		while (current) {
+			if (current.activeChild) {
+				// save it
+				if (current.activeChild instanceof InputMessageStore) {
+					history.push(current.activeChild);
+				} else if (
+					current.activeChild instanceof ResponseMessageStore
+				) {
+					history.push(current.activeChild);
+				} else if (current.activeChild instanceof PlanMessageStore) {
+					history.push(current.activeChild);
+				}
+			}
+
+			// move forward
+			current = current.activeChild;
+		}
+
+		return history;
 	}
 
 	/**
@@ -242,6 +276,10 @@ export class RoomStore {
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {
+		if (this.mode !== "executing") {
+			return null;
+		}
+
 		// Search through history in reverse order to find the most recent plan
 		for (let i = this.history.length - 1; i >= 0; i--) {
 			const message = this.history[i];
@@ -292,6 +330,14 @@ export class RoomStore {
 	};
 
 	/**
+	 * Set the agentId
+	 * @param agentId - agent to use in the room
+	 */
+	setAgentId = (agentId: string) => {
+		this._store.agentId = agentId;
+	};
+
+	/**
 	 * Set options
 	 * @param options - options
 	 */
@@ -300,6 +346,31 @@ export class RoomStore {
 			...this._store.options,
 			...options,
 		};
+	};
+
+	/**
+	 * Set Agent
+	 * @param options - options
+	 */
+	linkAgent = async (agent: Agent) => {
+		try {
+			const { errors } = await this.runRoomPixel<
+				[
+					{
+						roomId: string;
+					},
+				]
+			>(
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agent.workspace_id)});`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+			this.setAgentId(agent.workspace_id);
+		} catch (e) {
+			throw new Error(e.message || "Error linking agent");
+		}
 	};
 
 	/**
@@ -514,9 +585,57 @@ export class RoomStore {
 		}
 
 		// run the message
-		await parentMessage.runMessage(inputMessage);
+		try {
+			await parentMessage.runMessage(inputMessage);
 
-		// go next if we want
+			// if it is executing continue the execution
+			this.plan?.verifyHumanInterventionStepExecution();
+		} catch (e) {
+			this.plan?.failStepExecution();
+
+			throw e;
+		}
+	};
+
+	/**
+	 * Process a tool call
+	 * @param messageId - id of the message
+	 * @param toolId - id of the tool
+	 * @param toolName - name of the tool
+	 * @param toolResponse - response from the tool
+	 */
+	processTool = async (
+		messageId: string,
+		toolId: string,
+		toolName: string,
+		toolResponse: string,
+	): Promise<void> => {
+		try {
+			const message = this.getMessage(messageId);
+			if (!message || message instanceof ResponseMessageStore !== true) {
+				return;
+			}
+
+			const tool = message.getTool(toolId, toolName);
+			if (!tool) {
+				return;
+			}
+
+			// save the response with the tool
+			await message.saveToolExecution(
+				tool,
+				toolResponse,
+				this.mode === "executing",
+			);
+
+			// verify if it is correct if executing
+			this.plan?.verifyToolStepExecution(
+				tool._meta.map.SMSS_PROJECT_ID,
+				tool.name,
+			);
+		} catch {
+			this.plan?.failStepExecution();
+		}
 	};
 
 	/**
