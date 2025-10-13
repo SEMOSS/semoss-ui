@@ -2,7 +2,8 @@ import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	Container,
@@ -23,8 +24,9 @@ import {
 	RoomConfiguration,
 	RoomInput,
 } from "@/components";
+import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
-import { ResponseMessageStore } from "@/stores";
+import type { Agent } from "@/types";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -136,7 +138,15 @@ const getDateTitle = (d: string) => {
 	return message;
 };
 
+/**
+ * The page for a room
+ *
+ * @component
+ */
 export const RoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 
 	const notification = useNotification();
@@ -148,10 +158,21 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
+	// get the agent if there is one
+	const agentId = room?.getAgentId();
+	const { data: agent, status } = usePixel<Agent>(
+		agentId ? `GetWorkspace("${agentId}");` : null,
+	);
+	const isLoadingAgent = status === "LOADING";
+
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
 	);
+
+	/**
+	 * Effects
+	 */
 
 	// load the room
 	useEffect(() => {
@@ -197,29 +218,12 @@ export const RoomPage = observer(() => {
 
 				const tool = event.data.tool;
 
-				const message = room.getMessage(tool.message);
-				if (
-					!message ||
-					message instanceof ResponseMessageStore !== true
-				) {
-					return;
-				}
-
-				// save the response with the tool
-				await message.saveTool(
+				room.processTool(
+					tool.message,
 					tool.id,
 					tool.name,
 					tool.response,
-					room.mode !== "executing",
 				);
-
-				// TODO: Fix. This works because we only execute one step at a time.
-				// if it is executing, continue the plan
-				if (room.mode === "executing") {
-					if (room.plan) {
-						room.plan.saveTool();
-					}
-				}
 			} catch {
 				// noop
 			}
@@ -232,8 +236,20 @@ export const RoomPage = observer(() => {
 		};
 	}, [room]);
 
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
+	}
+
+	let isDisabled = false;
+	// If the plan is executing, only the execution step is enabled
+	if (room.mode === "executing") {
+		isDisabled = room.plan?.step?.details.stepType !== "human_intervention";
 	}
 
 	return (
@@ -341,44 +357,51 @@ export const RoomPage = observer(() => {
 						<Container maxWidth="xl" disableGutters={true}>
 							<RoomInput
 								isLoading={room.isLoading}
-								isDisabled={room.mode === "executing"}
+								isDisabled={isDisabled}
 								minRows={3}
 								maxRows={8}
 								actions={
-									<Tooltip
-										title={"Open Configuration Menu"}
-										placement="top"
-									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={room.isLoading}
-											color={
-												room.sidebar.isOpen &&
-												room.sidebar.type ===
-													"CONFIGURATION"
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												// toggle open / closed based on the state
-												if (
+									agentId ? (
+										<AgentChip
+											agent={agent}
+											loading={isLoadingAgent}
+										/>
+									) : (
+										<Tooltip
+											title={"Configuration"}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Configuration"
+												disabled={room.isLoading}
+												color={
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-												) {
-													room.closeSidebar();
-												} else {
-													room.openSidebar(
-														"CONFIGURATION",
-													);
+														? "primary"
+														: "default"
 												}
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
-									</Tooltip>
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
