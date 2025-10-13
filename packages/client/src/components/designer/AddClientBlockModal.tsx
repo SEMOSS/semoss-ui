@@ -22,6 +22,7 @@ import { SECTION_ORDER } from "../blocks-workspace/menus/default-menu";
 import { getBlockElement } from '@/stores';
 import { DesignerMenuItem } from '../blocks-workspace/menus/menu-types';
 import { CommunityLayers } from './CommunityLayers';
+import { refreshCommunityTab } from "../blocks-workspace";
 
 const StyledModalHeading = styled(Modal.Title)({
 	display: "flex",
@@ -328,7 +329,7 @@ export const AddClientBlockModal = (props: EditDetailsModalProps) => {
 					message: output,
 				});
 			}
-
+            refreshCommunityTab.setRefresh(true);
 			reset(AddAsClientBlock);
 			onClose();
             setShowPreviewModal(false);

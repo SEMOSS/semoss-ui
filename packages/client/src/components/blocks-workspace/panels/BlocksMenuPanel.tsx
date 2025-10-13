@@ -113,6 +113,13 @@ export interface AddBlocksMenuProps {
 
 const defaultSection = "Miscellaneous";
 
+export const refreshCommunityTab = {
+	refresh: false,
+	setRefresh: (value: boolean) => {
+		refreshCommunityTab.refresh = value;
+	}
+}
+
 /**
  * Add Blocks to the UI
  */
@@ -326,6 +333,13 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 				.filter((sectionItems) => sectionItems.length)
 		);
 	}, [sortedItems, search, filterCategoryMap]);
+
+	useEffect(() => {
+		if (refreshCommunityTab.refresh) {
+			getClientBlocks();
+			refreshCommunityTab.setRefresh(false);
+		}
+	}, [refreshCommunityTab.refresh]);
 
 	useEffect(() => {
 		setFilterCategoryMap(() => {
