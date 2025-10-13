@@ -13,7 +13,13 @@ export interface App {
 }
 
 // TODO: define properly
-export interface Agent extends App {}
+export interface Agent {
+	workspace_id: string;
+	name: string;
+	date_created: string; // ISO string
+	description: string;
+	system_prompt: string;
+}
 
 /**
  * Instructions from the backend
