@@ -1,4 +1,4 @@
-import { ChevronRight, KeyboardArrowDown } from "@mui/icons-material";
+import { ChevronRight, KeyboardArrowDown, KeyboardArrowUp } from "@mui/icons-material";
 import { useState } from "react";
 import {
 	Box,
@@ -38,15 +38,17 @@ export const HistoryRow = (props: {
 		<>
 			<Table.Row>
 				<Table.Cell>
-					<IconButton
-						size="small"
-						onClick={() => setOpen(!open)}
-						data-testid={"historyRow-table-toggle-btn"}
-					>
-						{open ? <KeyboardArrowDown /> : <ChevronRight />}
-					</IconButton>
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<IconButton
+							size="small"
+							onClick={() => setOpen(!open)}
+							data-testid={"historyRow-table-toggle-btn"}
+						>
+							{open ? <KeyboardArrowUp /> : <KeyboardArrowDown />}
+						</IconButton>
+						<span>{row.jobName}</span>
+					</Stack>
 				</Table.Cell>
-				<Table.Cell>{row.jobName}</Table.Cell>
 				<Table.Cell>{row.execStart}</Table.Cell>
 				<Table.Cell>{row.execDelta}</Table.Cell>
 				<Table.Cell>

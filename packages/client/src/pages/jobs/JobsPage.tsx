@@ -9,11 +9,13 @@ import {
 	Pause,
 } from "@mui/icons-material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Navigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
 import { Button, Search, Stack, Tabs, useNotification, styled, Box, ToggleTabsGroup } from "@semoss/ui";
 import AlarmOnIcon from '@mui/icons-material/AlarmOn';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import { useRootStore, useSettings } from "@/hooks";
 import { DeleteJobModal } from "./DeleteJobModal";
 import { JobBuilderModal } from "./JobBuilderModal";
@@ -47,19 +49,11 @@ const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 	alignItems: "center",
 	padding: "0px 3px",
-	color: theme.palette.primary.main,
 }));
 
 const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
 	height: "38px",
 	padding: "8px 11px",
-	color: theme.palette.primary.main,
-	"&.MuiTab-root": {
-		borderRadius: theme.shape.borderRadius,
-	},
-	"&.Mui-selected": {
-		boxShadow: theme.palette.primary.light,
-	},
 }));
 
 export function JobsPage() {
@@ -99,6 +93,9 @@ export function JobsPage() {
 	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
 	const [historyCount, setHistoryCount] = useState<number>(-1);
 	const { adminMode } = useSettings();
+	const searchRef = useRef(null);
+	const [searchOpen, setSearchOpen] = useState(false);
+	const [filterOpen, setFilterOpen] = useState(false);
 
 	const getJobs = () => {
 		setJobsLoading(true);
@@ -541,6 +538,19 @@ export function JobsPage() {
 		debouncedGetHistory();
 	}, [historySearchBuffer, debouncedGetHistory]);
 
+	useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
+                setSearchOpen(false);
+            }
+        };
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, [searchRef]);
+
 	const deleteMutlipleJobs = () => {
 		setDeleteMultiple(true);
 		const rowsToBeDeleted = jobs.filter((job) =>
@@ -593,6 +603,7 @@ export function JobsPage() {
 						onChange={(_, value: string) => {
 							setSelectedTable(value);
 						}}
+						color="primary"
 					>
 						<StyledToggleTabsGroupItem
 							label="Jobs"
@@ -606,78 +617,77 @@ export function JobsPage() {
 						/>
 					</StyledToggleTabsGroup>
 					<Stack direction="row" spacing={2}>
-						{/* <Search
-							size="small"
-							value={searchValue}
-							onChange={(e) => setSearchValue(e.target.value)}
-						/> */}
-						<span>
-							<Button
-								disabled={selectedActiveJobs.length === 0}
-								variant="outlined"
-								startIcon={<Pause />}
-								size="medium"
-								onClick={() => pauseJobs()}
-								data-testid={"jobsPage-pause-btn"}
-							>
-								Pause
-							</Button>
-						</span>
-						<span>
-							<Button
-								disabled={selectedPausedJobs.length === 0}
-								variant="outlined"
-								startIcon={<NotStartedOutlined />}
-								size="medium"
-								onClick={() => resumeJobs()}
-								data-testid={"jobsPage-resume-btn"}
-							>
-								Resume
-							</Button>
-						</span>
-						<span>
-							<Button
-								disabled={rowSelectionModel.length === 0}
-								variant="outlined"
-								startIcon={<DeleteOutline />}
-								size="medium"
-								onClick={() => deleteMutlipleJobs()}
-								data-testid={"jobsPage-delete-btn"}
-							>
-								Delete
-							</Button>
-						</span>
-						<span>
-							<Button
-								size="medium"
-								variant="contained"
-								startIcon={<Add />}
-								onClick={() =>
-									setInitialBuilderState({
-										id: null,
-										name: "",
-										pixel: "",
-										tags: [],
-										cronExpression: "0 0 12 * * *",
-										cronTz: "Eastern Standard Time",
-										smtpHost: "",
-										smtpPort: "",
-										subject: "",
-										jobType: "",
-										to: [],
-										cc: [],
-										bcc: [],
-										from: "",
-										message: "",
-										username: "",
-										password: "",
-									})
-								}
-								data-testid={"jobsPage-add-btn"}
-							>
-								Add New
-							</Button>
-						</span>
+						{selectedTable === "Jobs" && (
+							<>
+								<span>
+									<Button
+										disabled={selectedActiveJobs.length === 0}
+										variant="outlined"
+										startIcon={<Pause />}
+										size="medium"
+										onClick={() => pauseJobs()}
+										data-testid={"jobsPage-pause-btn"}
+									>
+										Pause
+									</Button>
+								</span>
+								<span>
+									<Button
+										disabled={selectedPausedJobs.length === 0}
+										variant="outlined"
+										startIcon={<NotStartedOutlined />}
+										size="medium"
+										onClick={() => resumeJobs()}
+										data-testid={"jobsPage-resume-btn"}
+									>
+										Resume
+									</Button>
+								</span>
+								<span>
+									<Button
+										disabled={rowSelectionModel.length === 0}
+										variant="outlined"
+										startIcon={<DeleteOutline />}
+										size="medium"
+										onClick={() => deleteMutlipleJobs()}
+										data-testid={"jobsPage-delete-btn"}
+									>
+										Delete
+									</Button>
+								</span>
+								<span>
+									<Button
+										size="medium"
+										variant="contained"
+										startIcon={<Add />}
+										onClick={() =>
+											setInitialBuilderState({
+												id: null,
+												name: "",
+												pixel: "",
+												tags: [],
+												cronExpression: "0 0 12 * * *",
+												cronTz: "Eastern Standard Time",
+												smtpHost: "",
+												smtpPort: "",
+												subject: "",
+												jobType: "",
+												to: [],
+												cc: [],
+												bcc: [],
+												from: "",
+												message: "",
+												username: "",
+												password: "",
+											})
+										}
+										data-testid={"jobsPage-add-btn"}
+									>
+										Add New
+									</Button>
+								</span>
+							</>
+						)}
 						{rowSelectionModel.length > 1 ? (
 							<span>
 								<Button
@@ -695,7 +705,7 @@ export function JobsPage() {
 						)}
 					</Stack>
 				</Stack>
-				<Stack border={"1px solid #E0E0E0"} borderRadius="8px 8px 0 0" mt={2}>
+				<Stack border={"1px solid #E0E0E0"} borderRadius="8px 8px 0 0" mt={2} flex={1} direction="row" justifyContent="space-between" alignItems="center" spacing={2} padding={1}>
 					{selectedTable === "Jobs" && (
 						<Tabs
 							value={selectedJobTab}
@@ -722,7 +732,30 @@ export function JobsPage() {
 							<Tabs.Item value="Failed" label="Failed" />
 						</Tabs>
 					)}
-					
+					<Stack direction="row" spacing={2} alignItems="center">
+						{!searchOpen && (
+							<SearchIcon color="action"
+								onClick={() => {
+									setFilterOpen(!filterOpen);
+									setSearchOpen(!searchOpen);
+								}}
+							/>
+						)}
+						{searchOpen && (
+							<div ref={searchRef}>
+								<Search
+									size="small"
+									value={searchValue}
+									onChange={(e) => setSearchValue(e.target.value)}
+								/>
+							</div>
+						)}
+						<FilterAltIcon color="action" 
+							onClick={() => {
+								setFilterOpen(!filterOpen);
+							}}
+						/>
+					</Stack>
 				</Stack>
 				{selectedTable === "Jobs" && (
 					<JobsTable

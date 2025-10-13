@@ -15,6 +15,10 @@ const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
 		transform: "rotate(90deg)",
 	},
 }));
+const StyledStack = styled(Stack)(() => ({
+	border: '1px solid #E0E0E0',
+	 borderRadius: '0 0 8px 8px'
+}));
 const LoadingTableCell = styled(Table.Cell)(() => ({
 	padding: 0,
 }));
@@ -45,14 +49,13 @@ export const JobHistory = (props: {
 	} = props;
 
 	return (
-			<Stack spacing={2}>
+			<StyledStack spacing={2}>
 				<Table.Container>
 					<Table>
 						<Table.Head>
 							<Table.Row>
-								<Table.Cell></Table.Cell>
-								<Table.Cell>Name</Table.Cell>
-								<Table.Cell>Run Date</Table.Cell>
+								<Table.Cell>Job Name</Table.Cell>
+								<Table.Cell>Run Time</Table.Cell>
 								<Table.Cell>Time</Table.Cell>
 								<Table.Cell>Status</Table.Cell>
 							</Table.Row>
@@ -97,6 +100,6 @@ export const JobHistory = (props: {
 						</Table.Footer>
 					</Table>
 				</Table.Container>
-			</Stack>
+			</StyledStack>
 	);
 };

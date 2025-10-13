@@ -18,6 +18,7 @@ import {
 } from "@semoss/ui";
 import type { Job, JobBuilder } from "./job.types";
 import { getHumanReadableCronExpression } from "./job.utils";
+import Avatar  from "../../assets/img/Avatar.svg";
 
 const StyledDataGrid = styled(DataGrid)(() => ({
 	".MuiDataGrid-overlayWrapper": {
@@ -31,6 +32,15 @@ const StyledDataGrid = styled(DataGrid)(() => ({
 		wordWrap: "break-word!important",
 	},
 }));
+
+const StyledChip = styled(Chip, { shouldForwardProp: (prop) => prop !== "isActive" })<{ isActive: boolean }>(({ theme, ...props }) => {
+	const isActive = (props as any).isActive;
+	return {
+		fontWeight: 600,
+		color: "#fff",
+		backgroundColor: isActive ? theme.palette.success.main : theme.palette.error.main,
+	};
+});
 
 const LoadingOverlay = () => {
 	return <LinearProgress color="primary" />;
@@ -160,12 +170,9 @@ export const JobsTable = (props: {
 			flex: 1,
 			renderCell: (params) => {
 				return (
-						<Chip
+						<StyledChip
 							label={params.value ? "Active" : "Inactive"}
-							sx={{
-								backgroundColor: params.value ? "#4CAF50" : "#F44336",
-								color: "#fff",
-							}}
+							isActive={params.value}
 						/>
 					);
 			},
@@ -174,6 +181,18 @@ export const JobsTable = (props: {
 			headerName: "Modified By",
 			field: "ownerId",
 			flex: 1,
+			renderCell: (params) => {
+				return (
+					<Stack direction="row" alignItems="center" spacing={1}>
+						<img
+							src={Avatar}
+							alt="Avatar"
+							style={{ width: 24, height: 24, borderRadius: "50%" }}
+						/>
+						<span>{params.value}</span>
+					</Stack>
+				);
+			},
 		},
 		{
 			headerName: "Actions",
