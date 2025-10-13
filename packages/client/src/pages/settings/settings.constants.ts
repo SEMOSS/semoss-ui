@@ -209,4 +209,12 @@ export const SETTINGS_ROUTES: {
 		history: ["settings/"],
 		admin: true,
 	},
+	{
+		title: "Add Jobs",
+		path: "add-new-job",
+		description: "Fill out all the details in order to add the model to the catalog.",
+		icon: mdiClipboardTextOutline,
+		history: ["jobs", "add-new-job"],
+		admin: true,
+	}
 ];

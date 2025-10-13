@@ -10,7 +10,7 @@ import {
 } from "@mui/icons-material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
 import { useEffect, useMemo, useState, useRef } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { debounced, runPixel } from "@semoss/sdk/react";
 import { Button, Search, Stack, Tabs, useNotification, styled, Box, ToggleTabsGroup } from "@semoss/ui";
 import AlarmOnIcon from '@mui/icons-material/AlarmOn';
@@ -94,6 +94,7 @@ export function JobsPage() {
 	const [historyCount, setHistoryCount] = useState<number>(-1);
 	const { adminMode } = useSettings();
 	const searchRef = useRef(null);
+	const navigate = useNavigate();
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [filterOpen, setFilterOpen] = useState(false);
 
@@ -661,25 +662,26 @@ export function JobsPage() {
 										variant="contained"
 										startIcon={<Add />}
 										onClick={() =>
-											setInitialBuilderState({
-												id: null,
-												name: "",
-												pixel: "",
-												tags: [],
-												cronExpression: "0 0 12 * * *",
-												cronTz: "Eastern Standard Time",
-												smtpHost: "",
-												smtpPort: "",
-												subject: "",
-												jobType: "",
-												to: [],
-												cc: [],
-												bcc: [],
-												from: "",
-												message: "",
-												username: "",
-												password: "",
-											})
+											// setInitialBuilderState({
+											// 	id: null,
+											// 	name: "",
+											// 	pixel: "",
+											// 	tags: [],
+											// 	cronExpression: "0 0 12 * * *",
+											// 	cronTz: "Eastern Standard Time",
+											// 	smtpHost: "",
+											// 	smtpPort: "",
+											// 	subject: "",
+											// 	jobType: "",
+											// 	to: [],
+											// 	cc: [],
+											// 	bcc: [],
+											// 	from: "",
+											// 	message: "",
+											// 	username: "",
+											// 	password: "",
+											// })
+											 navigate("/settings/add-new-job")
 										}
 										data-testid={"jobsPage-add-btn"}
 									>
