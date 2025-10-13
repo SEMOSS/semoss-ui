@@ -8,7 +8,7 @@ import {
 	TextField,
 } from "@semoss/ui";
 import { usePage } from "@/hooks";
-import { Search } from "./Search";
+import { PlatformSearch } from "./PlatformSearch";
 
 const StyledNavbar = styled("div")(({ theme }) => ({
 	position: "absolute",
@@ -58,7 +58,7 @@ export const Navbar: React.FC = observer(() => {
 			></Stack>
 			<Container maxWidth={false} sx={{ maxWidth: "720px" }}>
 				{page.navbar && page.navbar.search ? (
-					<Search
+					<PlatformSearch
 						renderInput={(params) => (
 							<StyledTextField
 								{...params}

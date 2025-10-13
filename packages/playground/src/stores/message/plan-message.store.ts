@@ -46,6 +46,13 @@ export class PlanMessageStore extends AbstractMessageStore {
 		});
 	}
 
+	/**
+	 * The execution step
+	 */
+	get step(): PlanStep | null {
+		return this.plan.steps[this.executionIdx] || null;
+	}
+
 	/***
 	 * Add a new step to the plan
 	 * @param step
@@ -56,6 +63,17 @@ export class PlanMessageStore extends AbstractMessageStore {
 			step_number: this.plan.steps.length,
 			...step,
 		});
+	}
+
+	/***
+	 * Update a step in the plan
+	 * @param step
+	 */
+	updateStep(stepNumber: number, step: Partial<PlanStep>) {
+		this.plan.steps[stepNumber] = {
+			...this.plan.steps[stepNumber],
+			...step,
+		};
 	}
 
 	/**
@@ -72,7 +90,9 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 * Send a new user message and recieve a response
 	 * @param prompt - user message
 	 */
-	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+	): Promise<PlanMessageStore> => {
 		const room = this.room;
 
 		// connect to the parent
@@ -118,8 +138,10 @@ paramValues=[${JSON.stringify({
 		const responseMessage = createMessageStore(
 			room,
 			output.responseMessage,
-		);
+		) as PlanMessageStore;
 		inputMessage.addChild(responseMessage);
+
+		return responseMessage;
 	};
 
 	/**
@@ -163,22 +185,6 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 	};
 
 	/**
-	 * TODO: Fix. This is brittle and will break if we go out of order
-	 * Save the tool and continue execution
-	 */
-	saveTool = () => {
-		const step = this.plan.steps[this.executionIdx];
-
-		runInAction(() => {
-			step.status = "completed";
-		});
-
-		// move forward and execute the next one
-		this.executionIdx++;
-		this.executeStep();
-	};
-
-	/**
 	 * Execution
 	 */
 	/**
@@ -192,15 +198,24 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 
 		// mark all as pending
 		runInAction(() => {
-			this.executionIdx = 0;
-
 			for (const step of this.plan.steps) {
 				step.status = "pending";
 			}
 		});
 
 		// start executing the first step
+		this.executionIdx = 0;
 		this.executeStep();
+	};
+
+	/**
+	 * Execute the next step
+	 * @returns resolves if successfully executed
+	 */
+	private executeNextStep = async (): Promise<void> => {
+		// move forward and execute the next one
+		this.executionIdx++;
+		await this.executeStep();
 	};
 
 	/**
@@ -209,7 +224,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 	 * @returns Promise that resolves to true if step executed successfully
 	 */
 	private executeStep = async (): Promise<void> => {
-		const step = this.plan.steps[this.executionIdx];
+		const step = this.step;
 
 		// No more pending steps, switch back to chat mode
 		if (!step) {
@@ -235,7 +250,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 			} else if (step.details.stepType === "llm_reasoning") {
 				completed = await this.executeReasoningStep(step);
 			} else if (step.details.stepType === "human_intervention") {
-				throw new Error("TODO: Human Intervention step execution");
+				completed = await this.executeHumanInterventionStep(step);
 			} else if (step.details.stepType === "no_tool_available") {
 				throw new Error(
 					`Step ${step.step_number}: No tool available for ${step.details.missing_capability}`,
@@ -247,10 +262,6 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				runInAction(() => {
 					step.status = "completed";
 				});
-
-				// move forward and execute the next one
-				this.executionIdx++;
-				this.executeStep();
 			}
 		} catch (error) {
 			// Mark step as failed
@@ -292,9 +303,11 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 
 		const { output } = response.pixelReturn[0];
 
+		console.error("TODO: Refactor to search by messageId");
+
 		// Get the input from COT
 		const inputMessage = createMessageStore(room, output.inputMessage);
-		this.addChild(inputMessage);
+		room.tail.addChild(inputMessage);
 
 		// Add the response
 		const responseMessage = createMessageStore(
@@ -319,5 +332,91 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 		await this.room.askMessage(step.details.prompt, []);
 
 		return true;
+	};
+
+	/**
+	 * Execute a human intervention step
+	 * @param step - Step to execute
+	 */
+	private executeHumanInterventionStep = async (
+		step: PlanStep,
+	): Promise<boolean> => {
+		if (step.details.stepType !== "human_intervention") {
+			throw new Error("Invalid step type for human intervention");
+		}
+
+		// wait for the user
+		return false;
+	};
+
+	/**
+	 * TODO: Fix. This is brittle and will break if we go out of order
+	 * Verify the execution of a tool step. Throw an error if it fails.
+	 * @param toolName - name of the tool
+	 * @param toolId - id of the app
+	 */
+	verifyToolStepExecution = (appId: string, toolName: string) => {
+		const step = this.step;
+		if (!step) {
+			return;
+		}
+
+		if (step.details.stepType !== "tool_call") {
+			return;
+		}
+
+		if (
+			step.details._meta.map.SMSS_PROJECT_ID !== appId ||
+			step.details.tool_name !== toolName
+		) {
+			return;
+		}
+
+		// TODO: check success criteria
+
+		runInAction(() => {
+			step.status = "completed";
+		});
+
+		this.executeNextStep();
+	};
+
+	/**
+	 * Verify the execution of human intervention. Throw an error if it fails.
+	 */
+	verifyHumanInterventionStepExecution = () => {
+		const step = this.step;
+		if (!step) {
+			return;
+		}
+
+		if (
+			step.details.stepType !== "llm_reasoning" &&
+			step.details.stepType !== "human_intervention"
+		) {
+			return;
+		}
+
+		// TODO: check success criteria
+
+		runInAction(() => {
+			step.status = "completed";
+		});
+
+		this.executeNextStep();
+	};
+
+	/**
+	 * Fail the execution step
+	 */
+	failStepExecution = async () => {
+		const step = this.step;
+		if (!step) {
+			return;
+		}
+
+		runInAction(() => {
+			step.status = "failed";
+		});
 	};
 }

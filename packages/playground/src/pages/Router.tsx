@@ -35,7 +35,13 @@ export const Router = () => {
 					<Route element={<MainLayout />}>
 						<Route path="new" element={<NewRoomPage />} />
 						<Route path="room/:roomId" element={<RoomPage />} />
-						<Route path="agent" element={<AgentPage />} />
+						<Route path="agent">
+							<Route index element={<AgentPage />} />
+							<Route
+								path=":agentId/new"
+								element={<NewRoomPage />}
+							/>
+						</Route>
 						<Route
 							path="*"
 							element={<Navigate to="/new" replace />}
