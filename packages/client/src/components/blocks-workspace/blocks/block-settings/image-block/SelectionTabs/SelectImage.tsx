@@ -1,4 +1,4 @@
-import { ListItemText, Select } from "@semoss/ui";
+import { Select } from "@semoss/ui";
 import { BaseSettingSection } from "../../../settings";
 
 const SelectImage = ({ data, imageFiles, setData }) => {
@@ -26,7 +26,7 @@ const SelectImage = ({ data, imageFiles, setData }) => {
 			>
 				{imageFiles?.map((file) => (
 					<Select.Item key={file.name} value={file.name}>
-						<ListItemText>{file.name}</ListItemText>
+						{file.name}
 					</Select.Item>
 				))}
 			</Select>
