@@ -89,7 +89,7 @@ const StyledCardHeader = styled(Card.Header)({
 		height: "20px",
 	},
 	".MuiCardHeader-title": {
-		width: "200px",
+		width: "fit-content",
 	},
 	display: "flex",
 	flexDirection: "column",
