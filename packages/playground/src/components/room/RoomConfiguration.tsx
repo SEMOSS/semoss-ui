@@ -197,7 +197,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					<TextField
 						aria-label="Token Length"
 						type="number"
-						value={options.tokenLength}
+						value={options.tokenLength ?? ""}
 						onChange={(e) =>
 							setOptions({
 								...options,

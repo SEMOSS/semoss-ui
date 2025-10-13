@@ -416,13 +416,13 @@ export class RoomStore {
 
 		const loadOptions = async () => {
 			const response = await this.runRoomPixel<
-				RoomStoreInterface["options"][]
+				{ OPTIONS: RoomStoreInterface["options"] }[]
 			>(`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`);
 			const { output } = response.pixelReturn[0];
 
 			runInAction(() => {
 				// set the options based on the history
-				this.setOptions(output);
+				this.setOptions(output.OPTIONS);
 
 				// mark as initialized
 				this._store.isInitialized = true;
