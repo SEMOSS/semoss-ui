@@ -24,6 +24,9 @@ const StyledName = styled(Typography)(({ theme }) => ({
 	fontStyle: "normal",
 	lineHeight: "143%",
 	letterSpacing: "0.17px",
+	overflow: "hidden",
+	textOverflow: "ellipsis",
+	whiteSpace: "nowrap",
 }));
 
 const StyledProjectType = styled("div")(({ theme }) => ({
@@ -89,7 +92,7 @@ const StyledCardHeader = styled(Card.Header)({
 		height: "20px",
 	},
 	".MuiCardHeader-title": {
-		width: "fit-content",
+		width: "250px",
 	},
 	display: "flex",
 	flexDirection: "column",
@@ -282,13 +285,13 @@ export const BrowseTemplateTileCard = (props: BrowseTemplateTileCardProps) => {
 						<StyledCardContentDiv>
 							<StyledCardHeader
 								title={
-									<StyledName variant={"body2"}>
+									<StyledName variant={"body2"} title={app.project_name}>
 										{removeUnderscores(app.project_name)}
 									</StyledName>
 								}
 							/>
 							<StyledCardContent>
-								<StyledCardDescription variant={"caption"}>
+								<StyledCardDescription variant={"caption"} title={app.description}>
 									{app.description
 										? app.description
 										: "No description available"}
