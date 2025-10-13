@@ -18,8 +18,6 @@ import {
 	IconButton,
 	Link,
 	Menu,
-	MenuItem,
-	MenuList,
 	Modal,
 	Stack,
 	styled,
@@ -504,66 +502,64 @@ export const TeamTileCard = (props: TeamCardProps) => {
 							},
 						}}
 					>
-						<MenuList>
-							{type === "CUSTOM" && (
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										handleClose(e);
-										setAddMembersModal(true);
-										getUsersNonGroup(false);
+						{type === "CUSTOM" && (
+							<Menu.Item
+								onClick={(e) => {
+									e.stopPropagation();
+									handleClose(e);
+									setAddMembersModal(true);
+									getUsersNonGroup(false);
+								}}
+							>
+								<Stack direction="row" gap={2}>
+									<PersonAddIcon
+										sx={{ color: "#0000008A" }}
+									/>
+									<div>Add member to team</div>
+								</Stack>
+							</Menu.Item>
+						)}
+						<Menu.Item
+							onClick={(e) => {
+								e.stopPropagation();
+								handleClose(e);
+								setEditTeam(true);
+							}}
+						>
+							<Stack direction="row" gap={2}>
+								<EditIcon sx={{ color: "#0000008A" }} />
+								<div>Edit team</div>
+							</Stack>
+						</Menu.Item>
+						<Menu.Item
+							onClick={(e) => {
+								e.stopPropagation();
+								setDeleteModal(true);
+								handleClose(e);
+							}}
+							onMouseOver={() => {
+								setHover(true);
+							}}
+							sx={{ color: hover ? "red" : "#0000008A" }}
+							onMouseLeave={() => {
+								setHover(false);
+							}}
+						>
+							<Stack direction="row" gap={2}>
+								<DeleteRounded
+									sx={{
+										color: hover ? "red" : "#0000008A",
+									}}
+								/>
+								<div
+									style={{
+										color: hover ? "red" : "black",
 									}}
 								>
-									<Stack direction="row" gap={2}>
-										<PersonAddIcon
-											sx={{ color: "#0000008A" }}
-										/>
-										<div>Add member to team</div>
-									</Stack>
-								</MenuItem>
-							)}
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									handleClose(e);
-									setEditTeam(true);
-								}}
-							>
-								<Stack direction="row" gap={2}>
-									<EditIcon sx={{ color: "#0000008A" }} />
-									<div>Edit team</div>
-								</Stack>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									setDeleteModal(true);
-									handleClose(e);
-								}}
-								onMouseOver={() => {
-									setHover(true);
-								}}
-								sx={{ color: hover ? "red" : "#0000008A" }}
-								onMouseLeave={() => {
-									setHover(false);
-								}}
-							>
-								<Stack direction="row" gap={2}>
-									<DeleteRounded
-										sx={{
-											color: hover ? "red" : "#0000008A",
-										}}
-									/>
-									<div
-										style={{
-											color: hover ? "red" : "black",
-										}}
-									>
-										Delete team
-									</div>
-								</Stack>
-							</MenuItem>
-						</MenuList>
+									Delete team
+								</div>
+							</Stack>
+						</Menu.Item>
 					</Menu>
 				</StyledActionContainer>
 			</StyledTileCard>
@@ -656,126 +652,128 @@ export const TeamTileCard = (props: TeamCardProps) => {
 							}}
 						/>
 
-						{selectedNonCredentialedUsers?.map((user, idx) => {
-							const space = user.name.indexOf(" ");
-							const initial = user.name
-								? space > -1
-									? `${user.name[0].toUpperCase()}${user.name[
+						{selectedNonCredentialedUsers &&
+							selectedNonCredentialedUsers.map((user, idx) => {
+								const space = user.name.indexOf(" ");
+								const initial = user.name
+									? space > -1
+										? `${user.name[0].toUpperCase()}${user.name[
 											space + 1
 										].toUpperCase()}`
-									: user.name[0].toUpperCase()
-								: user.id[0].toUpperCase();
-							return (
-								<Box
-									key={`${user.id}-${idx}`}
-									sx={{
-										display: "flex",
-										justifyContent: "left",
-										align: "center",
-										backgroundColor:
-											idx % 2 !== 0
-												? "rgba(0, 0, 0, .03)"
-												: "",
-									}}
-								>
+										: user.name[0].toUpperCase()
+									: user.id[0].toUpperCase();
+								return (
 									<Box
+										key={idx}
 										sx={{
 											display: "flex",
-											justifyContent: "center",
-											marginTop: "6px",
-											marginLeft: "8px",
-											marginRight: "8px",
+											justifyContent: "left",
+											align: "center",
+											backgroundColor:
+												idx % 2 !== 0
+													? "rgba(0, 0, 0, .03)"
+													: "",
 										}}
 									>
 										<Box
 											sx={{
 												display: "flex",
-												height: "80px",
-												width: "80px",
 												justifyContent: "center",
-												alignItems: "center",
-												border: "0.5px solid rgba(0, 0, 0, .05)",
-												borderRadius: "50%",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
 											}}
 										>
-											<Avatar
-												aria-label="avatar"
-												sx={{
-													display: "flex",
-													width: "60px",
-													height: "60px",
-													fontSize: "24px",
-													backgroundColor: user.color,
-												}}
-											>
-												{initial}
-											</Avatar>
-										</Box>
-									</Box>
-									<Card.Header
-										title={
-											<Typography variant="h5">
-												{user.name}
-											</Typography>
-										}
-										subheader={
 											<Box
 												sx={{
 													display: "flex",
-													gap: 2,
-													marginTop: "4px",
+													height: "80px",
+													width: "80px",
+													justifyContent: "center",
+													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "50%",
 												}}
 											>
-												<span
-													style={{
-														opacity: 0.9,
-														fontSize: "14px",
+												<Avatar
+													aria-label="avatar"
+													sx={{
+														display: "flex",
+														width: "60px",
+														height: "60px",
+														fontSize: "24px",
+														backgroundColor:
+															user.color,
 													}}
 												>
-													{`User ID: `}
-													<Chip
-														label={user.id}
-														size="small"
-													/>
-												</span>
-												{`• `}
-												<span>
-													{`Email: `}
-													<Link
-														href={`mailto:${user.email}`}
-														underline="none"
-													>
-														{user.email}
-													</Link>
-												</span>
+													{initial}
+												</Avatar>
 											</Box>
-										}
-										action={
-											<IconButton
-												sx={{
-													mt: "16px",
-													color: "rgba( 0, 0, 0, .7)",
-													mr: "24px",
-												}}
-												onClick={() => {
-													const filtered =
-														selectedNonCredentialedUsers.filter(
-															(val) =>
-																val.id !==
-																user.id,
+										</Box>
+										<Card.Header
+											title={
+												<Typography variant="h5">
+													{user.name}
+												</Typography>
+											}
+											subheader={
+												<Box
+													sx={{
+														display: "flex",
+														gap: 2,
+														marginTop: "4px",
+													}}
+												>
+													<span
+														style={{
+															opacity: 0.9,
+															fontSize: "14px",
+														}}
+													>
+														{`User ID: `}
+														<Chip
+															label={user.id}
+															size="small"
+														/>
+													</span>
+													{`• `}
+													<span>
+														{`Email: `}
+														<Link
+															href={`mailto:${user.email}`}
+															underline="none"
+														>
+															{user.email}
+														</Link>
+													</span>
+												</Box>
+											}
+											action={
+												<IconButton
+													sx={{
+														mt: "16px",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "24px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedUsers.filter(
+																(val) =>
+																	val.id !==
+																	user.id,
+															);
+														setSelectedNonCredentialedUsers(
+															filtered,
 														);
-													setSelectedNonCredentialedUsers(
-														filtered,
-													);
-												}}
-											>
-												<ClearRounded />
-											</IconButton>
-										}
-									/>
-								</Box>
-							);
-						})}
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
+									</Box>
+								);
+							})}
 					</StyledModalContentText>
 				</Modal.Content>
 				<Modal.Actions>
@@ -813,10 +811,10 @@ export const TeamTileCard = (props: TeamCardProps) => {
 						const updatedTeams = teams.map((t) =>
 							t.id === team.previousTeamName
 								? {
-										id: team.id,
-										description: team.description,
-										type: team.type,
-									}
+									id: team.id,
+									description: team.description,
+									type: team.type,
+								}
 								: t,
 						);
 

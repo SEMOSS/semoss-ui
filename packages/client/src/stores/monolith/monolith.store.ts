@@ -310,7 +310,7 @@ export class MonolithStore {
 	 * @returns true if successful
 	 */
 	async logout(): Promise<boolean> {
-		await logout()
+		await logout();
 		return true;
 	}
 

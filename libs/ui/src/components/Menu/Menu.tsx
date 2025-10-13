@@ -1,8 +1,4 @@
-import {
-	Menu as MuiMenu,
-	type MenuProps as MuiMenuProps,
-	type PopoverProps,
-} from "@mui/material";
+import { Menu as MuiMenu, type SxProps } from "@mui/material";
 
 export type MenuAnchorReference = "anchorEl" | "anchorPosition";
 
@@ -22,7 +18,7 @@ export interface MenuProps {
 	 * An HTML element, or a function that returns one.
 	 * It's used to set the position of the menu.
 	 */
-	anchorEl?: PopoverProps["anchorEl"];
+	anchorEl?: HTMLElement | null | (() => HTMLElement | null);
 
 	/**
 	 * If `true` (Default) will focus the `[role="menu"]` if no focusable child is found. Disabled
@@ -58,11 +54,8 @@ export interface MenuProps {
 
 	/**
 	 * Callback fired when the component requests to be closed.
-	 *
-	 * @param {object} event The event source of the callback.
-	 * @param {string} reason Can be: `"escapeKeyDown"`, `"backdropClick"`, `"tabKeyDown"`.
 	 */
-	onClose?: PopoverProps["onClose"];
+	onClose?: () => void;
 
 	/**
 	 * If `true`, the component is shown.
@@ -73,7 +66,7 @@ export interface MenuProps {
 	 * The system prop that allows defining system overrides as well as additional CSS styles.
 	 */
 
-	sx?: MuiMenuProps["sx"];
+	sx?: SxProps;
 
 	/**
 	 * The variant to use. Use `menu` to prevent selected items from impacting the initial focus.

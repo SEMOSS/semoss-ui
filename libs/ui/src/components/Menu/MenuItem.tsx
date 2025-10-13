@@ -1,7 +1,4 @@
-import {
-	MenuItem as MuiMenuItem,
-	type MenuItemProps as MuiMenuItemProps,
-} from "@mui/material";
+import { MenuItem as MuiMenuItem, type SxProps } from "@mui/material";
 
 export interface MenuItemProps {
 	/**
@@ -60,7 +57,7 @@ export interface MenuItemProps {
 	/**
 	 * Value of item
 	 */
-	value?: any;
+	value?: React.LiHTMLAttributes<HTMLLIElement>["value"];
 
 	/**
 	 * Mouse over event handler
@@ -75,12 +72,16 @@ export interface MenuItemProps {
 	/**
 	 * The system prop that allows defining system overrides as well as additional CSS styles.
 	 */
-	sx?: MuiMenuItemProps["sx"];
+	sx?: SxProps;
 }
 
 export const MenuItem: React.FC<MenuItemProps> = ({
 	children,
 	...otherProps
 }) => {
-	return <MuiMenuItem {...otherProps}>{children}</MuiMenuItem>;
+	return (
+		<MuiMenuItem value={10} {...otherProps}>
+			{children}
+		</MuiMenuItem>
+	);
 };

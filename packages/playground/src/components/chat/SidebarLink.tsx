@@ -19,7 +19,7 @@ const StyledLinkButton = styled(List.ItemButton, {
 	borderRadius: theme.shape.borderRadiusSm,
 })) as unknown as typeof List.ItemButton;
 
-const StyledLinkButtonIcon = styled(List.Icon, {
+const StyledLinkButtonIcon = styled(List.ItemIcon, {
 	shouldForwardProp: (prop) => prop !== "selected",
 })<{ selected: boolean }>(({ theme, selected }) => ({
 	color: selected ? theme.palette.primary.main : theme.palette.secondary.dark,

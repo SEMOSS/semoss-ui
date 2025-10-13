@@ -788,9 +788,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									/>
 								}
 							>
-								<List.Icon>
+								<List.ItemIcon>
 									<LocalPoliceRounded />
-								</List.Icon>
+								</List.ItemIcon>
 								<List.ItemText
 									primary={<strong>Admin</strong>}
 									secondary="Complete access to platform"
@@ -819,9 +819,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									/>
 								}
 							>
-								<List.Icon>
+								<List.ItemIcon>
 									<CloudUploadRounded />
-								</List.Icon>
+								</List.ItemIcon>
 								<List.ItemText
 									primary={<strong>Publisher</strong>}
 									secondary=" Able to upload data to platform"
@@ -850,9 +850,9 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									/>
 								}
 							>
-								<List.Icon>
+								<List.ItemIcon>
 									<DownloadForOfflineRounded />
-								</List.Icon>
+								</List.ItemIcon>
 								<List.ItemText
 									primary={<strong>Exporter</strong>}
 									secondary="Able to export data from platform"

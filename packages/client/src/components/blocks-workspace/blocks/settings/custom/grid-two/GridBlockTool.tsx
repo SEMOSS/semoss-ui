@@ -69,7 +69,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "generalchartsettings"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -78,7 +78,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Header Styling" />
 							<InfoOutlined color="disabled" />
@@ -103,7 +103,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "cellStylingSettings"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -112,7 +112,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Cell Styling" />
 							<InfoOutlined color="disabled" />
@@ -144,7 +144,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "titleSettings"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -153,7 +153,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Title" />
 							<InfoOutlined color="disabled" />
@@ -178,7 +178,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "colorByValue"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -187,7 +187,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Color By Value" />
 							<InfoOutlined color="disabled" />
@@ -210,7 +210,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "wrapText"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -219,7 +219,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Wrap Text" />
 							<InfoOutlined color="disabled" />
@@ -242,7 +242,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "rowSpanning"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -251,7 +251,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Row Spanning" />
 							<InfoOutlined color="disabled" />
@@ -275,7 +275,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "resizing"}
 					>
-						<List.Icon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -284,7 +284,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 										: "disabled"
 								}
 							/>
-						</List.Icon>
+						</List.ItemIcon>
 						<StyledBox>
 							<List.ItemText primary="Resizing" />
 							<InfoOutlined color="disabled" />

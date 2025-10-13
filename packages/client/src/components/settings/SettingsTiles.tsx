@@ -1,4 +1,3 @@
-import DeleteIcon from "@mui/icons-material/Delete";
 import LockIcon from "@mui/icons-material/Lock";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import type { AxiosResponse } from "axios";
@@ -8,6 +7,7 @@ import {
 	Box,
 	Button,
 	Grid,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -24,7 +24,6 @@ import {
 	setProjectVisiblity,
 } from "@/api";
 import databaseIcon from "@/assets/img/databaseIcon.png";
-import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { formatToDataTestId } from "@/utility";
@@ -403,7 +402,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Box>
 									<Typography
 										variant="body1"
-										fontWeight="500"
+										fontWeight="medium"
 									>
 										Private
 									</Typography>
@@ -458,7 +457,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										<Box>
 											<Typography
 												variant="body1"
-												fontWeight="500"
+												fontWeight="medium"
 											>
 												Non Discoverable
 											</Typography>
@@ -513,7 +512,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											Non Discoverable
 										</Typography>
@@ -563,10 +562,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 								{/* Text Stack on the right */}
 								<Box>
-									<Typography
-										variant="body1"
-										fontWeight="500"
-									>
+									<Typography variant="body2">
+										Users cannot request access to this
+										database if private
 										{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 									</Typography>
 									<Typography variant="body2">
@@ -681,7 +679,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Box>
 									<Typography
 										variant="body1"
-										fontWeight="500"
+										fontWeight="medium"
 									>
 										Private
 									</Typography>
@@ -738,7 +736,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										<Box>
 											<Typography
 												variant="body1"
-												fontWeight="500"
+												fontWeight="medium"
 											>
 												Non Discoverable
 											</Typography>
@@ -791,7 +789,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											Non Discoverable
 										</Typography>
@@ -845,7 +843,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 										</Typography>

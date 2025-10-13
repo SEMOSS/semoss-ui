@@ -13,7 +13,7 @@ const StyledSwitch = styled(MuiSwitch)(({ theme, size }) => ({
 		"&.Mui-checked": {
 			transform:
 				size === "small" ? "translateX(16px)" : "translateX(20px)",
-			color: "#fff",
+			color: theme.palette.common.white,
 
 			"& + .MuiSwitch-track": {
 				backgroundColor: theme.palette.primary.main,

@@ -13,6 +13,7 @@ import {
 	Button,
 	Divider,
 	FileDropzone,
+	LoadingScreen,
 	Paper,
 	Stack,
 	Switch,
@@ -24,7 +25,6 @@ import {
 } from "@semoss/ui";
 import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
-import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 
 const StyledAppSettings = styled("div")(({ theme }) => ({

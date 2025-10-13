@@ -14,6 +14,7 @@ import {
 	Collapse,
 	Grid,
 	IconButton,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -28,7 +29,6 @@ import {
 	deleteUserAccessKeys,
 	editMemberInfo,
 } from "@/api/auth";
-import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 

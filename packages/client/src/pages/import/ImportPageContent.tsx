@@ -16,7 +16,6 @@
  * - /import/model/OpenAi
  */
 
-import Tooltip from "@mui/material/Tooltip";
 import React, { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -29,6 +28,7 @@ import {
 	Stack,
 	styled,
 	Tabs,
+	Tooltip,
 	Typography,
 } from "@semoss/ui";
 import { BuildDb } from "@/assets/img/BuildDb";
