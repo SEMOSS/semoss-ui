@@ -73,7 +73,7 @@ interface RoomStoreInterface {
 		tools: Toolbox[];
 
 		/*
-		 * MCP ids loaded into the room
+		 * MCP ids loaded into the room - should eventually be part of tools
 		 */
 		mcpToolID: string[];
 
