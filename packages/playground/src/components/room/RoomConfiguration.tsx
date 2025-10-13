@@ -74,6 +74,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 			if (room && tool.type === "APP") {
 				await room.removeMcpTool(tool.id);
 			} else {
+				// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
 				const updatedTools = options.tools.filter(
 					(t) => t.id !== tool.id,
 				);
@@ -82,6 +83,24 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					tools: updatedTools,
 				});
 			}
+		};
+
+		const handleToolClose = async (success: boolean, tools: Toolbox[]) => {
+			// update the tools if successful
+			if (success) {
+				if (room) {
+					await room.setTools(tools);
+				} else {
+					// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
+					setOptions({
+						...options,
+						tools: tools,
+					});
+				}
+			}
+
+			// close it
+			setIsToolsOpen(false);
 		};
 
 		return (
@@ -252,18 +271,9 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				{isToolsOpen && (
 					<ToolboxOverlay
 						tools={options.tools}
-						onClose={(success, tools) => {
-							// update the tools if successful
-							if (success) {
-								setOptions({
-									...options,
-									tools: tools,
-								});
-							}
-
-							// close it
-							setIsToolsOpen(false);
-						}}
+						onClose={(success, tools) =>
+							handleToolClose(success, tools)
+						}
 					/>
 				)}
 			</RightMenu>

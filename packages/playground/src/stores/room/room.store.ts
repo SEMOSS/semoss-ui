@@ -341,7 +341,7 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the mdetadata
+	 * Set the metadata
 	 * @param metadata - metadata
 	 */
 	setMetadata = (metadata: Partial<RoomStoreInterface["metadata"]>) => {
@@ -497,9 +497,22 @@ export class RoomStore {
 	};
 
 	/**
+	 * Set Tools for a room, including MCP tools for now
+	 * @param tools - list of tools to set
+	 */
+	setTools = async (tools: Toolbox[]) => {
+		const newOptions = { ...this._store.options };
+		newOptions.tools = tools;
+		newOptions.mcpToolID = tools
+			.filter((t) => t.type === "APP")
+			.map((t) => t.id);
+		this._store.options = newOptions;
+		await this.updateRoomOptions(newOptions);
+	};
+
+	/**
 	 * Remove MCP Tool
 	 * @param mcpToolID - MCP tool ID to remove
-	 * @param options - full set of new options
 	 */
 	removeMcpTool = async (mcpToolID: string) => {
 		const newOptions = { ...this._store.options };
