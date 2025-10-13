@@ -217,7 +217,12 @@ export class ChatStore {
 
 			// push options to BE
 			if (Object.keys(options).length > 0) {
-				await room.updateRoomOptions(options);
+				await room.updateRoomOptions({
+					...options,
+					mcpToolID: options.tools
+						.filter((t) => t.type === "APP")
+						.map((t) => t.id),
+				});
 			}
 
 			runInAction(() => {

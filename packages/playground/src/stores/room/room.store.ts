@@ -73,6 +73,11 @@ interface RoomStoreInterface {
 		tools: Toolbox[];
 
 		/*
+		 * MCP ids loaded into the room
+		 */
+		mcpToolID: string[];
+
+		/*
 		 * Length of the token
 		 */
 		tokenLength: number;
@@ -131,6 +136,7 @@ export class RoomStore {
 		options: {
 			instructions: "",
 			tools: [],
+			mcpToolID: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},

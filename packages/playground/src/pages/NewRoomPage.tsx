@@ -83,6 +83,7 @@ export const NewRoomPage = observer(() => {
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
 		tools: [],
+		mcpToolID: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 	});
