@@ -4,7 +4,6 @@ import {
 	Button,
 	FormControl,
 	IconButton,
-	MenuItem,
 	Modal,
 	Select,
 	Stack,
@@ -104,7 +103,7 @@ const EngineCard: React.FC<EngineCardProps> = ({
 						}}
 					>
 						{availableEngines?.data?.map((engine) => (
-							<MenuItem
+							<Select.Item
 								key={engine.database_id || engine.app_id}
 								value={engine.database_id || engine.app_id}
 								sx={{ fontSize: "0.98rem" }}
@@ -121,7 +120,7 @@ const EngineCard: React.FC<EngineCardProps> = ({
 								>
 									({engine.database_type || engine.app_type})
 								</Typography>
-							</MenuItem>
+							</Select.Item>
 						))}
 					</Select>
 					{showReplacementPlaceholder && !replacementValue && (
@@ -431,13 +430,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 		onClose();
 	};
 
-	// --- Check if at least one valid replacement is selected ---
-	const hasValidReplacements =
-		failedIds.length > 0 &&
-		failedIds.some(
-			(id) => engineReplacements[id] && engineReplacements[id] !== "",
-		);
-
 	return (
 		<>
 			<Modal
@@ -705,7 +697,6 @@ const EngineIdsModal: React.FC<EngineIdsModalProps> = ({
 							<Button
 								variant="contained"
 								onClick={handleSaveReplacements}
-								disabled={!hasValidReplacements}
 							>
 								Save Replacements
 							</Button>
