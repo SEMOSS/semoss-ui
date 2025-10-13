@@ -497,6 +497,22 @@ export class RoomStore {
 	};
 
 	/**
+	 * Remove MCP Tool
+	 * @param mcpToolID - MCP tool ID to remove
+	 * @param options - full set of new options
+	 */
+	removeMcpTool = async (mcpToolID: string) => {
+		const newOptions = { ...this._store.options };
+		newOptions.tools = newOptions.tools.filter(
+			(t) => !(t.id === mcpToolID && t.type === "APP"),
+		);
+		newOptions.mcpToolID = newOptions.mcpToolID.filter(
+			(id) => id !== mcpToolID,
+		);
+		await this.updateRoomOptions(newOptions);
+	};
+
+	/**
 	 * Download the history of the room as a PDF
 	 */
 	downloadHistory = async (): Promise<void> => {

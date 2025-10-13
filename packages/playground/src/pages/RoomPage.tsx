@@ -440,6 +440,7 @@ export const RoomPage = observer(() => {
 								onClose={() => {
 									room.closeSidebar();
 								}}
+								room={room}
 							/>
 						)}
 						{room.sidebar.type === "ARTIFACTS" && (
