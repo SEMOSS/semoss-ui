@@ -135,9 +135,10 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 										spacing={1}
 										alignItems={"center"}
 									>
+										<div>{s.status}</div>
 										<Typography
 											variant="subtitle2"
-											fontWeight={500}
+											fontWeight={"medium"}
 										>
 											{s.step_name}
 										</Typography>
@@ -310,7 +311,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 
 				{editStep !== null && (
 					<EditStepOverlay
-						mode="Edit"
+						mode="Update"
 						current={editStep}
 						onClose={(success, step) => {
 							// update the plan if successful
