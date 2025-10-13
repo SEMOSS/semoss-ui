@@ -1,7 +1,7 @@
-import { List as MuiList, type ListProps as MuiListProps } from "@mui/material";
-import { type ForwardedRef, forwardRef } from "react";
+import { List as MuiList, type SxProps } from "@mui/material";
+import { forwardRef } from "react";
 
-export interface ListProps extends MuiListProps {
+export interface ListProps {
 	/**
 	 * The content of the component.
 	 */
@@ -30,19 +30,21 @@ export interface ListProps extends MuiListProps {
 	 * 	String to use a HTML element for root node
 	 */
 	component?: React.ElementType;
+
+	/**
+	 * custom style object
+	 */
+	sx?: SxProps;
 }
 
-const _List = (
-	props: ListProps,
-	ref: ForwardedRef<HTMLUListElement>,
-): JSX.Element => {
-	const { children, ...otherProps } = props;
+export const List = forwardRef<HTMLUListElement, ListProps>(
+	(props, ref): JSX.Element => {
+		const { children, ...otherProps } = props;
 
-	return (
-		<MuiList ref={ref} {...otherProps}>
-			{children}
-		</MuiList>
-	);
-};
-
-export const List = forwardRef(_List);
+		return (
+			<MuiList ref={ref} {...otherProps}>
+				{children}
+			</MuiList>
+		);
+	},
+);

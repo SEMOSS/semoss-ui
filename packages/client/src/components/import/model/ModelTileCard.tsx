@@ -111,25 +111,25 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 }) => {
 	const textRef = useRef<HTMLParagraphElement>(null);
 	const [isTruncated, setIsTruncated] = useState(false);
- const label = model.display || model.name;
+	const label = model.display || model.name;
 
-		useEffect(() => {
-			const checkTruncated = () => {
-				const el = textRef.current;
-				if (el) {
-					setIsTruncated(el.scrollWidth > el.clientWidth);
-				}
-			};
+	useEffect(() => {
+		const checkTruncated = () => {
+			const el = textRef.current;
+			if (el) {
+				setIsTruncated(el.scrollWidth > el.clientWidth);
+			}
+		};
 
-			// initial check
-			checkTruncated();
+		// initial check
+		checkTruncated();
 
-			// recheck on window resize
-			window.addEventListener("resize", checkTruncated);
-			return () => {
-				window.removeEventListener("resize", checkTruncated);
-			};
-		}, []);
+		// recheck on window resize
+		window.addEventListener("resize", checkTruncated);
+		return () => {
+			window.removeEventListener("resize", checkTruncated);
+		};
+	}, []);
 
 	const cardContent = (
 		<StyledFormTypeModelBox
@@ -155,21 +155,21 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 					<StyledCardImage isModel={true} src={model.icon} />
 				)}
 
-								<TitleRow>
-									<StyledCardModelText ref={textRef}>
-										{model.display || model.name}
-									</StyledCardModelText>
-									{!model.disable && model.embedding ? (
-										<EmbeddingTile
-											variant="body1"
-											data-testId={formatToDataTestId(
-												`importPageContent-${model.name}-embeddings-tag`,
-											)}
-										>
-											Embeddings
-										</EmbeddingTile>
-									) : null}
-								</TitleRow>
+				<TitleRow>
+					<StyledCardModelText ref={textRef}>
+						{model.display || model.name}
+					</StyledCardModelText>
+					{!model.disable && model.embedding ? (
+						<EmbeddingTile
+							variant="body1"
+							data-testId={formatToDataTestId(
+								`importPageContent-${model.name}-embeddings-tag`,
+							)}
+						>
+							Embeddings
+						</EmbeddingTile>
+					) : null}
+				</TitleRow>
 			</StyledInnerBox>
 		</StyledFormTypeModelBox>
 	);

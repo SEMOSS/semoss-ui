@@ -6,7 +6,7 @@ import {
 } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
-import { AxiosResponse } from "axios";
+import type { AxiosResponse } from "axios";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
 	Autocomplete,
@@ -18,8 +18,6 @@ import {
 	IconButton,
 	Link,
 	Menu,
-	MenuItem,
-	MenuList,
 	Modal,
 	Stack,
 	styled,
@@ -479,66 +477,64 @@ export const TeamTileCard = (props: TeamCardProps) => {
 							},
 						}}
 					>
-						<MenuList>
-							{type === "CUSTOM" && (
-								<MenuItem
-									onClick={(e) => {
-										e.stopPropagation();
-										handleClose(e);
-										setAddMembersModal(true);
-										getUsersNonGroup(false);
+						{type === "CUSTOM" && (
+							<Menu.Item
+								onClick={(e) => {
+									e.stopPropagation();
+									handleClose(e);
+									setAddMembersModal(true);
+									getUsersNonGroup(false);
+								}}
+							>
+								<Stack direction="row" gap={2}>
+									<PersonAddIcon
+										sx={{ color: "#0000008A" }}
+									/>
+									<div>Add member to team</div>
+								</Stack>
+							</Menu.Item>
+						)}
+						<Menu.Item
+							onClick={(e) => {
+								e.stopPropagation();
+								handleClose(e);
+								setEditTeam(true);
+							}}
+						>
+							<Stack direction="row" gap={2}>
+								<EditIcon sx={{ color: "#0000008A" }} />
+								<div>Edit team</div>
+							</Stack>
+						</Menu.Item>
+						<Menu.Item
+							onClick={(e) => {
+								e.stopPropagation();
+								setDeleteModal(true);
+								handleClose(e);
+							}}
+							onMouseOver={() => {
+								setHover(true);
+							}}
+							sx={{ color: hover ? "red" : "#0000008A" }}
+							onMouseLeave={() => {
+								setHover(false);
+							}}
+						>
+							<Stack direction="row" gap={2}>
+								<DeleteRounded
+									sx={{
+										color: hover ? "red" : "#0000008A",
+									}}
+								/>
+								<div
+									style={{
+										color: hover ? "red" : "black",
 									}}
 								>
-									<Stack direction="row" gap={2}>
-										<PersonAddIcon
-											sx={{ color: "#0000008A" }}
-										/>
-										<div>Add member to team</div>
-									</Stack>
-								</MenuItem>
-							)}
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									handleClose(e);
-									setEditTeam(true);
-								}}
-							>
-								<Stack direction="row" gap={2}>
-									<EditIcon sx={{ color: "#0000008A" }} />
-									<div>Edit team</div>
-								</Stack>
-							</MenuItem>
-							<MenuItem
-								onClick={(e) => {
-									e.stopPropagation();
-									setDeleteModal(true);
-									handleClose(e);
-								}}
-								onMouseOver={() => {
-									setHover(true);
-								}}
-								sx={{ color: hover ? "red" : "#0000008A" }}
-								onMouseLeave={() => {
-									setHover(false);
-								}}
-							>
-								<Stack direction="row" gap={2}>
-									<DeleteRounded
-										sx={{
-											color: hover ? "red" : "#0000008A",
-										}}
-									/>
-									<div
-										style={{
-											color: hover ? "red" : "black",
-										}}
-									>
-										Delete team
-									</div>
-								</Stack>
-							</MenuItem>
-						</MenuList>
+									Delete team
+								</div>
+							</Stack>
+						</Menu.Item>
 					</Menu>
 				</StyledActionContainer>
 			</StyledTileCard>
@@ -637,8 +633,8 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								const initial = user.name
 									? space > -1
 										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
+											space + 1
+										].toUpperCase()}`
 										: user.name[0].toUpperCase()
 									: user.id[0].toUpperCase();
 								return (
@@ -790,10 +786,10 @@ export const TeamTileCard = (props: TeamCardProps) => {
 						const updatedTeams = teams.map((t) =>
 							t.id === team.previousTeamName
 								? {
-										id: team.id,
-										description: team.description,
-										type: team.type,
-									}
+									id: team.id,
+									description: team.description,
+									type: team.type,
+								}
 								: t,
 						);
 

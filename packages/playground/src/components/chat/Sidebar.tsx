@@ -307,13 +307,13 @@ export const Sidebar = observer(() => {
 							</IconButton>
 						}
 					>
-						<List.Icon sx={{ minWidth: "auto" }}>
+						<List.ItemIcon sx={{ minWidth: "auto" }}>
 							<StyledAvatar variant="circular">
 								<Typography variant="body3">
 									{initials}
 								</Typography>
 							</StyledAvatar>
-						</List.Icon>
+						</List.ItemIcon>
 						<List.ItemText
 							primary={userName}
 							primaryTypographyProps={{

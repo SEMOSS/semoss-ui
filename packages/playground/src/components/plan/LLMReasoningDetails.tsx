@@ -35,7 +35,7 @@ export const LLMReasoningDetails: React.FC<LLMReasoningDetailsProps> = (
 				multiline
 				rows={4}
 				required
-				placeholder="Enter the prompt for the LLM to process..."
+				placeholder="Enter the instructions for the AI"
 			/>
 		</Grid>
 	);
