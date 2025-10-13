@@ -102,15 +102,29 @@ export const DatabaseSettingsPage = () => {
 
 	const [view, setView] = useState("tile");
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [sort, setSort] = useState("Name");
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
+	const [isSearching, setIsSearching] = useState(false);
 
 	//** amount of items to be loaded */
 	const limit = 15;
 
 	// To focus when getting new results
 	const searchbarRef = useRef(null);
+
+	useEffect(() => {
+		setIsSearching(true);
+		const timer = setTimeout(() => {
+			setDebouncedSearch(search);
+			setIsSearching(false);
+		}, 400);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [search]);
 
 	// get a list of the keys
 	const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -136,7 +150,7 @@ export const DatabaseSettingsPage = () => {
 	const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
 		metaKeys,
-	)}, filterWord=["${search}"], onlyFavorites=[true], engineTypes=['DATABASE']);
+	)}, filterWord=["${debouncedSearch}"], onlyFavorites=[true], engineTypes=['DATABASE']);
     `);
 
 	useEffect(() => {
@@ -157,7 +171,7 @@ export const DatabaseSettingsPage = () => {
 	const getEngines = useAPI([
 		"getEngines",
 		adminMode,
-		search,
+		debouncedSearch,
 		"DATABASE",
 		offset,
 		limit,
@@ -171,7 +185,7 @@ export const DatabaseSettingsPage = () => {
 			field: "databases",
 			value: [],
 		});
-	}, [adminMode, search]);
+	}, [adminMode, debouncedSearch]);
 
 	//** append data through infinite scroll */
 	useEffect(() => {
@@ -373,7 +387,7 @@ export const DatabaseSettingsPage = () => {
 
 	return (
 		<>
-			<StyledBackdrop open={getEngines.status !== "SUCCESS"}>
+			<StyledBackdrop open={getEngines.status === "LOADING" || isSearching}>
 				<Stack
 					direction={"column"}
 					alignItems={"center"}
@@ -381,7 +395,9 @@ export const DatabaseSettingsPage = () => {
 					spacing={1}
 				>
 					<CircularProgress />
-					<Typography variant="body2">Loading</Typography>
+					<Typography variant="body2">
+						{isSearching ? "Searching" : "Loading"}
+					</Typography>
 					<Typography variant="caption">Databases</Typography>
 				</Stack>
 			</StyledBackdrop>
@@ -424,6 +440,19 @@ export const DatabaseSettingsPage = () => {
 					</ToggleButtonGroup>
 				</StyledSearchbarContainer>
 				<Grid container spacing={3}>
+					{databases.length === 0 &&
+					getEngines.status === "SUCCESS" &&
+					debouncedSearch ? (
+						<Grid item xs={12}>
+							<Typography
+								variant="body1"
+								sx={{ textAlign: "center", py: 4 }}
+							>
+								No databases found matching &quot;{debouncedSearch}
+								&quot;
+							</Typography>
+						</Grid>
+					) : null}
 					{databases.length
 						? databases.map((db, i) => {
 								return (
