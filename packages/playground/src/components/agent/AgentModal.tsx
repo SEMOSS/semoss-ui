@@ -1,14 +1,13 @@
 import { Close } from "@mui/icons-material";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { usePixel } from "@semoss/sdk/react";
 import {
+	Autocomplete,
 	Button,
 	Checkbox,
-	Chip,
 	IconButton,
 	Modal,
-	Select,
 	Stack,
 	styled,
 	TextField,
@@ -18,11 +17,23 @@ import {
 import { useChat } from "@/hooks";
 import type { Agent, App, Engine, Toolbox } from "@/types";
 
-const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+const StyledModal = styled(Modal)(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
 	gap: theme.spacing(2),
-	paddingTop: `${theme.spacing(1)}!important`,
+	borderRadius: "12px !important",
+	padding: `${theme.spacing(2)} ${theme.spacing(1)}`,
+}));
+
+const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(1),
+	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
+}));
+
+const StyledTitle = styled(Modal.Content)(({ theme }) => ({
+	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
 }));
 
 export interface AgentModalProps {
@@ -83,7 +94,6 @@ export const AgentModal = (props: AgentModalProps) => {
 	const isCreatingNew = agentInfo === null;
 
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [selectedTools, setSelectedTools] = useState([]);
 	const [tools, setTools] = useState([]);
 
 	// pixel call to get all tools
@@ -103,9 +113,9 @@ export const AgentModal = (props: AgentModalProps) => {
 		const tools = getApps.data.map((tool) => getTool(tool));
 		setTools(tools);
 		setIsLoading(false);
-	}, [getApps.status]);
+	}, [getApps.status, getApps.data]);
 
-	const { getValues, handleSubmit, control, watch } = useForm<NewAgentForm>({
+	const { handleSubmit, control, watch } = useForm<NewAgentForm>({
 		defaultValues: {
 			AGENT_NAME: "",
 			AGENT_DESCRIPTION: "",
@@ -114,33 +124,8 @@ export const AgentModal = (props: AgentModalProps) => {
 		},
 	});
 
-	const watchAll = watch();
+	const isFormValid = !!watch("AGENT_NAME");
 
-	const isFormValid = useMemo(() => {
-		return !!getValues("AGENT_NAME");
-	}, [watchAll]);
-
-	const handleToolChange = (event) => {
-		const {
-			target: { value },
-		} = event;
-		let newSelection = typeof value === "string" ? value.split(",") : value;
-		if (newSelection.includes("select-all")) {
-			// if tools length doesn't match selected check all boxes. else deselect all
-			newSelection =
-				tools.length === selectedTools.length
-					? []
-					: tools.map((tool) => tool.id);
-		}
-		setSelectedTools(newSelection);
-		return newSelection;
-	};
-
-	const onToolDelete = (toolId: string) => {
-		const newTools = selectedTools.filter((tool) => tool !== toolId);
-		setSelectedTools(newTools);
-		return newTools;
-	};
 	/**
 	 * Method that is called to create the app
 	 */
@@ -166,8 +151,8 @@ export const AgentModal = (props: AgentModalProps) => {
 	});
 
 	return (
-		<Modal open={open} onClose={onClose} fullWidth>
-			<Modal.Title>
+		<StyledModal open={open} onClose={onClose} fullWidth>
+			<StyledTitle>
 				<Stack direction="row" justifyContent="space-between">
 					<Typography variant="h6">
 						{isCreatingNew ? "Create Agent" : "View Agent"}
@@ -176,11 +161,11 @@ export const AgentModal = (props: AgentModalProps) => {
 						<Close />
 					</IconButton>
 				</Stack>
-			</Modal.Title>
+			</StyledTitle>
 			<form onSubmit={onSubmit}>
 				<StyledModalContent>
 					{isCreatingNew ? (
-						<Stack direction="column" spacing={1}>
+						<Stack direction="column" spacing={1.5}>
 							<Controller
 								name={"AGENT_NAME"}
 								control={control}
@@ -267,123 +252,80 @@ export const AgentModal = (props: AgentModalProps) => {
 								rules={{}}
 								render={({ field }) => {
 									return (
-										<Select
-											label="Use These Tools"
-											variant="outlined"
+										<Autocomplete
+											fullWidth
+											multiple
+											disableCloseOnSelect
 											disabled={isLoading}
-											placeholder="Tools"
-											size="small"
-											data-testid={
-												"newAgentModal-tool-select"
-											}
-											SelectProps={{
-												multiple: true,
-												value: selectedTools,
-												onChange: (event) => {
-													const value =
-														handleToolChange(event);
-													field.onChange(value);
-												},
-												renderValue: (
-													selectedValue,
-												) => {
-													if (
-														!Array.isArray(
-															selectedValue,
-														)
-													)
-														return null;
-													return (
-														<Stack
-															spacing={1}
-															direction="row"
-														>
-															{selectedValue.map(
-																(value) => {
-																	const t =
-																		tools.find(
-																			(
-																				tool,
-																			) =>
-																				tool.id ===
-																				value,
-																		);
-																	if (!t)
-																		return null;
-																	return (
-																		<span
-																			key={
-																				t.id
-																			}
-																			role="none"
-																			onMouseDown={(
-																				e,
-																			) =>
-																				e.stopPropagation()
-																			}
-																		>
-																			<Chip
-																				key={
-																					t.id
-																				}
-																				label={
-																					t.name
-																				}
-																				size={
-																					"small"
-																				}
-																				onDelete={(
-																					e,
-																				) => {
-																					e.stopPropagation();
-																					const newTools =
-																						onToolDelete(
-																							t.id,
-																						);
-																					field.onChange(
-																						newTools,
-																					);
-																				}}
-																			/>
-																		</span>
-																	);
-																},
-															)}
-														</Stack>
-													);
-												},
+											options={tools}
+											isOptionEqualToValue={(
+												option,
+												value,
+											) => option.id === value.id}
+											filterOptions={() => {
+												return [
+													{
+														name: "Select All",
+														all: true,
+													},
+													...tools,
+												];
 											}}
-										>
-											<Select.Item
-												value={"select-all"}
-												key={
-													"newAgentModal-tool-select-all"
-												}
-											>
-												<Checkbox
-													checked={
+											value={field.value || []}
+											onChange={(_, val) => {
+												let newVal = val;
+												if (
+													val.find(
+														(option) => option.all,
+													)
+												)
+													newVal =
 														tools.length ===
-														selectedTools.length
-													}
-												/>
-												Select All
-											</Select.Item>
-											{tools.map((tool, idx) => {
+														field?.value?.length
+															? []
+															: tools;
+
+												field.onChange(newVal);
+											}}
+											getOptionLabel={(option) =>
+												option.name
+											}
+											renderOption={(
+												props,
+												option,
+												{ selected },
+											) => {
+												const { key, ...optionProps } =
+													props;
 												return (
-													<Select.Item
-														value={tool.id}
-														key={`newAgentModal-tool-${idx + 1}`}
+													<li
+														key={key}
+														{...optionProps}
 													>
 														<Checkbox
-															checked={selectedTools.includes(
-																tool.id,
-															)}
+															checked={
+																option.all
+																	? !!(
+																			field
+																				?.value
+																				?.length ===
+																			tools?.length
+																		)
+																	: selected
+															}
 														/>
-														{tool.name}
-													</Select.Item>
+														{option.name}
+													</li>
 												);
-											})}
-										</Select>
+											}}
+											renderInput={(params) => (
+												<TextField
+													{...params}
+													label="Use These Tools"
+													placeholder="Tools"
+												/>
+											)}
+										/>
 									);
 								}}
 							/>
@@ -439,6 +381,6 @@ export const AgentModal = (props: AgentModalProps) => {
 					)}
 				</Modal.Actions>
 			</form>
-		</Modal>
+		</StyledModal>
 	);
 };

@@ -272,7 +272,7 @@ export class ChatStore {
 			const prompt = esc(data.AGENT_CONTEXT ?? "");
 			const tools =
 				data.AGENT_TOOLS && data.AGENT_TOOLS.length > 0
-					? data.AGENT_TOOLS
+					? data.AGENT_TOOLS.map((tool) => tool.id)
 					: [];
 
 			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=[${JSON.stringify(tools)}])`;
