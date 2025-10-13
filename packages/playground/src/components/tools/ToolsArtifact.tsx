@@ -73,6 +73,7 @@ export const ToolArtifact: React.FC<ToolArtifactProps> = observer(
 					tool: {
 						type: "MCP",
 						message: config?.tool?.message || "",
+						app: config?.app || "",
 						id: config?.tool?.id || "",
 						name: config?.tool?.name || "",
 						parameters: toJS(config?.tool?.parameters || {}),

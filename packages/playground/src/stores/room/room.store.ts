@@ -6,8 +6,8 @@ import {
 	type AbstractMessageStore,
 	createMessageStore,
 	InputMessageStore,
-	type PlanMessageStore,
-	type ResponseMessageStore,
+	PlanMessageStore,
+	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
 import type { Agent, PixelMessage, Toolbox } from "@/types";
@@ -237,7 +237,28 @@ export class RoomStore {
 		| ResponseMessageStore
 		| PlanMessageStore
 	)[] {
-		return this._store.root.history || [];
+		let current: AbstractMessageStore = this._store.root;
+
+		const history = [];
+		while (current) {
+			if (current.activeChild) {
+				// save it
+				if (current.activeChild instanceof InputMessageStore) {
+					history.push(current.activeChild);
+				} else if (
+					current.activeChild instanceof ResponseMessageStore
+				) {
+					history.push(current.activeChild);
+				} else if (current.activeChild instanceof PlanMessageStore) {
+					history.push(current.activeChild);
+				}
+			}
+
+			// move forward
+			current = current.activeChild;
+		}
+
+		return history;
 	}
 
 	/**
@@ -255,6 +276,10 @@ export class RoomStore {
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {
+		if (this.mode !== "executing") {
+			return null;
+		}
+
 		// Search through history in reverse order to find the most recent plan
 		for (let i = this.history.length - 1; i >= 0; i--) {
 			const message = this.history[i];
@@ -560,9 +585,57 @@ export class RoomStore {
 		}
 
 		// run the message
-		await parentMessage.runMessage(inputMessage);
+		try {
+			await parentMessage.runMessage(inputMessage);
 
-		// go next if we want
+			// if it is executing continue the execution
+			this.plan?.verifyHumanInterventionStepExecution();
+		} catch (e) {
+			this.plan?.failStepExecution();
+
+			throw e;
+		}
+	};
+
+	/**
+	 * Process a tool call
+	 * @param messageId - id of the message
+	 * @param toolId - id of the tool
+	 * @param toolName - name of the tool
+	 * @param toolResponse - response from the tool
+	 */
+	processTool = async (
+		messageId: string,
+		toolId: string,
+		toolName: string,
+		toolResponse: string,
+	): Promise<void> => {
+		try {
+			const message = this.getMessage(messageId);
+			if (!message || message instanceof ResponseMessageStore !== true) {
+				return;
+			}
+
+			const tool = message.getTool(toolId, toolName);
+			if (!tool) {
+				return;
+			}
+
+			// save the response with the tool
+			await message.saveToolExecution(
+				tool,
+				toolResponse,
+				this.mode === "executing",
+			);
+
+			// verify if it is correct if executing
+			this.plan?.verifyToolStepExecution(
+				tool._meta.map.SMSS_PROJECT_ID,
+				tool.name,
+			);
+		} catch {
+			this.plan?.failStepExecution();
+		}
 	};
 
 	/**
