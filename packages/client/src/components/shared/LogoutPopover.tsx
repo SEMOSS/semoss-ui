@@ -6,12 +6,12 @@ import {
 	Button,
 	IconButton,
 	List,
+	LoadingScreen,
 	Popover,
 	Stack,
 	styled,
 	Typography,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
 import { useRootStore } from "@/hooks";
 
 const StyledTypography = styled(Typography)(({ theme }) => ({

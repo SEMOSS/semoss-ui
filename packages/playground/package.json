@@ -8,7 +8,7 @@
         "type-check": "tsc --pretty --noEmit"
     },
     "dependencies": {
-        "@mui/icons-material": "^5.14.1",
+        "@mui/icons-material": "6.0.0",
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@semoss/shared": "workspace:*",

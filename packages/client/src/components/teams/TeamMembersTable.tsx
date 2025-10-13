@@ -429,7 +429,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				color: "success",
 				message: `Successfully removed users`,
 			});
-			setCount((prevCount) => {return prevCount + 1;});
+			setCount((prevCount) => {
+				return prevCount + 1;
+			});
 			setDeleteMembersModal(false);
 			setSelectedMembers([]);
 		}
@@ -553,7 +555,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			<StyledMemberInnerContent>
 				{(teamMembers && teamMembers.length > 0) ||
 				memberCount > 0 ||
-				hasMembers || searchFilter ? (
+				hasMembers ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>Members</StyledTableTitleDiv>
@@ -564,9 +567,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											spacing={"small"}
 											variant={"circular"}
 											max={5}
-											total={
-												teamMembers?.length
-											}
+											total={teamMembers?.length}
 										>
 											{Avatars.map((el) => {
 												return el;
@@ -653,8 +654,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{Array.isArray(teamMembers) && teamMembers.length > 0 ? 
-									(teamMembers?.map((user, i) => {
+								{Array.isArray(teamMembers) &&
+								teamMembers.length > 0 ? (
+									teamMembers?.map((user, i) => {
 										let isSelected = false;
 
 										if (user) {
@@ -774,12 +776,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												</Table.Row>
 											);
 										}
-									})) : (
-										<Table.Row key={'no-members-found'}>
-													<Table.Cell colSpan={5} align="center">No Members found.</Table.Cell>
-										</Table.Row>
-									)
-								}
+									})
+								) : (
+									<Table.Row key={"no-members-found"}>
+										<Table.Cell colSpan={5} align="center">
+											No Members found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -876,162 +880,159 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 						/>
 
 						{selectedNonCredentialedUsers?.map((user, idx) => {
-								const space = user.name.indexOf(" ");
-								const initial = user.name
-									? space > -1
-										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
-										: user.name[0].toUpperCase()
-									: user.id[0].toUpperCase();
-								return (
+							const space = user.name.indexOf(" ");
+							const initial = user.name
+								? space > -1
+									? `${user.name[0].toUpperCase()}${user.name[
+											space + 1
+										].toUpperCase()}`
+									: user.name[0].toUpperCase()
+								: user.id[0].toUpperCase();
+							return (
+								<Box
+									key={`${user.name} - ${idx}`}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+									}}
+								>
 									<Box
-										key={`${user.name} - ${idx}`}
 										sx={{
-											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
+											height: "56px",
+											width: "100%",
+											gap: "8px",
+											position: "relative",
+											border: "5px",
 										}}
 									>
 										<Box
 											sx={{
-												height: "56px",
-												width: "100%",
-												gap: "8px",
-												position: "relative",
-												border: "5px",
+												display: "flex",
+												justifyContent: "left",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
+												float: "left",
 											}}
 										>
 											<Box
 												sx={{
 													display: "flex",
-													justifyContent: "left",
-													marginTop: "6px",
-													marginLeft: "8px",
-													marginRight: "8px",
-													float: "left",
+													height: "32px",
+													width: "32px",
+													justifyContent: "center",
+													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "50%",
 												}}
 											>
+												<Avatar
+													aria-label="avatar"
+													sx={{
+														display: "flex",
+														width: "32px",
+														height: "32px",
+														fontSize: "24px",
+														backgroundColor:
+															user.color,
+													}}
+												>
+													{initial}
+												</Avatar>
+											</Box>
+										</Box>
+										<Card.Header
+											title={
+												<Typography
+													variant="h6"
+													sx={{
+														maxHeight: "24px",
+														height: "90%",
+														marginTop: "5px",
+													}}
+												>
+													{user.name}
+												</Typography>
+											}
+											sx={{
+												color: "#000",
+												maxWidth: "466px",
+												height: "15px",
+												width: "100%",
+												float: "left",
+												gap: "16px",
+											}}
+											subheader={
 												<Box
 													sx={{
 														display: "flex",
-														height: "32px",
-														width: "32px",
-														justifyContent:
-															"center",
-														alignItems: "center",
-														border: "0.5px solid rgba(0, 0, 0, .05)",
-														borderRadius: "50%",
+														gap: "2px",
+														marginTop: "2px",
 													}}
 												>
-													<Avatar
-														aria-label="avatar"
-														sx={{
-															display: "flex",
-															width: "32px",
-															height: "32px",
-															fontSize: "24px",
-															backgroundColor:
-																user.color,
+													<span
+														style={{
+															opacity: 0.9,
+															fontSize: "11px",
 														}}
 													>
-														{initial}
-													</Avatar>
-												</Box>
-											</Box>
-											<Card.Header
-												title={
-													<Typography
-														variant="h6"
-														sx={{
-															maxHeight: "24px",
-															height: "90%",
-															marginTop: "5px",
-														}}
-													>
-														{user.name}
-													</Typography>
-												}
-												sx={{
-													color: "#000",
-													maxWidth: "466px",
-													height: "15px",
-													width: "100%",
-													float: "left",
-													gap: "16px",
-												}}
-												subheader={
-													<Box
-														sx={{
-															display: "flex",
-															gap: "2px",
-															marginTop: "2px",
-														}}
-													>
-														<span
-															style={{
-																opacity: 0.9,
-																fontSize:
-																	"11px",
-															}}
+														{`User ID: `}
+														<Chip
+															label={user.id}
+															size="small"
+														/>
+													</span>
+													{`• `}
+													<span>
+														{`Email: `}
+														<Link
+															href={`mailto:${user.email}`}
+															underline="none"
 														>
-															{`User ID: `}
-															<Chip
-																label={user.id}
-																size="small"
-															/>
-														</span>
-														{`• `}
-														<span>
-															{`Email: `}
-															<Link
-																href={`mailto:${user.email}`}
-																underline="none"
-															>
-																{user.email}
-															</Link>
-														</span>
-													</Box>
-												}
-												action={
-													<IconButton
-														sx={{
-															height: "28px",
-															width: "28px",
-															gap: "30px",
-															fontSize: "small",
-															mt: "16px",
-															color: "rgba( 0, 0, 0, .7)",
-															mr: "2px",
-															top: "0px",
-															position:
-																"absolute",
-															padding: "10px",
-														}}
-														onClick={() => {
-															const filtered =
-																selectedNonCredentialedUsers.filter(
-																	(val) =>
-																		val.id !==
-																		user.id,
-																);
-															setSelectedNonCredentialedUsers(
-																filtered,
+															{user.email}
+														</Link>
+													</span>
+												</Box>
+											}
+											action={
+												<IconButton
+													sx={{
+														height: "28px",
+														width: "28px",
+														gap: "30px",
+														fontSize: "small",
+														mt: "16px",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "2px",
+														top: "0px",
+														position: "absolute",
+														padding: "10px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedUsers.filter(
+																(val) =>
+																	val.id !==
+																	user.id,
 															);
-														}}
-													>
-														<ClearRounded />
-													</IconButton>
-												}
-											/>
-										</Box>
+														setSelectedNonCredentialedUsers(
+															filtered,
+														);
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
 									</Box>
-								);
-							})}
+								</Box>
+							);
+						})}
 					</StyledModalContentText>
 				</Modal.Content>
 				<Modal.Actions>
