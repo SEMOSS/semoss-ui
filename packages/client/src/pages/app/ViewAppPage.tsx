@@ -13,6 +13,7 @@ import {
 	Avatar,
 	Button,
 	IconButton,
+	LoadingScreen,
 	Modal,
 	Stack,
 	styled,
@@ -21,7 +22,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { CodeRenderer } from "@/components/code-workspace";
-import { LoadingScreen, ShareOverlay } from "@/components/ui";
+import { ShareOverlay } from "@/components/ui";
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
