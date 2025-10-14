@@ -422,7 +422,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 		appCatalogPageStatus.current.removalChanges = true;
 	};
 
-	// to limit the apps that are sent to filterbox for performance
+  	// to limit the apps that are sent to filterbox for performance
 	let renderedAppIds = [];
 	if (inputValue) {
 		renderedAppIds.push(...apps.map((app) => app.project_id));
@@ -492,10 +492,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 										setMetaFilters(filters);
 									}}
 									filteredCatalogIds={renderedAppIds}
-									filterBoxRefresh={
-										appCatalogPageStatus.current
-											.removalChanges
-									}
+									filterBoxRefresh={appCatalogPageStatus.current.removalChanges}
 									onfilterBoxRefreshCompleted={() => {
 										appCatalogPageStatus.current.removalChanges = false;
 									}}
