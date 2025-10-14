@@ -14,6 +14,7 @@ import {
 	Collapse,
 	Grid,
 	IconButton,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -23,7 +24,6 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 
