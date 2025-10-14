@@ -1,7 +1,8 @@
 import { SearchRounded } from "@mui/icons-material";
 import type { Meta, StoryObj } from "@storybook/react-webpack5";
-import React from "react";
-import { Box, MenuItem as Item } from "../..";
+import { Box, Menu } from "../..";
+
+const Item = Menu.Item;
 
 const meta: Meta<typeof Item> = {
 	title: "Components/Select/Item",

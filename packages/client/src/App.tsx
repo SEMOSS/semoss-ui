@@ -1,9 +1,10 @@
 import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
-import { Env, CSRF} from "@semoss/sdk/react";
+import { CSRF, Env } from "@semoss/sdk/react";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
 import { AppWrapper } from "./AppWrapper";
+
 // use the environment variable to set the module
 Env.update({
 	MODULE: import.meta.env.MODULE || "/Monolith",
