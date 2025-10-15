@@ -236,7 +236,10 @@ export const ModalBlock: BlockComponent = observer(({ id }) => {
 				<MuiModal
 					open={shouldShowModal}
 					onClose={handleClose}
-					container={() => document.getElementById("page-1")}
+					container={() => {
+						const elements = Array.from(document.querySelectorAll('[id="page-1"]'));
+						return elements.at(-1) || elements[elements.length - 1];
+					}}
 					sx={{
 						position: "absolute",
 						display: "flex",
