@@ -60,8 +60,8 @@ export type Variable =
 			to: string;
 			type: "cell"; // Specific case when type is 'cell'
 			cellId: string;
-			rename?: string;
 			value?: any;
+			rename?: string;
 	  };
 
 export type VariableWithId =
