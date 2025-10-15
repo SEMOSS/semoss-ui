@@ -13,6 +13,7 @@ import {
 	Button,
 	Divider,
 	FileDropzone,
+	LoadingScreen,
 	Paper,
 	Stack,
 	Switch,
@@ -23,7 +24,6 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { Java } from "@/assets/img/Java";
-import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 
 const StyledAppSettings = styled("div")(({ theme }) => ({

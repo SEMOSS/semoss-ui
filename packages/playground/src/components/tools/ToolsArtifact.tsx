@@ -53,8 +53,6 @@ export const ToolArtifact: React.FC<ToolArtifactProps> = observer(
 		const iframeRef = useRef<HTMLIFrameElement>(null);
 		const [isLoading, setIsLoading] = useState<boolean>(true);
 
-		console.log(isLoading);
-
 		// get the metadata
 		const getAppInfo = usePixel<{
 			project_type: "BLOCKS" | "CODE" | "INSIGHT" | "";
@@ -75,6 +73,7 @@ export const ToolArtifact: React.FC<ToolArtifactProps> = observer(
 					tool: {
 						type: "MCP",
 						message: config?.tool?.message || "",
+						app: config?.app || "",
 						id: config?.tool?.id || "",
 						name: config?.tool?.name || "",
 						parameters: toJS(config?.tool?.parameters || {}),

@@ -1,9 +1,13 @@
-import { LightbulbOutlined, Tune } from "@mui/icons-material";
+import {
+	FormatListNumbered,
+	LightbulbOutlined,
+	Tune,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useInsight } from "@semoss/sdk/react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useInsight, usePixel } from "@semoss/sdk/react";
 import {
 	Container,
 	IconButton,
@@ -13,13 +17,17 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
+import { AgentChip } from "@/components/agent";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import type { Agent } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
 	: "";
+
+const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
 
 const StyledPage = styled(Stack)(() => ({
 	height: "100%",
@@ -48,10 +56,23 @@ const StyledButton = styled("button")(({ theme }) => ({
 	},
 }));
 
+/**
+ * The page to create a new room
+ *
+ * @component
+ */
 export const NewRoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
+	const { agentId } = useParams() as { agentId?: string };
+	const { data: agent, status } = usePixel<Agent>(
+		agentId ? `GetWorkspace("${agentId}");` : null,
+	);
+	const isLoadingAgent = status === "LOADING";
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -59,17 +80,24 @@ export const NewRoomPage = observer(() => {
 			? (system.config.logins[loginType] as unknown as string)
 			: "";
 
+	/**
+	 * State
+	 */
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		knowledge: null,
 		tools: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
-		autoExecute: false,
 	});
+
+	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+	/**
+	 * Functions
+	 */
 
 	/**
 	 * Ask the model
@@ -85,14 +113,27 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		// create a new room
-		const room = await chat.createRoom(chat.models.selected, prompt);
+		const usingAgent = agentId && agent !== null;
 
-		// initialize it
-		await room.initialize();
+		// create a new room
+		const room = await chat.createRoom(
+			prompt,
+			isPlanning ? "planning" : "chat",
+			chat.models.selected,
+			usingAgent
+				? {
+						instructions: "",
+						// knowledge: null,
+						tools: [],
+						tokenLength: TOKEN_LENGTH,
+						temperature: TEMPERATURE,
+					}
+				: options,
+			usingAgent ? agent : undefined,
+		);
 
 		// ask the room
-		await room.askMessage(prompt, files, options);
+		await room.askMessage(prompt, files);
 
 		// turn the loading screen off
 		setIsLoading(false);
@@ -136,30 +177,66 @@ export const NewRoomPage = observer(() => {
 							{APP_DESCRIPTION}
 						</Typography>
 						<RoomInput
-							isLoading={isLoading}
+							isLoading={isLoading || isLoadingAgent}
 							isDisabled={false}
 							minRows={4}
 							maxRows={8}
 							actions={
-								<Tooltip
-									title={"Open Configuration Menu"}
-									placement="top"
-								>
-									<IconButton
-										size={"medium"}
-										type="button"
-										aria-label="Open Configuration Menu"
-										disabled={isLoading}
-										color={
-											isMenuOpen ? "primary" : "default"
-										}
-										onClick={() => {
-											setIsMenuOpen(!isMenuOpen);
-										}}
-									>
-										<Tune color="inherit" />
-									</IconButton>
-								</Tooltip>
+								<Stack direction="row" alignItems="center">
+									{agentId ? (
+										<AgentChip
+											agent={agent}
+											loading={isLoadingAgent}
+										/>
+									) : (
+										<Tooltip
+											title={"Open Configuration Menu"}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={isLoading}
+												color={
+													isMenuOpen
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsMenuOpen(!isMenuOpen);
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
+									{ENABLE_PLANNING && (
+										<Tooltip
+											title={
+												"Note: This is a beta feature. Use this to generate plan"
+											}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Generate plan"
+												disabled={isLoading}
+												color={
+													isPlanning
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsPlanning(!isPlanning);
+												}}
+											>
+												<FormatListNumbered color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
+								</Stack>
 							}
 							onPrompt={async (prompt, files) => {
 								await askMessage(prompt, files);
