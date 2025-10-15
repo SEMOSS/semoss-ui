@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { Engine } from "@/types";
+import type { Agent, Engine } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -101,7 +101,7 @@ export class ChatStore {
 	 * @param roomId - message to get
 	 */
 	getRoom(roomId: string): RoomStore | null {
-		return this._store.rooms[roomId];
+		return this._store.rooms[roomId] ?? null;
 	}
 
 	/**
@@ -153,7 +153,13 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	createRoom = async (modelId: string, name: string): Promise<RoomStore> => {
+	createRoom = async (
+		name: string,
+		mode: RoomStore["mode"],
+		modelId: string,
+		options: RoomStore["options"],
+		agent?: Agent,
+	): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -182,12 +188,20 @@ export class ChatStore {
 			// register the room
 			const room = this.newRoom(roomId);
 
+			// initialize the room to get the insightId
+			await room.initialize();
+
 			// set the initial data
-			room.setModel(modelId);
 			room.setMetadata({
 				name: name,
 				dateCreated: new Date().toDateString(),
 			});
+			room.setMode(mode);
+			room.setOptions(options);
+			room.setModel(modelId);
+			if (agent) {
+				room.linkAgent(agent);
+			}
 
 			runInAction(() => {
 				// add to the front
@@ -219,7 +233,7 @@ export class ChatStore {
 
 			// wait for the pixel to run
 			await this._actions.run<[boolean]>(
-				`CloseRoom(roomId=["${roomId}"]);`,
+				`RemoveUserRoom(roomId=["${roomId}"]);`,
 			);
 
 			// throw errors
@@ -270,6 +284,7 @@ export class ChatStore {
 						ROOM_ID: string;
 						ROOM_NAME: string;
 						DATE_CREATED: string;
+						WORKSPACE_ID?: string;
 					}[],
 				]
 			>(`GetUserConversationRooms();`);
@@ -298,6 +313,10 @@ export class ChatStore {
 					name: r.ROOM_NAME,
 					dateCreated: r.DATE_CREATED,
 				});
+
+				if (r.WORKSPACE_ID) {
+					room.setAgentId(r.WORKSPACE_ID);
+				}
 
 				// store the order
 				order.push(r.ROOM_ID);

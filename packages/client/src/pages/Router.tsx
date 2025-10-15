@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, Route, Routes } from "react-router-dom";
-import { LoadingScreen } from "@/components/ui";
+import { LoadingScreen } from "@semoss/ui";
 import { useRootStore } from "@/hooks";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import {

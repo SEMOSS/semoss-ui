@@ -6,6 +6,7 @@ import React, { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Grid,
+	LoadingScreen,
 	Menu,
 	Search,
 	Select,
@@ -15,7 +16,6 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { InsightLandscapeCard, InsightTileCard } from "@/components/insight";
-import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 
 export interface InsightInterface {
