@@ -457,7 +457,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 														"Select All",
 													)}
 												>
-													<List.Icon>
+													<List.ItemIcon>
 														<Checkbox
 															edge="start"
 															checked={
@@ -476,7 +476,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 															tabIndex={-1}
 															disableRipple
 														/>
-													</List.Icon>
+													</List.ItemIcon>
 													<List.ItemText primary="Select All" />
 												</List.Item>
 
@@ -487,7 +487,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 															option,
 														)}
 													>
-														<List.Icon>
+														<List.ItemIcon>
 															<Checkbox
 																edge="start"
 																checked={localState.frame.includes(
@@ -496,7 +496,7 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 																tabIndex={-1}
 																disableRipple
 															/>
-														</List.Icon>
+														</List.ItemIcon>
 														<List.ItemText
 															primary={option}
 														/>
