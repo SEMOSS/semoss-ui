@@ -70,7 +70,7 @@ const FilterListComponent = ({
 					key="select-all"
 					onClick={handleToggle("Select All")}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<Checkbox
 							edge="start"
 							checked={allFilteredChecked}
@@ -78,21 +78,21 @@ const FilterListComponent = ({
 							tabIndex={-1}
 							disableRipple
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Select All" />
 				</List.Item>
 			)}
 
 			{filteredOptions.map((option) => (
 				<List.Item key={option} onClick={handleToggle(option)}>
-					<List.Icon>
+					<List.ItemIcon>
 						<Checkbox
 							edge="start"
 							checked={checked.includes(option)}
 							tabIndex={-1}
 							disableRipple
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary={option} />
 				</List.Item>
 			))}
