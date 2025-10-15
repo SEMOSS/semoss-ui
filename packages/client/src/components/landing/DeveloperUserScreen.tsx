@@ -1,7 +1,7 @@
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { STATE_VERSION } from "@semoss/renderer";
+import { STATE_VERSION, Variable } from "@semoss/renderer";
 import { Box, Stack, styled } from "@semoss/ui";
 import AIConductor from "@/assets/img/AIConductor.png";
 import DevBanner from "@/assets/img/DevBanner.png";
@@ -10,7 +10,7 @@ import { NewAppModal } from "@/components/app";
 import { BannerSection } from "@/components/landing/BannerSection";
 import { FeaturedAppCard } from "@/components/landing/FeaturedAppCard";
 import { useRootStore } from "@/hooks";
-import { BASE_PAGE_BLOCKS } from "../../pages/app/app.constants";
+import { BASE_APP_QUERIES, BASE_APP_VARIABLES, BASE_PAGE_BLOCKS } from "../../pages/app/app.constants";
 import CreateAppSection from "./CreateAppSection";
 import { FanFavoritesSection } from "./FanFavoritesSection";
 
@@ -64,8 +64,8 @@ export const DeveloperUserScreen = observer(() => {
 				type: "blocks",
 				state: {
 					version: STATE_VERSION,
-					variables: {},
-					queries: {},
+					variables: BASE_APP_VARIABLES as Record<string, Variable>,
+					queries: BASE_APP_QUERIES,
 					blocks: BASE_PAGE_BLOCKS,
 					executionOrder: [],
 				},
