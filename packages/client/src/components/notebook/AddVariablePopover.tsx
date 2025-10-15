@@ -49,6 +49,7 @@ const StyledStack = styled(Stack)(() => ({
 const StyledPopover = styled(Popover)(({ theme }) => ({
 	padding: theme.spacing(2),
 	marginLeft: theme.spacing(2),
+	maxHeight: "80vh",
 }));
 
 const QueryPreviewContainer = styled(Stack)(() => ({
@@ -517,7 +518,7 @@ export const AddVariablePopover = observer((props: AddVariablePopoverProps) => {
 				}
 			} else if (
 				variableType &&
-				(!engine || variablePointer || variableInputValue)
+				(engine || variablePointer || variableInputValue)
 			) {
 				return <StyledPlaceholder />;
 			}

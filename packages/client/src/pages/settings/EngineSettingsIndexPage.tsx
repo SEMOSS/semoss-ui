@@ -112,16 +112,30 @@ export const EngineSettingsIndexPage = (
 
 	const [view, setView] = useState("tile");
 	const [search, setSearch] = useState("");
+	const [debouncedSearch, setDebouncedSearch] = useState("");
 	const [sort, setSort] = useState("ENGINENAME");
 	const [sortOrder, setSortOrder] = useState("ASC");
 	const [canCollect, setCanCollect] = useState(true);
 	const [offset, setOffset] = useState(0);
+	const [isSearching, setIsSearching] = useState(false);
 
 	//** amount of items to be loaded */
 	const limit = 8;
 
 	// To focus when getting new results
 	const searchbarRef = useRef(null);
+
+	useEffect(() => {
+		setIsSearching(true);
+		const timer = setTimeout(() => {
+			setDebouncedSearch(search);
+			setIsSearching(false);
+		}, 400);
+
+		return () => {
+			clearTimeout(timer);
+		};
+	}, [search]);
 
 	// get a list of the keys
 	const databaseMetaKeys = configStore.store.config.databaseMetaKeys.filter(
@@ -147,7 +161,7 @@ export const EngineSettingsIndexPage = (
 	const getFavoritedDatabases = usePixel(`
     MyEngines(metaKeys = ${JSON.stringify(
 		metaKeys,
-	)}, filterWord=["${search}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
+	)}, filterWord=["${debouncedSearch}"], sort=[{"${sort}" : "${sortOrder}"}], onlyFavorites=[true], engineTypes=["${type}"]);
     `);
 
 	useEffect(() => {
@@ -168,7 +182,7 @@ export const EngineSettingsIndexPage = (
 	const getEngines = useAPI([
 		"getEngines",
 		adminMode,
-		search,
+		debouncedSearch,
 		type,
 		offset,
 		limit,
@@ -182,7 +196,7 @@ export const EngineSettingsIndexPage = (
 			field: "databases",
 			value: [],
 		});
-	}, [adminMode, search, sort]);
+	}, [adminMode, debouncedSearch, sort]);
 
 	//** append data through infinite scroll */
 	useEffect(() => {
@@ -387,7 +401,7 @@ export const EngineSettingsIndexPage = (
 	return (
 		<>
 			<Backdrop
-				open={getEngines.status !== "SUCCESS"}
+				open={getEngines.status === "LOADING" || isSearching}
 				sx={{
 					backgroundColor: "rgba(255, 255, 255, 0.5)",
 					zIndex: 1501,
@@ -400,8 +414,18 @@ export const EngineSettingsIndexPage = (
 					spacing={1}
 				>
 					<CircularProgress />
-					<Typography variant="body2">Loading</Typography>
-					<Typography variant="caption">Databases</Typography>
+					<Typography variant="body2">
+						{isSearching ? "Searching" : "Loading"}
+					</Typography>
+					<Typography variant="caption">
+						{type === "DATABASE"
+							? "Databases"
+							: type === "MODEL"
+								? "Models"
+								: type === "VECTOR"
+									? "Vectors"
+									: "Engines"}
+					</Typography>
 				</Stack>
 			</Backdrop>
 			<StyledContainer>
@@ -477,6 +501,26 @@ export const EngineSettingsIndexPage = (
 					</ToggleButtonGroup>
 				</StyledSearchbarContainer>
 				<Grid container spacing={3}>
+					{databases.length === 0 &&
+					getEngines.status === "SUCCESS" &&
+					debouncedSearch ? (
+						<Grid item xs={12}>
+							<Typography
+								variant="body1"
+								sx={{ textAlign: "center", py: 4 }}
+							>
+								No{" "}
+								{type === "DATABASE"
+									? "databases"
+									: type === "MODEL"
+										? "models"
+										: type === "VECTOR"
+											? "vectors"
+											: "engines"}{" "}
+								found matching &quot;{debouncedSearch}&quot;
+							</Typography>
+						</Grid>
+					) : null}
 					{databases.length
 						? databases.map((db, i) => {
 								return (

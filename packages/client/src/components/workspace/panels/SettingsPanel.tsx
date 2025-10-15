@@ -1,5 +1,4 @@
 import { GetAppRounded } from "@mui/icons-material";
-import { Typography } from "@mui/material";
 import { observer } from "mobx-react-lite";
 import { useNavigate } from "react-router-dom";
 import {
@@ -8,6 +7,7 @@ import {
 	Stack,
 	styled,
 	Tooltip,
+	Typography,
 	useNotification,
 } from "@semoss/ui";
 import { AppSettings } from "@/components/app";
@@ -38,8 +38,6 @@ const StyledContent = styled("div")(({ theme }) => ({
 	gap: theme.spacing(2),
 	flexShrink: "0",
 }));
-
-type VIEW = "CURRENT" | "PENDING" | "APP";
 
 export const SettingsPanel = observer(({ value }: { value: string }) => {
 	const { configStore, monolithStore } = useRootStore();

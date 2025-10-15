@@ -1,7 +1,6 @@
 import { Add, Delete, Edit } from "@mui/icons-material";
-import CopyAllIcon from "@mui/icons-material/CopyAll";
 import SearchIcon from "@mui/icons-material/Search";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -9,8 +8,8 @@ import {
 	Box,
 	Button,
 	Checkbox,
-	Grid,
 	IconButton,
+	LoadingScreen,
 	Popover,
 	Search,
 	Stack,
@@ -19,7 +18,6 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import { UserAddOverlay } from "./UserAddOverlay";
 import { UserPopover } from "./UserPopover";
@@ -167,6 +165,8 @@ const StyledNoUsersDiv = styled("div")(({ theme }) => ({
 	alignItems: "center",
 }));
 
+const StyledTableDiv = styled("div")({});
+
 const formatValue = (input: string) => {
 	if (input !== undefined) {
 		const mappings: Record<string, string> = {
@@ -250,11 +250,11 @@ export const UserTable = (props: UserTableProps) => {
 	const isLoading =
 		getUsers.status === "INITIAL" || getUsers.status === "LOADING";
 	const renderedMembers =
-		getUsers.status === "SUCCESS" ? getUsers.data["users"] : [];
+		getUsers.status === "SUCCESS" ? getUsers.data?.users : [];
 	const totalUsers =
-		getUsers.status === "SUCCESS" ? getUsers.data["totalUsers"] : 0;
+		getUsers.status === "SUCCESS" ? getUsers.data?.totalUsers : 0;
 	const hasUsers =
-		getUsers.status === "SUCCESS" && getUsers.data["totalUsers"] > 0;
+		getUsers.status === "SUCCESS" && getUsers.data?.totalUsers > 0;
 
 	/**
 	 * Update a user
@@ -371,8 +371,6 @@ export const UserTable = (props: UserTableProps) => {
 						});
 
 						onChange();
-						// refresh the users
-						getUsers.refresh();
 					} else {
 						notification.add({
 							color: "error",
@@ -388,6 +386,8 @@ export const UserTable = (props: UserTableProps) => {
 			}
 		} finally {
 			setSelectedMembers([]);
+			// refresh the users
+			getUsers.refresh();
 		}
 	};
 	/**
@@ -503,7 +503,7 @@ export const UserTable = (props: UserTableProps) => {
 							</LoadingScreen>
 						</StyledMemberLoading>
 					) : (
-						<>
+						<StyledTableDiv>
 							{hasUsers ? (
 								<StyledMemberTable>
 									<Table.Head>
@@ -825,7 +825,7 @@ export const UserTable = (props: UserTableProps) => {
 									</Button>
 								</StyledNoUsersDiv>
 							)}
-						</>
+						</StyledTableDiv>
 					)}
 				</StyledTableContainer>
 			</StyledMemberInnerContent>
