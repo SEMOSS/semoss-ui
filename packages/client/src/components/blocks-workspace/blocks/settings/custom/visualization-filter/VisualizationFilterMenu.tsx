@@ -2,7 +2,6 @@
 
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import CloseIcon from "@mui/icons-material/Close";
-import { Checkbox, ClickAwayListener } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import {
 	type BlockComponent,
@@ -14,6 +13,8 @@ import {
 	Autocomplete,
 	Box,
 	Button,
+	Checkbox,
+	ClickAwayListener,
 	List,
 	Stack,
 	Switch,
@@ -459,22 +460,11 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 												>
 													<List.ItemIcon>
 														<Checkbox
-															edge="start"
 															checked={
 																localState.frame
 																	.length ===
 																options.length
 															}
-															indeterminate={
-																localState.frame
-																	.length >
-																	0 &&
-																localState.frame
-																	.length <
-																	options.length
-															}
-															tabIndex={-1}
-															disableRipple
 														/>
 													</List.ItemIcon>
 													<List.ItemText primary="Select All" />
@@ -489,12 +479,9 @@ export const VisualizationFilterMenu: BlockComponent = ({ id }) => {
 													>
 														<List.ItemIcon>
 															<Checkbox
-																edge="start"
 																checked={localState.frame.includes(
 																	option,
 																)}
-																tabIndex={-1}
-																disableRipple
 															/>
 														</List.ItemIcon>
 														<List.ItemText
