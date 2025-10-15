@@ -369,6 +369,13 @@ export const MyProfilePage = () => {
 	const pySnippet = getSDKSnippet("py", ACCESSKEY, SECRETKEY);
 	const jsSnippet = getSDKSnippet("js", ACCESSKEY, SECRETKEY);
 
+	const watchedName = userInfoWatch("NAME");
+    const watchedEmail = userInfoWatch("EMAIL");
+
+    // Check if either Name or Email is changed
+    const isChanged = watchedName !== name || watchedEmail !== email;
+
+
 	return (
 		<Stack gap={3} className="my-profile-page">
 			<StyledPaper>
@@ -428,7 +435,6 @@ export const MyProfilePage = () => {
 														maxLength: 255,
 													}}
 													fullWidth={true}
-													disabled={!admin}
 												></TextField>
 											);
 										}}
@@ -511,7 +517,6 @@ export const MyProfilePage = () => {
 														maxLength: 500,
 													}}
 													fullWidth={true}
-													disabled={!admin}
 												></TextField>
 											);
 										}}
@@ -530,7 +535,7 @@ export const MyProfilePage = () => {
 										variant="contained"
 										color="primary"
 										type="submit"
-										disabled={!admin}
+										disabled={!isChanged}
 										data-testid={"myProfilePage-save-btn"}
 									>
 										Save
