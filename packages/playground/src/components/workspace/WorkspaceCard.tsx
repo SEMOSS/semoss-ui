@@ -1,9 +1,9 @@
 import { ArrowForward, LightbulbOutlined } from "@mui/icons-material";
 import { Button, Skeleton, Stack, styled, Typography } from "@semoss/ui";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 export interface WorkspaceCardProps {
-	agent: Agent | null;
+	workspace: Workspace | null;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
 }
@@ -25,12 +25,12 @@ const StyledCardItem = styled(Stack)(({ theme }) => ({
 export const WorkspaceCard = ({
 	onPrimaryClick,
 	onSecondaryClick,
-	agent,
+	workspace,
 }: WorkspaceCardProps) => {
 	/**
 	 * Constants
 	 */
-	const isAgentValid = agent !== null;
+	const isWorkspaceValid = workspace !== null;
 
 	return (
 		<StyledCardItem
@@ -42,15 +42,15 @@ export const WorkspaceCard = ({
 			<Stack>
 				<LightbulbOutlined />
 				<Typography variant="body1">
-					{isAgentValid ? (
-						agent.name
+					{isWorkspaceValid ? (
+						workspace.name
 					) : (
 						<Skeleton width="100%" height="100%" />
 					)}
 				</Typography>
 				<Typography variant="body2" color="textSecondary">
-					{isAgentValid ? (
-						agent.description
+					{isWorkspaceValid ? (
+						workspace.description
 					) : (
 						<Skeleton width="100%" height="100%" />
 					)}
@@ -66,7 +66,7 @@ export const WorkspaceCard = ({
 						endIcon={<ArrowForward />}
 						size="small"
 						variant="text"
-						disabled={!isAgentValid}
+						disabled={!isWorkspaceValid}
 					>
 						View Details
 					</Button>

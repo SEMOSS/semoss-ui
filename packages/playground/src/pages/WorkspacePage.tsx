@@ -14,7 +14,7 @@ import {
 } from "@semoss/ui";
 import { WorkspaceCard, WorkspaceModal } from "@/components";
 import { useChat } from "@/hooks";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
@@ -22,7 +22,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
 }));
 
 /**
- * Renders the Discover Page, allowing users to discover and create agents
+ * Renders the Discover Page, allowing users to discover and create Workspaces
  *
  * @component
  */
@@ -37,21 +37,25 @@ export const WorkspacePage = observer(() => {
 	 * State
 	 */
 	const [search, setSearch] = useState("");
-	const [isAgentModalOpen, setIsAgentModalOpen] = useState<boolean>(false);
-	const [agentInfo, setAgentInfo] = useState<Agent | null>(null);
+	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
+		useState<boolean>(false);
+	const [workspaceInfo, setWorkspaceInfo] = useState<Workspace | null>(null);
 
 	/**
 	 * Functions
 	 */
-	const createRoom = (agentId: string) => {
-		navigate(`/agent/${agentId}/new`);
+	const createRoom = (workspaceId: string) => {
+		navigate(`/workspace/${workspaceId}/new`);
 	};
 
 	/**
 	 * Constants
 	 */
-	const agentsToRender = Object.values(chat.agents).filter((agent) =>
-		search ? agent.name.toLowerCase().includes(search.toLowerCase()) : true,
+	const workspacesToRender = Object.values(chat.workspaces).filter(
+		(workspace) =>
+			search
+				? workspace.name.toLowerCase().includes(search.toLowerCase())
+				: true,
 	);
 
 	return (
@@ -65,15 +69,15 @@ export const WorkspacePage = observer(() => {
 			<Stack paddingRight={2} spacing={3}>
 				<Stack width="100%" alignItems="center" spacing={2}>
 					<Typography variant="h4" fontWeight="bold">
-						Discover Agents
+						Discover Workspaces
 					</Typography>
 					<Typography
 						variant="body1"
 						color="textSecondary"
 						align="center"
 					>
-						Explore and build custom AI agents designed to meet your
-						unique needs and integrate seamlessly into your
+						Explore and build custom AI Workspaces designed to meet
+						your unique needs and integrate seamlessly into your
 						processes.
 					</Typography>
 				</Stack>
@@ -94,21 +98,21 @@ export const WorkspacePage = observer(() => {
 						<Box>
 							<Stack>
 								<Typography variant="h6">
-									Build Your Own Agent
+									Build Your Own Workspace
 								</Typography>
 								<Typography
 									variant="body1"
 									color="textSecondary"
 								>
-									Create a personalized AI agent tailored to
-									your goals with just a few steps.
+									Create a personalized AI Workspace tailored
+									to your goals with just a few steps.
 								</Typography>
 							</Stack>
 						</Box>
 						<Button
 							onClick={() => {
-								setAgentInfo(null);
-								setIsAgentModalOpen(true);
+								setWorkspaceInfo(null);
+								setIsWorkspaceModalOpen(true);
 							}}
 							variant="contained"
 						>
@@ -145,23 +149,25 @@ export const WorkspacePage = observer(() => {
 			<Stack overflow="auto" paddingRight={2} paddingTop={3}>
 				<div>
 					<Grid container columnSpacing={2} rowSpacing={4}>
-						{agentsToRender.map((agentInfo) => (
+						{workspacesToRender.map((workspaceInfo) => (
 							<Grid
 								item
 								xs={12}
 								sm={6}
 								md={3}
-								key={agentInfo.workspace_id}
+								key={workspaceInfo.workspace_id}
 							>
 								<Stack width="100%" spacing={1} height="100%">
 									<WorkspaceCard
-										agent={agentInfo}
+										workspace={workspaceInfo}
 										onSecondaryClick={() => {
-											setAgentInfo(agentInfo);
-											setIsAgentModalOpen(true);
+											setWorkspaceInfo(workspaceInfo);
+											setIsWorkspaceModalOpen(true);
 										}}
 										onPrimaryClick={() => {
-											createRoom(agentInfo.workspace_id);
+											createRoom(
+												workspaceInfo.workspace_id,
+											);
 										}}
 									/>
 									<Stack paddingLeft={1}>
@@ -169,7 +175,7 @@ export const WorkspacePage = observer(() => {
 											variant="caption"
 											color="textSecondary"
 										>
-											{`Published ${new Date(agentInfo.date_created).toLocaleDateString()}`}
+											{`Published ${new Date(workspaceInfo.date_created).toLocaleDateString()}`}
 										</Typography>
 									</Stack>
 								</Stack>
@@ -179,14 +185,14 @@ export const WorkspacePage = observer(() => {
 				</div>
 			</Stack>
 			<WorkspaceModal
-				open={isAgentModalOpen}
-				onClose={(newAgentId) => {
-					setIsAgentModalOpen(false);
-					if (newAgentId) {
-						createRoom(newAgentId);
+				open={isWorkspaceModalOpen}
+				onClose={(newWorkspaceId) => {
+					setIsWorkspaceModalOpen(false);
+					if (newWorkspaceId) {
+						createRoom(newWorkspaceId);
 					}
 				}}
-				agentInfo={agentInfo}
+				workspaceInfo={workspaceInfo}
 			/>
 		</Stack>
 	);

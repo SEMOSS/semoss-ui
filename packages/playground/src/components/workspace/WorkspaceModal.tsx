@@ -15,12 +15,12 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { Agent, App, Engine, Toolbox } from "@/types";
+import type { App, Engine, Toolbox, Workspace } from "@/types";
 
 export interface WorkspaceModalProps {
 	open: boolean;
-	onClose: (newAgentId?: string) => void;
-	agentInfo: Agent | null;
+	onClose: (newWorkspaceId?: string) => void;
+	workspaceInfo: Workspace | null;
 }
 
 const StyledModal = styled(Modal)(({ theme }) => ({
@@ -73,14 +73,14 @@ const getTool = (item: Engine | App): Toolbox => {
 };
 
 /**
- * Renders a modal to create a new agent
+ * Renders a modal to create a new Workspace
  *
  * @component
  */
 export const WorkspaceModal = ({
 	open,
 	onClose,
-	agentInfo,
+	workspaceInfo,
 }: WorkspaceModalProps) => {
 	/**
 	 * Library Hooks
@@ -100,7 +100,7 @@ export const WorkspaceModal = ({
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [tools, setTools] = useState([]);
 	const { handleSubmit, control, watch } = useForm<
-		Pick<Agent, "name" | "system_prompt" | "description"> & {
+		Pick<Workspace, "name" | "system_prompt" | "description"> & {
 			tools: Toolbox[];
 		}
 	>({
@@ -153,7 +153,7 @@ export const WorkspaceModal = ({
 	/**
 	 * Constants
 	 */
-	const isCreatingNew = agentInfo === null;
+	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
 
 	return (
@@ -161,7 +161,7 @@ export const WorkspaceModal = ({
 			<StyledTitle>
 				<Stack direction="row" justifyContent="space-between">
 					<Typography variant="h6">
-						{isCreatingNew ? "Create Agent" : "View Agent"}
+						{isCreatingNew ? "Create Workspace" : "View Workspace"}
 					</Typography>
 					<IconButton size="small" onClick={() => onClose()}>
 						<Close />
@@ -191,7 +191,7 @@ export const WorkspaceModal = ({
 											}
 											fullWidth
 											data-testid={
-												"newAgentModal-textField-name"
+												"newWorkspaceModal-textField-name"
 											}
 										/>
 									);
@@ -215,7 +215,7 @@ export const WorkspaceModal = ({
 												field.onChange(value)
 											}
 											data-testid={
-												"newAgentModal-description-txt"
+												"newWorkspaceModal-description-txt"
 											}
 										/>
 									);
@@ -246,7 +246,7 @@ export const WorkspaceModal = ({
 													},
 											}}
 											data-testid={
-												"newAgentModal-context-txt"
+												"newWorkspaceModal-context-txt"
 											}
 										/>
 									);
@@ -342,31 +342,31 @@ export const WorkspaceModal = ({
 								variant="outlined"
 								label="Name"
 								disabled
-								value={agentInfo.name}
+								value={workspaceInfo.name}
 							/>
 							<TextField
 								variant="outlined"
 								label="ID"
 								disabled
-								value={agentInfo.workspace_id}
+								value={workspaceInfo.workspace_id}
 							/>
 							<TextField
 								variant="outlined"
 								label="Description"
 								disabled
-								value={agentInfo.description}
+								value={workspaceInfo.description}
 							/>
 							<TextField
 								variant="outlined"
 								label="Context"
 								disabled
-								value={agentInfo.system_prompt}
+								value={workspaceInfo.system_prompt}
 							/>
 							<TextField
 								variant="outlined"
 								label="Date Created"
 								disabled
-								value={agentInfo.date_created}
+								value={workspaceInfo.date_created}
 							/>
 						</Stack>
 					)}
@@ -380,7 +380,7 @@ export const WorkspaceModal = ({
 							type="submit"
 							variant={"contained"}
 							disabled={isLoading || !isFormValid}
-							data-testid={"newAgentModal-create-btn"}
+							data-testid={"newWorkspaceModal-create-btn"}
 						>
 							Add
 						</Button>

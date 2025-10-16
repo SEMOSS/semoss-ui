@@ -1,12 +1,12 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { Agent, Engine, Toolbox } from "@/types";
+import type { Engine, Toolbox, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
+const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -25,9 +25,9 @@ interface ChatStoreInterface {
 	rooms: Record<string, RoomStore>;
 
 	/**
-	 * Map of id to agent
+	 * Map of id to workspace
 	 */
-	agents: Record<string, Agent>;
+	workspaces: Record<string, Workspace>;
 
 	/**
 	 * Order of the rooms
@@ -56,7 +56,7 @@ export class ChatStore {
 		isInitialized: false,
 		isLoading: false,
 		rooms: {},
-		agents: {},
+		workspaces: {},
 		order: [],
 		models: {
 			options: [],
@@ -112,10 +112,10 @@ export class ChatStore {
 	}
 
 	/**
-	 * Get the agents from the store
+	 * Get the workspaces from the store
 	 */
-	get agents() {
-		return this._store.agents;
+	get workspaces() {
+		return this._store.workspaces;
 	}
 
 	/**
@@ -134,8 +134,8 @@ export class ChatStore {
 			Promise.all([
 				// get the room info
 				this.getRooms(),
-				// get the agent info
-				this.getAgents(),
+				// get the workspace info
+				this.getWorkspaces(),
 				// get the model info
 				this.getModels(),
 			]).finally(() => {
@@ -211,8 +211,8 @@ export class ChatStore {
 			room.setMode(mode);
 			room.setModel(modelId);
 
-			if (options.agent) {
-				room.legacyLinkAgent(options.agent?.agent_id);
+			if (options.workspace) {
+				room.legacyLinkWorkspace(options.workspace?.workspace_id);
 			}
 
 			// push options to BE
@@ -286,7 +286,7 @@ export class ChatStore {
 	};
 
 	addWorkspace = async (
-		data: Pick<Agent, "name" | "system_prompt" | "description"> & {
+		data: Pick<Workspace, "name" | "system_prompt" | "description"> & {
 			tools: Toolbox[];
 		},
 	): Promise<string> => {
@@ -395,12 +395,12 @@ export class ChatStore {
 	};
 
 	/**
-	 * Get available agents from the backend
+	 * Get available workspaces from the backend
 	 */
-	private getAgents = async (): Promise<void> => {
-		// agents are not enabled, set it to the default
-		if (!ENABLE_AGENT) {
-			this._store.agents = {};
+	private getWorkspaces = async (): Promise<void> => {
+		// workspaces are not enabled, set it to the default
+		if (!ENABLE_WORKSPACE) {
+			this._store.workspaces = {};
 			return;
 		}
 
@@ -409,14 +409,14 @@ export class ChatStore {
 			this.setIsLoading(true);
 
 			// clear the models
-			this._store.agents = {};
+			this._store.workspaces = {};
 
 			// wait for the pixel to run
 			const { pixelReturn } =
 				await this._actions.run<
 					[
 						{
-							workspaces: Agent[];
+							workspaces: Workspace[];
 						},
 					]
 				>(` ListWorkspaces()`);
@@ -430,12 +430,12 @@ export class ChatStore {
 				// get the output
 				const { output } = pixelReturn[0];
 				// store the models
-				this._store.agents = output.workspaces.reduce(
-					(acc, agent) => {
-						acc[agent.workspace_id] = agent;
+				this._store.workspaces = output.workspaces.reduce(
+					(acc, workspace) => {
+						acc[workspace.workspace_id] = workspace;
 						return acc;
 					},
-					{} as Record<string, Agent>,
+					{} as Record<string, Workspace>,
 				);
 			});
 		} finally {

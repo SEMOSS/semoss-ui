@@ -156,9 +156,9 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
-	// get the agent if there is one
-	const agentId = room?.options?.agent?.agent_id ?? null;
-	const agent = chat.agents[agentId] ?? null;
+	// get the workspace if there is one
+	const workspaceId = room?.options?.workspace?.workspace_id ?? null;
+	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -360,8 +360,8 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									agentId ? (
-										<WorkspaceChip agent={agent} />
+									workspaceId ? (
+										<WorkspaceChip workspace={workspace} />
 									) : (
 										<Tooltip
 											title={"Configuration"}

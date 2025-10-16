@@ -35,10 +35,10 @@ export const Router = () => {
 					<Route element={<MainLayout />}>
 						<Route path="new" element={<NewRoomPage />} />
 						<Route path="room/:roomId" element={<RoomPage />} />
-						<Route path="agent">
+						<Route path="workspace">
 							<Route index element={<WorkspacePage />} />
 							<Route
-								path=":agentId/new"
+								path=":workspaceId/new"
 								element={<NewRoomPage />}
 							/>
 						</Route>

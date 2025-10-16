@@ -88,10 +88,10 @@ interface RoomStoreInterface {
 		temperature: number;
 
 		/*
-		 * Agents associated with the room
+		 * Workspace associated with the room
 		 */
-		agent?: {
-			agent_id: string;
+		workspace?: {
+			workspace_id: string;
 		};
 	};
 
@@ -444,10 +444,10 @@ export class RoomStore {
 	};
 
 	/**
-	 * Link Agent
-	 * @param agentId - Agent id to link to the room
+	 * Link Workspace
+	 * @param workspaceId - Workspace id to link to the room
 	 */
-	legacyLinkAgent = async (agentId: string) => {
+	legacyLinkWorkspace = async (workspaceId: string) => {
 		try {
 			const { errors } = await this.runRoomPixel<
 				[
@@ -456,14 +456,14 @@ export class RoomStore {
 					},
 				]
 			>(
-				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agentId)});`,
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(workspaceId)});`,
 			);
 
 			if (errors?.length > 0) {
 				throw new Error(errors?.join(", ") || undefined);
 			}
 		} catch (e) {
-			throw new Error(e.message || "Error linking agent");
+			throw new Error(e.message || "Error linking workspace");
 		}
 	};
 

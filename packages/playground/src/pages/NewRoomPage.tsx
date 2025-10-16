@@ -71,8 +71,8 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
-	const { agentId } = useParams() as { agentId?: string };
-	const agent = chat.agents[agentId] ?? null;
+	const { workspaceId } = useParams() as { workspaceId?: string };
+	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -114,15 +114,18 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		const usingAgent = agentId && agent !== null;
+		const usingWorkspace = workspaceId && workspace !== null;
 
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
-			usingAgent
-				? { ...options, agent: { agent_id: agent.workspace_id } }
+			usingWorkspace
+				? {
+						...options,
+						workspace: { workspace_id: workspace.workspace_id },
+					}
 				: options,
 		);
 
@@ -180,8 +183,8 @@ export const NewRoomPage = observer(() => {
 							maxRows={8}
 							actions={
 								<Stack direction="row" alignItems="center">
-									{agentId ? (
-										<WorkspaceChip agent={agent} />
+									{workspaceId ? (
+										<WorkspaceChip workspace={workspace} />
 									) : (
 										<Tooltip
 											title={"Open Configuration Menu"}

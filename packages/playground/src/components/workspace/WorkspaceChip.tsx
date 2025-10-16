@@ -1,38 +1,38 @@
 import { ErrorOutline, LightbulbOutlined } from "@mui/icons-material";
 import { Chip, Skeleton, Tooltip } from "@semoss/ui";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 export interface WorkspaceChipProps {
-	agent: Agent | null;
+	workspace: Workspace | null;
 	loading?: boolean;
 }
 
 /**
- * Renders a chip showing users which agent configuration is being used
+ * Renders a chip showing users which workspace configuration is being used
  *
  * @component
  */
-export const WorkspaceChip = ({ agent, loading }: WorkspaceChipProps) => {
+export const WorkspaceChip = ({ workspace, loading }: WorkspaceChipProps) => {
 	/**
 	 * Constants
 	 **/
-	const isAgentValid = agent && !loading;
+	const isWorkspaceValid = workspace && !loading;
 
 	return (
 		<Tooltip
 			title={
 				loading
-					? "Loading Agent Configuration"
-					: isAgentValid
-						? "Using Agent Configuration"
-						: "Error Loading Agent Configuration"
+					? "Loading Workspace Configuration"
+					: isWorkspaceValid
+						? "Using Workspace Configuration"
+						: "Error Loading Workspace Configuration"
 			}
 			placement="top"
 		>
 			<span>
 				<Chip
 					icon={
-						loading || isAgentValid ? (
+						loading || isWorkspaceValid ? (
 							<LightbulbOutlined />
 						) : (
 							<ErrorOutline />
@@ -41,10 +41,10 @@ export const WorkspaceChip = ({ agent, loading }: WorkspaceChipProps) => {
 					label={
 						loading ? (
 							<Skeleton width="36px" height="100%" />
-						) : isAgentValid ? (
-							agent.name
+						) : isWorkspaceValid ? (
+							workspace.name
 						) : (
-							"Error loading agent"
+							"Error loading workspace"
 						)
 					}
 				/>

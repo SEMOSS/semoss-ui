@@ -13,7 +13,7 @@ export interface App {
 }
 
 // TODO: define properly
-export interface Agent {
+export interface Workspace {
 	workspace_id: string;
 	name: string;
 	date_created: string; // ISO string
