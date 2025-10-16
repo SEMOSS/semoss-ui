@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { Engine, Toolbox, Workspace } from "@/types";
+import type { App, Engine, Toolbox, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -285,10 +285,68 @@ export class ChatStore {
 		}
 	};
 
+	/**
+	 * Get available tools from the backend
+	 */
+	// Record<type, Record<id, Toolbox[]>>
+	getToolMap = async (
+		filterWord?: string,
+	): Promise<Record<string, Record<string, Toolbox>>> => {
+		try {
+			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
+				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
+			);
+
+			if (
+				!pixelReturn ||
+				pixelReturn.length === 0 ||
+				!pixelReturn[0].output
+			) {
+				throw new Error();
+			}
+
+			const toolBoxes = pixelReturn[0].output.map((tool): Toolbox => {
+				if ("app_type" in tool) {
+					// It's an Engine
+					return {
+						type: tool.app_type,
+						id: tool.app_id,
+						name: tool.app_name,
+						description: tool.description || "",
+						tags: [], // Tags are not provided in the current response
+					};
+				} else {
+					// It's an App
+					return {
+						type: "APP",
+						id: tool.project_id,
+						name: tool.project_name,
+						description: tool.description || "",
+						tags: [], // Tags are not provided in the current response
+					};
+				}
+			});
+
+			return toolBoxes.reduce(
+				(acc, tool) => {
+					if (!acc[tool.type]) {
+						acc[tool.type] = {};
+					}
+					acc[tool.type][tool.id] = tool;
+					return acc;
+				},
+				{} as Record<string, Record<string, Toolbox>>,
+			);
+		} catch {
+			throw new Error("Failed to fetch tools");
+		}
+	};
+
 	addWorkspace = async (
-		data: Pick<Workspace, "name" | "system_prompt" | "description"> & {
-			tools: Toolbox[];
-		},
+		data: Pick<
+			Workspace,
+			"name" | "system_prompt" | "description" | "tools"
+		>,
 	): Promise<string> => {
 		try {
 			const esc = (v: string) =>
@@ -298,7 +356,7 @@ export class ChatStore {
 			const prompt = esc(data.system_prompt ?? "");
 			const tools = data.tools.map((tool) => tool.id);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=[${JSON.stringify(tools)}])`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=${JSON.stringify(tools)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors

@@ -1,7 +1,6 @@
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
@@ -15,7 +14,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { App, Engine, Toolbox, Workspace } from "@/types";
+import type { Toolbox, Workspace } from "@/types";
 
 export interface WorkspaceModalProps {
 	open: boolean;
@@ -43,36 +42,6 @@ const StyledTitle = styled(Modal.Content)(({ theme }) => ({
 }));
 
 /**
- * Get a unique key for a tool
- * @param tool The tool to get the key for
- * @returns The unique key for the tool
- */
-const getTool = (item: Engine | App): Toolbox => {
-	let id = "";
-	let name = "";
-	let type: Toolbox["type"] = "DATABASE";
-
-	// Type guard to check if item is App
-	if ("project_id" in item && "project_name" in item) {
-		id = item.project_id;
-		type = "APP";
-		name = item.project_name;
-	} else if ("app_id" in item && "app_name" in item) {
-		id = item.app_id;
-		name = item.app_name;
-		type = item.app_type;
-	}
-
-	return {
-		id: id,
-		type: type,
-		name: name,
-		description: "",
-		tags: [],
-	};
-};
-
-/**
  * Renders a modal to create a new Workspace
  *
  * @component
@@ -87,22 +56,16 @@ export const WorkspaceModal = ({
 	 */
 	const notification = useNotification();
 	const { chat } = useChat();
-	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=[""])`,
-		{
-			data: [],
-		},
-	);
 
 	/**
 	 * State
 	 */
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [tools, setTools] = useState([]);
+	const [toolMap, setToolMap] = useState<
+		Record<string, Record<string, Toolbox>>
+	>({});
 	const { handleSubmit, control, watch } = useForm<
-		Pick<Workspace, "name" | "system_prompt" | "description"> & {
-			tools: Toolbox[];
-		}
+		Pick<Workspace, "name" | "system_prompt" | "description" | "tools">
 	>({
 		defaultValues: {
 			name: "",
@@ -140,21 +103,37 @@ export const WorkspaceModal = ({
 	 * Effects
 	 */
 	useEffect(() => {
-		if (getApps.status !== "SUCCESS") {
+		const fetchTools = async () => {
 			setIsLoading(true);
-			return;
-		}
+			try {
+				const toolMap = await chat.getToolMap();
+				setToolMap(toolMap);
+			} catch (e) {
+				console.error(e);
 
-		const tools = getApps.data.map((tool) => getTool(tool));
-		setTools(tools);
-		setIsLoading(false);
-	}, [getApps.status, getApps.data]);
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchTools();
+	}, [chat.getToolMap, notification.add]);
 
 	/**
 	 * Constants
 	 */
 	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
+	const toolsArray = Object.values(toolMap).flatMap(Object.values);
+
+	/**
+	 * Types
+	 */
+	type ToolboxWithAll = Toolbox & { all?: boolean };
+	type ToolBoxKeys = Workspace["tools"][number];
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -263,22 +242,29 @@ export const WorkspaceModal = ({
 											multiple
 											disableCloseOnSelect
 											disabled={isLoading}
-											options={tools}
+											options={toolsArray}
 											isOptionEqualToValue={(
-												option,
-												value,
-											) => option.id === value.id}
+												option: Toolbox,
+												value: ToolBoxKeys,
+											) =>
+												option.id === value.id &&
+												option.type === value.type
+											}
 											filterOptions={() => {
 												return [
 													{
 														name: "Select All",
 														all: true,
+														type: "Select All",
 													},
-													...tools,
-												];
+													...toolsArray,
+												] as ToolboxWithAll[];
 											}}
 											value={field.value || []}
-											onChange={(_, val) => {
+											onChange={(
+												_,
+												val: ToolboxWithAll[],
+											) => {
 												let newVal = val;
 												if (
 													val.find(
@@ -286,19 +272,36 @@ export const WorkspaceModal = ({
 													)
 												)
 													newVal =
-														tools.length ===
+														toolsArray.length ===
 														field?.value?.length
 															? []
-															: tools;
+															: toolsArray;
 
-												field.onChange(newVal);
+												field.onChange(
+													newVal.map((tool) => ({
+														id: tool.id,
+														type: tool.type,
+													})),
+												); // only send id and type to backend
 											}}
-											getOptionLabel={(option) =>
-												option.name
+											getOptionLabel={(
+												option: ToolBoxKeys,
+											) =>
+												toolMap[option.type]?.[
+													option.id
+												].name || ""
+											}
+											getOptionKey={(
+												option: ToolBoxKeys,
+											) =>
+												JSON.stringify({
+													id: option.id,
+													type: option.type,
+												})
 											}
 											renderOption={(
 												props,
-												option,
+												option: ToolboxWithAll,
 												{ selected },
 											) => {
 												const { key, ...optionProps } =
@@ -315,7 +318,7 @@ export const WorkspaceModal = ({
 																			field
 																				?.value
 																				?.length ===
-																			tools?.length
+																			toolsArray?.length
 																		)
 																	: selected
 															}

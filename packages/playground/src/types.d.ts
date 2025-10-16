@@ -19,6 +19,7 @@ export interface Workspace {
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
+	tools: Pick<Toolbox, "id" | "type">[];
 }
 
 /**
