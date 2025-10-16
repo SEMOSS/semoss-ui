@@ -50,8 +50,8 @@ export const EditEngineDetails = observer(() => {
 	// get a list of the keys
 	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
 		(k) => {
-			// filter the fields to the ones that are passed in
-			return Object.hasOwn(metadata, k.metakey);
+			// only show the ones we want
+			return (k.engine_default ? k.engine_default.includes(type) : true) && Object.hasOwn(metadata, k.metakey);
 		},
 	);
 
@@ -548,6 +548,37 @@ export const EditEngineDetails = observer(() => {
 													}}
 													data-testid={formatToDataTestId(
 														`editEngineDetails-${label}-autocomplete`,
+													)}
+												/>
+											);
+										}}
+									/>
+								);
+							} else if (display_options === "date") {
+								return (
+									<Controller
+										key={metakey}
+										name={metakey}
+										control={control}
+										render={({ field }) => {
+											return (
+												<TextField
+													type="date"
+													label={label}
+													value={
+														(field.value as string) ||
+														""
+													}
+													onChange={(e) =>
+														field.onChange(
+															e.target.value,
+														)
+													}
+													InputLabelProps={
+														{ shrink: true }
+													}
+													data-testid={formatToDataTestId(
+														`editEngineDetails-${label}-date`,
 													)}
 												/>
 											);

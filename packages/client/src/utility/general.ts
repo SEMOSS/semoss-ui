@@ -249,3 +249,7 @@ export const extractInitials = (str: string): string => {
 export const formatToDataTestId = (text: string) => {
 	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
 };
+
+export const metaKeysRestrictionByEngineDefault = (sourceKeys, catalogType) => {
+	return sourceKeys.filter((s) =>  s.engine_default ? s.engine_default?.includes(catalogType) : true);
+}

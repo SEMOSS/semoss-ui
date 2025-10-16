@@ -11,7 +11,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { formatToDataTestId, removeUnderscores, toTitleCase } from "@/utility";
+import { formatToDataTestId, metaKeysRestrictionByEngineDefault, removeUnderscores, toTitleCase } from "@/utility";
 
 const StyledFilter = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -108,7 +108,7 @@ export const Filterbox = (props: FilterboxProps) => {
 	const list =
 		type === "APP"
 			? configStore.store.config.projectMetaKeys
-			: configStore.store.config.databaseMetaKeys;
+			: metaKeysRestrictionByEngineDefault(configStore.store.config.databaseMetaKeys, type);
 
 	// get a list of the keys
 	const metaKeyList = list.filter((k) => {
@@ -132,24 +132,12 @@ export const Filterbox = (props: FilterboxProps) => {
 	metaKeys.filter((v) => v);
 
 	// track the options
-	const [filterOptions, setFilterOptions] = useState<
-		Record<string, { value: string; count: number }[]>
-	>({});
+	const [filterOptions, setFilterOptions] = useState<Record<string, { value: string; count: number }[]>>({});
 
 	// track which filters are opened their selected value, and search term
 	const [filterVisibility, setFilterVisibility] = useState<
 		Record<string, { open: boolean; value: string[]; search: string }>
-	>(() => {
-		return metaKeyList.reduce((prev, current) => {
-			prev[current.metakey] = {
-				open: false,
-				value: [],
-				search: "",
-			};
-
-			return prev;
-		}, {});
-	});
+	>({});
 	const [filterByVisibility, setFilterByVisibility] = useState(true);
 
 	const getCatalogFilters = usePixel<
@@ -233,6 +221,15 @@ export const Filterbox = (props: FilterboxProps) => {
 				[filter.metakey]: true,
 			}));
 		});
+
+		setFilterVisibility(metaKeyList.reduce((prev, current) => {
+			prev[current.metakey] = {
+				open: false,
+				value: [],
+				search: "",
+			};
+			return prev;
+		}, {}));
 
 		setFilterOptions(updated);
 	}, [getCatalogFilters.status, getCatalogFilters.data]);

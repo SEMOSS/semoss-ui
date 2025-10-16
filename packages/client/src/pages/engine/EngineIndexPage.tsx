@@ -17,7 +17,7 @@ import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
 import { ENGINE_TYPES } from "@/types";
-import { formatToDataTestId, removeUnderscores } from "@/utility";
+import { formatToDataTestId, metaKeysRestrictionByEngineDefault, removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledContainer = styled("div")(({ theme }) => ({
@@ -101,7 +101,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		// get a list of the keys
 		const databaseMetaKeys =
-			configStore.store.config.databaseMetaKeys.filter((k) => {
+			metaKeysRestrictionByEngineDefault(configStore.store.config.databaseMetaKeys, route.type).filter((k) => {
 				return (
 					k.display_options === "single-checklist" ||
 					k.display_options === "multi-checklist" ||

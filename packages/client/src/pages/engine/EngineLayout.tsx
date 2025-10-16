@@ -13,7 +13,7 @@ import { LoadingScreen, Stack, styled, ToggleTabsGroup } from "@semoss/ui";
 import { EngineHeader } from "@/components/engine";
 import { EngineContext } from "@/contexts";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
-import { removeUnderscores } from "@/utility";
+import { metaKeysRestrictionByEngineDefault, removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
 const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
@@ -59,7 +59,7 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	const { adminMode } = useSettings();
 
 	// filter metakeys to the ones we want
-	const engineMetaKeys = configStore.store.config.databaseMetaKeys.filter(
+	const engineMetaKeys = metaKeysRestrictionByEngineDefault(configStore.store.config.databaseMetaKeys, route.type).filter(
 		(k) => {
 			return (
 				k.metakey !== "description" &&
@@ -116,7 +116,8 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 				if (
 					found.display_options === "single-typeahead" ||
 					found.display_options === "select-box" ||
-					found.display_options === "multi-typeahead"
+					found.display_options === "multi-typeahead" ||
+					found.display_options === "date"
 				) {
 					if (typeof getEngineMetadata?.data[curr] === "string") {
 						prev[curr] = [getEngineMetadata?.data[curr]];

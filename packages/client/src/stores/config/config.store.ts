@@ -42,11 +42,13 @@ interface ConfigStoreInterface {
 				| "multi-select"
 				| "single-typeahead"
 				| "multi-typeahead"
-				| "select-box";
+				| "select-box"
+				| "date";
 			display_order: number;
 			metakey: string;
 			single_multi: string;
 			display_values?: string;
+			engine_default?: string;
 		}[];
 		projectMetaKeys: {
 			display_options:
@@ -64,6 +66,7 @@ interface ConfigStoreInterface {
 			metakey: string;
 			single_multi: string;
 			display_values?: string;
+			engine_default?: string;
 		}[];
 		/**
 		 * List of available providers (logins) that are available
