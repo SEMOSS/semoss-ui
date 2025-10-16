@@ -1,7 +1,16 @@
 import type React from "react";
-import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
-import { Autocomplete, Grid, Select, TextField } from "@semoss/ui";
+import { useId, useState } from "react";
+import { usePixel } from "@semoss/sdk/react";
+import {
+	Field,
+	FieldGroup,
+	FieldLabel,
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@semoss/ui/next";
 import { getToolbox } from "@/components";
 import type { App, Engine, MCP, PlanStep, Toolbox } from "@/types";
 
@@ -18,17 +27,16 @@ interface ToolCallDetailsProps {
 export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	const { details, onDetailsChange } = props;
 
-	const [toolbox, setToolbox] = useState<Toolbox | null>(null);
-	const [search, setSearch] = useState("");
+	const toolboxId = useId();
+	const toolId = useId();
 
-	// debounce the input
-	const debouncedSearch = useDebouncedValue(search);
+	const [toolbox, setToolbox] = useState<Toolbox | null>(null);
 
 	/**
 	 * Get all of the groups
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"])`,
 		{
 			data: [],
 		},
@@ -53,61 +61,45 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	const toolboxOptions = getApps.data.map((item) => getToolbox(item));
 
 	return (
-		<>
-			<Grid item xs={12}>
-				<Autocomplete<Toolbox, false, false, false>
-					loading={getApps.status === "LOADING"}
-					options={toolboxOptions}
-					value={toolbox || null}
-					inputValue={search}
-					getOptionLabel={(option) => {
-						if (typeof option === "string") {
-							return option;
-						}
-						return option.name;
+		<FieldGroup>
+			<Field>
+				<FieldLabel htmlFor={toolboxId}>Toolbox</FieldLabel>
+				<Select
+					value={toolbox?.id || ""}
+					onValueChange={(value) => {
+						const selectedToolbox = toolboxOptions.find(
+							(option) => option.id === value,
+						);
+						setToolbox(selectedToolbox || null);
 					}}
-					isOptionEqualToValue={(option, value) => {
-						if (
-							typeof option === "string" ||
-							typeof value === "string"
-						) {
-							return false;
-						}
-						return option.id === value.id;
-					}}
-					onInputChange={(_event, newValue) => {
-						setSearch(newValue);
-					}}
-					onChange={(_event, newValue) => {
-						// set the toolbox (only if it's a Toolbox object, not a string)
-						if (newValue && typeof newValue !== "string") {
-							setToolbox(newValue);
-						} else {
-							setToolbox(null);
-						}
-					}}
-					renderInput={(params) => (
-						<TextField
-							{...params}
-							label="Select Toolbox"
-							variant="outlined"
-							placeholder="Search Toolbox"
-							InputProps={{
-								...params.InputProps,
-								startAdornment: null,
-							}}
-						/>
-					)}
-				/>
-			</Grid>
-			<Grid item xs={12}>
+				>
+					<SelectTrigger id={toolboxId}>
+						<SelectValue placeholder="Select Toolbox" />
+					</SelectTrigger>
+					<SelectContent>
+						{getApps.status === "LOADING" ? (
+							<SelectItem value="" disabled>
+								Loading...
+							</SelectItem>
+						) : (
+							toolboxOptions.map((option) => (
+								<SelectItem key={option.id} value={option.id}>
+									{option.name}
+								</SelectItem>
+							))
+						)}
+					</SelectContent>
+				</Select>
+			</Field>
+			<Field>
+				<FieldLabel htmlFor={toolId}>Tool</FieldLabel>
+
 				<Select
 					value={details.tool_name}
-					label="Select Tool"
-					onChange={(e) => {
+					onValueChange={(value) => {
 						onDetailsChange({
 							...details,
-							tool_name: e.target.value,
+							tool_name: value,
 							title: toolbox.name,
 							_meta: {
 								map: {
@@ -117,15 +109,19 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 							},
 						});
 					}}
-					fullWidth
 				>
-					{getMCP.data.tools.map((tool) => (
-						<Select.Item key={tool.name} value={tool.name}>
-							{tool.title}
-						</Select.Item>
-					))}
+					<SelectTrigger id={toolId}>
+						<SelectValue placeholder="Tool" />
+					</SelectTrigger>
+					<SelectContent>
+						{getMCP.data.tools.map((tool) => (
+							<SelectItem key={tool.name} value={tool.name}>
+								{tool.title}
+							</SelectItem>
+						))}
+					</SelectContent>
 				</Select>
-			</Grid>
-		</>
+			</Field>
+		</FieldGroup>
 	);
 };

@@ -1,17 +1,25 @@
-import { Close } from "@mui/icons-material";
 import type React from "react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
 	Button,
-	Grid,
-	IconButton,
-	Modal,
+	Dialog,
+	DialogContent,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+	DialogTrigger,
+	Input,
+	Label,
 	Select,
-	Stack,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
 	Stepper,
-	TextField,
-	Typography,
-} from "@semoss/ui";
+	StepperStep,
+	StepperStepLabel,
+	Textarea,
+} from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
 import { HumanInterventionDetails } from "./HumanInterventionDetails";
 import { LLMReasoningDetails } from "./LLMReasoningDetails";
@@ -51,18 +59,22 @@ const getStepDetailsDefaults = (
 };
 
 interface EditStepOverlayProps {
+	/** Trigger element for the overlay */
+	children: React.ReactNode;
+
 	/** Mode of the overlay */
 	mode: "Add" | "Update";
 
 	/** Current step if editing */
 	current?: PlanStep;
 
-	/** Callback triggered when the tool model is closed */
-	onClose: (success: boolean, step?: PlanStep) => void;
+	/** Callback triggered when the data is submitted */
+	onSubmit: (step?: PlanStep) => Promise<void>;
 }
 
 export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 	const {
+		children,
 		mode,
 		current = {
 			step_name: "",
@@ -72,9 +84,14 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 			status: "pending",
 			details: getStepDetailsDefaults("tool_call"),
 		},
-		onClose,
+		onSubmit = () => null,
 	} = props;
 
+	const nameId = useId();
+	const descriptionId = useId();
+	const typeId = useId();
+
+	const [isOpen, setIsOpen] = useState(false);
 	const [activeStep, setActiveStep] = useState(0);
 	const [step, setStep] = useState<PlanStep>({
 		step_name: current.step_name,
@@ -108,37 +125,26 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 	}
 
 	return (
-		<Modal
-			open={true}
-			onClose={() => onClose(false)}
-			aria-labelledby="Add step"
-			aria-describedby="Add step"
-			maxWidth={"md"}
-			fullWidth={true}
-			scroll="paper"
-		>
-			<Modal.Title>
-				<Stack direction="row" justifyContent="space-between">
-					<Typography variant="h6">{mode} Step</Typography>
-					<IconButton size="small" onClick={() => onClose(false)}>
-						<Close />
-					</IconButton>
-				</Stack>
-			</Modal.Title>
-			<Modal.Content>
-				<Stepper activeStep={activeStep} sx={{ mb: 3 }}>
+		<Dialog open={isOpen} onOpenChange={(open) => setIsOpen(open)}>
+			<DialogTrigger asChild>{children}</DialogTrigger>
+			<DialogContent className="sm:max-w-lg">
+				<DialogHeader>
+					<DialogTitle>{mode} Step</DialogTitle>
+				</DialogHeader>
+
+				<Stepper activeStep={activeStep} className="mb-6">
 					{steps.map((label) => (
-						<Stepper.Step key={label}>
-							<Stepper.StepLabel>{label}</Stepper.StepLabel>
-						</Stepper.Step>
+						<StepperStep key={label}>
+							<StepperStepLabel>{label}</StepperStepLabel>
+						</StepperStep>
 					))}
 				</Stepper>
 				{activeStep === 0 && (
-					<Grid container spacing={2}>
-						<Grid item xs={12}>
-							<TextField
-								fullWidth
-								label="Name"
+					<div className="space-y-4">
+						<div>
+							<Label htmlFor={nameId}>Name *</Label>
+							<Input
+								id={nameId}
 								value={step.step_name}
 								onChange={(e) =>
 									setStep({
@@ -146,13 +152,13 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 										step_name: e.target.value,
 									})
 								}
-								required
+								className="mt-1"
 							/>
-						</Grid>
-						<Grid item xs={12}>
-							<TextField
-								fullWidth
-								label="Description"
+						</div>
+						<div>
+							<Label htmlFor={descriptionId}>Description *</Label>
+							<Textarea
+								id={descriptionId}
 								value={step.description}
 								onChange={(e) =>
 									setStep({
@@ -160,43 +166,43 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 										description: e.target.value,
 									})
 								}
-								multiline
 								rows={3}
-								required
+								className="mt-1"
 							/>
-						</Grid>
-						<Grid item xs={12}>
+						</div>
+						<div>
+							<Label htmlFor={typeId}>Type *</Label>
 							<Select
-								fullWidth
-								label="Type"
 								value={step.type}
-								onChange={(e) => {
-									const type = e.target
-										.value as PlanStep["type"];
-
+								onValueChange={(value) => {
+									const type = value as PlanStep["type"];
 									setStep({
 										...step,
 										type: type,
 										details: getStepDetailsDefaults(type),
 									});
 								}}
-								required
 							>
-								<Select.Item value="tool_call">
-									Tool
-								</Select.Item>
-								<Select.Item value="llm_reasoning">
-									AI
-								</Select.Item>
-								<Select.Item value="human_intervention">
-									User
-								</Select.Item>
+								<SelectTrigger className="mt-1">
+									<SelectValue placeholder="Select type" />
+								</SelectTrigger>
+								<SelectContent>
+									<SelectItem value="tool_call">
+										Tool
+									</SelectItem>
+									<SelectItem value="llm_reasoning">
+										AI
+									</SelectItem>
+									<SelectItem value="human_intervention">
+										User
+									</SelectItem>
+								</SelectContent>
 							</Select>
-						</Grid>
-					</Grid>
+						</div>
+					</div>
 				)}
 				{activeStep === 1 && (
-					<Grid container spacing={2}>
+					<div className="space-y-4">
 						{step.details.stepType === "tool_call" && (
 							<ToolCallDetails
 								details={step.details}
@@ -230,46 +236,52 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 								}}
 							/>
 						)}
-					</Grid>
+					</div>
 				)}
-			</Modal.Content>
-			<Modal.Actions>
-				<Button
-					variant="text"
-					onClick={() => {
-						if (activeStep === 0) {
-							onClose(false);
-							return;
-						}
 
-						// reset
-						setStep({
-							...step,
-							details: getStepDetailsDefaults(step.type),
-						});
+				<DialogFooter>
+					<Button
+						variant="ghost"
+						onClick={() => {
+							if (activeStep === 0) {
+								setIsOpen(false);
+								return;
+							}
 
-						// go back
-						setActiveStep((prevStep) => prevStep - 1);
-					}}
-				>
-					{activeStep === 0 ? "Cancel" : "Back"}
-				</Button>
-				<Button
-					variant="contained"
-					disabled={isDisabled}
-					onClick={() => {
-						if (activeStep === steps.length - 1) {
-							onClose(true, step);
-							return;
-						}
+							// reset
+							setStep({
+								...step,
+								details: getStepDetailsDefaults(step.type),
+							});
 
-						// go forward
-						setActiveStep((prevStep) => prevStep + 1);
-					}}
-				>
-					{activeStep === steps.length - 1 ? "Confirm" : "Next"}
-				</Button>
-			</Modal.Actions>
-		</Modal>
+							// go back
+							setActiveStep((prevStep) => prevStep - 1);
+						}}
+					>
+						{activeStep === 0 ? "Cancel" : "Back"}
+					</Button>
+					<Button
+						variant="default"
+						disabled={isDisabled}
+						onClick={async () => {
+							if (activeStep === steps.length - 1) {
+								// submit it
+								await onSubmit(step);
+
+								// close it
+								setIsOpen(false);
+
+								return;
+							}
+
+							// go forward
+							setActiveStep((prevStep) => prevStep + 1);
+						}}
+					>
+						{activeStep === steps.length - 1 ? "Confirm" : "Next"}
+					</Button>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
 	);
 };

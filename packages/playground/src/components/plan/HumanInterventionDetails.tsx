@@ -1,5 +1,6 @@
 import type React from "react";
-import { Grid, TextField } from "@semoss/ui";
+import { useId } from "react";
+import { Field, FieldLabel, Textarea } from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
 
 type HumanInterventionDetails = Extract<
@@ -19,12 +20,13 @@ export const HumanInterventionDetails: React.FC<
 	HumanInterventionDetailsProps
 > = (props) => {
 	const { details, onDetailsChange } = props;
+	const instructionsId = useId();
 
 	return (
-		<Grid item xs={12}>
-			<TextField
-				fullWidth
-				label="Instructions"
+		<Field>
+			<FieldLabel htmlFor={instructionsId}>Instructions *</FieldLabel>
+			<Textarea
+				id={instructionsId}
 				value={details.instructions}
 				onChange={(e) => {
 					onDetailsChange({
@@ -32,11 +34,10 @@ export const HumanInterventionDetails: React.FC<
 						instructions: e.target.value,
 					});
 				}}
-				multiline
 				rows={4}
-				required
 				placeholder="Instructions for the ai to process the user's feedback"
+				required
 			/>
-		</Grid>
+		</Field>
 	);
 };

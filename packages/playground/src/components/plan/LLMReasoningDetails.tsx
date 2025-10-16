@@ -1,5 +1,6 @@
 import type React from "react";
-import { Grid, TextField } from "@semoss/ui";
+import { useId } from "react";
+import { Field, FieldLabel, Textarea } from "@semoss/ui/next";
 import type { PlanStep } from "@/types";
 
 type LLMReasoningDetails = Extract<
@@ -19,12 +20,13 @@ export const LLMReasoningDetails: React.FC<LLMReasoningDetailsProps> = (
 	props,
 ) => {
 	const { details, onDetailsChange } = props;
+	const promptId = useId();
 
 	return (
-		<Grid item xs={12}>
-			<TextField
-				fullWidth
-				label="Prompt"
+		<Field>
+			<FieldLabel htmlFor={promptId}>Prompt</FieldLabel>
+			<Textarea
+				id={promptId}
 				value={details.prompt}
 				onChange={(e) => {
 					onDetailsChange({
@@ -32,11 +34,10 @@ export const LLMReasoningDetails: React.FC<LLMReasoningDetailsProps> = (
 						prompt: e.target.value,
 					});
 				}}
-				multiline
 				rows={4}
-				required
 				placeholder="Enter the instructions for the AI"
+				required
 			/>
-		</Grid>
+		</Field>
 	);
 };

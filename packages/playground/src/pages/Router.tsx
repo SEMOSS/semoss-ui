@@ -1,6 +1,6 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
-import { LoadingScreen } from "@semoss/ui";
+import { Spinner } from "@semoss/ui/next";
 import { AgentPage } from "./AgentPage";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import { LoginPage } from "./LoginPage";
@@ -16,7 +16,11 @@ export const Router = () => {
 
 	// don't load anything if it is pending
 	if (!isInitialized) {
-		return <LoadingScreen.Trigger />;
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	if (error) {

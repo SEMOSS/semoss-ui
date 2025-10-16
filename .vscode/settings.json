@@ -10,6 +10,9 @@
     "source.fixAll.biome": "explicit",
     "source.organizeImports.biome": "explicit",
   },
+  "files.associations": {
+    "*.css":"tailwindcss"
+  },
   "[javascript]": {
     "editor.defaultFormatter": "biomejs.biome",
   },

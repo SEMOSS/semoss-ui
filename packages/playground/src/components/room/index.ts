@@ -1,3 +1,4 @@
-export * from "./RoomArtifact";
-export * from "./RoomConfiguration";
-export * from "./RoomInput";
+export * from "./room-artifact";
+export * from "./room-configuration";
+export * from "./room-input";
+export * from "./room-sidebar";
