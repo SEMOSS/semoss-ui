@@ -263,6 +263,48 @@ export class ChatStore {
 		}
 	};
 
+	addWorkspace = async (data): Promise<string> => {
+		try {
+			const esc = (v: string) =>
+				String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+			const name = esc(data.AGENT_NAME ?? "");
+			const desc = esc(data.AGENT_DESCRIPTION ?? "");
+			const prompt = esc(data.AGENT_CONTEXT ?? "");
+			const tools =
+				data.AGENT_TOOLS && data.AGENT_TOOLS.length > 0
+					? data.AGENT_TOOLS.map((tool) => tool.id)
+					: [];
+
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=[${JSON.stringify(tools)}])`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			return pixelReturn[0].output;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	deleteWorkspace = async (workspaceId: string) => {
+		try {
+			await this._actions.run(
+				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
+			);
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			return;
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
 	/**
 	 * Helpers
 	 */
