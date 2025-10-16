@@ -6,6 +6,7 @@ import BoxIcon from "../../../../../../assets/block-settings/img/Box.svg";
 import BulletIcon from "../../../../../../assets/block-settings/img/Bullet.svg";
 import ButtonIcon from "../../../../../../assets/block-settings/img/Button.svg";
 import ChoroPlethIcon from "../../../../../../assets/block-settings/img/ChroplethIcon.svg";
+import CloudIcon from "../../../../../../assets/block-settings/img/CloudIcon.svg";
 import ClusterIcon from "../../../../../../assets/block-settings/img/Cluster.svg";
 import DendrogramIcon from "../../../../../../assets/block-settings/img/dendrogram.svg";
 import FunnelIcon from "../../../../../../assets/block-settings/img/Funnel.svg";
@@ -344,6 +345,252 @@ export const VisualMapConstant = {
 			icon: <img src={String(KPIIcon)} alt="KPI Icon" />,
 			name: "kpi",
 			label: "KPI",
+		},
+	],
+	Words: [
+		{
+			icon: <img src={String(CloudIcon)} alt="Cloud Icon" />,
+			name: "cloud",
+			label: "Cloud",
+			title: "echart-word-cloud",
+			option: {
+				title: {
+					text: "Word Cloud",
+					left: "left",
+					top: "top",
+					show: true,
+					textStyle: {
+						color: "#000000",
+						fontWeight: "bold",
+						fontFamily: "Arial Narrow",
+						fontSize: 12,
+					},
+				},
+				tooltip: {
+					show: true,
+					trigger: "item",
+				},
+				color: [
+					"#5470c6",
+					"#91cc75",
+					"#fac858",
+					"#ee6666",
+					"#73c0de",
+					"#3ba272",
+					"#fc8452",
+					"#9a60b4",
+					"#ea7ccc",
+					"#45b7d1",
+				],
+				series: [
+					{
+						type: "wordCloud",
+						gridSize: 2,
+						sizeRange: [12, 60],
+						rotationRange: [-90, 90],
+						rotationStep: 45,
+						shape: "pentagon",
+						width: "100%",
+						height: "100%",
+						drawOutOfBound: false,
+						layoutAnimation: true,
+						textStyle: {
+							fontFamily: "sans-serif",
+							fontWeight: "bold",
+						},
+						emphasis: {
+							focus: "self",
+							textStyle: {
+								shadowBlur: 10,
+								shadowColor: "#333",
+							},
+						},
+						data: [
+							{
+								name: "A",
+								value: 26,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "B",
+								value: 25,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "C",
+								value: 24,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "D",
+								value: 23,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "E",
+								value: 22,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "F",
+								value: 21,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "G",
+								value: 20,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "H",
+								value: 19,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "I",
+								value: 18,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "J",
+								value: 17,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "K",
+								value: 16,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "L",
+								value: 15,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "M",
+								value: 14,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "N",
+								value: 13,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "O",
+								value: 12,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "P",
+								value: 11,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "Q",
+								value: 10,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "R",
+								value: 9,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "S",
+								value: 8,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "T",
+								value: 7,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "U",
+								value: 6,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "V",
+								value: 5,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "W",
+								value: 4,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "X",
+								value: 3,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "Y",
+								value: 2,
+								// Style of single text
+								textStyle: {},
+							},
+							{
+								name: "Z",
+								value: 1,
+								// Style of single text
+								textStyle: {},
+							},
+						],
+					},
+				],
+				reset: {
+					title: {
+						text: "Word Cloud",
+						left: "left",
+						top: "top",
+						show: true,
+						textStyle: {
+							color: "#000000",
+							fontWeight: "bold",
+							fontFamily: "Arial Narrow",
+							fontSize: 12,
+						},
+					},
+					series: {
+						gridSize: 2,
+						sizeRange: [12, 60],
+						rotationRange: [-90, 90],
+						rotationStep: 45,
+						shape: "pentagon",
+						textStyle: {
+							fontFamily: "sans-serif",
+							fontWeight: "bold",
+						},
+					},
+				},
+			},
 		},
 	],
 	Map: [
