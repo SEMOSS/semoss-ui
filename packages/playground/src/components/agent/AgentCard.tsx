@@ -48,7 +48,7 @@ export const AgentCard = ({
 						<Skeleton width="100%" height="100%" />
 					)}
 				</Typography>
-				<Typography variant="body2" color="text.secondary">
+				<Typography variant="body2" color="textSecondary">
 					{isAgentValid ? (
 						agent.description
 					) : (
@@ -59,7 +59,10 @@ export const AgentCard = ({
 			<Stack justifyContent="flex-end">
 				<div>
 					<Button
-						onClick={onSecondaryClick}
+						onClick={(e) => {
+							e.stopPropagation();
+							onSecondaryClick?.();
+						}}
 						endIcon={<ArrowForward />}
 						size="small"
 						variant="text"

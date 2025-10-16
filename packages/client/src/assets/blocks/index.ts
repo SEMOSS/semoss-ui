@@ -109,5 +109,7 @@ export { default as VEGA_ACTIVE } from "./Vega_Active.png";
 export { default as VEGA_HOVER } from "./Vega_Hover.png";
 export { default as VISUALIZATION_FILTER_ACTIVE } from "./Viz_Filter_Active.png";
 export { default as VISUALIZATION_FILTER_HOVER } from "./Viz_Filter_Hover.png";
+export { default as WORD_CLOUD_ACTIVE } from "./Word_Cloud_Active.png";
+export { default as WORD_CLOUD_HOVER } from "./Word_Cloud_Hover.png";
 export { default as WORLD_MAP_ACTIVE } from "./World_Map_Active.png";
 export { default as WORLD_MAP_HOVER } from "./World_Map_Hover.png";
