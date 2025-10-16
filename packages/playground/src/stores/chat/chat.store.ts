@@ -206,7 +206,7 @@ export class ChatStore {
 			// set the initial data
 			room.setMetadata({
 				name: name,
-				dateCreated: new Date().toDateString(),
+				dateCreated: new Date().toISOString(),
 			});
 			room.setMode(mode);
 			room.setModel(modelId);
@@ -342,6 +342,9 @@ export class ChatStore {
 		}
 	};
 
+	/**
+	 * Add a new workspace
+	 */
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
@@ -363,6 +366,21 @@ export class ChatStore {
 			if (this._error) {
 				throw new Error(this._error.message);
 			}
+
+			runInAction(() => {
+				// add to the store
+				this._store.workspaces = {
+					...this._store.workspaces,
+					[pixelReturn[0].output]: {
+						workspace_id: pixelReturn[0].output,
+						name: data.name,
+						date_created: new Date().toISOString(),
+						description: data.description,
+						system_prompt: data.system_prompt,
+						tools: data.tools,
+					},
+				};
+			});
 
 			return pixelReturn[0].output;
 		} catch (e) {
