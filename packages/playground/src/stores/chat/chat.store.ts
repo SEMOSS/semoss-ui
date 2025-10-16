@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { Agent, Engine } from "@/types";
+import type { Agent, Engine, Toolbox } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -285,17 +285,18 @@ export class ChatStore {
 		}
 	};
 
-	addWorkspace = async (data): Promise<string> => {
+	addWorkspace = async (
+		data: Pick<Agent, "name" | "system_prompt" | "description"> & {
+			tools: Toolbox[];
+		},
+	): Promise<string> => {
 		try {
 			const esc = (v: string) =>
 				String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-			const name = esc(data.AGENT_NAME ?? "");
-			const desc = esc(data.AGENT_DESCRIPTION ?? "");
-			const prompt = esc(data.AGENT_CONTEXT ?? "");
-			const tools =
-				data.AGENT_TOOLS && data.AGENT_TOOLS.length > 0
-					? data.AGENT_TOOLS.map((tool) => tool.id)
-					: [];
+			const name = esc(data.name ?? "");
+			const desc = esc(data.description ?? "");
+			const prompt = esc(data.system_prompt ?? "");
+			const tools = data.tools.map((tool) => tool.id);
 
 			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=[${JSON.stringify(tools)}])`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);

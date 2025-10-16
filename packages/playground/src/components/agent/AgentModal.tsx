@@ -42,13 +42,6 @@ export interface AgentModalProps {
 	agentInfo: Agent | null;
 }
 
-type NewAgentForm = {
-	AGENT_NAME: string;
-	AGENT_DESCRIPTION: string;
-	AGENT_CONTEXT: string;
-	AGENT_TOOLS: string[] | null;
-};
-
 /**
  * Get a unique key for a tool
  * @param tool The tool to get the key for
@@ -102,19 +95,23 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 	 */
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [tools, setTools] = useState([]);
-	const { handleSubmit, control, watch } = useForm<NewAgentForm>({
+	const { handleSubmit, control, watch } = useForm<
+		Pick<Agent, "name" | "system_prompt" | "description"> & {
+			tools: Toolbox[];
+		}
+	>({
 		defaultValues: {
-			AGENT_NAME: "",
-			AGENT_DESCRIPTION: "",
-			AGENT_CONTEXT: "",
-			AGENT_TOOLS: null,
+			name: "",
+			system_prompt: "",
+			description: "",
+			tools: [],
 		},
 	});
 
 	/**
 	 * Method that is called to create the app
 	 */
-	const onSubmit = handleSubmit(async (data: NewAgentForm) => {
+	const onSubmit = handleSubmit(async (data) => {
 		try {
 			// start the loading screen
 			setIsLoading(true);
@@ -153,7 +150,7 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 	 * Constants
 	 */
 	const isCreatingNew = agentInfo === null;
-	const isFormValid = !!watch("AGENT_NAME");
+	const isFormValid = !!watch("name");
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -172,7 +169,7 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 					{isCreatingNew ? (
 						<Stack direction="column" spacing={1.5}>
 							<Controller
-								name={"AGENT_NAME"}
+								name={"name"}
 								control={control}
 								rules={{ required: true }}
 								render={({ field }) => {
@@ -197,7 +194,7 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 								}}
 							/>
 							<Controller
-								name={"AGENT_DESCRIPTION"}
+								name={"description"}
 								control={control}
 								rules={{ required: false }}
 								render={({ field }) => {
@@ -221,7 +218,7 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 								}}
 							/>
 							<Controller
-								name={"AGENT_CONTEXT"}
+								name={"system_prompt"}
 								control={control}
 								rules={{}}
 								render={({ field }) => {
@@ -252,7 +249,7 @@ export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
 								}}
 							/>
 							<Controller
-								name={"AGENT_TOOLS"}
+								name={"tools"}
 								control={control}
 								rules={{}}
 								render={({ field }) => {
