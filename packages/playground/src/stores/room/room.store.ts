@@ -496,7 +496,7 @@ export class RoomStore {
 		const newOptions = { ...this._store.options };
 		newOptions.tools = tools;
 		newOptions.mcpToolID = tools
-			.filter((t) => t.type === "APP")
+			.filter((t) => t.type === "PROJECT")
 			.map((t) => t.id);
 		this._store.options = newOptions;
 		await this.updateRoomOptions(newOptions);
@@ -509,7 +509,7 @@ export class RoomStore {
 	removeMcpTool = async (mcpToolID: string) => {
 		const newOptions = { ...this._store.options };
 		newOptions.tools = newOptions.tools.filter(
-			(t) => !(t.id === mcpToolID && t.type === "APP"),
+			(t) => !(t.id === mcpToolID && t.type === "PROJECT"),
 		);
 		newOptions.mcpToolID = newOptions.mcpToolID.filter(
 			(id) => id !== mcpToolID,

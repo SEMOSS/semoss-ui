@@ -38,7 +38,7 @@ export interface Instructions {
 
 export interface Toolbox {
 	/** Type of the tool */
-	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
 
 	/** Id of the tool */
 	id: string;

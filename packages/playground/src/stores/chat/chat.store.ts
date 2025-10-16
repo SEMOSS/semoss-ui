@@ -220,7 +220,7 @@ export class ChatStore {
 				await room.updateRoomOptions({
 					...options,
 					mcpToolID: options.tools
-						.filter((t) => t.type === "APP")
+						.filter((t) => t.type === "PROJECT")
 						.map((t) => t.id),
 				});
 			}
@@ -318,7 +318,7 @@ export class ChatStore {
 				} else {
 					// It's an App
 					return {
-						type: "APP",
+						type: "PROJECT",
 						id: tool.project_id,
 						name: tool.project_name,
 						description: tool.description || "",
