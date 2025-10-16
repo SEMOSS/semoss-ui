@@ -22,8 +22,8 @@ import {
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
+	WorkspaceChip,
 } from "@/components";
-import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
 
 const StyledPage = styled(Stack)(() => ({
@@ -361,7 +361,7 @@ export const RoomPage = observer(() => {
 								maxRows={8}
 								actions={
 									agentId ? (
-										<AgentChip agent={agent} />
+										<WorkspaceChip agent={agent} />
 									) : (
 										<Tooltip
 											title={"Configuration"}

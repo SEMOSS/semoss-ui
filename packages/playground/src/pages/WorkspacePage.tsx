@@ -12,7 +12,7 @@ import {
 	TextField,
 	Typography,
 } from "@semoss/ui";
-import { AgentCard, AgentModal } from "@/components/agent";
+import { WorkspaceCard, WorkspaceModal } from "@/components";
 import { useChat } from "@/hooks";
 import type { Agent } from "@/types";
 
@@ -26,7 +26,7 @@ const StyledTextField = styled(TextField)(({ theme }) => ({
  *
  * @component
  */
-export const AgentPage = observer(() => {
+export const WorkspacePage = observer(() => {
 	/**
 	 * Library Hooks
 	 */
@@ -154,7 +154,7 @@ export const AgentPage = observer(() => {
 								key={agentInfo.workspace_id}
 							>
 								<Stack width="100%" spacing={1} height="100%">
-									<AgentCard
+									<WorkspaceCard
 										agent={agentInfo}
 										onSecondaryClick={() => {
 											setAgentInfo(agentInfo);
@@ -178,7 +178,7 @@ export const AgentPage = observer(() => {
 					</Grid>
 				</div>
 			</Stack>
-			<AgentModal
+			<WorkspaceModal
 				open={isAgentModalOpen}
 				onClose={(newAgentId) => {
 					setIsAgentModalOpen(false);

@@ -16,8 +16,12 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
-import { AgentChip } from "@/components/agent";
+import {
+	PromptLibrary,
+	RoomConfiguration,
+	RoomInput,
+	WorkspaceChip,
+} from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -177,7 +181,7 @@ export const NewRoomPage = observer(() => {
 							actions={
 								<Stack direction="row" alignItems="center">
 									{agentId ? (
-										<AgentChip agent={agent} />
+										<WorkspaceChip agent={agent} />
 									) : (
 										<Tooltip
 											title={"Open Configuration Menu"}

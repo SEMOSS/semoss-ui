@@ -2,7 +2,7 @@ import { ErrorOutline, LightbulbOutlined } from "@mui/icons-material";
 import { Chip, Skeleton, Tooltip } from "@semoss/ui";
 import type { Agent } from "@/types";
 
-export interface AgentChipProps {
+export interface WorkspaceChipProps {
 	agent: Agent | null;
 	loading?: boolean;
 }
@@ -12,7 +12,7 @@ export interface AgentChipProps {
  *
  * @component
  */
-export const AgentChip = ({ agent, loading }: AgentChipProps) => {
+export const WorkspaceChip = ({ agent, loading }: WorkspaceChipProps) => {
 	/**
 	 * Constants
 	 **/

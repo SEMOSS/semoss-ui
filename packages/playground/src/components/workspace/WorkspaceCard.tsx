@@ -2,7 +2,7 @@ import { ArrowForward, LightbulbOutlined } from "@mui/icons-material";
 import { Button, Skeleton, Stack, styled, Typography } from "@semoss/ui";
 import type { Agent } from "@/types";
 
-export interface AgentCardProps {
+export interface WorkspaceCardProps {
 	agent: Agent | null;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
@@ -18,15 +18,15 @@ const StyledCardItem = styled(Stack)(({ theme }) => ({
 }));
 
 /**
- * Renders a card representing an agent
+ * Renders a card representing a workspace
  *
  * @component
  */
-export const AgentCard = ({
+export const WorkspaceCard = ({
 	onPrimaryClick,
 	onSecondaryClick,
 	agent,
-}: AgentCardProps) => {
+}: WorkspaceCardProps) => {
 	/**
 	 * Constants
 	 */

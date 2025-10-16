@@ -17,6 +17,12 @@ import {
 import { useChat } from "@/hooks";
 import type { Agent, App, Engine, Toolbox } from "@/types";
 
+export interface WorkspaceModalProps {
+	open: boolean;
+	onClose: (newAgentId?: string) => void;
+	agentInfo: Agent | null;
+}
+
 const StyledModal = styled(Modal)(({ theme }) => ({
 	display: "flex",
 	flexDirection: "column",
@@ -35,12 +41,6 @@ const StyledModalContent = styled(Modal.Content)(({ theme }) => ({
 const StyledTitle = styled(Modal.Content)(({ theme }) => ({
 	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
 }));
-
-export interface AgentModalProps {
-	open: boolean;
-	onClose: (newAgentId?: string) => void;
-	agentInfo: Agent | null;
-}
 
 /**
  * Get a unique key for a tool
@@ -77,7 +77,11 @@ const getTool = (item: Engine | App): Toolbox => {
  *
  * @component
  */
-export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
+export const WorkspaceModal = ({
+	open,
+	onClose,
+	agentInfo,
+}: WorkspaceModalProps) => {
 	/**
 	 * Library Hooks
 	 */
