@@ -122,6 +122,9 @@ export const NewRoomPage = observer(() => {
 				: options,
 		);
 
+		// set the initialized state
+		room.setInitialized();
+
 		// ask the room
 		await room.askMessage(prompt, files);
 

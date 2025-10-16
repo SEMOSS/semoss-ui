@@ -355,13 +355,24 @@ export class RoomStore {
 	 * Initialize the room and load messages and options if they are there
 	 */
 	initialize = async () => {
-		const loadMessages = async () => {
-			// get all of the messages in historical order (sorted)
-			const response = await this.runRoomPixel<[PixelMessage[]]>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
+		try {
+			// only load messages once
+			if (this._store.isInitialized) {
+				return;
+			}
+
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// get all of the messages, get all the options
+			const response = await this.runRoomPixel<
+				(PixelMessage[] | { OPTIONS: RoomStoreInterface["options"] })[]
+			>(
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const { output: messageOutput } = response.pixelReturn[0];
+			const { output: optionsOutput } = response.pixelReturn[1];
 
 			const root = new RootMessageStore(this);
 			const messages: Record<
@@ -379,7 +390,7 @@ export class RoomStore {
 			let activeModelId = this._store.modelId;
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
-			for (const pixelMessage of output) {
+			for (const pixelMessage of messageOutput as PixelMessage[]) {
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
 				}
@@ -405,42 +416,23 @@ export class RoomStore {
 					root.addChild(m.message);
 				}
 			}
+
 			runInAction(() => {
 				// set the model based on the history
 				this.setModel(activeModelId);
 
+				// set the options based on the history
+				this.setOptions(
+					(
+						optionsOutput as {
+							OPTIONS: RoomStoreInterface["options"];
+						}
+					).OPTIONS,
+				);
+
 				// store it
 				this._store.root = root;
-			});
-		};
 
-		const loadOptions = async () => {
-			const response = await this.runRoomPixel<
-				{ OPTIONS: RoomStoreInterface["options"] }[]
-			>(`GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`);
-			const { output } = response.pixelReturn[0];
-
-			runInAction(() => {
-				// set the options based on the history
-				this.setOptions(output.OPTIONS);
-
-				// mark as initialized
-				this._store.isInitialized = true;
-			});
-		};
-
-		try {
-			// only load messages once
-			if (this._store.isInitialized) {
-				return;
-			}
-
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			await Promise.all([loadMessages(), loadOptions()]);
-
-			runInAction(() => {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
@@ -591,6 +583,13 @@ export class RoomStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Mark a room as initialized
+	 */
+	setInitialized = (): void => {
+		this._store.isInitialized = true;
 	};
 
 	/**
