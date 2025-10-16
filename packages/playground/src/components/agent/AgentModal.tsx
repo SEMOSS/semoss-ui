@@ -84,19 +84,12 @@ const getTool = (item: Engine | App): Toolbox => {
  *
  * @component
  */
-export const AgentModal = (props: AgentModalProps) => {
-	const { open, onClose, agentInfo } = props;
+export const AgentModal = ({ open, onClose, agentInfo }: AgentModalProps) => {
+	/**
+	 * Library Hooks
+	 */
 	const notification = useNotification();
 	const { chat } = useChat();
-	/**
-	 * Constants
-	 */
-	const isCreatingNew = agentInfo === null;
-
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [tools, setTools] = useState([]);
-
-	// pixel call to get all tools
 	const getApps = usePixel<(Engine | App)[]>(
 		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=[""])`,
 		{
@@ -104,17 +97,11 @@ export const AgentModal = (props: AgentModalProps) => {
 		},
 	);
 
-	useEffect(() => {
-		if (getApps.status !== "SUCCESS") {
-			setIsLoading(true);
-			return;
-		}
-
-		const tools = getApps.data.map((tool) => getTool(tool));
-		setTools(tools);
-		setIsLoading(false);
-	}, [getApps.status, getApps.data]);
-
+	/**
+	 * State
+	 */
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [tools, setTools] = useState([]);
 	const { handleSubmit, control, watch } = useForm<NewAgentForm>({
 		defaultValues: {
 			AGENT_NAME: "",
@@ -123,8 +110,6 @@ export const AgentModal = (props: AgentModalProps) => {
 			AGENT_TOOLS: null,
 		},
 	});
-
-	const isFormValid = !!watch("AGENT_NAME");
 
 	/**
 	 * Method that is called to create the app
@@ -150,8 +135,28 @@ export const AgentModal = (props: AgentModalProps) => {
 		}
 	});
 
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		if (getApps.status !== "SUCCESS") {
+			setIsLoading(true);
+			return;
+		}
+
+		const tools = getApps.data.map((tool) => getTool(tool));
+		setTools(tools);
+		setIsLoading(false);
+	}, [getApps.status, getApps.data]);
+
+	/**
+	 * Constants
+	 */
+	const isCreatingNew = agentInfo === null;
+	const isFormValid = !!watch("AGENT_NAME");
+
 	return (
-		<StyledModal open={open} onClose={onClose} fullWidth>
+		<StyledModal open={open} fullWidth>
 			<StyledTitle>
 				<Stack direction="row" justifyContent="space-between">
 					<Typography variant="h6">
