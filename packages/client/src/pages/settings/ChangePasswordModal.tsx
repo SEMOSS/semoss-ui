@@ -70,14 +70,12 @@ const StyledValidationTypography = styled(Typography)(({ theme }) => ({
 	paddingBottom: "14px",
 }));
 
-const StyledLineBox = styled(Box)(({theme}) => ({
+const StyledLineBox = styled(Box)(({ theme }) => ({
 	borderTop: `1px solid ${theme.palette.divider}`,
 	marginBottom: "16px",
 }));
 
-const StyledButton = styled(Button)(({
-	theme,
-}) => ({
+const StyledButton = styled(Button)(({ theme }) => ({
 	color: theme.palette.text.primary,
 	fontSize: "14px",
 	fontStyle: "normal",
@@ -92,7 +90,7 @@ const StyledBox = styled(Box)({
 	gap: "8px",
 });
 
-const StyledLabelTypography = styled(Typography)(({theme}) => ({
+const StyledLabelTypography = styled(Typography)(({ theme }) => ({
 	fontWeight: 400,
 	color: theme.palette.text.secondary,
 }));
@@ -169,17 +167,24 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 	const onChangePassword = async () => {
 		setLoading(true);
 		try {
-			const res = await fetch(`${Env.MODULE}/api/auth/user/changePassword`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
+			const res = await fetch(
+				`${Env.MODULE}/api/auth/user/changePassword`,
+				{
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({ currentPassword, newPassword }),
 				},
-				body: JSON.stringify({ currentPassword, newPassword }),
-			});
+			);
 
 			if (!res.ok) {
 				const errBody = await res.json().catch(() => ({}));
-				throw new Error(errBody?.errorMessage || errBody?.message || "Password change failed");
+				throw new Error(
+					errBody?.errorMessage ||
+						errBody?.message ||
+						"Password change failed",
+				);
 			}
 
 			const data = await res.json();
@@ -270,7 +275,10 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 					),
 					endAdornment: (
 						<InputAdornment position="end">
-							<IconButton onClick={() => setShow(!show)} edge="end">
+							<IconButton
+								onClick={() => setShow(!show)}
+								edge="end"
+							>
 								{show ? <Visibility /> : <VisibilityOff />}
 							</IconButton>
 						</InputAdornment>
@@ -297,25 +305,53 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 					<Typography variant="h6">Change Password</Typography>
 				</StyledModalTitle>
 				<StyledTitleTypography variant="body1">
-					Your new password must be different from previously used <br />
+					Your new password must be different from previously used{" "}
+					<br />
 					passwords.
 				</StyledTitleTypography>
 
-				{renderPasswordField("Current Password", currentPassword, setCurrentPassword, showCurrent, setShowCurrent)}
-				{renderPasswordField("New Password", newPassword, setNewPassword, showNew, setShowNew, sameAsCurrent)}
-				{renderPasswordField("Confirm New Password", confirmPassword, setConfirmPassword, showConfirm, setShowConfirm, confirmError)}
+				{renderPasswordField(
+					"Current Password",
+					currentPassword,
+					setCurrentPassword,
+					showCurrent,
+					setShowCurrent,
+				)}
+				{renderPasswordField(
+					"New Password",
+					newPassword,
+					setNewPassword,
+					showNew,
+					setShowNew,
+					sameAsCurrent,
+				)}
+				{renderPasswordField(
+					"Confirm New Password",
+					confirmPassword,
+					setConfirmPassword,
+					showConfirm,
+					setShowConfirm,
+					confirmError,
+				)}
 
 				{/* Password Strength Indicator */}
 				<StyledDiv>
-					{["length", "upper", "lower", "number", "special"].map((rule, i) => {
-						let bgColor = "#D9D9D9";
-						if (i < rulesPassed) {
-							if (rulesPassed === 5) bgColor = "green";
-							else if (rulesPassed >= 3) bgColor = "orange";
-							else bgColor = "red";
-						}
-						return <StyledPasswordIndicator key={rule} bgColor={bgColor} />;
-					})}
+					{["length", "upper", "lower", "number", "special"].map(
+						(rule, i) => {
+							let bgColor = "#D9D9D9";
+							if (i < rulesPassed) {
+								if (rulesPassed === 5) bgColor = "green";
+								else if (rulesPassed >= 3) bgColor = "orange";
+								else bgColor = "red";
+							}
+							return (
+								<StyledPasswordIndicator
+									key={rule}
+									bgColor={bgColor}
+								/>
+							);
+						},
+					)}
 				</StyledDiv>
 
 				{/* Validations */}
@@ -323,11 +359,26 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 					<StyledValidationTypography variant="body1">
 						Password must contain:
 					</StyledValidationTypography>
-					{renderValidationItem("8 or more characters", validations.length)}
-					{renderValidationItem("At least 1 uppercase letter", validations.upper)}
-					{renderValidationItem("At least 1 lowercase letter", validations.lower)}
-					{renderValidationItem("At least 1 number", validations.number)}
-					{renderValidationItem("At least 1 special character", validations.special)}
+					{renderValidationItem(
+						"8 or more characters",
+						validations.length,
+					)}
+					{renderValidationItem(
+						"At least 1 uppercase letter",
+						validations.upper,
+					)}
+					{renderValidationItem(
+						"At least 1 lowercase letter",
+						validations.lower,
+					)}
+					{renderValidationItem(
+						"At least 1 number",
+						validations.number,
+					)}
+					{renderValidationItem(
+						"At least 1 special character",
+						validations.special,
+					)}
 				</StyledValidationBox>
 			</StyledModelContent>
 
@@ -344,7 +395,7 @@ export const ChangePasswordModal = ({ open, onClose }) => {
 					onClick={onChangePassword}
 					loading={loading}
 				>
-				Change Password
+					Change Password
 				</Button>
 			</StyledFooterBox>
 		</Modal>

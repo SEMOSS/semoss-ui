@@ -31,43 +31,43 @@ import {
 } from "@/api/auth";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
-import { ChangePasswordModal } from "./ChangePasswordModel";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 
-const StyledAvatar = styled(Avatar)(({
+const StyledAvatar = styled(Avatar)({
 	display: "flex",
 	alignContent: "center",
 	justifyContent: "center",
 	backgroundColor: "#975FE4",
-}));
+});
 
-const StyledPaper = styled(Paper)(({
+const StyledPaper = styled(Paper)({
 	padding: "40px 30px 20px 50px",
-}));
+});
 
-const StyledAccessTokensPaper = styled(Paper)(({
+const StyledAccessTokensPaper = styled(Paper)({
 	padding: "40px 30px 20px 28px",
-}));
+});
 
-const HeaderCell = styled(Table.Cell)(({
+const HeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
-}));
+});
 
-const LeftHeaderCell = styled(Table.Cell)(({
+const LeftHeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "20px 0 0 0",
 	textAlign: "center",
-}));
+});
 
-const RightHeaderCell = styled(Table.Cell)(({
+const RightHeaderCell = styled(Table.Cell)({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "0 20px 0 0",
 	textAlign: "center",
-}));
+});
 
-const MessageDiv = styled("div")(({
+const MessageDiv = styled("div")({
 	textAlign: "center",
 	marginTop: "100px",
 	fontSize: "13px",
@@ -75,48 +75,48 @@ const MessageDiv = styled("div")(({
 	color: "#666",
 	width: "100%",
 	margin: "75px auto 85px",
-}));
+});
 
-const AvatarForm = styled("form")(({
+const AvatarForm = styled("form")({
 	paddingTop: "15px",
 	width: "750px",
-}));
+});
 
-const CurrentAvatarStack = styled(Stack)(({
+const CurrentAvatarStack = styled(Stack)({
 	alignItems: "center",
-}));
+});
 
-const StyledTableContainer = styled(Table.Container)(({
+const StyledTableContainer = styled(Table.Container)({
 	marginTop: "20px",
-}));
+});
 
-const StyledGrid = styled(Grid)(({
+const StyledGrid = styled(Grid)({
 	marginBottom: "40px",
-}));
+});
 
-const MonolithGrid = styled(Grid)(({
+const MonolithGrid = styled(Grid)({
 	display: "flex",
 	alignItems: "center",
-}));
+});
 
-const StyledStack = styled(Stack)(({
+const StyledStack = styled(Stack)({
 	marginBottom: "15px",
-}));
+});
 
-const CopyGridItem = styled(Grid)(({
+const CopyGridItem = styled(Grid)({
 	padding: 0,
 	display: "flex",
 	justifyContent: "right",
-}));
+});
 
-const GridItem = styled(Grid)(({
+const GridItem = styled(Grid)({
 	padding: 0,
-}));
+});
 
-const CustomGridItem = styled(GridItem)(({
+const CustomGridItem = styled(GridItem)({
 	padding: 0,
 	zIndex: 8,
-}));
+});
 
 const _StyledCodeBlock = styled("pre")(({ theme }) => ({
 	display: "flex",
@@ -157,8 +157,8 @@ const StyledCreatedKeyContainer = styled(Stack)(({ theme }) => ({
 
 const StyledLink = styled("a")(({ theme }) => ({
 	textDecoration: "underline",
-    cursor: "pointer",
-    color: "#0471F0",
+	cursor: "pointer",
+	color: "#0471F0",
 	fontFamily: "Inter",
 	fontStyle: "normal",
 	fontWeight: 500,
@@ -229,7 +229,7 @@ export const MyProfilePage = () => {
 	const SECRETKEY = watch("SECRETKEY");
 
 	// track if we can create a key
-	const isCreated = !!(ACCESSKEY && SECRETKEY );
+	const isCreated = !!(ACCESSKEY && SECRETKEY);
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
@@ -242,18 +242,21 @@ export const MyProfilePage = () => {
 			// need to confirm reactor for runQuery or monolithStore method for editing profile
 			console.log(data);
 
-			const userObj :Record<string, unknown> = {
+			const userObj: Record<string, unknown> = {
 				password: "",
 				id: nativeLogin,
 				email: email,
 				username: id,
 				name: data.NAME,
-				type: configStore.store.config.nativeRegistration ? "NATIVE" : "CUSTOM",
+				type: configStore.store.config.nativeRegistration
+					? "NATIVE"
+					: "CUSTOM",
 				admin: configStore.store.user?.admin || false,
 			};
-			
-			userObj.id = data.USERID !== nativeLogin ? data.USERID : nativeLogin;
-			userObj.newUsername =data.USERNAME !== id ? data.USERNAME : null;
+
+			userObj.id =
+				data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername = data.USERNAME !== id ? data.USERNAME : null;
 			userObj.newEmail = data.EMAIL !== email ? data.EMAIL : null;
 
 			const response = await editMemberInfo(true, userObj);
@@ -387,11 +390,10 @@ export const MyProfilePage = () => {
 	const jsSnippet = getSDKSnippet("js", ACCESSKEY, SECRETKEY);
 
 	const watchedName = userInfoWatch("NAME");
-    const watchedEmail = userInfoWatch("EMAIL");
+	const watchedEmail = userInfoWatch("EMAIL");
 
-    // Check if either Name or Email is changed
-    const isChanged = watchedName !== name || watchedEmail !== email;
-
+	// Check if either Name or Email is changed
+	const isChanged = watchedName !== name || watchedEmail !== email;
 
 	return (
 		<Stack gap={3} className="my-profile-page">
@@ -539,15 +541,18 @@ export const MyProfilePage = () => {
 										}}
 									/>
 								</StyledStack>
-								<Stack direction = "row">
-								<StyledLink
-                                    onClick={() => setPasswordModal(true)}
-                                >
-                                    Change Password
-                                </StyledLink>
+								<Stack direction="row">
+									<StyledLink
+										onClick={() => setPasswordModal(true)}
+									>
+										Change Password
+									</StyledLink>
 								</Stack>
 
-								<Stack direction="row" sx={{marginTop:"6px"}}>
+								<Stack
+									direction="row"
+									sx={{ marginTop: "6px" }}
+								>
 									<Button
 										variant="contained"
 										color="primary"
@@ -721,7 +726,9 @@ export const MyProfilePage = () => {
 							getUserAccessKeys.data.length !== 0
 								? getUserAccessKeys.data.map((k, idx) => {
 										return (
-											<Table.Row key={`${k.TOKENNAME}-${idx}`}>
+											<Table.Row
+												key={`${k.TOKENNAME}-${idx}`}
+											>
 												<Table.Cell align={"left"}>
 													{k.TOKENNAME}
 												</Table.Cell>
@@ -1105,10 +1112,11 @@ export const MyProfilePage = () => {
 					</Stack>
 				</Modal.Content>
 			</Modal>
+
 			<ChangePasswordModal
-							open={passwordModal}
-							onClose={() => setPasswordModal(false)}
-						/>
+				open={passwordModal}
+				onClose={() => setPasswordModal(false)}
+			/>
 		</Stack>
 	);
 };
