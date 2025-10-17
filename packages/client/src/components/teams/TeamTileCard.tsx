@@ -24,6 +24,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { addTeamUser, deleteTeam, getNonTeamUsers } from "@/api/teams";
 import { useRootStore } from "@/hooks";
 import { AddTeamModal } from "./AddTeamModal";
 
@@ -42,6 +43,20 @@ const colors = [
 
 interface NonCredentialedUser {
 	name: string;
+}
+
+interface NonTeamMembers {
+	admin: boolean;
+	countrycode: string;
+	email: string;
+	exporter: boolean;
+	id: string;
+	name: string;
+	phone: string;
+	phoneextension: string;
+	publisher: boolean;
+	type: string;
+	username: string;
 }
 
 const StyledTileCard = styled(Card, {
@@ -212,7 +227,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
 			if (type === "CUSTOM") {
 				try {
-					const response = await monolithStore.getNonTeamUsers(
+					const response = await getNonTeamUsers(
 						id,
 						AUTOCOMPLETE_LIMIT,
 						offset,
@@ -222,7 +237,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 					// ignore if there is no response
 					if (response) {
 						let requests = reset ? [] : nonCredentialedUsers;
-						const users = response.map((val) => {
+						const users = (response as unknown as NonTeamMembers[]).map((val) => {
 							return {
 								...val,
 								color: colors[
@@ -295,7 +310,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 
 	const deleteGroup = () => {
 		try {
-			monolithStore.deleteTeam(id, type);
+			deleteTeam(id, type);
 			dispatch({
 				type: "field",
 				field: "teams",
@@ -346,13 +361,20 @@ export const TeamTileCard = (props: TeamCardProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				const response: AxiosResponse<{ success: boolean }> | null =
-					await monolithStore.addTeamUser(
-						id,
-						requests[i].type,
-						requests[i].userid,
-						true,
-					);
+				const response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = await addTeamUser(
+					id,
+					requests[i].type,
+					requests[i].userid,
+					true,
+				);
 
 				if (!response) {
 					return;
@@ -387,6 +409,9 @@ export const TeamTileCard = (props: TeamCardProps) => {
 			setCount(count + 1);
 		}
 	};
+
+	const open = Boolean(anchorEl);
+	const _popoverId = open ? "simple-popover" : undefined;
 
 	return (
 		<React.Fragment>
@@ -434,7 +459,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 																? "200px"
 																: "75px"
 													}
-													key={`${id}${i}`}
+													key={`tag-${t}`}
 													label={t}
 													variant="filled"
 												/>
@@ -443,7 +468,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 									})
 								) : (
 									<StyledTagChip
-										key={`${id}0`}
+										key={`tag-none`}
 										label={tag}
 										variant="filled"
 									/>
@@ -603,7 +628,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 								return option.name === value.name;
 							}}
 							onChange={(
-								event,
+								_event,
 								newValue: NonCredentialedUser[],
 							) => {
 								setSelectedNonCredentialedUsers([...newValue]);
@@ -620,7 +645,7 @@ export const TeamTileCard = (props: TeamCardProps) => {
 										),
 									),
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 								setNonCredentialedUsers([]);
