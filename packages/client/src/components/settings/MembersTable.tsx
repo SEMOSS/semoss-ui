@@ -19,6 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -258,7 +259,7 @@ interface JsonType {
 export const MembersTable = (props: MembersTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -486,7 +487,15 @@ export const MembersTable = (props: MembersTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -494,13 +503,13 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.editEngineUserPermissions(
+				response = await editEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.editProjectUserPermissions(
+				response = await editProjectUserPermissions(
 					adminMode,
 					id,
 					requests,

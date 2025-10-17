@@ -17,7 +17,7 @@ export const JobTypesBuilder = (props: {
 		<Stack spacing={2} width="100%">
 			<Autocomplete
 				size="small"
-                multiple={false}
+				multiple={false}
 				options={JobTypeOptions}
 				value={builder.jobType}
 				renderInput={(params) => {

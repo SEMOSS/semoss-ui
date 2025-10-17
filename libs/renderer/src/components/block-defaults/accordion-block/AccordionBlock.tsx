@@ -6,16 +6,16 @@ import { useBlock } from "../../../hooks";
 import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 import { Slot } from "../../blocks";
 
-const StyledAccordion = styled(Accordion)(({ theme }) => ({
+const StyledAccordion = styled(Accordion)({
 	padding: 0,
 	margin: 0,
 	borderRadius: "12px",
 	"&.MuiAccordion-root:before": {
 		backgroundColor: "white",
 	},
-}));
+});
 
-const AccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
+const AccordionTrigger = styled(Accordion.Trigger)({
 	"& .MuiAccordionSummary-content": {
 		margin: 0,
 	},
@@ -28,15 +28,15 @@ const AccordionTrigger = styled(Accordion.Trigger)(({ theme }) => ({
 		borderBottomLeftRadius: 0,
 		borderBottomRightRadius: 0,
 	},
-}));
+});
 
-const AccordionContent = styled(Accordion.Content)(({ theme }) => ({
+const AccordionContent = styled(Accordion.Content)({
 	margin: 0,
 	padding: 0,
 	borderRadius: "inherit",
 	borderTopLeftRadius: 0,
 	borderTopRightRadius: 0,
-}));
+});
 
 export interface AccordionBlockDef extends BlockDef<"accordion"> {
 	widget: "accordion";
