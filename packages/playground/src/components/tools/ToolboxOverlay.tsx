@@ -53,7 +53,7 @@ const StyledItem = styled("div")(({ theme }) => ({
 	cursor: "pointer",
 }));
 
-const StyledItemImageHolder = styled("div")(({ theme }) => ({
+const StyledItemImageHolder = styled("div")({
 	display: "flex",
 	flexDirection: "column",
 	justifyContent: "center",
@@ -64,15 +64,15 @@ const StyledItemImageHolder = styled("div")(({ theme }) => ({
 	"& img": {
 		height: "100%",
 	},
-}));
+});
 
-const StyledItemDescription = styled(Typography)(({ theme }) => ({
+const StyledItemDescription = styled(Typography)({
 	display: "-webkit-box",
 	height: "60px",
 	overflow: "hidden",
 	WebkitBoxOrient: "vertical",
 	WebkitLineClamp: 3,
-}));
+});
 
 interface ToolboxOverlayProps {
 	/** Tools loaded into the room */

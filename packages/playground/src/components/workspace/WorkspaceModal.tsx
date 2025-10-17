@@ -1,7 +1,6 @@
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
@@ -15,7 +14,13 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { Agent, App, Engine, Toolbox } from "@/types";
+import type { Toolbox, Workspace } from "@/types";
+
+export interface WorkspaceModalProps {
+	open: boolean;
+	onClose: (newWorkspaceId?: string) => void;
+	workspaceInfo: Workspace | null;
+}
 
 const StyledModal = styled(Modal)(({ theme }) => ({
 	display: "flex",
@@ -36,100 +41,44 @@ const StyledTitle = styled(Modal.Content)(({ theme }) => ({
 	padding: `${theme.spacing(1)} ${theme.spacing(2)}`,
 }));
 
-export interface AgentModalProps {
-	open: boolean;
-	onClose: (newAgentId?: string) => void;
-	agentInfo: Agent | null;
-}
-
-type NewAgentForm = {
-	AGENT_NAME: string;
-	AGENT_DESCRIPTION: string;
-	AGENT_CONTEXT: string;
-	AGENT_TOOLS: string[] | null;
-};
-
 /**
- * Get a unique key for a tool
- * @param tool The tool to get the key for
- * @returns The unique key for the tool
- */
-const getTool = (item: Engine | App): Toolbox => {
-	let id = "";
-	let name = "";
-	let type: Toolbox["type"] = "DATABASE";
-
-	// Type guard to check if item is App
-	if ("project_id" in item && "project_name" in item) {
-		id = item.project_id;
-		type = "APP";
-		name = item.project_name;
-	} else if ("app_id" in item && "app_name" in item) {
-		id = item.app_id;
-		name = item.app_name;
-		type = item.app_type;
-	}
-
-	return {
-		id: id,
-		type: type,
-		name: name,
-		description: "",
-		tags: [],
-	};
-};
-
-/**
- * Renders a modal to create a new agent
+ * Renders a modal to create a new Workspace
  *
  * @component
  */
-export const AgentModal = (props: AgentModalProps) => {
-	const { open, onClose, agentInfo } = props;
+export const WorkspaceModal = ({
+	open,
+	onClose,
+	workspaceInfo,
+}: WorkspaceModalProps) => {
+	/**
+	 * Library Hooks
+	 */
 	const notification = useNotification();
 	const { chat } = useChat();
+
 	/**
-	 * Constants
+	 * State
 	 */
-	const isCreatingNew = agentInfo === null;
-
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [tools, setTools] = useState([]);
-
-	// pixel call to get all tools
-	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=[""])`,
-		{
-			data: [],
-		},
-	);
-
-	useEffect(() => {
-		if (getApps.status !== "SUCCESS") {
-			setIsLoading(true);
-			return;
-		}
-
-		const tools = getApps.data.map((tool) => getTool(tool));
-		setTools(tools);
-		setIsLoading(false);
-	}, [getApps.status, getApps.data]);
-
-	const { handleSubmit, control, watch } = useForm<NewAgentForm>({
+	const [toolMap, setToolMap] = useState<
+		Record<string, Record<string, Toolbox>>
+	>({});
+	const { handleSubmit, control, watch } = useForm<
+		Pick<Workspace, "name" | "system_prompt" | "description" | "tools">
+	>({
 		defaultValues: {
-			AGENT_NAME: "",
-			AGENT_DESCRIPTION: "",
-			AGENT_CONTEXT: "",
-			AGENT_TOOLS: null,
+			name: "",
+			system_prompt: "",
+			description: "",
+			tools: [],
 		},
 	});
-
-	const isFormValid = !!watch("AGENT_NAME");
 
 	/**
 	 * Method that is called to create the app
 	 */
-	const onSubmit = handleSubmit(async (data: NewAgentForm) => {
+	const onSubmit = handleSubmit(async (data) => {
 		try {
 			// start the loading screen
 			setIsLoading(true);
@@ -150,12 +99,48 @@ export const AgentModal = (props: AgentModalProps) => {
 		}
 	});
 
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		const fetchTools = async () => {
+			setIsLoading(true);
+			try {
+				const toolMap = await chat.getToolMap();
+				setToolMap(toolMap);
+			} catch (e) {
+				console.error(e);
+
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchTools();
+	}, [chat.getToolMap, notification.add]);
+
+	/**
+	 * Constants
+	 */
+	const isCreatingNew = workspaceInfo === null;
+	const isFormValid = !!watch("name");
+	const toolsArray = Object.values(toolMap).flatMap(Object.values);
+
+	/**
+	 * Types
+	 */
+	type ToolboxWithAll = Toolbox & { all?: boolean };
+	type ToolBoxKeys = Workspace["tools"][number];
+
 	return (
-		<StyledModal open={open} onClose={onClose} fullWidth>
+		<StyledModal open={open} fullWidth>
 			<StyledTitle>
 				<Stack direction="row" justifyContent="space-between">
 					<Typography variant="h6">
-						{isCreatingNew ? "Create Agent" : "View Agent"}
+						{isCreatingNew ? "Create Workspace" : "View Workspace"}
 					</Typography>
 					<IconButton size="small" onClick={() => onClose()}>
 						<Close />
@@ -167,7 +152,7 @@ export const AgentModal = (props: AgentModalProps) => {
 					{isCreatingNew ? (
 						<Stack direction="column" spacing={1.5}>
 							<Controller
-								name={"AGENT_NAME"}
+								name={"name"}
 								control={control}
 								rules={{ required: true }}
 								render={({ field }) => {
@@ -185,14 +170,14 @@ export const AgentModal = (props: AgentModalProps) => {
 											}
 											fullWidth
 											data-testid={
-												"newAgentModal-textField-name"
+												"newWorkspaceModal-textField-name"
 											}
 										/>
 									);
 								}}
 							/>
 							<Controller
-								name={"AGENT_DESCRIPTION"}
+								name={"description"}
 								control={control}
 								rules={{ required: false }}
 								render={({ field }) => {
@@ -209,14 +194,14 @@ export const AgentModal = (props: AgentModalProps) => {
 												field.onChange(value)
 											}
 											data-testid={
-												"newAgentModal-description-txt"
+												"newWorkspaceModal-description-txt"
 											}
 										/>
 									);
 								}}
 							/>
 							<Controller
-								name={"AGENT_CONTEXT"}
+								name={"system_prompt"}
 								control={control}
 								rules={{}}
 								render={({ field }) => {
@@ -240,14 +225,14 @@ export const AgentModal = (props: AgentModalProps) => {
 													},
 											}}
 											data-testid={
-												"newAgentModal-context-txt"
+												"newWorkspaceModal-context-txt"
 											}
 										/>
 									);
 								}}
 							/>
 							<Controller
-								name={"AGENT_TOOLS"}
+								name={"tools"}
 								control={control}
 								rules={{}}
 								render={({ field }) => {
@@ -257,22 +242,29 @@ export const AgentModal = (props: AgentModalProps) => {
 											multiple
 											disableCloseOnSelect
 											disabled={isLoading}
-											options={tools}
+											options={toolsArray}
 											isOptionEqualToValue={(
-												option,
-												value,
-											) => option.id === value.id}
+												option: Toolbox,
+												value: ToolBoxKeys,
+											) =>
+												option.id === value.id &&
+												option.type === value.type
+											}
 											filterOptions={() => {
 												return [
 													{
 														name: "Select All",
 														all: true,
+														type: "Select All",
 													},
-													...tools,
-												];
+													...toolsArray,
+												] as ToolboxWithAll[];
 											}}
 											value={field.value || []}
-											onChange={(_, val) => {
+											onChange={(
+												_,
+												val: ToolboxWithAll[],
+											) => {
 												let newVal = val;
 												if (
 													val.find(
@@ -280,19 +272,36 @@ export const AgentModal = (props: AgentModalProps) => {
 													)
 												)
 													newVal =
-														tools.length ===
+														toolsArray.length ===
 														field?.value?.length
 															? []
-															: tools;
+															: toolsArray;
 
-												field.onChange(newVal);
+												field.onChange(
+													newVal.map((tool) => ({
+														id: tool.id,
+														type: tool.type,
+													})),
+												); // only send id and type to backend
 											}}
-											getOptionLabel={(option) =>
-												option.name
+											getOptionLabel={(
+												option: ToolBoxKeys,
+											) =>
+												toolMap[option.type]?.[
+													option.id
+												].name || ""
+											}
+											getOptionKey={(
+												option: ToolBoxKeys,
+											) =>
+												JSON.stringify({
+													id: option.id,
+													type: option.type,
+												})
 											}
 											renderOption={(
 												props,
-												option,
+												option: ToolboxWithAll,
 												{ selected },
 											) => {
 												const { key, ...optionProps } =
@@ -309,7 +318,7 @@ export const AgentModal = (props: AgentModalProps) => {
 																			field
 																				?.value
 																				?.length ===
-																			tools?.length
+																			toolsArray?.length
 																		)
 																	: selected
 															}
@@ -336,31 +345,31 @@ export const AgentModal = (props: AgentModalProps) => {
 								variant="outlined"
 								label="Name"
 								disabled
-								value={agentInfo.name}
+								value={workspaceInfo.name}
 							/>
 							<TextField
 								variant="outlined"
 								label="ID"
 								disabled
-								value={agentInfo.workspace_id}
+								value={workspaceInfo.workspace_id}
 							/>
 							<TextField
 								variant="outlined"
 								label="Description"
 								disabled
-								value={agentInfo.description}
+								value={workspaceInfo.description}
 							/>
 							<TextField
 								variant="outlined"
 								label="Context"
 								disabled
-								value={agentInfo.system_prompt}
+								value={workspaceInfo.system_prompt}
 							/>
 							<TextField
 								variant="outlined"
 								label="Date Created"
 								disabled
-								value={agentInfo.date_created}
+								value={workspaceInfo.date_created}
 							/>
 						</Stack>
 					)}
@@ -374,7 +383,7 @@ export const AgentModal = (props: AgentModalProps) => {
 							type="submit"
 							variant={"contained"}
 							disabled={isLoading || !isFormValid}
-							data-testid={"newAgentModal-create-btn"}
+							data-testid={"newWorkspaceModal-create-btn"}
 						>
 							Add
 						</Button>
