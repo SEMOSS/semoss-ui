@@ -9,6 +9,17 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
+	project_date_created: string;
+}
+
+// TODO: define properly
+export interface Workspace {
+	workspace_id: string;
+	name: string;
+	date_created: string; // ISO string
+	description: string;
+	system_prompt: string;
+	tools: Pick<Toolbox, "id" | "type">[];
 }
 
 /**
@@ -25,17 +36,9 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Knowledge {
-	/** Id of the tool */
-	id: string;
-
-	/** Name of the tool */
-	name: string;
-}
-
-export interface Tool {
+export interface Toolbox {
 	/** Type of the tool */
-	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
 
 	/** Id of the tool */
 	id: string;
@@ -79,14 +82,10 @@ interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
-	ornaments: {
-		chunks: unknown[];
-	};
 }
 
 interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
-	visible: true;
 	inputUIPrompt: string;
 	files: {
 		fileName: string;
@@ -108,13 +107,14 @@ interface InputToolExecPixelMessage extends AbstractPixelMessage {
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
-	visible: true;
 	content: string;
+	ornaments: {
+		PLAYGROUND_MESSAGE_TYPE?: "COT";
+	};
 }
 
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
-	visible: true;
 	tool_responses: {
 		/** tool execution id */
 		id: string;
@@ -137,4 +137,79 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
 	}[];
+}
+
+/**
+ * Plan
+ */
+export interface Plan {
+	user_prompt: string;
+	plan_id: string;
+	steps: PlanStep[];
+}
+
+export interface PlanStep {
+	step_number: number;
+	step_name: string;
+	description: string;
+	type:
+		| "tool_call"
+		| "llm_reasoning"
+		| "human_intervention"
+		| "no_tool_available";
+	status: "pending" | "in_progress" | "completed" | "failed";
+	details:
+		| {
+				stepType: "tool_call";
+				tool_name: string;
+				parameters: Record<string, unknown>;
+				rationaleForStep: string;
+				title: string;
+				_meta: {
+					map: {
+						SMSS_PROJECT_NAME: string;
+						SMSS_PROJECT_ID: string;
+					};
+				};
+		  }
+		| {
+				stepType: "llm_reasoning";
+				prompt: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "human_intervention";
+				required_role: string;
+				instructions: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "no_tool_available";
+				missing_capability: string;
+				rationaleForStep: string;
+		  };
+}
+
+export interface MCP {
+	_meta: {
+		SMSS_PROJECT_NAME: string;
+		SMSS_PROJECT_ID: string;
+	};
+	tools: MCPTool[];
+}
+
+export interface MCPTool {
+	description?: string;
+	inputSchema: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	name: string;
+	outputSchema?: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	title?: string;
 }

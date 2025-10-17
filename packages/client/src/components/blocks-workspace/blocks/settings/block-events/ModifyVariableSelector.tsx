@@ -1,4 +1,3 @@
-import { toJS } from "mobx";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { useBlocks } from "@semoss/renderer";
@@ -16,24 +15,24 @@ export const ModifyVariableSelector = ({
 	setValue,
 }: ModifyVariableSelectorProps) => {
 	// TODO: FIX this blockId assign, inconsistent behavior
-
 	const { state } = useBlocks();
-	const variables = toJS(state.variables);
 
 	useEffect(() => {
 		setValue("payload.blockId", id);
 	}, [id]);
 
-	const variableEntries: [string, any][] = Object.entries(variables || {});
-
-	// Only allow variables of type string, number, array, date, or json
-	const allowedTypes = ["string", "number", "array", "date", "JSON"];
-	const filteredVariableEntries = variableEntries.filter(
-		([key, variable]) => {
-			const type = variable?.type;
-			return allowedTypes.includes(type);
-		},
-	);
+	// get all primitive variables from state
+	const primitiveVarTypes = [
+		"string",
+		"number",
+		"boolean",
+		"array",
+		"object",
+		"json",
+	];
+	const primitiveVariables = Object.entries(state.variables)
+		?.filter(([_, v]) => primitiveVarTypes.includes(v.type))
+		?.map(([k]) => k);
 
 	return (
 		<Stack>
@@ -49,9 +48,12 @@ export const ModifyVariableSelector = ({
 							field.onChange(value);
 						}}
 					>
-						{filteredVariableEntries.map(([key, variable]) => (
-							<Select.Item key={key} value={key}>
-								{key}
+						{primitiveVariables?.map((type) => (
+							<Select.Item
+								key={`update-var--${type}`}
+								value={type}
+							>
+								{type}
 							</Select.Item>
 						))}
 					</Select>
@@ -64,6 +66,7 @@ export const ModifyVariableSelector = ({
 					<>
 						<TextField
 							label={"Update Value"}
+							value={field.value || ""}
 							onChange={(value) => {
 								field.onChange(value);
 							}}

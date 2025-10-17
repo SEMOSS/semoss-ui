@@ -1,8 +1,8 @@
-import { QueryBuilder, Tune } from "@mui/icons-material";
+import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
 	Chip,
 	Container,
@@ -16,13 +16,15 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
+	InputMessage,
+	PlanMessage,
+	ResponseMessage,
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
-	RoomMessage,
+	WorkspaceChip,
 } from "@/components";
-import { useChat } from "@/hooks";
-import { ResponseMessageStore } from "@/stores/message/response-message.store";
+import { useAutoScroll, useChat } from "@/hooks";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -42,13 +44,33 @@ const StyledContent = styled(Stack)(() => ({
 	paddingBottom: "16px",
 }));
 
-const StyledScroll = styled("div")(() => ({
-	display: "flex",
-	// flexDirection: "column-reverse",
+const StyledScrollContainer = styled("div")(() => ({
+	position: "relative",
 	flex: 1,
+	width: "100%",
+	overflow: "hidden",
+}));
+
+const StyledScroll = styled("div")(() => ({
+	height: "100%",
 	width: "100%",
 	overflowX: "hidden",
 	overflowY: "auto",
+	position: "relative",
+}));
+
+const StyledScrollButton = styled(IconButton)(({ theme }) => ({
+	position: "absolute",
+	bottom: "16px",
+	right: "16px",
+	backgroundColor: theme.palette.primary.main,
+	color: theme.palette.primary.contrastText,
+	boxShadow: theme.shadows[4],
+	zIndex: 1000,
+	"&:hover": {
+		backgroundColor: theme.palette.primary.dark,
+		boxShadow: theme.shadows[6],
+	},
 }));
 
 const getDateTitle = (d: string) => {
@@ -114,7 +136,15 @@ const getDateTitle = (d: string) => {
 	return message;
 };
 
+/**
+ * The page for a room
+ *
+ * @component
+ */
 export const RoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 
 	const notification = useNotification();
@@ -126,23 +156,40 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
+	// get the workspace if there is one
+	const workspaceId = room?.options?.workspace?.workspace_id ?? null;
+	const workspace = chat.workspaces[workspaceId] ?? null;
+
+	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
+	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
+		room?.history?.length || 0,
+	);
+
+	/**
+	 * Effects
+	 */
+
 	// load the room
 	useEffect(() => {
 		if (!room || room.isInitialized) {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-			navigate("/");
-		}
-	}, [room, notification.add]);
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
+	}, [room, notification.add, navigate]);
 
 	// create a listener to process messages from the room
 	useEffect(() => {
@@ -170,15 +217,12 @@ export const RoomPage = observer(() => {
 
 				const tool = event.data.tool;
 
-				const message = room.getMessage(tool.message);
-				if (
-					!message ||
-					message instanceof ResponseMessageStore !== true
-				) {
-					return;
-				}
-
-				room.saveTool(message, tool.id, tool.name, tool.response);
+				room.processTool(
+					tool.message,
+					tool.id,
+					tool.name,
+					tool.response,
+				);
 			} catch {
 				// noop
 			}
@@ -191,8 +235,20 @@ export const RoomPage = observer(() => {
 		};
 	}, [room]);
 
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
+	}
+
+	let isDisabled = false;
+	// If the plan is executing, only the execution step is enabled
+	if (room.mode === "executing") {
+		isDisabled = room.plan?.step?.details.stepType !== "human_intervention";
 	}
 
 	return (
@@ -242,74 +298,106 @@ export const RoomPage = observer(() => {
 					flex={1}
 					alignItems={"center"}
 				>
-					<StyledScroll>
-						<Container
-							maxWidth="xl"
-							sx={{ padding: "0 !important" }}
-						>
-							{room.history.map((m) => (
-								<Stack
-									key={m.id}
-									direction="column"
-									sx={{
-										paddingTop: "8px",
-										paddingBottom: "8px",
-									}}
+					<StyledScrollContainer>
+						<StyledScroll ref={scrollRef}>
+							<Container maxWidth="xl" disableGutters={true}>
+								{room.history.map((m, mIdx) => {
+									if (!m.visible) {
+										return null;
+									}
+
+									return (
+										<Stack
+											key={m.id}
+											direction="column"
+											sx={{
+												paddingTop: "8px",
+												paddingBottom: "8px",
+											}}
+										>
+											{m.type === "INPUT" && (
+												<InputMessage message={m} />
+											)}
+											{m.type === "RESPONSE" && (
+												<ResponseMessage message={m} />
+											)}
+											{m.type === "PLAN" && (
+												<PlanMessage
+													message={m}
+													isLast={
+														mIdx ===
+														room.history.length - 1
+													}
+												/>
+											)}
+										</Stack>
+									);
+								})}
+							</Container>
+						</StyledScroll>
+						{isUserScrolled && (
+							<Tooltip title="Scroll to bottom" placement="top">
+								<StyledScrollButton
+									size="small"
+									color="primary"
+									onClick={() => scrollToBottom()}
+									aria-label="Scroll to bottom"
 								>
-									<RoomMessage message={m} />
-								</Stack>
-							))}
-						</Container>
-					</StyledScroll>
+									<KeyboardArrowDown fontSize="medium" />
+								</StyledScrollButton>
+							</Tooltip>
+						)}
+					</StyledScrollContainer>
 					<Stack
 						direction={"row"}
 						justifyContent={"center"}
 						width={"100%"}
 					>
-						<Container
-							maxWidth="xl"
-							sx={{ padding: " 0 !important" }}
-						>
+						<Container maxWidth="xl" disableGutters={true}>
 							<RoomInput
 								isLoading={room.isLoading}
-								isDisabled={false}
+								isDisabled={isDisabled}
 								minRows={3}
 								maxRows={8}
 								actions={
-									<Tooltip
-										title={"Open Configuration Menu"}
-										placement="top"
-									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={room.isLoading}
-											color={
-												room.sidebar.isOpen &&
-												room.sidebar.type ===
-													"CONFIGURATION"
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												// toggle open / closed based on the state
-												if (
+									workspaceId ? (
+										<WorkspaceChip workspace={workspace} />
+									) : (
+										<Tooltip
+											title={"Configuration"}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Configuration"
+												disabled={room.isLoading}
+												color={
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-												) {
-													room.closeSidebar();
-												} else {
-													room.openSidebar(
-														"CONFIGURATION",
-													);
+														? "primary"
+														: "default"
 												}
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
-									</Tooltip>
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
@@ -352,6 +440,7 @@ export const RoomPage = observer(() => {
 								onClose={() => {
 									room.closeSidebar();
 								}}
+								room={room}
 							/>
 						)}
 						{room.sidebar.type === "ARTIFACTS" && (

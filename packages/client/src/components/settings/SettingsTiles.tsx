@@ -1,4 +1,3 @@
-import DeleteIcon from "@mui/icons-material/Delete";
 import LockIcon from "@mui/icons-material/Lock";
 import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
 import type { AxiosResponse } from "axios";
@@ -8,6 +7,7 @@ import {
 	Box,
 	Button,
 	Grid,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -17,8 +17,13 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	setEngineGlobal,
+	setEngineVisiblity,
+	setProjectGlobal,
+	setProjectVisiblity,
+} from "@/api";
 import databaseIcon from "@/assets/img/databaseIcon.png";
-import { LoadingScreen } from "@/components/ui";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { formatToDataTestId } from "@/utility";
@@ -221,7 +226,15 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			// start the loading screen
 			setLoading(true);
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -229,13 +242,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.setEngineVisiblity(
+				response = await setEngineVisiblity(
 					adminMode,
 					id,
 					!discoverable,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.setProjectVisiblity(
+				response = await setProjectVisiblity(
 					adminMode,
 					id,
 					!discoverable,
@@ -282,7 +295,15 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			// start the loading screen
 			setLoading(true);
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -290,13 +311,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.setEngineGlobal(
+				response = await setEngineGlobal(
 					adminMode,
 					id,
 					!global,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.setProjectGlobal(
+				response = await setProjectGlobal(
 					adminMode,
 					id,
 					!global,
@@ -381,7 +402,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Box>
 									<Typography
 										variant="body1"
-										fontWeight="500"
+										fontWeight="medium"
 									>
 										Private
 									</Typography>
@@ -436,7 +457,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										<Box>
 											<Typography
 												variant="body1"
-												fontWeight="500"
+												fontWeight="medium"
 											>
 												Non Discoverable
 											</Typography>
@@ -491,7 +512,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											Non Discoverable
 										</Typography>
@@ -541,10 +562,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 
 								{/* Text Stack on the right */}
 								<Box>
-									<Typography
-										variant="body1"
-										fontWeight="500"
-									>
+									<Typography variant="body2">
+										Users cannot request access to this
+										database if private
 										{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 									</Typography>
 									<Typography variant="body2">
@@ -659,7 +679,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<Box>
 									<Typography
 										variant="body1"
-										fontWeight="500"
+										fontWeight="medium"
 									>
 										Private
 									</Typography>
@@ -716,7 +736,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										<Box>
 											<Typography
 												variant="body1"
-												fontWeight="500"
+												fontWeight="medium"
 											>
 												Non Discoverable
 											</Typography>
@@ -769,7 +789,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											Non Discoverable
 										</Typography>
@@ -823,7 +843,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Box>
 										<Typography
 											variant="body1"
-											fontWeight="500"
+											fontWeight="medium"
 										>
 											{`Delete ${type.charAt(0).toUpperCase() + type.slice(1).toLowerCase()}`}
 										</Typography>

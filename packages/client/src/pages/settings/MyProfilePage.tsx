@@ -14,6 +14,7 @@ import {
 	Collapse,
 	Grid,
 	IconButton,
+	LoadingScreen,
 	Modal,
 	Paper,
 	Stack,
@@ -23,46 +24,50 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { LoadingScreen } from "@/components/ui";
+import {
+	createUserAccessKey,
+	deleteUserAccessKeys,
+	editMemberInfo,
+} from "@/api/auth";
 import { useAPI, useRootStore } from "@/hooks";
 import { getSDKSnippet } from "@/utility";
 import { ChangePasswordModal } from "./ChangePasswordModel";
 
-const StyledAvatar = styled(Avatar)(({ theme }) => ({
+const StyledAvatar = styled(Avatar)(({
 	display: "flex",
 	alignContent: "center",
 	justifyContent: "center",
 	backgroundColor: "#975FE4",
 }));
 
-const StyledPaper = styled(Paper)(({ theme }) => ({
+const StyledPaper = styled(Paper)(({
 	padding: "40px 30px 20px 50px",
 }));
 
-const StyledAccessTokensPaper = styled(Paper)(({ theme }) => ({
+const StyledAccessTokensPaper = styled(Paper)(({
 	padding: "40px 30px 20px 28px",
 }));
 
-const HeaderCell = styled(Table.Cell)(({ theme }) => ({
+const HeaderCell = styled(Table.Cell)(({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 }));
 
-const LeftHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const LeftHeaderCell = styled(Table.Cell)(({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "20px 0 0 0",
 	textAlign: "center",
 }));
 
-const RightHeaderCell = styled(Table.Cell)(({ theme }) => ({
+const RightHeaderCell = styled(Table.Cell)(({
 	backgroundColor: "#f3f3f3",
 	borderBottom: "1px solid #ccc",
 	borderRadius: "0 20px 0 0",
 	textAlign: "center",
 }));
 
-const MessageDiv = styled("div")(({ theme }) => ({
+const MessageDiv = styled("div")(({
 	textAlign: "center",
 	marginTop: "100px",
 	fontSize: "13px",
@@ -72,45 +77,56 @@ const MessageDiv = styled("div")(({ theme }) => ({
 	margin: "75px auto 85px",
 }));
 
-const AvatarForm = styled("form")(({ theme }) => ({
+const AvatarForm = styled("form")(({
 	paddingTop: "15px",
 	width: "750px",
 }));
 
-const CurrentAvatarStack = styled(Stack)(({ theme }) => ({
+const CurrentAvatarStack = styled(Stack)(({
 	alignItems: "center",
 }));
 
-const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+const StyledTableContainer = styled(Table.Container)(({
 	marginTop: "20px",
 }));
 
-const StyledGrid = styled(Grid)(({ theme }) => ({
+const StyledGrid = styled(Grid)(({
 	marginBottom: "40px",
 }));
 
-const MonolithGrid = styled(Grid)(({ theme }) => ({
+const MonolithGrid = styled(Grid)(({
 	display: "flex",
 	alignItems: "center",
 }));
 
-const StyledStack = styled(Stack)(({ theme }) => ({
+const StyledStack = styled(Stack)(({
 	marginBottom: "15px",
 }));
 
-const CopyGridItem = styled(Grid)(({ theme }) => ({
+const CopyGridItem = styled(Grid)(({
 	padding: 0,
 	display: "flex",
 	justifyContent: "right",
 }));
 
-const GridItem = styled(Grid)(({ theme }) => ({
+const GridItem = styled(Grid)(({
 	padding: 0,
 }));
 
-const CustomGridItem = styled(GridItem)(({ theme }) => ({
+const CustomGridItem = styled(GridItem)(({
 	padding: 0,
 	zIndex: 8,
+}));
+
+const _StyledCodeBlock = styled("pre")(({ theme }) => ({
+	display: "flex",
+	alignItems: "center",
+	gap: theme.spacing(5),
+	background: theme.palette.background.default,
+	borderRadius: theme.shape.borderRadius,
+	padding: theme.spacing(2),
+	overflowX: "scroll",
+	margin: "0px",
 }));
 
 const StyledCodeContent = styled("code", {
@@ -168,7 +184,7 @@ interface EditUserInfoForm {
 
 export const MyProfilePage = () => {
 	const notification = useNotification();
-	const { configStore, monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const { email, id, name, admin } = configStore.store.user;
 
 	// track the models
@@ -181,7 +197,7 @@ export const MyProfilePage = () => {
 
 	// NATIVE Login USERID must match Username
 	const logins = configStore.store.config.logins;
-	const nativeLogin = logins["NATIVE"];
+	const nativeLogin = (logins as unknown as { NATIVE: string })?.NATIVE;
 
 	const { control, reset, setValue, handleSubmit, watch } =
 		useForm<CreateAccessKeyForm>({
@@ -213,7 +229,7 @@ export const MyProfilePage = () => {
 	const SECRETKEY = watch("SECRETKEY");
 
 	// track if we can create a key
-	const isCreated = ACCESSKEY && SECRETKEY ? true : false;
+	const isCreated = !!(ACCESSKEY && SECRETKEY );
 
 	const [isJsSdkOpen, setIsJsSdkOpen] = useState(false);
 	const [isPySdkOpen, setIsPySdkOpen] = useState(false);
@@ -226,19 +242,21 @@ export const MyProfilePage = () => {
 			// need to confirm reactor for runQuery or monolithStore method for editing profile
 			console.log(data);
 
-			const userObj = {
+			const userObj :Record<string, unknown> = {
 				password: "",
 				id: nativeLogin,
 				email: email,
 				username: id,
 				name: data.NAME,
+				type: configStore.store.config.nativeRegistration ? "NATIVE" : "CUSTOM",
+				admin: configStore.store.user?.admin || false,
 			};
+			
+			userObj.id = data.USERID !== nativeLogin ? data.USERID : nativeLogin;
+			userObj.newUsername =data.USERNAME !== id ? data.USERNAME : null;
+			userObj.newEmail = data.EMAIL !== email ? data.EMAIL : null;
 
-			data.USERID !== nativeLogin && (userObj["newId"] = data.USERID);
-			data.USERNAME !== id && (userObj["newUsername"] = data.USERNAME);
-			data.EMAIL !== email && (userObj["newEmail"] = data.EMAIL);
-
-			const response = await monolithStore.editMemberInfo(true, userObj);
+			const response = await editMemberInfo(true, userObj);
 
 			if (response.data) {
 				notification.add({
@@ -265,7 +283,7 @@ export const MyProfilePage = () => {
 	 */
 	const createAccessKey = async (data: CreateAccessKeyForm) => {
 		try {
-			const output = await monolithStore.createUserAccessKey(
+			const output = await createUserAccessKey(
 				data.TOKENNAME,
 				data.TOKENDESCRIPTION || "",
 			);
@@ -295,8 +313,7 @@ export const MyProfilePage = () => {
 	 */
 	const deleteAccessKey = async (accessKey: string) => {
 		try {
-			const response =
-				await monolithStore.deleteUserAccessKeys(accessKey);
+			const response = await deleteUserAccessKeys(accessKey);
 
 			if (!response) {
 				throw new Error("Error deleting key");
@@ -704,7 +721,7 @@ export const MyProfilePage = () => {
 							getUserAccessKeys.data.length !== 0
 								? getUserAccessKeys.data.map((k, idx) => {
 										return (
-											<Table.Row key={idx}>
+											<Table.Row key={`${k.TOKENNAME}-${idx}`}>
 												<Table.Cell align={"left"}>
 													{k.TOKENNAME}
 												</Table.Cell>

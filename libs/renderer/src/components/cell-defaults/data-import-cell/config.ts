@@ -15,6 +15,7 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
 		columnAliases: [],
 		tableNames: [],
 		joins: [],
+		dataLimit: null,
 		// TODO add filters and summaries
 		// filters: [],
 		// summaries: [],
@@ -22,7 +23,7 @@ export const DataImportCellConfig: CellConfig<DataImportCellDef> = {
 	toPixel: ({ frameType, frameVariableName, selectQuery }) => {
 		return (
 			selectQuery.slice(0, -1) +
-			` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ \"${frameVariableName}\" ] ) ] ) ; `
+			` | Import ( frame = [ CreateFrame ( frameType = [ ${frameType} ] , override = [ true ] ) .as ( [ "${frameVariableName}" ] ) ] ) ; `
 		);
 	},
 };
