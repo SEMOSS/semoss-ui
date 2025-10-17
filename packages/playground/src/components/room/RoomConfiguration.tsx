@@ -19,7 +19,7 @@ import {
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Toolbox } from "@/types";
+import type { Toolbox, ToolboxConfig } from "@/types";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
@@ -69,14 +69,14 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 		/**
 		 * Functions
 		 */
-		const handleDeleteTool = async (tool: Toolbox) => {
+		const handleDeleteTool = async (tool: ToolboxConfig) => {
 			// Remove the tool from the options
-			if (room && tool.type === "APP") {
-				await room.removeMcpTool(tool.id);
+			if (room) {
+				await room.removeTool(tool);
 			} else {
 				// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
 				const updatedTools = options.tools.filter(
-					(t) => t.id !== tool.id,
+					(t) => !(t.id === tool.id && t.type === tool.type),
 				);
 				setOptions({
 					...options,
@@ -87,14 +87,17 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 
 		const handleToolClose = async (success: boolean, tools: Toolbox[]) => {
 			// update the tools if successful
+			const toolConfigs: ToolboxConfig[] = tools.map(
+				({ id, type, name }) => ({ id, type, name }),
+			);
 			if (success) {
 				if (room) {
-					await room.setTools(tools);
+					await room.setTools(toolConfigs);
 				} else {
 					// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
 					setOptions({
 						...options,
-						tools: tools,
+						tools: toolConfigs,
 					});
 				}
 			}

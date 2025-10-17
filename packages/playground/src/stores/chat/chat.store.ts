@@ -217,12 +217,7 @@ export class ChatStore {
 
 			// push options to BE
 			if (Object.keys(options).length > 0) {
-				await room.updateRoomOptions({
-					...options,
-					mcpToolID: options.tools
-						.filter((t) => t.type === "PROJECT")
-						.map((t) => t.id),
-				});
+				await room.updateRoomOptions(options);
 			}
 
 			runInAction(() => {
@@ -288,7 +283,7 @@ export class ChatStore {
 	/**
 	 * Get available tools from the backend
 	 */
-	// Record<type, Record<id, Toolbox[]>>
+	// Record<type, Record<id, Toolbox>>
 	getToolMap = async (
 		filterWord?: string,
 	): Promise<Record<string, Record<string, Toolbox>>> => {

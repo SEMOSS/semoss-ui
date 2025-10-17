@@ -17,7 +17,7 @@ import {
 	Typography,
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
-import type { App, Engine, Toolbox } from "@/types";
+import type { App, Engine, Toolbox, ToolboxConfig } from "@/types";
 import { getToolbox } from "./utility";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
@@ -76,7 +76,7 @@ const StyledItemDescription = styled(Typography)({
 
 interface ToolboxOverlayProps {
 	/** Tools loaded into the room */
-	tools: Toolbox[];
+	tools: ToolboxConfig[];
 
 	/** Callback triggered when the tool model is closed */
 	onClose: (success: boolean, tools?: Toolbox[]) => void;
@@ -237,7 +237,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 												>
 													<StyledItemImageHolder>
 														{tool.type ===
-															"APP" && (
+															"PROJECT" && (
 															<img
 																alt=""
 																src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}

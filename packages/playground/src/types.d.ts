@@ -12,14 +12,13 @@ export interface App {
 	project_date_created: string;
 }
 
-// TODO: define properly
 export interface Workspace {
 	workspace_id: string;
 	name: string;
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
-	tools: Pick<Toolbox, "id" | "type">[];
+	tools: ToolboxConfig[];
 }
 
 /**
@@ -52,6 +51,8 @@ export interface Toolbox {
 	/** Tags of the tool */
 	tags: string[];
 }
+
+export type ToolboxConfig = Pick<Toolbox, "type" | "id" | "name">;
 
 /**
  * Item from the prompt library
