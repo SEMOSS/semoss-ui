@@ -1,7 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { MODEL_KEY } from "@/constants";
-import type { App, Engine, Toolbox, Workspace } from "@/types";
+import type { App, Engine, Toolbox, ToolboxConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -352,7 +352,9 @@ export class ChatStore {
 			const name = esc(data.name ?? "");
 			const desc = esc(data.description ?? "");
 			const prompt = esc(data.system_prompt ?? "");
-			const tools = data.tools.map((tool) => tool.id);
+			const tools = data.tools.map(
+				({ name, id, type }): ToolboxConfig => ({ name, id, type }),
+			);
 
 			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], tools=${JSON.stringify(tools)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
