@@ -14,7 +14,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { Toolbox, Workspace } from "@/types";
+import type { Toolbox, ToolboxConfig, Workspace } from "@/types";
 
 export interface WorkspaceModalProps {
 	open: boolean;
@@ -133,7 +133,6 @@ export const WorkspaceModal = ({
 	 * Types
 	 */
 	type ToolboxWithAll = Toolbox & { all?: boolean };
-	type ToolBoxKeys = Workspace["tools"][number];
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -245,7 +244,7 @@ export const WorkspaceModal = ({
 											options={toolsArray}
 											isOptionEqualToValue={(
 												option: Toolbox,
-												value: ToolBoxKeys,
+												value: ToolboxConfig,
 											) =>
 												option.id === value.id &&
 												option.type === value.type
@@ -278,21 +277,24 @@ export const WorkspaceModal = ({
 															: toolsArray;
 
 												field.onChange(
-													newVal.map((tool) => ({
-														id: tool.id,
-														type: tool.type,
-													})),
+													newVal.map(
+														({
+															id,
+															type,
+															name,
+														}): ToolboxConfig => ({
+															id,
+															type,
+															name,
+														}),
+													),
 												); // only send id and type to backend
 											}}
 											getOptionLabel={(
-												option: ToolBoxKeys,
-											) =>
-												toolMap[option.type]?.[
-													option.id
-												].name || ""
-											}
+												option: ToolboxConfig,
+											) => option.name}
 											getOptionKey={(
-												option: ToolBoxKeys,
+												option: ToolboxConfig,
 											) =>
 												JSON.stringify({
 													id: option.id,
