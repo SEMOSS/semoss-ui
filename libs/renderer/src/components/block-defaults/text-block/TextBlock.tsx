@@ -8,6 +8,7 @@ import { showBlock } from "../../blocks/RendererEngine";
 export interface TextBlockDef extends BlockDef<"text"> {
 	widget: "text";
 	data: {
+		showPlaceholder: boolean;
 		style: CSSProperties;
 		text: string;
 		variant?: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" | "span";
@@ -37,9 +38,14 @@ export const TextBlock: BlockComponent = observer(({ id }) => {
 
 	if (!data.isStreaming) displayTxt = textContent;
 
-	// Show fallback if no value
+	// Show placeholder or empty string if no value
+	const showPlaceholder = data.showPlaceholder;
 	if (!displayTxt || displayTxt.trim() === "") {
-		displayTxt = "Waiting for value...";
+		if (showPlaceholder) {
+			displayTxt = "Waiting for value...";
+		} else {
+			displayTxt = "";
+		}
 	}
 
 	useEffect(() => {
