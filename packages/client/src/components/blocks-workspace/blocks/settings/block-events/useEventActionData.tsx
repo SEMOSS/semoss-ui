@@ -27,7 +27,7 @@ export const useEventActionData = (queryId: string) => {
 	const pages = useMemo(() => {
 		return state.getAllBlocksOfType("page").map((page) => ({
 			id: page.id,
-			route: page.data.route,
+			route: (page.data.route ? page.data.route : "/"),
 		}));
 	}, [state]);
 

@@ -13,7 +13,7 @@ export const BASE_PAGE_BLOCKS: Record<string, Block> = {
 				gap: "8px",
 				fontFamily: "roboto",
 			},
-			route: "page-1",
+			route: "",
 		},
 		listeners: {
 			onPageLoad: {
