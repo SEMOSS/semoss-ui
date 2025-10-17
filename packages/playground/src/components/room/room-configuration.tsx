@@ -12,7 +12,9 @@ import {
 	ScrollArea,
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 	Slider,
@@ -68,16 +70,26 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 													<SelectValue placeholder="Select Model" />
 												</SelectTrigger>
 												<SelectContent>
-													{chat.models.options.map(
-														(m) => (
-															<SelectItem
-																key={m.app_id}
-																value={m.app_id}
-															>
-																{m.app_name}
-															</SelectItem>
-														),
-													)}
+													<SelectGroup>
+														<SelectLabel>
+															Model
+														</SelectLabel>
+
+														{chat.models.options.map(
+															(m) => (
+																<SelectItem
+																	key={
+																		m.app_id
+																	}
+																	value={
+																		m.app_id
+																	}
+																>
+																	{m.app_name}
+																</SelectItem>
+															),
+														)}
+													</SelectGroup>
 												</SelectContent>
 											</Select>
 										</Field>
@@ -112,18 +124,20 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 													</div>
 
 													<Tooltip>
-														<TooltipTrigger>
-															<Button
-																variant="outline"
-																size="sm"
-																onClick={() =>
-																	setIsToolboxOpen(
-																		true,
-																	)
-																}
-															>
-																<PlusIcon />
-															</Button>
+														<TooltipTrigger asChild>
+															<span>
+																<Button
+																	variant="outline"
+																	size="sm"
+																	onClick={() =>
+																		setIsToolboxOpen(
+																			true,
+																		)
+																	}
+																>
+																	<PlusIcon />
+																</Button>
+															</span>
 														</TooltipTrigger>
 														<TooltipContent>
 															Add Tools

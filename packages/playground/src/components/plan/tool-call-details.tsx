@@ -3,11 +3,12 @@ import { useId, useState } from "react";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Field,
-	FieldGroup,
 	FieldLabel,
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
+	SelectLabel,
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
@@ -61,7 +62,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	const toolboxOptions = getApps.data.map((item) => getToolbox(item));
 
 	return (
-		<FieldGroup>
+		<>
 			<Field>
 				<FieldLabel htmlFor={toolboxId}>Toolbox</FieldLabel>
 				<Select
@@ -77,23 +78,26 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 						<SelectValue placeholder="Select Toolbox" />
 					</SelectTrigger>
 					<SelectContent>
-						{getApps.status === "LOADING" ? (
-							<SelectItem value="" disabled>
-								Loading...
-							</SelectItem>
-						) : (
-							toolboxOptions.map((option) => (
+						<SelectGroup>
+							<SelectLabel>Toolbox</SelectLabel>
+							{/* {getApps.status === "LOADING" ? (
+								<SelectItem value="" disabled>
+									Loading...
+								</SelectItem>
+							) : (
+								
+							)} */}
+							{toolboxOptions.map((option) => (
 								<SelectItem key={option.id} value={option.id}>
 									{option.name}
 								</SelectItem>
-							))
-						)}
+							))}
+						</SelectGroup>
 					</SelectContent>
 				</Select>
 			</Field>
 			<Field>
 				<FieldLabel htmlFor={toolId}>Tool</FieldLabel>
-
 				<Select
 					value={details.tool_name}
 					onValueChange={(value) => {
@@ -114,14 +118,17 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 						<SelectValue placeholder="Tool" />
 					</SelectTrigger>
 					<SelectContent>
-						{getMCP.data.tools.map((tool) => (
-							<SelectItem key={tool.name} value={tool.name}>
-								{tool.title}
-							</SelectItem>
-						))}
+						<SelectGroup>
+							<SelectLabel>Tool</SelectLabel>
+							{getMCP.data.tools.map((tool) => (
+								<SelectItem key={tool.name} value={tool.name}>
+									{tool.title}
+								</SelectItem>
+							))}
+						</SelectGroup>
 					</SelectContent>
 				</Select>
 			</Field>
-		</FieldGroup>
+		</>
 	);
 };

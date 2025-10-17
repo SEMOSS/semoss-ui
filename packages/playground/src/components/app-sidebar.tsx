@@ -1,6 +1,17 @@
-import { MessageCirclePlusIcon, XIcon } from "lucide-react";
+import {
+	ComputerIcon,
+	MessageCirclePlusIcon,
+	TrashIcon,
+	XIcon,
+} from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { Link, matchPath, useLocation, useParams } from "react-router-dom";
+import {
+	Link,
+	matchPath,
+	NavLink,
+	useLocation,
+	useParams,
+} from "react-router-dom";
 import {
 	Button,
 	Sidebar,
@@ -14,6 +25,11 @@ import {
 	SidebarMenuButton,
 	SidebarMenuItem,
 	SidebarRail,
+	SidebarSeparator,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+	toast,
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
@@ -33,19 +49,19 @@ export const AppSidebar = observer(() => {
 		<Sidebar variant="inset">
 			<SidebarHeader>
 				<SidebarMenu>
-					<SidebarMenuItem className="2 flex items-center overflow-hidden">
+					<SidebarMenuItem className="group/logo flex items-center overflow-hidden">
 						<SidebarMenuButton size="lg" asChild>
 							<Link
 								to={"/"}
 								aria-label={"Go Home"}
-								className="flex h-8 w-full flex-1 items-center text-sidebar-primary-foreground"
+								className="flex h-8 w-full flex-1 items-center"
 							>
 								<AppLogo />
 							</Link>
 						</SidebarMenuButton>
 
 						<Button
-							className="invisible group-hover:visible"
+							className="invisible group-hover/logo:visible"
 							variant="ghost"
 							size="icon"
 							onClick={(event) => {
@@ -59,18 +75,25 @@ export const AppSidebar = observer(() => {
 					</SidebarMenuItem>
 				</SidebarMenu>
 
-				<div className="p-1">
+				<SidebarMenu className="gap-2 p-2">
 					<Button
 						className="w-full bg-sidebar-primary text-sidebar-primary-foreground shadow-none"
 						size="sm"
 						variant="outline"
 						asChild
 					>
-						<Link to={"/new"} aria-label={"New Chat"}>
+						<NavLink
+							to={"/new"}
+							aria-label={"New Chat"}
+							className={({ isActive }) =>
+								isActive ? "text-primary" : ""
+							}
+						>
 							<MessageCirclePlusIcon />
 							New
-						</Link>
+						</NavLink>
 					</Button>
+
 					{ENABLE_AGENT && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
@@ -78,12 +101,14 @@ export const AppSidebar = observer(() => {
 								isActive={!!matchPath("/agent", pathname)}
 							>
 								<Link to={"/agent"} aria-label={"Agents"}>
+									<ComputerIcon />
 									Agents
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>
 					)}
-				</div>
+				</SidebarMenu>
+				<SidebarSeparator />
 			</SidebarHeader>
 			<SidebarContent>
 				<SidebarGroup>
@@ -101,19 +126,55 @@ export const AppSidebar = observer(() => {
 								}
 
 								return (
-									<SidebarMenuItem key={roomId}>
+									<SidebarMenuItem
+										key={roomId}
+										className="group/room flex"
+									>
 										<SidebarMenuButton
 											asChild
 											isActive={activeRoomId === roomId}
 										>
 											<Link
-												className="inline-block truncate"
+												className="inline-block flex-1 truncate"
 												to={`/room/${roomId}`}
 												aria-label={"Select a room"}
 											>
 												{name}
 											</Link>
 										</SidebarMenuButton>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
+													<Button
+														className="hidden group-hover/room:inline-flex"
+														variant="ghost"
+														size="icon-sm"
+														onClick={async (e) => {
+															e.stopPropagation();
+
+															try {
+																await chat.closeRoom(
+																	roomId,
+																);
+
+																toast.success(
+																	"Room deleted successfully",
+																);
+															} catch (e) {
+																toast.error(
+																	e.message,
+																);
+															}
+														}}
+													>
+														<TrashIcon className="text-destructive" />
+													</Button>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												Delete Room
+											</TooltipContent>
+										</Tooltip>
 									</SidebarMenuItem>
 								);
 							})}
@@ -122,7 +183,8 @@ export const AppSidebar = observer(() => {
 				</SidebarGroup>
 			</SidebarContent>
 			<SidebarFooter>
-				<NavUser />{" "}
+				<SidebarSeparator />
+				<NavUser />
 			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>

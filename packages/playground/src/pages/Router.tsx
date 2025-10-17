@@ -1,7 +1,7 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { Spinner } from "@semoss/ui/next";
-import { AgentPage } from "./AgentPage";
+import { AgentPage } from "./agent-page";
 import { AuthenticatedLayout } from "./authenticated-layout";
 import { LoginPage } from "./login-page";
 import { MainLayout } from "./main-layout";
@@ -39,13 +39,7 @@ export const Router = () => {
 					<Route element={<MainLayout />}>
 						<Route path="new" element={<NewRoomPage />} />
 						<Route path="room/:roomId" element={<RoomPage />} />
-						<Route path="agent">
-							<Route index element={<AgentPage />} />
-							<Route
-								path=":agentId/new"
-								element={<NewRoomPage />}
-							/>
-						</Route>
+						<Route path="agent" element={<AgentPage />} />
 						<Route
 							path="*"
 							element={<Navigate to="/new" replace />}

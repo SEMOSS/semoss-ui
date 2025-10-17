@@ -1,7 +1,7 @@
-import { CogIcon, ListTodoIcon } from "lucide-react";
+import { CogIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -17,8 +17,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { RoomConfiguration, RoomInput } from "@/components";
-import { AgentChip } from "@/components/agent";
+import { RoomAgent, RoomConfiguration, RoomInput } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -27,8 +26,6 @@ import type { Agent } from "@/types";
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
 	: "";
-
-const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
 
 /**
  * The page to create a new room
@@ -41,11 +38,14 @@ export const NewRoomPage = observer(() => {
 	 */
 	const { chat } = useChat();
 	const navigate = useNavigate();
-	const { agentId } = useParams() as { agentId?: string };
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
+	const [searchParams] = useSearchParams();
+	const [mode, setMode] = useState<{
+		type: "chat" | "plan" | "agent";
+		agent: Agent | null;
+	}>({
+		type: "chat",
+		agent: null,
+	});
 
 	/**
 	 * State
@@ -58,7 +58,6 @@ export const NewRoomPage = observer(() => {
 		temperature: TEMPERATURE,
 	});
 
-	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 
 	/**
@@ -79,23 +78,13 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		const usingAgent = agentId && agent !== null;
-
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
-			isPlanning ? "planning" : "chat",
+			mode.type === "plan" ? "planning" : "chat",
 			chat.models.selected,
-			usingAgent
-				? {
-						instructions: "",
-						// knowledge: null,
-						tools: [],
-						tokenLength: TOKEN_LENGTH,
-						temperature: TEMPERATURE,
-					}
-				: options,
-			usingAgent ? agent : undefined,
+			options,
+			mode.type === "agent" && mode.agent ? mode.agent : undefined,
 		);
 
 		// ask the room
@@ -108,9 +97,31 @@ export const NewRoomPage = observer(() => {
 		navigate(`/room/${room.roomId}`);
 	};
 
+	const agentId = searchParams.get("agentId");
+	const getWorkspace = usePixel<Agent | null>(
+		agentId ? `GetWorkspace("${agentId}");` : null,
+		{
+			data: null,
+		},
+	);
+
+	// if the agentId is passed in, use taht to set the mode
+	useEffect(() => {
+		if (getWorkspace.status !== "SUCCESS") {
+			return;
+		}
+
+		if (getWorkspace.data) {
+			setMode({
+				type: "agent",
+				agent: getWorkspace.data,
+			});
+		}
+	}, [getWorkspace.status, getWorkspace.data]);
+
 	return (
-		<ResizablePanelGroup direction="horizontal" className="">
-			<ResizablePanel className="flex flex-col items-center justify-center overflow-auto">
+		<ResizablePanelGroup direction="horizontal">
+			<ResizablePanel className="flex flex-col items-center justify-center overflow-auto p-2">
 				<div className="mx-auto w-full max-w-2xl">
 					<Card className="w-full">
 						<CardHeader>
@@ -119,20 +130,23 @@ export const NewRoomPage = observer(() => {
 						</CardHeader>
 						<CardContent>
 							<RoomInput
-								isLoading={isLoading || isLoadingAgent}
+								isLoading={
+									isLoading ||
+									(agentId &&
+										getWorkspace.status !== "SUCCESS")
+								}
 								isDisabled={false}
 								minRows={4}
 								maxRows={8}
 								actions={
-									<div className="flex flex-row items-center">
-										{agentId ? (
-											<AgentChip
-												agent={agent}
-												loading={isLoadingAgent}
-											/>
-										) : (
-											<Tooltip>
-												<TooltipTrigger>
+									<>
+										<RoomAgent
+											mode={mode}
+											onModeChange={setMode}
+										/>
+										<Tooltip>
+											<TooltipTrigger asChild>
+												<span>
 													<Button
 														aria-label="Open Configuration Menu"
 														className={`${isMenuOpen ? "text-primary" : ""}`}
@@ -147,38 +161,13 @@ export const NewRoomPage = observer(() => {
 													>
 														<CogIcon />
 													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													Open Configuration Menu
-												</TooltipContent>
-											</Tooltip>
-										)}
-										{ENABLE_PLANNING && (
-											<Tooltip>
-												<TooltipTrigger>
-													<Button
-														aria-label="Generate plan"
-														className={`${isPlanning ? "text-primary hover:text-primary" : ""}`}
-														disabled={isLoading}
-														variant="ghost"
-														size="icon-sm"
-														onClick={() => {
-															setIsPlanning(
-																!isPlanning,
-															);
-														}}
-													>
-														<ListTodoIcon />
-													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													Note: This is a beta
-													feature. Use this to
-													generate plan
-												</TooltipContent>
-											</Tooltip>
-										)}
-									</div>
+												</span>
+											</TooltipTrigger>
+											<TooltipContent>
+												Open Configuration Menu
+											</TooltipContent>
+										</Tooltip>
+									</>
 								}
 								onPrompt={async (prompt, files) => {
 									await askMessage(prompt, files);
@@ -193,8 +182,8 @@ export const NewRoomPage = observer(() => {
 
 			{isMenuOpen && (
 				<>
-					<ResizableHandle />
-					<ResizablePanel className="relative" defaultSize={25}>
+					<ResizableHandle className="my-auto h-32" />
+					<ResizablePanel className="relative p-2" defaultSize={25}>
 						<RoomConfiguration
 							options={options}
 							setOptions={(o) => {

@@ -1,5 +1,11 @@
-import { ErrorOutline, LightbulbOutlined } from "@mui/icons-material";
-import { Chip, Skeleton, Tooltip } from "@semoss/ui";
+import { AlertCircle, Lightbulb } from "lucide-react";
+import {
+	Badge,
+	Skeleton,
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@semoss/ui/next";
 import type { Agent } from "@/types";
 
 export interface AgentChipProps {
@@ -19,36 +25,35 @@ export const AgentChip = ({ agent, loading }: AgentChipProps) => {
 	const isAgentValid = agent && !loading;
 
 	return (
-		<Tooltip
-			title={
-				loading
+		<Tooltip>
+			<TooltipTrigger asChild>
+				<Badge
+					variant={
+						loading || isAgentValid ? "secondary" : "destructive"
+					}
+					className="flex items-center gap-1"
+				>
+					{loading || isAgentValid ? (
+						<Lightbulb className="h-3 w-3" />
+					) : (
+						<AlertCircle className="h-3 w-3" />
+					)}
+					{loading ? (
+						<Skeleton className="h-4 w-9" />
+					) : isAgentValid ? (
+						agent.name
+					) : (
+						"Error loading agent"
+					)}
+				</Badge>
+			</TooltipTrigger>
+			<TooltipContent>
+				{loading
 					? "Loading Agent Configuration"
 					: isAgentValid
 						? "Using Agent Configuration"
-						: "Error Loading Agent Configuration"
-			}
-			placement="top"
-		>
-			<span>
-				<Chip
-					icon={
-						loading || isAgentValid ? (
-							<LightbulbOutlined />
-						) : (
-							<ErrorOutline />
-						)
-					}
-					label={
-						loading ? (
-							<Skeleton width="36px" height="100%" />
-						) : isAgentValid ? (
-							agent.name
-						) : (
-							"Error loading agent"
-						)
-					}
-				/>
-			</span>
+						: "Error Loading Agent Configuration"}
+			</TooltipContent>
 		</Tooltip>
 	);
 };

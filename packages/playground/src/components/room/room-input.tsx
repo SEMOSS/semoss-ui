@@ -211,81 +211,89 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<>
 				<div className="relative w-full">
-					<div className="absolute top-4 right-4 z-10 flex flex-row items-center justify-end gap-1">
+					<div className="absolute bottom-4 left-4 z-10 flex flex-row items-center gap-1">
+						{actions}
+					</div>
+					<div className="absolute right-4 bottom-4 z-10 flex flex-row items-center gap-1">
+						{ENABLE_ATTACHMENT && (
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span>
+										<Button
+											aria-label="Attach Documents"
+											disabled={isDisabled || isLoading}
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												fileRef.current?.click();
+											}}
+										>
+											<FileIcon />
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>Attach Document</TooltipContent>
+							</Tooltip>
+						)}
+
 						<Tooltip>
-							<TooltipTrigger>
-								<Button
-									variant={"ghost"}
-									aria-label="Record the Model"
-									disabled={
-										!canListen || isDisabled || isLoading
-									}
-									onClick={() => {
-										if (isListening) {
-											stopListening();
-										} else {
-											startListening();
+							<TooltipTrigger asChild>
+								<span>
+									<Button
+										variant={"ghost"}
+										aria-label="Record the Model"
+										size="icon-sm"
+										disabled={
+											!canListen ||
+											isDisabled ||
+											isLoading
 										}
-									}}
-								>
-									<MicIcon
-										className={`${isListening ? "animate-pulse text-error" : ""}`}
-									/>
-								</Button>
+										onClick={() => {
+											if (isListening) {
+												stopListening();
+											} else {
+												startListening();
+											}
+										}}
+									>
+										<MicIcon
+											className={`${isListening ? "animate-pulse text-error" : ""}`}
+										/>
+									</Button>
+								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{isListening ? "Stop Recording" : "Record"}
 							</TooltipContent>
 						</Tooltip>
-					</div>
-					<div className="absolute bottom-4 left-4 z-10 flex flex-row items-center gap-1">
-						{ENABLE_ATTACHMENT && (
-							<Tooltip>
-								<TooltipTrigger>
+
+						<Tooltip>
+							<TooltipTrigger asChild>
+								<span>
 									<Button
-										aria-label="Attach Documents"
-										disabled={isDisabled || isLoading}
-										variant="ghost"
-										size="icon-sm"
+										variant="default"
+										aria-label="Prompt the Model"
+										disabled={
+											isDisabled || isLoading || isEmpty
+										}
 										onClick={() => {
-											fileRef.current?.click();
+											promptModel(input);
 										}}
 									>
-										<FileIcon />
+										{isLoading ? (
+											<Spinner />
+										) : (
+											<SendHorizonalIcon />
+										)}
 									</Button>
-								</TooltipTrigger>
-								<TooltipContent>Attach Document</TooltipContent>
-							</Tooltip>
-						)}
-						{actions}
-					</div>
-					<div className="absolute right-4 bottom-4 z-10">
-						<Tooltip>
-							<TooltipTrigger>
-								<Button
-									variant="default"
-									aria-label="Prompt the Model"
-									disabled={
-										isDisabled || isLoading || isEmpty
-									}
-									onClick={() => {
-										promptModel(input);
-									}}
-									className="min-w-0 rounded-lg p-2 leading-none shadow-sm"
-								>
-									{isLoading ? (
-										<Spinner />
-									) : (
-										<SendHorizonalIcon />
-									)}
-								</Button>
+								</span>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
-									if (isEmpty) {
-										return "Please enter a prompt";
-									} else if (isLoading) {
+									if (isLoading) {
 										return "Processing prompt";
+									} else if (isEmpty) {
+										return "Please enter a prompt";
 									} else if (isDisabled) {
 										return "";
 									}
@@ -312,7 +320,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							value={input}
 							disabled={isDisabled}
 							rows={minRows}
-							className={`w-full resize-none pb-12 ${
+							className={`w-full resize-none pb-14 ${
 								isDragging
 									? "border-2 border-primary border-dashed bg-background"
 									: "border-2 border-border border-solid bg-background hover:border-primary"
@@ -367,6 +375,13 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							}}
 							onKeyDown={(e) => {
 								if (e.key === "Enter") {
+									// allow new lines with shift
+									if (e.shiftKey) {
+										return;
+									}
+
+									// prompt the model
+									e.preventDefault();
 									promptModel(input);
 								}
 							}}
@@ -382,7 +397,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 									<TooltipTrigger asChild>
 										<div className="group relative flex size-22 cursor-pointer flex-row items-center justify-center overflow-hidden border border-border">
 											{getFileImage(f)}
-											<div className="absolute top-0 right-0 z-10 hidden group-hover:block">
+											<div className="absolute top-0 right-0 z-10 hidden group-hover:inline-flex">
 												<Button
 													variant="ghost"
 													size={"icon-sm"}

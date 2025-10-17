@@ -1,3 +1,3 @@
-export * from "./AgentCard";
 export * from "./AgentChip";
-export * from "./AgentModal";
+export * from "./agent-card";
+export * from "./agent-overlay";

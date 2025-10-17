@@ -169,7 +169,9 @@ function StepperStepContent({
 	const { isActive } = React.useContext(StepContext);
 	const { orientation } = React.useContext(StepperContext);
 
-	if (!isActive) return null;
+	if (!isActive) {
+		return null;
+	}
 
 	return (
 		<div

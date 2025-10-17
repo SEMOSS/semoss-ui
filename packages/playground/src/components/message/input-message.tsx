@@ -9,8 +9,8 @@ interface InputMessageProps {
 export const InputMessage: React.FC<InputMessageProps> = observer(
 	({ message }) => {
 		return (
-			<div className="inline-flex flex-row items-start self-end rounded-t-md rounded-bl-md bg-sidebar-primary-foreground p-3 text-secondary shadow-sm">
-				<div className="text-sm">{message.text}</div>
+			<div className="wrap-anywhere ml-[10%] flex-row items-start self-end rounded-t-md rounded-bl-md bg-sidebar-primary-foreground p-3 text-base text-foreground shadow-sm dark:text-background">
+				{message.text}
 			</div>
 		);
 	},

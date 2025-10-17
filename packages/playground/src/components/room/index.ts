@@ -1,3 +1,4 @@
+export * from "./room-agent";
 export * from "./room-artifact";
 export * from "./room-configuration";
 export * from "./room-input";

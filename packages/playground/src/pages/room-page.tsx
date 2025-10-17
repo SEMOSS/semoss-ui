@@ -2,7 +2,6 @@ import { ClockIcon, CogIcon, MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -26,9 +25,7 @@ import {
 	RoomConfiguration,
 	RoomInput,
 } from "@/components";
-import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
-import type { Agent } from "@/types";
 
 // Styled components removed - using Tailwind CSS classes directly
 
@@ -113,13 +110,6 @@ export const RoomPage = observer(() => {
 
 	// get the room
 	const room = chat.getRoom(roomId);
-
-	// get the agent if there is one
-	const agentId = room?.getAgentId();
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -230,8 +220,8 @@ export const RoomPage = observer(() => {
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
 				>
-					<ResizablePanel className="flex h-full w-full flex-1 flex-col items-center overflow-hidden pb-2">
-						<div className="relative w-full flex-1 overflow-hidden px-1">
+					<ResizablePanel className="flex h-full w-full flex-1 flex-col items-center overflow-hidden p-2">
+						<div className="relative w-full flex-1 overflow-hidden">
 							<ScrollArea
 								className="h-full w-full"
 								viewportRef={(ele) => setScrollEle(ele)}
@@ -274,15 +264,17 @@ export const RoomPage = observer(() => {
 
 							{isUserScrolled && (
 								<Tooltip>
-									<TooltipTrigger>
-										<Button
-											size="sm"
-											className="absolute right-4 bottom-4 z-50 bg-primary text-primary-foreground shadow-md hover:shadow-lg"
-											onClick={() => scrollToBottom()}
-											aria-label="Scroll to bottom"
-										>
-											<MoveDownIcon />
-										</Button>
+									<TooltipTrigger asChild>
+										<span className="absolute right-4 bottom-4 z-50">
+											<Button
+												size="sm"
+												className="bg-primary text-primary-foreground shadow-md hover:shadow-lg"
+												onClick={() => scrollToBottom()}
+												aria-label="Scroll to bottom"
+											>
+												<MoveDownIcon />
+											</Button>
+										</span>
 									</TooltipTrigger>
 									<TooltipContent>
 										Scroll to bottom
@@ -297,14 +289,9 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									agentId ? (
-										<AgentChip
-											agent={agent}
-											loading={isLoadingAgent}
-										/>
-									) : (
-										<Tooltip>
-											<TooltipTrigger>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<span>
 												<Button
 													size="sm"
 													className={`${
@@ -337,12 +324,12 @@ export const RoomPage = observer(() => {
 												>
 													<CogIcon />
 												</Button>
-											</TooltipTrigger>
-											<TooltipContent>
-												Open Configuration Menu
-											</TooltipContent>
-										</Tooltip>
-									)
+											</span>
+										</TooltipTrigger>
+										<TooltipContent>
+											Open Configuration Menu
+										</TooltipContent>
+									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
@@ -355,9 +342,9 @@ export const RoomPage = observer(() => {
 					{room.sidebar.isOpen &&
 						room.sidebar.type === "CONFIGURATION" && (
 							<>
-								<ResizableHandle />
+								<ResizableHandle className="my-auto h-32" />
 								<ResizablePanel
-									className={"relative"}
+									className={"relative p-2"}
 									defaultSize={25}
 								>
 									<RoomConfiguration
@@ -375,9 +362,9 @@ export const RoomPage = observer(() => {
 					{room.sidebar.isOpen &&
 						room.sidebar.type === "ARTIFACTS" && (
 							<>
-								<ResizableHandle />
+								<ResizableHandle className="my-auto h-32" />
 								<ResizablePanel
-									className={"relative"}
+									className={"relative p-2"}
 									defaultSize={70}
 								>
 									<RoomArtifact room={room} />

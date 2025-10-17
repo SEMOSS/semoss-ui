@@ -5,12 +5,6 @@ import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
-	Card,
-	CardContent,
-	CardDescription,
-	CardFooter,
-	CardHeader,
-	CardTitle,
 	Checkbox,
 	Dialog,
 	DialogClose,
@@ -134,7 +128,10 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 
 	return (
 		<Dialog open={open} onOpenChange={(o) => onOpenChange(o)}>
-			<DialogContent className="sm:max-w-lg">
+			<DialogContent
+				className="sm:max-w-lg"
+				aria-describedby="Add a Toolbox"
+			>
 				<DialogHeader>
 					<DialogTitle>Add Toolbox</DialogTitle>
 					<DialogDescription>

@@ -24,7 +24,7 @@ export const HumanInterventionDetails: React.FC<
 
 	return (
 		<Field>
-			<FieldLabel htmlFor={instructionsId}>Instructions *</FieldLabel>
+			<FieldLabel htmlFor={instructionsId}>Instructions</FieldLabel>
 			<Textarea
 				id={instructionsId}
 				value={details.instructions}

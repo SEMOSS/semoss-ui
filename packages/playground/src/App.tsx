@@ -11,7 +11,7 @@ export const App = () => {
 	return (
 		<InsightProvider>
 			<ThemeProvider>
-				<div className="absolute inset-0 overflow-hidden">
+				<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 					<Router />
 				</div>
 				<Toaster />

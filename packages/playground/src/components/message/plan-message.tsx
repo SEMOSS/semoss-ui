@@ -47,6 +47,7 @@ interface PlanMessageProps {
 export const PlanMessage: React.FC<PlanMessageProps> = observer(
 	({ message, isLast }) => {
 		const [editStep, setEditStep] = useState<PlanStep | null>(null);
+		const [isAddStepOpen, setIsAddStepOpen] = useState(false);
 
 		/**
 		 * Accept the plan
@@ -143,59 +144,74 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 										key={s.step_number}
 										// className="pb-4"
 									>
-										<CollapsibleTrigger className="group flex w-full flex-row items-start gap-2 [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180">
-											<div
-												className={`${color} mr-1 flex size-8 flex-col items-center justify-center overflow-hidden rounded-full p-2`}
-											>
-												{icon}
-											</div>
-											<span className="wrap-break-word mt-1 text-left text-base">
-												{s.step_name}
-											</span>
-											<Tooltip>
-												<TooltipTrigger>
+										<CollapsibleTrigger
+											className="group flex w-full flex-row items-start gap-2 [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180"
+											asChild
+										>
+											<span>
+												<div
+													className={`${color} mr-1 flex size-8 flex-col items-center justify-center overflow-hidden rounded-full p-2`}
+												>
+													{icon}
+												</div>
+												<span className="wrap-break-word mt-1 text-left text-base">
+													{s.step_name}
+												</span>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<span>
+															<Button
+																variant="ghost"
+																size="icon"
+																className="invisible group-hover:visible"
+																onClick={(
+																	e,
+																) => {
+																	e.stopPropagation();
+																}}
+															>
+																<CircleQuestionMarkIcon />
+															</Button>
+														</span>
+													</TooltipTrigger>
+													<TooltipContent>
+														{
+															s.details
+																.rationaleForStep
+														}
+													</TooltipContent>
+												</Tooltip>
+
+												<div className="flex-1">
+													{" "}
+													&nbsp;
+												</div>
+
+												{isLast && (
 													<Button
 														variant="ghost"
 														size="icon"
 														className="invisible group-hover:visible"
 														onClick={(e) => {
 															e.stopPropagation();
+
+															removeStep(
+																s.step_number,
+															);
 														}}
 													>
-														<CircleQuestionMarkIcon />
+														<TrashIcon className="text-destructive" />
 													</Button>
-												</TooltipTrigger>
-												<TooltipContent>
-													{s.details.rationaleForStep}
-												</TooltipContent>
-											</Tooltip>
-
-											<div className="flex-1">
-												{" "}
-												&nbsp;
-											</div>
-
-											{isLast && (
+												)}
 												<Button
 													variant="ghost"
 													size="icon"
-													className="invisible group-hover:visible"
-													onClick={(e) => {
-														e.stopPropagation();
-
-														removeStep(
-															s.step_number,
-														);
-													}}
 												>
-													<TrashIcon className="text-destructive" />
+													<ChevronDownIcon
+														data-rotate={true}
+													/>
 												</Button>
-											)}
-											<Button variant="ghost" size="icon">
-												<ChevronDownIcon
-													data-rotate={true}
-												/>
-											</Button>
+											</span>
 										</CollapsibleTrigger>
 										<CollapsibleContent className="mt-2 mb-2 rounded-lg bg-sidebar-accent p-4">
 											<div>
@@ -206,39 +222,16 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 												{s.details.stepType ===
 													"no_tool_available" && (
 													<div className="flex flex-row justify-center">
-														<EditStepOverlay
-															mode="Update"
-															current={editStep}
-															onSubmit={async (
-																step,
-															) => {
-																// update the plan if successful
-																if (step) {
-																	message.updateStep(
-																		step.step_number,
-																		step,
-																	);
-																}
-
-																// close it
-																setEditStep(
-																	null,
-																);
+														<Button
+															size="sm"
+															className="bg-warning"
+															onClick={() => {
+																setEditStep(s);
 															}}
 														>
-															<Button
-																size="sm"
-																className="bg-warning"
-																onClick={() => {
-																	setEditStep(
-																		s,
-																	);
-																}}
-															>
-																<LinkIcon />
-																Fix Step
-															</Button>
-														</EditStepOverlay>
+															<LinkIcon />
+															Fix Step
+														</Button>
 													</div>
 												)}
 											</div>
@@ -250,20 +243,14 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 					)}
 					{isLast && (
 						<CardFooter className="justify-between">
-							<EditStepOverlay
-								mode="Add"
-								onSubmit={async (step) => {
-									// update the plan if successful
-									if (step) {
-										message.addStep(step);
-									}
-								}}
+							<Button
+								size="sm"
+								variant="outline"
+								onClick={() => setIsAddStepOpen(true)}
 							>
-								<Button size="sm" variant="outline">
-									<PlusIcon />
-									Add
-								</Button>
-							</EditStepOverlay>
+								<PlusIcon />
+								Add
+							</Button>
 							<Button
 								size="sm"
 								variant="default"
@@ -276,6 +263,46 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 								Accept
 							</Button>
 						</CardFooter>
+					)}
+
+					{isAddStepOpen && (
+						<EditStepOverlay
+							mode="Add"
+							open={true}
+							onOpenChange={(isOpen) => {
+								if (!isOpen) {
+									setIsAddStepOpen(false);
+								}
+							}}
+							onSubmit={async (step) => {
+								// update the plan if successful
+								if (step) {
+									message.addStep(step);
+								}
+							}}
+						/>
+					)}
+
+					{editStep && (
+						<EditStepOverlay
+							mode="Update"
+							current={editStep}
+							open={true}
+							onOpenChange={(isOpen) => {
+								if (!isOpen) {
+									setEditStep(null);
+								}
+							}}
+							onSubmit={async (step) => {
+								// update the plan if successful
+								if (step) {
+									message.updateStep(step.step_number, step);
+								}
+
+								// close it
+								setEditStep(null);
+							}}
+						/>
 					)}
 				</Card>
 			</div>
