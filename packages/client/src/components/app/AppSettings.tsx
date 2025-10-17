@@ -85,13 +85,13 @@ const StyledCardLeft = styled("div")(({ theme }) => ({
 	alignItems: "flex-start",
 }));
 
-const StyledCondensedPublishContainer = styled("div")(({
+const StyledCondensedPublishContainer = styled("div")({
 	display: "flex",
 	width: "100%",
 	gap: "1rem",
 	flexDirection: "column",
 	alignItems: "flex-start",
-}));
+});
 
 const StyledListItemHeader = styled("div")(({ theme }) => ({
 	display: "flex",
@@ -121,12 +121,12 @@ const StyledSubRow = styled("div")({
 	},
 });
 
-const StyledSubHeaderContainer = styled("div")(({
+const StyledSubHeaderContainer = styled("div")({
 	display: "flex",
 	flexDirection: "row",
 	justifyContent: "space-between",
 	width: "100%",
-}));
+});
 
 const StyledLeftActionContainer = styled("div")({
 	display: "flex",
@@ -195,14 +195,14 @@ const StyledTable = styled(Table)(({ theme }) => ({
 	borderWidth: "thin",
 }));
 
-const StyledCenteredFallback = styled("div")(({
+const StyledCenteredFallback = styled("div")({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
 	height: "100%",
 	minHeight: 120,
 	width: "100%",
-}));
+});
 
 const StyledPaper = styled(Paper)(({ theme }) => ({
 	backgroundColor: theme.palette.background.paper,
