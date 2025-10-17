@@ -536,7 +536,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 												isDiscoverable={mode !== "Mine"}
 												href={
 													mode === "Discoverable"
-														? `#/app/${app.project_id}/detail`
+														? `#/app/${app.project_id}`
 														: `#/app/${app.project_id}/view`
 												}
 												onAction={() => {
@@ -544,7 +544,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 														mode === "Discoverable"
 													) {
 														navigate(
-															`/app/${app.project_id}/detail`,
+															`/app/${app.project_id}`,
 														);
 													} else {
 														navigate(
