@@ -21,6 +21,7 @@ import {
 	Switch,
 	styled,
 	TextField,
+	Tooltip,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { VisualMap } from "../../VisualMap";
@@ -588,9 +589,15 @@ export const DataTabStyling = observer(
 												id={refId}
 											>
 												<span>
-													{aggregatedColumnName(
-														column,
-													)}
+													{aggregatedColumnName(column).length > 20 ? (
+                                                        <Tooltip title={aggregatedColumnName(column)}>
+                                                            <span style={{ cursor: "pointer" }}>
+                                                                {aggregatedColumnName(column).slice(0, 12) + "..."}
+                                                            </span>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        aggregatedColumnName(column)
+                                                    )}
 												</span>
 												<div>
 													{item.aggregate && (
