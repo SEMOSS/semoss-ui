@@ -354,7 +354,7 @@ export class ChatStore {
 			const prompt = esc(data.system_prompt ?? "");
 			const tools = data.tools.map((tool) => tool.id);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=${JSON.stringify(tools)})`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], tools=${JSON.stringify(tools)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
