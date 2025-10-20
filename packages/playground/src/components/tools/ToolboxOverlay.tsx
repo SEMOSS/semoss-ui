@@ -18,7 +18,7 @@ import {
 } from "@semoss/ui";
 import LOGO from "@/assets/img/logo.svg";
 import type { App, Engine, Toolbox, ToolboxConfig } from "@/types";
-import { getToolbox } from "./utility";
+import { engineProjectToToolbox } from "./utility";
 
 const ENDPOINT = import.meta.env.ENDPOINT;
 const MODULE = import.meta.env.MODULE;
@@ -222,7 +222,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 								height={"100%"}
 							>
 								{getApps.data.map((item) => {
-									const tool = getToolbox(item);
+									const tool = engineProjectToToolbox(item);
 
 									return (
 										<Grid key={tool.id} item xs={6}>

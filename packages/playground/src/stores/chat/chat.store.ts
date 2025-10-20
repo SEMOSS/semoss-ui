@@ -1,5 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
+import { engineProjectToToolbox } from "@/components";
 import { MODEL_KEY } from "@/constants";
 import type { App, Engine, Toolbox, ToolboxConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
@@ -300,27 +301,7 @@ export class ChatStore {
 				throw new Error();
 			}
 
-			const toolBoxes = pixelReturn[0].output.map((tool): Toolbox => {
-				if ("app_type" in tool) {
-					// It's an Engine
-					return {
-						type: tool.app_type,
-						id: tool.app_id,
-						name: tool.app_name,
-						description: tool.description || "",
-						tags: [], // Tags are not provided in the current response
-					};
-				} else {
-					// It's an App
-					return {
-						type: "PROJECT",
-						id: tool.project_id,
-						name: tool.project_name,
-						description: tool.description || "",
-						tags: [], // Tags are not provided in the current response
-					};
-				}
-			});
+			const toolBoxes = pixelReturn[0].output.map(engineProjectToToolbox);
 
 			return toolBoxes.reduce(
 				(acc, tool) => {

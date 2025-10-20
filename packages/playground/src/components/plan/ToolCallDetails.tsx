@@ -2,7 +2,7 @@ import type React from "react";
 import { useState } from "react";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import { Autocomplete, Grid, Select, TextField } from "@semoss/ui";
-import { getToolbox } from "@/components";
+import { engineProjectToToolbox } from "@/components";
 import type { App, Engine, MCP, PlanStep, Toolbox } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
@@ -50,7 +50,9 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 		},
 	);
 
-	const toolboxOptions = getApps.data.map((item) => getToolbox(item));
+	const toolboxOptions = getApps.data.map((item) =>
+		engineProjectToToolbox(item),
+	);
 
 	return (
 		<>
