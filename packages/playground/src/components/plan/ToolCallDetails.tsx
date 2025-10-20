@@ -50,9 +50,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 		},
 	);
 
-	const toolboxOptions = getApps.data.map((item) =>
-		engineProjectToToolbox(item),
-	);
+	const toolboxOptions = getApps.data.map(engineProjectToToolbox);
 
 	return (
 		<>

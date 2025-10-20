@@ -122,6 +122,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 			data: [],
 		},
 	);
+	const toolboxes = getApps.data.map(engineProjectToToolbox);
 
 	/**
 	 * Track if the tool is selected
@@ -221,76 +222,72 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 								// overflow={'auto'}
 								height={"100%"}
 							>
-								{getApps.data.map((item) => {
-									const tool = engineProjectToToolbox(item);
-
-									return (
-										<Grid key={tool.id} item xs={6}>
-											<StyledItem
-												onClick={() => {
-													onToolSelect(tool);
-												}}
+								{toolboxes.map((tool) => (
+									<Grid key={tool.id} item xs={6}>
+										<StyledItem
+											onClick={() => {
+												onToolSelect(tool);
+											}}
+										>
+											<Stack
+												direction={"row"}
+												spacing={1}
 											>
-												<Stack
-													direction={"row"}
-													spacing={1}
-												>
-													<StyledItemImageHolder>
-														{tool.type ===
-															"PROJECT" && (
-															<img
-																alt=""
-																src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}
-																onError={({
-																	currentTarget,
-																}) => {
-																	currentTarget.onerror =
-																		null; // prevents looping
-																	currentTarget.src =
-																		LOGO;
-																}}
-															/>
-														)}
-													</StyledItemImageHolder>
-													<Typography
-														variant="subtitle2"
-														sx={{
-															flex: 1,
-														}}
-													>
-														{tool.name}
-													</Typography>
-													<Checkbox
-														checked={isToolSelected(
-															tool.id,
-														)}
-														onChange={() => {
-															onToolSelect(tool);
-														}}
-													/>
-												</Stack>
-												<StyledItemDescription variant="caption">
-													{tool.description}
-												</StyledItemDescription>
-												<Stack
-													direction="row"
-													alignItems="center"
-													spacing={0.5}
-													height={"24px"}
-												>
-													{tool.tags.map((tag) => (
-														<Chip
-															key={tag}
-															color="default"
-															size="small"
-															label={tag}
+												<StyledItemImageHolder>
+													{tool.type ===
+														"PROJECT" && (
+														<img
+															alt=""
+															src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}
+															onError={({
+																currentTarget,
+															}) => {
+																currentTarget.onerror =
+																	null; // prevents looping
+																currentTarget.src =
+																	LOGO;
+															}}
 														/>
-													))}
-												</Stack>
-											</StyledItem>
-										</Grid>
-									);
-								})}
+													)}
+												</StyledItemImageHolder>
+												<Typography
+													variant="subtitle2"
+													sx={{
+														flex: 1,
+													}}
+												>
+													{tool.name}
+												</Typography>
+												<Checkbox
+													checked={isToolSelected(
+														tool.id,
+													)}
+													onChange={() => {
+														onToolSelect(tool);
+													}}
+												/>
+											</Stack>
+											<StyledItemDescription variant="caption">
+												{tool.description}
+											</StyledItemDescription>
+											<Stack
+												direction="row"
+												alignItems="center"
+												spacing={0.5}
+												height={"24px"}
+											>
+												{tool.tags.map((tag) => (
+													<Chip
+														key={tag}
+														color="default"
+														size="small"
+														label={tag}
+													/>
+												))}
+											</Stack>
+										</StyledItem>
+									</Grid>
+								))}
 							</Grid>
 						)}
 					</StyledHolder>

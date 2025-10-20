@@ -74,7 +74,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 			if (room) {
 				await room.removeTool(tool);
 			} else {
-				// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
+				// otherwise we're creating a new room, just update the options
 				const updatedTools = options.tools.filter(
 					(t) => !(t.id === tool.id && t.type === tool.type),
 				);
@@ -94,7 +94,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				if (room) {
 					await room.setTools(toolConfigs);
 				} else {
-					// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
+					// otherwise we're creating a new room, just update the options
 					setOptions({
 						...options,
 						tools: toolConfigs,
