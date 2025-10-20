@@ -237,7 +237,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 												>
 													<StyledItemImageHolder>
 														{tool.type ===
-															"APP" && (
+															"PROJECT" && (
 															<img
 																alt=""
 																src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}
