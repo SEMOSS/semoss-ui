@@ -357,7 +357,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "xaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -366,7 +366,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit X Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -383,7 +383,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "yaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -392,7 +392,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit Y Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -409,7 +409,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "chartposition"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -418,7 +418,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Position" />
 					<InfoOutlined />
 				</List.ItemButton>
