@@ -10,6 +10,7 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
+import { setProjectFavorite } from "@/api";
 import { type AppMetadata, AppTileCard } from "@/components/app";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
@@ -143,7 +144,7 @@ const TERMINAL_APP: AppMetadata = {
  * App page
  */
 export const AppCatalogPage = observer((): JSX.Element => {
-	const { configStore, monolithStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const navigate = useNavigate();
 
 	const [state, dispatch] = useReducer(reducer, initialState);
@@ -251,8 +252,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 	 */
 	const favoriteApp = (app) => {
 		const favorite = !isFavorited(app.project_id);
-		monolithStore
-			.setProjectFavorite(app.project_id, favorite)
+		setProjectFavorite(app.project_id, favorite)
 			.then(() => {
 				if (!favorite) {
 					// Create a new array before modifying
@@ -536,7 +536,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 												isDiscoverable={mode !== "Mine"}
 												href={
 													mode === "Discoverable"
-														? `#/app/${app.project_id}/detail`
+														? `#/app/${app.project_id}`
 														: `#/app/${app.project_id}/view`
 												}
 												onAction={() => {
@@ -544,7 +544,7 @@ export const AppCatalogPage = observer((): JSX.Element => {
 														mode === "Discoverable"
 													) {
 														navigate(
-															`/app/${app.project_id}/detail`,
+															`/app/${app.project_id}`,
 														);
 													} else {
 														navigate(

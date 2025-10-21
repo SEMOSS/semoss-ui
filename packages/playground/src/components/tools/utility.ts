@@ -13,7 +13,7 @@ export const getToolbox = (item: Engine | App): Toolbox => {
 	// Type guard to check if item is App
 	if ("project_id" in item && "project_name" in item) {
 		id = item.project_id;
-		type = "APP";
+		type = "PROJECT";
 		name = item.project_name;
 	} else if ("app_id" in item && "app_name" in item) {
 		id = item.app_id;

@@ -17,6 +17,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	setEngineGlobal,
+	setEngineVisiblity,
+	setProjectGlobal,
+	setProjectVisiblity,
+} from "@/api";
 import databaseIcon from "@/assets/img/databaseIcon.png";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -220,7 +226,15 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			// start the loading screen
 			setLoading(true);
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -228,13 +242,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.setEngineVisiblity(
+				response = await setEngineVisiblity(
 					adminMode,
 					id,
 					!discoverable,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.setProjectVisiblity(
+				response = await setProjectVisiblity(
 					adminMode,
 					id,
 					!discoverable,
@@ -281,7 +295,15 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 			// start the loading screen
 			setLoading(true);
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -289,13 +311,13 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.setEngineGlobal(
+				response = await setEngineGlobal(
 					adminMode,
 					id,
 					!global,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.setProjectGlobal(
+				response = await setProjectGlobal(
 					adminMode,
 					id,
 					!global,
