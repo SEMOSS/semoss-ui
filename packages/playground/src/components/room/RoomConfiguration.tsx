@@ -86,11 +86,11 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 		};
 
 		const handleToolClose = async (success: boolean, tools: Toolbox[]) => {
-			// update the tools if successful
-			const toolConfigs: ToolboxConfig[] = tools.map(
-				({ id, type, name }) => ({ id, type, name }),
-			);
 			if (success) {
+				// update the tools if successful
+				const toolConfigs: ToolboxConfig[] = tools.map(
+					({ id, type, name }) => ({ id, type, name }),
+				);
 				if (room) {
 					await room.setTools(toolConfigs);
 				} else {
