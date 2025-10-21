@@ -1,5 +1,5 @@
+import type { Variable } from "@semoss/renderer";
 import { Stack, styled } from "@semoss/ui";
-import { Variable } from "@semoss/renderer";
 import type { AppMetadata } from "./app.types";
 import { BrowseTemplateTileCard } from "./BrowseTempateTitleCard";
 import {
@@ -76,8 +76,11 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 	};
 
 	const includeMCPDriverToTemplateState = (template: Template): Template => {
-		if( template.state.queries && !template.state.queries?.["mcp_driver"] &&
-			template.state.variables && !template.state.variables?.["mcp_driver"] &&
+		if (
+			template.state.queries &&
+			!template.state.queries?.["mcp_driver"] &&
+			template.state.variables &&
+			!template.state.variables?.["mcp_driver"] &&
 			!template.state.variables?.["mcp_driver--1"]
 		) {
 			return {
@@ -86,7 +89,7 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 					...template.state,
 					queries: {
 						...template.state.queries,
-						"mcp_driver": {
+						mcp_driver: {
 							id: "mcp_driver",
 							cells: [
 								{
@@ -94,30 +97,30 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 									widget: "code",
 									parameters: {
 										code: "",
-										type: "py"
-									}
-								}
-							]
-						}
+										type: "py",
+									},
+								},
+							],
+						},
 					},
 					variables: {
 						...template.state.variables,
-						"mcp_driver": {
+						mcp_driver: {
 							type: "query",
 							to: "mcp_driver",
-							cellId: "1"
+							cellId: "1",
 						} as Variable,
 						"mcp_driver--1": {
 							type: "cell",
 							to: "mcp_driver",
-							cellId: "1"
-						}
+							cellId: "1",
+						},
 					},
-				}
+				},
 			};
 		}
 		return template;
-	}
+	};
 
 	return (
 		<Stack
@@ -138,7 +141,9 @@ export const AppTemplates = (props: AppTemplatesProps) => {
 						<BrowseTemplateTileCard
 							key={`default-template-${app.project_name}`}
 							app={getAppMetadataFromTemplate(t)}
-							onAction={() => onUse(includeMCPDriverToTemplateState(t))}
+							onAction={() =>
+								onUse(includeMCPDriverToTemplateState(t))
+							}
 						/>
 					);
 				})}

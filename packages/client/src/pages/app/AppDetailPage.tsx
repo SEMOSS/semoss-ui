@@ -27,6 +27,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -272,8 +273,7 @@ export const AppDetailPage = observer(() => {
 	};
 
 	async function getPermission() {
-		const { permission: role } =
-			await monolithStore.getUserProjectPermission(appId);
+		const { permission: role } = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);
@@ -532,7 +532,11 @@ export const AppDetailPage = observer(() => {
 					const filesToUpload = Array.isArray(imageMeta)
 						? imageMeta
 						: [imageMeta];
-					await monolithStore.uploadImage(filesToUpload, appId);
+					await uploadImage(
+						filesToUpload,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// close it, refresh and succesfully message

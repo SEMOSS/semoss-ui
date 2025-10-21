@@ -179,7 +179,6 @@ export const SelectOptionsSettings = observer(
 				}
 			}
 			return (
-				<>
 					<QuerySelectionSettings
 						id={id}
 						label="Options"
@@ -201,7 +200,6 @@ export const SelectOptionsSettings = observer(
 							});
 						}}
 					/>
-				</>
 			);
 		}
 
@@ -240,7 +238,7 @@ export const SelectOptionsSettings = observer(
 							>
 								<Autocomplete
 									fullWidth
-                                    multiple={false}
+									multiple={false}
 									value={parsedData[d.path]}
 									options={keys}
 									onChange={(_, newValue) => {
