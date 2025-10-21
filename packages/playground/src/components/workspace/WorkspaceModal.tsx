@@ -129,11 +129,6 @@ export const WorkspaceModal = ({
 	const isFormValid = !!watch("name");
 	const toolsArray = Object.values(toolMap).flatMap(Object.values);
 
-	/**
-	 * Types
-	 */
-	type ToolboxWithAll = Toolbox & { all?: boolean };
-
 	return (
 		<StyledModal open={open} fullWidth>
 			<StyledTitle>
@@ -236,50 +231,25 @@ export const WorkspaceModal = ({
 								name={"tools"}
 								control={control}
 								rules={{}}
-								render={({ field }) => {
-									return (
-										<Autocomplete
-											fullWidth
-											multiple
-											disableCloseOnSelect
-											disabled={isLoading}
-											options={toolsArray}
-											isOptionEqualToValue={(
-												option: Toolbox,
-												value: ToolboxConfig,
-											) =>
-												option.id === value.id &&
-												option.type === value.type
-											}
-											filterOptions={() => {
-												return [
-													{
-														name: "Select All",
-														all: true,
-														type: "Select All",
-													},
-													...toolsArray,
-												] as ToolboxWithAll[];
-											}}
-											value={field.value || []}
-											onChange={(
-												_,
-												val: ToolboxWithAll[],
-											) => {
-												let newVal = val;
-												if (
-													val.find(
-														(option) => option.all,
-													)
-												)
-													newVal =
-														toolsArray.length ===
-														field?.value?.length
-															? []
-															: toolsArray;
-
+								render={({ field }) => (
+									<Autocomplete
+										fullWidth
+										multiple
+										disableCloseOnSelect
+										disabled={isLoading}
+										options={toolsArray}
+										isOptionEqualToValue={(
+											option: Toolbox,
+											value: ToolboxConfig,
+										) =>
+											option.id === value.id &&
+											option.type === value.type
+										}
+										value={field.value || []}
+										onChange={
+											(_, val: Toolbox[]) =>
 												field.onChange(
-													newVal.map(
+													val.map(
 														({
 															id,
 															type,
@@ -290,57 +260,42 @@ export const WorkspaceModal = ({
 															name,
 														}),
 													),
-												); // only send id and type to backend
-											}}
-											getOptionLabel={(
-												option: ToolboxConfig,
-											) => option.name}
-											getOptionKey={(
-												option: ToolboxConfig,
-											) =>
-												JSON.stringify({
-													id: option.id,
-													type: option.type,
-												})
-											}
-											renderOption={(
-												props,
-												option: ToolboxWithAll,
-												{ selected },
-											) => {
-												const { key, ...optionProps } =
-													props;
-												return (
-													<li
-														key={key}
-														{...optionProps}
-													>
-														<Checkbox
-															checked={
-																option.all
-																	? !!(
-																			field
-																				?.value
-																				?.length ===
-																			toolsArray?.length
-																		)
-																	: selected
-															}
-														/>
-														{option.name}
-													</li>
-												);
-											}}
-											renderInput={(params) => (
-												<TextField
-													{...params}
-													label="Use These Tools"
-													placeholder="Tools"
-												/>
-											)}
-										/>
-									);
-								}}
+												) // only send id and type to backend
+										}
+										getOptionLabel={(
+											option: ToolboxConfig,
+										) => option.name}
+										getOptionKey={(option: ToolboxConfig) =>
+											JSON.stringify({
+												id: option.id,
+												type: option.type,
+											})
+										}
+										renderOption={(
+											props,
+											option: ToolboxConfig,
+											{ selected },
+										) => {
+											const { key, ...optionProps } =
+												props;
+											return (
+												<li key={key} {...optionProps}>
+													<Checkbox
+														checked={selected}
+													/>
+													{option.name}
+												</li>
+											);
+										}}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												label="Use These Tools"
+												placeholder="Tools"
+											/>
+										)}
+									/>
+								)}
 							/>
 						</Stack>
 					) : (
