@@ -47,6 +47,7 @@ import { LegendStackChart } from "../stack-chart/LegendStackChart";
 import { StackChartBarStyle } from "../stack-chart/StackChartBarStyle";
 import { ValueLabelStackChart } from "../stack-chart/ValueLabelStackChart";
 import { TitleTool } from "../TitleTool";
+import CloudSettings from "../world-cloud-chart/CloudSettings";
 import ColourByValue from "./ColourByValue";
 import { CustomizeValueLabels } from "./CustomizeValueLabels";
 import { EditXAxis } from "./Edit-X-Axis";
@@ -356,7 +357,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "xaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -365,7 +366,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit X Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -382,7 +383,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "yaxis"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -391,7 +392,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Edit Y Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -408,7 +409,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "chartposition"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -417,7 +418,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Position" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1449,6 +1450,69 @@ const LineChartTools = ({ id }) => {
 	);
 };
 
+const CloudChartTools = ({ id }) => {
+	const [CloudSelection, setCloudSelection] = useState("");
+
+	return (
+		<>
+			<ResizingTool id={id} />
+			<ColorpalatteTool id={id} />
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setCloudSelection((prevList) =>
+							prevList === "title" ? "" : "title",
+						)
+					}
+					selected={CloudSelection === "title"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								CloudSelection === "title"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Chart Title" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{CloudSelection === "title" && (
+					<TitleTool id={id} path={"option"} />
+				)}
+			</StyledListItem>
+			<StyledListItem disablePadding>
+				<List.ItemButton
+					onClick={() =>
+						setCloudSelection((prevList) =>
+							prevList === "shape" ? "" : "shape",
+						)
+					}
+					selected={CloudSelection === "shape"}
+				>
+					<List.Icon>
+						<ImageIcon
+							fontSize="large"
+							color={
+								CloudSelection === "shape"
+									? "primary"
+									: "disabled"
+							}
+						/>
+					</List.Icon>
+					<List.ItemText primary="Cloud Settings" />
+					<InfoOutlined />
+				</List.ItemButton>
+				{CloudSelection === "shape" && (
+					<CloudSettings id={id} path={"option"} />
+				)}
+			</StyledListItem>
+		</>
+	);
+};
+
 const MapChartTools = ({ id }) => {
 	const [mapSelection, setMapSelection] = useState("");
 	return (
@@ -1773,6 +1837,9 @@ export const UpgradedVisualizationTool =
 				)}
 				{data.variation === "echart-dendrogram-chart" && (
 					<DendrogramToolsList id={id} />
+				)}
+				{data.variation === "echart-word-cloud" && (
+					<CloudChartTools id={id} />
 				)}
 			</List>
 		);
