@@ -149,7 +149,7 @@ export const WorkspaceModal = ({
 			<form onSubmit={onSubmit}>
 				<StyledModalContent>
 					{isCreatingNew ? (
-						<Stack direction="column" spacing={1.5}>
+						<Stack direction="column" spacing={2}>
 							<Controller
 								name={"name"}
 								control={control}
@@ -207,6 +207,8 @@ export const WorkspaceModal = ({
 									return (
 										<TextField
 											multiline
+											minRows={4}
+											maxRows={8}
 											label="Context"
 											variant="outlined"
 											placeholder="Context"
@@ -342,7 +344,7 @@ export const WorkspaceModal = ({
 							/>
 						</Stack>
 					) : (
-						<Stack direction="column" spacing={1}>
+						<Stack direction="column" spacing={2}>
 							<TextField
 								variant="outlined"
 								label="Name"
@@ -366,6 +368,9 @@ export const WorkspaceModal = ({
 								label="Context"
 								disabled
 								value={workspaceInfo.system_prompt}
+								multiline
+								minRows={4}
+								maxRows={8}
 							/>
 							<TextField
 								variant="outlined"
