@@ -7,7 +7,7 @@ import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import {
 	Container,
 	IconButton,
@@ -16,12 +16,15 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
-import { AgentChip } from "@/components/agent";
+import {
+	PromptLibrary,
+	RoomConfiguration,
+	RoomInput,
+	WorkspaceChip,
+} from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Agent } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
@@ -68,11 +71,8 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
-	const { agentId } = useParams() as { agentId?: string };
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
+	const { workspaceId } = useParams() as { workspaceId?: string };
+	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -87,6 +87,7 @@ export const NewRoomPage = observer(() => {
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
 		tools: [],
+		mcpToolID: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 	});
@@ -113,24 +114,23 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		const usingAgent = agentId && agent !== null;
+		const usingWorkspace = workspaceId && workspace !== null;
 
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
-			usingAgent
+			usingWorkspace
 				? {
-						instructions: "",
-						// knowledge: null,
-						tools: [],
-						tokenLength: TOKEN_LENGTH,
-						temperature: TEMPERATURE,
+						...options,
+						workspace: { workspace_id: workspace.workspace_id },
 					}
 				: options,
-			usingAgent ? agent : undefined,
 		);
+
+		// set the initialized state
+		room.setInitialized();
 
 		// ask the room
 		await room.askMessage(prompt, files);
@@ -177,17 +177,14 @@ export const NewRoomPage = observer(() => {
 							{APP_DESCRIPTION}
 						</Typography>
 						<RoomInput
-							isLoading={isLoading || isLoadingAgent}
+							isLoading={isLoading}
 							isDisabled={false}
 							minRows={4}
 							maxRows={8}
 							actions={
 								<Stack direction="row" alignItems="center">
-									{agentId ? (
-										<AgentChip
-											agent={agent}
-											loading={isLoadingAgent}
-										/>
+									{workspaceId ? (
+										<WorkspaceChip workspace={workspace} />
 									) : (
 										<Tooltip
 											title={"Open Configuration Menu"}

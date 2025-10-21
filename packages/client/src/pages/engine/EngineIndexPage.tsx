@@ -11,6 +11,7 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
+import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
@@ -209,7 +210,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			setSearch(newInputValue as string);
 		}, 300);
 
-		const handleInputChange = (newInputValue) => {
+		const handleInputChange = (newInputValue: string) => {
 			setInputValue(newInputValue);
 			debouncedSet(newInputValue);
 		};
@@ -219,12 +220,11 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 * @param db
 		 */
 		const setGlobal = (db) => {
-			monolithStore
-				.setEngineGlobal(
-					configStore.store.user.admin,
-					db.database_id,
-					!db.database_global,
-				)
+			setEngineGlobal(
+				configStore.store.user.admin,
+				db.database_id,
+				!db.database_global,
+			)
 				.then((response) => {
 					if (response.data.success) {
 						const newDatabases = [];
@@ -257,8 +257,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const favoriteDb = (db) => {
 			const favorite = !isFavorited(db.database_id);
-			monolithStore
-				.setEngineFavorite(db.database_id, favorite)
+			setEngineFavorite(db.database_id, favorite)
 				.then(() => {
 					if (!favorite) {
 						const newFavorites = favoritedDbs;
@@ -316,6 +315,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 			monolithStore.runQuery(pixelString).then((response) => {
 				const type = response.pixelReturn[0].operationType;
+				const _pixelResponse = response.pixelReturn[0].output;
 
 				if (type.indexOf("ERROR") === -1) {
 					const newDatabases = [];
@@ -420,7 +420,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				field: "databases",
 				value: mutateListWithVotes,
 			});
-		}, [getDatabases.status, getDatabases.data]);
+		}, [getDatabases.status, getDatabases.data, databases]);
 
 		/**
 		 * @desc Sets Favorited Engines
@@ -447,7 +447,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			return () => {
 				scrollEle.removeEventListener("scroll", scrollAll);
 			};
-		}, [scrollEle]);
+		}, [scrollEle, scrollAll]);
 
 		/**
 		 * Reset tiles anytime search changes

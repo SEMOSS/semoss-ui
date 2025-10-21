@@ -10,7 +10,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { Agent, PixelMessage, Toolbox } from "@/types";
+import type { PixelMessage, Toolbox } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -53,11 +53,6 @@ interface RoomStoreInterface {
 	 */
 	modelId: string;
 
-	/*
-	 * Id of the agent linked to the room
-	 */
-	agentId?: string;
-
 	/**
 	 * Root message
 	 */
@@ -78,6 +73,11 @@ interface RoomStoreInterface {
 		tools: Toolbox[];
 
 		/*
+		 * MCP ids loaded into the room - should eventually be part of tools
+		 */
+		mcpToolID: string[];
+
+		/*
 		 * Length of the token
 		 */
 		tokenLength: number;
@@ -86,6 +86,13 @@ interface RoomStoreInterface {
 		 * Temperature of the model
 		 */
 		temperature: number;
+
+		/*
+		 * Workspace associated with the room
+		 */
+		workspace?: {
+			workspace_id: string;
+		};
 	};
 
 	/**
@@ -125,11 +132,11 @@ export class RoomStore {
 			dateCreated: "",
 		},
 		modelId: "",
-		agentId: undefined,
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
 			tools: [],
+			mcpToolID: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
@@ -201,13 +208,6 @@ export class RoomStore {
 	 */
 	get modelId() {
 		return this._store.modelId;
-	}
-
-	/**
-	 * Agent that the user is interacting with
-	 */
-	getAgentId() {
-		return this._store.agentId;
 	}
 
 	/**
@@ -330,14 +330,6 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the agentId
-	 * @param agentId - agent to use in the room
-	 */
-	setAgentId = (agentId: string) => {
-		this._store.agentId = agentId;
-	};
-
-	/**
 	 * Set options
 	 * @param options - options
 	 */
@@ -349,32 +341,7 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set Agent
-	 * @param options - options
-	 */
-	linkAgent = async (agent: Agent) => {
-		try {
-			const { errors } = await this.runRoomPixel<
-				[
-					{
-						roomId: string;
-					},
-				]
-			>(
-				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(agent.workspace_id)});`,
-			);
-
-			if (errors?.length > 0) {
-				throw new Error(errors?.join(", ") || undefined);
-			}
-			this.setAgentId(agent.workspace_id);
-		} catch (e) {
-			throw new Error(e.message || "Error linking agent");
-		}
-	};
-
-	/**
-	 * Set the mdetadata
+	 * Set the metadata
 	 * @param metadata - metadata
 	 */
 	setMetadata = (metadata: Partial<RoomStoreInterface["metadata"]>) => {
@@ -385,7 +352,7 @@ export class RoomStore {
 	};
 	/** Actions */
 	/**
-	 * Initialize the room and load messages if they are there
+	 * Initialize the room and load messages and options if they are there
 	 */
 	initialize = async () => {
 		try {
@@ -397,12 +364,15 @@ export class RoomStore {
 			// turn on the loading screen
 			this.setIsLoading(true);
 
-			// get all of the messages in historical order (sorted)
-			const response = await this.runRoomPixel<[PixelMessage[]]>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
+			// get all of the messages, get all the options
+			const response = await this.runRoomPixel<
+				(PixelMessage[] | { OPTIONS: RoomStoreInterface["options"] })[]
+			>(
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const { output: messageOutput } = response.pixelReturn[0];
+			const { output: optionsOutput } = response.pixelReturn[1];
 
 			const root = new RootMessageStore(this);
 			const messages: Record<
@@ -418,22 +388,11 @@ export class RoomStore {
 
 			// store the last model
 			let activeModelId = this._store.modelId;
-			let activeOptions: Pick<
-				RoomStoreInterface["options"],
-				"tokenLength" | "temperature"
-			> = {
-				...this._store.options,
-			};
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
-			for (const pixelMessage of output) {
+			for (const pixelMessage of messageOutput as PixelMessage[]) {
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
-					activeOptions = {
-						...activeOptions,
-						temperature: pixelMessage.paramMap.temperature,
-						tokenLength: pixelMessage.paramMap.max_new_tokens,
-					};
 				}
 
 				// create the message
@@ -459,9 +418,17 @@ export class RoomStore {
 			}
 
 			runInAction(() => {
-				// set the model + options based on the history
+				// set the model based on the history
 				this.setModel(activeModelId);
-				this.setOptions(activeOptions);
+
+				// set the options based on the history
+				this.setOptions(
+					(
+						optionsOutput as {
+							OPTIONS: RoomStoreInterface["options"];
+						}
+					).OPTIONS,
+				);
 
 				// store it
 				this._store.root = root;
@@ -469,10 +436,85 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+		} catch (e) {
+			throw new Error(e.message || "Error initializing room");
 		} finally {
-			// turn off the loading screen
 			this.setIsLoading(false);
 		}
+	};
+
+	/**
+	 * Link Workspace
+	 * @param workspaceId - Workspace id to link to the room
+	 */
+	legacyLinkWorkspace = async (workspaceId: string) => {
+		try {
+			const { errors } = await this.runRoomPixel<
+				[
+					{
+						roomId: string;
+					},
+				]
+			>(
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(workspaceId)});`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+		} catch (e) {
+			throw new Error(e.message || "Error linking workspace");
+		}
+	};
+
+	/**
+	 * UpdateRoomOptions
+	 * @param options - full set of new options
+	 */
+	updateRoomOptions = async (options: RoomStore["options"]) => {
+		try {
+			const { errors } = await this.runRoomPixel(
+				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+					options,
+				)}]);`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+			this._store.options = options;
+		} catch (e) {
+			throw new Error(e.message || "Error updating room options");
+		}
+	};
+
+	/**
+	 * Set Tools for a room, including MCP tools for now
+	 * @param tools - list of tools to set
+	 */
+	setTools = async (tools: Toolbox[]) => {
+		const newOptions = { ...this._store.options };
+		newOptions.tools = tools;
+		newOptions.mcpToolID = tools
+			.filter((t) => t.type === "PROJECT")
+			.map((t) => t.id);
+		this._store.options = newOptions;
+		await this.updateRoomOptions(newOptions);
+	};
+
+	/**
+	 * Remove MCP Tool
+	 * @param mcpToolID - MCP tool ID to remove
+	 */
+	removeMcpTool = async (mcpToolID: string) => {
+		const newOptions = { ...this._store.options };
+		newOptions.tools = newOptions.tools.filter(
+			(t) => !(t.id === mcpToolID && t.type === "PROJECT"),
+		);
+		newOptions.mcpToolID = newOptions.mcpToolID.filter(
+			(id) => id !== mcpToolID,
+		);
+		await this.updateRoomOptions(newOptions);
 	};
 
 	/**
@@ -541,6 +583,13 @@ export class RoomStore {
 	 */
 	private setIsLoading = (isLoading: boolean): void => {
 		this._store.isLoading = isLoading;
+	};
+
+	/**
+	 * Mark a room as initialized
+	 */
+	setInitialized = (): void => {
+		this._store.isInitialized = true;
 	};
 
 	/**
