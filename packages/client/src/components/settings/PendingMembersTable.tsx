@@ -25,8 +25,14 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import {
+	approveEngineUserAccessRequest,
+	approveProjectUserAccessRequest,
+	denyEngineUserAccessRequest,
+	denyProjectUserAccessRequest,
+} from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { usePixel, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PENDING_USER, SETTINGS_ROLE } from "./settings.types";
 
@@ -187,7 +193,6 @@ interface PendingMemberTableProps {
 export const PendingMembersTable = (props: PendingMemberTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -259,7 +264,7 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -267,13 +272,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.approveEngineUserAccessRequest(
+				response = await approveEngineUserAccessRequest(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.approveProjectUserAccessRequest(
+				response = await approveProjectUserAccessRequest(
 					adminMode,
 					id,
 					requests,
@@ -343,7 +348,15 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -351,13 +364,13 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.denyEngineUserAccessRequest(
+				response = await denyEngineUserAccessRequest(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.denyProjectUserAccessRequest(
+				response = await denyProjectUserAccessRequest(
 					adminMode,
 					id,
 					requests,

@@ -104,9 +104,6 @@ export class PlanMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// get a list of tool ids
-		const tools: string[] = room.options.tools.map((t) => t.id, []);
-
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<
 			[
@@ -121,7 +118,6 @@ roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
