@@ -149,83 +149,71 @@ export const WorkspaceModal = ({
 								name={"name"}
 								control={control}
 								rules={{ required: true }}
-								render={({ field }) => {
-									return (
-										<TextField
-											variant="outlined"
-											label="Name"
-											placeholder="Add Name"
-											value={
-												field.value ? field.value : ""
-											}
-											disabled={isLoading}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											fullWidth
-											data-testid={
-												"newWorkspaceModal-textField-name"
-											}
-										/>
-									);
-								}}
+								render={({ field }) => (
+									<TextField
+										variant="outlined"
+										label="Name"
+										placeholder="Add Name"
+										value={field.value ? field.value : ""}
+										disabled={isLoading}
+										onChange={(value) =>
+											field.onChange(value)
+										}
+										fullWidth
+										data-testid={
+											"newWorkspaceModal-textField-name"
+										}
+									/>
+								)}
 							/>
 							<Controller
 								name={"description"}
 								control={control}
 								rules={{ required: false }}
-								render={({ field }) => {
-									return (
-										<TextField
-											label="Description"
-											variant="outlined"
-											placeholder="Description"
-											value={
-												field.value ? field.value : ""
-											}
-											disabled={isLoading}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											data-testid={
-												"newWorkspaceModal-description-txt"
-											}
-										/>
-									);
-								}}
+								render={({ field }) => (
+									<TextField
+										label="Description"
+										variant="outlined"
+										placeholder="Description"
+										value={field.value ? field.value : ""}
+										disabled={isLoading}
+										onChange={(value) =>
+											field.onChange(value)
+										}
+										data-testid={
+											"newWorkspaceModal-description-txt"
+										}
+									/>
+								)}
 							/>
 							<Controller
 								name={"system_prompt"}
 								control={control}
 								rules={{}}
-								render={({ field }) => {
-									return (
-										<TextField
-											multiline
-											minRows={4}
-											maxRows={8}
-											label="Context"
-											variant="outlined"
-											placeholder="Context"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											sx={{
-												"& .MuiInputBase-inputMultiline:focus":
-													{
-														border: "none !important",
-														outline: "none",
-													},
-											}}
-											data-testid={
-												"newWorkspaceModal-context-txt"
-											}
-										/>
-									);
-								}}
+								render={({ field }) => (
+									<TextField
+										multiline
+										minRows={4}
+										maxRows={8}
+										label="Context"
+										variant="outlined"
+										placeholder="Context"
+										value={field.value ? field.value : ""}
+										onChange={(value) =>
+											field.onChange(value)
+										}
+										sx={{
+											"& .MuiInputBase-inputMultiline:focus":
+												{
+													border: "none !important",
+													outline: "none",
+												},
+										}}
+										data-testid={
+											"newWorkspaceModal-context-txt"
+										}
+									/>
+								)}
 							/>
 							<Controller
 								name={"tools"}
