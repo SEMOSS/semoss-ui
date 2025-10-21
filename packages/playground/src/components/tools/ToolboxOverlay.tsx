@@ -191,7 +191,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 						>
 							new
 						</Link>{" "}
-						tools for the agent. The agent will use tools to
+						toolboxes for the agent. The agent will use toolboxes to
 						interact with external sources to help perform actions
 						and answer questions.
 					</Modal.ContentText>
