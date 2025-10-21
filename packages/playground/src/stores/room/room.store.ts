@@ -68,9 +68,9 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * Tools loaded into the room
+		 * Toolboxes loaded into the room
 		 */
-		tools: ToolboxConfig[];
+		toolboxes: ToolboxConfig[];
 
 		/*
 		 * Length of the token
@@ -130,7 +130,7 @@ export class RoomStore {
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			tools: [],
+			toolboxes: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
@@ -483,12 +483,12 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set Tools for a room, including MCP tools for now
-	 * @param tools - list of tools to set
+	 * Set Toolboxes for a room
+	 * @param toolboxes - list of toolboxes to set
 	 */
-	setTools = async (tools: (Toolbox | ToolboxConfig)[]) => {
+	setToolboxes = async (toolboxes: (Toolbox | ToolboxConfig)[]) => {
 		const newOptions = { ...this._store.options };
-		newOptions.tools = tools.map(({ id, type, name }) => ({
+		newOptions.toolboxes = toolboxes.map(({ id, type, name }) => ({
 			id,
 			type,
 			name,
@@ -503,7 +503,7 @@ export class RoomStore {
 	 */
 	removeTool = async (tool: ToolboxConfig) => {
 		const newOptions = { ...this._store.options };
-		newOptions.tools = newOptions.tools.filter(
+		newOptions.toolboxes = newOptions.toolboxes.filter(
 			(t) => !(t.id === tool.id && t.type === tool.type),
 		);
 		await this.updateRoomOptions(newOptions);

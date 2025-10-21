@@ -282,7 +282,7 @@ export class ChatStore {
 	};
 
 	/**
-	 * Get available tools from the backend
+	 * Get available toolboxes from the backend
 	 */
 	// Record<type, Record<id, Toolbox>>
 	getToolMap = async (
@@ -314,7 +314,7 @@ export class ChatStore {
 				{} as Record<string, Record<string, Toolbox>>,
 			);
 		} catch {
-			throw new Error("Failed to fetch tools");
+			throw new Error("Failed to fetch toolboxes");
 		}
 	};
 
@@ -324,7 +324,7 @@ export class ChatStore {
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "tools"
+			"name" | "system_prompt" | "description" | "toolboxes"
 		>,
 	): Promise<string> => {
 		try {
@@ -333,11 +333,11 @@ export class ChatStore {
 			const name = esc(data.name ?? "");
 			const desc = esc(data.description ?? "");
 			const prompt = esc(data.system_prompt ?? "");
-			const tools = data.tools.map(
+			const toolboxes = data.toolboxes.map(
 				({ name, id, type }): ToolboxConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], tools=${JSON.stringify(tools)})`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], toolboxes=${JSON.stringify(toolboxes)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -355,7 +355,7 @@ export class ChatStore {
 						date_created: new Date().toISOString(),
 						description: data.description,
 						system_prompt: data.system_prompt,
-						tools: data.tools,
+						toolboxes: data.toolboxes,
 					},
 				};
 			});

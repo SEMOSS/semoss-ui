@@ -75,29 +75,32 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				await room.removeTool(tool);
 			} else {
 				// otherwise we're creating a new room, just update the options
-				const updatedTools = options.tools.filter(
+				const updatedToolboxes = options.toolboxes.filter(
 					(t) => !(t.id === tool.id && t.type === tool.type),
 				);
 				setOptions({
 					...options,
-					tools: updatedTools,
+					toolboxes: updatedToolboxes,
 				});
 			}
 		};
 
-		const handleToolClose = async (success: boolean, tools: Toolbox[]) => {
-			// update the tools if successful
-			const toolConfigs: ToolboxConfig[] = tools.map(
+		const handleToolClose = async (
+			success: boolean,
+			toolboxes: Toolbox[],
+		) => {
+			// update the toolboxes if successful
+			const toolboxConfigs: ToolboxConfig[] = toolboxes.map(
 				({ id, type, name }) => ({ id, type, name }),
 			);
 			if (success) {
 				if (room) {
-					await room.setTools(toolConfigs);
+					await room.setToolboxes(toolboxConfigs);
 				} else {
 					// otherwise we're creating a new room, just update the options
 					setOptions({
 						...options,
-						tools: toolConfigs,
+						toolboxes: toolboxConfigs,
 					});
 				}
 			}
@@ -159,7 +162,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
-							name={"Tools"}
+							name={"Toolboxess"}
 							actions={
 								<Button
 									variant="outlined"
@@ -176,8 +179,8 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 
 						<RightMenuContent direction={"column"} spacing={1}>
 							<List dense={true}>
-								{options.tools.length ? (
-									options.tools.map((t) => {
+								{options.toolboxes.length ? (
+									options.toolboxes.map((t) => {
 										return (
 											<List.Item
 												key={t.id}
@@ -212,7 +215,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 												textAlign: "center",
 											}}
 										>
-											No tools added
+											No toolboxes added
 										</Typography>
 									</List.Item>
 								)}
@@ -273,9 +276,9 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				</RightMenuContent>
 				{isToolsOpen && (
 					<ToolboxOverlay
-						tools={options.tools}
-						onClose={(success, tools) =>
-							handleToolClose(success, tools)
+						toolboxes={options.toolboxes}
+						onClose={(success, toolboxes) =>
+							handleToolClose(success, toolboxes)
 						}
 					/>
 				)}

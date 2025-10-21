@@ -75,38 +75,38 @@ const StyledItemDescription = styled(Typography)({
 });
 
 interface ToolboxOverlayProps {
-	/** Tools loaded into the room */
-	tools: ToolboxConfig[];
+	/** Toolboxes loaded into the room */
+	toolboxes: ToolboxConfig[];
 
-	/** Callback triggered when the tool model is closed */
-	onClose: (success: boolean, tools?: Toolbox[]) => void;
+	/** Callback triggered when the toolbox model is closed */
+	onClose: (success: boolean, toolboxes?: Toolbox[]) => void;
 }
 
 export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
-	const { tools, onClose } = props;
+	const { toolboxes, onClose } = props;
 
-	const [updatedTools, setUpdatedTools] = useState<Record<string, Toolbox>>(
-		() => {
-			return tools.reduce((acc, val) => {
-				acc[val.id] = val;
+	const [updatedToolboxes, setUpdatedToolboxes] = useState<
+		Record<string, Toolbox>
+	>(() => {
+		return toolboxes.reduce((acc, val) => {
+			acc[val.id] = val;
 
-				return acc;
-			}, {});
-		},
-	);
+			return acc;
+		}, {});
+	});
 
-	const updatedToolsArray = Object.values(updatedTools);
+	const updatedToolboxesArray = Object.values(updatedToolboxes);
 
-	// update when tools change
+	// update when toolboxes change
 	useEffect(() => {
-		const toolsMap = tools.reduce((acc, val) => {
+		const toolboxesMap = toolboxes.reduce((acc, val) => {
 			acc[val.id] = val;
 
 			return acc;
 		}, {});
 
-		setUpdatedTools(toolsMap);
-	}, [tools]);
+		setUpdatedToolboxes(toolboxesMap);
+	}, [toolboxes]);
 
 	const [search, setSearch] = useState<string>("");
 
@@ -122,44 +122,44 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 			data: [],
 		},
 	);
-	const toolboxes = getApps.data.map(engineProjectToToolbox);
+	const availableToolboxes = getApps.data.map(engineProjectToToolbox);
 
 	/**
-	 * Track if the tool is selected
+	 * Track if the toolbox is selected
 	 */
-	const isToolSelected = (toolId: string): boolean => {
-		return Object.hasOwn(updatedTools, toolId);
+	const isToolboxSelected = (toolboxId: string): boolean => {
+		return Object.hasOwn(updatedToolboxes, toolboxId);
 	};
 
 	/**
-	 * Select a tool and update the arraw
+	 * Select a toolbox and update the array
 	 */
-	const onToolSelect = (tool: Toolbox) => {
+	const onToolboxSelect = (toolbox: Toolbox) => {
 		// copy for react
-		const updated = { ...updatedTools };
+		const updated = { ...updatedToolboxes };
 
-		if (isToolSelected(tool.id)) {
+		if (isToolboxSelected(toolbox.id)) {
 			// remove it
-			delete updated[tool.id];
+			delete updated[toolbox.id];
 		} else {
 			// add it
-			updated[tool.id] = tool;
+			updated[toolbox.id] = toolbox;
 		}
 
-		setUpdatedTools(updated);
+		setUpdatedToolboxes(updated);
 	};
 
 	/**
-	 * Select a tool and update the arraw
+	 * Select a toolbox and update the array
 	 */
-	const onToolDelete = (t: Toolbox) => {
+	const onToolboxDelete = (t: Toolbox) => {
 		// copy for react
-		const updated = { ...updatedTools };
+		const updated = { ...updatedToolboxes };
 
 		// remove it
 		delete updated[t.id];
 
-		setUpdatedTools(updated);
+		setUpdatedToolboxes(updated);
 	};
 
 	return (
@@ -222,11 +222,11 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 								// overflow={'auto'}
 								height={"100%"}
 							>
-								{toolboxes.map((tool) => (
-									<Grid key={tool.id} item xs={6}>
+								{availableToolboxes.map((toolbox) => (
+									<Grid key={toolbox.id} item xs={6}>
 										<StyledItem
 											onClick={() => {
-												onToolSelect(tool);
+												onToolboxSelect(toolbox);
 											}}
 										>
 											<Stack
@@ -234,11 +234,11 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 												spacing={1}
 											>
 												<StyledItemImageHolder>
-													{tool.type ===
+													{toolbox.type ===
 														"PROJECT" && (
 														<img
 															alt=""
-															src={`${ENDPOINT}${MODULE}/api/app-${tool.id}/appImage/download`}
+															src={`${ENDPOINT}${MODULE}/api/app-${toolbox.id}/appImage/download`}
 															onError={({
 																currentTarget,
 															}) => {
@@ -256,19 +256,21 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 														flex: 1,
 													}}
 												>
-													{tool.name}
+													{toolbox.name}
 												</Typography>
 												<Checkbox
-													checked={isToolSelected(
-														tool.id,
+													checked={isToolboxSelected(
+														toolbox.id,
 													)}
 													onChange={() => {
-														onToolSelect(tool);
+														onToolboxSelect(
+															toolbox,
+														);
 													}}
 												/>
 											</Stack>
 											<StyledItemDescription variant="caption">
-												{tool.description}
+												{toolbox.description}
 											</StyledItemDescription>
 											<Stack
 												direction="row"
@@ -276,7 +278,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 												spacing={0.5}
 												height={"24px"}
 											>
-												{tool.tags.map((tag) => (
+												{toolbox.tags.map((tag) => (
 													<Chip
 														key={tag}
 														color="default"
@@ -291,7 +293,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 							</Grid>
 						)}
 					</StyledHolder>
-					{updatedToolsArray.length > 0 && (
+					{updatedToolboxesArray.length > 0 && (
 						<>
 							<Typography variant="body1" fontWeight={"medium"}>
 								Selected
@@ -301,14 +303,14 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 								spacing={1}
 								flexWrap={"wrap"}
 							>
-								{updatedToolsArray.map((t) => (
+								{updatedToolboxesArray.map((t) => (
 									<Chip
 										key={t.id}
 										label={t.name}
 										size={"small"}
 										onDelete={() => {
 											// should delete since it is selected
-											onToolDelete(t);
+											onToolboxDelete(t);
 										}}
 									/>
 								))}
@@ -325,7 +327,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 					variant="contained"
 					onClick={() => {
 						// get the new keys
-						const updated = Object.values(updatedTools);
+						const updated = Object.values(updatedToolboxes);
 
 						onClose(true, updated);
 					}}

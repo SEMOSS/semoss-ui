@@ -65,13 +65,13 @@ export const WorkspaceModal = ({
 		Record<string, Record<string, Toolbox>>
 	>({});
 	const { handleSubmit, control, watch } = useForm<
-		Pick<Workspace, "name" | "system_prompt" | "description" | "tools">
+		Pick<Workspace, "name" | "system_prompt" | "description" | "toolboxes">
 	>({
 		defaultValues: {
 			name: "",
 			system_prompt: "",
 			description: "",
-			tools: [],
+			toolboxes: [],
 		},
 	});
 
@@ -103,7 +103,7 @@ export const WorkspaceModal = ({
 	 * Effects
 	 */
 	useEffect(() => {
-		const fetchTools = async () => {
+		const fetchToolboxes = async () => {
 			setIsLoading(true);
 			try {
 				const toolMap = await chat.getToolMap();
@@ -119,7 +119,7 @@ export const WorkspaceModal = ({
 				setIsLoading(false);
 			}
 		};
-		fetchTools();
+		fetchToolboxes();
 	}, [chat.getToolMap, notification.add]);
 
 	/**
@@ -127,7 +127,7 @@ export const WorkspaceModal = ({
 	 */
 	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
-	const toolsArray = Object.values(toolMap).flatMap(Object.values);
+	const toolboxesArray = Object.values(toolMap).flatMap(Object.values);
 
 	/**
 	 * Types
@@ -231,7 +231,7 @@ export const WorkspaceModal = ({
 								}}
 							/>
 							<Controller
-								name={"tools"}
+								name={"toolboxes"}
 								control={control}
 								rules={{}}
 								render={({ field }) => {
@@ -241,7 +241,7 @@ export const WorkspaceModal = ({
 											multiple
 											disableCloseOnSelect
 											disabled={isLoading}
-											options={toolsArray}
+											options={toolboxesArray}
 											isOptionEqualToValue={(
 												option: Toolbox,
 												value: ToolboxConfig,
@@ -256,7 +256,7 @@ export const WorkspaceModal = ({
 														all: true,
 														type: "Select All",
 													},
-													...toolsArray,
+													...toolboxesArray,
 												] as ToolboxWithAll[];
 											}}
 											value={field.value || []}
@@ -271,10 +271,10 @@ export const WorkspaceModal = ({
 													)
 												)
 													newVal =
-														toolsArray.length ===
+														toolboxesArray.length ===
 														field?.value?.length
 															? []
-															: toolsArray;
+															: toolboxesArray;
 
 												field.onChange(
 													newVal.map(
@@ -320,7 +320,7 @@ export const WorkspaceModal = ({
 																			field
 																				?.value
 																				?.length ===
-																			toolsArray?.length
+																			toolboxesArray?.length
 																		)
 																	: selected
 															}
@@ -332,8 +332,8 @@ export const WorkspaceModal = ({
 											renderInput={(params) => (
 												<TextField
 													{...params}
-													label="Use These Tools"
-													placeholder="Tools"
+													label="Use These Toolboxes"
+													placeholder="Toolboxes"
 												/>
 											)}
 										/>
