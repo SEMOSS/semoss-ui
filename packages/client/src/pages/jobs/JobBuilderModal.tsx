@@ -53,6 +53,9 @@ export const JobBuilderModal = (props: {
 	);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [builder, setBuilder] = useState<JobBuilder>(emptyBuilder);
+	const [cronExpression, setCronExpression] = useState<string>(
+		emptyBuilder.cronExpression,
+	);
 	const setBuilderField = (field: string, value: string | string[]) => {
 		setBuilder((previousBuilder) => ({
 			...previousBuilder,
@@ -67,12 +70,18 @@ export const JobBuilderModal = (props: {
 	useEffect(() => {
 		const builderToSet = initialBuilder ? initialBuilder : emptyBuilder;
 		setBuilder(builderToSet);
+		setCronExpression(builderToSet.cronExpression);
 		const cronValues = builderToSet.cronExpression.split(" ");
 		if (cronValues.length < 6) {
 			// invalid cron syntax, send to standard builder
 			setFrequencyType("standard");
 			return;
-		} else if (Number.isNaN(cronValues[1]) || Number.isNaN(cronValues[2])) {
+		} else if (
+			Number.isNaN(cronValues[1]) ||
+			Number.isNaN(cronValues[2]) ||
+			isNaN(Number(cronValues[1])) ||
+			isNaN(Number(cronValues[2]))
+		) {
 			// non-integer time values, must be custom
 			setFrequencyType("custom");
 			return;
@@ -110,8 +119,8 @@ export const JobBuilderModal = (props: {
 			cronValues[1] !== "*" &&
 			!(
 				!Number.isNaN(cronValues[1]) &&
-				parseInt(cronValues[1]) <= 59 &&
-				parseInt(cronValues[1]) >= 0
+				parseInt(cronValues[1], 10) <= 59 &&
+				parseInt(cronValues[1], 10) >= 0
 			)
 		) {
 			return false;
@@ -120,8 +129,8 @@ export const JobBuilderModal = (props: {
 			cronValues[2] !== "*" &&
 			!(
 				!Number.isNaN(cronValues[2]) &&
-				parseInt(cronValues[2]) <= 23 &&
-				parseInt(cronValues[2]) >= 0
+				parseInt(cronValues[2], 10) <= 23 &&
+				parseInt(cronValues[2], 10) >= 0
 			)
 		) {
 			return false;
@@ -130,8 +139,8 @@ export const JobBuilderModal = (props: {
 			cronValues[3] !== "*" &&
 			!(
 				!Number.isNaN(cronValues[3]) &&
-				parseInt(cronValues[3]) <= 31 &&
-				parseInt(cronValues[3]) >= 0
+				parseInt(cronValues[3], 10) <= 31 &&
+				parseInt(cronValues[3], 10) >= 0
 			)
 		) {
 			return false;
@@ -140,8 +149,8 @@ export const JobBuilderModal = (props: {
 			cronValues[4] !== "*" &&
 			!(
 				!Number.isNaN(cronValues[4]) &&
-				parseInt(cronValues[4]) <= 12 &&
-				parseInt(cronValues[4]) >= 1
+				parseInt(cronValues[4], 10) <= 12 &&
+				parseInt(cronValues[4], 10) >= 1
 			)
 		) {
 			return false;
@@ -150,8 +159,8 @@ export const JobBuilderModal = (props: {
 			cronValues[5] !== "?" &&
 			!(
 				!Number.isNaN(cronValues[5]) &&
-				parseInt(cronValues[5]) <= 6 &&
-				parseInt(cronValues[5]) >= 0
+				parseInt(cronValues[5], 10) <= 6 &&
+				parseInt(cronValues[5], 10) >= 0
 			)
 		) {
 			return false;
@@ -275,6 +284,10 @@ export const JobBuilderModal = (props: {
 	const updateJob = async () => {
 		setIsLoading(true);
 		const encode = getEncodeByJobType(builder);
+		const cronExpr =
+			builder.cronExpression.split(" ").length < 7
+				? `${builder.cronExpression} *`
+				: builder.cronExpression;
 		await runPixel(
 			`META|EditScheduledJob(jobId="${builder.id}",jobName="${
 				builder.name
@@ -282,14 +295,12 @@ export const JobBuilderModal = (props: {
 				builder.tags.length
 					? `jobTags=${JSON.stringify(builder.tags)},`
 					: ""
-			}jobGroup=["defaultGroup"],cronExpression="${
-				builder.cronExpression
-			} *",cronTz="${
+			}jobGroup=["defaultGroup"],cronExpression="${cronExpr}",cronTz="${
 				builder.cronTz
 			}",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
 				builder.jobType
 			}", "jobName":"${builder.name}", "cronExpression":"${
-				builder.cronExpression
+				cronExpr
 			}", "cronTimeZone":"${
 				builder.cronTz
 			}"}',triggerOnLoad=[false],triggerNow=[false]);`,
@@ -373,12 +384,12 @@ export const JobBuilderModal = (props: {
 					/>
 					{frequencyType === "standard" ? (
 						<JobStandardFrequencyBuilder
-							builder={builder}
+							cronExpression={cronExpression}
 							setBuilderField={setBuilderField}
 						/>
 					) : (
 						<JobCustomFrequencyBuilder
-							builder={builder}
+							cronExpression={cronExpression}
 							setBuilderField={setBuilderField}
 						/>
 					)}

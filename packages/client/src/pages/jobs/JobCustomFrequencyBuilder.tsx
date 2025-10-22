@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
 import { Stack, TextField } from "@semoss/ui";
-import type { JobBuilder } from "./job.types";
 
 export const JobCustomFrequencyBuilder = (props: {
-	builder: JobBuilder;
+	cronExpression: string;
 	setBuilderField: (field: string, value: string | string[]) => void;
 }) => {
-	const { builder, setBuilderField } = props;
+	const { cronExpression, setBuilderField } = props;
 
 	const [cronMinute, setCronMinute] = useState<string>("0");
 	const [cronHour, setCronHour] = useState<string>("12");
@@ -15,33 +14,43 @@ export const JobCustomFrequencyBuilder = (props: {
 	const [cronDayOfWeek, setCronDayOfWeek] = useState<string>("?");
 
 	useEffect(() => {
-		const cronValues = builder.cronExpression.split(" ");
+		const cronValues = cronExpression.split(" ");
 		if (cronValues.length < 6) {
 			// make sure it's valid cron syntax
 			return;
 		}
-		if (!Number.isNaN(cronValues[1]) || cronValues[1] == "*") {
+		if (!Number.isNaN(cronValues[1]) || cronValues[1] === "*") {
 			setCronMinute(cronValues[1]);
 		}
-		if (!Number.isNaN(cronValues[2]) || cronValues[2] == "*") {
+		if (!Number.isNaN(cronValues[2]) || cronValues[2] === "*") {
 			setCronHour(cronValues[2]);
 		}
-		if (!Number.isNaN(cronValues[3]) || cronValues[3] == "*") {
+		if (!Number.isNaN(cronValues[3]) || cronValues[3] === "*") {
 			setCronDayOfMonth(cronValues[3]);
 		}
-		if (!Number.isNaN(cronValues[4]) || cronValues[4] == "*") {
+		if (!Number.isNaN(cronValues[4]) || cronValues[4] === "*") {
 			setCronMonth(cronValues[4]);
 		}
-		if (!Number.isNaN(cronValues[5]) || cronValues[5] == "?") {
+		if (!Number.isNaN(cronValues[5]) || cronValues[5] === "?") {
 			setCronDayOfWeek(cronValues[5]);
 		}
-	}, []);
+		if (!Number.isNaN(cronValues[5]) || cronValues[5] === "*") {
+			setCronDayOfWeek("?");
+		}
+	}, [cronExpression]);
 	useEffect(() => {
 		setBuilderField(
 			"cronExpression",
 			`0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek} *`,
 		);
-	}, [cronMinute, cronHour, cronDayOfMonth, cronMonth, cronDayOfWeek]);
+	}, [
+		cronMinute,
+		cronHour,
+		cronDayOfMonth,
+		cronMonth,
+		cronDayOfWeek,
+		setBuilderField,
+	]);
 
 	return (
 		<Stack direction="row" spacing={1} width="100%">
@@ -52,8 +61,8 @@ export const JobCustomFrequencyBuilder = (props: {
 					cronMinute !== "*" &&
 					!(
 						!Number.isNaN(cronMinute) &&
-						parseInt(cronMinute) <= 59 &&
-						parseInt(cronMinute) >= 0
+						parseInt(cronMinute, 10) <= 59 &&
+						parseInt(cronMinute, 10) >= 0
 					)
 				}
 				onChange={(e) => setCronMinute(e.target.value)}
@@ -65,8 +74,8 @@ export const JobCustomFrequencyBuilder = (props: {
 					cronHour !== "*" &&
 					!(
 						!Number.isNaN(cronHour) &&
-						parseInt(cronHour) <= 23 &&
-						parseInt(cronHour) >= 0
+						parseInt(cronHour, 10) <= 23 &&
+						parseInt(cronHour, 10) >= 0
 					)
 				}
 				onChange={(e) => setCronHour(e.target.value)}
@@ -78,8 +87,8 @@ export const JobCustomFrequencyBuilder = (props: {
 					cronDayOfMonth !== "*" &&
 					!(
 						!Number.isNaN(cronDayOfMonth) &&
-						parseInt(cronDayOfMonth) <= 31 &&
-						parseInt(cronDayOfMonth) >= 0
+						parseInt(cronDayOfMonth, 10) <= 31 &&
+						parseInt(cronDayOfMonth, 10) >= 0
 					)
 				}
 				onChange={(e) => setCronDayOfMonth(e.target.value)}
@@ -91,8 +100,8 @@ export const JobCustomFrequencyBuilder = (props: {
 					cronMonth !== "*" &&
 					!(
 						!Number.isNaN(cronMonth) &&
-						parseInt(cronMonth) <= 12 &&
-						parseInt(cronMonth) >= 1
+						parseInt(cronMonth, 10) <= 12 &&
+						parseInt(cronMonth, 10) >= 1
 					)
 				}
 				onChange={(e) => setCronMonth(e.target.value)}
@@ -104,8 +113,8 @@ export const JobCustomFrequencyBuilder = (props: {
 					cronDayOfWeek !== "?" &&
 					!(
 						!Number.isNaN(cronDayOfWeek) &&
-						parseInt(cronDayOfWeek) <= 6 &&
-						parseInt(cronDayOfWeek) >= 0
+						parseInt(cronDayOfWeek, 10) <= 6 &&
+						parseInt(cronDayOfWeek, 10) >= 0
 					)
 				}
 				onChange={(e) => setCronDayOfWeek(e.target.value)}
