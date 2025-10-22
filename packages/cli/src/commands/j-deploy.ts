@@ -106,6 +106,16 @@ j-deploy (./src/commands/j-deploy.ts)
                     );
 
                     // save the result
+                    // log the reactor output for visibility
+                    // use this.log so it integrates with oclif output
+                    // but fall back to console.log if this.log is not available in this scope
+                    try {
+                        // `this` inside Listr tasks may not be the command, so use console.log
+                        console.log("Reactor output:", pixelReturn[0].output);
+                    } catch {
+                        // noop
+                    }
+
                     context.result = pixelReturn[0].output;
 
                     return true;
