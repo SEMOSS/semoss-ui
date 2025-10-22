@@ -75,20 +75,20 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				await room.removeMCP(mcp);
 			} else {
 				// otherwise we're creating a new room, just update the options
-				const updatedMCPs = options.mcps.filter(
+				const updatedMCPs = options.mcp.filter(
 					(t) => !(t.id === mcp.id && t.type === mcp.type),
 				);
 				setOptions({
 					...options,
-					mcps: updatedMCPs,
+					mcp: updatedMCPs,
 				});
 			}
 		};
 
-		const handleMCPClose = async (success: boolean, mcps: MCP[]) => {
+		const handleMCPClose = async (success: boolean, mcp: MCP[]) => {
 			if (success) {
-				// update the MCPs if successful
-				const mcpConfigs: MCPConfig[] = mcps.map(
+				// update the mcp list if successful
+				const mcpConfigs: MCPConfig[] = mcp.map(
 					({ id, type, name }) => ({ id, type, name }),
 				);
 				if (room) {
@@ -97,7 +97,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					// otherwise we're creating a new room, just update the options
 					setOptions({
 						...options,
-						mcps: mcpConfigs,
+						mcp: mcpConfigs,
 					});
 				}
 			}
@@ -159,7 +159,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
-							name={"MCPs"}
+							name={"MCP's"}
 							actions={
 								<Button
 									variant="outlined"
@@ -176,8 +176,8 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 
 						<RightMenuContent direction={"column"} spacing={1}>
 							<List dense={true}>
-								{options.mcps.length ? (
-									options.mcps.map((mcp) => {
+								{options.mcp.length ? (
+									options.mcp.map((mcp) => {
 										return (
 											<List.Item
 												key={mcp.id}
@@ -212,7 +212,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 												textAlign: "center",
 											}}
 										>
-											No MCPs added
+											No MCP's added
 										</Typography>
 									</List.Item>
 								)}
@@ -273,10 +273,8 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				</RightMenuContent>
 				{isToolsOpen && (
 					<ToolboxOverlay
-						mcps={options.mcps}
-						onClose={(success, mcps) =>
-							handleMCPClose(success, mcps)
-						}
+						mcp={options.mcp}
+						onClose={(success, mcp) => handleMCPClose(success, mcp)}
 					/>
 				)}
 			</RightMenu>

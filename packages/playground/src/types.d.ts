@@ -18,7 +18,7 @@ export interface Workspace {
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
-	mcps: MCPConfig[];
+	mcp: MCPConfig[];
 }
 
 /**

@@ -76,35 +76,35 @@ const StyledItemDescription = styled(Typography)({
 
 interface ToolboxOverlayProps {
 	/** Tools loaded into the room */
-	mcps: MCPConfig[];
+	mcp: MCPConfig[];
 
 	/** Callback triggered when the tool model is closed */
-	onClose: (success: boolean, mcps?: MCP[]) => void;
+	onClose: (success: boolean, mcp?: MCP[]) => void;
 }
 
 export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
-	const { mcps, onClose } = props;
+	const { mcp, onClose } = props;
 
-	const [updatedMCPs, setUpdatedMCPs] = useState<Record<string, MCP>>(() => {
-		return mcps.reduce((acc, val) => {
+	const [updatedMCP, setUpdatedMCP] = useState<Record<string, MCP>>(() => {
+		return mcp.reduce((acc, val) => {
 			acc[val.id] = val;
 
 			return acc;
 		}, {});
 	});
 
-	const updatedMCPsArray = Object.values(updatedMCPs);
+	const updatedMCPArray = Object.values(updatedMCP);
 
 	// update when mcps change
 	useEffect(() => {
-		const mcpsMap = mcps.reduce((acc, val) => {
+		const mcpMap = mcp.reduce((acc, val) => {
 			acc[val.id] = val;
 
 			return acc;
 		}, {});
 
-		setUpdatedMCPs(mcpsMap);
-	}, [mcps]);
+		setUpdatedMCP(mcpMap);
+	}, [mcp]);
 
 	const [search, setSearch] = useState<string>("");
 
@@ -126,7 +126,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	 * Track if the MCP is selected
 	 */
 	const isMCPSelected = (mcpId: string): boolean => {
-		return Object.hasOwn(updatedMCPs, mcpId);
+		return Object.hasOwn(updatedMCP, mcpId);
 	};
 
 	/**
@@ -134,7 +134,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	 */
 	const onMCPSelect = (mcp: MCP) => {
 		// copy for react
-		const updated = { ...updatedMCPs };
+		const updated = { ...updatedMCP };
 
 		if (isMCPSelected(mcp.id)) {
 			// remove it
@@ -144,7 +144,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 			updated[mcp.id] = mcp;
 		}
 
-		setUpdatedMCPs(updated);
+		setUpdatedMCP(updated);
 	};
 
 	/**
@@ -152,12 +152,12 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	 */
 	const onMCPDelete = (mcp: MCP) => {
 		// copy for react
-		const updated = { ...updatedMCPs };
+		const updated = { ...updatedMCP };
 
 		// remove it
 		delete updated[mcp.id];
 
-		setUpdatedMCPs(updated);
+		setUpdatedMCP(updated);
 	};
 
 	return (
@@ -288,7 +288,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 							</Grid>
 						)}
 					</StyledHolder>
-					{updatedMCPsArray.length > 0 && (
+					{updatedMCPArray.length > 0 && (
 						<>
 							<Typography variant="body1" fontWeight={"medium"}>
 								Selected
@@ -298,7 +298,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 								spacing={1}
 								flexWrap={"wrap"}
 							>
-								{updatedMCPsArray.map((mcp) => (
+								{updatedMCPArray.map((mcp) => (
 									<Chip
 										key={mcp.id}
 										label={mcp.name}
@@ -322,7 +322,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 					variant="contained"
 					onClick={() => {
 						// get the new keys
-						const updated = Object.values(updatedMCPs);
+						const updated = Object.values(updatedMCP);
 
 						onClose(true, updated);
 					}}

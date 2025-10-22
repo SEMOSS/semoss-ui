@@ -70,7 +70,7 @@ interface RoomStoreInterface {
 		/*
 		 * MCPs loaded into the room
 		 */
-		mcps: MCPConfig[];
+		mcp: MCPConfig[];
 
 		/*
 		 * Length of the token
@@ -130,7 +130,7 @@ export class RoomStore {
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			mcps: [],
+			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
@@ -484,11 +484,11 @@ export class RoomStore {
 
 	/**
 	 * Set MCPs for a room
-	 * @param mcps - list of MCPs to set
+	 * @param mcp - list of mcps to set
 	 */
-	setMCPs = async (mcps: (MCP | MCPConfig)[]) => {
+	setMCPs = async (mcp: (MCP | MCPConfig)[]) => {
 		const newOptions = { ...this._store.options };
-		newOptions.mcps = mcps.map(({ id, type, name }) => ({
+		newOptions.mcp = mcp.map(({ id, type, name }) => ({
 			id,
 			type,
 			name,
@@ -503,7 +503,7 @@ export class RoomStore {
 	 */
 	removeMCP = async (mcp: MCPConfig) => {
 		const newOptions = { ...this._store.options };
-		newOptions.mcps = newOptions.mcps.filter(
+		newOptions.mcp = newOptions.mcp.filter(
 			(t) => !(t.id === mcp.id && t.type === mcp.type),
 		);
 		await this.updateRoomOptions(newOptions);

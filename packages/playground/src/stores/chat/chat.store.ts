@@ -314,7 +314,7 @@ export class ChatStore {
 				{} as Record<string, Record<string, MCP>>,
 			);
 		} catch {
-			throw new Error("Failed to fetch MCPs");
+			throw new Error("Failed to fetch MCP's");
 		}
 	};
 
@@ -322,10 +322,7 @@ export class ChatStore {
 	 * Add a new workspace
 	 */
 	addWorkspace = async (
-		data: Pick<
-			Workspace,
-			"name" | "system_prompt" | "description" | "mcps"
-		>,
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
 	): Promise<string> => {
 		try {
 			const esc = (v: string) =>
@@ -333,11 +330,11 @@ export class ChatStore {
 			const name = esc(data.name ?? "");
 			const desc = esc(data.description ?? "");
 			const prompt = esc(data.system_prompt ?? "");
-			const mcps = data.mcps.map(
+			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcps=${JSON.stringify(mcps)})`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcp=${JSON.stringify(mcp)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -355,7 +352,7 @@ export class ChatStore {
 						date_created: new Date().toISOString(),
 						description: data.description,
 						system_prompt: data.system_prompt,
-						mcps: data.mcps,
+						mcp: data.mcp,
 					},
 				};
 			});

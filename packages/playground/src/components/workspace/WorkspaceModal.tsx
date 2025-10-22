@@ -65,13 +65,13 @@ export const WorkspaceModal = ({
 		{},
 	);
 	const { handleSubmit, control, watch } = useForm<
-		Pick<Workspace, "name" | "system_prompt" | "description" | "mcps">
+		Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">
 	>({
 		defaultValues: {
 			name: "",
 			system_prompt: "",
 			description: "",
-			mcps: [],
+			mcp: [],
 		},
 	});
 
@@ -127,7 +127,7 @@ export const WorkspaceModal = ({
 	 */
 	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
-	const mcpsArray = Object.values(mcpMap).flatMap(Object.values);
+	const mcpArray = Object.values(mcpMap).flatMap(Object.values);
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -216,7 +216,7 @@ export const WorkspaceModal = ({
 								)}
 							/>
 							<Controller
-								name={"mcps"}
+								name={"mcp"}
 								control={control}
 								rules={{}}
 								render={({ field }) => (
@@ -225,7 +225,7 @@ export const WorkspaceModal = ({
 										multiple
 										disableCloseOnSelect
 										disabled={isLoading}
-										options={mcpsArray}
+										options={mcpArray}
 										isOptionEqualToValue={(
 											option: MCP,
 											value: MCPConfig,
@@ -278,8 +278,8 @@ export const WorkspaceModal = ({
 										renderInput={(params) => (
 											<TextField
 												{...params}
-												label="Use These MCPs"
-												placeholder="MCPs"
+												label="Use These MCP's"
+												placeholder="MCP's"
 											/>
 										)}
 									/>
