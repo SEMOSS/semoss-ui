@@ -65,7 +65,6 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 	// get the workspace if there is one
 	const workspaceId = options.workspace?.workspace_id ?? null;
 	const workspace = chat.workspaces[workspaceId] ?? null;
-	console.log("Workspace in RoomConfiguration:", workspace);
 
 	/**
 	 * State
