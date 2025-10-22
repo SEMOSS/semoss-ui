@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import { Autocomplete, Grid, Select, TextField } from "@semoss/ui";
 import { engineProjectToToolbox } from "@/components";
-import type { App, Engine, MCPTool, MCPToolbox, PlanStep } from "@/types";
+import type { App, Engine, MCP, MCPTool, PlanStep } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
 
@@ -18,7 +18,7 @@ interface ToolCallDetailsProps {
 export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	const { details, onDetailsChange } = props;
 
-	const [toolbox, setToolbox] = useState<MCPToolbox | null>(null);
+	const [toolbox, setToolbox] = useState<MCP | null>(null);
 	const [search, setSearch] = useState("");
 
 	// debounce the input
@@ -50,7 +50,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	return (
 		<>
 			<Grid item xs={12}>
-				<Autocomplete<MCPToolbox, false, false, false>
+				<Autocomplete<MCP, false, false, false>
 					loading={getApps.status === "LOADING"}
 					options={toolboxOptions}
 					value={toolbox || null}
