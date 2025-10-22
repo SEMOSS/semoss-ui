@@ -159,7 +159,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
-							name={"MCP's"}
+							name={"MCPs"}
 							actions={
 								<Button
 									variant="outlined"
@@ -212,7 +212,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 												textAlign: "center",
 											}}
 										>
-											No MCP's added
+											No MCPs added
 										</Typography>
 									</List.Item>
 								)}

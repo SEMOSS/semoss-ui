@@ -278,8 +278,8 @@ export const WorkspaceModal = ({
 										renderInput={(params) => (
 											<TextField
 												{...params}
-												label="Use These MCP's"
-												placeholder="MCP's"
+												label="Use These MCPs"
+												placeholder="MCPs"
 											/>
 										)}
 									/>

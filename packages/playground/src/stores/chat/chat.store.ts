@@ -314,7 +314,7 @@ export class ChatStore {
 				{} as Record<string, Record<string, MCP>>,
 			);
 		} catch {
-			throw new Error("Failed to fetch MCP's");
+			throw new Error("Failed to fetch MCPs");
 		}
 	};
 
