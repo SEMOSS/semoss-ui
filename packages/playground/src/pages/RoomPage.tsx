@@ -22,7 +22,6 @@ import {
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
-	WorkspaceChip,
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
 
@@ -155,10 +154,6 @@ export const RoomPage = observer(() => {
 
 	// get the room
 	const room = chat.getRoom(roomId);
-
-	// get the workspace if there is one
-	const workspaceId = room?.options?.workspace?.workspace_id ?? null;
-	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -360,44 +355,40 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									workspaceId ? (
-										<WorkspaceChip workspace={workspace} />
-									) : (
-										<Tooltip
-											title={"Configuration"}
-											placement="top"
-										>
-											<IconButton
-												size={"medium"}
-												type="button"
-												aria-label="Configuration"
-												disabled={room.isLoading}
-												color={
+									<Tooltip
+										title={"Configuration"}
+										placement="top"
+									>
+										<IconButton
+											size={"medium"}
+											type="button"
+											aria-label="Configuration"
+											disabled={room.isLoading}
+											color={
+												room.sidebar.isOpen &&
+												room.sidebar.type ===
+													"CONFIGURATION"
+													? "primary"
+													: "default"
+											}
+											onClick={() => {
+												// toggle open / closed based on the state
+												if (
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-														? "primary"
-														: "default"
+												) {
+													room.closeSidebar();
+												} else {
+													room.openSidebar(
+														"CONFIGURATION",
+													);
 												}
-												onClick={() => {
-													// toggle open / closed based on the state
-													if (
-														room.sidebar.isOpen &&
-														room.sidebar.type ===
-															"CONFIGURATION"
-													) {
-														room.closeSidebar();
-													} else {
-														room.openSidebar(
-															"CONFIGURATION",
-														);
-													}
-												}}
-											>
-												<Tune color="inherit" />
-											</IconButton>
-										</Tooltip>
-									)
+											}}
+										>
+											<Tune color="inherit" />
+										</IconButton>
+									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
