@@ -16,3 +16,9 @@ Note: If you have a custom setup, create a `.env.local` to configure your enviro
 ```
 
 **Do not change the .env**
+
+# Notes on Naming
+
+1. "TOOLBOX" = MCP
+
+2. "WORKSPACE" = Collection of MCPs (a.k.a. "agent")
