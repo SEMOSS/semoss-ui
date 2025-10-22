@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import { Autocomplete, Grid, Select, TextField } from "@semoss/ui";
 import { engineProjectToToolbox } from "@/components";
-import type { App, Engine, MCP, PlanStep, Toolbox } from "@/types";
+import type { App, Engine, MCPTool, MCPToolbox, PlanStep } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
 
@@ -18,7 +18,7 @@ interface ToolCallDetailsProps {
 export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	const { details, onDetailsChange } = props;
 
-	const [toolbox, setToolbox] = useState<Toolbox | null>(null);
+	const [toolbox, setToolbox] = useState<MCPToolbox | null>(null);
 	const [search, setSearch] = useState("");
 
 	// debounce the input
@@ -37,25 +37,20 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	/**
 	 * Get all of the groups
 	 */
-	const getMCP = usePixel<MCP>(
-		toolbox ? `GetMCPTools("${toolbox.id}")` : null,
-		{
-			data: {
-				_meta: {
-					SMSS_PROJECT_NAME: "",
-					SMSS_PROJECT_ID: "",
-				},
-				tools: [],
-			},
+	const getMCP = usePixel<{
+		tools: MCPTool[];
+	}>(toolbox ? `GetMCPTools("${toolbox.id}")` : null, {
+		data: {
+			tools: [],
 		},
-	);
+	});
 
 	const toolboxOptions = getApps.data.map(engineProjectToToolbox);
 
 	return (
 		<>
 			<Grid item xs={12}>
-				<Autocomplete<Toolbox, false, false, false>
+				<Autocomplete<MCPToolbox, false, false, false>
 					loading={getApps.status === "LOADING"}
 					options={toolboxOptions}
 					value={toolbox || null}

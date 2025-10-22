@@ -86,7 +86,7 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		tools: [],
+		mcps: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
 	});

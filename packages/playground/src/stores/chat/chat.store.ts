@@ -2,7 +2,7 @@ import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
 import { engineProjectToToolbox } from "@/components";
 import { MODEL_KEY } from "@/constants";
-import type { App, Engine, Toolbox, ToolboxConfig, Workspace } from "@/types";
+import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -282,12 +282,12 @@ export class ChatStore {
 	};
 
 	/**
-	 * Get available tools from the backend
+	 * Get available MCPs from the backend
 	 */
-	// Record<type, Record<id, Toolbox>>
-	getToolMap = async (
+	// Record<type, Record<id, MCP>>
+	getMcpMap = async (
 		filterWord?: string,
-	): Promise<Record<string, Record<string, Toolbox>>> => {
+	): Promise<Record<string, Record<string, MCP>>> => {
 		try {
 			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
 				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
@@ -311,10 +311,10 @@ export class ChatStore {
 					acc[tool.type][tool.id] = tool;
 					return acc;
 				},
-				{} as Record<string, Record<string, Toolbox>>,
+				{} as Record<string, Record<string, MCP>>,
 			);
 		} catch {
-			throw new Error("Failed to fetch tools");
+			throw new Error("Failed to fetch MCPs");
 		}
 	};
 
@@ -324,7 +324,7 @@ export class ChatStore {
 	addWorkspace = async (
 		data: Pick<
 			Workspace,
-			"name" | "system_prompt" | "description" | "tools"
+			"name" | "system_prompt" | "description" | "mcps"
 		>,
 	): Promise<string> => {
 		try {
@@ -333,11 +333,11 @@ export class ChatStore {
 			const name = esc(data.name ?? "");
 			const desc = esc(data.description ?? "");
 			const prompt = esc(data.system_prompt ?? "");
-			const tools = data.tools.map(
-				({ name, id, type }): ToolboxConfig => ({ name, id, type }),
+			const mcps = data.mcps.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], tools=${JSON.stringify(tools)})`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcps=${JSON.stringify(mcps)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -355,7 +355,7 @@ export class ChatStore {
 						date_created: new Date().toISOString(),
 						description: data.description,
 						system_prompt: data.system_prompt,
-						tools: data.tools,
+						mcps: data.mcps,
 					},
 				};
 			});

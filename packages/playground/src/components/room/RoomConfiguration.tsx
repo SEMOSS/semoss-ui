@@ -19,7 +19,7 @@ import {
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Toolbox, ToolboxConfig } from "@/types";
+import type { MCP, MCPConfig } from "@/types";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
@@ -69,35 +69,35 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 		/**
 		 * Functions
 		 */
-		const handleDeleteTool = async (tool: ToolboxConfig) => {
-			// Remove the tool from the options
+		const handleDeleteMCP = async (mcp: MCPConfig) => {
+			// Remove the MCP from the options
 			if (room) {
-				await room.removeTool(tool);
+				await room.removeMCP(mcp);
 			} else {
 				// otherwise we're creating a new room, just update the options
-				const updatedTools = options.tools.filter(
-					(t) => !(t.id === tool.id && t.type === tool.type),
+				const updatedMCPs = options.mcps.filter(
+					(t) => !(t.id === mcp.id && t.type === mcp.type),
 				);
 				setOptions({
 					...options,
-					tools: updatedTools,
+					mcps: updatedMCPs,
 				});
 			}
 		};
 
-		const handleToolClose = async (success: boolean, tools: Toolbox[]) => {
+		const handleMCPClose = async (success: boolean, mcps: MCP[]) => {
 			if (success) {
-				// update the tools if successful
-				const toolConfigs: ToolboxConfig[] = tools.map(
+				// update the MCPs if successful
+				const mcpConfigs: MCPConfig[] = mcps.map(
 					({ id, type, name }) => ({ id, type, name }),
 				);
 				if (room) {
-					await room.setTools(toolConfigs);
+					await room.setMCPs(mcpConfigs);
 				} else {
 					// otherwise we're creating a new room, just update the options
 					setOptions({
 						...options,
-						tools: toolConfigs,
+						mcps: mcpConfigs,
 					});
 				}
 			}
@@ -159,7 +159,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
-							name={"Tools"}
+							name={"MCPs"}
 							actions={
 								<Button
 									variant="outlined"
@@ -176,11 +176,11 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 
 						<RightMenuContent direction={"column"} spacing={1}>
 							<List dense={true}>
-								{options.tools.length ? (
-									options.tools.map((t) => {
+								{options.mcps.length ? (
+									options.mcps.map((mcp) => {
 										return (
 											<List.Item
-												key={t.id}
+												key={mcp.id}
 												dense={true}
 												secondaryAction={
 													<IconButton
@@ -188,7 +188,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 														aria-label="delete"
 														size="small"
 														onClick={() =>
-															handleDeleteTool(t)
+															handleDeleteMCP(mcp)
 														}
 													>
 														<Delete
@@ -198,7 +198,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 												}
 											>
 												<List.ItemText
-													primary={t.name}
+													primary={mcp.name}
 												/>
 											</List.Item>
 										);
@@ -212,7 +212,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 												textAlign: "center",
 											}}
 										>
-											No tools added
+											No MCPs added
 										</Typography>
 									</List.Item>
 								)}
@@ -273,9 +273,9 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 				</RightMenuContent>
 				{isToolsOpen && (
 					<ToolboxOverlay
-						tools={options.tools}
-						onClose={(success, tools) =>
-							handleToolClose(success, tools)
+						mcps={options.mcps}
+						onClose={(success, mcps) =>
+							handleMCPClose(success, mcps)
 						}
 					/>
 				)}

@@ -18,7 +18,7 @@ export interface Workspace {
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
-	tools: ToolboxConfig[];
+	mcps: MCPConfig[];
 }
 
 /**
@@ -35,24 +35,24 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Toolbox {
-	/** Type of the tool */
+export interface MCP {
+	/** Type of the mcp */
 	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
 
-	/** Id of the tool */
+	/** Id of the mcp */
 	id: string;
 
-	/** Name of the tool */
+	/** Name of the mcp */
 	name: string;
 
-	/** Description of the tool */
+	/** Description of the mcp */
 	description: string;
 
-	/** Tags of the tool */
+	/** Tags of the mcp */
 	tags: string[];
 }
 
-export type ToolboxConfig = Pick<Toolbox, "type" | "id" | "name">;
+export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
 
 /**
  * Item from the prompt library
@@ -189,14 +189,6 @@ export interface PlanStep {
 				missing_capability: string;
 				rationaleForStep: string;
 		  };
-}
-
-export interface MCP {
-	_meta: {
-		SMSS_PROJECT_NAME: string;
-		SMSS_PROJECT_ID: string;
-	};
-	tools: MCPTool[];
 }
 
 export interface MCPTool {

@@ -14,7 +14,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { Toolbox, ToolboxConfig, Workspace } from "@/types";
+import type { MCP, MCPConfig, Workspace } from "@/types";
 
 export interface WorkspaceModalProps {
 	open: boolean;
@@ -61,17 +61,17 @@ export const WorkspaceModal = ({
 	 * State
 	 */
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [toolMap, setToolMap] = useState<
-		Record<string, Record<string, Toolbox>>
-	>({});
+	const [mcpMap, setMcpMap] = useState<Record<string, Record<string, MCP>>>(
+		{},
+	);
 	const { handleSubmit, control, watch } = useForm<
-		Pick<Workspace, "name" | "system_prompt" | "description" | "tools">
+		Pick<Workspace, "name" | "system_prompt" | "description" | "mcps">
 	>({
 		defaultValues: {
 			name: "",
 			system_prompt: "",
 			description: "",
-			tools: [],
+			mcps: [],
 		},
 	});
 
@@ -103,11 +103,11 @@ export const WorkspaceModal = ({
 	 * Effects
 	 */
 	useEffect(() => {
-		const fetchTools = async () => {
+		const fetchMCPs = async () => {
 			setIsLoading(true);
 			try {
-				const toolMap = await chat.getToolMap();
-				setToolMap(toolMap);
+				const mcpMap = await chat.getMcpMap();
+				setMcpMap(mcpMap);
 			} catch (e) {
 				console.error(e);
 
@@ -119,15 +119,15 @@ export const WorkspaceModal = ({
 				setIsLoading(false);
 			}
 		};
-		fetchTools();
-	}, [chat.getToolMap, notification.add]);
+		fetchMCPs();
+	}, [chat.getMcpMap, notification.add]);
 
 	/**
 	 * Constants
 	 */
 	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
-	const toolsArray = Object.values(toolMap).flatMap(Object.values);
+	const mcpsArray = Object.values(mcpMap).flatMap(Object.values);
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -216,7 +216,7 @@ export const WorkspaceModal = ({
 								)}
 							/>
 							<Controller
-								name={"tools"}
+								name={"mcps"}
 								control={control}
 								rules={{}}
 								render={({ field }) => (
@@ -225,24 +225,24 @@ export const WorkspaceModal = ({
 										multiple
 										disableCloseOnSelect
 										disabled={isLoading}
-										options={toolsArray}
+										options={mcpsArray}
 										isOptionEqualToValue={(
-											option: Toolbox,
-											value: ToolboxConfig,
+											option: MCP,
+											value: MCPConfig,
 										) =>
 											option.id === value.id &&
 											option.type === value.type
 										}
 										value={field.value || []}
 										onChange={
-											(_, val: Toolbox[]) =>
+											(_, val: MCP[]) =>
 												field.onChange(
 													val.map(
 														({
 															id,
 															type,
 															name,
-														}): ToolboxConfig => ({
+														}): MCPConfig => ({
 															id,
 															type,
 															name,
@@ -250,10 +250,10 @@ export const WorkspaceModal = ({
 													),
 												) // only send id and type to backend
 										}
-										getOptionLabel={(
-											option: ToolboxConfig,
-										) => option.name}
-										getOptionKey={(option: ToolboxConfig) =>
+										getOptionLabel={(option: MCPConfig) =>
+											option.name
+										}
+										getOptionKey={(option: MCPConfig) =>
 											JSON.stringify({
 												id: option.id,
 												type: option.type,
@@ -261,7 +261,7 @@ export const WorkspaceModal = ({
 										}
 										renderOption={(
 											props,
-											option: ToolboxConfig,
+											option: MCPConfig,
 											{ selected },
 										) => {
 											const { key, ...optionProps } =
@@ -278,8 +278,8 @@ export const WorkspaceModal = ({
 										renderInput={(params) => (
 											<TextField
 												{...params}
-												label="Use These Tools"
-												placeholder="Tools"
+												label="Use These MCPs"
+												placeholder="MCPs"
 											/>
 										)}
 									/>

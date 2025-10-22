@@ -10,7 +10,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { PixelMessage, Toolbox, ToolboxConfig } from "@/types";
+import type { MCP, MCPConfig, PixelMessage } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -68,9 +68,9 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * Tools loaded into the room
+		 * MCPs loaded into the room
 		 */
-		tools: ToolboxConfig[];
+		mcps: MCPConfig[];
 
 		/*
 		 * Length of the token
@@ -130,7 +130,7 @@ export class RoomStore {
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			tools: [],
+			mcps: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
@@ -483,12 +483,12 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set Tools for a room, including MCP tools for now
-	 * @param tools - list of tools to set
+	 * Set MCPs for a room
+	 * @param mcps - list of MCPs to set
 	 */
-	setTools = async (tools: (Toolbox | ToolboxConfig)[]) => {
+	setMCPs = async (mcps: (MCP | MCPConfig)[]) => {
 		const newOptions = { ...this._store.options };
-		newOptions.tools = tools.map(({ id, type, name }) => ({
+		newOptions.mcps = mcps.map(({ id, type, name }) => ({
 			id,
 			type,
 			name,
@@ -498,13 +498,13 @@ export class RoomStore {
 	};
 
 	/**
-	 * Remove Tool
-	 * @param tool - Tool to remove
+	 * Remove MCP
+	 * @param mcp - MCP to remove
 	 */
-	removeTool = async (tool: ToolboxConfig) => {
+	removeMCP = async (mcp: MCPConfig) => {
 		const newOptions = { ...this._store.options };
-		newOptions.tools = newOptions.tools.filter(
-			(t) => !(t.id === tool.id && t.type === tool.type),
+		newOptions.mcps = newOptions.mcps.filter(
+			(t) => !(t.id === mcp.id && t.type === mcp.type),
 		);
 		await this.updateRoomOptions(newOptions);
 	};
