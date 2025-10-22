@@ -16,6 +16,8 @@ import {
 	RightMenuContent,
 	RightMenuTitle,
 	ToolboxOverlay,
+	WorkspaceCard,
+	WorkspaceModal,
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -68,7 +70,9 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 	/**
 	 * State
 	 */
-	const [isToolsOpen, setIsToolsOpen] = useState(false);
+	const [isToolsOpen, setIsToolsOpen] = useState<boolean>(false);
+	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
+		useState<boolean>(false);
 
 	/**
 	 * Functions
@@ -140,6 +144,17 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 								</Menu.Item>
 							))}
 						</StyledTextField>
+					</RightMenuContent>
+				</>
+			)}
+			{workspace && (
+				<>
+					<RightMenuTitle name="Workspace" />
+					<RightMenuContent direction="column" spacing={1}>
+						<WorkspaceCard
+							workspace={workspace}
+							onPrimaryClick={() => setIsWorkspaceModalOpen(true)}
+						/>
 					</RightMenuContent>
 				</>
 			)}
@@ -280,6 +295,11 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 					onClose={(success, mcp) => handleMCPClose(success, mcp)}
 				/>
 			)}
+			<WorkspaceModal
+				workspaceInfo={workspace}
+				open={isWorkspaceModalOpen}
+				onClose={() => setIsWorkspaceModalOpen(false)}
+			/>
 		</RightMenu>
 	);
 });
