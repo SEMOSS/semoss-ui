@@ -35,6 +35,10 @@ deploy (./src/commands/deploy.ts)
 	};
 
 	public async run(): Promise<void> {
+
+		        console.log("------------------------")
+        console.log("JOHNS SCRIPT TO DEPLOY V1 ******")
+        console.log("------------------------")
 		const { flags } = await this.parse(Deploy);
 
 		// path to the environment variables
