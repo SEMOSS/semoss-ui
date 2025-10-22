@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Badge,
 	Container,
 	IconButton,
 	Stack,
@@ -184,22 +185,37 @@ export const NewRoomPage = observer(() => {
 										title={"Open Configuration Menu"}
 										placement="top"
 									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={isLoading}
-											color={
-												isMenuOpen
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												setIsMenuOpen(!isMenuOpen);
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
+										<span>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={isLoading}
+												color={
+													isMenuOpen
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsMenuOpen(!isMenuOpen);
+												}}
+											>
+												<Badge
+													badgeContent={
+														options.mcp.length ||
+														options.workspace ||
+														options.instructions
+															?.length
+															? 1
+															: 0
+													}
+													color="primary"
+													variant="dot"
+												>
+													<Tune color="inherit" />
+												</Badge>
+											</IconButton>
+										</span>
 									</Tooltip>
 									{ENABLE_PLANNING && (
 										<Tooltip

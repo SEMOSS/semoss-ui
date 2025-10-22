@@ -4,6 +4,7 @@ import { Resizable } from "re-resizable";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
+	Badge,
 	Chip,
 	Container,
 	Divider,
@@ -359,35 +360,53 @@ export const RoomPage = observer(() => {
 										title={"Configuration"}
 										placement="top"
 									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Configuration"
-											disabled={room.isLoading}
-											color={
-												room.sidebar.isOpen &&
-												room.sidebar.type ===
-													"CONFIGURATION"
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												// toggle open / closed based on the state
-												if (
+										<span>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Configuration"
+												disabled={room.isLoading}
+												color={
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-												) {
-													room.closeSidebar();
-												} else {
-													room.openSidebar(
-														"CONFIGURATION",
-													);
+														? "primary"
+														: "default"
 												}
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
+												}}
+											>
+												<Badge
+													color="primary"
+													variant="dot"
+													badgeContent={
+														room.options.mcp
+															.length ||
+														room.options
+															.workspace ||
+														room.options
+															.instructions
+															?.length
+															? 1
+															: 0
+													}
+												>
+													<Tune color="inherit" />
+												</Badge>
+											</IconButton>
+										</span>
 									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
