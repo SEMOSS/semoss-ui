@@ -3,7 +3,6 @@ import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
 import {
 	Chip,
 	Container,
@@ -23,10 +22,9 @@ import {
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
+	WorkspaceChip,
 } from "@/components";
-import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
-import type { Agent } from "@/types";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -158,12 +156,9 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
-	// get the agent if there is one
-	const agentId = room?.getAgentId();
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
+	// get the workspace if there is one
+	const workspaceId = room?.options?.workspace?.workspace_id ?? null;
+	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -180,16 +175,20 @@ export const RoomPage = observer(() => {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-			navigate("/");
-		}
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
 	}, [room, notification.add, navigate]);
 
 	// create a listener to process messages from the room
@@ -361,11 +360,8 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									agentId ? (
-										<AgentChip
-											agent={agent}
-											loading={isLoadingAgent}
-										/>
+									workspaceId ? (
+										<WorkspaceChip workspace={workspace} />
 									) : (
 										<Tooltip
 											title={"Configuration"}
@@ -444,6 +440,7 @@ export const RoomPage = observer(() => {
 								onClose={() => {
 									room.closeSidebar();
 								}}
+								room={room}
 							/>
 						)}
 						{room.sidebar.type === "ARTIFACTS" && (

@@ -5,7 +5,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Droppable } from "react-beautiful-dnd";
 import {
 	type BlockDef,
@@ -21,6 +21,7 @@ import {
 	Switch,
 	styled,
 	TextField,
+	Tooltip,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { VisualMap } from "../../VisualMap";
@@ -376,7 +377,8 @@ export const DataTabStyling = observer(
 				<StyledSubSection>
 					<Autocomplete
 						fullWidth
-						id={"Echart-Frame"}
+						id={{"Echart-Frame"}
+						key={`selected-frame-${data.frame.name || "0"}`} // Key to force remount on frame change}
 						multiple={false}
 						disabled={getFrames.status !== "SUCCESS"}
 						value={data.frame?.name}
@@ -462,7 +464,7 @@ export const DataTabStyling = observer(
 
 				{/* Drag and Drop Input Field */}
 				{chart.map((item, index) => (
-					<StyledDroppable key={`${item.name} - ${index}`}>
+					<StyledDroppable key={`chart-field-${item.name}`}>
 						<StyledLabelSection>
 							<StyledSpanLabel>
 								Select {item.name}
@@ -565,7 +567,7 @@ export const DataTabStyling = observer(
 										};
 										return (
 											<div
-												key={colIndex}
+												key={column}
 												style={{
 													padding: "4px 8px",
 													margin: "4px 0",
@@ -587,9 +589,15 @@ export const DataTabStyling = observer(
 												id={refId}
 											>
 												<span>
-													{aggregatedColumnName(
-														column,
-													)}
+													{aggregatedColumnName(column).length > 20 ? (
+                                                        <Tooltip title={aggregatedColumnName(column)}>
+                                                            <span style={{ cursor: "pointer" }}>
+                                                                {aggregatedColumnName(column).slice(0, 12) + "..."}
+                                                            </span>
+                                                        </Tooltip>
+                                                    ) : (
+                                                        aggregatedColumnName(column)
+                                                    )}
 												</span>
 												<div>
 													{item.aggregate && (

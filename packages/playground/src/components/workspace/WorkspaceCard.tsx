@@ -1,9 +1,9 @@
 import { ArrowForward, LightbulbOutlined } from "@mui/icons-material";
 import { Button, Skeleton, Stack, styled, Typography } from "@semoss/ui";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
-export interface AgentCardProps {
-	agent: Agent | null;
+export interface WorkspaceCardProps {
+	workspace: Workspace | null;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
 }
@@ -18,19 +18,19 @@ const StyledCardItem = styled(Stack)(({ theme }) => ({
 }));
 
 /**
- * Renders a card representing an agent
+ * Renders a card representing a workspace
  *
  * @component
  */
-export const AgentCard = ({
+export const WorkspaceCard = ({
 	onPrimaryClick,
 	onSecondaryClick,
-	agent,
-}: AgentCardProps) => {
+	workspace,
+}: WorkspaceCardProps) => {
 	/**
 	 * Constants
 	 */
-	const isAgentValid = agent !== null;
+	const isWorkspaceValid = workspace !== null;
 
 	return (
 		<StyledCardItem
@@ -42,15 +42,15 @@ export const AgentCard = ({
 			<Stack>
 				<LightbulbOutlined />
 				<Typography variant="body1">
-					{isAgentValid ? (
-						agent.name
+					{isWorkspaceValid ? (
+						workspace.name
 					) : (
 						<Skeleton width="100%" height="100%" />
 					)}
 				</Typography>
-				<Typography variant="body2" color="text.secondary">
-					{isAgentValid ? (
-						agent.description
+				<Typography variant="body2" color="textSecondary">
+					{isWorkspaceValid ? (
+						workspace.description
 					) : (
 						<Skeleton width="100%" height="100%" />
 					)}
@@ -59,11 +59,14 @@ export const AgentCard = ({
 			<Stack justifyContent="flex-end">
 				<div>
 					<Button
-						onClick={onSecondaryClick}
+						onClick={(e) => {
+							e.stopPropagation();
+							onSecondaryClick?.();
+						}}
 						endIcon={<ArrowForward />}
 						size="small"
 						variant="text"
-						disabled={!isAgentValid}
+						disabled={!isWorkspaceValid}
 					>
 						View Details
 					</Button>
