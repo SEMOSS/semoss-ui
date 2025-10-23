@@ -411,18 +411,22 @@ export class RoomStore {
 				}
 			}
 
+			// options
+			const newOptions = (
+				optionsOutput as {
+					OPTIONS: RoomStoreInterface["options"];
+				}
+			).OPTIONS;
+			if (!newOptions.workspace?.workspace_id) {
+				delete newOptions.workspace;
+			}
+
 			runInAction(() => {
 				// set the model based on the history
 				this.setModel(activeModelId);
 
 				// set the options based on the history
-				this.setOptions(
-					(
-						optionsOutput as {
-							OPTIONS: RoomStoreInterface["options"];
-						}
-					).OPTIONS,
-				);
+				this.setOptions(newOptions);
 
 				// store it
 				this._store.root = root;
