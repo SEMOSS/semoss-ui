@@ -160,6 +160,7 @@ j-deploy (./src/commands/j-deploy.ts)
 			zipBuffer?: Buffer;
 			deleteResult?: any;
 			uploadResult?: any;
+            url?: string;
 		}>([
 			{
 				title: "Initializing",
@@ -509,6 +510,31 @@ j-deploy (./src/commands/j-deploy.ts)
 						}
 						throw error;
 					}
+
+					return true;
+				},
+			},
+            {
+				title: "Loading App Reactors",
+				task: async () => {
+					// Load the insight classes
+					await insight.actions.run(
+						`ReloadInsightClasses(project='${Env.APP}', release=true);`,
+					);
+
+					return true;
+				},
+			},
+			{
+				title: "Publishing App",
+				task: async (context) => {
+					// Publish the app
+					const { pixelReturn } = await insight.actions.run<[string]>(
+						`PublishProject(project='${Env.APP}', release=true);`,
+					);
+
+					// save the url
+					context.url = pixelReturn[0].output;
 
 					return true;
 				},
