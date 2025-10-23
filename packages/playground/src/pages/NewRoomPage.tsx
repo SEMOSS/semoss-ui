@@ -134,11 +134,15 @@ export const NewRoomPage = observer(() => {
 	 * Effects
 	 */
 	useEffect(() => {
-		setOptions((prev) => ({
-			...prev,
-			workspace: { workspace_id: workspaceId },
-		}));
+		if (workspaceId) {
+			setOptions((prev) => ({
+				...prev,
+				workspace: { workspace_id: workspaceId },
+			}));
+		}
 	}, [workspaceId]);
+
+	console.log(JSON.stringify(options));
 
 	return (
 		<StyledPage direction={"row"} spacing={2}>
