@@ -198,6 +198,7 @@ deploy (./src/commands/deploy.ts)
 						path,
 					);
 
+					console.log("Uploaded:", uploaded);
 					// unzip the file in the new project
 					await insight.actions.run(
 						`UnzipFile(filePath=["${path}${uploaded[0].fileName}"], space=["${Env.APP}"])`,
