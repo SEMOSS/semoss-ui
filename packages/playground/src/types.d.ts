@@ -13,12 +13,13 @@ export interface App {
 }
 
 // TODO: define properly
-export interface Agent {
+export interface Workspace {
 	workspace_id: string;
 	name: string;
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
+	tools: Pick<Toolbox, "id" | "type">[];
 }
 
 /**
@@ -37,7 +38,7 @@ export interface Instructions {
 
 export interface Toolbox {
 	/** Type of the tool */
-	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
 
 	/** Id of the tool */
 	id: string;
