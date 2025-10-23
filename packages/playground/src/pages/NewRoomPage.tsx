@@ -142,8 +142,6 @@ export const NewRoomPage = observer(() => {
 		}
 	}, [workspaceId]);
 
-	console.log(JSON.stringify(options));
-
 	return (
 		<StyledPage direction={"row"} spacing={2}>
 			<StyledContent
