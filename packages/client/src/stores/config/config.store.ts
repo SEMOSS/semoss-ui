@@ -7,7 +7,8 @@ import { Env,
   	logout,
 	runPixel,
 } from "@semoss/sdk/react";
-import { AppMetadata } from "@/components/app";
+import { getUserProjectPermission as getUserProjectLevelPermission, registerUser } from "@/api";
+import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
 	type RootStore,
@@ -289,11 +290,10 @@ export class ConfigStore {
 		let customTheme = {};
 		try {
 			if (
-				this._store.config.theme &&
-				this._store.config.theme["THEME_MAP"]
+				(this._store.config.theme as { THEME_MAP: string })?.THEME_MAP
 			) {
 				customTheme = JSON.parse(
-					this._store.config.theme["THEME_MAP"] as string,
+					(this._store.config.theme as { THEME_MAP: string }).THEME_MAP as string,
 				);
 			}
 		} catch {}
@@ -470,11 +470,11 @@ export class ConfigStore {
 				}
 
 				// get the user based on provider
-				if (output["SAML"]) {
-					user = output["SAML"];
-				} else if (output["NATIVE"]) {
-					user = output["NATIVE"];
-				} else if (output && Object.keys(output).length > 0) {
+				if (output.SAML) {
+					user = output.SAML;
+				} else if (output.NATIVE) {
+					user = output.NATIVE;
+				} else if (Object.keys(output).length > 0) {
 					// This is a hack...since we don't have a single user
 					user = output[Object.keys(output)[0]];
 				}
@@ -682,10 +682,10 @@ export class ConfigStore {
 		phoneextension: string,
 		countrycode: string,
 	): Promise<boolean> {
-		const { monolithStore } = this._root;
+		// const { monolithStore } = this._root;
 
 		// login that preceeds sending of OTP
-		await monolithStore.registerUser(
+		await registerUser(
 			name,
 			username,
 			email,
@@ -803,7 +803,7 @@ export class ConfigStore {
 	async createWorkspace(appId: string) {
 		// check the permission
 		const getUserProjectPermission =
-			await this._root.monolithStore.getUserProjectPermission(appId);
+			await getUserProjectLevelPermission(appId);
 
 		// get the role and throw an error if it is missing
 		const role = getUserProjectPermission.permission;
@@ -852,8 +852,7 @@ export class ConfigStore {
 			const res = await runPixel("META|HelpJson();");
 
 			runInAction(() => {
-				const generalReactorList = res.pixelReturn[0].output["General"];
-
+				const generalReactorList = (res.pixelReturn[0].output as { General: string[] })?.General;
 				this._generalReactors = generalReactorList;
 			});
 		} catch {
