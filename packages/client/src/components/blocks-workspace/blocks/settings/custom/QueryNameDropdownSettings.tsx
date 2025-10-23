@@ -101,7 +101,7 @@ export const QueryNameDropdownSettings = observer(
 					fullWidth
 					disableClearable={value === ""}
 					size="small"
-                    multiple={false}
+					multiple={false}
 					value={value}
 					options={queries}
 					getOptionLabel={(queryKey: string) => queryKey}

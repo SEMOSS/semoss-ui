@@ -90,6 +90,10 @@ export const config: BlockSettingsConfig = {
 			name: "Pre Process",
 			children: [...buildListener("preProcess")],
 		},
+		{
+			name: "On Change",
+			children: [...buildListener("onChange")],
+		},
 	],
 	styleMenu: [
 		{

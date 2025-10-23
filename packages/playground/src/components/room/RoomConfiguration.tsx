@@ -3,8 +3,6 @@ import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
 	Button,
-	Checkbox,
-	FormControlLabel,
 	IconButton,
 	List,
 	Menu,
@@ -14,17 +12,16 @@ import {
 	Typography,
 } from "@semoss/ui";
 import {
-	KnowledgeOverlay,
 	RightMenu,
 	RightMenuContent,
 	RightMenuTitle,
-	ToolsOverlay,
+	ToolboxOverlay,
 } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
+import type { Toolbox } from "@/types";
 
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
-const ENABLE_KNOWLEDGE = import.meta.env.VITE_ENABLE_KNOWLEDGE === "true";
 const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
 
 const StyledTextField = styled(TextField)(({ theme }) => ({
@@ -50,15 +47,61 @@ interface RoomConfigurationProps {
 
 	/** Close the Menu */
 	onClose?: () => void;
+
+	/** The room, used to make updates */
+	room?: RoomStore;
 }
 
 export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 	(props) => {
-		const { chat } = useChat();
-		const { options, setOptions, onClose } = props;
+		const { options, setOptions, onClose, room } = props;
 
-		const [isKnowledgeOpen, setIsKnowledgeOpen] = useState(false);
+		/**
+		 * Library hooks
+		 */
+		const { chat } = useChat();
+
+		/**
+		 * State
+		 */
 		const [isToolsOpen, setIsToolsOpen] = useState(false);
+
+		/**
+		 * Functions
+		 */
+		const handleDeleteTool = async (tool: Toolbox) => {
+			// Remove the tool from the options
+			if (room && tool.type === "APP") {
+				await room.removeMcpTool(tool.id);
+			} else {
+				// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
+				const updatedTools = options.tools.filter(
+					(t) => t.id !== tool.id,
+				);
+				setOptions({
+					...options,
+					tools: updatedTools,
+				});
+			}
+		};
+
+		const handleToolClose = async (success: boolean, tools: Toolbox[]) => {
+			// update the tools if successful
+			if (success) {
+				if (room) {
+					await room.setTools(tools);
+				} else {
+					// otherwise we're creating a new room, just update the options and NewRoomPage will handle mcps
+					setOptions({
+						...options,
+						tools: tools,
+					});
+				}
+			}
+
+			// close it
+			setIsToolsOpen(false);
+		};
 
 		return (
 			<RightMenu header={"Configuration"} onClose={() => onClose()}>
@@ -110,67 +153,6 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 						}}
 					/>
 				</RightMenuContent>
-				{ENABLE_KNOWLEDGE && (
-					<>
-						<RightMenuTitle
-							name={"Knowledge"}
-							actions={
-								<Button
-									variant="outlined"
-									color="inherit"
-									size="small"
-									onClick={() => {
-										setIsKnowledgeOpen(true);
-									}}
-								>
-									Add
-								</Button>
-							}
-						/>
-
-						<RightMenuContent direction={"column"} spacing={1}>
-							<List dense={true}>
-								{options.knowledge ? (
-									<List.Item
-										dense={true}
-										secondaryAction={
-											<IconButton
-												edge="end"
-												aria-label="delete"
-												size="small"
-												onClick={() => {
-													// update the tools
-													setOptions({
-														...options,
-														knowledge: null,
-													});
-												}}
-											>
-												<Delete fontSize={"small"} />
-											</IconButton>
-										}
-									>
-										<List.ItemText
-											primary={options.knowledge.name}
-										/>
-									</List.Item>
-								) : (
-									<List.Item dense={true}>
-										<Typography
-											variant="caption"
-											sx={{
-												width: "100%",
-												textAlign: "center",
-											}}
-										>
-											No knowledge added
-										</Typography>
-									</List.Item>
-								)}
-							</List>
-						</RightMenuContent>
-					</>
-				)}
 				{ENABLE_TOOLS && (
 					<>
 						<RightMenuTitle
@@ -192,7 +174,7 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 						<RightMenuContent direction={"column"} spacing={1}>
 							<List dense={true}>
 								{options.tools.length ? (
-									options.tools.map((t, tIdx) => {
+									options.tools.map((t) => {
 										return (
 											<List.Item
 												key={t.id}
@@ -202,24 +184,9 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 														edge="end"
 														aria-label="delete"
 														size="small"
-														onClick={() => {
-															// copy it
-															const updated = [
-																...options.tools,
-															];
-
-															// remove at index
-															updated.splice(
-																tIdx,
-																1,
-															);
-
-															// update the tools
-															setOptions({
-																...options,
-																tools: updated,
-															});
-														}}
+														onClick={() =>
+															handleDeleteTool(t)
+														}
 													>
 														<Delete
 															fontSize={"small"}
@@ -247,21 +214,6 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 									</List.Item>
 								)}
 							</List>
-							<FormControlLabel
-								control={
-									<Checkbox
-										checked={options.autoExecute}
-										onChange={(_e, _vall) =>
-											setOptions({
-												...options,
-												autoExecute:
-													!options.autoExecute,
-											})
-										}
-									/>
-								}
-								label="Auto-execute"
-							/>
 						</RightMenuContent>
 					</>
 				)}
@@ -277,17 +229,16 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 					</Typography>
 					<TextField
 						aria-label="Token Length"
-						type="number"
-						value={options.tokenLength}
+						value={options.tokenLength ?? ""}
 						onChange={(e) =>
 							setOptions({
 								...options,
-								tokenLength: Number(e.target.value) || 0,
+								tokenLength:
+									Number(
+										e.target.value?.replace(/\D/g, ""),
+									) || null,
 							})
 						}
-						inputProps={{
-							min: 0,
-						}}
 						size="small"
 						variant="outlined"
 						fullWidth={true}
@@ -317,38 +268,12 @@ export const RoomConfiguration: React.FC<RoomConfigurationProps> = observer(
 						marks={marks}
 					/>
 				</RightMenuContent>
-				{isKnowledgeOpen && (
-					<KnowledgeOverlay
-						knowledge={options.knowledge}
-						onClose={(success, knowledge) => {
-							// if its successful, update the options
-							if (success) {
-								setOptions({
-									...options,
-									knowledge: knowledge,
-								});
-							}
-
-							// close the modal
-							setIsKnowledgeOpen(false);
-						}}
-					/>
-				)}
 				{isToolsOpen && (
-					<ToolsOverlay
+					<ToolboxOverlay
 						tools={options.tools}
-						onClose={(success, tools) => {
-							// update the tools if successful
-							if (success) {
-								setOptions({
-									...options,
-									tools: tools,
-								});
-							}
-
-							// close it
-							setIsToolsOpen(false);
-						}}
+						onClose={(success, tools) =>
+							handleToolClose(success, tools)
+						}
 					/>
 				)}
 			</RightMenu>

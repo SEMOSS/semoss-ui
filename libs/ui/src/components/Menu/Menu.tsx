@@ -1,14 +1,10 @@
-import {
-	Menu as MuiMenu,
-	type MenuProps as MuiMenuProps,
-	type PopoverProps,
-} from "@mui/material";
+import { Menu as MuiMenu, type SxProps } from "@mui/material";
 
-export type MenuAnchorReference = 'anchorEl' | 'anchorPosition';
+export type MenuAnchorReference = "anchorEl" | "anchorPosition";
 
 export interface MenuPosition {
-    top: number;
-    left: number;
+	top: number;
+	left: number;
 }
 
 export interface MenuProps {
@@ -22,7 +18,7 @@ export interface MenuProps {
 	 * An HTML element, or a function that returns one.
 	 * It's used to set the position of the menu.
 	 */
-	anchorEl?: PopoverProps["anchorEl"];
+	anchorEl?: HTMLElement | null | (() => HTMLElement | null);
 
 	/**
 	 * If `true` (Default) will focus the `[role="menu"]` if no focusable child is found. Disabled
@@ -36,17 +32,17 @@ export interface MenuProps {
 	/**
 	 * Menu contents, normally `MenuItem`s.
 	 */
-    /**
-        * This is the position that may be used to set the position of the popover.
-        * The coordinates are relative to the application's client area.
-    */
-    anchorPosition?: MenuPosition;
+	/**
+	 * This is the position that may be used to set the position of the popover.
+	 * The coordinates are relative to the application's client area.
+	 */
+	anchorPosition?: MenuPosition;
 
 	children?: React.ReactNode;
-     /**
-         * Determines which anchor prop to use for positioning the popover.
-     */
-    anchorReference?: MenuAnchorReference;
+	/**
+	 * Determines which anchor prop to use for positioning the popover.
+	 */
+	anchorReference?: MenuAnchorReference;
 	/**
 	 * When opening the menu will not focus the active item but the `[role="menu"]`
 	 * unless `autoFocus` is also set to `false`. Not using the default means not
@@ -58,11 +54,8 @@ export interface MenuProps {
 
 	/**
 	 * Callback fired when the component requests to be closed.
-	 *
-	 * @param {object} event The event source of the callback.
-	 * @param {string} reason Can be: `"escapeKeyDown"`, `"backdropClick"`, `"tabKeyDown"`.
 	 */
-	onClose?: PopoverProps["onClose"];
+	onClose?: () => void;
 
 	/**
 	 * If `true`, the component is shown.
@@ -73,7 +66,7 @@ export interface MenuProps {
 	 * The system prop that allows defining system overrides as well as additional CSS styles.
 	 */
 
-	sx?: MuiMenuProps["sx"];
+	sx?: SxProps;
 
 	/**
 	 * The variant to use. Use `menu` to prevent selected items from impacting the initial focus.
