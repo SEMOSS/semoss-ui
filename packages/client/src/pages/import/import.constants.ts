@@ -1,5 +1,4 @@
 //Drag and Drop Data
-/* eslint-disable suspicious/noTemplateCurlyInString */
 
 import TerminalRoundedIcon from "@mui/icons-material/TerminalRounded";
 //Add Storage
