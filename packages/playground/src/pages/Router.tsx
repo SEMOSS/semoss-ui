@@ -1,12 +1,12 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { LoadingScreen } from "@semoss/ui";
-import { AgentPage } from "./AgentPage";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 import { LoginPage } from "./LoginPage";
 import { MainLayout } from "./MainLayout";
 import { NewRoomPage } from "./NewRoomPage";
 import { RoomPage } from "./RoomPage";
+import { WorkspacePage } from "./WorkspacePage";
 
 /**
  * The main router for the application. It handles the routing logic and renders the appropriate components based on the current URL.
@@ -35,10 +35,10 @@ export const Router = () => {
 					<Route element={<MainLayout />}>
 						<Route path="new" element={<NewRoomPage />} />
 						<Route path="room/:roomId" element={<RoomPage />} />
-						<Route path="agent">
-							<Route index element={<AgentPage />} />
+						<Route path="workspace">
+							<Route index element={<WorkspacePage />} />
 							<Route
-								path=":agentId/new"
+								path=":workspaceId/new"
 								element={<NewRoomPage />}
 							/>
 						</Route>
