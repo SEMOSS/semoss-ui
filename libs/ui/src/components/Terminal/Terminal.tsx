@@ -3,16 +3,42 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import "@xterm/xterm/css/xterm.css";
 import "./terminal.css";
+import {
+	ClipboardAddon,
+} from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { Terminal as XTerm } from "@xterm/xterm";
 import { TerminalSpinner } from "./TerminalSpinner";
 
-const StyledTerminal = styled("div")(({ theme }) => ({
+const StyledTerminal = styled("div")({
 	height: "100%",
 	width: "100%",
 	overflow: "hidden",
+});
+
+const StyledOption = styled("div")(({
+	height: "fit-content",
+	width: "fit-content",
+	position: "absolute",
+	bottom: 0,
+	left: "20px",
+	right: "20px",
+	overflowY: "auto",
+	backgroundColor: '#1e1e1e',
+	color: "#ffffff",
+	padding: "10px",
+	borderRadius: "5px",
+	maxHeight: "40px",
+	overflowX: "scroll",
+	zIndex: 1000,
+	"ul > li": {
+		"&:hover": {
+			cursor: "pointer",
+			backgroundColor: "#4e4e4e",
+		},
+	},
 }));
 
 // prompt for new input
@@ -54,6 +80,8 @@ export interface TerminalProps {
 
 	/** custom style object */
 	sx?: SxProps;
+	/** Suggestions to show in the terminal */
+	suggestions?: string[];
 }
 
 export const Terminal: React.FC<TerminalProps> = ({
@@ -66,6 +94,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 	onCommand = () => null,
 	onRun = () => null,
 	sx,
+	suggestions = [],
 }) => {
 	// hold at ref to the terminal element
 	const terminalRef = useRef<HTMLDivElement>(null);
@@ -85,6 +114,11 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 	// save the instance
 	const [terminalInstance, setTerminalInstance] = useState<XTerm>(null);
+	//show and hide option
+	const [showOption, setShowOption] = useState(false);
+	//get the x and y position of the terminal
+	const positionData = useRef({ top: 60, left: 20 });
+	const terminalOptions = useRef<{ hasSelectedText: boolean }>({ hasSelectedText: false });
 
 	const isDisabled = loading || disabled;
 
@@ -148,6 +182,9 @@ export const Terminal: React.FC<TerminalProps> = ({
 		// add search
 		const searchAddon = new SearchAddon();
 		t.loadAddon(searchAddon);
+
+		const clipboardAddon = new ClipboardAddon();
+		t.loadAddon(clipboardAddon);
 
 		// mount it
 		t.open(terminalRef.current);
@@ -348,6 +385,22 @@ export const Terminal: React.FC<TerminalProps> = ({
 								PROMPT_LENGTH + updatedBuffer.position
 							}C`,
 						);
+						// const topVal = (terminalInstance.buffer.active.cursorY) > 1 ? (terminalRef.current.offsetHeight - 30) : 45;
+						const topVal =
+							terminalInstance.buffer.active.cursorY > 20
+								? terminalInstance.buffer.active.cursorY *
+										19.6 - 50
+								: terminalInstance.buffer.active.cursorY *
+										19.6 + 12;
+						const leftVal = terminalInstance.buffer.active.cursorY > 20 ? 0 : terminalInstance.buffer.active.cursorX * 10;
+						positionData.current = {
+							...positionData.current,
+							top: topVal,
+							left: leftVal,
+						};
+						if (!showOption) {
+							setShowOption(true);
+						}
 					}
 				}
 			}
@@ -358,6 +411,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 			// update the command
 			onCommand(updatedBuffer.command);
+		});
+		const selectionData = terminalInstance.onSelectionChange(() => {
+			const selectedTextLength = terminalInstance.getSelection().length;
+			terminalOptions.current.hasSelectedText = selectedTextLength > 0;
 		});
 
 		// cleanup
@@ -397,7 +454,17 @@ export const Terminal: React.FC<TerminalProps> = ({
 				terminalInstance.writeln(`${h.instructions}`);
 			}
 			terminalInstance.writeln(`${PROMPT}${h.command}`);
-			terminalInstance.writeln(h.response);
+			if (h.response.indexOf("\n") > -1) {
+				h.response.split("\n").forEach((line) => {
+					terminalInstance.writeln(line);
+				});
+			} else if (h.response.indexOf("\r") > -1) {
+				h.response.split("\r").forEach((line) => {
+					terminalInstance.writeln(line);
+				});
+			} else {
+				terminalInstance.writeln(h.response);
+			}
 			terminalInstance.write(`\n\r`);
 		});
 
@@ -422,6 +489,26 @@ export const Terminal: React.FC<TerminalProps> = ({
 			spinnerRef.current?.stop();
 		}
 	}, [loading]);
+	//handle the suggestions click
+	const handleSuggestionClick = useCallback(
+		(suggestion: string) => {
+			terminalInstance.write(
+				`\r\x1b[2K${PROMPT}${suggestion}\r\x1b[${
+					PROMPT_LENGTH + suggestion.length
+				}C`,
+			);
+			setBuffer((prevBuffer) => {
+				return {
+					...prevBuffer,
+					command: suggestion,
+					position: suggestion.length,
+				};
+			});
+			onCommand(suggestion);
+			setShowOption(false);
+		},
+		[onCommand, terminalInstance],
+	);
 
 	// // reset historyPosition when history changes
 	// useEffect(() => {
@@ -432,6 +519,57 @@ export const Terminal: React.FC<TerminalProps> = ({
 	// useEffect(() => {
 	//     setBuffer(history.length);
 	// }, [defaultCommand]);
-
-	return <StyledTerminal ref={terminalRef} sx={sx} />;
+	const hasSelectedText = terminalInstance?.getSelection().length > 0 || false;
+	return (
+		<>
+			{showOption && (
+				<StyledOption
+					style={{
+						left: `${positionData.current.left}px`,
+						top: `${positionData.current.top}px`,
+					}}
+				>
+					<ul
+						style={{ listStyleType: "none", padding: 0, margin: 0 }}
+					>
+						{buffer.command !== "" &&
+							suggestions
+								.filter((suggestion) =>
+									suggestion
+										.toLowerCase()
+										.includes(buffer.command.toLowerCase()),
+								)
+								.map((suggestion) => (
+									// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+									<li
+										key={suggestion}
+										onClick={() =>
+											handleSuggestionClick(suggestion)
+										}
+									>
+										{suggestion}
+									</li>
+								))}
+					</ul>
+				</StyledOption>
+			)}
+			{
+					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+					// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
+					(<div style={{ position: "absolute", top: 10, right: 0, cursor: "pointer", zIndex: 1000, backgroundColor: "#fff", color: "#000", padding: "5px", borderRadius: "5px" }} onClick={async (e)=>{
+						const selectedText = terminalInstance.getSelection();
+						try{
+							navigator.clipboard.writeText(selectedText).then(() => {
+								console.log('selection copied to clipboard');
+								terminalInstance.clearSelection();
+							});
+						}
+						catch{
+							console.log('failed to copy selection');
+						}
+					}}>Copy</div>)
+			}
+			<StyledTerminal ref={terminalRef} sx={sx} />
+		</>
+	);
 };

@@ -1,6 +1,7 @@
 import { CodeRounded, TerminalRounded } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { runPixel } from "@semoss/sdk/react";
 import {
 	Button,
 	buildTable,
@@ -60,6 +61,7 @@ export const TerminalPanel: React.FC = observer(() => {
 
 	const [command, setCommand] = useState<string>("");
 	const [language, setLanguage] = useState("PIXEL");
+	const suggesstionsList = useRef([]);
 
 	/**
 	 * Get instructions based on the language
@@ -77,9 +79,74 @@ export const TerminalPanel: React.FC = observer(() => {
 		} else if (language === "R") {
 			instructions = `${prefix}\x1b[36mR\x1b[0m${postfix}`;
 		}
-
+		console.log("instructions", instructions);
 		return instructions;
 	};
+
+	const getSuggestions = async () => {
+		const suggestions = await runPixel("META|help();");
+		const suggestionsData = await suggestions;
+		const suggestionsJson: string =
+			suggestionsData?.pixelReturn[0]?.output || "";
+		const suggesstionsArray = suggestionsJson.split("\n");
+		const suggestionsIndexBased = suggesstionsArray
+			.map((item, index) => (item.indexOf(":") > -1 ? index : -1))
+			.filter((item) => item > -1);
+		// const suggesstionsArraySplitCount = (suggestionsIndexBased.length - 2  > 0) ? (suggestionsIndexBased.length - 2) * 2 : 2;
+		const suggesstionsSection = [];
+		const suggesstionsData = {};
+		for (let i = 0; i < suggestionsIndexBased.length - 1; i++) {
+			suggesstionsSection.push([
+				suggestionsIndexBased[i],
+				suggestionsIndexBased?.[i + 1] || -1,
+			]);
+			suggesstionsData[
+				suggesstionsArray[suggestionsIndexBased[i]]
+					.toString()
+					.trim()
+					.replaceAll(" ", "")
+					.replaceAll(":", "")
+			] = suggestionsIndexBased?.[i + 1]
+				? suggesstionsArray.slice(
+						suggestionsIndexBased[i] + 1,
+						suggestionsIndexBased?.[i + 1],
+					)
+				: suggesstionsArray.slice(suggestionsIndexBased[i] + 1);
+		}
+		Object.keys(suggesstionsData).forEach((key) => {
+			suggesstionsData[key] = suggesstionsData[key].flatMap((item) =>
+				item.split(" ").filter((innerItem) => innerItem.length > 0),
+			);
+		});
+		console.log(suggesstionsData, "Suggesstion");
+		//returning GeneralReactors for testing suggesstions
+		return (suggesstionsData) || {
+			GeneralReactors: [],
+		};
+	};
+	useEffect(() => {
+		getSuggestions()
+			.then((data) => {
+				if(language === "PIXEL"){
+					suggesstionsList.current = (data as unknown)?.GeneralReactors || [];
+				}
+				else if(language === "SHELL"){
+					suggesstionsList.current = (data as unknown)?.TinkerFrameReactors || [];
+				}
+				else if(language === "PYTHON"){
+					suggesstionsList.current = (data as unknown)?.PythonFrameReactors || [];
+				}
+				else if(language === "R"){
+					suggesstionsList.current = (data as unknown)?.RFrameReactors || [];
+				}
+				else{
+					suggesstionsList.current = (data as unknown)?.GeneralReactors || [];
+				}
+			})
+			.catch((err) => {
+				suggesstionsList.current = [];
+			});
+	}, [language]);
 
 	/**
 	 * Run a command
@@ -175,9 +242,9 @@ export const TerminalPanel: React.FC = observer(() => {
 					),
 					command: command,
 					response:
-						typeof formatted !== "string"
+						colorizeJSON(typeof formatted !== "string"
 							? JSON.stringify(formatted, null, 2)
-							: formatted,
+							: formatted),
 				});
 			}
 
@@ -194,6 +261,24 @@ export const TerminalPanel: React.FC = observer(() => {
 			setIsLoading(false);
 		}
 	};
+	const colorizeJSON = (jsonString: string) => {
+		return jsonString.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, match => {
+            if (/:$/.test(match)) {
+                // key (yellow)
+                return `\x1b[33m${match}\x1b[0m`;
+            } else {
+                // string value (green)
+                return `\x1b[32m${match}\x1b[0m`;
+            }
+        }).replace(/\b(true|false|null)\b/g, match => {
+            // boolean/null (magenta)
+            return `\x1b[35m${match}\x1b[0m`;
+        })
+        .replace(/:\s*"([^"]+)"/, match => {
+            // number (cyan)
+            return `\x1b[36m${match}\x1b[0m`;
+        });
+	}
 
 	return (
 		<Panel
@@ -248,6 +333,7 @@ export const TerminalPanel: React.FC = observer(() => {
 				loading={isLoading}
 				history={history}
 				instructions={getInstructions(language, "Running ")}
+				suggestions={suggesstionsList.current}
 				onRun={() => runCommand()}
 				onCommand={(c) => setCommand(c)}
 			/>
