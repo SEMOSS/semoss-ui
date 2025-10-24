@@ -108,7 +108,6 @@ j-deploy (./src/commands/j-deploy.ts)
 			this.log(
 				"🛑 Debugger breakpoint enabled - attach your debugger now",
 			);
-			debugger; // This will pause execution if debugger is attached
 		}
 
 		try {
@@ -366,6 +365,8 @@ j-deploy (./src/commands/j-deploy.ts)
 			//     title: "Running DeleteAsset Reactor",
 			//     task: async (context) => {
 			//         const startTime = Date.now();
+			// 			// Deletes all assets in version/assets/
+			//         const deleteCommand = `DeleteAppAssets(filePath="")`;
 			//         const deleteCommand = `DeleteAsset(filePath="version/assets/", space=["${Env.APP}"])`;
 
 			//         if (flags.verbose || flags.superVerbose) {
