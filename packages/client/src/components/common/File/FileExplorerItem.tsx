@@ -1,10 +1,13 @@
 import {
 	DeleteOutline,
 	DescriptionOutlined,
+	EditOutlined,
+	SmartToyOutlined,
 	TopicOutlined,
 } from "@mui/icons-material";
 import { useCallback, useState } from "react";
 import {
+	Box,
 	CircularProgress,
 	Icon,
 	IconButton,
@@ -73,6 +76,18 @@ interface FileExplorerItemProps {
 		event: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => void;
+
+	/** Triggered when the Make MCP Icon is clicked */
+	onMakeMCPClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => boolean | void;
+
+	/** Triggered when the Edit MCP Icon is clicked */
+	onMCPEditClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => boolean | void;
 }
 
 export const FileExplorerItem = (props: FileExplorerItemProps) => {
@@ -87,6 +102,8 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		onDragStart = () => null,
 		onDragEnd = () => null,
 		onTrashClick = () => null,
+		onMakeMCPClick = () => null,
+		onMCPEditClick = () => null,
 	} = props;
 	const [isHovered, setIsHovered] = useState(false);
 	const [isDragging, setIsDragging] = useState(false);
@@ -113,6 +130,9 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 			e.stopImmediatePropagation();
 		});
 	}, []);
+
+	const makeMCPCandidate = path === "version/assets/py/mcp_driver.py" && !isDirectory;
+	const editMCPCandidate = path === "version/assets/mcp/py_mcp.json" && !isDirectory;
 
 	return (
 		<StyledNode
@@ -148,20 +168,53 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 					</Icon>
 					<StyledTypography variant="body2">{name}</StyledTypography>
 					{isHovered ? (
-						<IconButton
-							title={`Delete ${name}`}
-							onClick={(e) => {
-								// don't allow it to propagate
-								e.stopPropagation();
+						<Box>
+							{makeMCPCandidate && 
+								<IconButton
+									title={`Make ${name} MCP`}
+									size="small"
+									color={"default"}
+									onClick={(e) => {
+										// don't allow it to propagate
+										e.stopPropagation();
+										// trigger
+										onMakeMCPClick(e, path);
+									}}
+									
+								>
+									<SmartToyOutlined fontSize="inherit"/>
+								</IconButton>
+							}
+							{editMCPCandidate &&
+								<IconButton
+									title={`Edit ${name}`}
+									size="small"
+									color={"default"}
+									onClick={(e) => {
+										// don't allow it to propagate
+										e.stopPropagation();
+										// trigger
+										onMCPEditClick(e, path);
+									}}
+								>
+									<EditOutlined fontSize="inherit" />
+								</IconButton>
+							}
+							<IconButton
+								title={`Delete ${name}`}
+								onClick={(e) => {
+									// don't allow it to propagate
+									e.stopPropagation();
 
-								// trigger
-								onTrashClick(e, path);
-							}}
-							size="small"
-							color={"default"}
-						>
-							<DeleteOutline fontSize="inherit" />
-						</IconButton>
+									// trigger
+									onTrashClick(e, path);
+								}}
+								size="small"
+								color={"default"}
+							>
+								<DeleteOutline fontSize="inherit" />
+							</IconButton>
+						</Box>
 					) : null}
 				</StyledLabel>
 			}
@@ -192,6 +245,12 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 										}}
 										onDragStart={(e, path) => {
 											onDragStart(e, path);
+										}}
+										onMakeMCPClick={(e, path) => {
+											onMakeMCPClick(e, path);
+										}}
+										onMCPEditClick={(e, path) => {
+											onMCPEditClick(e, path);
 										}}
 									/>
 								);
