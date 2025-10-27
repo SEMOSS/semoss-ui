@@ -36,16 +36,18 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 	const addLimit = cellDetail?.parameters?.dataLimit
 		? (Number(cellDetail.parameters.dataLimit) ?? -1)
 		: -1;
-	const queryToRun = useMemo(()=> `Frame(frame=[${output.name}] )|QueryAll()|Limit(${addLimit})|CollectAll();`,[output]);		
+	const queryToRun = useMemo(
+		() =>
+			`Frame(frame=[${output.name}] )|QueryAll()|Limit(${addLimit})|CollectAll();`,
+		[output],
+	);
 	// get the data from the frame
 	const getData = useBlocksPixel<{
-				data: {
-					values: (string | number | boolean)[][];
-					headers: string[];
-				};
-			}>(
-				queryToRun,
-			);
+		data: {
+			values: (string | number | boolean)[][];
+			headers: string[];
+		};
+	}>(queryToRun);
 
 	// get the count of data in the frame
 	const getCount = useBlocksPixel<number>(
@@ -58,7 +60,6 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 	const isError = getData.status === "ERROR" || getCount.status === "ERROR";
 	const isSuccess =
 		getData.status === "SUCCESS" && getCount.status === "SUCCESS";
-
 
 	return (
 		<>

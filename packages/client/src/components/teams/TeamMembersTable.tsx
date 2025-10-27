@@ -21,7 +21,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { useRootStore } from "@/hooks";
+import {
+	addTeamUser,
+	deleteTeamUser,
+	getNonTeamUsers,
+	getTeamUsers,
+} from "@/api/teams";
 
 const colors = [
 	"#22A4FF",
@@ -187,10 +192,24 @@ interface MembersTableProps {
 	name: string;
 }
 
+interface TeamMember {
+	admin: boolean;
+	countrycode: string;
+	email: string;
+	exporter: boolean;
+	id: string;
+	name: string;
+	phone: string;
+	phoneextension: string;
+	publisher: boolean;
+	type: string;
+	username: string;
+};
+
+
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -326,8 +345,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response: AxiosResponse<{ success: boolean }> | null = null;
-				response = await monolithStore.addTeamUser(
+				let response:
+					| AxiosResponse<{ success: boolean }>
+					| {
+							response: Response;
+							data: {
+								success: boolean;
+							};
+					  }
+					| null = null;
+				response = await addTeamUser(
 					groupId,
 					requests[i].type,
 					requests[i].userid,
@@ -375,8 +402,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 */
 	const deleteUser = async (user) => {
 		try {
-			let response: AxiosResponse<{ success: boolean }> | null = null;
-			response = await monolithStore.deleteTeamUser(user);
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
+			response = await deleteTeamUser(user);
 
 			if (!response) {
 				return;
@@ -406,11 +441,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		try {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
-					let response: AxiosResponse<{ success: boolean }> | null =
-						null;
-					response = await monolithStore.deleteTeamUser(
-						selectedMembers[i],
-					);
+					let response:
+						| AxiosResponse<{ success: boolean }>
+						| {
+								response: Response;
+								data: {
+									success: boolean;
+								};
+						  }
+						| null = null;
+					response = await deleteTeamUser(selectedMembers[i]);
 
 					if (!response) {
 						return;
@@ -429,7 +469,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				color: "success",
 				message: `Successfully removed users`,
 			});
-			setCount((prevCount) => {return prevCount + 1;});
+			setCount((prevCount) => {
+				return prevCount + 1;
+			});
 			setDeleteMembersModal(false);
 			setSelectedMembers([]);
 		}
@@ -446,10 +488,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			let response;
 			// possibly add more db table columns / keys here to get id type for display under username
 			// eslint-disable-next-line prefer-const
-			response = await monolithStore.getNonTeamUsers(
+			const response = await getNonTeamUsers(
 				groupId,
 				AUTOCOMPLETE_LIMIT,
 				offset,
@@ -459,7 +500,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = response.map((val) => {
+				const users = (response as unknown as TeamMember[]).map((val) => {
 					return {
 						...val,
 						color: colors[
@@ -510,28 +551,24 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	memberCount > 19 && paginationOptions.membersPageCounts.push(20);
 
 	const filterUsers = useCallback(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				rowsPerPage,
-				membersPage * rowsPerPage - rowsPerPage, // offset
-				searchFilter,
-			)
-			.then((data) => {
-				setTeamMembers(data);
-				setHasMembers(data?.length > 0);
-			});
+		getTeamUsers(
+			groupId,
+			rowsPerPage,
+			membersPage * rowsPerPage - rowsPerPage, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
+			setTeamMembers(data);
+			setHasMembers(data?.length > 0);
+		});
 	}, [count, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
-		monolithStore
-			.getTeamUsers(
-				groupId,
-				100,
-				0, // offset
-				searchFilter,
-			)
-			.then((data) => {
+		getTeamUsers(
+			groupId,
+			100,
+			0, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
 				setMemberCount(data.length);
 				setAllTeamMembers(data);
 			});
@@ -553,7 +590,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			<StyledMemberInnerContent>
 				{(teamMembers && teamMembers.length > 0) ||
 				memberCount > 0 ||
-				hasMembers || searchFilter ? (
+				hasMembers ||
+				searchFilter ? (
 					<StyledTableContainer>
 						<StyledTableTitleContainer>
 							<StyledTableTitleDiv>Members</StyledTableTitleDiv>
@@ -564,9 +602,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											spacing={"small"}
 											variant={"circular"}
 											max={5}
-											total={
-												teamMembers?.length
-											}
+											total={teamMembers?.length}
 										>
 											{Avatars.map((el) => {
 												return el;
@@ -653,20 +689,20 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{Array.isArray(teamMembers) && teamMembers.length > 0 ? 
-									(teamMembers?.map((user, i) => {
+								{Array.isArray(teamMembers) &&
+								teamMembers.length > 0 ? (
+									teamMembers?.map((user, i) => {
 										let isSelected = false;
 
-										if (user) {
-											isSelected = selectedMembers.some(
-												(value) => {
-													return (
-														value.userid ===
-														user.userid
-													);
-												},
-											);
-										}
+									if (user) {
+										isSelected = selectedMembers.some(
+											(value) => {
+												return (
+													value.userid === user.userid
+												);
+											},
+										);
+									}
 
 										if (user) {
 											return (
@@ -740,9 +776,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 														{user.dateadded}
 													</Table.Cell>
 
-													<DateTableCell size="small">
-														{user.dateadded}
-													</DateTableCell>
+												<DateTableCell size="small">
+													{user.dateadded}
+												</DateTableCell>
 
 													<Table.Cell size="small">
 														<IconButton
@@ -774,12 +810,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 												</Table.Row>
 											);
 										}
-									})) : (
-										<Table.Row key={'no-members-found'}>
-													<Table.Cell colSpan={5} align="center">No Members found.</Table.Cell>
-										</Table.Row>
-									)
-								}
+									})
+								) : (
+									<Table.Row key={"no-members-found"}>
+										<Table.Cell colSpan={5} align="center">
+											No Members found.
+										</Table.Cell>
+									</Table.Row>
+								)}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -787,8 +825,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
-										onPageChange={(e, v) => {
-											setMembersPage(v + 1);
+										onPageChange={(_e, _v) => {
+											setMembersPage(_v + 1);
 											setSelectedMembers([]);
 										}}
 										onRowsPerPageChange={(e) => {
@@ -848,13 +886,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option) => {
-								return `${option.name}`;
+							getOptionLabel={(option: unknown) => {
+								return `${(option as { name: string }).name}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
-								return option.name === value.name;
+								return (
+									(option as { name: string }).name ===
+									(value as { name: string }).name
+								);
 							}}
-							onChange={(event, newValue) => {
+							onChange={(_event, newValue: unknown[]) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{
@@ -869,169 +910,166 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(event, newValue) => {
+							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
 						{selectedNonCredentialedUsers?.map((user, idx) => {
-								const space = user.name.indexOf(" ");
-								const initial = user.name
-									? space > -1
-										? `${user.name[0].toUpperCase()}${user.name[
-												space + 1
-											].toUpperCase()}`
-										: user.name[0].toUpperCase()
-									: user.id[0].toUpperCase();
-								return (
+							const space = user.name.indexOf(" ");
+							const initial = user.name
+								? space > -1
+									? `${user.name[0].toUpperCase()}${user.name[
+											space + 1
+										].toUpperCase()}`
+									: user.name[0].toUpperCase()
+								: user.id[0].toUpperCase();
+							return (
+								<Box
+									key={`${user.name} - ${idx}`}
+									sx={{
+										display: "flex",
+										justifyContent: "left",
+										align: "center",
+										backgroundColor:
+											idx % 2 !== 0
+												? "rgba(0, 0, 0, .03)"
+												: "",
+									}}
+								>
 									<Box
-										key={`${user.name} - ${idx}`}
 										sx={{
-											display: "flex",
-											justifyContent: "left",
-											align: "center",
-											backgroundColor:
-												idx % 2 !== 0
-													? "rgba(0, 0, 0, .03)"
-													: "",
+											height: "56px",
+											width: "100%",
+											gap: "8px",
+											position: "relative",
+											border: "5px",
 										}}
 									>
 										<Box
 											sx={{
-												height: "56px",
-												width: "100%",
-												gap: "8px",
-												position: "relative",
-												border: "5px",
+												display: "flex",
+												justifyContent: "left",
+												marginTop: "6px",
+												marginLeft: "8px",
+												marginRight: "8px",
+												float: "left",
 											}}
 										>
 											<Box
 												sx={{
 													display: "flex",
-													justifyContent: "left",
-													marginTop: "6px",
-													marginLeft: "8px",
-													marginRight: "8px",
-													float: "left",
+													height: "32px",
+													width: "32px",
+													justifyContent: "center",
+													alignItems: "center",
+													border: "0.5px solid rgba(0, 0, 0, .05)",
+													borderRadius: "50%",
 												}}
 											>
+												<Avatar
+													aria-label="avatar"
+													sx={{
+														display: "flex",
+														width: "32px",
+														height: "32px",
+														fontSize: "24px",
+														backgroundColor:
+															user.color,
+													}}
+												>
+													{initial}
+												</Avatar>
+											</Box>
+										</Box>
+										<Card.Header
+											title={
+												<Typography
+													variant="h6"
+													sx={{
+														maxHeight: "24px",
+														height: "90%",
+														marginTop: "5px",
+													}}
+												>
+													{user.name}
+												</Typography>
+											}
+											sx={{
+												color: "#000",
+												maxWidth: "466px",
+												height: "15px",
+												width: "100%",
+												float: "left",
+												gap: "16px",
+											}}
+											subheader={
 												<Box
 													sx={{
 														display: "flex",
-														height: "32px",
-														width: "32px",
-														justifyContent:
-															"center",
-														alignItems: "center",
-														border: "0.5px solid rgba(0, 0, 0, .05)",
-														borderRadius: "50%",
+														gap: "2px",
+														marginTop: "2px",
 													}}
 												>
-													<Avatar
-														aria-label="avatar"
-														sx={{
-															display: "flex",
-															width: "32px",
-															height: "32px",
-															fontSize: "24px",
-															backgroundColor:
-																user.color,
+													<span
+														style={{
+															opacity: 0.9,
+															fontSize: "11px",
 														}}
 													>
-														{initial}
-													</Avatar>
-												</Box>
-											</Box>
-											<Card.Header
-												title={
-													<Typography
-														variant="h6"
-														sx={{
-															maxHeight: "24px",
-															height: "90%",
-															marginTop: "5px",
-														}}
-													>
-														{user.name}
-													</Typography>
-												}
-												sx={{
-													color: "#000",
-													maxWidth: "466px",
-													height: "15px",
-													width: "100%",
-													float: "left",
-													gap: "16px",
-												}}
-												subheader={
-													<Box
-														sx={{
-															display: "flex",
-															gap: "2px",
-															marginTop: "2px",
-														}}
-													>
-														<span
-															style={{
-																opacity: 0.9,
-																fontSize:
-																	"11px",
-															}}
+														{`User ID: `}
+														<Chip
+															label={user.id}
+															size="small"
+														/>
+													</span>
+													{`• `}
+													<span>
+														{`Email: `}
+														<Link
+															href={`mailto:${user.email}`}
+															underline="none"
 														>
-															{`User ID: `}
-															<Chip
-																label={user.id}
-																size="small"
-															/>
-														</span>
-														{`• `}
-														<span>
-															{`Email: `}
-															<Link
-																href={`mailto:${user.email}`}
-																underline="none"
-															>
-																{user.email}
-															</Link>
-														</span>
-													</Box>
-												}
-												action={
-													<IconButton
-														sx={{
-															height: "28px",
-															width: "28px",
-															gap: "30px",
-															fontSize: "small",
-															mt: "16px",
-															color: "rgba( 0, 0, 0, .7)",
-															mr: "2px",
-															top: "0px",
-															position:
-																"absolute",
-															padding: "10px",
-														}}
-														onClick={() => {
-															const filtered =
-																selectedNonCredentialedUsers.filter(
-																	(val) =>
-																		val.id !==
-																		user.id,
-																);
-															setSelectedNonCredentialedUsers(
-																filtered,
+															{user.email}
+														</Link>
+													</span>
+												</Box>
+											}
+											action={
+												<IconButton
+													sx={{
+														height: "28px",
+														width: "28px",
+														gap: "30px",
+														fontSize: "small",
+														mt: "16px",
+														color: "rgba( 0, 0, 0, .7)",
+														mr: "2px",
+														top: "0px",
+														position: "absolute",
+														padding: "10px",
+													}}
+													onClick={() => {
+														const filtered =
+															selectedNonCredentialedUsers.filter(
+																(val) =>
+																	val.id !==
+																	user.id,
 															);
-														}}
-													>
-														<ClearRounded />
-													</IconButton>
-												}
-											/>
-										</Box>
+														setSelectedNonCredentialedUsers(
+															filtered,
+														);
+													}}
+												>
+													<ClearRounded />
+												</IconButton>
+											}
+										/>
 									</Box>
-								);
-							})}
+								</Box>
+							);
+						})}
 					</StyledModalContentText>
 				</Modal.Content>
 				<Modal.Actions>

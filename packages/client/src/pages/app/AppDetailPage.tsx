@@ -6,7 +6,6 @@ import {
 	SimCardDownload,
 } from "@mui/icons-material";
 import UpdateIcon from "@mui/icons-material/Update";
-import { IconButton, Tooltip } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useParams } from "react-router-dom";
@@ -18,13 +17,16 @@ import {
 	Chip,
 	CircularProgress,
 	Grid,
+	IconButton,
 	Modal,
 	Stack,
 	styled,
 	ToggleTabsGroup,
+	Tooltip,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { getUserProjectPermission, uploadImage } from "@/api";
 import {
 	type AppDetailsFormTypes,
 	AppDetailsFormValues,
@@ -284,8 +286,7 @@ export const AppDetailPage = () => {
 	}, [appId]);
 
 	async function getPermission() {
-		const { permission: role } =
-			await monolithStore.getUserProjectPermission(appId);
+		const { permission: role } = await getUserProjectPermission(appId);
 
 		setValue("userRole", role);
 		const permission = determineUserPermission(role);
@@ -544,7 +545,11 @@ export const AppDetailPage = () => {
 					const filesToUpload = Array.isArray(imageMeta)
 						? imageMeta
 						: [imageMeta];
-					await monolithStore.uploadImage(filesToUpload, appId);
+					await uploadImage(
+						filesToUpload,
+						appId,
+						configStore.store.insightID,
+					);
 				}
 
 				// close it, refresh and succesfully message

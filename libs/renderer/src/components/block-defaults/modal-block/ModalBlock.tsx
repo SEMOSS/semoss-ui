@@ -159,8 +159,7 @@ const ModalContent: FC<{
 });
 
 export const ModalBlock: BlockComponent = observer(({ id }) => {
-	const { attrs, data, slots, listeners } =
-		useBlock<ModalBlockDef>(id);
+	const { attrs, data, slots, listeners } = useBlock<ModalBlockDef>(id);
 	const { state } = useBlocks();
 	const isStatic = state.mode === "static";
 

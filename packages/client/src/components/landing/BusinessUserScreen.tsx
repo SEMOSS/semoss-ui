@@ -10,7 +10,7 @@ import {
 } from "@semoss/ui";
 import BusinessUserImage from "../../assets/img/BusinessUserLanding.svg";
 import businessUsercheckgrid from "../../assets/img/businessUsercheckgrid.svg";
-import { Search } from "../shared";
+import { PlatformSearch } from "../shared";
 
 const StyledContainer = styled("div")(({ theme }) => ({
 	position: "absolute",
@@ -102,7 +102,7 @@ export const BusinessUserScreen: React.FC = observer(() => {
 				</SliderTexts>
 			</ContentContainer>
 			<Box sx={{ width: "100%", maxWidth: "60%", overflow: "auto" }}>
-				<Search
+				<PlatformSearch
 					renderInput={(params) => (
 						<StyledTextField
 							{...params}

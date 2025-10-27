@@ -1,8 +1,12 @@
-import { LightbulbOutlined, Tune } from "@mui/icons-material";
+import {
+	FormatListNumbered,
+	LightbulbOutlined,
+	Tune,
+} from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
 	Container,
@@ -12,7 +16,12 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
+import {
+	PromptLibrary,
+	RoomConfiguration,
+	RoomInput,
+	WorkspaceChip,
+} from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -20,6 +29,8 @@ import type { RoomStore } from "@/stores";
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
 	: "";
+
+const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
 
 const StyledPage = styled(Stack)(() => ({
 	height: "100%",
@@ -48,10 +59,20 @@ const StyledButton = styled("button")(({ theme }) => ({
 	},
 }));
 
+/**
+ * The page to create a new room
+ *
+ * @component
+ */
 export const NewRoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
+	const { workspaceId } = useParams() as { workspaceId?: string };
+	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -59,17 +80,25 @@ export const NewRoomPage = observer(() => {
 			? (system.config.logins[loginType] as unknown as string)
 			: "";
 
+	/**
+	 * State
+	 */
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		knowledge: null,
 		tools: [],
+		mcpToolID: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
-		autoExecute: false,
 	});
+
+	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+	/**
+	 * Functions
+	 */
 
 	/**
 	 * Ask the model
@@ -85,14 +114,26 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		// create a new room
-		const room = await chat.createRoom(chat.models.selected, prompt);
+		const usingWorkspace = workspaceId && workspace !== null;
 
-		// initialize it
-		await room.initialize();
+		// create a new room
+		const room = await chat.createRoom(
+			prompt,
+			isPlanning ? "planning" : "chat",
+			chat.models.selected,
+			usingWorkspace
+				? {
+						...options,
+						workspace: { workspace_id: workspace.workspace_id },
+					}
+				: options,
+		);
+
+		// set the initialized state
+		room.setInitialized();
 
 		// ask the room
-		await room.askMessage(prompt, files, options);
+		await room.askMessage(prompt, files);
 
 		// turn the loading screen off
 		setIsLoading(false);
@@ -141,25 +182,58 @@ export const NewRoomPage = observer(() => {
 							minRows={4}
 							maxRows={8}
 							actions={
-								<Tooltip
-									title={"Open Configuration Menu"}
-									placement="top"
-								>
-									<IconButton
-										size={"medium"}
-										type="button"
-										aria-label="Open Configuration Menu"
-										disabled={isLoading}
-										color={
-											isMenuOpen ? "primary" : "default"
-										}
-										onClick={() => {
-											setIsMenuOpen(!isMenuOpen);
-										}}
-									>
-										<Tune color="inherit" />
-									</IconButton>
-								</Tooltip>
+								<Stack direction="row" alignItems="center">
+									{workspaceId ? (
+										<WorkspaceChip workspace={workspace} />
+									) : (
+										<Tooltip
+											title={"Open Configuration Menu"}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={isLoading}
+												color={
+													isMenuOpen
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsMenuOpen(!isMenuOpen);
+												}}
+											>
+												<Tune color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
+									{ENABLE_PLANNING && (
+										<Tooltip
+											title={
+												"Note: This is a beta feature. Use this to generate plan"
+											}
+											placement="top"
+										>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Generate plan"
+												disabled={isLoading}
+												color={
+													isPlanning
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsPlanning(!isPlanning);
+												}}
+											>
+												<FormatListNumbered color="inherit" />
+											</IconButton>
+										</Tooltip>
+									)}
+								</Stack>
 							}
 							onPrompt={async (prompt, files) => {
 								await askMessage(prompt, files);
