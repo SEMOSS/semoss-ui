@@ -361,50 +361,46 @@ j-deploy (./src/commands/j-deploy.ts)
 					return true;
 				},
 			},
-			// {
-			//     title: "Running DeleteAsset Reactor",
-			//     task: async (context) => {
-			//         const startTime = Date.now();
-			// 			// Deletes all assets in version/assets/
-			//         const deleteCommand = `DeleteAppAssets(filePath="")`;
-			//         const deleteCommand = `DeleteAsset(filePath="version/assets/", space=["${Env.APP}"])`;
+			{
+			    title: "Running DeleteAsset Reactor",
+			    task: async (context) => {
+			        const startTime = Date.now();
+					
+					// Deletes all assets in version/assets/
+			        const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
 
-			//         if (flags.verbose || flags.superVerbose) {
-			//             logWithTiming(`🗑️ Executing: ${deleteCommand}`, startTime);
-			//         }
+			        if (flags.verbose || flags.superVerbose) {
+			            logWithTiming(`🗑️ Executing: ${deleteCommand}`, startTime);
+			        }
 
-			//         if (flags.superVerbose) {
-			//             this.log(`🔍 Delete Details:`);
-			//             this.log(`   • Command: ${deleteCommand}`);
-			//             this.log(`   • Target Path: version/assets/`);
-			//             this.log(`   • Target App: ${Env.APP}`);
-			//         }
+			        if (flags.superVerbose) {
+			            this.log(`🔍 Delete Details:`);
+			            this.log(`   • Command: ${deleteCommand}`);
+			            this.log(`   • Target Path: version/assets/`);
+			            this.log(`   • Target App: ${Env.APP}`);
+			        }
 
-			//         // Run the DeleteAsset reactor
-			//         const { pixelReturn } =
-			//             await insight.actions.run(deleteCommand);
+			        // Run the DeleteAsset reactor
+			        const { pixelReturn } =
+			            await insight.actions.run(deleteCommand);
 
-			//         if (flags.showRaw || flags.superVerbose) {
-			//             logWithTiming(`📊 Raw DeleteAsset pixelReturn: ${JSON.stringify(pixelReturn, null, 2)}`, startTime);
-			//         }
+			        // save the delete result
+			        context.deleteResult = pixelReturn[0].output;
 
-			//         // save the delete result
-			//         context.deleteResult = pixelReturn[0].output;
+			        if (flags.verbose || flags.superVerbose) {
+			            logWithTiming(`✅ DeleteAsset Result: ${context.deleteResult}`, startTime);
+			        }
 
-			//         if (flags.verbose || flags.superVerbose) {
-			//             logWithTiming(`✅ DeleteAsset Result: ${context.deleteResult}`, startTime);
-			//         }
+			        if (flags.superVerbose) {
+			            this.log(`🔍 Delete Analysis:`);
+			            this.log(`   • Result: ${context.deleteResult}`);
+			            this.log(`   • Result Type: ${typeof context.deleteResult}`);
+			            this.log(`   • Execution Time: ${Date.now() - startTime}ms`);
+			        }
 
-			//         if (flags.superVerbose) {
-			//             this.log(`🔍 Delete Analysis:`);
-			//             this.log(`   • Result: ${context.deleteResult}`);
-			//             this.log(`   • Result Type: ${typeof context.deleteResult}`);
-			//             this.log(`   • Execution Time: ${Date.now() - startTime}ms`);
-			//         }
-
-			//         return true;
-			//     },
-			// },
+			        return true;
+			    },
+			},
 			{
 				title: "Uploading Zipped Directory",
 				task: async (context) => {
