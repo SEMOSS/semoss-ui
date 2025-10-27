@@ -96,6 +96,11 @@ export interface CheckboxProps {
 		 * The browser uses "on" as the default value.
 		 */
 		value?: boolean;
+
+		/**
+		 * If true, the component is partially checked.
+		 */
+		indeterminate?: boolean;
 	};
 }
 
