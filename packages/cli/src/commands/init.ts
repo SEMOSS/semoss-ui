@@ -33,9 +33,6 @@ init (./src/commands/init.ts)
 	};
 
 	public async run(): Promise<void> {
-		        console.log("------------------------")
-        console.log("JOHNS SCRIPT TO initialize V1 ******")
-        console.log("------------------------")
 		const { flags } = await this.parse(Deploy);
 
 		// path to the environment variables
