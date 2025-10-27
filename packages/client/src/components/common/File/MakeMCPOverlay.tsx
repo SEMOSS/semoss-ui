@@ -16,6 +16,7 @@ import {
 	Search,
 	Select,
 	Stepper,
+	Switch,
 	styled,
 	Table,
 	TextField,
@@ -28,7 +29,7 @@ type PropertyDetails = {
 	title?: string;
 	description?: string;
 	type?: string | string[];
-	default?: string;
+	default?: string | number | boolean | Record<string, unknown> | unknown[];
 };
 
 type Tool = {
@@ -153,6 +154,17 @@ const StyledDeleteIcon = styled(IconButton)(() => ({
 	marginLeft: "auto",
 }));
 
+const StyledJsonEditor = styled(TextField)(() => ({
+	fontFamily: "monospace",
+	fontSize: "12px",
+}));
+
+const StyledBooleanContainer = styled(Box)(() => ({
+	display: "flex",
+	alignItems: "center",
+	gap: "8px",
+}));
+
 // ==================== UTILITY FUNCTIONS ====================
 
 function isTool(obj: unknown): obj is Tool {
@@ -160,6 +172,82 @@ function isTool(obj: unknown): obj is Tool {
 	const rec = obj as Record<string, unknown>;
 	return typeof rec.name === "string";
 }
+
+// Helper to get normalized type
+const getNormalizedType = (type: string | string[] | undefined): string => {
+	if (Array.isArray(type)) {
+		return type[0] || "string";
+	}
+	return type || "string";
+};
+
+// Helper to get default value based on type
+const getDefaultValueForType = (
+	type: string,
+): string | number | boolean | Record<string, unknown> | unknown[] => {
+	switch (type) {
+		case "number":
+			return 0;
+		case "boolean":
+			return false;
+		case "object":
+			return {};
+		case "array":
+			return [];
+		case "string":
+		default:
+			return "";
+	}
+};
+
+// Helper to safely convert value to boolean
+const toBooleanValue = (value: unknown): boolean => {
+	if (typeof value === "boolean") {
+		return value;
+	}
+	return false;
+};
+
+// Helper to format default value for display
+const formatDefaultValue = (value: unknown, type: string): string => {
+	if (value === undefined || value === null) return "";
+	if (type === "object" || type === "array") {
+		try {
+			return JSON.stringify(value, null, 2);
+		} catch {
+			return String(value);
+		}
+	}
+	return String(value);
+};
+
+// Helper to parse default value from input
+const parseDefaultValue = (
+	value: string,
+	type: string,
+): string | number | boolean | Record<string, unknown> | unknown[] => {
+	if (!value) return "";
+
+	switch (type) {
+		case "number": {
+			const num = Number(value);
+			return Number.isNaN(num) ? "" : num;
+		}
+		case "boolean":
+			return typeof value === "string"
+				? value === "true"
+				: value === true;
+		case "object":
+		case "array":
+			try {
+				return JSON.parse(value) as Record<string, unknown> | unknown[];
+			} catch {
+				return value;
+			}
+		default:
+			return value;
+	}
+};
 
 // ==================== MAIN COMPONENT ====================
 
@@ -250,7 +338,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							...acc,
 							[paramName]: propDetails,
 						}),
-						{},
+						{} as Record<string, PropertyDetails>,
 					);
 
 				return {
@@ -266,7 +354,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 	// ==================== EFFECTS ====================
 
-	// Initialize expanded state when step changes or functions change
 	useEffect(() => {
 		if (activeStep === 1) {
 			setExpanded((prev) => ({
@@ -312,7 +399,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			toolName: string,
 			paramName: string,
 			propertyKey: string,
-			value: string,
+			value:
+				| string
+				| number
+				| boolean
+				| Record<string, unknown>
+				| unknown[],
 		) => {
 			const updated = tools.map((tool) => {
 				if (isTool(tool) && tool.name === toolName) {
@@ -322,6 +414,44 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							...(tool.inputSchema?.properties?.[paramName] ||
 								{}),
 							[propertyKey]: value,
+						},
+					};
+					return {
+						...tool,
+						inputSchema: {
+							...tool.inputSchema,
+							properties: updatedProperties,
+						},
+					};
+				}
+				return tool;
+			});
+			handleToolsUpdate(updated);
+		},
+		[tools, handleToolsUpdate],
+	);
+
+	const updateToolTypeAndDefault = useCallback(
+		(
+			toolName: string,
+			paramName: string,
+			newType: string,
+			newDefault:
+				| string
+				| number
+				| boolean
+				| Record<string, unknown>
+				| unknown[],
+		) => {
+			const updated = tools.map((tool) => {
+				if (isTool(tool) && tool.name === toolName) {
+					const updatedProperties = {
+						...(tool.inputSchema?.properties || {}),
+						[paramName]: {
+							...(tool.inputSchema?.properties?.[paramName] ||
+								{}),
+							type: newType,
+							default: newDefault,
 						},
 					};
 					return {
@@ -361,22 +491,21 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					return newParams;
 				});
 				return prev.filter((name) => name !== tool.name);
-			} else {
-				const requiredParams = Array.isArray(tool.inputSchema?.required)
-					? tool.inputSchema.required.reduce(
-							(acc, n) => ({ ...acc, [n]: true }),
-							{},
-						)
-					: {};
-				setSelectedParameters((prevParams) => ({
-					...prevParams,
-					[tool.name]: {
-						...(prevParams[tool.name] ?? {}),
-						...requiredParams,
-					},
-				}));
-				return [...prev, tool.name];
 			}
+			const requiredParams = Array.isArray(tool.inputSchema?.required)
+				? tool.inputSchema.required.reduce(
+						(acc, n) => ({ ...acc, [n]: true }),
+						{} as Record<string, boolean>,
+					)
+				: {};
+			setSelectedParameters((prevParams) => ({
+				...prevParams,
+				[tool.name]: {
+					...(prevParams[tool.name] ?? {}),
+					...requiredParams,
+				},
+			}));
+			return [...prev, tool.name];
 		});
 	}, []);
 
@@ -521,14 +650,26 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 	const handleTypeChange = useCallback(
 		(newType: string, toolName: string, paramName: string) => {
-			updateToolProperty(toolName, paramName, "type", newType);
+			const defaultValue = getDefaultValueForType(newType);
+			updateToolTypeAndDefault(
+				toolName,
+				paramName,
+				newType,
+				defaultValue,
+			);
 		},
-		[updateToolProperty],
+		[updateToolTypeAndDefault],
 	);
 
 	const handleDefaultChange = useCallback(
-		(newDefault: string, toolName: string, paramName: string) => {
-			updateToolProperty(toolName, paramName, "default", newDefault);
+		(
+			newDefault: string | boolean,
+			toolName: string,
+			paramName: string,
+			type: string,
+		) => {
+			const parsedValue = parseDefaultValue(String(newDefault), type);
+			updateToolProperty(toolName, paramName, "default", parsedValue);
 		},
 		[updateToolProperty],
 	);
@@ -569,12 +710,154 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 	// ==================== RENDER FUNCTIONS ====================
 
+	const renderDefaultValueInput = useCallback(
+		(tool: Tool, propName: string, propDetails: PropertyDetails) => {
+			const type = getNormalizedType(propDetails?.type);
+			const defaultValue = propDetails?.default;
+			const displayValue = formatDefaultValue(defaultValue, type);
+
+			switch (type) {
+				case "number":
+					return (
+						<TextField
+							data-testid={`parameter-default-${tool.name}-${propName}`}
+							key={`${tool.name}-${propName}-default`}
+							size="small"
+							fullWidth
+							type="number"
+							defaultValue={displayValue}
+							onChange={(e) =>
+								handleDefaultChange(
+									e.target.value,
+									tool.name,
+									propName,
+									type,
+								)
+							}
+							placeholder="Enter number"
+						/>
+					);
+
+				case "boolean":
+					return (
+						<StyledBooleanContainer
+							data-testid={`parameter-default-container-${tool.name}-${propName}`}
+						>
+							<Typography
+								variant="body2"
+								data-testid={`parameter-boolean-label-${tool.name}-${propName}`}
+							>
+								{toBooleanValue(defaultValue)
+									? "True"
+									: "False"}
+							</Typography>
+							<Switch
+								data-testid={`parameter-default-${tool.name}-${propName}`}
+								checked={toBooleanValue(defaultValue)}
+								onChange={(
+									e: React.ChangeEvent<HTMLInputElement>,
+								) =>
+									handleDefaultChange(
+										e.target.checked,
+										tool.name,
+										propName,
+										type,
+									)
+								}
+								size="small"
+							/>
+						</StyledBooleanContainer>
+					);
+
+				case "object":
+					return (
+						<StyledJsonEditor
+							data-testid={`parameter-default-${tool.name}-${propName}`}
+							key={`${tool.name}-${propName}-default`}
+							size="small"
+							fullWidth
+							multiline
+							rows={3}
+							defaultValue={displayValue || "{}"}
+							onChange={(e) => {
+								try {
+									JSON.parse(e.target.value);
+									handleDefaultChange(
+										e.target.value,
+										tool.name,
+										propName,
+										type,
+									);
+								} catch {
+									// Invalid JSON, don't update yet
+								}
+							}}
+							placeholder='{"key": "value"}'
+							helperText="Enter valid JSON object"
+						/>
+					);
+
+				case "array":
+					return (
+						<StyledJsonEditor
+							data-testid={`parameter-default-${tool.name}-${propName}`}
+							key={`${tool.name}-${propName}-default`}
+							size="small"
+							fullWidth
+							multiline
+							rows={3}
+							defaultValue={displayValue || "[]"}
+							onChange={(e) => {
+								try {
+									const parsed = JSON.parse(e.target.value);
+									if (Array.isArray(parsed)) {
+										handleDefaultChange(
+											e.target.value,
+											tool.name,
+											propName,
+											type,
+										);
+									}
+								} catch {
+									// Invalid JSON, don't update yet
+								}
+							}}
+							placeholder='["item1", "item2"]'
+							helperText="Enter valid JSON array"
+						/>
+					);
+
+				case "string":
+				default:
+					return (
+						<TextField
+							data-testid={`parameter-default-${tool.name}-${propName}`}
+							key={`${tool.name}-${propName}-default`}
+							size="small"
+							fullWidth
+							defaultValue={displayValue}
+							onChange={(e) =>
+								handleDefaultChange(
+									e.target.value,
+									tool.name,
+									propName,
+									type,
+								)
+							}
+							placeholder="Enter string value"
+						/>
+					);
+			}
+		},
+		[handleDefaultChange],
+	);
+
 	const renderParameterRow = useCallback(
 		(
 			tool: Tool,
 			propName: string,
 			propDetails: PropertyDetails,
-			showDescriptionField: boolean = false,
+			showDescriptionField = false,
 		) => {
 			const requiredFlag = isRequired(tool, propName);
 			const current = getSelectedForTool(tool.name);
@@ -586,7 +869,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					data-testid={`parameter-row-${tool.name}-${propName}`}
 				>
 					{showDescriptionField && (
-						<Table.Cell>
+						<Table.Cell
+							data-testid={`parameter-checkbox-cell-${tool.name}-${propName}`}
+						>
 							<Checkbox
 								data-testid={`parameter-checkbox-${tool.name}-${propName}`}
 								disabled={requiredFlag}
@@ -597,9 +882,13 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							/>
 						</Table.Cell>
 					)}
-					<Table.Cell>
+					<Table.Cell
+						data-testid={`parameter-name-cell-${tool.name}-${propName}`}
+					>
 						{showDescriptionField ? (
-							<StyledParameterBox>
+							<StyledParameterBox
+								data-testid={`parameter-title-box-${tool.name}-${propName}`}
+							>
 								<TextField
 									data-testid={`parameter-title-${tool.name}-${propName}`}
 									key={`${tool.name}-${propName}-title`}
@@ -627,7 +916,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 								)}
 							</StyledParameterBox>
 						) : (
-							<StyledParameterBox>
+							<StyledParameterBox
+								data-testid={`parameter-name-box-${tool.name}-${propName}`}
+							>
 								<Typography
 									variant="body2"
 									data-testid={`parameter-name-${tool.name}-${propName}`}
@@ -647,7 +938,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						)}
 					</Table.Cell>
 					{showDescriptionField ? (
-						<Table.Cell>
+						<Table.Cell
+							data-testid={`parameter-description-cell-${tool.name}-${propName}`}
+						>
 							<TextField
 								data-testid={`parameter-description-${tool.name}-${propName}`}
 								key={`${tool.name}-${propName}-description`}
@@ -665,10 +958,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						</Table.Cell>
 					) : (
 						<>
-							<StyledTypeSelectCell>
+							<StyledTypeSelectCell
+								data-testid={`parameter-type-cell-${tool.name}-${propName}`}
+							>
 								<Select
 									data-testid={`parameter-type-${tool.name}-${propName}`}
-									value={propDetails?.type ?? ""}
+									value={getNormalizedType(propDetails?.type)}
 									size="small"
 									fullWidth
 									onChange={(e) =>
@@ -679,44 +974,46 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 										)
 									}
 								>
-									<Select.Item value="string">
+									<Select.Item
+										value="string"
+										data-testid={`parameter-type-option-string-${tool.name}-${propName}`}
+									>
 										string
 									</Select.Item>
-									<Select.Item value="number">
+									<Select.Item
+										value="number"
+										data-testid={`parameter-type-option-number-${tool.name}-${propName}`}
+									>
 										number
 									</Select.Item>
-									<Select.Item value="boolean">
+									<Select.Item
+										value="boolean"
+										data-testid={`parameter-type-option-boolean-${tool.name}-${propName}`}
+									>
 										boolean
 									</Select.Item>
-									<Select.Item value="array">
+									<Select.Item
+										value="array"
+										data-testid={`parameter-type-option-array-${tool.name}-${propName}`}
+									>
 										array
 									</Select.Item>
-									<Select.Item value="object">
+									<Select.Item
+										value="object"
+										data-testid={`parameter-type-option-object-${tool.name}-${propName}`}
+									>
 										object
 									</Select.Item>
 								</Select>
 							</StyledTypeSelectCell>
-							<Table.Cell>
-								<TextField
-									data-testid={`parameter-default-${tool.name}-${propName}`}
-									key={`${tool.name}-${propName}-default`}
-									size="small"
-									fullWidth
-									defaultValue={propDetails?.default ?? ""}
-									onChange={(e) =>
-										handleDefaultChange(
-											e.target.value,
-											tool.name,
-											propName,
-										)
-									}
-									placeholder="Default value"
-									type={
-										propDetails?.type === "number"
-											? "number"
-											: "text"
-									}
-								/>
+							<Table.Cell
+								data-testid={`parameter-default-cell-${tool.name}-${propName}`}
+							>
+								{renderDefaultValueInput(
+									tool,
+									propName,
+									propDetails,
+								)}
 							</Table.Cell>
 						</>
 					)}
@@ -730,12 +1027,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			handleTitleChange,
 			handleDescriptionChange,
 			handleTypeChange,
-			handleDefaultChange,
+			renderDefaultValueInput,
 		],
 	);
 
 	const renderParameterTable = useCallback(
-		(tool: Tool, showDescriptionField: boolean = false) => {
+		(tool: Tool, showDescriptionField = false) => {
 			const props = tool.inputSchema?.properties ?? {};
 			const names = Object.keys(props);
 			const required = new Set(tool.inputSchema?.required ?? []);
@@ -753,10 +1050,16 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					size="small"
 					data-testid={`parameter-table-${tool.name}`}
 				>
-					<Table.Head>
-						<Table.Row>
+					<Table.Head
+						data-testid={`parameter-table-head-${tool.name}`}
+					>
+						<Table.Row
+							data-testid={`parameter-table-header-row-${tool.name}`}
+						>
 							{showDescriptionField && (
-								<Table.Cell>
+								<Table.Cell
+									data-testid={`parameter-select-all-cell-${tool.name}`}
+								>
 									<Checkbox
 										data-testid={`select-all-parameters-${tool.name}`}
 										checked={checked}
@@ -771,18 +1074,36 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 									/>
 								</Table.Cell>
 							)}
-							<Table.Cell>Parameter</Table.Cell>
+							<Table.Cell
+								data-testid={`parameter-header-parameter-${tool.name}`}
+							>
+								Parameter
+							</Table.Cell>
 							{showDescriptionField ? (
-								<Table.Cell>Description</Table.Cell>
+								<Table.Cell
+									data-testid={`parameter-header-description-${tool.name}`}
+								>
+									Description
+								</Table.Cell>
 							) : (
 								<>
-									<Table.Cell>Return Type</Table.Cell>
-									<Table.Cell>Default Value</Table.Cell>
+									<Table.Cell
+										data-testid={`parameter-header-type-${tool.name}`}
+									>
+										Return Type
+									</Table.Cell>
+									<Table.Cell
+										data-testid={`parameter-header-default-${tool.name}`}
+									>
+										Default Value
+									</Table.Cell>
 								</>
 							)}
 						</Table.Row>
 					</Table.Head>
-					<Table.Body>
+					<Table.Body
+						data-testid={`parameter-table-body-${tool.name}`}
+					>
 						{Object.entries(props).map(([propName, propDetails]) =>
 							renderParameterRow(
 								tool,
@@ -799,7 +1120,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	);
 
 	const renderAccordionContent = useCallback(
-		(tool: Tool, showParameterSelection: boolean = false) => {
+		(tool: Tool, showParameterSelection = false) => {
 			const totalCount = Object.keys(
 				tool.inputSchema?.properties ?? {},
 			).length;
@@ -815,12 +1136,18 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					data-testid={`accordion-${tool.name}`}
 				>
 					<StyledAccordionTrigger
-						expandIcon={<StyledExpandMore />}
+						expandIcon={
+							<StyledExpandMore
+								data-testid={`accordion-expand-icon-${tool.name}`}
+							/>
+						}
 						onClick={() => handleAccordionExpand(tool.name)}
 						data-testid={`accordion-trigger-${tool.name}`}
 					>
 						{showParameterSelection ? (
-							<StyledHeaderBox>
+							<StyledHeaderBox
+								data-testid={`accordion-header-box-${tool.name}`}
+							>
 								<Typography
 									variant="body1"
 									data-testid={`accordion-title-${tool.name}`}
@@ -893,7 +1220,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				) : (
 					<StyledFunctionList data-testid="function-list">
 						{functionSearch === "" && (
-							<List.Item>
+							<List.Item data-testid="select-all-functions-item">
 								<List.ItemButton
 									onClick={handleSelectAllFunctions}
 									data-testid="select-all-functions-button"
@@ -907,7 +1234,10 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 												: undefined
 										}
 									/>
-									<List.ItemText primary="Select All" />
+									<List.ItemText
+										primary="Select All"
+										data-testid="select-all-functions-text"
+									/>
 								</List.ItemButton>
 							</List.Item>
 						)}
@@ -935,6 +1265,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 													tool.title ||
 													`Function ${tool.name}`
 												}
+												data-testid={`function-text-${tool.name}`}
 											/>
 											<StyledDeleteIcon
 												data-testid={`delete-icon-${tool.name}`}
@@ -950,6 +1281,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 													color="error"
 													fontSize="small"
 													titleAccess="Delete Function"
+													data-testid={`delete-icon-svg-${tool.name}`}
 												/>
 											</StyledDeleteIcon>
 										</List.ItemButton>
@@ -1011,7 +1343,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				</StyledStepperWrapper>
 
 				<StyledStepperContainer data-testid="stepper-container">
-					<Box>
+					<Box data-testid="stepper-description-box">
 						<Typography variant="body1" data-testid="step-title">
 							{stepsDescriptions[activeStep].text}
 						</Typography>
@@ -1030,9 +1362,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							size="small"
 							startIcon={
 								collapseAll[activeStep] ? (
-									<UnfoldMore />
+									<UnfoldMore data-testid="unfold-more-icon" />
 								) : (
-									<UnfoldLess />
+									<UnfoldLess data-testid="unfold-less-icon" />
 								)
 							}
 							onClick={handleCollapseAll}
