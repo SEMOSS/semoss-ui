@@ -17,6 +17,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportForm } from "./ModelImportForm";
@@ -131,10 +132,7 @@ export const ModelImport: React.FC = () => {
 
 	const onSubmit = async (data) => {
 		setFormLoading(true);
-		const upload = await monolithStore.uploadFile(
-			[data],
-			configStore.store.insightID,
-		);
+		const upload = await uploadFile([data], configStore.store.insightID);
 
 		const pixelString = `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["MODEL"])`;
 
@@ -411,7 +409,7 @@ export const ModelImport: React.FC = () => {
 				<Typography variant="h4">
 					{selectedModel?.trim() || "Connect to Model Catalog"}
 				</Typography>
-				<Typography variant="body1" color="text.secondary">
+				<Typography variant="body1" color="textSecondary">
 					{selectedModel?.trim()
 						? "Fill out all the model details in order to add the model to the catalog."
 						: "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape."}
