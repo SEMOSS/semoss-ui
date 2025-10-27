@@ -232,9 +232,10 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	const configuredFunctions = useMemo(() => {
 		return Object.keys(selectedParameters)
 			.map((toolName) => {
-				const tool = filteredFunctions.find(
-					(t) => isTool(t) && t.name === toolName,
-				) as Tool | undefined;
+				const tool = (tools as unknown[])
+					.filter(isTool)
+					.find((t) => t.name === toolName);
+
 				if (!tool) return undefined;
 
 				const filteredProperties = Object.entries(
@@ -261,21 +262,19 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				} as Tool;
 			})
 			.filter((t): t is Tool => t !== undefined);
-	}, [selectedParameters, filteredFunctions]);
+	}, [selectedParameters, tools]);
 
 	// ==================== EFFECTS ====================
 
 	// Initialize expanded state when step changes or functions change
 	useEffect(() => {
 		if (activeStep === 1) {
-			// Step 2: expand all selected functions by default
 			setExpanded((prev) => ({
 				...prev,
 				1: selectedFilteredFunctions.map((f) => f.name),
 			}));
 			setCollapseAll((prev) => ({ ...prev, 1: false }));
 		} else if (activeStep === 2) {
-			// Step 3: expand all configured functions by default
 			setExpanded((prev) => ({
 				...prev,
 				2: configuredFunctions.map((f) => f.name),
@@ -383,10 +382,8 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 	const handleFunctionDelete = useCallback(
 		(e: React.MouseEvent, tool: Tool) => {
-			// Stop event propagation to prevent checkbox toggle
 			e.stopPropagation();
 
-			// Remove the tool from the tools array
 			const updatedTools = tools.filter((t) => {
 				if (isTool(t)) {
 					return t.name !== tool.name;
@@ -394,22 +391,18 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				return true;
 			});
 
-			// Update parent component with the new tools array
 			handleToolsUpdate(updatedTools);
 
-			// Clean up selectedFunctions state
 			setSelectedFunctions((prev) =>
 				prev.filter((name) => name !== tool.name),
 			);
 
-			// Clean up selectedParameters state
 			setSelectedParameters((prev) => {
 				const newParams = { ...prev };
 				delete newParams[tool.name];
 				return newParams;
 			});
 
-			// Clean up expanded state if the tool was expanded
 			setExpanded((prev) => ({
 				...prev,
 				1: prev[1]?.filter((name) => name !== tool.name) ?? [],
@@ -507,6 +500,13 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		[activeStep],
 	);
 
+	const handleTitleChange = useCallback(
+		(newTitle: string, toolName: string, paramName: string) => {
+			updateToolProperty(toolName, paramName, "title", newTitle);
+		},
+		[updateToolProperty],
+	);
+
 	const handleDescriptionChange = useCallback(
 		(newDescription: string, toolName: string, paramName: string) => {
 			updateToolProperty(
@@ -598,23 +598,53 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						</Table.Cell>
 					)}
 					<Table.Cell>
-						<StyledParameterBox>
-							<Typography
-								variant="body2"
-								data-testid={`parameter-name-${tool.name}-${propName}`}
-							>
-								{propDetails?.title ?? propName}
-							</Typography>
-							{requiredFlag && (
+						{showDescriptionField ? (
+							<StyledParameterBox>
+								<TextField
+									data-testid={`parameter-title-${tool.name}-${propName}`}
+									key={`${tool.name}-${propName}-title`}
+									size="small"
+									defaultValue={
+										propDetails?.title ?? propName
+									}
+									fullWidth
+									onChange={(e) =>
+										handleTitleChange(
+											e.target.value,
+											tool.name,
+											propName,
+										)
+									}
+								/>
+								{requiredFlag && (
+									<Typography
+										variant="body2"
+										color="error"
+										data-testid={`parameter-required-${tool.name}-${propName}`}
+									>
+										*
+									</Typography>
+								)}
+							</StyledParameterBox>
+						) : (
+							<StyledParameterBox>
 								<Typography
 									variant="body2"
-									color="error"
-									data-testid={`parameter-required-${tool.name}-${propName}`}
+									data-testid={`parameter-name-${tool.name}-${propName}`}
 								>
-									*
+									{propDetails?.title ?? propName}
 								</Typography>
-							)}
-						</StyledParameterBox>
+								{requiredFlag && (
+									<Typography
+										variant="body2"
+										color="error"
+										data-testid={`parameter-required-${tool.name}-${propName}`}
+									>
+										*
+									</Typography>
+								)}
+							</StyledParameterBox>
+						)}
 					</Table.Cell>
 					{showDescriptionField ? (
 						<Table.Cell>
@@ -697,6 +727,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			isRequired,
 			getSelectedForTool,
 			toggleParameterForTool,
+			handleTitleChange,
 			handleDescriptionChange,
 			handleTypeChange,
 			handleDefaultChange,
