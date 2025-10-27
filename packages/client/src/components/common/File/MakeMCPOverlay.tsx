@@ -536,9 +536,14 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
                             <Table.Cell>
                                 <Checkbox
                                     data-testid={`select-all-parameters-${tool.name}`}
-                                    indeterminate={indeterminate}
+                                    
                                     checked={checked}
                                     onChange={() => handleSelectAllParameters(tool)}
+                                    checkboxProps={
+                                        indeterminate
+                                            ? { indeterminate: true }
+                                            : undefined
+                                    }
                                 />
                             </Table.Cell>
                         )}
@@ -628,8 +633,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
                                 <List.ItemButton onClick={handleSelectAllFunctions} data-testid="select-all-functions-button">
                                     <Checkbox 
                                         data-testid="select-all-functions-checkbox"
-                                        indeterminate={indeterminate} 
-                                        checked={allChecked} 
+                                        checked={allChecked}
+                                        checkboxProps={
+                                            indeterminate
+                                                ? { indeterminate: true }
+                                                : undefined
+                                        }
                                     />
                                     <List.ItemText primary="Select All" />
                                 </List.ItemButton>
