@@ -159,7 +159,7 @@ j-deploy (./src/commands/j-deploy.ts)
 			zipBuffer?: Buffer;
 			deleteResult?: any;
 			uploadResult?: any;
-            url?: string;
+			url?: string;
 		}>([
 			{
 				title: "Initializing",
@@ -362,44 +362,54 @@ j-deploy (./src/commands/j-deploy.ts)
 				},
 			},
 			{
-			    title: "Running DeleteAsset Reactor",
-			    task: async (context) => {
-			        const startTime = Date.now();
-					
+				title: "Running DeleteAsset Reactor",
+				task: async (context) => {
+					const startTime = Date.now();
+
 					// Deletes all assets in version/assets/
-			        const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
+					const deleteCommand = `DeleteAppAssets(project="${Env.APP}")`;
 
-			        if (flags.verbose || flags.superVerbose) {
-			            logWithTiming(`🗑️ Executing: ${deleteCommand}`, startTime);
-			        }
+					if (flags.verbose || flags.superVerbose) {
+						logWithTiming(
+							`🗑️ Executing: ${deleteCommand}`,
+							startTime,
+						);
+					}
 
-			        if (flags.superVerbose) {
-			            this.log(`🔍 Delete Details:`);
-			            this.log(`   • Command: ${deleteCommand}`);
-			            this.log(`   • Target Path: version/assets/`);
-			            this.log(`   • Target App: ${Env.APP}`);
-			        }
+					if (flags.superVerbose) {
+						this.log(`🔍 Delete Details:`);
+						this.log(`   • Command: ${deleteCommand}`);
+						this.log(`   • Target Path: version/assets/`);
+						this.log(`   • Target App: ${Env.APP}`);
+					}
 
-			        // Run the DeleteAsset reactor
-			        const { pixelReturn } =
-			            await insight.actions.run(deleteCommand);
+					// Run the DeleteAsset reactor
+					const { pixelReturn } =
+						await insight.actions.run(deleteCommand);
 
-			        // save the delete result
-			        context.deleteResult = pixelReturn[0].output;
+					// save the delete result
+					context.deleteResult = pixelReturn[0].output;
 
-			        if (flags.verbose || flags.superVerbose) {
-			            logWithTiming(`✅ DeleteAsset Result: ${context.deleteResult}`, startTime);
-			        }
+					if (flags.verbose || flags.superVerbose) {
+						logWithTiming(
+							`✅ DeleteAsset Result: ${context.deleteResult}`,
+							startTime,
+						);
+					}
 
-			        if (flags.superVerbose) {
-			            this.log(`🔍 Delete Analysis:`);
-			            this.log(`   • Result: ${context.deleteResult}`);
-			            this.log(`   • Result Type: ${typeof context.deleteResult}`);
-			            this.log(`   • Execution Time: ${Date.now() - startTime}ms`);
-			        }
+					if (flags.superVerbose) {
+						this.log(`🔍 Delete Analysis:`);
+						this.log(`   • Result: ${context.deleteResult}`);
+						this.log(
+							`   • Result Type: ${typeof context.deleteResult}`,
+						);
+						this.log(
+							`   • Execution Time: ${Date.now() - startTime}ms`,
+						);
+					}
 
-			        return true;
-			    },
+					return true;
+				},
 			},
 			{
 				title: "Uploading Zipped Directory",
@@ -511,7 +521,7 @@ j-deploy (./src/commands/j-deploy.ts)
 					return true;
 				},
 			},
-            {
+			{
 				title: "Loading App Reactors",
 				task: async () => {
 					// Load the insight classes
