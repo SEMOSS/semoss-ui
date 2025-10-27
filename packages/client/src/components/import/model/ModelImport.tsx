@@ -6,20 +6,24 @@ import {
 	Box,
 	Breadcrumbs,
 	Button,
+	FileDropzone,
 	Grid,
-	IconButton,
 	Link,
+	Modal,
 	Search,
 	Stack,
 	styled,
 	Tabs,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
+import { useRootStore } from "@/hooks";
 import { formatToDataTestId } from "@/utility";
 import { ModelImportForm } from "./ModelImportForm";
 import { ModelTileCard } from "./ModelTileCard";
-import type { FieldDefinition } from "./model-import.constants";
+import type { CategoryTexts, FieldDefinition } from "./model-import.constants";
 import {
+	Custom_Model_Image,
 	IMPORTABLE_MODELS,
 	type ImportableModels,
 	MODEL_VERSIONS,
@@ -42,7 +46,20 @@ const UploadButton = styled(Button)(({ theme }) => ({
 	borderColor: theme.palette.action.disabled,
 	color: theme.palette.text.primary,
 	borderRadius: "12px",
-	padding: theme.spacing(1.25, 2),
+	alignSelf: "flex-start",
+}));
+
+const SubmitUploadButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.background.default,
+	borderRadius: "12px",
+	alignSelf: "flex-start",
+}));
+
+const CloseButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.secondary.dark,
+	borderRadius: "12px",
 	alignSelf: "flex-start",
 }));
 
@@ -53,14 +70,30 @@ const StyledTab = styled(Tabs.Item)({
 	color: "rgba(0, 0, 0, 0.60)",
 });
 
+const StyledDropzoneField = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+	width: "100%",
+	height: "100%",
+}));
+
 export const ModelImport: React.FC = () => {
 	const navigate = useNavigate();
+
+	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
 
 	const [search, setSearch] = useState("");
 	const [importableModels, setImportableModels] =
 		useState<ImportableModels | null>(null);
+	const [importableModelsCategory, setimportableModelsCategory] =
+		useState<CategoryTexts | null>(null);
 	const [selectedProvider, setSelectedProvider] = useState("");
 	const [selectedModel, setSelectedModel] = useState<string | null>(null);
+	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
+	const [formLoading, setFormLoading] = useState(false);
+	const [filedata, setFiledata] = useState(null);
 
 	/**
 	 * Any initialization logic for the model import flow - fetch importable models
@@ -71,6 +104,7 @@ export const ModelImport: React.FC = () => {
 			await runPixel("1+1");
 
 			setImportableModels(IMPORTABLE_MODELS as ImportableModels);
+			setimportableModelsCategory(IMPORTABLE_MODELS.categoryTexts);
 			setSelectedProvider(IMPORTABLE_MODELS.providers[0].name);
 		};
 
@@ -90,6 +124,46 @@ export const ModelImport: React.FC = () => {
 		return llms;
 	}, [selectedProvider, importableModels, search]);
 
+	const handleFileUpload = (flag: boolean) => {
+		// Open or close the file upload modal based on the provided flag
+		setIsFileUploadModalOpen(flag);
+	};
+
+	const onSubmit = async (data) => {
+		setFormLoading(true);
+		const upload = await monolithStore.uploadFile(
+			[data],
+			configStore.store.insightID,
+		);
+
+		const pixelString = `UploadEngine(filePath=["${upload[0].fileLocation}"], engineTypes=["MODEL"])`;
+
+		const response = await monolithStore.runQuery(pixelString);
+		const output = response.pixelReturn[0].output,
+			operationType = response.pixelReturn[0].operationType;
+
+		if (operationType.indexOf("ERROR") > -1) {
+			notification.add({
+				color: "error",
+				message: output,
+			});
+			setFormLoading(false);
+			return;
+		}
+
+		notification.add({
+			color: "success",
+			message: `ZIP uploaded successfully`,
+		});
+
+		navigate(`/engine/model/${output.database_id}`);
+		setFormLoading(false);
+		return;
+	};
+
+	const selectedImage = Custom_Model_Image.find(
+		(item) => item.name === selectedProvider,
+	)?.imgURL;
 	/**
 	 * Determines view
 	 */
@@ -107,7 +181,11 @@ export const ModelImport: React.FC = () => {
 								}}
 								fullWidth
 							/>
-							<UploadButton size="small" variant="outlined">
+							<UploadButton
+								size="medium"
+								variant="outlined"
+								onClick={() => handleFileUpload(true)}
+							>
 								<FileUploadOutlined fontSize="small" />
 							</UploadButton>
 						</StyledSearchbarContainer>
@@ -179,9 +257,9 @@ export const ModelImport: React.FC = () => {
 										>
 											<ModelTileCard
 												model={{
-													name: "custom",
-													display: "Custom",
-													icon: "/src/assets/img/SEMOSS_BLACK_LOGO.png",
+													name: "Others",
+													display: "Others",
+													icon: selectedImage,
 													embedding: false,
 													disable: false,
 												}}
@@ -235,6 +313,8 @@ export const ModelImport: React.FC = () => {
 						name={selectedModel}
 						fields={fields}
 						advanced={advanced}
+						selectedProvider={selectedProvider}
+						importableModelsCategory={importableModelsCategory}
 					/>
 				);
 			}
@@ -288,24 +368,53 @@ export const ModelImport: React.FC = () => {
 						</Breadcrumbs.Item>
 					)}
 				</Breadcrumbs>
-
-				<Typography
-					variant="h4"
-					// sx={isModelPage ? { fontWeight: 500 } : undefined}
+				<Modal
+					open={isFileUploadModalOpen}
+					maxWidth="xl"
+					onClose={() => setIsFileUploadModalOpen(false)}
 				>
-					Connect to Model
+					<Modal.Content sx={{ width: "600px" }}>
+						<StyledDropzoneField>
+							<Typography variant={"body1"}>Zip File</Typography>
+							<FileDropzone
+								multiple={false}
+								onChange={(newValues) => {
+									setFiledata(newValues);
+								}}
+							/>
+							<Stack
+								spacing={2}
+								direction="row"
+								justifyContent="flex-end"
+							>
+								<CloseButton
+									size="small"
+									variant="text"
+									onClick={() =>
+										setIsFileUploadModalOpen(false)
+									}
+								>
+									Close
+								</CloseButton>
+								<SubmitUploadButton
+									size="small"
+									variant="contained"
+									disabled={!filedata || formLoading}
+									onClick={() => onSubmit(filedata)}
+								>
+									Upload
+								</SubmitUploadButton>
+							</Stack>
+						</StyledDropzoneField>
+					</Modal.Content>
+				</Modal>
+				<Typography variant="h4">
+					{selectedModel?.trim() || "Connect to Model Catalog"}
 				</Typography>
-				<Typography
-					variant="body1"
-					// color={isModelPage ? "secondary" : "inherit"}
-				>
-					In an era fueled by information, the seamless interlinking
-					of various databases stands as a cornerstone for unlocking
-					the untapped potential of LLM applications. Whether you're a
-					seasoned AI practitioner, a language aficionado, or an
-					industry visionary, this page serves as your guiding star to
-					grasp the spectrum of database options available within the
-					LLM landscape.
+				<Typography variant="body1" color="text.secondary">
+					{selectedModel?.trim()
+						? "Fill out all the model details in order to add the model to the catalog."
+						: "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape."}
 				</Typography>
 			</StyledStack>
 			{view}
