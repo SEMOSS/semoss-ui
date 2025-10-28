@@ -22,7 +22,6 @@ import {
 } from "@semoss/ui";
 import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
-import { Radio } from "../../../../../../libs/ui/dist/types/components/RadioGroup/Radio";
 import DataSelection from "./DataSelection";
 import ExcelDataSelection from "./ExcelDataSelection";
 import { MetaModelType } from "./MetaModelType";
@@ -224,9 +223,15 @@ export const DatabaseForm = ({ title, description, fields }) => {
 					color: "error",
 					message: "Prop File is not implemented.",
 				});
+
 				setIsLoading(false);
 				return;
-			}
+			} else {
+				pixelExpressions = uploadedFiles.map(
+					(file) =>
+						`UploadDatabase(filePath=["${file.fileLocation}"],space=[""])`,
+				);
+			}			
 
 			const parsedResults: ParsedResult[] = [];
 			const fileNames: string[] = [];
@@ -251,6 +256,9 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				}
 				setFilePath(filePathFromExpression);
 				parsedResults.push(output);
+				if(title==="ZIP"){
+				navigate(`/engine/database/${output.database_id}`);
+			}
 			}
 			setExcelFileName(fileNames);
 			setParsedData(parsedResults);
@@ -622,7 +630,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 										key={opt.value}
 										value={opt.value}
 										control={
-											<Radio
+											<RadioGroup.Item
 												data-testid={`database-form-radio-${val.fieldName}-${opt.value}`}
 												label={""}
 											/>
