@@ -14,7 +14,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useChat } from "@/hooks";
-import type { Toolbox, Workspace } from "@/types";
+import type { MCP, MCPConfig, Workspace } from "@/types";
 
 export interface WorkspaceModalProps {
 	open: boolean;
@@ -61,17 +61,17 @@ export const WorkspaceModal = ({
 	 * State
 	 */
 	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [toolMap, setToolMap] = useState<
-		Record<string, Record<string, Toolbox>>
-	>({});
+	const [mcpMap, setMcpMap] = useState<Record<string, Record<string, MCP>>>(
+		{},
+	);
 	const { handleSubmit, control, watch } = useForm<
-		Pick<Workspace, "name" | "system_prompt" | "description" | "tools">
+		Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">
 	>({
 		defaultValues: {
 			name: "",
 			system_prompt: "",
 			description: "",
-			tools: [],
+			mcp: [],
 		},
 	});
 
@@ -103,11 +103,11 @@ export const WorkspaceModal = ({
 	 * Effects
 	 */
 	useEffect(() => {
-		const fetchTools = async () => {
+		const fetchMCPs = async () => {
 			setIsLoading(true);
 			try {
-				const toolMap = await chat.getToolMap();
-				setToolMap(toolMap);
+				const mcpMap = await chat.getMcpMap();
+				setMcpMap(mcpMap);
 			} catch (e) {
 				console.error(e);
 
@@ -119,21 +119,15 @@ export const WorkspaceModal = ({
 				setIsLoading(false);
 			}
 		};
-		fetchTools();
-	}, [chat.getToolMap, notification.add]);
+		fetchMCPs();
+	}, [chat.getMcpMap, notification.add]);
 
 	/**
 	 * Constants
 	 */
 	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
-	const toolsArray = Object.values(toolMap).flatMap(Object.values);
-
-	/**
-	 * Types
-	 */
-	type ToolboxWithAll = Toolbox & { all?: boolean };
-	type ToolBoxKeys = Workspace["tools"][number];
+	const mcpArray = Object.values(mcpMap).flatMap(Object.values);
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -150,197 +144,150 @@ export const WorkspaceModal = ({
 			<form onSubmit={onSubmit}>
 				<StyledModalContent>
 					{isCreatingNew ? (
-						<Stack direction="column" spacing={1.5}>
+						<Stack direction="column" spacing={2}>
 							<Controller
 								name={"name"}
 								control={control}
 								rules={{ required: true }}
-								render={({ field }) => {
-									return (
-										<TextField
-											variant="outlined"
-											label="Name"
-											placeholder="Add Name"
-											value={
-												field.value ? field.value : ""
-											}
-											disabled={isLoading}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											fullWidth
-											data-testid={
-												"newWorkspaceModal-textField-name"
-											}
-										/>
-									);
-								}}
+								render={({ field }) => (
+									<TextField
+										variant="outlined"
+										label="Name"
+										placeholder="Add Name"
+										value={field.value ? field.value : ""}
+										disabled={isLoading}
+										onChange={(value) =>
+											field.onChange(value)
+										}
+										fullWidth
+										data-testid={
+											"newWorkspaceModal-textField-name"
+										}
+									/>
+								)}
 							/>
 							<Controller
 								name={"description"}
 								control={control}
 								rules={{ required: false }}
-								render={({ field }) => {
-									return (
-										<TextField
-											label="Description"
-											variant="outlined"
-											placeholder="Description"
-											value={
-												field.value ? field.value : ""
-											}
-											disabled={isLoading}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											data-testid={
-												"newWorkspaceModal-description-txt"
-											}
-										/>
-									);
-								}}
+								render={({ field }) => (
+									<TextField
+										label="Description"
+										variant="outlined"
+										placeholder="Description"
+										value={field.value ? field.value : ""}
+										disabled={isLoading}
+										onChange={(value) =>
+											field.onChange(value)
+										}
+										data-testid={
+											"newWorkspaceModal-description-txt"
+										}
+									/>
+								)}
 							/>
 							<Controller
 								name={"system_prompt"}
 								control={control}
 								rules={{}}
-								render={({ field }) => {
-									return (
-										<TextField
-											multiline
-											label="Context"
-											variant="outlined"
-											placeholder="Context"
-											value={
-												field.value ? field.value : ""
-											}
-											onChange={(value) =>
-												field.onChange(value)
-											}
-											sx={{
-												"& .MuiInputBase-inputMultiline:focus":
-													{
-														border: "none !important",
-														outline: "none",
-													},
-											}}
-											data-testid={
-												"newWorkspaceModal-context-txt"
-											}
-										/>
-									);
-								}}
+								render={({ field }) => (
+									<TextField
+										multiline
+										minRows={4}
+										maxRows={8}
+										label="Context"
+										variant="outlined"
+										placeholder="Context"
+										value={field.value ? field.value : ""}
+										onChange={(value) =>
+											field.onChange(value)
+										}
+										sx={{
+											"& .MuiInputBase-inputMultiline:focus":
+												{
+													border: "none !important",
+													outline: "none",
+												},
+										}}
+										data-testid={
+											"newWorkspaceModal-context-txt"
+										}
+									/>
+								)}
 							/>
 							<Controller
-								name={"tools"}
+								name={"mcp"}
 								control={control}
 								rules={{}}
-								render={({ field }) => {
-									return (
-										<Autocomplete
-											fullWidth
-											multiple
-											disableCloseOnSelect
-											disabled={isLoading}
-											options={toolsArray}
-											isOptionEqualToValue={(
-												option: Toolbox,
-												value: ToolBoxKeys,
-											) =>
-												option.id === value.id &&
-												option.type === value.type
-											}
-											filterOptions={() => {
-												return [
-													{
-														name: "Select All",
-														all: true,
-														type: "Select All",
-													},
-													...toolsArray,
-												] as ToolboxWithAll[];
-											}}
-											value={field.value || []}
-											onChange={(
-												_,
-												val: ToolboxWithAll[],
-											) => {
-												let newVal = val;
-												if (
-													val.find(
-														(option) => option.all,
-													)
-												)
-													newVal =
-														toolsArray.length ===
-														field?.value?.length
-															? []
-															: toolsArray;
-
+								render={({ field }) => (
+									<Autocomplete
+										fullWidth
+										multiple
+										disableCloseOnSelect
+										disabled={isLoading}
+										options={mcpArray}
+										isOptionEqualToValue={(
+											option: MCP,
+											value: MCPConfig,
+										) =>
+											option.id === value.id &&
+											option.type === value.type
+										}
+										value={field.value || []}
+										onChange={
+											(_, val: MCP[]) =>
 												field.onChange(
-													newVal.map((tool) => ({
-														id: tool.id,
-														type: tool.type,
-													})),
-												); // only send id and type to backend
-											}}
-											getOptionLabel={(
-												option: ToolBoxKeys,
-											) =>
-												toolMap[option.type]?.[
-													option.id
-												].name || ""
-											}
-											getOptionKey={(
-												option: ToolBoxKeys,
-											) =>
-												JSON.stringify({
-													id: option.id,
-													type: option.type,
-												})
-											}
-											renderOption={(
-												props,
-												option: ToolboxWithAll,
-												{ selected },
-											) => {
-												const { key, ...optionProps } =
-													props;
-												return (
-													<li
-														key={key}
-														{...optionProps}
-													>
-														<Checkbox
-															checked={
-																option.all
-																	? !!(
-																			field
-																				?.value
-																				?.length ===
-																			toolsArray?.length
-																		)
-																	: selected
-															}
-														/>
-														{option.name}
-													</li>
-												);
-											}}
-											renderInput={(params) => (
-												<TextField
-													{...params}
-													label="Use These Tools"
-													placeholder="Tools"
-												/>
-											)}
-										/>
-									);
-								}}
+													val.map(
+														({
+															id,
+															type,
+															name,
+														}): MCPConfig => ({
+															id,
+															type,
+															name,
+														}),
+													),
+												) // only send id and type to backend
+										}
+										getOptionLabel={(option: MCPConfig) =>
+											option.name
+										}
+										getOptionKey={(option: MCPConfig) =>
+											JSON.stringify({
+												id: option.id,
+												type: option.type,
+											})
+										}
+										renderOption={(
+											props,
+											option: MCPConfig,
+											{ selected },
+										) => {
+											const { key, ...optionProps } =
+												props;
+											return (
+												<li key={key} {...optionProps}>
+													<Checkbox
+														checked={selected}
+													/>
+													{option.name}
+												</li>
+											);
+										}}
+										renderInput={(params) => (
+											<TextField
+												{...params}
+												label="Use These MCPs"
+												placeholder="MCPs"
+											/>
+										)}
+									/>
+								)}
 							/>
 						</Stack>
 					) : (
-						<Stack direction="column" spacing={1}>
+						<Stack direction="column" spacing={2}>
 							<TextField
 								variant="outlined"
 								label="Name"
@@ -364,6 +311,9 @@ export const WorkspaceModal = ({
 								label="Context"
 								disabled
 								value={workspaceInfo.system_prompt}
+								multiline
+								minRows={4}
+								maxRows={8}
 							/>
 							<TextField
 								variant="outlined"

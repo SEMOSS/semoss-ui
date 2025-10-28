@@ -4,6 +4,7 @@ import { Resizable } from "re-resizable";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
+	Badge,
 	Chip,
 	Container,
 	Divider,
@@ -22,7 +23,6 @@ import {
 	RoomArtifact,
 	RoomConfiguration,
 	RoomInput,
-	WorkspaceChip,
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
 
@@ -155,10 +155,6 @@ export const RoomPage = observer(() => {
 
 	// get the room
 	const room = chat.getRoom(roomId);
-
-	// get the workspace if there is one
-	const workspaceId = room?.options?.workspace?.workspace_id ?? null;
-	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
@@ -360,13 +356,11 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									workspaceId ? (
-										<WorkspaceChip workspace={workspace} />
-									) : (
-										<Tooltip
-											title={"Configuration"}
-											placement="top"
-										>
+									<Tooltip
+										title={"Configuration"}
+										placement="top"
+									>
+										<span>
 											<IconButton
 												size={"medium"}
 												type="button"
@@ -394,10 +388,26 @@ export const RoomPage = observer(() => {
 													}
 												}}
 											>
-												<Tune color="inherit" />
+												<Badge
+													color="primary"
+													variant="dot"
+													badgeContent={
+														room.options.mcp
+															.length ||
+														room.options
+															.workspace ||
+														room.options
+															.instructions
+															?.length
+															? 1
+															: 0
+													}
+												>
+													<Tune color="inherit" />
+												</Badge>
 											</IconButton>
-										</Tooltip>
-									)
+										</span>
+									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
