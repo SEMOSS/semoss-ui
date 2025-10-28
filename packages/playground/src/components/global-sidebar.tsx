@@ -38,7 +38,7 @@ import { NavUser } from "./nav-user";
 
 const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
 
-export const AppSidebar = observer(() => {
+export const GlobalSidebar = observer(() => {
 	const { chat } = useChat();
 	const { setOpen } = useSidebar();
 

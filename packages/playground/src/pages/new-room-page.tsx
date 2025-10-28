@@ -1,15 +1,10 @@
-import { CogIcon } from "lucide-react";
+import { Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Card,
-	CardContent,
-	CardDescription,
-	CardHeader,
-	CardTitle,
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
@@ -17,6 +12,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
+import background from "@/assets/img/background.svg";
 import { RoomAgent, RoomConfiguration, RoomInput } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
@@ -120,82 +116,85 @@ export const NewRoomPage = observer(() => {
 	}, [getWorkspace.status, getWorkspace.data]);
 
 	return (
-		<ResizablePanelGroup direction="horizontal">
-			<ResizablePanel className="flex flex-col items-center justify-center overflow-auto p-2">
-				<div className="mx-auto w-full max-w-2xl">
-					<Card className="w-full">
-						<CardHeader>
-							<CardTitle>Welcome!</CardTitle>
-							<CardDescription>{APP_DESCRIPTION}</CardDescription>
-						</CardHeader>
-						<CardContent>
-							<RoomInput
-								isLoading={
-									isLoading ||
-									(agentId &&
-										getWorkspace.status !== "SUCCESS")
-								}
-								isDisabled={false}
-								minRows={4}
-								maxRows={8}
-								actions={
-									<>
-										<RoomAgent
-											mode={mode}
-											onModeChange={setMode}
-										/>
-										<Tooltip>
-											<TooltipTrigger asChild>
-												<span>
-													<Button
-														aria-label="Open Configuration Menu"
-														className={`${isMenuOpen ? "text-primary" : ""}`}
-														disabled={isLoading}
-														variant="ghost"
-														size="icon-sm"
-														onClick={() => {
-															setIsMenuOpen(
-																!isMenuOpen,
-															);
-														}}
-													>
-														<CogIcon />
-													</Button>
-												</span>
-											</TooltipTrigger>
-											<TooltipContent>
-												Open Configuration Menu
-											</TooltipContent>
-										</Tooltip>
-									</>
-								}
-								onPrompt={async (prompt, files) => {
-									await askMessage(prompt, files);
+		<div
+			className="h-full w-full"
+			style={{ backgroundImage: `url(${background})` }}
+		>
+			<ResizablePanelGroup direction="horizontal">
+				<ResizablePanel className="flex flex-col items-center justify-center overflow-auto p-2">
+					<div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
+							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
+								Welcome
+							</div>
+							<div className="text-center text-muted-foreground text-sm leading-normal">
+								{APP_DESCRIPTION}
+							</div>
+						</div>
 
-									return true;
-								}}
-							/>
-						</CardContent>
-					</Card>
-				</div>
-			</ResizablePanel>
+						<RoomInput
+							isLoading={
+								isLoading ||
+								(agentId && getWorkspace.status !== "SUCCESS")
+							}
+							isDisabled={false}
+							minRows={4}
+							maxRows={8}
+							agent={
+								<RoomAgent mode={mode} onModeChange={setMode} />
+							}
+							configuration={
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Button
+												aria-label="Open Configuration Menu"
+												className={`${isMenuOpen ? "text-primary" : ""}`}
+												disabled={isLoading}
+												variant="ghost"
+												size="icon-sm"
+												onClick={() => {
+													setIsMenuOpen(!isMenuOpen);
+												}}
+											>
+												<Settings2Icon />
+											</Button>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Open Configuration Menu
+									</TooltipContent>
+								</Tooltip>
+							}
+							onPrompt={async (prompt, files) => {
+								await askMessage(prompt, files);
 
-			{isMenuOpen && (
-				<>
-					<ResizableHandle className="my-auto h-32" />
-					<ResizablePanel className="relative p-2" defaultSize={25}>
-						<RoomConfiguration
-							options={options}
-							setOptions={(o) => {
-								setOptions(o);
-							}}
-							onClose={() => {
-								setIsMenuOpen(false);
+								return true;
 							}}
 						/>
-					</ResizablePanel>
-				</>
-			)}
-		</ResizablePanelGroup>
+					</div>
+				</ResizablePanel>
+
+				{isMenuOpen && (
+					<>
+						<ResizableHandle className="my-auto h-32" />
+						<ResizablePanel
+							className="relative p-2"
+							defaultSize={25}
+						>
+							<RoomConfiguration
+								options={options}
+								setOptions={(o) => {
+									setOptions(o);
+								}}
+								onClose={() => {
+									setIsMenuOpen(false);
+								}}
+							/>
+						</ResizablePanel>
+					</>
+				)}
+			</ResizablePanelGroup>
+		</div>
 	);
 });

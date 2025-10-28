@@ -1,4 +1,4 @@
-import { ClockIcon, CogIcon, MoveDownIcon } from "lucide-react";
+import { ClockIcon, MoveDownIcon, Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
@@ -288,7 +288,7 @@ export const RoomPage = observer(() => {
 								isDisabled={isDisabled}
 								minRows={3}
 								maxRows={8}
-								actions={
+								configuration={
 									<Tooltip>
 										<TooltipTrigger asChild>
 											<span>
@@ -322,7 +322,7 @@ export const RoomPage = observer(() => {
 														}
 													}}
 												>
-													<CogIcon />
+													<Settings2Icon />
 												</Button>
 											</span>
 										</TooltipTrigger>

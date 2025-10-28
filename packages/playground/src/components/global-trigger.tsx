@@ -2,7 +2,7 @@ import { PanelLeftIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { Button, useSidebar } from "@semoss/ui/next";
 
-export const AppHeader = observer(() => {
+export const GlobalTrigger = observer(() => {
 	const { open, setOpen } = useSidebar();
 
 	if (open) {

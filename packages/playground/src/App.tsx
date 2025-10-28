@@ -10,7 +10,7 @@ Env.update({
 export const App = () => {
 	return (
 		<InsightProvider>
-			<ThemeProvider>
+			<ThemeProvider defaultTheme="light">
 				<div className="absolute inset-0 h-screen w-screen overflow-hidden">
 					<Router />
 				</div>

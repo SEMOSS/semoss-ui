@@ -4,7 +4,8 @@ import {
 	FileType2Icon,
 	FileVideoCameraIcon,
 	MicIcon,
-	SendHorizonalIcon,
+	PaperclipIcon,
+	SendIcon,
 	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -35,8 +36,11 @@ interface RoomInputProps {
 	/** Maximum number of rendered rows rows */
 	maxRows: number;
 
-	/** Custom actions */
-	actions: React.ReactNode;
+	/** Agent toggle */
+	agent?: React.ReactNode;
+
+	/** Configuration toggle */
+	configuration?: React.ReactNode;
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
@@ -48,7 +52,8 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		isDisabled,
 		minRows = 2,
 		maxRows = 6,
-		actions = null,
+		agent = null,
+		configuration = null,
 		onPrompt = () => null,
 	}) => {
 		const [input, setInput] = useState("");
@@ -211,31 +216,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<>
 				<div className="relative w-full">
-					<div className="absolute bottom-4 left-4 z-10 flex flex-row items-center gap-1">
-						{actions}
-					</div>
-					<div className="absolute right-4 bottom-4 z-10 flex flex-row items-center gap-1">
-						{ENABLE_ATTACHMENT && (
-							<Tooltip>
-								<TooltipTrigger asChild>
-									<span>
-										<Button
-											aria-label="Attach Documents"
-											disabled={isDisabled || isLoading}
-											variant="ghost"
-											size="icon-sm"
-											onClick={() => {
-												fileRef.current?.click();
-											}}
-										>
-											<FileIcon />
-										</Button>
-									</span>
-								</TooltipTrigger>
-								<TooltipContent>Attach Document</TooltipContent>
-							</Tooltip>
-						)}
-
+					<div className="absolute top-3 right-3 z-10">
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span>
@@ -266,7 +247,39 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								{isListening ? "Stop Recording" : "Record"}
 							</TooltipContent>
 						</Tooltip>
+					</div>
+					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
+						{agent}
+					</div>
+					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
+						<div className="flex flex-row items-center">
+							{ENABLE_ATTACHMENT && (
+								<Tooltip>
+									<TooltipTrigger asChild>
+										<span>
+											<Button
+												aria-label="Attach Documents"
+												disabled={
+													isDisabled || isLoading
+												}
+												variant="ghost"
+												size="icon-sm"
+												onClick={() => {
+													fileRef.current?.click();
+												}}
+											>
+												<PaperclipIcon />
+											</Button>
+										</span>
+									</TooltipTrigger>
+									<TooltipContent>
+										Attach Document
+									</TooltipContent>
+								</Tooltip>
+							)}
 
+							{configuration}
+						</div>
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<span>
@@ -280,11 +293,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 											promptModel(input);
 										}}
 									>
-										{isLoading ? (
-											<Spinner />
-										) : (
-											<SendHorizonalIcon />
-										)}
+										{isLoading ? <Spinner /> : <SendIcon />}
 									</Button>
 								</span>
 							</TooltipTrigger>
@@ -316,15 +325,15 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					<div className="relative">
 						<Textarea
 							ref={inputRef}
-							placeholder="Ask a question"
+							placeholder="What do you want to do today?"
 							value={input}
 							disabled={isDisabled}
 							rows={minRows}
-							className={`w-full resize-none pb-14 ${
+							className={`w-full resize-none px-3pb-14 pt-3 ${
 								isDragging
-									? "border-2 border-primary border-dashed bg-background"
-									: "border-2 border-border border-solid bg-background hover:border-primary"
-							} rounded-lg shadow-sm transition-colors`}
+									? "border-1 border-primary border-dashed bg-background"
+									: "border-1 border-border border-solid bg-background hover:border-primary"
+							} rounded-md shadow-lg transition-colors`}
 							autoFocus={true}
 							style={{
 								minHeight: `${minRows * 3}rem`,
