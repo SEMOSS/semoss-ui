@@ -204,8 +204,6 @@ const ExcelDataSelection = ({
 					true,
 				]),
 			);
-
-			// ✅ Completely replace the sheet — no merging
 			setTableStates((prev) => ({
 				...prev,
 				[sheetKey]: {
@@ -280,7 +278,7 @@ const ExcelDataSelection = ({
 					collapseAll: true,
 					cleanHeaders: parsedData.cleanHeaders,
 					dataTypes: parsedData.dataTypes || {},
-					tableName: sheetName, // ✅ added
+					tableName: sheetName,
 				};
 			});
 		});
@@ -413,93 +411,97 @@ const ExcelDataSelection = ({
 	}
 
 	const handleImport = () => {
-		const payloadArray = files.map((file, fileIndex) => {
-			const dataTypeMap: Record<
-				string,
-				Record<string, Record<string, string>>
-			> = {};
-			const newHeaders: Record<
-				string,
-				Record<string, Record<string, string>>
-			> = {};
-			const additionalDataTypes: Record<
-				string,
-				Record<string, Record<string, string>>
-			> = {};
-			const descriptionMap: Record<string, string> = {};
-			const logicalNamesMap: Record<string, string[]> = {};
+	const payloadArray = files.map((file, fileIndex) => {
+		const dataTypeMap: Record<
+			string,
+			Record<string, Record<string, string>>
+		> = {};
+		const newHeaders: Record<
+			string,
+			Record<string, Record<string, string>>
+		> = {};
+		const additionalDataTypes: Record<
+			string,
+			Record<string, Record<string, string>>
+		> = {};
+		const descriptionMap: Record<
+			string,
+			Record<string, Record<string, string>>
+		> = {};
+		const logicalNamesMap: Record<
+			string,
+			Record<string, Record<string, string[]>>
+		> = {};
 
-			// ✅ add tables here
-			const tables: Record<string, Record<string, string>> = {};
+		const tables: Record<string, Record<string, string>> = {};
 
-			const sheetNames = Object.keys(file || {});
-			sheetNames.forEach((sheetName) => {
-				const range = Object.keys(file[sheetName])[0];
-				const sheetKey = `${fileIndex}-${sheetName}`;
-				const parsedData = file[sheetName][range];
-				const state = tableStates[sheetKey];
-				if (!parsedData || !state) return;
+		const sheetNames = Object.keys(file || {});
+		sheetNames.forEach((sheetName) => {
+			const range = Object.keys(file[sheetName])[0];
+			const sheetKey = `${fileIndex}-${sheetName}`;
+			const parsedData = file[sheetName][range];
+			const state = tableStates[sheetKey];
+			if (!parsedData || !state) return;
 
-				const editedRange = editedRanges[sheetKey] ?? range;
-				const tableName = state.tableName?.trim() || sheetName; // ✅ use custom or fallback
+			const editedRange = editedRanges[sheetKey] ?? range;
+			const tableName = state.tableName?.trim() || sheetName;
 
-				// ✅ build your required tables payload
-				tables[sheetName] = { [editedRange]: tableName };
+			tables[sheetName] = { [editedRange]: tableName };
 
-				// ---- keep your existing logic ----
-				dataTypeMap[sheetName] = { [editedRange]: {} };
-				newHeaders[sheetName] = {};
-				additionalDataTypes[sheetName] = { [editedRange]: {} };
+			dataTypeMap[sheetName] = { [editedRange]: {} };
+			newHeaders[sheetName] = {};
+			additionalDataTypes[sheetName] = { [editedRange]: {} };
 
-				state.cleanHeaders?.forEach((header) => {
-					const alias = state.columnMetadata[header]?.alias || header;
+			descriptionMap[sheetName] = { [editedRange]: {} };
+			logicalNamesMap[sheetName] = { [editedRange]: {} };
 
-					dataTypeMap[sheetName][editedRange][alias] =
-						state.columnMetadata[header]?.dataType || "STRING";
+			state.cleanHeaders?.forEach((header) => {
+				const alias = state.columnMetadata[header]?.alias || header;
 
-					if (alias !== header) {
-						if (!newHeaders[sheetName][editedRange])
-							newHeaders[sheetName][editedRange] = {};
-						newHeaders[sheetName][editedRange][alias] = header;
-					}
+				dataTypeMap[sheetName][editedRange][alias] =
+					state.columnMetadata[header]?.dataType || "STRING";
 
-					if (state.columnMetadata[header]?.format) {
-						additionalDataTypes[sheetName][editedRange][alias] =
-							state.columnMetadata[header]?.format!;
-					}
+				if (alias !== header) {
+					if (!newHeaders[sheetName][editedRange])
+						newHeaders[sheetName][editedRange] = {};
+					newHeaders[sheetName][editedRange][alias] = header;
+				}
 
-					if (state.columnMetadata[header]?.description) {
-						descriptionMap[alias] =
-							state.columnMetadata[header]?.description!;
-					}
+				if (state.columnMetadata[header]?.format) {
+					additionalDataTypes[sheetName][editedRange][alias] =
+						state.columnMetadata[header]?.format!;
+				}
 
-					if (
-						Array.isArray(
-							state.columnMetadata[header]?.logicalName,
-						) &&
-						state.columnMetadata[header]!.logicalName!.length > 0
-					) {
-						logicalNamesMap[alias] =
-							state.columnMetadata[header]!.logicalName!;
-					}
-				});
+				if (state.columnMetadata[header]?.description) {
+					descriptionMap[sheetName][editedRange][alias] =
+						state.columnMetadata[header]?.description!;
+				}
+
+				if (
+					Array.isArray(state.columnMetadata[header]?.logicalName) &&
+					state.columnMetadata[header]!.logicalName!.length > 0
+				) {
+					logicalNamesMap[sheetName][editedRange][alias] =
+						state.columnMetadata[header]!.logicalName!;
+				}
 			});
-
-			// ✅ include tables in payload
-			return {
-				filePath: [fileName[fileIndex]],
-				dataTypeMap,
-				newHeaders,
-				additionalDataTypes,
-				descriptionMap,
-				logicalNamesMap,
-				tables: [tables],
-				existing: fileIndex > 0 ? true : false,
-			};
 		});
 
-		onImport(payloadArray);
-	};
+		return {
+			filePath: [fileName[fileIndex]],
+			dataTypeMap,
+			newHeaders,
+			additionalDataTypes,
+			descriptionMap: [descriptionMap],
+			logicalNamesMap: [logicalNamesMap],
+			tables: [tables],
+			existing: fileIndex > 0 ? true : false,
+		};
+	});
+
+	onImport(payloadArray);
+};
+
 
 	return (
 		<>
@@ -532,7 +534,7 @@ const ExcelDataSelection = ({
 						const sheetKey = `${fileIndex}-${sheetName}`;
 						const state = tableStates[sheetKey];
 
-						// ✅ Use updated data from state if available, otherwise fallback to file
+						// Use updated data from state if available, otherwise fallback to file
 						const parsedData =
 							state?.cleanHeaders && state?.dataTypes
 								? {
@@ -629,7 +631,7 @@ const ExcelDataSelection = ({
 											>
 												Range:
 											</StyledTypographyTitle>
-											{/* ✅ Add your Range textfield + Preview button */}
+											{/* Add your Range textfield + Preview button */}
 											<Stack spacing={1}>
 												<Stack
 													direction="row"
@@ -734,7 +736,7 @@ const ExcelDataSelection = ({
 																	<Box
 																		sx={{
 																			minHeight:
-																				"30px", // slightly taller to handle 2 lines
+																				"30px",
 																			mt: 0.3,
 																			width: "100%",
 																			overflow:
@@ -751,7 +753,7 @@ const ExcelDataSelection = ({
 																					lineHeight:
 																						"1rem",
 																					whiteSpace:
-																						"normal", // ✅ allow wrapping
+																						"normal",
 																					wordBreak:
 																						"break-word",
 																				}}
@@ -880,7 +882,6 @@ const ExcelDataSelection = ({
 												</Table.Head>
 
 												<Table.Body>
-													{/* ✅ use state.cleanHeaders, not parsedData.cleanHeaders */}
 													{state.cleanHeaders?.map(
 														(column, index) => (
 															<Table.Row
