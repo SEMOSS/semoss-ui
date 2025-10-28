@@ -1,6 +1,7 @@
 import {
 	DeleteOutlined,
 	ExpandMore,
+	RestoreFromTrash,
 	UnfoldLess,
 	UnfoldMore,
 } from "@mui/icons-material";
@@ -10,6 +11,7 @@ import {
 	Box,
 	Button,
 	Checkbox,
+	Chip,
 	IconButton,
 	List,
 	Modal,
@@ -122,7 +124,7 @@ const StyledHeaderBox = styled(Box)(() => ({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "space-between",
-	width: "65%",
+	width: "100%",
 }));
 
 const StyledCollapseButton = styled(Button)(({ theme }) => ({
@@ -162,6 +164,47 @@ const StyledJsonEditor = styled(TextField)(() => ({
 const StyledBooleanContainer = styled(Box)(() => ({
 	display: "flex",
 	alignItems: "center",
+	gap: "8px",
+}));
+
+const StyledDeletedItem = styled(Box)(({ theme }) => ({
+	opacity: 0.6,
+	backgroundColor: theme.palette.error.light + "15",
+	borderRadius: theme.shape.borderRadius,
+	border: `1px solid ${theme.palette.error.light}`,
+	padding: theme.spacing(0.5),
+	width: "100%",
+	"& *": {
+		color: theme.palette.text.secondary,
+	},
+}));
+
+const StyledDeletedAccordion = styled(Box)(({ theme }) => ({
+	opacity: 0.6,
+	position: "relative",
+	backgroundColor: theme.palette.error.light + "10",
+	borderRadius: theme.shape.borderRadius,
+	border: `1px solid ${theme.palette.error.light}`,
+	marginBottom: theme.spacing(1),
+	"&::before": {
+		content: '""',
+		position: "absolute",
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: theme.palette.error.light,
+		opacity: 0.05,
+		borderRadius: theme.shape.borderRadius,
+		pointerEvents: "none",
+		zIndex: 1,
+	},
+}));
+
+const StyledFunctionItemContent = styled(Box)(() => ({
+	display: "flex",
+	alignItems: "center",
+	width: "100%",
 	gap: "8px",
 }));
 
@@ -273,6 +316,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		2: false,
 	});
 	const [expanded, setExpanded] = useState<ExpandedState>({ 1: [], 2: [] });
+	const [deletedFunctions, setDeletedFunctions] = useState<string[]>([]);
 
 	// ==================== CONSTANTS ====================
 
@@ -314,8 +358,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	const selectedFilteredFunctions = useMemo(() => {
 		return (filteredFunctions as unknown[])
 			.filter(isTool)
-			.filter((t) => selectedFunctions.includes(t.name));
-	}, [filteredFunctions, selectedFunctions]);
+			.filter(
+				(t) =>
+					selectedFunctions.includes(t.name) &&
+					!deletedFunctions.includes(t.name),
+			);
+	}, [filteredFunctions, selectedFunctions, deletedFunctions]);
 
 	const configuredFunctions = useMemo(() => {
 		return Object.keys(selectedParameters)
@@ -324,7 +372,8 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					.filter(isTool)
 					.find((t) => t.name === toolName);
 
-				if (!tool) return undefined;
+				if (!tool || deletedFunctions.includes(toolName))
+					return undefined;
 
 				const filteredProperties = Object.entries(
 					tool.inputSchema?.properties ?? {},
@@ -350,7 +399,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				} as Tool;
 			})
 			.filter((t): t is Tool => t !== undefined);
-	}, [selectedParameters, tools]);
+	}, [selectedParameters, tools, deletedFunctions]);
 
 	// ==================== EFFECTS ====================
 
@@ -472,73 +521,70 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	// ==================== EVENT HANDLERS ====================
 
 	const handleSelectAllFunctions = useCallback(() => {
-		if (selectedFunctions.length === filteredFunctions.length) {
+		const availableFunctions = filteredFunctions.filter(
+			(tool) => !deletedFunctions.includes((tool as Tool).name),
+		);
+		if (selectedFunctions.length === availableFunctions.length) {
 			setSelectedFunctions([]);
 		} else {
-			const allFunctionNames = filteredFunctions.map(
+			const allFunctionNames = availableFunctions.map(
 				(tool) => tool.name as string,
 			);
 			setSelectedFunctions(allFunctionNames);
 		}
-	}, [selectedFunctions.length, filteredFunctions]);
+	}, [selectedFunctions.length, filteredFunctions, deletedFunctions]);
 
-	const handleFunctionToggle = useCallback((tool: Tool) => {
-		setSelectedFunctions((prev) => {
-			if (prev.includes(tool.name)) {
-				setSelectedParameters((prevParams) => {
-					const newParams = { ...prevParams };
-					delete newParams[tool.name];
-					return newParams;
-				});
-				return prev.filter((name) => name !== tool.name);
-			}
-			const requiredParams = Array.isArray(tool.inputSchema?.required)
-				? tool.inputSchema.required.reduce(
-						(acc, n) => ({ ...acc, [n]: true }),
-						{} as Record<string, boolean>,
-					)
-				: {};
-			setSelectedParameters((prevParams) => ({
-				...prevParams,
-				[tool.name]: {
-					...(prevParams[tool.name] ?? {}),
-					...requiredParams,
-				},
-			}));
-			return [...prev, tool.name];
-		});
-	}, []);
+	const handleFunctionToggle = useCallback(
+		(tool: Tool) => {
+			if (deletedFunctions.includes(tool.name)) return;
+
+			setSelectedFunctions((prev) => {
+				if (prev.includes(tool.name)) {
+					setSelectedParameters((prevParams) => {
+						const newParams = { ...prevParams };
+						delete newParams[tool.name];
+						return newParams;
+					});
+					return prev.filter((name) => name !== tool.name);
+				}
+				const requiredParams = Array.isArray(tool.inputSchema?.required)
+					? tool.inputSchema.required.reduce(
+							(acc, n) => ({ ...acc, [n]: true }),
+							{} as Record<string, boolean>,
+						)
+					: {};
+				setSelectedParameters((prevParams) => ({
+					...prevParams,
+					[tool.name]: {
+						...(prevParams[tool.name] ?? {}),
+						...requiredParams,
+					},
+				}));
+				return [...prev, tool.name];
+			});
+		},
+		[deletedFunctions],
+	);
 
 	const handleFunctionDelete = useCallback(
 		(e: React.MouseEvent, tool: Tool) => {
 			e.stopPropagation();
-
-			const updatedTools = tools.filter((t) => {
-				if (isTool(t)) {
-					return t.name !== tool.name;
-				}
-				return true;
-			});
-
-			handleToolsUpdate(updatedTools);
-
+			setDeletedFunctions((prev) => [...prev, tool.name]);
 			setSelectedFunctions((prev) =>
 				prev.filter((name) => name !== tool.name),
 			);
-
-			setSelectedParameters((prev) => {
-				const newParams = { ...prev };
-				delete newParams[tool.name];
-				return newParams;
-			});
-
-			setExpanded((prev) => ({
-				...prev,
-				1: prev[1]?.filter((name) => name !== tool.name) ?? [],
-				2: prev[2]?.filter((name) => name !== tool.name) ?? [],
-			}));
 		},
-		[tools, handleToolsUpdate],
+		[],
+	);
+
+	const handleFunctionRestore = useCallback(
+		(e: React.MouseEvent, tool: Tool) => {
+			e.stopPropagation();
+			setDeletedFunctions((prev) =>
+				prev.filter((name) => name !== tool.name),
+			);
+		},
+		[],
 	);
 
 	const handleSelectAllParameters = useCallback(
@@ -676,24 +722,40 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 	const handleNextDisableCheck = useCallback((): boolean => {
 		if (activeStep === 0) {
-			return selectedFunctions.length === 0;
+			return (
+				selectedFunctions.length === 0 && deletedFunctions.length === 0
+			);
 		}
 		return false;
-	}, [activeStep, selectedFunctions.length]);
-
-	const handleSave = useCallback(() => {
-		handleMCPEditSave(tools);
-		onClose(true);
-	}, [tools, handleMCPEditSave, onClose]);
+	}, [activeStep, selectedFunctions.length, deletedFunctions.length]);
 
 	const handleNext = useCallback(() => {
 		if (activeStep === steps.length - 1) {
 			setIsLoading(true);
-			handleSave();
+			// Filter out deleted functions
+			const finalTools = tools.filter((t) => {
+				if (isTool(t)) {
+					return !deletedFunctions.includes(t.name);
+				}
+				return true;
+			});
+			// First update the parent's state
+			handleToolsUpdate(finalTools);
+			// Use setTimeout to ensure parent state updates before calling save
+			handleMCPEditSave(finalTools);
+			onClose(true);
 		} else {
 			setActiveStep((prev) => prev + 1);
 		}
-	}, [activeStep, steps.length, handleSave]);
+	}, [
+		activeStep,
+		steps.length,
+		tools,
+		deletedFunctions,
+		handleToolsUpdate,
+		handleMCPEditSave,
+		onClose,
+	]);
 
 	const handleBack = useCallback(() => {
 		if (activeStep > 0) {
@@ -1128,8 +1190,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				getSelectedForTool(tool.name),
 			).filter((key) => getSelectedForTool(tool.name)[key]).length;
 			const isExpanded = (expanded[activeStep] || []).includes(tool.name);
+			const isDeleted = deletedFunctions.includes(tool.name);
 
-			return (
+			const accordionContent = (
 				<Accordion
 					key={tool.name}
 					expanded={isExpanded}
@@ -1141,19 +1204,38 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 								data-testid={`accordion-expand-icon-${tool.name}`}
 							/>
 						}
-						onClick={() => handleAccordionExpand(tool.name)}
+						onClick={() =>
+							!isDeleted && handleAccordionExpand(tool.name)
+						}
 						data-testid={`accordion-trigger-${tool.name}`}
+						disabled={isDeleted}
 					>
 						{showParameterSelection ? (
 							<StyledHeaderBox
 								data-testid={`accordion-header-box-${tool.name}`}
 							>
-								<Typography
-									variant="body1"
-									data-testid={`accordion-title-${tool.name}`}
+								<Box
+									data-testid={`accordion-title-wrapper-${tool.name}`}
+									sx={{
+										display: "flex",
+										alignItems: "center",
+										gap: "8px",
+									}}
 								>
-									{tool.title ?? tool.name}
-								</Typography>
+									<Typography
+										variant="body1"
+										data-testid={`accordion-title-${tool.name}`}
+									>
+										{tool.title ?? tool.name}
+									</Typography>
+									{isDeleted && (
+										<Chip
+											label="Deleted"
+											size="small"
+											data-testid={`accordion-deleted-chip-${tool.name}`}
+										/>
+									)}
+								</Box>
 								<Typography
 									variant="body2"
 									color="textDisabled"
@@ -1163,12 +1245,29 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 								</Typography>
 							</StyledHeaderBox>
 						) : (
-							<Typography
-								variant="body1"
-								data-testid={`accordion-title-${tool.name}`}
+							<Box
+								data-testid={`accordion-title-wrapper-${tool.name}`}
+								sx={{
+									display: "flex",
+									alignItems: "center",
+									gap: "8px",
+									width: "100%",
+								}}
 							>
-								{tool.title ?? tool.name}
-							</Typography>
+								<Typography
+									variant="body1"
+									data-testid={`accordion-title-${tool.name}`}
+								>
+									{tool.title ?? tool.name}
+								</Typography>
+								{isDeleted && (
+									<Chip
+										label="Deleted"
+										size="small"
+										data-testid={`accordion-deleted-chip-${tool.name}`}
+									/>
+								)}
+							</Box>
 						)}
 					</StyledAccordionTrigger>
 					<Accordion.Content
@@ -1184,6 +1283,17 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					</Accordion.Content>
 				</Accordion>
 			);
+
+			return isDeleted ? (
+				<StyledDeletedAccordion
+					key={`deleted-${tool.name}`}
+					data-testid={`deleted-accordion-wrapper-${tool.name}`}
+				>
+					{accordionContent}
+				</StyledDeletedAccordion>
+			) : (
+				accordionContent
+			);
 		},
 		[
 			expanded,
@@ -1191,25 +1301,22 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			getSelectedForTool,
 			handleAccordionExpand,
 			renderParameterTable,
+			deletedFunctions,
 		],
 	);
 
 	// ==================== STEP CONTENT COMPONENTS ====================
 
 	const renderContentStep1 = () => {
-		const total = filteredFunctions.length;
+		const total = filteredFunctions.filter(
+			(tool) => !deletedFunctions.includes((tool as Tool).name),
+		).length;
 		const sel = selectedFunctions.length;
 		const allChecked = total > 0 && sel === total;
 		const indeterminate = sel > 0 && sel < total;
 
 		return (
 			<StyledFunctionListContainer data-testid="function-list-container">
-				<Search
-					data-testid="function-search-input"
-					placeholder="Search Functions"
-					value={functionSearch}
-					onChange={handleSearchChange}
-				/>
 				{filteredFunctions.length === 0 ? (
 					<StyledEmptyState
 						variant="body2"
@@ -1218,38 +1325,48 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						No functions found.
 					</StyledEmptyState>
 				) : (
-					<StyledFunctionList data-testid="function-list">
-						{functionSearch === "" && (
-							<List.Item data-testid="select-all-functions-item">
-								<List.ItemButton
-									onClick={handleSelectAllFunctions}
-									data-testid="select-all-functions-button"
-								>
-									<Checkbox
-										data-testid="select-all-functions-checkbox"
-										checked={allChecked}
-										checkboxProps={
-											indeterminate
-												? { indeterminate: true }
-												: undefined
-										}
-									/>
-									<List.ItemText
-										primary="Select All"
-										data-testid="select-all-functions-text"
-									/>
-								</List.ItemButton>
-							</List.Item>
-						)}
-						{filteredFunctions.map(
-							(tool) =>
-								isTool(tool) && (
-									<List.Item
-										key={tool.name}
-										data-testid={`function-item-${tool.name}`}
+					<>
+						<Search
+							data-testid="function-search-input"
+							placeholder="Search Functions"
+							value={functionSearch}
+							onChange={handleSearchChange}
+						/>
+						<StyledFunctionList data-testid="function-list">
+							{functionSearch === "" && (
+								<List.Item data-testid="select-all-functions-item">
+									<List.ItemButton
+										onClick={handleSelectAllFunctions}
+										data-testid="select-all-functions-button"
 									>
-										<List.ItemButton
-											data-testid={`function-button-${tool.name}`}
+										<Checkbox
+											data-testid="select-all-functions-checkbox"
+											checked={allChecked}
+											checkboxProps={
+												indeterminate
+													? { indeterminate: true }
+													: undefined
+											}
+										/>
+										<List.ItemText
+											primary="Select All"
+											data-testid="select-all-functions-text"
+										/>
+									</List.ItemButton>
+								</List.Item>
+							)}
+							{filteredFunctions.map((tool) => {
+								if (!isTool(tool)) return null;
+								const isDeleted = deletedFunctions.includes(
+									tool.name,
+								);
+
+								const itemContent = (
+									<List.ItemButton
+										data-testid={`function-button-${tool.name}`}
+									>
+										<StyledFunctionItemContent
+											data-testid={`function-content-${tool.name}`}
 										>
 											<Checkbox
 												data-testid={`function-checkbox-${tool.name}`}
@@ -1259,6 +1376,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 												onChange={() =>
 													handleFunctionToggle(tool)
 												}
+												disabled={isDeleted}
 											/>
 											<List.ItemText
 												primary={
@@ -1267,37 +1385,90 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 												}
 												data-testid={`function-text-${tool.name}`}
 											/>
-											<StyledDeleteIcon
-												data-testid={`delete-icon-${tool.name}`}
-												onClick={(e) =>
-													handleFunctionDelete(
-														e,
-														tool,
-													)
-												}
-												size="small"
+											{isDeleted ? (
+												<>
+													<Chip
+														label="Deleted"
+														size="small"
+														data-testid={`function-deleted-chip-${tool.name}`}
+													/>
+													<StyledDeleteIcon
+														data-testid={`restore-icon-${tool.name}`}
+														onClick={(e) =>
+															handleFunctionRestore(
+																e,
+																tool,
+															)
+														}
+														size="small"
+													>
+														<RestoreFromTrash
+															color="primary"
+															fontSize="small"
+															titleAccess="Restore Function"
+															data-testid={`restore-icon-svg-${tool.name}`}
+														/>
+													</StyledDeleteIcon>
+												</>
+											) : (
+												<StyledDeleteIcon
+													data-testid={`delete-icon-${tool.name}`}
+													onClick={(e) =>
+														handleFunctionDelete(
+															e,
+															tool,
+														)
+													}
+													size="small"
+												>
+													<DeleteOutlined
+														color="error"
+														fontSize="small"
+														titleAccess="Delete Function"
+														data-testid={`delete-icon-svg-${tool.name}`}
+													/>
+												</StyledDeleteIcon>
+											)}
+										</StyledFunctionItemContent>
+									</List.ItemButton>
+								);
+
+								return (
+									<List.Item
+										key={tool.name}
+										data-testid={`function-item-${tool.name}`}
+									>
+										{isDeleted ? (
+											<StyledDeletedItem
+												data-testid={`deleted-function-wrapper-${tool.name}`}
 											>
-												<DeleteOutlined
-													color="error"
-													fontSize="small"
-													titleAccess="Delete Function"
-													data-testid={`delete-icon-svg-${tool.name}`}
-												/>
-											</StyledDeleteIcon>
-										</List.ItemButton>
+												{itemContent}
+											</StyledDeletedItem>
+										) : (
+											itemContent
+										)}
 									</List.Item>
-								),
-						)}
-					</StyledFunctionList>
+								);
+							})}
+						</StyledFunctionList>
+					</>
 				)}
 			</StyledFunctionListContainer>
 		);
 	};
 
 	const renderContentStep2 = () => {
+		const allFunctionsWithDeleted = (filteredFunctions as unknown[])
+			.filter(isTool)
+			.filter(
+				(t) =>
+					selectedFunctions.includes(t.name) ||
+					deletedFunctions.includes(t.name),
+			);
+
 		return (
 			<StyledAccordionWrapper data-testid="step-2-accordion-wrapper">
-				{selectedFilteredFunctions.map((tool) =>
+				{allFunctionsWithDeleted.map((tool) =>
 					renderAccordionContent(tool, true),
 				)}
 			</StyledAccordionWrapper>
@@ -1305,9 +1476,23 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	};
 
 	const renderContentStep3 = () => {
+		const allConfiguredWithDeleted = Object.keys({
+			...selectedParameters,
+			...deletedFunctions.reduce(
+				(acc, name) => ({ ...acc, [name]: {} }),
+				{},
+			),
+		})
+			.map((toolName) => {
+				return (tools as unknown[])
+					.filter(isTool)
+					.find((t) => t.name === toolName);
+			})
+			.filter((t): t is Tool => t !== undefined);
+
 		return (
 			<StyledAccordionWrapper data-testid="step-3-accordion-wrapper">
-				{configuredFunctions.map((tool) =>
+				{allConfiguredWithDeleted.map((tool) =>
 					renderAccordionContent(tool, false),
 				)}
 			</StyledAccordionWrapper>

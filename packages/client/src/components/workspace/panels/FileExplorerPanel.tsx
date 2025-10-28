@@ -6,6 +6,7 @@ import {
 	PublishedWithChangesOutlined,
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
+import { runPixel } from "@semoss/sdk";
 import { FlexLayout } from "@semoss/shared";
 import {
 	IconButton,
@@ -20,8 +21,7 @@ import {
 	DeleteFileOverlay,
 	FileExplorer,
 } from "@/components/common";
-import {MakeMCPOverlay} from "@/components/common/File/MakeMCPOverlay";
-import { runPixel } from "@semoss/sdk";
+import { MakeMCPOverlay } from "@/components/common/File/MakeMCPOverlay";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
@@ -346,16 +346,16 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 		}
 	};
 
-	const handleMakeMCPClick = async(
+	const handleMakeMCPClick = async (
 		event: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => {
-		workspace.setLoading(true, );
+		workspace.setLoading(true);
 		try {
 			// Make pixel call to generate MCP tool
 			const { errors, pixelReturn } = await runPixel(
 				`MakePythonMCP(project="${workspace.appId}")`,
-			);			
+			);
 			workspace.setLoading(false);
 			// Handle pixel call errors
 			if (errors?.length) {
@@ -368,7 +368,7 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			// refresh the content
 			refreshFiles();
 			// Handle pixel call response
-			if(pixelReturn[0].output) {
+			if (pixelReturn[0].output) {
 				notification.add({
 					message: "Successfully generated MCP tools",
 					color: "success",
@@ -378,17 +378,16 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			if (!pixelReturn?.[0]?.output) {
 				throw new Error("Invalid response from pixel call");
 			}
-		}
-		catch (e) {
+		} catch (e) {
 			workspace.setLoading(false);
 			notification.add({
 				message: e.message,
 				color: "error",
 			});
 		}
-	}
+	};
 
-	const handleMCPEditClick = async(
+	const handleMCPEditClick = async (
 		event: React.MouseEvent<HTMLButtonElement>,
 		path: string,
 	) => {
@@ -407,35 +406,46 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 			setMCPTools(output);
 			setCurrentFilePath(path);
 			setMCPOverlayOpen(true);
-		}
-		catch (e) {
+		} catch (e) {
 			workspace.setLoading(false);
 			notification.add({
 				message: e.message,
 				color: "error",
-			});			
-		}	
-	}
+			});
+		}
+	};
 
-	const handleMCPEditSave = async() => {
-        try {
+	const handleMCPEditSave = async (finalTools: Record<string, unknown>[]) => {
+		try {
 			workspace.setLoading(true);
 			let pixel = "";
+			const tools = { ...mcpTools, tools: finalTools };
 			if (mcpTools) {
-				pixel = `SaveAsset(fileName=["${currentFilePath}"], content=["<encode>${JSON.stringify(mcpTools, null, 2)}</encode>"], space=["${workspace.appId}"]);CommitAsset(filePath=["${currentFilePath}"], comment=["Save from editor"], space=["${workspace.appId}"])`;
+				pixel = `SaveAsset(fileName=["${currentFilePath}"], content=["<encode>${JSON.stringify(tools, null, 2)}</encode>"], space=["${workspace.appId}"]);CommitAsset(filePath=["${currentFilePath}"], comment=["Save from editor"], space=["${workspace.appId}"])`;
 			}
 
-            if (!pixel) {
-                throw new Error("Error missing pixel to get file");
-            }
+			if (!pixel) {
+				throw new Error("Error missing pixel to get file");
+			}
 
-            const { errors, pixelReturn } = await runPixel(pixel, workspace.insightId);
+			const { errors, pixelReturn } = await runPixel(
+				pixel,
+				workspace.insightId,
+			);
 
-			if(pixelReturn[0].output) {
-				if(workspace.model) {
-					const tabset = workspace.model.getActiveTabset().getChildren().find((tabset) => tabset.getAttr("name") === "py_mcp.json");
-					if(tabset) {
-						await workspace.model.doAction(FlexLayout.Actions.deleteTab(tabset.getId()));
+			if (pixelReturn[0].output) {
+				if (workspace.model) {
+					const tabset = workspace.model
+						.getActiveTabset()
+						.getChildren()
+						.find(
+							(tabset) =>
+								tabset.getAttr("name") === "py_mcp.json",
+						);
+					if (tabset) {
+						await workspace.model.doAction(
+							FlexLayout.Actions.deleteTab(tabset.getId()),
+						);
 					}
 				}
 				notification.add({
@@ -444,20 +454,19 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				});
 			}
 
-            // bubble up the errors
-            for (const e of errors) {
-                throw new Error(e);
-            }
-        } catch (e) {
-            notification.add({
-                color: "error",
-                message: e.message,
-            });
-        } finally {
-            workspace.setLoading(false);
-        }
-	}
-
+			// bubble up the errors
+			for (const e of errors) {
+				throw new Error(e);
+			}
+		} catch (e) {
+			notification.add({
+				color: "error",
+				message: e.message,
+			});
+		} finally {
+			workspace.setLoading(false);
+		}
+	};
 
 	/** Helpers */
 	/**
@@ -790,7 +799,9 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				<MakeMCPOverlay
 					tools={mcpTools.tools as Record<string, unknown>[]}
 					onClose={() => setMCPOverlayOpen(false)}
-					handleToolsUpdate={(tools) => setMCPTools({...mcpTools, tools})}
+					handleToolsUpdate={(tools) =>
+						setMCPTools({ ...mcpTools, tools })
+					}
 					handleMCPEditSave={handleMCPEditSave}
 				/>
 			)}
