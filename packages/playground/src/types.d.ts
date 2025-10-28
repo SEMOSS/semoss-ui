@@ -114,6 +114,8 @@ interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	};
 }
 
+export type McpExecution = "auto" | "ask" | "disabled";
+
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
 	tool_responses: {
@@ -125,7 +127,7 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			map: {
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
-				SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled";
+				SMSS_MCP_EXECUTION: McpExecution;
 			};
 		};
 
