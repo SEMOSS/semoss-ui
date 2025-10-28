@@ -355,32 +355,51 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		);
 	}, [tools, functionSearch]);
 
-	const selectedFilteredFunctions = useMemo(() => {
+	// Functions shown in step 2 (both selected non-deleted + deleted)
+	const step2Functions = useMemo(() => {
 		return (filteredFunctions as unknown[])
 			.filter(isTool)
 			.filter(
 				(t) =>
-					selectedFunctions.includes(t.name) &&
-					!deletedFunctions.includes(t.name),
+					selectedFunctions.includes(t.name) ||
+					deletedFunctions.includes(t.name),
 			);
 	}, [filteredFunctions, selectedFunctions, deletedFunctions]);
 
 	const configuredFunctions = useMemo(() => {
-		return Object.keys(selectedParameters)
+		// Get all function names: both from selectedParameters and deletedFunctions
+		const allFunctionNames = Array.from(
+			new Set([...Object.keys(selectedParameters), ...deletedFunctions]),
+		);
+
+		return allFunctionNames
 			.map((toolName) => {
 				const tool = (tools as unknown[])
 					.filter(isTool)
 					.find((t) => t.name === toolName);
 
-				if (!tool || deletedFunctions.includes(toolName))
-					return undefined;
+				if (!tool) return undefined;
 
+				const isDeleted = deletedFunctions.includes(toolName);
+
+				// For deleted functions, include all properties to show in disabled state
+				if (isDeleted) {
+					return {
+						...tool,
+						inputSchema: {
+							...tool.inputSchema,
+							properties: tool.inputSchema?.properties || {},
+						},
+					} as Tool;
+				}
+
+				// For non-deleted functions, only include selected parameters
 				const filteredProperties = Object.entries(
 					tool.inputSchema?.properties ?? {},
 				)
 					.filter(
 						([paramName]) =>
-							selectedParameters[toolName]?.[paramName],
+							selectedParameters[toolName]?.[paramName] === true,
 					)
 					.reduce(
 						(acc, [paramName, propDetails]) => ({
@@ -389,6 +408,10 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						}),
 						{} as Record<string, PropertyDetails>,
 					);
+
+				// Only return the tool if it has at least one selected parameter
+				if (Object.keys(filteredProperties).length === 0)
+					return undefined;
 
 				return {
 					...tool,
@@ -401,13 +424,45 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			.filter((t): t is Tool => t !== undefined);
 	}, [selectedParameters, tools, deletedFunctions]);
 
+	// Check if all required parameters have non-empty titles in step 2
+	// This checks against the actual tools data which gets updated
+	const hasEmptyRequiredTitles = useMemo(() => {
+		if (activeStep !== 1) return false;
+
+		// Get the selected function names
+		const selectedFunctionNames = selectedFunctions.filter(
+			(name) => !deletedFunctions.includes(name),
+		);
+
+		for (const functionName of selectedFunctionNames) {
+			const tool = (tools as unknown[])
+				.filter(isTool)
+				.find((t) => t.name === functionName);
+
+			if (!tool) continue;
+
+			const requiredParams = tool.inputSchema?.required || [];
+			const properties = tool.inputSchema?.properties || {};
+
+			for (const paramName of requiredParams) {
+				const propDetails = properties[paramName];
+				const title = propDetails?.title?.trim() || "";
+				// Check if title is empty
+				if (title === "") {
+					return true;
+				}
+			}
+		}
+		return false;
+	}, [activeStep, selectedFunctions, deletedFunctions, tools]);
+
 	// ==================== EFFECTS ====================
 
 	useEffect(() => {
 		if (activeStep === 1) {
 			setExpanded((prev) => ({
 				...prev,
-				1: selectedFilteredFunctions.map((f) => f.name),
+				1: step2Functions.map((f) => f.name),
 			}));
 			setCollapseAll((prev) => ({ ...prev, 1: false }));
 		} else if (activeStep === 2) {
@@ -417,11 +472,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			}));
 			setCollapseAll((prev) => ({ ...prev, 2: false }));
 		}
-	}, [
-		activeStep,
-		selectedFilteredFunctions.length,
-		configuredFunctions.length,
-	]);
+	}, [activeStep, step2Functions.length, configuredFunctions.length]);
 
 	// ==================== HELPER FUNCTIONS ====================
 
@@ -646,19 +697,14 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 		const functionsToExpand =
 			currentStep === 1
-				? selectedFilteredFunctions.map((f) => f.name)
+				? step2Functions.map((f) => f.name)
 				: configuredFunctions.map((f) => f.name);
 
 		setExpanded((prev) => ({
 			...prev,
 			[currentStep]: isCurrentlyCollapsed ? functionsToExpand : [],
 		}));
-	}, [
-		activeStep,
-		collapseAll,
-		selectedFilteredFunctions,
-		configuredFunctions,
-	]);
+	}, [activeStep, collapseAll, step2Functions, configuredFunctions]);
 
 	const handleAccordionExpand = useCallback(
 		(name: string) => {
@@ -726,8 +772,17 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				selectedFunctions.length === 0 && deletedFunctions.length === 0
 			);
 		}
+		if (activeStep === 1) {
+			// Disable next if any required parameter has empty title
+			return hasEmptyRequiredTitles;
+		}
 		return false;
-	}, [activeStep, selectedFunctions.length, deletedFunctions.length]);
+	}, [
+		activeStep,
+		selectedFunctions.length,
+		deletedFunctions.length,
+		hasEmptyRequiredTitles,
+	]);
 
 	const handleNext = useCallback(() => {
 		if (activeStep === steps.length - 1) {
@@ -742,8 +797,10 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			// First update the parent's state
 			handleToolsUpdate(finalTools);
 			// Use setTimeout to ensure parent state updates before calling save
-			handleMCPEditSave(finalTools);
-			onClose(true);
+			setTimeout(() => {
+				handleMCPEditSave(finalTools);
+				onClose(true);
+			}, 100);
 		} else {
 			setActiveStep((prev) => prev + 1);
 		}
@@ -924,6 +981,8 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			const requiredFlag = isRequired(tool, propName);
 			const current = getSelectedForTool(tool.name);
 			const checked = requiredFlag ? true : !!current[propName];
+			const titleValue = propDetails?.title?.trim() || "";
+			const hasEmptyTitle = requiredFlag && titleValue === "";
 
 			return (
 				<Table.Row
@@ -965,6 +1024,10 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 											tool.name,
 											propName,
 										)
+									}
+									error={hasEmptyTitle}
+									helperText={
+										hasEmptyTitle ? "Title is required" : ""
 									}
 								/>
 								{requiredFlag && (
@@ -1458,17 +1521,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	};
 
 	const renderContentStep2 = () => {
-		const allFunctionsWithDeleted = (filteredFunctions as unknown[])
-			.filter(isTool)
-			.filter(
-				(t) =>
-					selectedFunctions.includes(t.name) ||
-					deletedFunctions.includes(t.name),
-			);
-
 		return (
 			<StyledAccordionWrapper data-testid="step-2-accordion-wrapper">
-				{allFunctionsWithDeleted.map((tool) =>
+				{step2Functions.map((tool) =>
 					renderAccordionContent(tool, true),
 				)}
 			</StyledAccordionWrapper>
@@ -1476,23 +1531,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	};
 
 	const renderContentStep3 = () => {
-		const allConfiguredWithDeleted = Object.keys({
-			...selectedParameters,
-			...deletedFunctions.reduce(
-				(acc, name) => ({ ...acc, [name]: {} }),
-				{},
-			),
-		})
-			.map((toolName) => {
-				return (tools as unknown[])
-					.filter(isTool)
-					.find((t) => t.name === toolName);
-			})
-			.filter((t): t is Tool => t !== undefined);
-
 		return (
 			<StyledAccordionWrapper data-testid="step-3-accordion-wrapper">
-				{allConfiguredWithDeleted.map((tool) =>
+				{configuredFunctions.map((tool) =>
 					renderAccordionContent(tool, false),
 				)}
 			</StyledAccordionWrapper>
