@@ -1,31 +1,29 @@
 import type { App, Engine, Toolbox } from "@/types";
 
 /**
- * Get a unique key for a tool
- * @param tool The tool to get the key for
- * @returns The unique key for the tool
+ * MyEngineProjects returns responses in a strange foramt where Engines and Apps have different structures.
+ * This function normalizes them into a common Toolbox format.
+ * @param tool The engine or app to convert
+ * @returns The normalized Toolbox object
  */
-export const getToolbox = (item: Engine | App): Toolbox => {
-	let id = "";
-	let name = "";
-	let type: Toolbox["type"] = "DATABASE";
-
-	// Type guard to check if item is App
-	if ("project_id" in item && "project_name" in item) {
-		id = item.project_id;
-		type = "PROJECT";
-		name = item.project_name;
-	} else if ("app_id" in item && "app_name" in item) {
-		id = item.app_id;
-		name = item.app_name;
-		type = item.app_type;
+export const engineProjectToToolbox = (tool: Engine | App): Toolbox => {
+	if ("app_type" in tool) {
+		// It's an Engine
+		return {
+			type: tool.app_type,
+			id: tool.app_id,
+			name: tool.app_name,
+			description: tool.description || "",
+			tags: [], // Tags are not provided in the current response
+		};
+	} else {
+		// It's an App
+		return {
+			type: "PROJECT",
+			id: tool.project_id,
+			name: tool.project_name,
+			description: tool.description || "",
+			tags: [], // Tags are not provided in the current response
+		};
 	}
-
-	return {
-		id: id,
-		type: type,
-		name: name,
-		description: "",
-		tags: [],
-	};
 };

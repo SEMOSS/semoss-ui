@@ -210,22 +210,20 @@ export const registerUser = async (
 		phoneextension: phoneextension,
 		countrycode: countrycode,
 	};
-	return await post(`${Env.MODULE}/api/auth/createUser`, create, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
+	return await post(`${Env.MODULE}/api/auth/createUser`, create).catch(
+		(error) => {
+			if (
+				error.response &&
+				error.response.status === 401 &&
+				error.response.data &&
+				error.response.data.requirePwdChange
+			) {
+				return;
+			}
+			// throw the message
+			throw Error(error);
 		},
-	}).catch((error) => {
-		if (
-			error.response &&
-			error.response.status === 401 &&
-			error.response.data &&
-			error.response.data.requirePwdChange
-		) {
-			return;
-		}
-		// throw the message
-		throw Error(error);
-	});
+	);
 };
 
 export const monolithLogout = async (): Promise<boolean> => {
