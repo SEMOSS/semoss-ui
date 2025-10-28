@@ -2,6 +2,7 @@ import { makeObservable, observable, runInAction } from "mobx";
 import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type {
 	InputToolExecPixelMessage,
+	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
 	ResponseToolPixelMessage,
@@ -35,7 +36,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** meta data from the tool */
 		_meta: {
 			map: {
-				SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled";
+				SMSS_MCP_EXECUTION: McpExecution;
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
 			};
