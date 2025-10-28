@@ -1,7 +1,8 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
+import { engineProjectToToolbox } from "@/components";
 import { MODEL_KEY } from "@/constants";
-import type { App, Engine, Toolbox, Workspace } from "@/types";
+import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
@@ -217,12 +218,7 @@ export class ChatStore {
 
 			// push options to BE
 			if (Object.keys(options).length > 0) {
-				await room.updateRoomOptions({
-					...options,
-					mcpToolID: options.tools
-						.filter((t) => t.type === "PROJECT")
-						.map((t) => t.id),
-				});
+				await room.updateRoomOptions(options);
 			}
 
 			runInAction(() => {
@@ -286,12 +282,12 @@ export class ChatStore {
 	};
 
 	/**
-	 * Get available tools from the backend
+	 * Get available MCPs from the backend
 	 */
-	// Record<type, Record<id, Toolbox[]>>
-	getToolMap = async (
+	// Record<type, Record<id, MCP>>
+	getMcpMap = async (
 		filterWord?: string,
-	): Promise<Record<string, Record<string, Toolbox>>> => {
+	): Promise<Record<string, Record<string, MCP>>> => {
 		try {
 			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
 				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
@@ -305,27 +301,7 @@ export class ChatStore {
 				throw new Error();
 			}
 
-			const toolBoxes = pixelReturn[0].output.map((tool): Toolbox => {
-				if ("app_type" in tool) {
-					// It's an Engine
-					return {
-						type: tool.app_type,
-						id: tool.app_id,
-						name: tool.app_name,
-						description: tool.description || "",
-						tags: [], // Tags are not provided in the current response
-					};
-				} else {
-					// It's an App
-					return {
-						type: "PROJECT",
-						id: tool.project_id,
-						name: tool.project_name,
-						description: tool.description || "",
-						tags: [], // Tags are not provided in the current response
-					};
-				}
-			});
+			const toolBoxes = pixelReturn[0].output.map(engineProjectToToolbox);
 
 			return toolBoxes.reduce(
 				(acc, tool) => {
@@ -335,10 +311,10 @@ export class ChatStore {
 					acc[tool.type][tool.id] = tool;
 					return acc;
 				},
-				{} as Record<string, Record<string, Toolbox>>,
+				{} as Record<string, Record<string, MCP>>,
 			);
 		} catch {
-			throw new Error("Failed to fetch tools");
+			throw new Error("Failed to fetch MCPs");
 		}
 	};
 
@@ -346,10 +322,7 @@ export class ChatStore {
 	 * Add a new workspace
 	 */
 	addWorkspace = async (
-		data: Pick<
-			Workspace,
-			"name" | "system_prompt" | "description" | "tools"
-		>,
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
 	): Promise<string> => {
 		try {
 			const esc = (v: string) =>
@@ -357,9 +330,11 @@ export class ChatStore {
 			const name = esc(data.name ?? "");
 			const desc = esc(data.description ?? "");
 			const prompt = esc(data.system_prompt ?? "");
-			const tools = data.tools.map((tool) => tool.id);
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], project=${JSON.stringify(tools)})`;
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcp=${JSON.stringify(mcp)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -377,7 +352,7 @@ export class ChatStore {
 						date_created: new Date().toISOString(),
 						description: data.description,
 						system_prompt: data.system_prompt,
-						tools: data.tools,
+						mcp: data.mcp,
 					},
 				};
 			});
