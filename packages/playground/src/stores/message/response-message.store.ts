@@ -276,11 +276,6 @@ paramValues=[${JSON.stringify({
 	private runToolExecution = async (): Promise<void> => {
 		const room = this.room;
 
-		console.log({
-			toolExecutionIdx: this.toolExecutionIdx,
-			tools: this.tools,
-		});
-
 		// skip if the index is out of bounds
 		if (
 			this.toolExecutionIdx < 0 ||
