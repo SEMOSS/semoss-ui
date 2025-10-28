@@ -93,7 +93,7 @@ paramValues=[${JSON.stringify({
 
 		// start running tools if there are any
 		if (responseMessage.type === "RESPONSE") {
-			// responseMessage.startToolExecution();
+			responseMessage.startToolExecution();
 		}
 
 		return responseMessage;
