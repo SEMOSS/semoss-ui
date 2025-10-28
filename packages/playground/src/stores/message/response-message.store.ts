@@ -34,7 +34,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** meta data from the tool */
 		_meta: {
 			map: {
-				autoExecute: boolean;
+				SMSS_MCP_EXECUTION: "auto" | "ask" | "disabled";
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
 			};
@@ -84,8 +84,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				id: t.id,
 				_meta: {
 					map: {
+						// SMSS_MCP_EXECUTION: "auto",
 						...t._meta.map,
-						autoExecute: false,
 					},
 				},
 				title: t.title,
@@ -109,6 +109,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 	 */
 	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
 		const room = this.room;
+		console.log("running message from response store", inputMessage);
 
 		// connect to the parent
 		this.addChild(inputMessage);
@@ -151,6 +152,7 @@ paramValues=[${JSON.stringify({
 			output.responseMessage,
 		) as ResponseMessageStore;
 		inputMessage.addChild(responseMessage);
+		console.log("response message created", responseMessage);
 
 		// start running tools if there are any
 		this.startToolExecution();
@@ -274,6 +276,8 @@ paramValues=[${JSON.stringify({
 	private runToolExecution = async (): Promise<void> => {
 		const room = this.room;
 
+		console.log("running tool execution at index", this.toolExecutionIdx);
+
 		// skip if the index is out of bounds
 		if (
 			this.toolExecutionIdx < 0 ||
@@ -286,11 +290,13 @@ paramValues=[${JSON.stringify({
 		if (!tool) {
 			return;
 		}
+		console.log(tool);
 
 		// only run if it is set to auto execute
-		if (!tool._meta.map.autoExecute) {
+		if (tool._meta.map.SMSS_MCP_EXECUTION !== "auto") {
 			return;
 		}
+		console.log("auto executing tool", tool.name);
 
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<[string]>(
