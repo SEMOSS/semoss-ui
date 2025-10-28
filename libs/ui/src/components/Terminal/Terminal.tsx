@@ -1,11 +1,10 @@
-import { type SxProps, styled } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ContentCopy, ContentPaste } from "@mui/icons-material";
+import { Icon, IconButton, type SxProps, styled } from "@mui/material";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import "@xterm/xterm/css/xterm.css";
 import "./terminal.css";
-import {
-	ClipboardAddon,
-} from "@xterm/addon-clipboard";
+import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
@@ -18,19 +17,19 @@ const StyledTerminal = styled("div")({
 	overflow: "hidden",
 });
 
-const StyledOption = styled("div")(({
-	height: "fit-content",
+const StyledOption = styled("div")({
+	height: "100px",
 	width: "fit-content",
 	position: "absolute",
 	bottom: 0,
 	left: "20px",
 	right: "20px",
 	overflowY: "auto",
-	backgroundColor: '#1e1e1e',
+	backgroundColor: "#1e1e1e",
 	color: "#ffffff",
 	padding: "10px",
 	borderRadius: "5px",
-	maxHeight: "40px",
+	maxHeight: "110px",
 	overflowX: "scroll",
 	zIndex: 1000,
 	"ul > li": {
@@ -39,7 +38,34 @@ const StyledOption = styled("div")(({
 			backgroundColor: "#4e4e4e",
 		},
 	},
-}));
+	"ul > li.selected": {
+		backgroundColor: "#b4b1b1ff",
+		"&:hover": {
+			cursor: "pointer",
+			backgroundColor: "#4e4e4e",
+		},
+	},
+});
+
+const StyledCopyButton = styled("div")({
+	position: "absolute",
+	top: 15,
+	right: 5,
+	cursor: "pointer",
+	zIndex: 1000,
+	color: "#000",
+	padding: "5px",
+	borderRadius: "5px",
+	display: "flex",
+	flexDirection: "row",
+	gap: "10px",
+	"> button":{
+		backgroundColor: "#686a6c",
+		"&:hover":{
+			backgroundColor: "#cbcdd0",
+		}
+	}
+});
 
 // prompt for new input
 const PROMPT = `\x1b[1;30m> \x1b[0m`;
@@ -118,7 +144,16 @@ export const Terminal: React.FC<TerminalProps> = ({
 	const [showOption, setShowOption] = useState(false);
 	//get the x and y position of the terminal
 	const positionData = useRef({ top: 60, left: 20 });
-	const terminalOptions = useRef<{ hasSelectedText: boolean }>({ hasSelectedText: false });
+	const terminalOptions = useRef<{ hasSelectedText: boolean }>({
+		hasSelectedText: false,
+	});
+	const clipboardAddonTerminal = new ClipboardAddon();
+	const suggesstionRef = useRef(null);
+	const [suggesstionData, setSuggesstionData] = useState({
+		chosenSuggestion: "",
+		selectedSuggestion: "",
+		chosenSuggestionIndex: -1
+	});
 
 	const isDisabled = loading || disabled;
 
@@ -239,19 +274,38 @@ export const Terminal: React.FC<TerminalProps> = ({
 			switch (key) {
 				// Enter
 				case "\r": {
-					if (updatedBuffer?.command?.trim() === "") {
-						// If command is empty, ignore
-						break;
-					} else {
-						// run the command with error handling
-						await onRun();
-					}
+					if(showOptionList.length === 0){
+						if (updatedBuffer?.command?.trim() === "") {
+							// If command is empty, ignore
+							break;
+						} else {
+							// run the command with error handling
+							await onRun();
+						}
 
-					// clear it
-					updatedBuffer = {
-						command: "",
-						position: 0,
-					};
+						// clear it
+						updatedBuffer = {
+							command: "",
+							position: 0,
+						};
+					}else {
+						if(suggesstionData.chosenSuggestionIndex !== -1 && suggesstionData.chosenSuggestion !== "") {
+							const suggesstionToClick = suggesstionData.chosenSuggestion;
+							handleSuggestionClick(suggesstionToClick, false);
+							setSuggesstionData((prevSuggestion)=>{
+								return {
+									...prevSuggestion,
+									chosenSuggestionIndex: -1,
+									chosenSuggestion:'',
+									selectedSuggestion: suggesstionToClick
+								}
+							});
+							updatedBuffer = {
+								command: suggesstionToClick,
+								position: suggesstionToClick.length,
+							};
+						}
+					}
 
 					break;
 				}
@@ -282,49 +336,102 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 				// Arrow Up
 				case "\x1b[A": {
-					// decrement and make sure it is always greater than 0
-					updatedHistoryPosition--;
-					if (updatedHistoryPosition < 0) {
-						updatedHistoryPosition = 0;
-					}
+					if(showOptionList.length === 0){
+						console.log('in if');
+						// decrement and make sure it is always greater than 0
+						updatedHistoryPosition--;
+						if (updatedHistoryPosition < 0) {
+							updatedHistoryPosition = 0;
+						}
 
-					// set the buffer to the command from the history
-					updatedBuffer.command =
-						history[updatedHistoryPosition].command;
-					updatedBuffer.position =
-						history[updatedHistoryPosition].command.length;
-
-					// clear the line and add the buffer
-					terminalInstance.write(
-						`\r\x1b[2K${PROMPT}${updatedBuffer.command}`,
-					);
-					break;
-				}
-
-				// Arrow Down
-				case "\x1b[B": {
-					// increment and make sure it is not longer than the history
-					updatedHistoryPosition++;
-					if (updatedHistoryPosition > history.length) {
-						updatedHistoryPosition = history.length;
-					}
-
-					// if it is equal to this history, set as empty
-					if (updatedHistoryPosition === history.length) {
-						updatedBuffer.command = "";
-						updatedBuffer.position = 0;
-					} else {
 						// set the buffer to the command from the history
 						updatedBuffer.command =
 							history[updatedHistoryPosition].command;
 						updatedBuffer.position =
 							history[updatedHistoryPosition].command.length;
-					}
 
-					// clear the line and add the buffer
-					terminalInstance.write(
-						`\r\x1b[2K${PROMPT}${updatedBuffer.command}`,
-					);
+						// clear the line and add the buffer
+						terminalInstance.write(
+							`\r\x1b[2K${PROMPT}${updatedBuffer.command}`,
+						);
+					} else {
+						console.log('in else', suggesstionData.chosenSuggestion);
+						if(suggesstionData.chosenSuggestion === ""){
+							setSuggesstionData((prevSuggestion)=>{
+								return {
+									...prevSuggestion,
+									selectedSuggestion: '',
+									chosenSuggestion: showOptionList.length - 1 < 0 ? showOptionList[0] : showOptionList[showOptionList.length - 1],
+									chosenSuggestionIndex: showOptionList.length - 1,
+								}
+							});
+						}else{
+							setSuggesstionData((prevSuggestion)=>{
+								let currentChosenSuggestionIndex = 0;
+								if(prevSuggestion.chosenSuggestionIndex < showOptionList.length && prevSuggestion.chosenSuggestionIndex > 0){
+									currentChosenSuggestionIndex = prevSuggestion.chosenSuggestionIndex < 0 ? 0 : prevSuggestion.chosenSuggestionIndex - 1;
+								} else{
+									currentChosenSuggestionIndex = showOptionList.length - 1;
+								}
+								return {
+									...prevSuggestion,
+									chosenSuggestion: showOptionList?.[currentChosenSuggestionIndex] || showOptionList?.[0],
+									chosenSuggestionIndex: showOptionList?.[currentChosenSuggestionIndex] ? currentChosenSuggestionIndex : 0,
+								}
+							})
+						}
+					}
+					break;
+				}
+
+				// Arrow Down
+				case "\x1b[B": {
+					if(showOptionList.length === 0){
+						// increment and make sure it is not longer than the history
+						updatedHistoryPosition++;
+						if (updatedHistoryPosition > history.length) {
+							updatedHistoryPosition = history.length;
+						}
+
+						// if it is equal to this history, set as empty
+						if (updatedHistoryPosition === history.length) {
+							updatedBuffer.command = "";
+							updatedBuffer.position = 0;
+						} else {
+							// set the buffer to the command from the history
+							updatedBuffer.command =
+								history[updatedHistoryPosition].command;
+							updatedBuffer.position =
+								history[updatedHistoryPosition].command.length;
+						}
+
+						// clear the line and add the buffer
+						terminalInstance.write(
+							`\r\x1b[2K${PROMPT}${updatedBuffer.command}`,
+						);
+					} else {
+						// terminalInstance.blur();
+						// suggesstionRef.current?.focus();
+						console.log(suggesstionData, 'suggesstionData');
+						if(suggesstionData.chosenSuggestion === ""){
+							setSuggesstionData((prevSuggestion)=>{
+								return {
+									...prevSuggestion,
+									selectedSuggestion: '',
+									chosenSuggestion: showOptionList[0],
+									chosenSuggestionIndex: 0,
+								}
+							});
+						}else{
+							setSuggesstionData((prevSuggestion)=>{
+								return {
+									...prevSuggestion,
+									chosenSuggestion: showOptionList?.[prevSuggestion.chosenSuggestionIndex + 1] || showOptionList?.[0],
+									chosenSuggestionIndex: showOptionList?.[prevSuggestion.chosenSuggestionIndex + 1] ? prevSuggestion.chosenSuggestionIndex + 1 : 0,
+								}
+							})
+						}
+					}
 					break;
 				}
 
@@ -389,18 +496,21 @@ export const Terminal: React.FC<TerminalProps> = ({
 						const topVal =
 							terminalInstance.buffer.active.cursorY > 20
 								? terminalInstance.buffer.active.cursorY *
-										19.6 - 50
+										19.6 - 125
 								: terminalInstance.buffer.active.cursorY *
-										19.6 + 12;
-						const leftVal = terminalInstance.buffer.active.cursorY > 20 ? 0 : terminalInstance.buffer.active.cursorX * 10;
+										19.6 + 30;
+						const leftVal = 0;
+							// terminalInstance.buffer.active.cursorY > 20
+							// 	? 0
+							// 	: terminalInstance.buffer.active.cursorX * 10;
 						positionData.current = {
 							...positionData.current,
 							top: topVal,
 							left: leftVal,
 						};
-						if (!showOption) {
-							setShowOption(true);
-						}
+						// if (!showOption) {
+						// 	setShowOption(true);
+						// }
 					}
 				}
 			}
@@ -412,10 +522,10 @@ export const Terminal: React.FC<TerminalProps> = ({
 			// update the command
 			onCommand(updatedBuffer.command);
 		});
-		const selectionData = terminalInstance.onSelectionChange(() => {
-			const selectedTextLength = terminalInstance.getSelection().length;
-			terminalOptions.current.hasSelectedText = selectedTextLength > 0;
-		});
+		// const selectionData = terminalInstance.onSelectionChange(() => {
+		// 	const selectedTextLength = terminalInstance.getSelection().length;
+		// 	terminalOptions.current.hasSelectedText = selectedTextLength > 0;
+		// });
 
 		// cleanup
 		return () => {
@@ -441,6 +551,22 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 		// reset + clear
 		terminalInstance.reset();
+
+		const terminalInstanceElement = terminalInstance.element as HTMLDivElement;
+		if(terminalInstanceElement){
+			console.log(terminalInstanceElement, 'terminalInstanceElement');
+			terminalInstanceElement.addEventListener("dblclick", ()=>{
+				console.log('double click');
+				const selected = terminalInstance.getSelection();
+				if(selected){
+					try{
+						navigator.clipboard.writeText(selected);
+					} catch(e){
+						console.log('Failed to copy');
+					}
+				}
+			});
+		}
 
 		// message
 		if (welcome) {
@@ -491,7 +617,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 	}, [loading]);
 	//handle the suggestions click
 	const handleSuggestionClick = useCallback(
-		(suggestion: string) => {
+		(suggestion: string, runCommandOnComplete: boolean = true) => {
 			terminalInstance.write(
 				`\r\x1b[2K${PROMPT}${suggestion}\r\x1b[${
 					PROMPT_LENGTH + suggestion.length
@@ -504,12 +630,69 @@ export const Terminal: React.FC<TerminalProps> = ({
 					position: suggestion.length,
 				};
 			});
-			onCommand(suggestion);
-			setShowOption(false);
+			if(runCommandOnComplete)
+				onCommand(suggestion);
+			// setShowOption(false);
 		},
 		[onCommand, terminalInstance],
 	);
-
+	const showOptionList = useMemo(() => {
+		const filteredSuggestions =
+			suggestions
+				.filter((suggestion) =>
+					suggestion
+						.toLowerCase()
+						.includes(buffer.command.toLowerCase()),
+				)
+				.slice(0, 3) || [];
+		if (
+			filteredSuggestions.length === 0 ||
+			filteredSuggestions?.[0] === buffer.command ||
+			buffer.command === ""
+		) {
+			return [];
+		}
+		return filteredSuggestions;
+	}, [buffer.command, suggestions]);
+	const handleCopyButtonClick = async () => {
+		const selectedText = terminalInstance.getSelection();
+		try {
+			navigator.clipboard
+				.writeText(selectedText)
+				.then(() => {
+					console.log(
+						"selection copied to clipboard",
+					);
+					terminalInstance.clearSelection();
+				});
+		} catch {
+			console.log("failed to copy selection");
+		}
+	};
+	const handlePasteButtonClick = async () => {
+		try {
+			navigator.clipboard
+				.readText()
+				.then((data) => {
+					const completeData = buffer.command + data;
+					terminalInstance.write(
+						`\r\x1b[2K${PROMPT}${completeData}\r\x1b[${
+							PROMPT_LENGTH + completeData.length
+						}C`,
+					);
+					setBuffer((prevBuffer) => {
+						return {
+							...prevBuffer,
+							command: completeData,
+							position: completeData.length,
+						};
+					});
+					// terminalInstance.clearSelection();
+				});
+		} catch {
+			console.log("failed to paste");
+		}
+	};
 	// // reset historyPosition when history changes
 	// useEffect(() => {
 	//     setHistoryPosition(history.length);
@@ -519,57 +702,48 @@ export const Terminal: React.FC<TerminalProps> = ({
 	// useEffect(() => {
 	//     setBuffer(history.length);
 	// }, [defaultCommand]);
-	const hasSelectedText = terminalInstance?.getSelection().length > 0 || false;
+
 	return (
 		<>
-			{showOption && (
+			{
+				// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+				// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
+				<StyledCopyButton>
+					<IconButton onClick={handleCopyButtonClick}><ContentCopy /></IconButton>
+					<IconButton onClick={handlePasteButtonClick}><ContentPaste /></IconButton>
+				</StyledCopyButton>
+			}
+			<StyledTerminal ref={terminalRef} sx={sx} />	
+			{showOptionList?.length > 0 && (
 				<StyledOption
 					style={{
 						left: `${positionData.current.left}px`,
 						top: `${positionData.current.top}px`,
 					}}
+					ref={suggesstionRef}
 				>
 					<ul
 						style={{ listStyleType: "none", padding: 0, margin: 0 }}
+						aria-roledescription="list"
 					>
 						{buffer.command !== "" &&
-							suggestions
-								.filter((suggestion) =>
-									suggestion
-										.toLowerCase()
-										.includes(buffer.command.toLowerCase()),
-								)
-								.map((suggestion) => (
-									// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-									<li
-										key={suggestion}
-										onClick={() =>
-											handleSuggestionClick(suggestion)
-										}
-									>
-										{suggestion}
-									</li>
-								))}
+							showOptionList.map((suggestion) => (
+								// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
+								<li
+									key={suggestion}
+									onClick={() =>
+										handleSuggestionClick(suggestion)
+									}
+									className={`${suggesstionData.chosenSuggestion === suggestion ? "selected" : ""}`}
+									aria-roledescription="option"
+								>
+									{suggestion}
+								</li>
+							))
+						}
 					</ul>
 				</StyledOption>
 			)}
-			{
-					// biome-ignore lint/a11y/useKeyWithClickEvents: <explanation>
-					// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
-					(<div style={{ position: "absolute", top: 10, right: 0, cursor: "pointer", zIndex: 1000, backgroundColor: "#fff", color: "#000", padding: "5px", borderRadius: "5px" }} onClick={async (e)=>{
-						const selectedText = terminalInstance.getSelection();
-						try{
-							navigator.clipboard.writeText(selectedText).then(() => {
-								console.log('selection copied to clipboard');
-								terminalInstance.clearSelection();
-							});
-						}
-						catch{
-							console.log('failed to copy selection');
-						}
-					}}>Copy</div>)
-			}
-			<StyledTerminal ref={terminalRef} sx={sx} />
 		</>
 	);
 };

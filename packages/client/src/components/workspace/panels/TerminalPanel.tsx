@@ -157,10 +157,15 @@ export const TerminalPanel: React.FC = observer(() => {
 	const runCommand = async () => {
 		try {
 			setIsLoading(true);
-
+			console.log(command, 'command in run ');
 			const cleaned = command.trim();
 			if (!cleaned) {
 				throw new Error(`No Command`);
+			}
+			if(cleaned === "toCSV()"){
+				console.log(history[history.length - 1], 'history');
+				setHistory(prevHistory => [...prevHistory, { ...history[history.length - 1], command: 'toCSV()', response: history[history.length - 1].response }]);
+				return ;
 			}
 
 			let pixel = "";
@@ -335,7 +340,10 @@ export const TerminalPanel: React.FC = observer(() => {
 				instructions={getInstructions(language, "Running ")}
 				suggestions={suggesstionsList.current}
 				onRun={() => runCommand()}
-				onCommand={(c) => setCommand(c)}
+				onCommand={(c) => {
+					console.log('command', c);
+					setCommand(c);
+				}}
 			/>
 		</Panel>
 	);
