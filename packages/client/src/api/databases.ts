@@ -36,11 +36,7 @@ export const updateDatabaseSmssProperties = async (
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {
-		headers: {
-			"content-type": "application/x-www-form-urlencoded",
-		},
-	}).catch((error) => {
+	}>(url, postData, {}).catch((error) => {
 		throw Error(error);
 	});
 	return response;

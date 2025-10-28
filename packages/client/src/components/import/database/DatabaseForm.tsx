@@ -20,11 +20,11 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 import DataSelection from "./DataSelection";
 import ExcelDataSelection from "./ExcelDataSelection";
 import { MetaModelType } from "./MetaModelType";
-
 
 const StyledBox = styled(Box)({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
@@ -181,7 +181,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		setFormValues(formData);
 
 		try {
-			const uploadedFiles = await monolithStore.uploadFile(
+			const uploadedFiles = await uploadFile(
 				formData.FILE_UPLOAD,
 				configStore.store.insightID,
 			);
@@ -529,11 +529,9 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				},
 			}}
 			render={({ field, fieldState: { error } }) => {
-				
 				switch (val.options.component) {
 					case "text-field":
 						return (
-							
 							<TextField
 								{...field}
 								fullWidth
