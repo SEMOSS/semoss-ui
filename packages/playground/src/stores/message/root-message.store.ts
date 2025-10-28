@@ -29,7 +29,6 @@ export class RootMessageStore extends AbstractMessageStore {
 		inputMessage: InputMessageStore,
 	): Promise<PlanMessageStore | ResponseMessageStore> => {
 		const room = this.room;
-		console.log("running message from root message store", inputMessage);
 
 		// connect to the parent
 		this.addChild(inputMessage);
