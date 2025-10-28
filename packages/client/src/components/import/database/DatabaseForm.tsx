@@ -1,9 +1,9 @@
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
-import { Box, Radio } from "@mui/material";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
+	Box,
 	Button,
 	Checkbox,
 	Divider,
@@ -22,6 +22,7 @@ import {
 } from "@semoss/ui";
 import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
+import { Radio } from "../../../../../../libs/ui/dist/types/components/RadioGroup/Radio";
 import DataSelection from "./DataSelection";
 import ExcelDataSelection from "./ExcelDataSelection";
 import { MetaModelType } from "./MetaModelType";
@@ -623,6 +624,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 										control={
 											<Radio
 												data-testid={`database-form-radio-${val.fieldName}-${opt.value}`}
+												label={""}
 											/>
 										}
 										label={opt.display}
