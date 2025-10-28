@@ -22,8 +22,9 @@ import {
 } from "@semoss/ui";
 import { useRootStore, useStepper } from "@/hooks";
 import DataSelection from "./DataSelection";
-import ExcelDataSelection from  "./ExcelDataSelection";
+import ExcelDataSelection from "./ExcelDataSelection";
 import { MetaModelType } from "./MetaModelType";
+
 
 const StyledBox = styled(Box)({
 	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
@@ -326,16 +327,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 	const submitExcelTablePixel = async (payloadArray, formValues) => {
 		const pixelStatements = payloadArray
 			.map((payloadObject) => {
-				return `RdbmsUploadExcelData(
-                database=["${formValues.DATABASE_NAME}"],
-                filePath=${JSON.stringify(payloadObject.filePath)},
-                dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],
-                newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],
-                additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],
-                descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],
-                logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],
-                existing=[${payloadObject.existing}]
-            );`;
+				return `RdbmsUploadExcelData(database=["${formValues.DATABASE_NAME}"],filePath=${JSON.stringify(payloadObject.filePath)},dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],existing=[${payloadObject.existing}],tables=[${JSON.stringify(payloadObject.tables)}]);`;
 			})
 			.join("");
 
@@ -410,8 +402,8 @@ export const DatabaseForm = ({ title, description, fields }) => {
 			fieldsToWatch.forEach((name: keyof typeof watch) => {
 				const val = watch(name);
 				if (watchedFieldRef.current[name] !== undefined && val) {
-					pixel = pixel?.replaceAll(`<${name.toString()}>`, val);
-					optionsPixel = optionsPixel?.replaceAll(`<${name.toString()}>`, val);
+					pixel = pixel?.replaceAll(`<${name}>`, val);
+					optionsPixel = optionsPixel?.replaceAll(`<${name}>`, val);
 				}
 			});
 
@@ -537,15 +529,18 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				},
 			}}
 			render={({ field, fieldState: { error } }) => {
+				
 				switch (val.options.component) {
 					case "text-field":
 						return (
+							
 							<TextField
 								{...field}
 								fullWidth
 								label={val.label}
 								disabled={val.disabled}
 								required={val.rules?.required}
+								// @ts-expect-error TODO FIX
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`database-form-input-${val.fieldName}`}
@@ -561,6 +556,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								label={val.label}
 								disabled={val.disabled}
 								required={val.rules?.required}
+								// @ts-expect-error TODO FIX
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`database-form-input-${val.fieldName}`}
@@ -576,6 +572,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								label={val.label}
 								disabled={val.disabled}
 								required={val.rules?.required}
+								// @ts-expect-error TODO FIX
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`database-form-input-${val.fieldName}`}
