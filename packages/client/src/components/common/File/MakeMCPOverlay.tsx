@@ -186,6 +186,7 @@ const StyledDeletedAccordion = styled(Box)(({ theme }) => ({
 	borderRadius: theme.shape.borderRadius,
 	border: `1px solid ${theme.palette.error.light}`,
 	marginBottom: theme.spacing(1),
+	pointerEvents: "none",
 	"&::before": {
 		content: '""',
 		position: "absolute",
@@ -216,7 +217,6 @@ function isTool(obj: unknown): obj is Tool {
 	return typeof rec.name === "string";
 }
 
-// Helper to get normalized type
 const getNormalizedType = (type: string | string[] | undefined): string => {
 	if (Array.isArray(type)) {
 		return type[0] || "string";
@@ -224,7 +224,6 @@ const getNormalizedType = (type: string | string[] | undefined): string => {
 	return type || "string";
 };
 
-// Helper to get default value based on type
 const getDefaultValueForType = (
 	type: string,
 ): string | number | boolean | Record<string, unknown> | unknown[] => {
@@ -243,15 +242,10 @@ const getDefaultValueForType = (
 	}
 };
 
-// Helper to safely convert value to boolean
 const toBooleanValue = (value: unknown): boolean => {
-	if (typeof value === "boolean") {
-		return value;
-	}
-	return false;
+	return typeof value === "boolean" ? value : false;
 };
 
-// Helper to format default value for display
 const formatDefaultValue = (value: unknown, type: string): string => {
 	if (value === undefined || value === null) return "";
 	if (type === "object" || type === "array") {
@@ -264,7 +258,6 @@ const formatDefaultValue = (value: unknown, type: string): string => {
 	return String(value);
 };
 
-// Helper to parse default value from input
 const parseDefaultValue = (
 	value: string,
 	type: string,
@@ -325,6 +318,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		"Select Parameters",
 		"Configure Parameters",
 	];
+
 	const stepsDescriptions = [
 		{
 			text: "Select Functions from File",
@@ -355,7 +349,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 		);
 	}, [tools, functionSearch]);
 
-	// Functions shown in step 2 (both selected non-deleted + deleted)
 	const step2Functions = useMemo(() => {
 		return (filteredFunctions as unknown[])
 			.filter(isTool)
@@ -367,7 +360,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	}, [filteredFunctions, selectedFunctions, deletedFunctions]);
 
 	const configuredFunctions = useMemo(() => {
-		// Get all function names: both from selectedParameters and deletedFunctions
 		const allFunctionNames = Array.from(
 			new Set([...Object.keys(selectedParameters), ...deletedFunctions]),
 		);
@@ -382,7 +374,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 				const isDeleted = deletedFunctions.includes(toolName);
 
-				// For deleted functions, include all properties to show in disabled state
 				if (isDeleted) {
 					return {
 						...tool,
@@ -393,7 +384,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					} as Tool;
 				}
 
-				// For non-deleted functions, only include selected parameters
 				const filteredProperties = Object.entries(
 					tool.inputSchema?.properties ?? {},
 				)
@@ -409,7 +399,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						{} as Record<string, PropertyDetails>,
 					);
 
-				// Only return the tool if it has at least one selected parameter
 				if (Object.keys(filteredProperties).length === 0)
 					return undefined;
 
@@ -424,12 +413,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			.filter((t): t is Tool => t !== undefined);
 	}, [selectedParameters, tools, deletedFunctions]);
 
-	// Check if all required parameters have non-empty titles in step 2
-	// This checks against the actual tools data which gets updated
 	const hasEmptyRequiredTitles = useMemo(() => {
 		if (activeStep !== 1) return false;
 
-		// Get the selected function names
 		const selectedFunctionNames = selectedFunctions.filter(
 			(name) => !deletedFunctions.includes(name),
 		);
@@ -447,7 +433,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			for (const paramName of requiredParams) {
 				const propDetails = properties[paramName];
 				const title = propDetails?.title?.trim() || "";
-				// Check if title is empty
 				if (title === "") {
 					return true;
 				}
@@ -472,7 +457,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			}));
 			setCollapseAll((prev) => ({ ...prev, 2: false }));
 		}
-	}, [activeStep, step2Functions.length, configuredFunctions.length]);
+	}, [activeStep, step2Functions, configuredFunctions]);
 
 	// ==================== HELPER FUNCTIONS ====================
 
@@ -773,7 +758,6 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			);
 		}
 		if (activeStep === 1) {
-			// Disable next if any required parameter has empty title
 			return hasEmptyRequiredTitles;
 		}
 		return false;
@@ -787,16 +771,13 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	const handleNext = useCallback(() => {
 		if (activeStep === steps.length - 1) {
 			setIsLoading(true);
-			// Filter out deleted functions
 			const finalTools = tools.filter((t) => {
 				if (isTool(t)) {
 					return !deletedFunctions.includes(t.name);
 				}
 				return true;
 			});
-			// First update the parent's state
 			handleToolsUpdate(finalTools);
-			// Use setTimeout to ensure parent state updates before calling save
 			setTimeout(() => {
 				handleMCPEditSave(finalTools);
 				onClose(true);
@@ -1380,6 +1361,12 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 
 		return (
 			<StyledFunctionListContainer data-testid="function-list-container">
+				<Search
+					data-testid="function-search-input"
+					placeholder="Search Functions"
+					value={functionSearch}
+					onChange={handleSearchChange}
+				/>
 				{filteredFunctions.length === 0 ? (
 					<StyledEmptyState
 						variant="body2"
@@ -1388,133 +1375,125 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 						No functions found.
 					</StyledEmptyState>
 				) : (
-					<>
-						<Search
-							data-testid="function-search-input"
-							placeholder="Search Functions"
-							value={functionSearch}
-							onChange={handleSearchChange}
-						/>
-						<StyledFunctionList data-testid="function-list">
-							{functionSearch === "" && (
-								<List.Item data-testid="select-all-functions-item">
-									<List.ItemButton
-										onClick={handleSelectAllFunctions}
-										data-testid="select-all-functions-button"
+					<StyledFunctionList data-testid="function-list">
+						{functionSearch === "" && (
+							<List.Item data-testid="select-all-functions-item">
+								<List.ItemButton
+									onClick={handleSelectAllFunctions}
+									data-testid="select-all-functions-button"
+								>
+									<Checkbox
+										data-testid="select-all-functions-checkbox"
+										checked={allChecked}
+										checkboxProps={
+											indeterminate
+												? { indeterminate: true }
+												: undefined
+										}
+									/>
+									<List.ItemText
+										primary="Select All"
+										data-testid="select-all-functions-text"
+									/>
+								</List.ItemButton>
+							</List.Item>
+						)}
+						{filteredFunctions.map((tool) => {
+							if (!isTool(tool)) return null;
+							const isDeleted = deletedFunctions.includes(
+								tool.name,
+							);
+
+							const itemContent = (
+								<List.ItemButton
+									data-testid={`function-button-${tool.name}`}
+								>
+									<StyledFunctionItemContent
+										data-testid={`function-content-${tool.name}`}
 									>
 										<Checkbox
-											data-testid="select-all-functions-checkbox"
-											checked={allChecked}
-											checkboxProps={
-												indeterminate
-													? { indeterminate: true }
-													: undefined
+											data-testid={`function-checkbox-${tool.name}`}
+											checked={selectedFunctions.includes(
+												tool.name,
+											)}
+											onChange={() =>
+												handleFunctionToggle(tool)
 											}
+											disabled={isDeleted}
 										/>
 										<List.ItemText
-											primary="Select All"
-											data-testid="select-all-functions-text"
+											primary={
+												tool.title ||
+												`Function ${tool.name}`
+											}
+											data-testid={`function-text-${tool.name}`}
 										/>
-									</List.ItemButton>
-								</List.Item>
-							)}
-							{filteredFunctions.map((tool) => {
-								if (!isTool(tool)) return null;
-								const isDeleted = deletedFunctions.includes(
-									tool.name,
-								);
-
-								const itemContent = (
-									<List.ItemButton
-										data-testid={`function-button-${tool.name}`}
-									>
-										<StyledFunctionItemContent
-											data-testid={`function-content-${tool.name}`}
-										>
-											<Checkbox
-												data-testid={`function-checkbox-${tool.name}`}
-												checked={selectedFunctions.includes(
-													tool.name,
-												)}
-												onChange={() =>
-													handleFunctionToggle(tool)
-												}
-												disabled={isDeleted}
-											/>
-											<List.ItemText
-												primary={
-													tool.title ||
-													`Function ${tool.name}`
-												}
-												data-testid={`function-text-${tool.name}`}
-											/>
-											{isDeleted ? (
-												<>
-													<Chip
-														label="Deleted"
-														size="small"
-														data-testid={`function-deleted-chip-${tool.name}`}
-													/>
-													<StyledDeleteIcon
-														data-testid={`restore-icon-${tool.name}`}
-														onClick={(e) =>
-															handleFunctionRestore(
-																e,
-																tool,
-															)
-														}
-														size="small"
-													>
-														<RestoreFromTrash
-															color="primary"
-															fontSize="small"
-															titleAccess="Restore Function"
-															data-testid={`restore-icon-svg-${tool.name}`}
-														/>
-													</StyledDeleteIcon>
-												</>
-											) : (
+										{isDeleted ? (
+											<>
+												<Chip
+													label="Deleted"
+													size="small"
+													data-testid={`function-deleted-chip-${tool.name}`}
+												/>
 												<StyledDeleteIcon
-													data-testid={`delete-icon-${tool.name}`}
+													data-testid={`restore-icon-${tool.name}`}
 													onClick={(e) =>
-														handleFunctionDelete(
+														handleFunctionRestore(
 															e,
 															tool,
 														)
 													}
 													size="small"
 												>
-													<DeleteOutlined
-														color="error"
+													<RestoreFromTrash
+														color="primary"
 														fontSize="small"
-														titleAccess="Delete Function"
-														data-testid={`delete-icon-svg-${tool.name}`}
+														titleAccess="Restore Function"
+														data-testid={`restore-icon-svg-${tool.name}`}
 													/>
 												</StyledDeleteIcon>
-											)}
-										</StyledFunctionItemContent>
-									</List.ItemButton>
-								);
-
-								return (
-									<List.Item
-										key={tool.name}
-										data-testid={`function-item-${tool.name}`}
-									>
-										{isDeleted ? (
-											<StyledDeletedItem
-												data-testid={`deleted-function-wrapper-${tool.name}`}
-											>
-												{itemContent}
-											</StyledDeletedItem>
+											</>
 										) : (
-											itemContent
+											<StyledDeleteIcon
+												data-testid={`delete-icon-${tool.name}`}
+												onClick={(e) =>
+													handleFunctionDelete(
+														e,
+														tool,
+													)
+												}
+												size="small"
+											>
+												<DeleteOutlined
+													color="error"
+													fontSize="small"
+													titleAccess="Delete Function"
+													data-testid={`delete-icon-svg-${tool.name}`}
+												/>
+											</StyledDeleteIcon>
 										)}
-									</List.Item>
-								);
-							})}
-						</StyledFunctionList>
-					</>
+									</StyledFunctionItemContent>
+								</List.ItemButton>
+							);
+
+							return (
+								<List.Item
+									key={tool.name}
+									data-testid={`function-item-${tool.name}`}
+								>
+									{isDeleted ? (
+										<StyledDeletedItem
+											data-testid={`deleted-function-wrapper-${tool.name}`}
+										>
+											{itemContent}
+										</StyledDeletedItem>
+									) : (
+										itemContent
+									)}
+								</List.Item>
+							);
+						})}
+					</StyledFunctionList>
 				)}
 			</StyledFunctionListContainer>
 		);
