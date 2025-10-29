@@ -18,7 +18,7 @@ import RLogo from "@/assets/img/R-logo.svg";
 import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
-const StyledImage = styled("img")(({ theme }) => ({
+const StyledImage = styled("img")(({
 	height: "13px",
 	wdith: "13px",
 }));
@@ -356,8 +356,7 @@ export const TerminalPanel: React.FC = observer(() => {
 				</>
 			}
 		>
-			<Terminal
-				loading={isLoading}
+			<Terminal //removing loading option from terminal as per request from ticket 1960
 				history={history}
 				instructions={getInstructions(language, "Running ")}
 				suggestions={suggesstionsList.current}
