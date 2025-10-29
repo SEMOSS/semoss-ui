@@ -1,5 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Stack, TextField } from "@semoss/ui";
+import {
+	hasValidDays,
+	hasValidHours,
+	hasValidMinutes,
+	hasValidMonths,
+	hasValidWeekdays,
+} from "./cronValidator";
 
 export const JobCustomFrequencyBuilder = (props: {
 	cronExpression: string;
@@ -52,71 +59,61 @@ export const JobCustomFrequencyBuilder = (props: {
 		setBuilderField,
 	]);
 
+	const isMinutesValid = useMemo(() => {
+		return hasValidMinutes(cronMinute);
+	}, [cronMinute]);
+
+	const isHoursValid = useMemo(() => {
+		return hasValidHours(cronHour);
+	}, [cronHour]);
+
+	const isDayOfMonthValid = useMemo(() => {
+		return hasValidDays(cronDayOfMonth);
+	}, [cronDayOfMonth]);
+
+	const isMonthValid = useMemo(() => {
+		return hasValidMonths(cronMonth);
+	}, [cronMonth]);
+
+	const isDayOfWeekValid = useMemo(() => {
+		return hasValidWeekdays(cronDayOfWeek);
+	}, [cronDayOfWeek]);
+
 	return (
 		<Stack direction="row" spacing={1} width="100%">
 			<TextField
 				label="Minute"
 				value={cronMinute}
-				error={
-					cronMinute !== "*" &&
-					!(
-						!Number.isNaN(cronMinute) &&
-						parseInt(cronMinute, 10) <= 59 &&
-						parseInt(cronMinute, 10) >= 0
-					)
-				}
+				error={isMinutesValid.error}
+				helperText={isMinutesValid.errorMessage}
 				onChange={(e) => setCronMinute(e.target.value)}
 			/>
 			<TextField
 				label="Hour"
 				value={cronHour}
-				error={
-					cronHour !== "*" &&
-					!(
-						!Number.isNaN(cronHour) &&
-						parseInt(cronHour, 10) <= 23 &&
-						parseInt(cronHour, 10) >= 0
-					)
-				}
+				error={isHoursValid.error}
+				helperText={isHoursValid.errorMessage}
 				onChange={(e) => setCronHour(e.target.value)}
 			/>
 			<TextField
 				label="Day of Month"
 				value={cronDayOfMonth}
-				error={
-					cronDayOfMonth !== "*" &&
-					!(
-						!Number.isNaN(cronDayOfMonth) &&
-						parseInt(cronDayOfMonth, 10) <= 31 &&
-						parseInt(cronDayOfMonth, 10) >= 0
-					)
-				}
+				error={isDayOfMonthValid.error}
+				helperText={isDayOfMonthValid.errorMessage}
 				onChange={(e) => setCronDayOfMonth(e.target.value)}
 			/>
 			<TextField
 				label="Month"
 				value={cronMonth}
-				error={
-					cronMonth !== "*" &&
-					!(
-						!Number.isNaN(cronMonth) &&
-						parseInt(cronMonth, 10) <= 12 &&
-						parseInt(cronMonth, 10) >= 1
-					)
-				}
+				error={isMonthValid.error}
+				helperText={isMonthValid.errorMessage}
 				onChange={(e) => setCronMonth(e.target.value)}
 			/>
 			<TextField
 				label="Day of Week"
 				value={cronDayOfWeek}
-				error={
-					cronDayOfWeek !== "?" &&
-					!(
-						!Number.isNaN(cronDayOfWeek) &&
-						parseInt(cronDayOfWeek, 10) <= 6 &&
-						parseInt(cronDayOfWeek, 10) >= 0
-					)
-				}
+				error={isDayOfWeekValid.error}
+				helperText={isDayOfWeekValid.errorMessage}
 				onChange={(e) => setCronDayOfWeek(e.target.value)}
 			/>
 		</Stack>

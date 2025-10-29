@@ -12,6 +12,13 @@ import {
 	ToggleButtonGroup,
 	useNotification,
 } from "@semoss/ui";
+import {
+	hasValidDays,
+	hasValidHours,
+	hasValidMinutes,
+	hasValidMonths,
+	hasValidWeekdays,
+} from "./cronValidator";
 import { JobCustomFrequencyBuilder } from "./JobCustomFrequencyBuilder";
 import { JobStandardFrequencyBuilder } from "./JobStandardFrequencyBuilder";
 import { JobTypesBuilder } from "./JobTypesBuilder";
@@ -77,8 +84,6 @@ export const JobBuilderModal = (props: {
 			setFrequencyType("standard");
 			return;
 		} else if (
-			Number.isNaN(cronValues[1]) ||
-			Number.isNaN(cronValues[2]) ||
 			isNaN(Number(cronValues[1])) ||
 			isNaN(Number(cronValues[2]))
 		) {
@@ -115,54 +120,19 @@ export const JobBuilderModal = (props: {
 			// make sure it's valid cron syntax
 			return false;
 		}
-		if (
-			cronValues[1] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[1]) &&
-				parseInt(cronValues[1], 10) <= 59 &&
-				parseInt(cronValues[1], 10) >= 0
-			)
-		) {
+		if (hasValidMinutes(cronValues[1]).error) {
 			return false;
 		}
-		if (
-			cronValues[2] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[2]) &&
-				parseInt(cronValues[2], 10) <= 23 &&
-				parseInt(cronValues[2], 10) >= 0
-			)
-		) {
+		if (hasValidHours(cronValues[2]).error) {
 			return false;
 		}
-		if (
-			cronValues[3] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[3]) &&
-				parseInt(cronValues[3], 10) <= 31 &&
-				parseInt(cronValues[3], 10) >= 0
-			)
-		) {
+		if (hasValidDays(cronValues[3]).error) {
 			return false;
 		}
-		if (
-			cronValues[4] !== "*" &&
-			!(
-				!Number.isNaN(cronValues[4]) &&
-				parseInt(cronValues[4], 10) <= 12 &&
-				parseInt(cronValues[4], 10) >= 1
-			)
-		) {
+		if (hasValidMonths(cronValues[4]).error) {
 			return false;
 		}
-		if (
-			cronValues[5] !== "?" &&
-			!(
-				!Number.isNaN(cronValues[5]) &&
-				parseInt(cronValues[5], 10) <= 6 &&
-				parseInt(cronValues[5], 10) >= 0
-			)
-		) {
+		if (hasValidWeekdays(cronValues[5]).error) {
 			return false;
 		}
 		return true;
