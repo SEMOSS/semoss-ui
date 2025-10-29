@@ -1,8 +1,8 @@
 import {
-	ArrowDownRightIcon,
 	ArrowLeftIcon,
 	ArrowRightIcon,
 	CopyIcon,
+	MessageCircleIcon,
 	RefreshCcwIcon,
 	ThumbsDownIcon,
 	ThumbsUpIcon,
@@ -70,12 +70,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 		};
 
 		return (
-			<div className="w-full overflow-hidden rounded-md bg-card px-4 py-3 shadow-sm">
-				<div className="group mb-1 flex flex-row items-center">
-					<span className="mr-0.5 text-muted-foreground text-xs">
-						Response
-					</span>
-					<ArrowDownRightIcon className="mr-3 size-4" />
+			<div className="flex w-full flex-col gap-2 overflow-hidden">
+				<div className="group flex flex-row items-center gap-2">
+					<MessageCircleIcon className="size-4" />
+					<span className="mr-0.5 font-medium text-base">Ask</span>
 					<div className="flex flex-1 flex-row items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
 						{inputMessage?.siblings.length > 1 && (
 							<>

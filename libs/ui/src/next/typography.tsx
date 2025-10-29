@@ -18,29 +18,13 @@ const createComponent = <T extends HTMLElement>(
 	return Component;
 };
 
-export const H1 = createComponent<HTMLHeadingElement>(
-	"h1",
-	"scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl",
-	"H1",
-);
+export const H1 = createComponent<HTMLHeadingElement>("h1", "heading-xl", "H1");
 
-export const H2 = createComponent<HTMLHeadingElement>(
-	"h2",
-	"scroll-m-20 border-b py-2 text-3xl font-semibold tracking-tight first:mt-0",
-	"H2",
-);
+export const H2 = createComponent<HTMLHeadingElement>("h2", "heading-lg", "H2");
 
-export const H3 = createComponent<HTMLHeadingElement>(
-	"h3",
-	"scroll-m-20 text-2xl font-semibold tracking-tight",
-	"H3",
-);
+export const H3 = createComponent<HTMLHeadingElement>("h3", "heading-md", "H3");
 
-export const H4 = createComponent<HTMLHeadingElement>(
-	"h4",
-	"scroll-m-20 text-xl font-semibold tracking-tight",
-	"H4",
-);
+export const H4 = createComponent<HTMLHeadingElement>("h4", "heading-sm", "H4");
 
 export const Lead = createComponent<HTMLParagraphElement>(
 	"p",

@@ -216,38 +216,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<>
 				<div className="relative w-full">
-					<div className="absolute top-3 right-3 z-10">
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<span>
-									<Button
-										variant={"ghost"}
-										aria-label="Record the Model"
-										size="icon-sm"
-										disabled={
-											!canListen ||
-											isDisabled ||
-											isLoading
-										}
-										onClick={() => {
-											if (isListening) {
-												stopListening();
-											} else {
-												startListening();
-											}
-										}}
-									>
-										<MicIcon
-											className={`${isListening ? "animate-pulse text-error" : ""}`}
-										/>
-									</Button>
-								</span>
-							</TooltipTrigger>
-							<TooltipContent>
-								{isListening ? "Stop Recording" : "Record"}
-							</TooltipContent>
-						</Tooltip>
-					</div>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
 						{agent}
 					</div>
@@ -279,6 +247,37 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							)}
 
 							{configuration}
+
+							<Tooltip>
+								<TooltipTrigger asChild>
+									<span>
+										<Button
+											variant={"ghost"}
+											aria-label="Record the Model"
+											size="icon-sm"
+											disabled={
+												!canListen ||
+												isDisabled ||
+												isLoading
+											}
+											onClick={() => {
+												if (isListening) {
+													stopListening();
+												} else {
+													startListening();
+												}
+											}}
+										>
+											<MicIcon
+												className={`${isListening ? "animate-pulse text-error" : ""}`}
+											/>
+										</Button>
+									</span>
+								</TooltipTrigger>
+								<TooltipContent>
+									{isListening ? "Stop Recording" : "Record"}
+								</TooltipContent>
+							</Tooltip>
 						</div>
 						<Tooltip>
 							<TooltipTrigger asChild>

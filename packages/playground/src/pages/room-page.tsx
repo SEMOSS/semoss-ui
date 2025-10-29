@@ -1,11 +1,13 @@
-import { ClockIcon, MoveDownIcon, Settings2Icon } from "lucide-react";
+import { MoveDownIcon, Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
-	Badge,
+	Breadcrumb,
+	BreadcrumbItem,
+	BreadcrumbList,
+	BreadcrumbPage,
 	Button,
-	Lead,
 	ResizableHandle,
 	ResizablePanel,
 	ResizablePanelGroup,
@@ -16,6 +18,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useSidebar,
 } from "@semoss/ui/next";
 import {
 	InputMessage,
@@ -29,78 +32,12 @@ import { useAutoScroll, useChat } from "@/hooks";
 
 // Styled components removed - using Tailwind CSS classes directly
 
-const getDateTitle = (d: string) => {
-	// Convert input to Date object if it's a string
-	const compareDate = new Date(d);
-	const now = new Date();
-
-	// Calculate difference in milliseconds
-	const diffTime = compareDate.getTime() - now.getTime();
-	const absDiffTime = Math.abs(diffTime);
-
-	// Convert to different time units
-	const minutes = Math.floor(absDiffTime / (1000 * 60));
-	const hours = Math.floor(absDiffTime / (1000 * 60 * 60));
-	const days = Math.floor(absDiffTime / (1000 * 60 * 60 * 24));
-	const weeks = Math.floor(days / 7);
-	const months = Math.floor(days / 30);
-	const years = Math.floor(days / 365);
-
-	let message = "";
-
-	// Determine the most appropriate time unit and format
-	if (absDiffTime < 1000) {
-		message = "Just now";
-	} else if (minutes < 1) {
-		const seconds = Math.floor(absDiffTime / 1000);
-		message =
-			diffTime < 0
-				? `${seconds} second${seconds !== 1 ? "s" : ""} ago`
-				: `In ${seconds} second${seconds !== 1 ? "s" : ""}`;
-	} else if (minutes < 60) {
-		message =
-			diffTime < 0
-				? `${minutes} minute${minutes !== 1 ? "s" : ""} ago`
-				: `In ${minutes} minute${minutes !== 1 ? "s" : ""}`;
-	} else if (hours < 24) {
-		message =
-			diffTime < 0
-				? `${hours} hour${hours !== 1 ? "s" : ""} ago`
-				: `In ${hours} hour${hours !== 1 ? "s" : ""}`;
-	} else if (days < 7) {
-		message =
-			diffTime < 0
-				? `${days} day${days !== 1 ? "s" : ""} ago`
-				: `In ${days} day${days !== 1 ? "s" : ""}`;
-	} else if (weeks < 4) {
-		message =
-			diffTime < 0
-				? `${weeks} week${weeks !== 1 ? "s" : ""} ago`
-				: `In ${weeks} week${weeks !== 1 ? "s" : ""}`;
-	} else if (months < 12) {
-		message =
-			diffTime < 0
-				? `${months} month${months !== 1 ? "s" : ""} ago`
-				: `In ${months} month${months !== 1 ? "s" : ""}`;
-	} else {
-		message =
-			diffTime < 0
-				? `${years} year${years !== 1 ? "s" : ""} ago`
-				: `In ${years} year${years !== 1 ? "s" : ""}`;
-	}
-
-	return message;
-};
-
 /**
  * The page for a room
  *
  * @component
  */
 export const RoomPage = observer(() => {
-	/**
-	 * Library Hooks
-	 */
 	const { chat } = useChat();
 
 	const navigate = useNavigate();
@@ -115,6 +52,8 @@ export const RoomPage = observer(() => {
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
 	);
+
+	const { open } = useSidebar();
 
 	/**
 	 * Effects
@@ -200,33 +139,46 @@ export const RoomPage = observer(() => {
 	}
 
 	return (
-		<div className="flex h-[calc(100vh-theme(space.2))] w-full flex-col gap-2 overflow-hidden">
-			<div className="flex w-full flex-row items-center px-4 py-3">
-				<Lead
-					title={room?.metadata?.name}
-					className="w-full max-w-100 truncate text-md"
-				>
-					{room?.metadata?.name}
-				</Lead>
+		<div className="flex h-[calc(100vh-theme(space.2))] w-full flex-col overflow-hidden">
+			<div className="flex h-12.5 w-full flex-row items-center px-6">
+				<div className="flex flex-row items-center justify-center gap-2">
+					{!open && (
+						<>
+							<div className="w-5"> &nbsp;</div>
+							<Separator
+								orientation="vertical"
+								style={{ height: "15px" }}
+							/>
+						</>
+					)}
+					<Breadcrumb>
+						<BreadcrumbList>
+							<BreadcrumbItem>
+								<BreadcrumbPage
+									title={room?.metadata?.name}
+									className="max-w-100 truncate text-foreground"
+								>
+									{room?.metadata?.name}
+								</BreadcrumbPage>
+							</BreadcrumbItem>
+						</BreadcrumbList>
+					</Breadcrumb>
+				</div>
 				<div className="flex-1" />
-				<Badge variant="secondary">
-					<ClockIcon />
-					{`Created ${getDateTitle(room?.metadata?.dateCreated)}`}
-				</Badge>
 			</div>
 			<Separator />
-			<div className="w-full flex-1 overflow-hidden p-2">
+			<div className="w-full flex-1 overflow-hidden">
 				<ResizablePanelGroup
 					direction="horizontal"
 					className="w-full flex-1 overflow-hidden"
 				>
-					<ResizablePanel className="flex h-full w-full flex-1 flex-col items-center overflow-hidden p-2">
+					<ResizablePanel className="flex h-full w-full flex-1 flex-col items-center overflow-hidden px-4 pb-4">
 						<div className="relative w-full flex-1 overflow-hidden">
 							<ScrollArea
 								className="h-full w-full"
 								viewportRef={(ele) => setScrollEle(ele)}
 							>
-								<div className="mx-auto max-w-screen-xl space-y-2 px-0">
+								<div className="mx-auto max-w-4xl space-y-9 px-0 py-6">
 									{room.history.map((m, mIdx) => {
 										if (!m.visible) {
 											return null;
@@ -268,7 +220,6 @@ export const RoomPage = observer(() => {
 										<span className="absolute right-4 bottom-4 z-50">
 											<Button
 												size="sm"
-												className="bg-primary text-primary-foreground shadow-md hover:shadow-lg"
 												onClick={() => scrollToBottom()}
 												aria-label="Scroll to bottom"
 											>
@@ -282,7 +233,7 @@ export const RoomPage = observer(() => {
 								</Tooltip>
 							)}
 						</div>
-						<div className="mx-auto w-full max-w-2xl shrink-0 px-2 pt-4">
+						<div className="mx-auto w-full max-w-4xl shrink-0 px-2 pt-4">
 							<RoomInput
 								isLoading={room.isLoading}
 								isDisabled={isDisabled}
