@@ -15,7 +15,7 @@ import {
 } from "@semoss/ui";
 import PythonLogo from "@/assets/img/Python-logo.svg";
 import RLogo from "@/assets/img/R-logo.svg";
-import { useWorkspace } from "@/hooks";
+import { useRootStore, useWorkspace } from "@/hooks";
 import { Panel } from "./Panel";
 
 const StyledImage = styled("img")(({ theme }) => ({
@@ -58,6 +58,7 @@ export const TerminalPanel: React.FC = observer(() => {
 	const [history, setHistory] = useState<TerminalProps["history"]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const { workspace } = useWorkspace();
+	const { monolithStore } = useRootStore();
 
 	const [command, setCommand] = useState<string>("");
 	const [language, setLanguage] = useState("PIXEL");
@@ -120,27 +121,30 @@ export const TerminalPanel: React.FC = observer(() => {
 		});
 		console.log(suggesstionsData, "Suggesstion");
 		//returning GeneralReactors for testing suggesstions
-		return (suggesstionsData) || {
-			GeneralReactors: [],
-		};
+		return (
+			suggesstionsData || {
+				GeneralReactors: [],
+			}
+		);
 	};
 	useEffect(() => {
 		getSuggestions()
 			.then((data) => {
-				if(language === "PIXEL"){
-					suggesstionsList.current = (data as unknown)?.GeneralReactors || [];
-				}
-				else if(language === "SHELL"){
-					suggesstionsList.current = (data as unknown)?.TinkerFrameReactors || [];
-				}
-				else if(language === "PYTHON"){
-					suggesstionsList.current = (data as unknown)?.PythonFrameReactors || [];
-				}
-				else if(language === "R"){
-					suggesstionsList.current = (data as unknown)?.RFrameReactors || [];
-				}
-				else{
-					suggesstionsList.current = (data as unknown)?.GeneralReactors || [];
+				if (language === "PIXEL") {
+					suggesstionsList.current =
+						(data as unknown)?.GeneralReactors || [];
+				} else if (language === "SHELL") {
+					suggesstionsList.current =
+						(data as unknown)?.TinkerFrameReactors || [];
+				} else if (language === "PYTHON") {
+					suggesstionsList.current =
+						(data as unknown)?.PythonFrameReactors || [];
+				} else if (language === "R") {
+					suggesstionsList.current =
+						(data as unknown)?.RFrameReactors || [];
+				} else {
+					suggesstionsList.current =
+						(data as unknown)?.GeneralReactors || [];
 				}
 			})
 			.catch((err) => {
@@ -157,15 +161,9 @@ export const TerminalPanel: React.FC = observer(() => {
 	const runCommand = async () => {
 		try {
 			setIsLoading(true);
-			console.log(command, 'command in run ');
 			const cleaned = command.trim();
 			if (!cleaned) {
 				throw new Error(`No Command`);
-			}
-			if(cleaned === "toCSV()"){
-				console.log(history[history.length - 1], 'history');
-				setHistory(prevHistory => [...prevHistory, { ...history[history.length - 1], command: 'toCSV()', response: history[history.length - 1].response }]);
-				return ;
 			}
 
 			let pixel = "";
@@ -182,6 +180,7 @@ export const TerminalPanel: React.FC = observer(() => {
 			const response = await workspace.runWorkspacePixel(pixel);
 
 			const updatedHistory = [...history];
+			const insightId = response.insightId;
 			for (const r of response.pixelReturn) {
 				const { output, operationType, timeToRun } = r;
 
@@ -237,6 +236,23 @@ export const TerminalPanel: React.FC = observer(() => {
 					formatted = `\x1b[31mInvalid Syntax: ${output}\x1b[0m`;
 				} else if (operationType.indexOf("ERROR") > -1) {
 					formatted = `\x1b[31mError: ${output}\x1b[0m`;
+				} else if (operationType.indexOf("FILE_DOWNLOAD") > -1) {
+					monolithStore
+						.download(insightId, formatted as string)
+						.then(() => {
+							if (output && response.errors.length === 0) {
+								notification.add({
+									color: "success",
+									message: `file downloaded successfully`,
+								});
+							}
+						})
+						.catch(() => {
+							notification.add({
+								color: "error",
+								message: `Error occurred while trying to download`,
+							});
+						});
 				}
 
 				updatedHistory.push({
@@ -246,10 +262,11 @@ export const TerminalPanel: React.FC = observer(() => {
 						postfix,
 					),
 					command: command,
-					response:
-						colorizeJSON(typeof formatted !== "string"
+					response: colorizeJSON(
+						typeof formatted !== "string"
 							? JSON.stringify(formatted, null, 2)
-							: formatted),
+							: formatted,
+					),
 				});
 			}
 
@@ -267,23 +284,28 @@ export const TerminalPanel: React.FC = observer(() => {
 		}
 	};
 	const colorizeJSON = (jsonString: string) => {
-		return jsonString.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g, match => {
-            if (/:$/.test(match)) {
-                // key (yellow)
-                return `\x1b[33m${match}\x1b[0m`;
-            } else {
-                // string value (green)
-                return `\x1b[32m${match}\x1b[0m`;
-            }
-        }).replace(/\b(true|false|null)\b/g, match => {
-            // boolean/null (magenta)
-            return `\x1b[35m${match}\x1b[0m`;
-        })
-        .replace(/:\s*"([^"]+)"/, match => {
-            // number (cyan)
-            return `\x1b[36m${match}\x1b[0m`;
-        });
-	}
+		return jsonString
+			.replace(
+				/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,
+				(match) => {
+					if (/:$/.test(match)) {
+						// key (yellow)
+						return `\x1b[33m${match}\x1b[0m`;
+					} else {
+						// string value (green)
+						return `\x1b[32m${match}\x1b[0m`;
+					}
+				},
+			)
+			.replace(/\b(true|false|null)\b/g, (match) => {
+				// boolean/null (magenta)
+				return `\x1b[35m${match}\x1b[0m`;
+			})
+			.replace(/:\s*"([^"]+)"/, (match) => {
+				// number (cyan)
+				return `\x1b[36m${match}\x1b[0m`;
+			});
+	};
 
 	return (
 		<Panel
@@ -341,7 +363,6 @@ export const TerminalPanel: React.FC = observer(() => {
 				suggestions={suggesstionsList.current}
 				onRun={() => runCommand()}
 				onCommand={(c) => {
-					console.log('command', c);
 					setCommand(c);
 				}}
 			/>
