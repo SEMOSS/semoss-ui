@@ -364,7 +364,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			return tools;
 		}
 		return tools.filter((tool) =>
-			(tool.name as string | undefined)
+			(tool.title as string | undefined)
 				?.toLowerCase()
 				.includes(functionSearch.toLowerCase()),
 		);
