@@ -365,6 +365,17 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 				});
 				return;
 			}
+			if (workspace.model) {
+				const tabset = workspace.model
+					.getActiveTabset()
+					.getChildren()
+					.find((tabset) => tabset.getAttr("name") === "py_mcp.json");
+				if (tabset) {
+					await workspace.model.doAction(
+						FlexLayout.Actions.deleteTab(tabset.getId()),
+					);
+				}
+			}
 			// refresh the content
 			refreshFiles();
 			// Handle pixel call response
