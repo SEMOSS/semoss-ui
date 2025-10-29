@@ -138,7 +138,6 @@ const ExcelDataSelection = ({
 	onImport,
 	onCancel,
 }: ExcelDataSelectionProps) => {
-	console.log("Files in ExcelDataSelection:", fileName);
 	const [tableStates, setTableStates] = useState<
 		Record<
 			string,
@@ -175,13 +174,10 @@ const ExcelDataSelection = ({
 		try {
 			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${range}"]);`;
 			const response = await monolithStore.runQuery(pixelExpression);
-			console.log("Preview Range Response:", response);
 
 			const result: ParsedResult = response.pixelReturn[0].output;
-			console.log("Preview Range Result:", result);
 
 			if (!result?.cleanHeaders || !result?.dataTypes) {
-				console.warn("Invalid result from API:", result);
 				return;
 			}
 
