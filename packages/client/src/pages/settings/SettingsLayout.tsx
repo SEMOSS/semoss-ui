@@ -142,6 +142,10 @@ export const SettingsLayout = observer(() => {
 										Settings
 									</Breadcrumbs.Item>
 									{matchedRoute.history.map((link, idx) => {
+										// Find the route that matches this history link
+										const linkRoute = SETTINGS_ROUTES.find(r => r.path === link || r.path === link.replace("/<id>", "/:id"));
+										const isLastItem = matchedRoute.history.length - 1 === idx;
+										
 										return (
 											<Breadcrumbs.Item
 												//@ts-expect-error: TODO FIX Type
@@ -150,19 +154,18 @@ export const SettingsLayout = observer(() => {
 												to={link.replace("<id>", id)}
 												underline="none"
 												color={
-													matchedRoute.history
-														.length -
-														1 ===
-													idx
+													isLastItem
 														? "text.disabled"
 														: "inherit"
 												}
 												variant="body1"
-												state={{ ...state }}
+												state={state && typeof state === 'object' ? { ...state } : undefined}
 											>
 												{link.includes("<id>")
 													? id
-													: matchedRoute.title}
+													: isLastItem 
+														? matchedRoute.title
+														: linkRoute?.title || link}
 											</Breadcrumbs.Item>
 										);
 									})}
@@ -174,8 +177,8 @@ export const SettingsLayout = observer(() => {
 								<Typography variant="h4">
 									{matchedRoute.history.length < 2
 										? matchedRoute.title
-										: state
-											? state.name
+										: state && typeof state === 'object' && 'name' in state
+											? (state as any).name
 											: matchedRoute.title}
 								</Typography>
 

@@ -148,7 +148,7 @@ export const SETTINGS_ROUTES: {
 		path: "jobs",
 		description: "Search by job name or filter using job tags",
 		icon: mdiTabletCellphone,
-		history: ["settings/"],
+		history: ["jobs"],
 		admin: true,
 	},
 	{
@@ -215,6 +215,14 @@ export const SETTINGS_ROUTES: {
 		description: "Fill out all the details in order to add the model to the catalog.",
 		icon: mdiClipboardTextOutline,
 		history: ["jobs", "add-new-job"],
+		admin: true,
+	},
+	{
+		title: "Edit Jobs",
+		path: "edit-job/:id",
+		description: "Fill out all the details in order to edit the model in the catalog.",
+		icon: mdiClipboardTextOutline,
+		history: ["jobs", "edit-job/:id"],
 		admin: true,
 	}
 ];

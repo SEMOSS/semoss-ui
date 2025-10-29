@@ -32,6 +32,7 @@ const SETTINGS_COMPONETS = {
 	"my-profile": MyProfilePage,
 	jobs: JobsPage,
 	"add-new-job": AddNewJob,
+	"edit-job/:id": AddNewJob,
 	"team-permissions": TeamsSettingsPage,
 	"team-permissions/:type/:id": TeamSettingsDetailPage,
 	"view-rdf-map": RDFMapPage,

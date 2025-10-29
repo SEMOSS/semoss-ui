@@ -1,8 +1,10 @@
 export interface JobBuilder {
+	formType: string;
 	id: string | null;
 	name: string;
 	pixel: string;
 	tags: string[];
+	basicTz: string;
 	cronExpression: string;
 	cronTz: string;
 	smtpHost: string | null;
@@ -96,6 +98,7 @@ export interface Job {
 	id: string;
 	name: string;
 	type: string;
+	basicTz: string;
 	cronExpression: string;
 	timeZone: string;
 	tags: string[];

@@ -94,6 +94,7 @@ export function JobsPage() {
 	const [historyCount, setHistoryCount] = useState<number>(-1);
 	const { adminMode } = useSettings();
 	const searchRef = useRef(null);
+	const filterRef = useRef(null);
 	const navigate = useNavigate();
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [filterOpen, setFilterOpen] = useState(false);
@@ -144,6 +145,7 @@ export function JobsPage() {
 							type: "Custom",
 							cronExpression: job.cronExpression,
 							timeZone: job.cronTz,
+							basicTz: job.cronTz ?? "", // Add basicTz property
 							tags: (job?.jobTags ?? "")
 								.split(",")
 								.filter((tag) => !!tag),
@@ -523,6 +525,16 @@ export function JobsPage() {
 		});
 	}, [rowSelectionModel]);
 
+	const filteredHistory = useMemo(() => {
+		const searchedHistory = history.filter((job) => job.jobName.includes(searchValue));
+		if (selectedHistoryTab === "Success") {
+			return searchedHistory.filter((job) => job.success === true);
+		} else if (selectedHistoryTab === "Failed") {
+			return searchedHistory.filter((job) => job.success === false);
+		}
+		return searchedHistory; // "All" case
+	}, [history, searchValue, selectedHistoryTab]);
+
 	// Create debounced version of getHistory function for search
 	const debouncedGetHistory = debounced(() => {
 		getHistory({ search: historySearchBuffer });
@@ -662,25 +674,6 @@ export function JobsPage() {
 										variant="contained"
 										startIcon={<Add />}
 										onClick={() =>
-											// setInitialBuilderState({
-											// 	id: null,
-											// 	name: "",
-											// 	pixel: "",
-											// 	tags: [],
-											// 	cronExpression: "0 0 12 * * *",
-											// 	cronTz: "Eastern Standard Time",
-											// 	smtpHost: "",
-											// 	smtpPort: "",
-											// 	subject: "",
-											// 	jobType: "",
-											// 	to: [],
-											// 	cc: [],
-											// 	bcc: [],
-											// 	from: "",
-											// 	message: "",
-											// 	username: "",
-											// 	password: "",
-											// })
 											 navigate("/settings/add-new-job")
 										}
 										data-testid={"jobsPage-add-btn"}
@@ -707,7 +700,7 @@ export function JobsPage() {
 						)}
 					</Stack>
 				</Stack>
-				<Stack border={"1px solid #E0E0E0"} borderRadius="8px 8px 0 0" mt={2} flex={1} direction="row" justifyContent="space-between" alignItems="center" spacing={2} padding={1}>
+				<Stack border={"1px solid #E0E0E0"} borderRadius="8px 8px 0 0" mt={2} flex={1} direction="row" justifyContent="space-between" alignItems="center" spacing={2} padding={1} sx={{ position: 'relative' }}>
 					{selectedTable === "Jobs" && (
 						<Tabs
 							value={selectedJobTab}
@@ -738,7 +731,6 @@ export function JobsPage() {
 						{!searchOpen && (
 							<SearchIcon color="action"
 								onClick={() => {
-									setFilterOpen(!filterOpen);
 									setSearchOpen(!searchOpen);
 								}}
 							/>
@@ -757,6 +749,64 @@ export function JobsPage() {
 								setFilterOpen(!filterOpen);
 							}}
 						/>
+						{filterOpen && (
+							<Box
+								sx={{
+									position: 'absolute',
+									top: '100%',
+									right: 0,
+									zIndex: 1000,
+									backgroundColor: 'background.paper',
+									border: '1px solid #E0E0E0',
+									borderRadius: 1,
+									padding: 2,
+									minWidth: 200,
+									boxShadow: 2
+								}}
+							>
+								<Stack spacing={1}>
+									<Button
+										variant={selectedJobTab === 'Active' ? 'contained' : 'outlined'}
+										size="small"
+										fullWidth
+										onClick={() => {
+											setSelectedTable('Jobs');
+											setSelectedJobTab('Active');
+											setFilterOpen(false);
+										}}
+										startIcon={<AlarmOnIcon />}
+									>
+										Active Jobs ({jobs.filter((job) => job.isActive).length})
+									</Button>
+									<Button
+										variant={selectedJobTab === 'Inactive' ? 'contained' : 'outlined'}
+										size="small"
+										fullWidth
+										onClick={() => {
+											setSelectedTable('Jobs');
+											setSelectedJobTab('Inactive');
+											setFilterOpen(false);
+										}}
+										startIcon={<Bedtime />}
+									>
+										Inactive Jobs ({jobs.filter((job) => !job.isActive).length})
+									</Button>
+									<Button
+										variant="outlined"
+										size="small"
+										fullWidth
+										onClick={() => {
+											setSelectedTable('History');
+											setSelectedHistoryTab('Failed');
+											setFilterOpen(false);
+										}}
+										startIcon={<ErrorRounded />}
+									>
+										Failed Jobs ({failedJobCount})
+									</Button>
+								</Stack>
+							</Box>
+						)}
 					</Stack>
 				</Stack>
 				{selectedTable === "Jobs" && (
@@ -772,7 +822,7 @@ export function JobsPage() {
 				)}
 				{selectedTable === "History" && (
 					<JobHistory
-						history={history}
+						history={filteredHistory}
 						historyLoading={historyLoading}
 						historyCount={historyCount}
 						historyPage={historyPage}

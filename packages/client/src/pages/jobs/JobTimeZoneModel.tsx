@@ -30,20 +30,32 @@ export const JobTimeZoneModel = (props: {
         if (!Number.isNaN(cronValues[2]) || cronValues[2] == "*") {
             setCronHour(cronValues[2]);
         }
-        if (!Number.isNaN(cronValues[3]) || cronValues[3] == "*") {
-            setCronDayOfMonth(cronValues[3]);
-        }
         if (!Number.isNaN(cronValues[4]) || cronValues[4] == "*") {
             setCronMonth(cronValues[4]);
         }
-        if (!Number.isNaN(cronValues[5]) || cronValues[5] == "?") {
-            setCronDayOfWeek(cronValues[5]);
+        
+        // Handle mutual exclusivity between day-of-month and day-of-week
+        const dayOfMonth = cronValues[3];
+        const dayOfWeek = cronValues[5];
+        
+        if (dayOfMonth && dayOfMonth !== "*" && dayOfMonth !== "?") {
+            // If day-of-month is specified, set day-of-week to ?
+            setCronDayOfMonth(dayOfMonth);
+            setCronDayOfWeek("?");
+        } else if (dayOfWeek && dayOfWeek !== "*" && dayOfWeek !== "?") {
+            // If day-of-week is specified, set day-of-month to ?
+            setCronDayOfWeek(dayOfWeek);
+            setCronDayOfMonth("?");
+        } else {
+            // Default case: set values as they are
+            setCronDayOfMonth(dayOfMonth || "*");
+            setCronDayOfWeek(dayOfWeek || "?");
         }
     }, []);
     useEffect(() => {
         setBuilderField(
             "cronExpression",
-            `0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek} *`,
+            `0 ${cronMinute} ${cronHour} ${cronDayOfMonth} ${cronMonth} ${cronDayOfWeek}`,
         );
     }, [cronMinute, cronHour, cronDayOfMonth, cronMonth, cronDayOfWeek]);
 
@@ -204,9 +216,13 @@ export const JobTimeZoneModel = (props: {
                                 multiple={false}
                                 value={cronDayOfMonth}
                                 options={daysOfMonth}
-                                onChange={(_, value) =>
-                                    setCronDayOfMonth(value)
-                                }
+                                onChange={(_, value) => {
+                                    setCronDayOfMonth(value ?? "*");
+                                    // If a specific day of month is selected, set day of week to ?
+                                    if (value && value !== "*") {
+                                        setCronDayOfWeek("?");
+                                    }
+                                }}
                                 size="small"
                                 getOptionLabel={(option: string) =>
                                     option.replaceAll("_", " ")
@@ -227,13 +243,16 @@ export const JobTimeZoneModel = (props: {
                             <Autocomplete
                                 multiple={false}
                                 value={cronMonth}
-                                options={Months.map((m) => `${m.month}`)}
+                                options={Months}
                                 onChange={(_, value) =>
-                                    setCronMonth(value)
+                                    setCronMonth(value && typeof value === 'object' ? `${value.value}` : "*")
                                 }
                                 size="small"
-                                getOptionLabel={(option: string) =>
-                                    option.replaceAll("_", " ")
+                                getOptionLabel={(option) =>
+                                    typeof option === 'string' ? option : option.month
+                                }
+                                isOptionEqualToValue={(option, value) =>
+                                    (typeof option === 'string' ? option : `${option.value}`) === value
                                 }
                                 renderInput={(params) => (
                                     <TextField
@@ -249,13 +268,21 @@ export const JobTimeZoneModel = (props: {
                             <Autocomplete
                                 multiple={false}
                                 value={cronDayOfWeek}
-                                options={DaysOfWeek.map((d) => `${d.day}`)}
-                                onChange={(_, value) =>
-                                    setCronDayOfWeek(value)
-                                }
+                                options={DaysOfWeek}
+                                onChange={(_, value) => {
+                                    const dayOfWeekValue = value && typeof value === 'object' ? `${value.value}` : "?";
+                                    setCronDayOfWeek(dayOfWeekValue);
+                                    // If a specific day of week is selected, set day of month to ?
+                                    if (value && typeof value === 'object') {
+                                        setCronDayOfMonth("?");
+                                    }
+                                }}
                                 size="small"
-                                getOptionLabel={(option: string) =>
-                                    option.replaceAll("_", " ")
+                                getOptionLabel={(option) =>
+                                    typeof option === 'string' ? option : option.day
+                                }
+                                isOptionEqualToValue={(option, value) =>
+                                    (typeof option === 'string' ? option : `${option.value}`) === value
                                 }
                                 renderInput={(params) => (
                                     <TextField

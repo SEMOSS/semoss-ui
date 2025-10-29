@@ -6,6 +6,7 @@ import {
 } from "@mui/x-data-grid";
 import dayjs from "dayjs";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Chip,
@@ -19,6 +20,7 @@ import {
 import type { Job, JobBuilder } from "./job.types";
 import { getHumanReadableCronExpression } from "./job.utils";
 import Avatar  from "../../assets/img/Avatar.svg";
+import { time } from "echarts";
 
 const StyledDataGrid = styled(DataGrid)(() => ({
 	".MuiDataGrid-overlayWrapper": {
@@ -65,6 +67,7 @@ export const JobsTable = (props: {
 		showDeleteJobModal,
 	} = props;
 	const notification = useNotification();
+	const navigate = useNavigate();
 
 	const [runJobLoading, setRunJobLoading] = useState<boolean>(false);
 
@@ -228,25 +231,30 @@ export const JobsTable = (props: {
 							size="medium"
 							disabled={runJobLoading}
 							onClick={() => {
-								setInitialBuilderState({
-									id: job.id,
-									name: job.name,
-									pixel: job.pixel,
-									tags: job.tags,
-									cronExpression:
-										job.cronExpression.replaceAll("?", "*"),
-									cronTz: job.timeZone,
-									smtpHost: job.smtpHost,
-									smtpPort: job.smtpPort,
-									subject: job.subject,
-									jobType: job.jobType,
-									to: job.to,
-									cc: job.cc,
-									bcc: job.bcc,
-									from: job.from,
-									message: job.message,
-									username: job.username,
-									password: job.password,
+								navigate(`/settings/edit-job/${job?.id}`, {
+									state: {
+										initialState: {
+											formType: "edit",
+											id: job.id,
+											name: job.name,
+											pixel: job.pixel,
+											tags: job.tags,
+											basicTz: job.basicTz,
+											cronExpression: job.cronExpression,
+											cronTz: job.timeZone,
+											smtpHost: job.smtpHost,
+											smtpPort: job.smtpPort,
+											subject: job.subject,
+											jobType: job.jobType,
+											to: job.to,
+											cc: job.cc,
+											bcc: job.bcc,
+											from: job.from,
+											message: job.message,
+											username: job.username,
+											password: job.password,
+											timeZone: job.timeZone,
+										}}
 								});
 							}}
 							data-testid={"jobsTable-edit-btn"}

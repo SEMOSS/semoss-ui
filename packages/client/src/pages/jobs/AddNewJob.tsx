@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useSettings } from "@/hooks";
 import { Stack, Typography, RadioGroup, Button, styled, useNotification } from "@semoss/ui";
 import { runPixel } from "@semoss/sdk/react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import type { JobBuilder, } from "./job.types";
 import { JobTypeCustomJob, JobTypeSendEmail, } from "./job.constants";
 import { JobTimeZoneModel } from "./JobTimeZoneModel";
@@ -10,9 +10,11 @@ import { JobDetailsModel } from "./JobDetailsModel";
 import { getEncodeByJobType } from "./job.utils";
 
 const emptyBuilder: JobBuilder = {
+    formType: "",
     id: null,
     name: "",
     pixel: "",
+    basicTz: "",
     tags: [],
     cronExpression: "0 0 12 * * ?",
     cronTz: "",
@@ -57,12 +59,16 @@ export const AddNewJob= (props: {
 }) => {
     const { adminMode } = useSettings();
     const notification = useNotification();
+    const location = useLocation();
     
     if (!adminMode) {
             return <Navigate to={"/settings"} />;
     }
     const { isOpen, close, getJobs, initialBuilder } = props;
-    const [builder, setBuilder] = useState<JobBuilder>(emptyBuilder);
+    const initialBuilderFromLocation = (location.state as { initialState?: JobBuilder } | undefined)?.initialState;
+    const [builder, setBuilder] = useState<JobBuilder>(
+        initialBuilderFromLocation ?? emptyBuilder
+    );
     const [timeZoneType, setTimeZoneType] = useState("Standard");
     const navigate = useNavigate();
 
@@ -136,6 +142,7 @@ export const AddNewJob= (props: {
             switch (builder.jobType) {
                 case JobTypeSendEmail:
                     return (
+                        !!builder.formType &&
                         !!builder.name &&
                         !!builder.smtpHost &&
                         !!builder.smtpPort &&
@@ -172,6 +179,7 @@ export const AddNewJob= (props: {
             }
     
             return (
+                builder.formType !== initialBuilder?.formType ||
                 builder.name !== initialBuilder.name ||
                 builder.pixel !== initialBuilder.pixel ||
                 JSON.stringify(builder.tags) !==
@@ -209,8 +217,6 @@ export const AddNewJob= (props: {
         ]);
     
     const addJob = async () => {
-            // setIsLoading(true);
-            console.log("Adding job:", builder);
             try {
                 const encode = getEncodeByJobType(builder);
                 const response = await runPixel(
@@ -231,6 +237,9 @@ export const AddNewJob= (props: {
                 if (response.errors.length) {
                     throw new Error(response.errors[0]);
                 }
+                else {
+                    navigate("/settings/jobs");
+                }
                 notification.add({
                     color: "success",
                     message: "Job added successfully",
@@ -241,11 +250,46 @@ export const AddNewJob= (props: {
                     message: "Unable to add job",
                 });
             }
-            getJobs();
-            // closeModal();
-            // setIsLoading(false);
         };
-    
+    const updateJob = async () => {
+        try{
+            const encode = getEncodeByJobType(builder);
+            const response = await runPixel(
+                `META|EditScheduledJob(jobId="${builder.id}",jobName="${
+                    builder.name
+                }",${
+                    builder.tags.length
+                        ? `jobTags=${JSON.stringify(builder.tags)},`
+                        : ""
+                }jobGroup=["defaultGroup"],cronExpression="${
+                    builder.cronExpression
+                } *",cronTz="${
+                    builder.cronTz
+                }",recipe="<encode>${encode}</encode>",uiState='{"jobType":"${
+                    builder.jobType
+                }", "jobName":"${builder.name}", "cronExpression":"${
+                    builder.cronExpression
+                }", "cronTimeZone":"${
+                    builder.cronTz
+                }"}',triggerOnLoad=[false],triggerNow=[false]);`,
+            );
+            if (response.errors.length) {
+                throw new Error(response.errors[0]);
+            }
+            else {
+                navigate("/settings/jobs");
+            }
+            notification.add({
+                color: "success",
+                message: "Job Updated successfully",
+            });
+        } catch{
+            notification.add({
+                color: "error",
+                message: "Unable to update job",
+            });
+        }
+    };
     return (
         <Stack>
             <Stack direction="row" flex={5} gap={11} alignItems="center">
@@ -257,7 +301,10 @@ export const AddNewJob= (props: {
                     <RadioGroup
                         name="timeZone"
                         value={timeZoneType}
-                        onChange={(event) => setTimeZoneType(event.target.value)}
+                        onChange={(event) => {
+                            setBuilderField("basicTz", event.target.value);
+                            setTimeZoneType(event.target.value);
+                        }}
                         sx={{ display: "flex", flexDirection: "row", gap: 5 }}
                     >
                         <RadioGroup.Item value="Standard" label="Standard" />
@@ -312,9 +359,9 @@ export const AddNewJob= (props: {
 					// 		!isCronExpressionValid ||
 					// 		!hasChanges
 				    // }
-                    onClick={addJob}
+                    onClick={builder.formType === "edit" ? updateJob : addJob}
                 >
-					Add Job
+                    {builder.formType === "edit" ? "Update Job" : "Add Job"}
 				</StyledButtonAdd>   
             </Stack>
         </Stack>
