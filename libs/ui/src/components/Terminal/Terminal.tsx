@@ -154,6 +154,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 		selectedSuggestion: "",
 		chosenSuggestionIndex: -1
 	});
+	const [customHideOption, setCustomHideOption] = useState(false);
 
 	const isDisabled = loading || disabled;
 
@@ -512,6 +513,11 @@ export const Terminal: React.FC<TerminalProps> = ({
 						// 	setShowOption(true);
 						// }
 					}
+					if(key === String.fromCharCode(27)){
+						setCustomHideOption(true);
+					} else{
+						setCustomHideOption(false);
+					}
 				}
 			}
 
@@ -714,7 +720,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 				</StyledCopyButton>
 			}
 			<StyledTerminal ref={terminalRef} sx={sx} />	
-			{showOptionList?.length > 0 && (
+			{(showOptionList?.length > 0 && !customHideOption) && (
 				<StyledOption
 					style={{
 						left: `${positionData.current.left}px`,
