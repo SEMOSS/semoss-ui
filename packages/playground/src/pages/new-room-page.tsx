@@ -116,13 +116,15 @@ export const NewRoomPage = observer(() => {
 	}, [getWorkspace.status, getWorkspace.data]);
 
 	return (
-		<div
-			className="h-full w-full"
-			style={{ backgroundImage: `url(${background})` }}
-		>
+		<div className="h-full w-full">
 			<ResizablePanelGroup direction="horizontal">
-				<ResizablePanel className="flex flex-col items-center justify-center overflow-auto p-2">
-					<div className="mx-auto flex w-full max-w-2xl flex-col gap-6">
+				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
+					<img
+						src={background}
+						alt="Background"
+						className="absolute inset-0 h-full w-full object-cover"
+					/>
+					<div className="z-10 mx-auto flex w-full max-w-2xl flex-col gap-6">
 						<div className="mx-auto flex max-w-xl flex-col items-center gap-3">
 							<div className="text-center font-semibold text-4xl text-foreground leading-normal">
 								Welcome

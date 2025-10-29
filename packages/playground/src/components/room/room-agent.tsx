@@ -76,7 +76,7 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 							<PopoverTrigger asChild>
 								<span>
 									<Button
-										className="w-36 text-left"
+										className="w-36 text-left text-muted-foreground"
 										variant="outline"
 										role="combobox"
 										aria-expanded={open}
