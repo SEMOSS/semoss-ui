@@ -127,7 +127,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 	}, [projectMetaValues.status, projectMetaValues.data]);
 
 	return (
-		<Modal open={isOpen} fullWidth>
+		<Modal open={isOpen} fullWidth data-testid="edit-app-details-modal">
 			<StyledModalHeading>
 				<StyledTitle variant="h6">Edit App Details</StyledTitle>
 
@@ -149,6 +149,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 								multiline
 								label="Description"
 								rows={3}
+								data-testid="description"
 							/>
 						);
 					}}
@@ -165,6 +166,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 								multiline
 								label="Main Uses"
 								rows={7}
+								data-testid="markdown"
 							/>
 						);
 					}}
@@ -182,7 +184,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 								freeSolo
 								onChange={(_, val) => field.onChange(val)}
 								renderInput={(params) => (
-									<TextField {...params} label="Tags" />
+									<TextField {...params} label="Tags" data-testid="tags" />
 								)}
 								filterOptions={(options, params) => {
 									const filtered = filter(options, params);
@@ -223,6 +225,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 										field.onChange(value[0]);
 									}
 								}}
+								data-testid="app-image"
 							/>
 						);
 					}}
@@ -251,6 +254,7 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 												onChange={(value) =>
 													field.onChange(value)
 												}
+												data-testid="markdown-editor"
 											/>
 										);
 									}}
@@ -372,11 +376,11 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 				})}
 			</StyledModalContent>
 
-			<Modal.Actions>
-				<Button onClick={() => onClose(true)} variant="text">
+			<Modal.Actions data-testid="edit-app-details-modal-actions">
+				<Button onClick={() => onClose(true)} variant="text" data-testid="cancel">
 					Cancel
 				</Button>
-				<Button onClick={handleEditAppDetails} variant="contained">
+				<Button onClick={handleEditAppDetails} variant="contained" data-testid="save">
 					Save
 				</Button>
 			</Modal.Actions>
