@@ -606,7 +606,7 @@ export function JobsPage() {
 									pixel: "",
 									tags: [],
 									cronExpression: "0 0 12 * * *",
-									cronTz: "Eastern Standard Time",
+									cronTz: "US/Eastern",
 									smtpHost: "",
 									smtpPort: "",
 									subject: "",

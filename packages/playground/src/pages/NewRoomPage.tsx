@@ -5,10 +5,11 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Badge,
 	Container,
 	IconButton,
 	Stack,
@@ -16,12 +17,7 @@ import {
 	Tooltip,
 	Typography,
 } from "@semoss/ui";
-import {
-	PromptLibrary,
-	RoomConfiguration,
-	RoomInput,
-	WorkspaceChip,
-} from "@/components";
+import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -72,7 +68,6 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const { system } = useInsight();
 	const { workspaceId } = useParams() as { workspaceId?: string };
-	const workspace = chat.workspaces[workspaceId] ?? null;
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -86,10 +81,10 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		tools: [],
-		mcpToolID: [],
+		mcp: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
+		workspace: null,
 	});
 
 	const [isPlanning, setIsPlanning] = useState(false);
@@ -114,19 +109,12 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		const usingWorkspace = workspaceId && workspace !== null;
-
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
-			usingWorkspace
-				? {
-						...options,
-						workspace: { workspace_id: workspace.workspace_id },
-					}
-				: options,
+			options,
 		);
 
 		// set the initialized state
@@ -141,6 +129,18 @@ export const NewRoomPage = observer(() => {
 		// go to the new room
 		navigate(`/room/${room.roomId}`);
 	};
+
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		if (workspaceId) {
+			setOptions((prev) => ({
+				...prev,
+				workspace: { workspace_id: workspaceId },
+			}));
+		}
+	}, [workspaceId]);
 
 	return (
 		<StyledPage direction={"row"} spacing={2}>
@@ -183,13 +183,11 @@ export const NewRoomPage = observer(() => {
 							maxRows={8}
 							actions={
 								<Stack direction="row" alignItems="center">
-									{workspaceId ? (
-										<WorkspaceChip workspace={workspace} />
-									) : (
-										<Tooltip
-											title={"Open Configuration Menu"}
-											placement="top"
-										>
+									<Tooltip
+										title={"Open Configuration Menu"}
+										placement="top"
+									>
+										<span>
 											<IconButton
 												size={"medium"}
 												type="button"
@@ -204,10 +202,23 @@ export const NewRoomPage = observer(() => {
 													setIsMenuOpen(!isMenuOpen);
 												}}
 											>
-												<Tune color="inherit" />
+												<Badge
+													badgeContent={
+														options.mcp.length ||
+														options.workspace ||
+														options.instructions
+															?.length
+															? 1
+															: 0
+													}
+													color="primary"
+													variant="dot"
+												>
+													<Tune color="inherit" />
+												</Badge>
 											</IconButton>
-										</Tooltip>
-									)}
+										</span>
+									</Tooltip>
 									{ENABLE_PLANNING && (
 										<Tooltip
 											title={
