@@ -285,6 +285,24 @@ const parseDefaultValue = (
 	}
 };
 
+const isValidJSON = (value: string, type: string): boolean => {
+	if (type !== "object" && type !== "array") return true;
+	if (!value || value.trim() === "") return true;
+
+	try {
+		const parsed = JSON.parse(value);
+		if (type === "array") {
+			return Array.isArray(parsed);
+		}
+		if (type === "object") {
+			return typeof parsed === "object" && !Array.isArray(parsed);
+		}
+		return true;
+	} catch {
+		return false;
+	}
+};
+
 // ==================== MAIN COMPONENT ====================
 
 export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
@@ -310,6 +328,9 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 	});
 	const [expanded, setExpanded] = useState<ExpandedState>({ 1: [], 2: [] });
 	const [deletedFunctions, setDeletedFunctions] = useState<string[]>([]);
+	const [jsonErrors, setJsonErrors] = useState<
+		Record<string, Record<string, boolean>>
+	>({});
 
 	// ==================== CONSTANTS ====================
 
@@ -734,6 +755,15 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 				newType,
 				defaultValue,
 			);
+			// Clear any JSON errors when type changes
+			setJsonErrors((prev) => {
+				const toolErrors = { ...prev[toolName] };
+				delete toolErrors[paramName];
+				return {
+					...prev,
+					[toolName]: toolErrors,
+				};
+			});
 		},
 		[updateToolTypeAndDefault],
 	);
@@ -815,6 +845,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 			const type = getNormalizedType(propDetails?.type);
 			const defaultValue = propDetails?.default;
 			const displayValue = formatDefaultValue(defaultValue, type);
+			const hasError = jsonErrors[tool.name]?.[propName] || false;
 
 			switch (type) {
 				case "number":
@@ -879,21 +910,39 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							multiline
 							rows={3}
 							defaultValue={displayValue || "{}"}
+							error={hasError}
 							onChange={(e) => {
-								try {
-									JSON.parse(e.target.value);
-									handleDefaultChange(
-										e.target.value,
-										tool.name,
-										propName,
-										type,
-									);
-								} catch {
-									// Invalid JSON, don't update yet
+								const value = e.target.value;
+								const isValid = isValidJSON(value, type);
+
+								setJsonErrors((prev) => ({
+									...prev,
+									[tool.name]: {
+										...(prev[tool.name] || {}),
+										[propName]: !isValid,
+									},
+								}));
+
+								if (isValid) {
+									try {
+										JSON.parse(value);
+										handleDefaultChange(
+											value,
+											tool.name,
+											propName,
+											type,
+										);
+									} catch {
+										// Invalid JSON, don't update
+									}
 								}
 							}}
 							placeholder='{"key": "value"}'
-							helperText="Enter valid JSON object"
+							helperText={
+								hasError
+									? "Invalid JSON object"
+									: "Enter valid JSON object"
+							}
 						/>
 					);
 
@@ -907,23 +956,41 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 							multiline
 							rows={3}
 							defaultValue={displayValue || "[]"}
+							error={hasError}
 							onChange={(e) => {
-								try {
-									const parsed = JSON.parse(e.target.value);
-									if (Array.isArray(parsed)) {
-										handleDefaultChange(
-											e.target.value,
-											tool.name,
-											propName,
-											type,
-										);
+								const value = e.target.value;
+								const isValid = isValidJSON(value, type);
+
+								setJsonErrors((prev) => ({
+									...prev,
+									[tool.name]: {
+										...(prev[tool.name] || {}),
+										[propName]: !isValid,
+									},
+								}));
+
+								if (isValid) {
+									try {
+										const parsed = JSON.parse(value);
+										if (Array.isArray(parsed)) {
+											handleDefaultChange(
+												value,
+												tool.name,
+												propName,
+												type,
+											);
+										}
+									} catch {
+										// Invalid JSON, don't update
 									}
-								} catch {
-									// Invalid JSON, don't update yet
 								}
 							}}
 							placeholder='["item1", "item2"]'
-							helperText="Enter valid JSON array"
+							helperText={
+								hasError
+									? "Invalid JSON array"
+									: "Enter valid JSON array"
+							}
 						/>
 					);
 
@@ -949,7 +1016,7 @@ export const MakeMCPOverlay = (props: MakeMCPOverlayProps) => {
 					);
 			}
 		},
-		[handleDefaultChange],
+		[handleDefaultChange, jsonErrors],
 	);
 
 	const renderParameterRow = useCallback(
