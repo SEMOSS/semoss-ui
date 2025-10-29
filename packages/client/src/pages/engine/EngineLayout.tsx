@@ -231,9 +231,9 @@ export const EngineLayout: React.FC<EngineLayoutProps> = ({ route }) => {
 	}
 
 	// show a loading screen when checking database category for DATABASE engines
-	// if (route.type === "DATABASE" && getDatabaseCategory.status !== "SUCCESS") {
-	// 	return <LoadingScreen.Trigger description="Loading Database Info" />;
-	// }
+	if (route.type === "DATABASE" && getDatabaseCategory.status !== "SUCCESS") {
+		return <LoadingScreen.Trigger description="Loading Database Info" />;
+	}
 
 	return (
 		<EngineContext.Provider
