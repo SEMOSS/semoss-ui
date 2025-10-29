@@ -7,7 +7,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { usePixel, useRootStore, useSettings } from "@/hooks";
+import { updateDatabaseSmssProperties } from "@/api";
+import { usePixel, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 
 const Editor = lazy(() => import("@monaco-editor/react"));
@@ -45,7 +46,6 @@ const StyledPaper = styled(Paper)(() => ({
 export const UpdateSMSS = (props: UpdateSMSSProps) => {
 	const { type, id } = props;
 
-	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -83,8 +83,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 	 * @desc hit endpoint to update smss file
 	 */
 	const updateSMSSProperties = () => {
-		monolithStore
-			.updateDatabaseSmssProperties(id, value)
+		updateDatabaseSmssProperties(id, value)
 			.then((resp) => {
 				const { data } = resp;
 

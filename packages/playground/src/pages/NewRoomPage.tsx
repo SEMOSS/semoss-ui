@@ -5,10 +5,11 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useInsight, usePixel } from "@semoss/sdk/react";
+import { useInsight } from "@semoss/sdk/react";
 import {
+	Badge,
 	Container,
 	IconButton,
 	Stack,
@@ -17,11 +18,9 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { PromptLibrary, RoomConfiguration, RoomInput } from "@/components";
-import { AgentChip } from "@/components/agent";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Agent } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
@@ -68,11 +67,7 @@ export const NewRoomPage = observer(() => {
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
-	const { agentId } = useParams() as { agentId?: string };
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
+	const { workspaceId } = useParams() as { workspaceId?: string };
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -86,9 +81,10 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		tools: [],
+		mcp: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
+		workspace: null,
 	});
 
 	const [isPlanning, setIsPlanning] = useState(false);
@@ -113,24 +109,16 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
-		const usingAgent = agentId && agent !== null;
-
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			isPlanning ? "planning" : "chat",
 			chat.models.selected,
-			usingAgent
-				? {
-						instructions: "",
-						// knowledge: null,
-						tools: [],
-						tokenLength: TOKEN_LENGTH,
-						temperature: TEMPERATURE,
-					}
-				: options,
-			usingAgent ? agent : undefined,
+			options,
 		);
+
+		// set the initialized state
+		room.setInitialized();
 
 		// ask the room
 		await room.askMessage(prompt, files);
@@ -141,6 +129,18 @@ export const NewRoomPage = observer(() => {
 		// go to the new room
 		navigate(`/room/${room.roomId}`);
 	};
+
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		if (workspaceId) {
+			setOptions((prev) => ({
+				...prev,
+				workspace: { workspace_id: workspaceId },
+			}));
+		}
+	}, [workspaceId]);
 
 	return (
 		<StyledPage direction={"row"} spacing={2}>
@@ -177,22 +177,17 @@ export const NewRoomPage = observer(() => {
 							{APP_DESCRIPTION}
 						</Typography>
 						<RoomInput
-							isLoading={isLoading || isLoadingAgent}
+							isLoading={isLoading}
 							isDisabled={false}
 							minRows={4}
 							maxRows={8}
 							actions={
 								<Stack direction="row" alignItems="center">
-									{agentId ? (
-										<AgentChip
-											agent={agent}
-											loading={isLoadingAgent}
-										/>
-									) : (
-										<Tooltip
-											title={"Open Configuration Menu"}
-											placement="top"
-										>
+									<Tooltip
+										title={"Open Configuration Menu"}
+										placement="top"
+									>
+										<span>
 											<IconButton
 												size={"medium"}
 												type="button"
@@ -207,10 +202,23 @@ export const NewRoomPage = observer(() => {
 													setIsMenuOpen(!isMenuOpen);
 												}}
 											>
-												<Tune color="inherit" />
+												<Badge
+													badgeContent={
+														options.mcp.length ||
+														options.workspace ||
+														options.instructions
+															?.length
+															? 1
+															: 0
+													}
+													color="primary"
+													variant="dot"
+												>
+													<Tune color="inherit" />
+												</Badge>
 											</IconButton>
-										</Tooltip>
-									)}
+										</span>
+									</Tooltip>
 									{ENABLE_PLANNING && (
 										<Tooltip
 											title={

@@ -3,8 +3,8 @@ import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
 import {
+	Badge,
 	Chip,
 	Container,
 	Divider,
@@ -24,9 +24,7 @@ import {
 	RoomConfiguration,
 	RoomInput,
 } from "@/components";
-import { AgentChip } from "@/components/agent";
 import { useAutoScroll, useChat } from "@/hooks";
-import type { Agent } from "@/types";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -158,13 +156,6 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
-	// get the agent if there is one
-	const agentId = room?.getAgentId();
-	const { data: agent, status } = usePixel<Agent>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-	);
-	const isLoadingAgent = status === "LOADING";
-
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
@@ -180,16 +171,20 @@ export const RoomPage = observer(() => {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-			navigate("/");
-		}
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
 	}, [room, notification.add, navigate]);
 
 	// create a listener to process messages from the room
@@ -361,16 +356,11 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								actions={
-									agentId ? (
-										<AgentChip
-											agent={agent}
-											loading={isLoadingAgent}
-										/>
-									) : (
-										<Tooltip
-											title={"Configuration"}
-											placement="top"
-										>
+									<Tooltip
+										title={"Configuration"}
+										placement="top"
+									>
+										<span>
 											<IconButton
 												size={"medium"}
 												type="button"
@@ -398,10 +388,26 @@ export const RoomPage = observer(() => {
 													}
 												}}
 											>
-												<Tune color="inherit" />
+												<Badge
+													color="primary"
+													variant="dot"
+													badgeContent={
+														room.options.mcp
+															.length ||
+														room.options
+															.workspace ||
+														room.options
+															.instructions
+															?.length
+															? 1
+															: 0
+													}
+												>
+													<Tune color="inherit" />
+												</Badge>
 											</IconButton>
-										</Tooltip>
-									)
+										</span>
+									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
 									await room.askMessage(prompt, files);
@@ -444,6 +450,7 @@ export const RoomPage = observer(() => {
 								onClose={() => {
 									room.closeSidebar();
 								}}
+								room={room}
 							/>
 						)}
 						{room.sidebar.type === "ARTIFACTS" && (

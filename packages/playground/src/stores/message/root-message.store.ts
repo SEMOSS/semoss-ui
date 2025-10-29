@@ -39,9 +39,6 @@ export class RootMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// get a list of tool ids
-		const tools: string[] = room.options.tools.map((t) => t.id, []);
-
 		let pixel = "";
 		if (room.mode === "chat") {
 			pixel = `AskPlayground(
@@ -50,7 +47,6 @@ roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
@@ -63,7 +59,6 @@ roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
