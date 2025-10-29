@@ -1466,7 +1466,7 @@ const CloudChartTools = ({ id }) => {
 					}
 					selected={CloudSelection === "title"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1475,7 +1475,7 @@ const CloudChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1492,7 +1492,7 @@ const CloudChartTools = ({ id }) => {
 					}
 					selected={CloudSelection === "shape"}
 				>
-					<List.Icon>
+					<List.ItemIcon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1501,7 +1501,7 @@ const CloudChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.Icon>
+					</List.ItemIcon>
 					<List.ItemText primary="Cloud Settings" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1774,12 +1774,12 @@ export const UpgradedVisualizationTool =
 		const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
 		return (
-			<List style={{ width: "100%" }}>
+			<List sx={{ width: "100%" }}>
 				{/* 
                         Custom section to handle bar chart components for respective menu section 
                         BAR Chart Menu for tools start here
                         */}
-				<List.Item disablePadding style={{ display: "block" }}>
+				<List.Item disablePadding sx={{ display: "block" }}>
 					<List.ItemButton
 						onClick={() =>
 							setSelectedList((prevList) =>
