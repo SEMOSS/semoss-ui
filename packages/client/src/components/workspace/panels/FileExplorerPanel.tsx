@@ -4,6 +4,7 @@ import {
 	FileUpload,
 	NoteAddOutlined,
 	PublishedWithChangesOutlined,
+	RefreshOutlined,
 } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { runPixel } from "@semoss/sdk";
@@ -710,6 +711,18 @@ export const FileExplorerPanel = (props: FileExplorerPanelProps) => {
 						>
 							<StyledFileSpan>Files</StyledFileSpan>
 							<Stack direction={"row"} spacing={0.5}>
+								<Tooltip title={`Refresh files`}>
+									<IconButton
+										size={"small"}
+										color={"default"}
+										onClick={(e) => {
+											e.stopPropagation();
+											refreshFiles();
+										}}
+									>
+										<RefreshOutlined fontSize="inherit" />
+									</IconButton>
+								</Tooltip>
 								<Tooltip title={`Publish files`}>
 									<IconButton
 										size={"small"}
