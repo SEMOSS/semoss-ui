@@ -72,7 +72,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	const debouncedSearch = useDebouncedValue(search);
 
 	/**
-	 * Get all of the groups
+	 * Get all of the available MCPs
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
 		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
