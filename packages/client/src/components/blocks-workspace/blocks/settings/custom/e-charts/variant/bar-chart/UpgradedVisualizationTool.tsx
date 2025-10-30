@@ -357,7 +357,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "xaxis"}
 				>
-					<List.ItemIcon>
+					<List.Icon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -366,7 +366,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.ItemIcon>
+					</List.Icon>
 					<List.ItemText primary="Edit X Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -383,7 +383,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "yaxis"}
 				>
-					<List.ItemIcon>
+					<List.Icon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -392,7 +392,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.ItemIcon>
+					</List.Icon>
 					<List.ItemText primary="Edit Y Axis" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -409,7 +409,7 @@ const GanttToolsList = ({ id }) => {
 					}
 					selected={ganttSelection === "chartposition"}
 				>
-					<List.ItemIcon>
+					<List.Icon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -418,7 +418,7 @@ const GanttToolsList = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.ItemIcon>
+					</List.Icon>
 					<List.ItemText primary="Chart Position" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1466,7 +1466,7 @@ const CloudChartTools = ({ id }) => {
 					}
 					selected={CloudSelection === "title"}
 				>
-					<List.ItemIcon>
+					<List.Icon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1475,7 +1475,7 @@ const CloudChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.ItemIcon>
+					</List.Icon>
 					<List.ItemText primary="Chart Title" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1492,7 +1492,7 @@ const CloudChartTools = ({ id }) => {
 					}
 					selected={CloudSelection === "shape"}
 				>
-					<List.ItemIcon>
+					<List.Icon>
 						<ImageIcon
 							fontSize="large"
 							color={
@@ -1501,7 +1501,7 @@ const CloudChartTools = ({ id }) => {
 									: "disabled"
 							}
 						/>
-					</List.ItemIcon>
+					</List.Icon>
 					<List.ItemText primary="Cloud Settings" />
 					<InfoOutlined />
 				</List.ItemButton>
@@ -1774,12 +1774,12 @@ export const UpgradedVisualizationTool =
 		const { data } = useBlockSettings<EchartVisualizationBlockDef>(id);
 		const [selectedList, setSelectedList] = useState(""); // maintain the current selected list, for expansion and collapsing
 		return (
-			<List sx={{ width: "100%" }}>
+			<List style={{ width: "100%" }}>
 				{/* 
                         Custom section to handle bar chart components for respective menu section 
                         BAR Chart Menu for tools start here
                         */}
-				<List.Item disablePadding sx={{ display: "block" }}>
+				<List.Item disablePadding style={{ display: "block" }}>
 					<List.ItemButton
 						onClick={() =>
 							setSelectedList((prevList) =>

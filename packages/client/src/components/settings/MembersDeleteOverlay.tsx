@@ -1,9 +1,5 @@
 import type { AxiosResponse } from "axios";
 import { Button, Modal, useNotification } from "@semoss/ui";
-import {
-	removeEngineUserPermissions,
-	removeProjectUserPermissions,
-} from "@/api";
 import { useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import type { SETTINGS_PROVISIONED_USER } from "./settings.types";
@@ -67,15 +63,7 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				return m.id;
 			});
 
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
+			let response: AxiosResponse<{ success: boolean }> | null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -83,13 +71,13 @@ export const MembersDeleteOverlay = (props: MembersDeleteOverlayProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await removeEngineUserPermissions(
+				response = await monolithStore.removeEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await removeProjectUserPermissions(
+				response = await monolithStore.removeProjectUserPermissions(
 					adminMode,
 					id,
 					requests,

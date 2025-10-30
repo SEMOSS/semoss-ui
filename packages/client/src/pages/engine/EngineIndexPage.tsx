@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { useEffect, useReducer, useRef, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatPostcssSourceMap } from "vite";
 import { debounced } from "@semoss/sdk/react";
@@ -12,7 +12,6 @@ import {
 	ToggleTabsGroup,
 	Typography,
 } from "@semoss/ui";
-import { setEngineFavorite, setEngineGlobal } from "@/api";
 import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
@@ -130,10 +129,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const offsetRef = useRef(0);
 		offsetRef.current = offset;
-		let scrollEle: HTMLDivElement,
-			scrollTimeout: ReturnType<typeof setTimeout>,
-			currentScroll: number,
-			previousScroll: number;
+		let scrollEle, scrollTimeout, currentScroll, previousScroll;
 
 		const [inputValue, setInputValue] = useState("");
 		const [search, setSearch] = useState("");
@@ -208,11 +204,11 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				: "",
 		);
 
-		const debouncedSet = debounced((newInputValue: string) => {
+		const debouncedSet = debounced((newInputValue) => {
 			setSearch(newInputValue);
 		}, 300);
 
-		const handleInputChange = (newInputValue: string) => {
+		const handleInputChange = (newInputValue) => {
 			setInputValue(newInputValue);
 			debouncedSet(newInputValue);
 		};
@@ -222,11 +218,12 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 * @param db
 		 */
 		const setGlobal = (db) => {
-			setEngineGlobal(
-				configStore.store.user.admin,
-				db.database_id,
-				!db.database_global,
-			)
+			monolithStore
+				.setEngineGlobal(
+					configStore.store.user.admin,
+					db.database_id,
+					!db.database_global,
+				)
 				.then((response) => {
 					if (response.data.success) {
 						const newDatabases = [];
@@ -259,7 +256,8 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 		 */
 		const favoriteDb = (db) => {
 			const favorite = !isFavorited(db.database_id);
-			setEngineFavorite(db.database_id, favorite)
+			monolithStore
+				.setEngineFavorite(db.database_id, favorite)
 				.then(() => {
 					if (!favorite) {
 						const newFavorites = favoritedDbs;
@@ -317,7 +315,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 			monolithStore.runQuery(pixelString).then((response) => {
 				const type = response.pixelReturn[0].operationType;
-				const _pixelResponse = response.pixelReturn[0].output;
+				const pixelResponse = response.pixelReturn[0].output;
 
 				if (type.indexOf("ERROR") === -1) {
 					const newDatabases = [];
@@ -328,7 +326,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 							newCopy.upvotes = !db.hasUpvoted
 								? newCopy.upvotes + 1
 								: newCopy.upvotes - 1;
-							newCopy.hasUpvoted = !db.hasUpvoted;
+							newCopy.hasUpvoted = !db.hasUpvoted ? true : false;
 
 							newDatabases.push(newCopy);
 						} else {
@@ -422,7 +420,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				field: "databases",
 				value: mutateListWithVotes,
 			});
-		}, [getDatabases.status, getDatabases.data, databases]);
+		}, [getDatabases.status, getDatabases.data]);
 
 		/**
 		 * @desc Sets Favorited Engines
@@ -449,7 +447,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			return () => {
 				scrollEle.removeEventListener("scroll", scrollAll);
 			};
-		}, [scrollEle, scrollAll]);
+		}, [scrollEle]);
 
 		/**
 		 * Reset tiles anytime search changes
@@ -468,7 +466,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 			getDatabases.status === "ERROR" ||
 			getCatalogFilters.status === "ERROR"
 		) {
-			return "ERROR";
+			return <>ERROR</>;
 		}
 
 		// filter out the bookmarked models for All Models section, it is used not to show StyledSectionLabel for All Models section when there is no (nonBookmarked) model to show
@@ -559,7 +557,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 						>
 							<StyledToggleTabsGroup
 								value={mode}
-								onChange={(_e: React.SyntheticEvent, val) => {
+								onChange={(e: React.SyntheticEvent, val) => {
 									dispatch({
 										type: "field",
 										field: "databases",

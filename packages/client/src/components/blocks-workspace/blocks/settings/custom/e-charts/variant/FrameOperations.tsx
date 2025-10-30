@@ -1801,7 +1801,6 @@ export const FrameOperations = observer(
 			<>
 				{accordionSection.map((item, index) => (
 					<Accordion
-						key={item[accordionList[index]].title}
 						expanded={item[accordionList[index]].expanded}
 						onChange={(e) => {
 							const accordionSectionToUp = accordionSection;

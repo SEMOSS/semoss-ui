@@ -51,7 +51,9 @@ export interface AutocompleteProps<
 		FreeSolo
 	>["renderInput"];
 	label?: React.ReactNode;
-	value?: Multiple extends true ? (T | string)[] : T | string | null;
+	value?: Multiple extends true
+        ? (T | string)[]
+        : T | string | null;
 }
 
 export function Autocomplete<

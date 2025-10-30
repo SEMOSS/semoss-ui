@@ -1,6 +1,5 @@
 import {
 	DeleteOutline,
-	EditOutlined,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";

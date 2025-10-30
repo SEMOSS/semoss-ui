@@ -542,6 +542,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						(kv: [string, any[]], i) => {
 							return (
 								<Box key={i}>
+									={" "}
 									<StyledCategoryTitle>
 										{kv[0]}
 									</StyledCategoryTitle>

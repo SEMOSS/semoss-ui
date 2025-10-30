@@ -1,3 +1,4 @@
+import { CSSProperties } from "react";
 import type { BlockConfig } from "../../../store";
 import { BLOCK_TYPE_ACTION } from "../block-defaults.constants";
 import { AudioBlock, type AudioBlockDef } from "./AudioBlock";

@@ -130,7 +130,9 @@ export const ColumnTextWrap = observer(
 		) => {
 			return (
 				<li {...props}>
-					<Checkbox checked={selected} />
+					<Checkbox
+						checked={selected}
+					/>
 					{option.name}
 				</li>
 			);
@@ -155,8 +157,8 @@ export const ColumnTextWrap = observer(
 						onChange={handleColumnChange}
 						options={data.columns || []}
 						getOptionLabel={(option) =>
-							typeof option === "string" ? option : option.name
-						}
+                            typeof option === 'string' ? option : option.name
+                        }
 						renderOption={renderOption}
 						renderInput={(params) => (
 							<TextField

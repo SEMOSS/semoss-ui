@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, styled, useNotification } from "@semoss/ui";
-import { uploadFile } from "@/api";
 import { ImportForm } from "@/components/import";
 import { useRootStore, useStepper } from "@/hooks";
 
@@ -76,7 +75,7 @@ export const ImportConnectionPage = () => {
 			/** Model: START */
 			let pixel;
 			if (values.secondaryFields["FILE"]) {
-				const upload = await uploadFile(
+				const upload = await monolithStore.uploadFile(
 					[values.secondaryFields["FILE"]],
 					configStore.store.insightID,
 				);
@@ -148,7 +147,7 @@ export const ImportConnectionPage = () => {
 				});
 
 				if (values.secondaryFields["EMBEDDINGS"]) {
-					const upload = await uploadFile(
+					const upload = await monolithStore.uploadFile(
 						[values.secondaryFields["EMBEDDINGS"]],
 						configStore.store.insightID,
 					);
@@ -209,7 +208,7 @@ export const ImportConnectionPage = () => {
 			/** Function: START */
 			let pixel;
 			if (values.secondaryFields["FILE"]) {
-				const upload = await uploadFile(
+				const upload = await monolithStore.uploadFile(
 					[values.secondaryFields["FILE"]],
 					configStore.store.insightID,
 				);

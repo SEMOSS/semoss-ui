@@ -21,12 +21,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import {
-	addTeamUser,
-	deleteTeamUser,
-	getNonTeamUsers,
-	getTeamUsers,
-} from "@/api/teams";
+import { useRootStore } from "@/hooks";
 
 const colors = [
 	"#22A4FF",
@@ -192,23 +187,10 @@ interface MembersTableProps {
 	name: string;
 }
 
-interface TeamMember {
-	admin: boolean;
-	countrycode: string;
-	email: string;
-	exporter: boolean;
-	id: string;
-	name: string;
-	phone: string;
-	phoneextension: string;
-	publisher: boolean;
-	type: string;
-	username: string;
-}
-
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
 
+	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -344,16 +326,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response:
-					| AxiosResponse<{ success: boolean }>
-					| {
-							response: Response;
-							data: {
-								success: boolean;
-							};
-					  }
-					| null = null;
-				response = await addTeamUser(
+				let response: AxiosResponse<{ success: boolean }> | null = null;
+				response = await monolithStore.addTeamUser(
 					groupId,
 					requests[i].type,
 					requests[i].userid,
@@ -401,16 +375,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	 */
 	const deleteUser = async (user) => {
 		try {
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
-			response = await deleteTeamUser(user);
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			response = await monolithStore.deleteTeamUser(user);
 
 			if (!response) {
 				return;
@@ -440,16 +406,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		try {
 			for (let i = 0; i < selectedMembers.length; i++) {
 				try {
-					let response:
-						| AxiosResponse<{ success: boolean }>
-						| {
-								response: Response;
-								data: {
-									success: boolean;
-								};
-						  }
-						| null = null;
-					response = await deleteTeamUser(selectedMembers[i]);
+					let response: AxiosResponse<{ success: boolean }> | null =
+						null;
+					response = await monolithStore.deleteTeamUser(
+						selectedMembers[i],
+					);
 
 					if (!response) {
 						return;
@@ -487,9 +448,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		}
 		setIsLoading(true);
 		try {
+			let response;
 			// possibly add more db table columns / keys here to get id type for display under username
 			// eslint-disable-next-line prefer-const
-			const response = await getNonTeamUsers(
+			response = await monolithStore.getNonTeamUsers(
 				groupId,
 				AUTOCOMPLETE_LIMIT,
 				offset,
@@ -499,16 +461,14 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = (response as unknown as TeamMember[]).map(
-					(val) => {
-						return {
-							...val,
-							color: colors[
-								Math.floor(Math.random() * colors.length)
-							],
-						};
-					},
-				);
+				const users = response.map((val) => {
+					return {
+						...val,
+						color: colors[
+							Math.floor(Math.random() * colors.length)
+						],
+					};
+				});
 				requests = requests.concat(users);
 				setNonCredentialedUsers(requests);
 				setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
@@ -552,27 +512,31 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	memberCount > 19 && paginationOptions.membersPageCounts.push(20);
 
 	const filterUsers = useCallback(() => {
-		getTeamUsers(
-			groupId,
-			rowsPerPage,
-			membersPage * rowsPerPage - rowsPerPage, // offset
-			searchFilter,
-		).then((data: unknown[]) => {
-			setTeamMembers(data);
-			setHasMembers(data?.length > 0);
-		});
+		monolithStore
+			.getTeamUsers(
+				groupId,
+				rowsPerPage,
+				membersPage * rowsPerPage - rowsPerPage, // offset
+				searchFilter,
+			)
+			.then((data) => {
+				setTeamMembers(data);
+				setHasMembers(data?.length > 0);
+			});
 	}, [count, membersPage, searchFilter, rowsPerPage]);
 
 	const filterUsersTwo = useCallback(() => {
-		getTeamUsers(
-			groupId,
-			100,
-			0, // offset
-			searchFilter,
-		).then((data: unknown[]) => {
-			setMemberCount(data.length);
-			setAllTeamMembers(data);
-		});
+		monolithStore
+			.getTeamUsers(
+				groupId,
+				100,
+				0, // offset
+				searchFilter,
+			)
+			.then((data) => {
+				setMemberCount(data.length);
+				setAllTeamMembers(data);
+			});
 	}, [count, membersPage, searchFilter]);
 
 	const filter = () => {
@@ -827,8 +791,8 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.membersPageCounts
 										}
-										onPageChange={(_e, _v) => {
-											setMembersPage(_v + 1);
+										onPageChange={(e, v) => {
+											setMembersPage(v + 1);
 											setSelectedMembers([]);
 										}}
 										onRowsPerPageChange={(e) => {
@@ -888,16 +852,13 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							}
 							value={selectedNonCredentialedUsers}
 							inputValue={searchMemberInput}
-							getOptionLabel={(option: unknown) => {
-								return `${(option as { name: string }).name}`;
+							getOptionLabel={(option) => {
+								return `${option.name}`;
 							}}
 							isOptionEqualToValue={(option, value) => {
-								return (
-									(option as { name: string }).name ===
-									(value as { name: string }).name
-								);
+								return option.name === value.name;
 							}}
-							onChange={(_event, newValue: unknown[]) => {
+							onChange={(event, newValue) => {
 								setSelectedNonCredentialedUsers([...newValue]);
 							}}
 							ListboxProps={{
@@ -912,7 +873,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(_event, newValue) => {
+							onInputChange={(event, newValue) => {
 								setSearchMemberInput(newValue);
 								setOffset(0);
 							}}

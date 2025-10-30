@@ -128,7 +128,7 @@ export const JobStandardFrequencyBuilder = (props: {
 			<Autocomplete
 				size="small"
 				options={FrequencyOptions}
-				multiple={false}
+                multiple={false}
 				value={frequency}
 				renderInput={(params) => {
 					return <TextField {...params} label="Frequency" />;
@@ -141,7 +141,7 @@ export const JobStandardFrequencyBuilder = (props: {
 					size="small"
 					options={DaysOfWeek}
 					value={dayOfWeek as any}
-					multiple={false}
+                    multiple={false}
 					renderInput={(params) => {
 						return <TextField {...params} label="Day of Week" />;
 					}}
@@ -160,7 +160,7 @@ export const JobStandardFrequencyBuilder = (props: {
 					size="small"
 					options={Months}
 					value={month as any}
-					multiple={false}
+                    multiple={false}
 					renderInput={(params) => {
 						return <TextField {...params} label="Month" />;
 					}}

@@ -21,23 +21,22 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { setProjectFavorite } from "@/api";
 import { CodeRenderer } from "@/components/code-workspace";
 import { ShareOverlay } from "@/components/ui";
 import { usePage, useRootStore } from "@/hooks";
 import type { WorkspaceStore } from "@/stores";
 import { NavbarHeader, NavbarLeft, NavbarRight } from "../../components/shared";
 
-const StyledContent = styled("div")({
+const StyledContent = styled("div")(({ theme }) => ({
 	position: "absolute",
 	inset: 0,
 	overflow: "hidden",
-});
+}));
 
 export const ViewAppPage = observer(() => {
 	// App ID Needed for pixel calls
 	const { appId } = useParams();
-	const { configStore } = useRootStore();
+	const { configStore, monolithStore } = useRootStore();
 
 	const notification = useNotification();
 	const navigate = useNavigate();
@@ -48,7 +47,8 @@ export const ViewAppPage = observer(() => {
 
 	const handleBookmark = (status: boolean) => {
 		setBookmarked(status);
-		setProjectFavorite(appId, status)
+		monolithStore
+			.setProjectFavorite(appId, status)
 			.then(() => {
 				notification.add({
 					color: "success",

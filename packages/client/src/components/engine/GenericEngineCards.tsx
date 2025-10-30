@@ -12,7 +12,6 @@ import {
 } from "@mui/icons-material";
 import type React from "react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Env } from "@semoss/sdk/react";
 import {
 	Avatar,
@@ -314,11 +313,11 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 		.replace(",", "");
 
 	const notification = useNotification();
-	const navigate = useNavigate();
 
 	const copyId = (id: string) => {
 		try {
 			navigator.clipboard.writeText(id);
+
 			notification.add({
 				color: "success",
 				message: "Successfully copied to clipboard",
@@ -446,16 +445,6 @@ export const EngineLandscapeCard = (props: DatabaseCardProps) => {
 								}}
 							>
 								Copy ID
-							</Menu.Item>
-							<Menu.Item
-								value="dashboard"
-								onClick={(event: React.MouseEvent) => {
-									navigate(`${id}/dashboard`);
-									setAnchorEl(null);
-									event.stopPropagation();
-								}}
-							>
-								View Dashboard
 							</Menu.Item>
 						</Menu>
 					</Stack>

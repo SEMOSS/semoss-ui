@@ -16,7 +16,6 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { addTeam, editTeam } from "@/api/teams";
 import AMAZON_S3 from "@/assets/loginProviders/Amazon_S3.png";
 import ADFS from "@/assets/loginProviders/adfs_microsoft_1.png";
 import Dropbox from "@/assets/loginProviders/dropbox.png";
@@ -35,7 +34,7 @@ import Surverymonkey from "@/assets/loginProviders/surveymonkey.png";
 import Twitter from "@/assets/loginProviders/x_twitter.png";
 import { useRootStore } from "@/hooks";
 
-const StyledModalTitle = styled(Modal.Title)(() => ({
+const StyledModalTitle = styled(Modal.Title)(({ theme }) => ({
 	width: "100%",
 	display: "flex",
 	justifyContent: "space-between",
@@ -69,7 +68,7 @@ const StyledSelectItem = styled(Select.Item, {
 })<{
 	/** Track if the page header is stuck */
 	type: string;
-}>(({ type }) => ({
+}>(({ theme, type }) => ({
 	borderBottom:
 		type === "CUSTOM"
 			? "1px solid var(--Secondary-Border, #C4C4C4)"
@@ -132,7 +131,7 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 
 	const navigate = useNavigate();
 	const notification = useNotification();
-	const { configStore } = useRootStore();
+	const { monolithStore, configStore } = useRootStore();
 
 	// State to track the previous team name, type
 	const [previousTeamName, setPreviousTeamName] = React.useState<
@@ -192,14 +191,13 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 		if (isEdit) {
 			// Logic for editing the team
 			try {
-				const response = await editTeam(
+				const response = await monolithStore.editTeam(
 					data.TEAM_NAME,
 					data.TEAM_DESCRIPTION,
 					data.TEAM_TYPE,
 					previousTeamName,
-					data.TEAM_TYPE,
 				);
-				if (response.data) {
+				if (response.status === 200 && response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
@@ -224,13 +222,12 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 		} else {
 			// Logic for creating a new team
 			try {
-				const response = await addTeam(
+				const response = await monolithStore.addTeam(
 					data.TEAM_NAME,
 					data.TEAM_DESCRIPTION,
-					false,
 					data.TEAM_TYPE,
 				);
-				if (!response.data) {
+				if (response.status === 200 && response.data) {
 					onClose({
 						id: data.TEAM_NAME,
 						type: data.TEAM_TYPE,
@@ -308,10 +305,10 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 															"registration",
 														].includes(p.provider),
 												)
-												.map((p, _idx) => {
+												.map((p, idx) => {
 													return (
 														<StyledSelectItem
-															key={`logintype-${p.provider}`}
+															key={idx}
 															value={p.provider}
 															type={p.provider}
 														>
@@ -340,9 +337,6 @@ export const AddTeamModal = (props: AddTeamModalProps) => {
 																			height: "24px",
 																			width: "24px",
 																		}}
-																		alt={
-																			"login provider icon"
-																		}
 																	/>
 																) : (
 																	<StyledIcon />

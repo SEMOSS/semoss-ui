@@ -7,14 +7,6 @@ export interface TableRowProps {
 
 	/** custom style object */
 	sx?: SxProps;
-
-	/**
-	 * Allows onClick event handling.
-	 * @default void
-	 */
-	onClick?: (
-		event: React.MouseEvent<HTMLTableRowElement, MouseEvent>,
-	) => void;
 }
 
 export const TableRow = (props: TableRowProps) => {

@@ -23,18 +23,8 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import {
-	addEngineUserPermissions,
-	addProjectUserPermissions,
-	editEngineUserPermissions,
-	editProjectUserPermissions,
-	getEngineUsers,
-	getEngineUsersNoCredentials,
-	getProjectUsers,
-	getProjectUsersNoCredentials,
-} from "@/api";
 import { PERMISSION_DESCRIPTION_MAP } from "@/constants";
-import { useSettings } from "@/hooks";
+import { useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
 import { permissionPriorityMapper } from "@/utility/general";
 import { MembersAddOverlayUser } from "./MembersAddOverlayUser";
@@ -153,6 +143,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		setAddModalUser,
 		onChange = () => null,
 	} = props;
+	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -221,14 +212,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				let all = [];
 				if (type === "APP") {
 					const [noCred, cred] = await Promise.all([
-						getProjectUsersNoCredentials(
+						monolithStore.getProjectUsersNoCredentials(
 							adminMode,
 							id,
 							AUTOCOMPLETE_LIMIT,
 							offset,
 							debouncedSearch || "",
 						),
-						getProjectUsers(
+						monolithStore.getProjectUsers(
 							adminMode,
 							id,
 							debouncedSearch || "",
@@ -246,14 +237,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					type === "FUNCTION"
 				) {
 					const [noCred, cred] = await Promise.all([
-						getEngineUsersNoCredentials(
+						monolithStore.getEngineUsersNoCredentials(
 							adminMode,
 							id,
 							AUTOCOMPLETE_LIMIT,
 							offset,
 							debouncedSearch || "",
 						),
-						getEngineUsers(
+						monolithStore.getEngineUsers(
 							adminMode,
 							id,
 							debouncedSearch || "",
@@ -311,7 +302,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 		try {
 			// construct requests for post data
 			const requests = members.map((m) => {
-				let json: Record<string, unknown> = {
+				const json = {
 					userid: m.id,
 					permission: validSetting(selectedRole)
 						? permissionPriorityMapper(selectedRole)?.permission
@@ -320,32 +311,21 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 				// FOR MODELS
 				if (restriction !== "null") {
-					json = {
-						...json,
-						usageRestriction: restriction,
-					};
+					json["usageRestriction"] = restriction;
 				}
 
 				if (frequency) {
-					json = {
-						...json,
-						usageFrequency: frequency,
-					};
+					json["usageFrequency"] = frequency;
 				}
 
 				if (restriction === "token") {
-					json = {
-						...json,
-						maxTokens: Number(maxTokens),
-					};
+					json["maxTokens"] = Number(maxTokens);
 				}
 
 				if (restriction === "compute") {
-					json = {
-						...json,
-						maxResponseTime: Number(maxTime),
-					};
+					json["maxResponseTime"] = Number(maxTime);
 				}
+
 				return json;
 			});
 
@@ -358,15 +338,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				return;
 			}
 
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
+			let response: AxiosResponse<{ success: boolean }> | null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -374,13 +346,13 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await editEngineUserPermissions(
+				response = await monolithStore.editEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await editProjectUserPermissions(
+				response = await monolithStore.editProjectUserPermissions(
 					adminMode,
 					id,
 					requests,
@@ -427,7 +399,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 		try {
 			// construct requests for post data
-			let requests: unknown[] = [];
+			let requests: any = null;
 			if (type === "MODEL") {
 				requests = selectedMembers.map((m) => {
 					return {
@@ -472,15 +444,7 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				return;
 			}
 
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
+			let response: AxiosResponse<{ success: boolean }> | null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -488,16 +452,16 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await addEngineUserPermissions(
+				response = await monolithStore.addEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await addProjectUserPermissions(
+				response = await monolithStore.addProjectUserPermissions(
 					adminMode,
 					id,
-					requests as string[],
+					requests,
 				);
 			}
 
@@ -600,14 +564,14 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 						isOptionEqualToValue={(option, value) => {
 							return option.id === value.id;
 						}}
-						onInputChange={(_event, newValue) => {
+						onInputChange={(event, newValue) => {
 							setSearch(newValue);
 							setOffset(0);
 							setInfiniteOn(true);
 							setRenderedMembers([]);
 							setSearchLoading(true);
 						}}
-						onChange={(_event, newValue) => {
+						onChange={(event, newValue) => {
 							setSelectedMembers(newValue || []);
 						}}
 						getOptionDisabled={(option) => !!option.permission}
@@ -890,11 +854,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 								}}
 							>
 								{Object.entries(usageRestritctionTypes).map(
-									(option, _i) => {
+									(option, i) => {
 										return (
 											<Select.Item
 												value={option[0]}
-												key={`usageRestrictionType-${option[0]}`}
+												key={i}
 											>
 												{option[1]}
 											</Select.Item>
@@ -923,11 +887,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 										}}
 									></TextField>
 									<Select label="Unit" value={unitTypes[0]}>
-										{unitTypes.map((option, _i) => {
+										{unitTypes.map((option, i) => {
 											return (
 												<Select.Item
 													value={option}
-													key={`unitType-${option}`}
+													key={i}
 												>
 													{option}
 												</Select.Item>
@@ -945,11 +909,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 									}}
 								>
 									{Object.entries(frequencyTypes).map(
-										(option, _i) => {
+										(option, i) => {
 											return (
 												<Select.Item
 													value={option[0]}
-													key={`frequencyType-${option[0]}`}
+													key={i}
 												>
 													{option[1]}
 												</Select.Item>

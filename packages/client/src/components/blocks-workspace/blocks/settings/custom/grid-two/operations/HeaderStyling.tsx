@@ -183,7 +183,9 @@ export const HeaderStyling = observer(
 		) => {
 			return (
 				<li {...props}>
-					<Checkbox checked={selected} />
+					<Checkbox
+						checked={selected}
+					/>
 					{option.name}
 				</li>
 			);
@@ -208,10 +210,10 @@ export const HeaderStyling = observer(
 						onChange={handleColumnChange}
 						options={data.columns || []}
 						getOptionLabel={(option) =>
-							typeof option === "object" && "name" in option
-								? option.name
-								: option
-						}
+                            typeof option === 'object' && 'name' in option
+                                ? option.name
+                                : option
+                        }
 						renderOption={renderOption}
 						renderInput={(params) => (
 							<TextField

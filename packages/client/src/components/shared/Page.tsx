@@ -47,10 +47,7 @@ export const Page: React.FC<PageProps> = observer(({ children }) => {
 			<StyledContent>
 				<Navbar />
 				<StyledInner id="home__content">
-					<StyledContainer
-						sx={{ maxWidth: "1440px" }}
-						id="home__container"
-					>
+					<StyledContainer sx={{ maxWidth: "1440px" }}>
 						{children}
 					</StyledContainer>
 				</StyledInner>

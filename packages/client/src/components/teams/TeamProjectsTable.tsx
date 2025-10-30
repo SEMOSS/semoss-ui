@@ -27,18 +27,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import {
-	addProject,
-	deleteProjectPermission,
-	editProjectPermisison,
-	getTeamProjects,
-	getUnassignedTeamProjects,
-} from "@/api";
 import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import { useRootStore } from "@/hooks";
 
 const colors = [
 	"#22A4FF",
@@ -51,11 +45,7 @@ const colors = [
 ];
 
 const projectImages = [codeApp2, codeApp3, codeApp4, codeApp5];
-const _UserInfoTableCell = styled(Table.Cell)({
-	display: "flex",
-	alignItems: "center",
-	height: "84px",
-});
+
 const NameIDWrapper = styled("div")({
 	display: "inline-block",
 });
@@ -67,7 +57,7 @@ const NameTableCell = styled(Table.Cell)({
 
 const DateTableCell = styled(Table.Cell)({
 	whiteSpace: "nowrap",
-	"@med_DateTableCell: 768px)": {
+	"@media (max-width: 768px)": {
 		whiteSpace: "normal",
 	},
 });
@@ -122,12 +112,6 @@ const StyledTableTitleProjectCountContainer = styled("div")({
 	alignItems: "center",
 	gap: "10px",
 	flex: "1 0 0",
-});
-
-const _StyledTableTitleProjectCount = styled("div")({
-	display: "flex",
-	flexDirection: "column",
-	alignItems: "flex-start",
 });
 
 const StyledSearchButtonContainer = styled("div")({
@@ -212,24 +196,10 @@ interface ProjectsTableProps {
 	name: string;
 }
 
-interface TeamProjects {
-	low_project_name: string;
-	project_cost: string;
-	project_created_by: string;
-	project_created_by_type: string;
-	project_date_created: string;
-	project_discoverable: boolean;
-	project_global: boolean;
-	project_has_portal: boolean;
-	project_id: string;
-	project_name: string;
-	project_portal_name: string;
-	project_type: string;
-}
-
 export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	const { groupId, groupType } = props;
 
+	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -308,7 +278,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 */
 	useEffect(() => {
 		filterProjects();
-	}, [groupId, groupType, count, projectsPage, searchFilter, rowsPerPage]);
+	}, [groupId, groupType, count, projectsPage, searchFilter,rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -358,16 +328,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response:
-					| AxiosResponse<{ success: boolean }>
-					| {
-							response: Response;
-							data: {
-								success: boolean;
-							};
-					  }
-					| null = null;
-				response = await addProject(
+				let response: AxiosResponse<{ success: boolean }> | null = null;
+				response = await monolithStore.addProject(
 					groupId,
 					requests[i].project_id,
 					permissionMapper[addProjectRole],
@@ -415,16 +377,8 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	 */
 	const deleteProject = async (project) => {
 		try {
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
-			response = await deleteProjectPermission(
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			response = await monolithStore.deleteProjectPermission(
 				groupId,
 				groupType,
 				project,
@@ -457,16 +411,9 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		try {
 			for (let i = 0; i < selectedProjects.length; i++) {
 				try {
-					let response:
-						| AxiosResponse<{ success: boolean }>
-						| {
-								response: Response;
-								data: {
-									success: boolean;
-								};
-						  }
-						| null = null;
-					response = await deleteProjectPermission(
+					let response: AxiosResponse<{ success: boolean }> | null =
+						null;
+					response = await monolithStore.deleteProjectPermission(
 						groupId,
 						groupType,
 						selectedProjects[i],
@@ -505,9 +452,10 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 		}
 		setIsLoading(true);
 		try {
+			let response;
 			// possibly add more db table columns / keys here to get id type for display under projects
 			// eslint-disable-next-line prefer-const
-			const response = await getUnassignedTeamProjects(
+			response = await monolithStore.getUnassignedTeamProjects(
 				groupId,
 				groupType,
 				AUTOCOMPLETE_LIMIT,
@@ -518,16 +466,14 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedProjects;
-				const projects = (response as unknown as TeamProjects[])?.map(
-					(val) => {
-						return {
-							...val,
-							color: colors[
-								Math.floor(Math.random() * colors.length)
-							],
-						};
-					},
-				);
+				const projects = response.map((val) => {
+					return {
+						...val,
+						color: colors[
+							Math.floor(Math.random() * colors.length)
+						],
+					};
+				});
 
 				requests = requests.concat(projects);
 				setNonCredentialedProjects(requests);
@@ -557,16 +503,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 				return;
 			}
 
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
-			response = await editProjectPermisison(groupId, groupType, project);
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			response = await monolithStore.editProjectPermisison(
+				groupId,
+				groupType,
+				project,
+			);
 
 			if (!response) {
 				return;
@@ -604,26 +546,30 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 	projectCount > 19 && paginationOptions.projectsPageCounts.push(20);
 
 	const filterProjects = useCallback(() => {
-		getTeamProjects(
-			groupId,
-			groupType,
-			rowsPerPage,
-			projectsPage * rowsPerPage - rowsPerPage, // offset
-			searchFilter,
-			false,
-		).then((data: unknown[]) => {
-			setProjects(data);
-			setHasProject(data.length > 0);
-		});
-		getTeamProjects(
-			groupId,
-			groupType,
-			100,
-			0, // offset
-			searchFilter,
-			false,
-		).then((data: unknown[]) => setProjectCount(data.length));
-	}, [count, projectsPage, searchFilter, rowsPerPage]);
+		monolithStore
+			.getTeamProjects(
+				groupId,
+				groupType,
+				rowsPerPage,
+				projectsPage * rowsPerPage - rowsPerPage, // offset
+				searchFilter,
+				false,
+			)
+			.then((data) => {
+				setProjects(data);
+				setHasProject(data.length > 0);
+			});
+		monolithStore
+			.getTeamProjects(
+				groupId,
+				groupType,
+				100,
+				0, // offset
+				searchFilter,
+				false,
+			)
+			.then((data) => setProjectCount(data.length));
+	}, [count, projectsPage, searchFilter,rowsPerPage]);
 
 	const debouncedFilterProjects = debounced(filterProjects, 400);
 
@@ -742,151 +688,157 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{projects?.map((project, i) => {
-									let isSelected = false;
+								{projects &&
+									projects.map((project, i) => {
+										let isSelected = false;
 
-									if (project) {
-										isSelected = selectedProjects.some(
-											(value) => {
-												return (
-													value.projectid ===
-													project.projectid
-												);
-											},
-										);
-									}
-									if (project) {
-										return (
-											<Table.Row
-												key={`project-${project.projectid}-${i}`}
-											>
-												<Table.Cell size="small">
-													<Stack
-														direction="row"
-														spacing={0}
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+										if (project) {
+											isSelected = selectedProjects.some(
+												(value) => {
+													return (
+														value.projectid ===
+														project.projectid
+													);
+												},
+											);
+										}
+										if (project) {
+											return (
+												<Table.Row
+													key={project.projectid + i}
+												>
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selProjects =
-																		[];
-																	selectedProjects.forEach(
-																		(p) => {
-																			if (
-																				p.projectid !==
-																				project.projectid
-																			)
-																				selProjects.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedProojects(
-																		selProjects,
-																	);
-																} else {
-																	setSelectedProojects(
-																		[
-																			...selectedProjects,
-																			project,
-																		],
-																	);
 																}
-															}}
-														/>
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selProjects =
+																			[];
+																		selectedProjects.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.projectid !==
+																					project.projectid
+																				)
+																					selProjects.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedProojects(
+																			selProjects,
+																		);
+																	} else {
+																		setSelectedProojects(
+																			[
+																				...selectedProjects,
+																				project,
+																			],
+																		);
+																	}
+																}}
+															/>
 
-														<NameIDWrapper>
-															<Typography variant="body2">
-																{
-																	project.project_name
-																}
-															</Typography>
-															<Typography
-																variant="body2"
-																color="secondary"
-															>
-																{`App ID: ${project.projectid}`}
-															</Typography>
-														</NameIDWrapper>
-													</Stack>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<StyledRadioGroup
-														row
-														defaultValue={
-															project.permission
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		project.project_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`App ID: ${project.projectid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
+															row
+															defaultValue={
+																project.permission
+															}
+															onChange={(e) => {
+																console.log(
+																	"Hit Update Permission fn and fix in state",
+																);
+																updateSelectedProjects(
+																	{
+																		projectid:
+																			project.projectid,
+																		type: project.type,
+																		permission:
+																			e
+																				.target
+																				.value,
+																	},
+																);
+															}}
+														>
+															<RadioGroup.Item
+																value="1"
+																label="Author"
+															/>
+															<RadioGroup.Item
+																value="2"
+																label="Editor"
+															/>
+															<RadioGroup.Item
+																value="3"
+																label="Read-Only"
+															/>
+														</StyledRadioGroup>
+													</Table.Cell>
+													<DateTableCell size="small">
+														{
+															project.project_date_created
 														}
-														onChange={(e) => {
-															console.log(
-																"Hit Update Permission fn and fix in state",
-															);
-															updateSelectedProjects(
-																{
-																	projectid:
-																		project.projectid,
-																	type: project.type,
-																	project_type:
-																		project.type,
-																	permission:
-																		e.target
-																			.value,
-																},
-															);
-														}}
-													>
-														<RadioGroup.Item
-															value="1"
-															label="Author"
-														/>
-														<RadioGroup.Item
-															value="2"
-															label="Editor"
-														/>
-														<RadioGroup.Item
-															value="3"
-															label="Read-Only"
-														/>
-													</StyledRadioGroup>
-												</Table.Cell>
-												<DateTableCell size="small">
-													{
-														project.project_date_created
+													</DateTableCell>
+													<Table.Cell size="small">
+														<IconButton
+															onClick={() => {
+																// set project
+																setProjectToDelete(
+																	project,
+																);
+																// open modal
+																setDeleteProjectModal(
+																	true,
+																);
+															}}
+														>
+															<Delete></Delete>
+														</IconButton>
+													</Table.Cell>
+												</Table.Row>
+											);
+										} else {
+											return (
+												<Table.Row
+													key={
+														i + "No data available"
 													}
-												</DateTableCell>
-												<Table.Cell size="small">
-													<IconButton
-														onClick={() => {
-															// set project
-															setProjectToDelete(
-																project,
-															);
-															// open modal
-															setDeleteProjectModal(
-																true,
-															);
-														}}
-													>
-														<Delete></Delete>
-													</IconButton>
-												</Table.Cell>
-											</Table.Row>
-										);
-									} else {
-										return (
-											<Table.Row
-												key={`No data available`}
-											>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-											</Table.Row>
-										);
-									}
-								})}
+												>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+												</Table.Row>
+											);
+										}
+									})}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -894,14 +846,12 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.projectsPageCounts
 										}
-										onPageChange={(_e, v) => {
+										onPageChange={(e, v) => {
 											setProjectsPage(v + 1);
 											setSelectedProojects([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(
-												parseInt(e.target.value, 10),
-											);
+											setRowsPerPage(parseInt(e.target.value, 10));
 											setProjectsPage(1);
 										}}
 										page={projectsPage - 1}
@@ -966,7 +916,7 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 									option.project_name === value.project_name
 								);
 							}}
-							onChange={(_event, newValue) => {
+							onChange={(event, newValue) => {
 								setSelectedNonCredentialedProjects([
 									...newValue,
 								]);
@@ -983,150 +933,164 @@ export const TeamProjectsTable = (props: ProjectsTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(_event, newValue) => {
+							onInputChange={(event, newValue) => {
 								setSearchProjectInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
-						{selectedNonCredentialedProjects.map((project, idx) => {
-							return (
-								<Box
-									key={`non-credentialed-${project.project_id}`}
-									sx={{
-										display: "flex",
-										justifyContent: "left",
-										align: "center",
-										backgroundColor:
-											idx % 2 !== 0
-												? "rgba(0, 0, 0, .03)"
-												: "",
-									}}
-								>
-									<Box
-										sx={{
-											width: "100%",
-											gap: "8px",
-											position: "relative",
-											paddingBottom: "7px",
-											border: "0px",
-											display: "flex",
-											alignItems: "center",
-										}}
-									>
+						{selectedNonCredentialedProjects &&
+							selectedNonCredentialedProjects.map(
+								(project, idx) => {
+									return (
 										<Box
+											key={idx}
 											sx={{
 												display: "flex",
-												justifyContent: "center",
-												marginTop: "6px",
-												marginLeft: "8px",
-												marginRight: "8px",
-												float: "left",
+												justifyContent: "left",
+												align: "center",
+												backgroundColor:
+													idx % 2 !== 0
+														? "rgba(0, 0, 0, .03)"
+														: "",
 											}}
 										>
 											<Box
 												sx={{
+													width: "100%",
+													gap: "8px",
+													position: "relative",
+													paddingBottom: "7px",
+													border: "0px",
 													display: "flex",
-													height: "32px",
-													width: "32px",
-													justifyContent: "center",
 													alignItems: "center",
-													border: "0.5px solid rgba(0, 0, 0, .05)",
-													borderRadius: "50%",
 												}}
 											>
-												<Avatar
-													aria-label="avatar"
-													sx={{
-														display: "flex",
-														width: "50px",
-														height: "50px",
-														"& img": {
-															width: "100%",
-															height: "100%",
-															objectFit: "cover",
-														},
-													}}
-													src={getRandomImageForProject(
-														project.project_id,
-													)}
-												/>
-											</Box>
-										</Box>
-										<Card.Header
-											title={
-												<Typography variant="h6">
-													{project.project_name}
-												</Typography>
-											}
-											sx={{
-												color: "#000",
-												maxWidth: "85%",
-												width: "100%",
-												float: "left",
-												gap: "16px",
-												display: "inline-flex",
-												alignItems: "center",
-												paddingBottom: "7px",
-												margin: "0px 0px 0px 0px",
-											}}
-											subheader={
 												<Box
 													sx={{
 														display: "flex",
-														gap: 2,
+														justifyContent:
+															"center",
+														marginTop: "6px",
+														marginLeft: "8px",
+														marginRight: "8px",
+														float: "left",
 													}}
 												>
-													<span
-														style={{
-															opacity: 0.9,
-															fontSize: "11px",
-															width: "70%",
-															gap: "4px",
+													<Box
+														sx={{
+															display: "flex",
+															height: "32px",
+															width: "32px",
+															justifyContent:
+																"center",
+															alignItems:
+																"center",
+															border: "0.5px solid rgba(0, 0, 0, .05)",
+															borderRadius: "50%",
 														}}
 													>
-														{`App ID: `}
-														<Typography
-															variant="body2"
-															component="span"
-														>
-															{project.project_id}
-														</Typography>
-													</span>
+														<Avatar
+															aria-label="avatar"
+															sx={{
+																display: "flex",
+																width: "50px",
+																height: "50px",
+																"& img": {
+																	width: "100%",
+																	height: "100%",
+																	objectFit:
+																		"cover",
+																},
+															}}
+															src={getRandomImageForProject(
+																project.project_id,
+															)}
+														/>
+													</Box>
 												</Box>
-											}
-											action={
-												<IconButton
+												<Card.Header
+													title={
+														<Typography variant="h6">
+															{
+																project.project_name
+															}
+														</Typography>
+													}
 													sx={{
-														height: "48px",
-														width: "48px",
-														fontSize: "small",
-														color: "rgba( 0, 0, 0, .7)",
-														mr: "2px",
-														top: "20%",
-														position: "absolute",
-														padding: "10px",
+														color: "#000",
+														maxWidth: "85%",
+														width: "100%",
+														float: "left",
+														gap: "16px",
+														display: "inline-flex",
+														alignItems: "center",
+														paddingBottom: "7px",
+														margin: "0px 0px 0px 0px",
 													}}
-													onClick={() => {
-														const filtered =
-															selectedNonCredentialedProjects.filter(
-																(val) =>
-																	val.project_id !==
-																	project.project_id,
-															);
-														setSelectedNonCredentialedProjects(
-															filtered,
-														);
-													}}
-												>
-													<ClearRounded />
-												</IconButton>
-											}
-										/>
-									</Box>
-								</Box>
-							);
-						})}
+													subheader={
+														<Box
+															sx={{
+																display: "flex",
+																gap: 2,
+															}}
+														>
+															<span
+																style={{
+																	opacity: 0.9,
+																	fontSize:
+																		"11px",
+																	width: "70%",
+																	gap: "4px",
+																}}
+															>
+																{`App ID: `}
+																<Typography
+																	variant="body2"
+																	component="span"
+																>
+																	{
+																		project.project_id
+																	}
+																</Typography>
+															</span>
+														</Box>
+													}
+													action={
+														<IconButton
+															sx={{
+																height: "48px",
+																width: "48px",
+																fontSize:
+																	"small",
+																color: "rgba( 0, 0, 0, .7)",
+																mr: "2px",
+																top: "20%",
+																position:
+																	"absolute",
+																padding: "10px",
+															}}
+															onClick={() => {
+																const filtered =
+																	selectedNonCredentialedProjects.filter(
+																		(val) =>
+																			val.project_id !==
+																			project.project_id,
+																	);
+																setSelectedNonCredentialedProjects(
+																	filtered,
+																);
+															}}
+														>
+															<ClearRounded />
+														</IconButton>
+													}
+												/>
+											</Box>
+										</Box>
+									);
+								},
+							)}
 
 						<Typography
 							variant="subtitle1"

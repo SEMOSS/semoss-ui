@@ -1,6 +1,7 @@
 import {
 	CloudUploadRounded,
 	DownloadForOfflineRounded,
+	Flag,
 	LocalPoliceRounded,
 } from "@mui/icons-material";
 import type { AxiosResponse } from "axios";
@@ -19,7 +20,6 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import { createUser, editMemberInfo } from "@/api";
 import { useRootStore, useSettings } from "@/hooks";
 
 const StyledModalContent = styled(Modal.Content)(() => ({
@@ -52,7 +52,7 @@ const StyledPermissions = styled(Typography)({
 	padding: "25px 0",
 });
 
-const StyledSubmitForm = styled("form")(() => ({
+const StyledSubmitForm = styled("form")(({ theme }) => ({
 	overflowY: "auto",
 }));
 
@@ -167,7 +167,7 @@ interface UserAddOverlayProps {
 export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 	const { open = false, user = null, onClose = () => null } = props;
 
-	const { configStore } = useRootStore();
+	const { configStore, monolithStore } = useRootStore();
 	const { adminMode } = useSettings();
 	const notification = useNotification();
 
@@ -235,13 +235,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 			let success = false;
 
 			try {
-				let response:
-					| AxiosResponse<boolean>
-					| {
-							response: Response;
-							data: boolean;
-					  }
-					| null = null;
+				let response: AxiosResponse<boolean> | null = null;
 
 				if (data.model_usage_restriction === "token") {
 					data.model_max_response_time = null;
@@ -257,10 +251,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 				}
 
 				if (isNewUser) {
-					response = await createUser(
-						adminMode,
-						data as unknown as Record<string, unknown>,
-					);
+					response = await monolithStore.createUser(adminMode, data);
 				} else {
 					if (
 						data.exporter === undefined ||
@@ -275,7 +266,10 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 							data.exporter = false;
 						}
 					}
-					response = await editMemberInfo(adminMode, data);
+					response = await monolithStore.editMemberInfo(
+						adminMode,
+						data,
+					);
 				}
 
 				if (!response) {
@@ -317,20 +311,20 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 			for (const error in e) {
 				if (
 					Object.hasOwn(e[error], "message") &&
-					e[error].message !== ""
+					e[error]["message"] !== ""
 				) {
-					errorMessages.push(`${e[error].message}.`);
+					errorMessages.push(e[error]["message"] + ".");
 				} else if (
 					Object.hasOwn(e[error], "type") &&
-					e[error].type === "required"
+					e[error]["type"] === "required"
 				) {
-					errorMessages.push(`${error} is a required field.`);
+					errorMessages.push(error + " is a required field.");
 				}
 			}
 
 			notification.add({
 				color: "error",
-				message: `Form is Invalid. ${errorMessages.join(" ")}`,
+				message: "Form is Invalid. " + errorMessages.join(" "),
 			});
 		},
 	);
@@ -353,7 +347,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									return (
 										<Select
 											label="Type"
-											disabled={!isNewUser}
+											disabled={isNewUser ? false : true}
 											value={
 												field.value ? field.value : ""
 											}
@@ -366,7 +360,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 													return (
 														<Select.Item
 															value={option.label}
-															key={`type-${option.label}-${i}`}
+															key={i}
 														>
 															{option.label}
 														</Select.Item>
@@ -385,7 +379,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									return (
 										<TextField
 											label="User Id"
-											disabled={!isNewUser}
+											disabled={isNewUser ? false : true}
 											value={
 												field.value ? field.value : ""
 											}
@@ -405,10 +399,10 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 										<TextField
 											label="Username"
 											disabled={
-												!!(
-													user?.type === "NATIVE" ||
-													type === "NATIVE"
-												)
+												user?.type === "NATIVE" ||
+												type === "NATIVE"
+													? true
+													: false
 											}
 											value={
 												isNewUser && type === "NATIVE"
@@ -497,7 +491,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 								rules={{
 									required: false,
 									validate: (value) => {
-										if (value === "") {
+										if (value == "") {
 											return true;
 										}
 										emailValidate(value);
@@ -529,7 +523,7 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 									control={control}
 									rules={{
 										validate: (value) => {
-											if (value === "") {
+											if (value == "") {
 												return true;
 											}
 											numberValidate(value);
@@ -616,15 +610,14 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 											onChange={(e) => {
 												field.onChange(e.target.value);
 											}}
-											data-testid="model-usage-restriction"
 										>
 											{Object.entries(
 												usageRestritctionTypes,
-											).map((option, _i) => {
+											).map((option, i) => {
 												return (
 													<Select.Item
 														value={option[0]}
-														key={`LimitType-${option[0]}`}
+														key={i}
 													>
 														{option[1]}
 													</Select.Item>
@@ -654,7 +647,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 														Number(e.target.value),
 													);
 												}}
-												data-testid="model-max-tokens"
 											></TextField>
 										);
 									}}
@@ -683,7 +675,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															),
 														);
 													}}
-													data-testid="model-max-response-time"
 												></TextField>
 											);
 										}}
@@ -697,17 +688,15 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 												<Select
 													label="Unit"
 													value={unitTypes[0]}
-													data-testid="unit-select"
 												>
 													{unitTypes.map(
-														(option, _i) => {
+														(option, i) => {
 															return (
 																<Select.Item
 																	value={
 																		option
 																	}
-																	key={`UnitType-${option}`}
-																	data-testid={`unit-select-${option}`}
+																	key={i}
 																>
 																	{option}
 																</Select.Item>
@@ -739,16 +728,14 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 														e.target.value,
 													);
 												}}
-												data-testid="model-usage-frequency"
 											>
 												{Object.entries(
 													frequencyTypes,
-												).map((option, _i) => {
+												).map((option, i) => {
 													return (
 														<Select.Item
 															value={option[0]}
-															key={`FrequencyType-${option[0]}`}
-															data-testid={`frequency-select-${option[0]}`}
+															key={i}
 														>
 															{option[1]}
 														</Select.Item>
@@ -781,7 +768,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															!field.value,
 														)
 													}
-													data-testid={`admin-switch-${field.value}`}
 												/>
 											);
 										}}
@@ -812,7 +798,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															!field.value,
 														)
 													}
-													data-testid={`publisher-switch-${field.value}`}
 												/>
 											);
 										}}
@@ -843,7 +828,6 @@ export const UserAddOverlay = observer((props: UserAddOverlayProps) => {
 															!field.value,
 														)
 													}
-													data-testid={`exporter-switch-${field.value}`}
 												/>
 											);
 										}}

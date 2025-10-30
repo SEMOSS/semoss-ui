@@ -152,7 +152,9 @@ export const ChartTitle = observer(
 		) => {
 			return (
 				<li {...props}>
-					<Checkbox checked={selected} />
+					<Checkbox
+						checked={selected}
+					/>
 					{option.name}
 				</li>
 			);

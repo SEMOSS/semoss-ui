@@ -4,7 +4,6 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import { Help } from "@/components/help";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { SettingsContext } from "@/contexts";
-import { AuditLogsDashboard } from "../AuditLogsDashboard";
 import { ImportPage } from "../import";
 import { EngineIndexPage } from "./EngineIndexPage";
 import { EngineLayout } from "./EngineLayout";
@@ -43,12 +42,6 @@ export const EngineRouter = observer(() => {
 									/>
 								))}
 							</Route>
-							<Route
-								path=":engineId/dashboard"
-								element={
-									<AuditLogsDashboard catalogName={r.name} />
-								}
-							/>
 							<Route
 								path="*"
 								element={<Navigate to="." replace />}

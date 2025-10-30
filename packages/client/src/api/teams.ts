@@ -26,53 +26,22 @@ export const addTeam = async (
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/addGroup";
 
-	let postData: Record<string, unknown> = {
+	const postData = {
 		groupId: groupId,
 		description: description,
 		isCustomGroup: isCustomGroup,
 	};
 
 	if (type) {
-		postData = {
-			...postData,
-			type: type,
-		};
+		postData["type"] = type;
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {});
-	return response;
-};
-
-/**
- * @name editTeam
- * @param groupId
- * @param description
- * @param type
- * @returns
- */
-export const editTeam = async (
-	groupId: string,
-	description: string,
-	type?: string,
-	previousTeamName?: string,
-	previousType?: string,
-) => {
-	let url = `${Env.MODULE}/api/auth/admin/`,
-		postData = {};
-
-	url += "group/editGroupDetails";
-
-	postData = {
-		groupId: previousTeamName,
-		newGroupId: groupId,
-		newDescription: description,
-		type: encodeURIComponent(previousType),
-		newType: encodeURIComponent(type),
-	};
-
-	const response = await post<{ success: boolean }>(url, postData, {});
-
+	}>(url, postData, {
+		headers: {
+			"content-type": "application/x-www-form-urlencoded",
+		},
+	});
 	return response;
 };
 
@@ -80,18 +49,19 @@ export const deleteTeam = async (groupid: string, type?: string) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/deleteGroup";
 
-	let postData: Record<string, unknown> = {
+	const postData = {
 		groupId: groupid,
 	};
 	if (type) {
-		postData = {
-			...postData,
-			type: type,
-		};
+		postData["type"] = type;
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {});
+	}>(url, postData, {
+		headers: {
+			"content-type": "application/x-www-form-urlencoded",
+		},
+	});
 	return response;
 };
 
@@ -103,10 +73,10 @@ export const getTeamUsers = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getGroupMembers?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	groupId ? `groupId=${groupId}` : "";
+	limit ? `limit=${limit}` : "";
+	offset ? `offset=${offset}` : "";
+	searchTerm ? `searchTerm=${searchTerm}` : "";
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -121,7 +91,7 @@ export const getTeamUsersCount = async (groupId: string) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getNumMembersInGroup?";
 
-	url += groupId ? `groupId=${groupId}` : "";
+	groupId ? `groupId=${groupId}` : "";
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -140,10 +110,10 @@ export const getNonTeamUsers = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getNonGroupMembers?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	groupId ? `groupId=${groupId}` : "";
+	limit ? `limit=${limit}` : "";
+	offset ? `offset=${offset}` : "";
+	searchTerm ? `searchTerm=${searchTerm}` : "";
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -167,20 +137,21 @@ export const addTeamUser = async (
 		url += "admin/";
 	}
 	url += "group/addGroupMember";
-	let postData: Record<string, unknown> = {
+	const postData = {
 		groupId: groupId,
 		type: type,
 		userId: userId,
 	};
 	if (endDate) {
-		postData = {
-			...postData,
-			endDate: endDate,
-		};
+		postData["endDate"] = endDate;
 	}
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {});
+	}>(url, postData, {
+		headers: {
+			"content-type": "application/x-www-form-urlencoded",
+		},
+	});
 	return response;
 };
 
@@ -198,7 +169,11 @@ export const deleteTeamUser = async (user: {
 	};
 	const response = await post<{
 		success: boolean;
-	}>(url, postData, {});
+	}>(url, postData, {
+		headers: {
+			"content-type": "application/x-www-form-urlencoded",
+		},
+	});
 	return response;
 };
 
@@ -213,13 +188,13 @@ export const getTeamProjects = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getProjectsForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
-	url += onlyApps ? `&onlyApps=${onlyApps}` : "";
-	url += type ? `&type=${type}` : "";
+	groupId ? `groupId=${groupId}` : "";
+	groupType ? `groupType=${groupType}` : "";
+	limit ? `limit=${limit}` : "";
+	offset ? `offset=${offset}` : "";
+	searchTerm ? `searchTerm=${searchTerm}` : "";
+	onlyApps ? `onlyApps=${onlyApps}` : "";
+	type ? `type=${type}` : "";
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -240,11 +215,11 @@ export const getUnassignedTeamProjects = async (
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
 	url += "group/getAvailableProjectsForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	groupId ? `groupId=${groupId}` : "";
+	groupType ? `groupType=${groupType}` : "";
+	limit ? `limit=${limit}` : "";
+	offset ? `offset=${offset}` : "";
+	searchTerm ? `searchTerm=${searchTerm}` : "";
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});
@@ -263,12 +238,12 @@ export const getTeamEngines = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getEnginesForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getEnginesForGroup";
+	groupId ? `groupId=${groupId}` : "";
+	groupType ? `groupType=${groupType}` : "";
+	limit ? `limit=${limit}` : "";
+	offset ? `offset=${offset}` : "";
+	searchTerm ? `searchTerm=${searchTerm}` : "";
 
 	const response = await get(url).catch((error) => {
 		throw Error(error);
@@ -277,7 +252,7 @@ export const getTeamEngines = async (
 	if (!response) {
 		throw Error("No Response to get group members");
 	}
-	return response;
+	return response.data;
 };
 
 export const getUnassignedTeamEngines = async (
@@ -288,12 +263,12 @@ export const getUnassignedTeamEngines = async (
 	searchTerm: string,
 ) => {
 	let url = `${Env.MODULE}/api/auth/admin/`;
-	url += "group/getAvailableEnginesForGroup?";
-	url += groupId ? `&groupId=${groupId}` : "";
-	url += groupType ? `&groupType=${groupType}` : "";
-	url += limit ? `&limit=${limit}` : "";
-	url += offset ? `&offset=${offset}` : "";
-	url += searchTerm ? `&searchTerm=${searchTerm}` : "";
+	url += "group/getAvailableEnginesForGroup";
+	groupId ? `groupId=${groupId}` : "";
+	groupType ? `groupType=${groupType}` : "";
+	limit ? `limit=${limit}` : "";
+	offset ? `offset=${offset}` : "";
+	searchTerm ? `searchTerm=${searchTerm}` : "";
 	const response = await get(url).catch((error) => {
 		throw Error(error);
 	});

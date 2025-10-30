@@ -4,8 +4,7 @@ import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { computed } from "mobx";
 import { observer } from "mobx-react-lite";
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Droppable } from "react-beautiful-dnd";
 import {
 	type BlockDef,
@@ -21,7 +20,6 @@ import {
 	Switch,
 	styled,
 	TextField,
-	Tooltip,
 } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { VisualMap } from "../../VisualMap";
@@ -81,8 +79,8 @@ const StyledSwitchSection = styled("div")(() => ({
 	marginTop: "15px",
 	marginLeft: "10px",
 	width: "100%",
-	alignItems: "center",
-	gap: "8px",
+    alignItems: 'center',
+    gap: '8px',
 }));
 //styled label for the constants
 const StyledSpanSwitch = styled("span")(() => ({
@@ -377,8 +375,7 @@ export const DataTabStyling = observer(
 				<StyledSubSection>
 					<Autocomplete
 						fullWidth
-						id={"Echart-Frame"}
-						key={`selected-frame-${data.frame.name || "0"}`} // Key to force remount on frame change
+						id="Echart-Frame"
 						multiple={false}
 						disabled={getFrames.status !== "SUCCESS"}
 						value={data.frame?.name}
@@ -407,7 +404,7 @@ export const DataTabStyling = observer(
 				>
 					<Autocomplete
 						fullWidth
-						id={"Echart-Visuals"}
+						id="Echart-Visuals"
 						multiple={false}
 						disabled={getFrames.status !== "SUCCESS"}
 						options={[]} // No options to display in the dropdown
@@ -464,7 +461,7 @@ export const DataTabStyling = observer(
 
 				{/* Drag and Drop Input Field */}
 				{chart.map((item, index) => (
-					<StyledDroppable key={`chart-field-${item.name}`}>
+					<StyledDroppable key={index}>
 						<StyledLabelSection>
 							<StyledSpanLabel>
 								Select {item.name}
@@ -567,7 +564,7 @@ export const DataTabStyling = observer(
 										};
 										return (
 											<div
-												key={column}
+												key={colIndex}
 												style={{
 													padding: "4px 8px",
 													margin: "4px 0",
@@ -591,27 +588,6 @@ export const DataTabStyling = observer(
 												<span>
 													{aggregatedColumnName(
 														column,
-													).length > 20 ? (
-														<Tooltip
-															title={aggregatedColumnName(
-																column,
-															)}
-														>
-															<span
-																style={{
-																	cursor: "pointer",
-																}}
-															>
-																{aggregatedColumnName(
-																	column,
-																).slice(0, 12) +
-																	"..."}
-															</span>
-														</Tooltip>
-													) : (
-														aggregatedColumnName(
-															column,
-														)
 													)}
 												</span>
 												<div>
@@ -686,10 +662,10 @@ export const DataTabStyling = observer(
 				<StyledSwitchSection>
 					<Switch
 						checked={checkedInstruction}
-						onChange={(
-							event: React.ChangeEvent<HTMLInputElement>,
-						) => setCheckedInstruction(event.target.checked)}
-						size="small"
+						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+							setCheckedInstruction(event.target.checked)
+						}
+                        size='small'
 						inputProps={{ "aria-label": "controlled" }}
 					/>
 					<StyledSpanSwitch>Show All Instruction</StyledSpanSwitch>
@@ -697,10 +673,10 @@ export const DataTabStyling = observer(
 				<StyledSwitchSection>
 					<Switch
 						checked={checkedVisual}
-						onChange={(
-							event: React.ChangeEvent<HTMLInputElement>,
-						) => setCheckedVisual(event.target.checked)}
-						size="small"
+						onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+							setCheckedVisual(event.target.checked)
+						}
+                        size='small'
 						inputProps={{ "aria-label": "controlled" }}
 					/>
 					<StyledSpanSwitch>Auto Visualize</StyledSpanSwitch>

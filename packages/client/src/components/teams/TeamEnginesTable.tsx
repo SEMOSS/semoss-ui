@@ -27,18 +27,12 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
-import {
-	addEnginePermission,
-	deleteEnginePermission,
-	editEnginePermission,
-	getTeamEngines,
-	getUnassignedTeamEngines,
-} from "@/api";
 import codeApp2 from "@/assets/img/code_app_2.png";
 import codeApp3 from "@/assets/img/code_app_3.png";
 import codeApp4 from "@/assets/img/code_app_4.png";
 import codeApp5 from "@/assets/img/code_app_5.png";
 import type { SETTINGS_ROLE } from "@/components/settings/settings.types";
+import { useRootStore } from "@/hooks";
 
 const colors = [
 	"#22A4FF",
@@ -186,6 +180,13 @@ const StyledCard = styled(Card)({
 	},
 });
 
+const StyledSelectEngineTypography = styled(Typography)({
+	color: "#000000DE",
+	font: "Inter",
+	fontWeight: "500",
+	fontSize: "16px",
+});
+
 const StyledRadioGroup = styled(RadioGroup)({
 	flexWrap: "nowrap",
 	whiteSpace: "nowrap",
@@ -225,6 +226,7 @@ interface Engine {
 export const TeamEnginesTable = (props: EnginesTableProps) => {
 	const { groupId, groupType } = props;
 
+	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 	const AUTOCOMPLETE_LIMIT = 10;
 	const AUTOCOMPLETE_OFFSET = 0;
@@ -274,10 +276,10 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		}
 		setIsLoading(true);
 		try {
-			// let response;
+			let response;
 			// possibly add more db table columns / keys here to get id type for display under engines
 			// eslint-disable-next-line prefer-const
-			const response = await getUnassignedTeamEngines(
+			response = await monolithStore.getUnassignedTeamEngines(
 				groupId,
 				groupType,
 				AUTOCOMPLETE_LIMIT,
@@ -288,7 +290,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedEngines;
-				const engines = (response as Engine[]).map((val: Engine) => {
+				const engines = response.map((val: Engine) => {
 					return {
 						...val,
 						color: colors[
@@ -372,8 +374,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 * @desc - sets engines in react hook form
 	 */
 	useEffect(() => {
-		filterEngines();
-	}, [groupId, groupType, enginesPage, searchFilter, count, rowsPerPage]);
+		filterEngines();	
+	}, [groupId, groupType, enginesPage, searchFilter, count,rowsPerPage]);
 	useEffect(() => {
 		if (isScrollBottom) {
 			if (canCollect) {
@@ -423,16 +425,8 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 			}
 
 			for (let i = 0; i < requests.length; i++) {
-				let response:
-					| AxiosResponse<{ success: boolean }>
-					| {
-							response: Response;
-							data: {
-								success: boolean;
-							};
-					  }
-					| null = null;
-				response = await addEnginePermission(
+				let response: AxiosResponse<{ success: boolean }> | null = null;
+				response = await monolithStore.addEnginePermission(
 					groupId,
 					requests[i].engine_id,
 					permissionMapper[addEngineRole],
@@ -480,16 +474,12 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	 */
 	const deleteEngine = async (engine: Engine) => {
 		try {
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
-			response = await deleteEnginePermission(groupId, groupType, engine);
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			response = await monolithStore.deleteEnginePermission(
+				groupId,
+				groupType,
+				engine,
+			);
 
 			if (!response) {
 				return;
@@ -518,16 +508,9 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 		try {
 			for (let i = 0; i < selectedEngines.length; i++) {
 				try {
-					let response:
-						| AxiosResponse<{ success: boolean }>
-						| {
-								response: Response;
-								data: {
-									success: boolean;
-								};
-						  }
-						| null = null;
-					response = await deleteEnginePermission(
+					let response: AxiosResponse<{ success: boolean }> | null =
+						null;
+					response = await monolithStore.deleteEnginePermission(
 						groupId,
 						groupType,
 						selectedEngines[i],
@@ -568,16 +551,11 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 				return;
 			}
 
-			let response:
-				| AxiosResponse<{ success: boolean }>
-				| {
-						response: Response;
-						data: {
-							success: boolean;
-						};
-				  }
-				| null = null;
-			response = await editEnginePermission(groupId, engine);
+			let response: AxiosResponse<{ success: boolean }> | null = null;
+			response = await monolithStore.editEnginePermission(
+				groupId,
+				engine,
+			);
 
 			if (!response) {
 				return;
@@ -614,48 +592,34 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 	enginesCount > 19 && paginationOptions.enginesPageCounts.push(20);
 
 	const filterEngines = useCallback(() => {
-		getTeamEngines(
-			groupId,
-			groupType,
-			rowsPerPage,
-			enginesPage * rowsPerPage - rowsPerPage, // offset
-			searchFilter,
-		).then((response) => {
-			setEngines(
-				(response as unknown as { data: Engine[]; response: unknown })
-					.data as Engine[],
-			);
-			setHasEngines(
-				(response as unknown as { data: Engine[]; response: unknown })
-					.data?.length > 0,
-			);
-		});
-
-		getTeamEngines(
-			groupId,
-			groupType,
-			100,
-			0, // offset
-			searchFilter,
-		).then((responseData) => {
-			setEngineCount(
-				(
-					(
-						responseData as unknown as {
-							data: Engine[];
-							response: unknown;
-						}
-					).data as Engine[]
-				)?.length,
-			);
-		});
+		monolithStore
+			.getTeamEngines(
+				groupId,
+				groupType,
+				rowsPerPage,
+				enginesPage * rowsPerPage - rowsPerPage, // offset
+				searchFilter,
+			)
+			.then((data) => {
+				setEngines(data);
+				setHasEngines(data.length > 0);
+			});
+		monolithStore
+			.getTeamEngines(
+				groupId,
+				groupType,
+				100,
+				0, // offset
+				searchFilter,
+			)
+			.then((data) => setEngineCount(data.length));
 	}, [
 		enginesPage,
 		searchFilter,
 		groupId,
 		groupType,
 		rowsPerPage,
-		getTeamEngines,
+		monolithStore.getTeamEngines,
 	]);
 
 	const debouncedFilterProjects = debounced(filterEngines, 400);
@@ -727,13 +691,13 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										<Checkbox
 											checked={
 												selectedEngines.length ===
-													engines?.length &&
-												engines?.length > 0
+													engines.length &&
+												engines.length > 0
 											}
 											onChange={() => {
 												if (
 													selectedEngines.length !==
-													engines?.length
+													engines.length
 												) {
 													setSelectedEngines(
 														engines || [],
@@ -753,154 +717,164 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 								</Table.Row>
 							</Table.Head>
 							<Table.Body>
-								{engines?.map((engine, i) => {
-									let isSelected = false;
+								{engines &&
+									engines.map((engine, i) => {
+										let isSelected = false;
 
-									if (engine) {
-										isSelected = selectedEngines.some(
-											(value) => {
-												return (
-													value.engineid ===
-													engine.engineid
-												);
-											},
-										);
-									}
-									if (engine) {
-										return (
-											<Table.Row
-												key={`${engine.engineid} + ${i}`}
-											>
-												<Table.Cell size="small">
-													<Stack
-														direction="row"
-														spacing={0}
-													>
-														<StyledCheckbox
-															checked={isSelected}
-															onChange={() => {
-																if (
+										if (engine) {
+											isSelected = selectedEngines.some(
+												(value) => {
+													return (
+														value.engineid ===
+														engine.engineid
+													);
+												},
+											);
+										}
+										if (engine) {
+											return (
+												<Table.Row
+													key={engine.engineid + i}
+												>
+													<Table.Cell size="small">
+														<Stack
+															direction="row"
+															spacing={0}
+														>
+															<StyledCheckbox
+																checked={
 																	isSelected
-																) {
-																	const selEngines =
-																		[];
-																	selectedEngines.forEach(
-																		(p) => {
-																			if (
-																				p.engineid !==
-																				engine.engineid
-																			)
-																				selEngines.push(
-																					p,
-																				);
-																		},
-																	);
-																	setSelectedEngines(
-																		selEngines,
-																	);
-																} else {
-																	setSelectedEngines(
-																		[
-																			...selectedEngines,
-																			engine,
-																		],
-																	);
 																}
+																onChange={() => {
+																	if (
+																		isSelected
+																	) {
+																		const selEngines =
+																			[];
+																		selectedEngines.forEach(
+																			(
+																				p,
+																			) => {
+																				if (
+																					p.engineid !==
+																					engine.engineid
+																				)
+																					selEngines.push(
+																						p,
+																					);
+																			},
+																		);
+																		setSelectedEngines(
+																			selEngines,
+																		);
+																	} else {
+																		setSelectedEngines(
+																			[
+																				...selectedEngines,
+																				engine,
+																			],
+																		);
+																	}
+																}}
+															/>
+															<NameIDWrapper>
+																<Typography variant="body2">
+																	{
+																		engine.engine_name
+																	}
+																</Typography>
+																<Typography
+																	variant="body2"
+																	color="secondary"
+																>
+																	{`Engine ID: ${engine.engineid}`}
+																</Typography>
+															</NameIDWrapper>
+														</Stack>
+													</Table.Cell>
+													<Table.Cell size="small">
+														<StyledRadioGroup
+															row
+															defaultValue={
+																engine.permission
+															}
+															onChange={(e) => {
+																console.log(
+																	"Hit Update Permission fn and fix in state",
+																);
+																updateSelectedEngines(
+																	{
+																		engineid:
+																			engine.engineid,
+																		type: engine.type,
+																		permission:
+																			e
+																				.target
+																				.value,
+																		engine_name:
+																			engine.engine_name,
+																		engine_id:
+																			engine.engine_id,
+																		engine_type:
+																			engine.engine_type,
+																		engine_date_created:
+																			engine.engine_date_created,
+																	},
+																);
 															}}
-														/>
-														<NameIDWrapper>
-															<Typography variant="body2">
-																{
-																	engine.engine_name
-																}
-															</Typography>
-															<Typography
-																variant="body2"
-																color="secondary"
-															>
-																{`Engine ID: ${engine.engineid}`}
-															</Typography>
-														</NameIDWrapper>
-													</Stack>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<StyledRadioGroup
-														row
-														defaultValue={
-															engine.permission
+														>
+															<RadioGroup.Item
+																value="1"
+																label="Author"
+															/>
+															<RadioGroup.Item
+																value="2"
+																label="Editor"
+															/>
+															<RadioGroup.Item
+																value="3"
+																label="Read-Only"
+															/>
+														</StyledRadioGroup>
+													</Table.Cell>
+													<DateTableCell size="small">
+														{
+															engine.engine_date_created
 														}
-														onChange={(e) => {
-															console.log(
-																"Hit Update Permission fn and fix in state",
-															);
-															updateSelectedEngines(
-																{
-																	engineid:
-																		engine.engineid,
-																	type: engine.type,
-																	permission:
-																		e.target
-																			.value,
-																	engine_name:
-																		engine.engine_name,
-																	engine_id:
-																		engine.engine_id,
-																	engine_type:
-																		engine.engine_type,
-																	engine_date_created:
-																		engine.engine_date_created,
-																},
-															);
-														}}
-													>
-														<RadioGroup.Item
-															value="1"
-															label="Author"
-														/>
-														<RadioGroup.Item
-															value="2"
-															label="Editor"
-														/>
-														<RadioGroup.Item
-															value="3"
-															label="Read-Only"
-														/>
-													</StyledRadioGroup>
-												</Table.Cell>
-												<DateTableCell size="small">
-													{engine.engine_date_created}
-												</DateTableCell>
-												<Table.Cell size="small">
-													<IconButton
-														onClick={() => {
-															// set engine
-															setEngineToDelete(
-																engine,
-															);
-															// open modal
-															setDeleteEngineModal(
-																true,
-															);
-														}}
-													>
-														<Delete></Delete>
-													</IconButton>
-												</Table.Cell>
-											</Table.Row>
-										);
-									} else {
-										return (
-											<Table.Row
-												key={`No data available`}
-											>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-												<Table.Cell size="small"></Table.Cell>
-											</Table.Row>
-										);
-									}
-								})}
+													</DateTableCell>
+													<Table.Cell size="small">
+														<IconButton
+															onClick={() => {
+																// set engine
+																setEngineToDelete(
+																	engine,
+																);
+																// open modal
+																setDeleteEngineModal(
+																	true,
+																);
+															}}
+														>
+															<Delete></Delete>
+														</IconButton>
+													</Table.Cell>
+												</Table.Row>
+											);
+										} else {
+											return (
+												<Table.Row
+													key={
+														i + "No data available"
+													}
+												>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+													<Table.Cell size="small"></Table.Cell>
+												</Table.Row>
+											);
+										}
+									})}
 							</Table.Body>
 							<Table.Footer>
 								<Table.Row>
@@ -908,14 +882,12 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										rowsPerPageOptions={
 											paginationOptions.enginesPageCounts
 										}
-										onPageChange={(_e, v) => {
+										onPageChange={(e, v) => {
 											setEnginesPage(v + 1);
 											setSelectedEngines([]);
 										}}
 										onRowsPerPageChange={(e) => {
-											setRowsPerPage(
-												parseInt(e.target.value, 10),
-											);
+											setRowsPerPage(parseInt(e.target.value, 10));
 											setEnginesPage(1);
 										}}
 										page={enginesPage - 1}
@@ -981,7 +953,7 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 									option.engine_name === value.engine_name
 								);
 							}}
-							onChange={(_event, newValue: Engine[]) => {
+							onChange={(event, newValue: Engine[]) => {
 								setSelectedNonCredentialedEngines([
 									...newValue,
 								]);
@@ -998,148 +970,151 @@ export const TeamEnginesTable = (props: EnginesTableProps) => {
 										),
 									),
 							}}
-							onInputChange={(_event, newValue) => {
+							onInputChange={(event, newValue) => {
 								setSearchEngineInput(newValue);
 								setOffset(0);
 							}}
 						/>
 
-						{selectedNonCredentialedEngines?.map((engine, idx) => (
-							<Box
-								key={`${engine.engine_name}- ${idx}`}
-								sx={{
-									display: "flex",
-									justifyContent: "left",
-									align: "center",
-									backgroundColor:
-										idx % 2 !== 0
-											? "rgba(0, 0, 0, .03)"
-											: "",
-								}}
-							>
-								<Box
-									sx={{
-										width: "100%",
-										gap: "8px",
-										position: "relative",
-										paddingBottom: "7px",
-										border: "0px",
-										display: "flex",
-										alignItems: "center",
-									}}
-								>
+						{selectedNonCredentialedEngines &&
+							selectedNonCredentialedEngines.map(
+								(engine, idx) => (
 									<Box
+										key={idx}
 										sx={{
 											display: "flex",
-											justifyContent: "center",
-											marginTop: "6px",
-											marginLeft: "8px",
-											marginRight: "8px",
-											float: "left",
+											justifyContent: "left",
+											align: "center",
+											backgroundColor:
+												idx % 2 !== 0
+													? "rgba(0, 0, 0, .03)"
+													: "",
 										}}
 									>
 										<Box
 											sx={{
+												width: "100%",
+												gap: "8px",
+												position: "relative",
+												paddingBottom: "7px",
+												border: "0px",
 												display: "flex",
-												height: "50px",
-												width: "50px",
-												justifyContent: "center",
 												alignItems: "center",
-												border: "0.5px solid rgba(0, 0, 0, .05)",
-												borderRadius: "50%",
 											}}
 										>
-											<Avatar
-												aria-label="avatar"
-												sx={{
-													display: "flex",
-													width: "50px",
-													height: "50px",
-													"& img": {
-														width: "100%",
-														height: "100%",
-														objectFit: "cover",
-													},
-												}}
-												src={getRandomImageForProject(
-													engine.engine_name,
-												)}
-											/>
-										</Box>
-									</Box>
-									<Card.Header
-										title={
-											<Typography variant="h6">
-												{engine.engine_name}
-											</Typography>
-										}
-										sx={{
-											color: "#000",
-											maxWidth: "85%",
-											width: "100%",
-											float: "left",
-											gap: "16px",
-											display: "inline-flex",
-											alignItems: "center",
-											paddingBottom: "7px",
-											margin: "0px 0px 0px 0px",
-										}}
-										subheader={
 											<Box
 												sx={{
 													display: "flex",
-													gap: 2,
+													justifyContent: "center",
+													marginTop: "6px",
+													marginLeft: "8px",
+													marginRight: "8px",
+													float: "left",
 												}}
 											>
-												<span
-													style={{
-														opacity: 0.9,
-														fontSize: "11px",
-														width: "70%",
-														gap: "4px",
+												<Box
+													sx={{
+														display: "flex",
+														height: "50px",
+														width: "50px",
+														justifyContent: "center",
+														alignItems: "center",
+														border: "0.5px solid rgba(0, 0, 0, .05)",
+														borderRadius: "50%",
 													}}
 												>
-													{`Engine ID: `}
-													<Typography
-														variant="body2"
-														component="span"
-													>
-														{engine.engine_id}
-													</Typography>
-												</span>
+													<Avatar
+														aria-label="avatar"
+														sx={{
+															display: "flex",
+															width: "50px",
+															height: "50px",
+															"& img": {
+																width: "100%",
+																height: "100%",
+																objectFit: "cover",
+															},
+														}}
+														src={getRandomImageForProject(
+															engine.engine_name,
+														)}
+													/>
+												</Box>
 											</Box>
-										}
-										action={
-											<IconButton
+											<Card.Header
+												title={
+													<Typography variant="h6">
+														{engine.engine_name}
+													</Typography>
+												}
 												sx={{
-													height: "48px",
-													width: "48px",
-													fontSize: "small",
-													color: "rgba( 0, 0, 0, .7)",
-													mr: "2px",
-													top: "20%",
-													position: "absolute",
-													padding: "10px",
+													color: "#000",
+													maxWidth: "85%",
+													width: "100%",
+													float: "left",
+													gap: "16px",
+													display: "inline-flex",
+													alignItems: "center",
+													paddingBottom: "7px",
+													margin: "0px 0px 0px 0px",
 												}}
-												onClick={() => {
-													const filtered =
-														selectedNonCredentialedEngines.filter(
-															(val) =>
-																val.engine_id !==
-																engine.engine_id,
-														);
-													setSelectedNonCredentialedEngines(
-														filtered,
-													);
-												}}
-											>
-												<ClearRounded />
-											</IconButton>
-										}
-									/>
-								</Box>
-							</Box>
-						))}
+												subheader={
+													<Box
+														sx={{
+															display: "flex",
+															gap: 2,
+														}}
+													>
+														<span
+															style={{
+																opacity: 0.9,
+																fontSize: "11px",
+																width: "70%",
+																gap: "4px",
+															}}
+														>
+															{`Engine ID: `}
+															<Typography
+																variant="body2"
+																component="span"
+															>
+																{engine.engine_id}
+															</Typography>
+														</span>
+													</Box>
+												}
+												action={
+													<IconButton
+														sx={{
+															height: "48px",
+															width: "48px",
+															fontSize: "small",
+															color: "rgba( 0, 0, 0, .7)",
+															mr: "2px",
+															top: "20%",
+															position: "absolute",
+															padding: "10px",
+														}}
+														onClick={() => {
+															const filtered =
+																selectedNonCredentialedEngines.filter(
+																	(val) =>
+																		val.engine_id !==
+																		engine.engine_id,
+																);
+															setSelectedNonCredentialedEngines(
+																filtered,
+															);
+														}}
+													>
+														<ClearRounded />
+													</IconButton>
+												}
+											/>
+										</Box>
+									</Box>
+								),
+							)}
 
 						<Typography
 							variant="subtitle1"

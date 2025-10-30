@@ -8,7 +8,6 @@ import {
 	Stack,
 	Typography,
 } from "@semoss/ui";
-import { uploadFile as uploadFileAPI } from "@/api";
 import { useRootStore } from "@/hooks";
 
 interface AddFileOverlayProps {
@@ -43,7 +42,7 @@ export const AddFileOverlay = (props: AddFileOverlayProps) => {
 
 			let upload = null;
 			if (type === "app") {
-				upload = await uploadFileAPI(
+				upload = await monolithStore.uploadFile(
 					[uploadFile],
 					configStore.store.insightID,
 					space,
