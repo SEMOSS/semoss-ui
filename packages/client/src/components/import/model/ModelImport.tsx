@@ -35,6 +35,7 @@ const StyledSearchbarContainer = styled("div")(({ theme }) => ({
 	width: "100%",
 	alignItems: "flex-start",
 	gap: theme.spacing(3),
+	marginTop: theme.spacing(3),
 }));
 
 const StyledStack = styled("div")(({ theme }) => ({
@@ -77,6 +78,18 @@ const StyledDropzoneField = styled("div")(({ theme }) => ({
 	gap: theme.spacing(2),
 	width: "100%",
 	height: "100%",
+}));
+
+const StyledTypographyDescription = styled(Typography)(({ theme }) => ({
+	marginBottom: theme.spacing(3),
+}));
+
+const StyledModelGrid = styled(Grid)(({ theme }) => ({
+	marginTop: theme.spacing(3),
+}));
+
+const StyledTabs = styled(Tabs)(({ theme }) => ({
+	marginTop: theme.spacing(1),
 }));
 
 export const ModelImport: React.FC = () => {
@@ -178,11 +191,13 @@ export const ModelImport: React.FC = () => {
 									setSearch(e.target.value);
 								}}
 								fullWidth
+								data-tesId={"model-search-bar"}
 							/>
 							<UploadButton
 								size="medium"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
+								data-tesId={"model-upload-file-button"}
 							>
 								<FileUploadOutlined fontSize="small" />
 							</UploadButton>
@@ -191,14 +206,15 @@ export const ModelImport: React.FC = () => {
 						{/* Add your model import flow components and logic here */}
 						{importableModels ? (
 							<Stack>
-								<Tabs
+								<StyledTabs
 									value={selectedProvider}
 									onChange={(_, newValue) => {
-										setSelectedProvider(newValue);
+										setSelectedProvider(
+											newValue.toString(),
+										);
 									}}
 									variant="scrollable"
 									sx={{
-										mt: 2,
 										borderBottom: "2px solid #E0E0E0",
 									}}
 								>
@@ -214,11 +230,11 @@ export const ModelImport: React.FC = () => {
 											/>
 										),
 									)}
-								</Tabs>
+								</StyledTabs>
 
 								{/* Models Grid */}
-								<Box sx={{ mt: 4 }}>
-									<Grid
+								<Box>
+									<StyledModelGrid
 										container
 										columns={6}
 										columnSpacing={2}
@@ -238,7 +254,7 @@ export const ModelImport: React.FC = () => {
 													model={model}
 													onModelSelect={(m) => {
 														setSelectedModel(
-															m.name,
+															m.display,
 														);
 													}}
 												/>
@@ -266,7 +282,7 @@ export const ModelImport: React.FC = () => {
 												}}
 											/>
 										</Grid>
-									</Grid>
+									</StyledModelGrid>
 								</Box>
 							</Stack>
 						) : null}
@@ -370,10 +386,16 @@ export const ModelImport: React.FC = () => {
 					open={isFileUploadModalOpen}
 					maxWidth="xl"
 					onClose={() => setIsFileUploadModalOpen(false)}
+					data-testid="model-zip-upload-modal"
 				>
 					<Modal.Content sx={{ width: "600px" }}>
 						<StyledDropzoneField>
-							<Typography variant={"body1"}>Zip File</Typography>
+							<Typography
+								variant={"body1"}
+								data-testid="model-zip-upload-title"
+							>
+								Zip File
+							</Typography>
 							<FileDropzone
 								multiple={false}
 								onChange={(newValues) => {
@@ -391,6 +413,7 @@ export const ModelImport: React.FC = () => {
 									onClick={() =>
 										setIsFileUploadModalOpen(false)
 									}
+									data-testid="model-upload-close-button"
 								>
 									Close
 								</CloseButton>
@@ -399,6 +422,7 @@ export const ModelImport: React.FC = () => {
 									variant="contained"
 									disabled={!filedata || formLoading}
 									onClick={() => onSubmit(filedata)}
+									data-testid="model-upload-submit-button"
 								>
 									Upload
 								</SubmitUploadButton>
@@ -406,14 +430,18 @@ export const ModelImport: React.FC = () => {
 						</StyledDropzoneField>
 					</Modal.Content>
 				</Modal>
-				<Typography variant="h4">
+				<Typography variant="h4" data-testid="model-import-title">
 					{selectedModel?.trim() || "Connect to Model Catalog"}
 				</Typography>
-				<Typography variant="body1" color="textSecondary">
+				<StyledTypographyDescription
+					variant="body1"
+					color="textSecondary"
+					data-testid="model-import-description"
+				>
 					{selectedModel?.trim()
 						? "Fill out all the model details in order to add the model to the catalog."
 						: "In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications. Whether you're a seasoned AI practitioner, a language aficionado, or an industry visionary, this page serves as your guiding star to grasp the spectrum of database options available within the LLM landscape."}
-				</Typography>
+				</StyledTypographyDescription>
 			</StyledStack>
 			{view}
 		</div>

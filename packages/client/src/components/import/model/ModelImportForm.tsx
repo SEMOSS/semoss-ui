@@ -172,6 +172,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							type="hidden"
 							name={field.name}
 							value={String(field.value ?? "")}
+							data-testId={`model-ImportForm-${f.key}-hidden-input`}
 							onChange={(e) =>
 								field.onChange(
 									(e.target as HTMLInputElement).value,
@@ -300,18 +301,11 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										errors?.[f.label]?.message.toString() ||
 										""
 									}
-									// helperText={
-									//   isValid
-									//     ? error?.type === "checkField"
-									//       ? f.rules.custom_rules.message
-									//       : error?.message
-									//     : ""
-									// }
+									data-testId={formatToDataTestId(
+										`importForm-${f.label}-textField`,
+									)}
 									error={!!error}
 									inputProps={{
-										"data-testId": formatToDataTestId(
-											`importForm-${f.label}-textField`,
-										),
 										onFocus: () => {
 											_lastField.current = {
 												..._lastField.current,
@@ -332,7 +326,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						case "file-upload":
 							return (
 								<StyledDropzoneField>
-									<Typography variant={"body1"}>
+									<Typography
+										data-testid={`model-import-form-${f.label}-file-upload`}
+										variant={"body1"}
+									>
 										{f.label}
 									</Typography>
 									<FileDropzone
@@ -367,6 +364,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
 									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-url`,
+									)}
 								/>
 							);
 						case "password":
@@ -379,6 +379,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
 									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-password`,
+									)}
 								/>
 							);
 						case "number":
@@ -398,6 +401,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										);
 									}}
 									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-number`,
+									)}
 								/>
 							);
 						case "textarea":
@@ -410,6 +416,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									onChange={(v) => field.onChange(v)}
 									rows={4}
 									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-textarea`,
+									)}
 								/>
 							);
 						case "select":
@@ -432,6 +441,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										)
 									}
 									disabled={f.disabled || isLockedModel}
+									data-testId={formatToDataTestId(
+										`model-importForm-${f.label}-select`,
+									)}
 								>
 									{(f.options || []).map((opt) => (
 										<Select.Item key={opt} value={opt}>
@@ -464,7 +476,12 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 										required={f.required}
 										disabled={f.disabled || isLockedModel}
 									/>
-									<Typography variant="body1">
+									<Typography
+										variant="body1"
+										data-testId={formatToDataTestId(
+											`model-importForm-${f.label}-text`,
+										)}
+									>
 										{f.label}
 									</Typography>
 								</Stack>
@@ -498,8 +515,17 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 					>
 						{/* Left: Category title + description */}
 						<Stack sx={{ flex: 1 }}>
-							<Typography variant="h6">{category}</Typography>
-							<Typography variant="body2" color="text.secondary">
+							<Typography
+								variant="h6"
+								data-testId={`model-importForm-category-title`}
+							>
+								{category}
+							</Typography>
+							<Typography
+								variant="body2"
+								data-testId={`model-importForm-category-description`}
+								color="textSecondary"
+							>
 								{importableModelsCategory[selectedProvider]?.[
 									category
 								] ?? "No description available."}
@@ -511,7 +537,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							{grouped[category].map((f) => renderField(f))}
 						</Stack>
 					</Box>
-					<Divider color="secondary" />
+					<Divider sx={{ color: "secondary" }} />
 				</Box>
 			))}
 			{advanced.length > 0 && (
@@ -521,8 +547,14 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 						alignItems="center"
 						justifyContent="space-between"
 					>
-						<Typography variant="h6">Advanced Settings</Typography>
+						<Typography
+							data-testId="model-advanced-settings-title"
+							variant="h6"
+						>
+							Advanced Settings
+						</Typography>
 						<IconButton
+							data-testId="model-advanced-settings-toggle"
 							onClick={() => setAdvancedOpen((prev) => !prev)}
 							size="small"
 						>
@@ -548,8 +580,9 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								{/* Left: Category title + description */}
 								<Stack sx={{ flex: 1 }}>
 									<Typography
+										data-testId="model-advanced-settings-description"
 										variant="body2"
-										color="text.secondary"
+										color="textSecondary"
 									>
 										Add advanced settings here
 									</Typography>
@@ -566,6 +599,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 			)}
 			<Box sx={{ display: "flex", justifyContent: "flex-end", mt: 4 }}>
 				<Button
+					data-testId="model-importForm-connect-button"
 					type="submit"
 					variant="contained"
 					disabled={isLoading || !isValid}
