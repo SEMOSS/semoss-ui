@@ -1,6 +1,6 @@
 import { MoveDownIcon, Settings2Icon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
 	Breadcrumb,
@@ -189,10 +189,7 @@ export const RoomPage = observer(() => {
 										}
 
 										return (
-											<div
-												key={m.id}
-												className="flex flex-col py-1"
-											>
+											<React.Fragment key={m.id}>
 												{m.type === "INPUT" && (
 													<InputMessage message={m} />
 												)}
@@ -212,7 +209,7 @@ export const RoomPage = observer(() => {
 														}
 													/>
 												)}
-											</div>
+											</React.Fragment>
 										);
 									})}
 								</div>

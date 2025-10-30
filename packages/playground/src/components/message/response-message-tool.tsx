@@ -26,13 +26,6 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 					tool._meta.map.SMSS_PROJECT_ID;
 		}
 
-		let color = "";
-		if (tool.response) {
-			color = "bg-primary";
-		} else {
-			color = "bg-secondary";
-		}
-
 		let icon = null;
 		if (tool.response) {
 			icon = <CheckIcon />;
@@ -44,7 +37,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 			<button
 				type="button"
 				disabled={isDisabled}
-				className={`group flex w-full flex-row items-start gap-2 rounded-lg border border-border px-3 py-2 ${
+				className={`group flex w-full flex-row items-center gap-3 rounded-lg border border-border p-2 text-left ${
 					isDisabled
 						? "cursor-not-allowed opacity-50"
 						: "cursor-pointer hover:bg-accent"
@@ -104,13 +97,24 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				}}
 			>
 				<div
-					className={`${color} mr-1 flex size-8 flex-col items-center justify-center overflow-hidden rounded-full p-2`}
+					className={`mr-1 flex size-9 flex-col items-center justify-center overflow-hidden rounded bg-primary p-2 text-primary-foreground`}
 				>
 					{icon}
 				</div>
-				<span className="wrap-break-word mt-1 text-left text-base">
-					{tool.title}
-				</span>
+				<div className="flex-1">
+					<div
+						className="truncate font-semibold text-base"
+						title={tool.title}
+					>
+						{tool.title}
+					</div>
+					<div
+						className="truncate text-secondary-foreground text-sm"
+						title={tool.title}
+					>
+						{tool.title}
+					</div>
+				</div>
 			</button>
 		);
 	},

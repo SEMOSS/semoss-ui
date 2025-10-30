@@ -174,11 +174,15 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 															<Button
 																variant="outline"
 																size="sm"
-																onClick={() =>
+																onClick={(
+																	event,
+																) => {
+																	event.stopPropagation();
+
 																	setIsToolsOpen(
 																		true,
-																	)
-																}
+																	);
+																}}
 															>
 																<PlusIcon />
 															</Button>

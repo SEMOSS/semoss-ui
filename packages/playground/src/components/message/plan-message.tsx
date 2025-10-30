@@ -1,33 +1,18 @@
 import {
-	ArrowDownRightIcon,
-	BrainIcon,
-	CheckIcon,
 	ChevronDownIcon,
-	CircleDashedIcon,
-	CircleQuestionMarkIcon,
-	HammerIcon,
 	LinkIcon,
-	PersonStandingIcon,
-	PlusIcon,
+	ListEndIcon,
+	ListIndentIncreaseIcon,
 	TrashIcon,
-	TriangleAlert,
-	XIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import {
 	Button,
-	Card,
-	CardContent,
-	CardFooter,
 	Collapsible,
 	CollapsibleContent,
 	CollapsibleTrigger,
 	Muted,
-	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
 import { EditStepOverlay } from "@/components";
@@ -86,225 +71,155 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 		}
 
 		return (
-			<div className="w-full overflow-hidden rounded-md bg-card px-4 py-3 shadow-sm">
-				<div className="group mb-2 flex flex-row items-center">
-					<span className="mr-0.5 text-muted-foreground text-xs">
-						Plan
-					</span>
-					<ArrowDownRightIcon className="mr-3 size-4" />
+			<div className="w-full overflow-hidden">
+				<div className="group flex flex-row items-center gap-2">
+					<ListEndIcon className="size-4" />
+					<span className="mr-0.5 font-medium text-base">Plan</span>
 				</div>
-				<p className="text-base">
+				<p className="mt-2 text-secondary-foreground text-sm">
 					Here is the plan that I have created. Feel free to modify it
 					as needed.
 				</p>
 
-				<Card className="mx-auto mt-6 w-full max-w-4xl">
-					{message.plan.steps.length > 0 && (
-						<CardContent>
-							{message.plan.steps.map((s) => {
-								let color = "";
-								if (s.status === "failed") {
-									color = "bg-error";
-								} else if (s.status === "completed") {
-									color = "bg-primary";
-								} else {
-									color = "bg-secondary";
-								}
-
-								let icon = null;
-								if (s.status === "failed") {
-									icon = <XIcon />;
-								} else if (s.status === "completed") {
-									icon = <CheckIcon />;
-								} else if (s.status === "in_progress") {
-									icon = <Spinner />;
-								} else if (s.status === "pending") {
-									icon = <CircleDashedIcon />;
-								}
-
-								if (s.details.stepType === "tool_call") {
-									icon = <HammerIcon />;
-								} else if (
-									s.details.stepType === "llm_reasoning"
-								) {
-									icon = <BrainIcon />;
-								} else if (
-									s.details.stepType === "human_intervention"
-								) {
-									icon = <PersonStandingIcon />;
-								} else if (
-									s.details.stepType === "no_tool_available"
-								) {
-									color = "bg-warning";
-									icon = <TriangleAlert />;
-								}
-
-								return (
-									<Collapsible
-										key={s.step_number}
-										// className="pb-4"
+				{message.plan.steps.length > 0 && (
+					<div className="mt-4 flex flex-col rounded-lg border border-border p-4">
+						{message.plan.steps.map((s) => {
+							return (
+								<Collapsible
+									key={s.step_number}
+									// className="pb-4"
+								>
+									<CollapsibleTrigger
+										className="group flex w-full overflow-hidden [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180"
+										asChild
 									>
-										<CollapsibleTrigger
-											className="group flex w-full flex-row items-start gap-2 [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180"
-											asChild
-										>
-											<span>
+										<div className="flex flex-row items-start gap-1">
+											<div className="mt-2 flex flex-1 flex-row items-start gap-2.5 overflow-hidden">
 												<div
-													className={`${color} mr-1 flex size-8 flex-col items-center justify-center overflow-hidden rounded-full p-2`}
+													className={`mt-0.5 flex size-4 shrink-0 flex-col items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground text-xs`}
 												>
-													{icon}
+													{s.step_number}
 												</div>
-												<span className="wrap-break-word mt-1 text-left text-base">
-													{s.step_name}
-												</span>
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<span>
-															<Button
-																variant="ghost"
-																size="icon"
-																className="invisible group-hover:visible"
-																onClick={(
-																	e,
-																) => {
-																	e.stopPropagation();
-																}}
-															>
-																<CircleQuestionMarkIcon />
-															</Button>
-														</span>
-													</TooltipTrigger>
-													<TooltipContent>
-														{
-															s.details
-																.rationaleForStep
-														}
-													</TooltipContent>
-												</Tooltip>
-
-												<div className="flex-1">
-													{" "}
-													&nbsp;
+												<div
+													className="flex-1 truncate text-left text-sm"
+													title={s.description}
+												>
+													{s.description}
 												</div>
+											</div>
 
-												{isLast && (
-													<Button
-														variant="ghost"
-														size="icon"
-														className="invisible group-hover:visible"
-														onClick={(e) => {
-															e.stopPropagation();
-
-															removeStep(
-																s.step_number,
-															);
-														}}
-													>
-														<TrashIcon className="text-destructive" />
-													</Button>
-												)}
+											{isLast && (
 												<Button
 													variant="ghost"
-													size="icon"
+													size="icon-sm"
+													className="invisible p-0 text-destructive group-hover:visible"
+													onClick={(e) => {
+														e.stopPropagation();
+
+														removeStep(
+															s.step_number,
+														);
+													}}
 												>
-													<ChevronDownIcon
-														data-rotate={true}
-													/>
+													<TrashIcon />
 												</Button>
-											</span>
-										</CollapsibleTrigger>
-										<CollapsibleContent className="mt-2 mb-2 rounded-lg bg-sidebar-accent p-4">
-											<div>
-												<Muted className="block">
-													{s.description}
-												</Muted>
+											)}
+											<ChevronDownIcon
+												className="mt-2 size-4"
+												data-rotate={true}
+											/>
+										</div>
+									</CollapsibleTrigger>
+									<CollapsibleContent className="mt-2 mb-2 rounded-lg bg-sidebar-accent p-4">
+										<div>
+											<Muted className="block">
+												{s.details.rationaleForStep}
+											</Muted>
 
-												{s.details.stepType ===
-													"no_tool_available" && (
-													<div className="flex flex-row justify-center">
-														<Button
-															size="sm"
-															className="bg-warning"
-															onClick={() => {
-																setEditStep(s);
-															}}
-														>
-															<LinkIcon />
-															Fix Step
-														</Button>
-													</div>
-												)}
-											</div>
-										</CollapsibleContent>
-									</Collapsible>
-								);
-							})}
-						</CardContent>
-					)}
-					{isLast && (
-						<CardFooter className="justify-between">
-							<Button
-								size="sm"
-								variant="outline"
-								onClick={() => setIsAddStepOpen(true)}
-							>
-								<PlusIcon />
-								Add
-							</Button>
-							<Button
-								size="sm"
-								variant="default"
-								disabled={!canAccept}
-								onClick={() => {
-									acceptPlan();
-								}}
-							>
-								<CheckIcon />
-								Accept
-							</Button>
-						</CardFooter>
-					)}
-
-					{isAddStepOpen && (
-						<EditStepOverlay
-							mode="Add"
-							open={true}
-							onOpenChange={(isOpen) => {
-								if (!isOpen) {
-									setIsAddStepOpen(false);
-								}
+											{s.details.stepType ===
+												"no_tool_available" && (
+												<div className="flex flex-row justify-center">
+													<Button
+														size="sm"
+														className="bg-warning"
+														onClick={() => {
+															setEditStep(s);
+														}}
+													>
+														<LinkIcon />
+														Fix Step
+													</Button>
+												</div>
+											)}
+										</div>
+									</CollapsibleContent>
+								</Collapsible>
+							);
+						})}
+					</div>
+				)}
+				{isLast && (
+					<div className="mt-4 flex flex-row gap-2">
+						<Button
+							size="sm"
+							variant="outline"
+							onClick={() => setIsAddStepOpen(true)}
+						>
+							<ListIndentIncreaseIcon />
+							Add
+						</Button>
+						<Button
+							size="sm"
+							variant="default"
+							disabled={!canAccept}
+							onClick={() => {
+								acceptPlan();
 							}}
-							onSubmit={async (step) => {
-								// update the plan if successful
-								if (step) {
-									message.addStep(step);
-								}
-							}}
-						/>
-					)}
+						>
+							Confirm Plan
+						</Button>
+					</div>
+				)}
 
-					{editStep && (
-						<EditStepOverlay
-							mode="Update"
-							current={editStep}
-							open={true}
-							onOpenChange={(isOpen) => {
-								if (!isOpen) {
-									setEditStep(null);
-								}
-							}}
-							onSubmit={async (step) => {
-								// update the plan if successful
-								if (step) {
-									message.updateStep(step.step_number, step);
-								}
+				{isAddStepOpen && (
+					<EditStepOverlay
+						mode="Add"
+						open={true}
+						onOpenChange={(isOpen) => {
+							if (!isOpen) {
+								setIsAddStepOpen(false);
+							}
+						}}
+						onSubmit={async (step) => {
+							// update the plan if successful
+							if (step) {
+								message.addStep(step);
+							}
+						}}
+					/>
+				)}
 
-								// close it
+				{editStep && (
+					<EditStepOverlay
+						mode="Update"
+						current={editStep}
+						open={true}
+						onOpenChange={(isOpen) => {
+							if (!isOpen) {
 								setEditStep(null);
-							}}
-						/>
-					)}
-				</Card>
+							}
+						}}
+						onSubmit={async (step) => {
+							// update the plan if successful
+							if (step) {
+								message.updateStep(step.step_number, step);
+							}
+
+							// close it
+							setEditStep(null);
+						}}
+					/>
+				)}
 			</div>
 		);
 	},
