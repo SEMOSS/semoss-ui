@@ -2,7 +2,7 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@semoss/ui/next";
 import type { Agent } from "@/types";
 
-export interface AgentCardProps {
+export interface WorkspaceCardProps {
 	agent: Agent;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
@@ -13,11 +13,11 @@ export interface AgentCardProps {
  *
  * @component
  */
-export const AgentCard = ({
+export const WorkspaceCard = ({
 	onPrimaryClick,
 	onSecondaryClick,
 	agent,
-}: AgentCardProps) => {
+}: WorkspaceCardProps) => {
 	return (
 		<button
 			type="button"
