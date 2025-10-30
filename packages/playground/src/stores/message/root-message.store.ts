@@ -91,6 +91,11 @@ paramValues=[${JSON.stringify({
 		) as PlanMessageStore | ResponseMessageStore;
 		inputMessage.addChild(responseMessage);
 
+		// start running tools if there are any
+		if (responseMessage.type === "RESPONSE") {
+			responseMessage.startToolExecution();
+		}
+
 		return responseMessage;
 	};
 }

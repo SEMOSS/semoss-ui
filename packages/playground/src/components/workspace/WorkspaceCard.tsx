@@ -59,10 +59,14 @@ export const WorkspaceCard = ({
 			<Stack justifyContent="flex-end">
 				<div>
 					<Button
-						onClick={(e) => {
-							e.stopPropagation();
-							onSecondaryClick?.();
-						}}
+						onClick={
+							onSecondaryClick
+								? (e) => {
+										e.stopPropagation();
+										onSecondaryClick?.();
+									}
+								: onPrimaryClick
+						}
 						endIcon={<ArrowForward />}
 						size="small"
 						variant="text"
