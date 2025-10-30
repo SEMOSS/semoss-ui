@@ -12,8 +12,8 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { getToolbox } from "@/components";
-import type { App, Engine, MCP, PlanStep, Toolbox } from "@/types";
+import { engineProjectToToolbox } from "@/components";
+import type { App, Engine, MCP, MCPTool, PlanStep } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
 
@@ -31,7 +31,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	const toolboxId = useId();
 	const toolId = useId();
 
-	const [toolbox, setToolbox] = useState<Toolbox | null>(null);
+	const [toolbox, setToolbox] = useState<MCP | null>(null);
 
 	/**
 	 * Get all of the groups
@@ -46,20 +46,15 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	/**
 	 * Get all of the groups
 	 */
-	const getMCP = usePixel<MCP>(
-		toolbox ? `GetMCPTools("${toolbox.id}")` : null,
-		{
-			data: {
-				_meta: {
-					SMSS_PROJECT_NAME: "",
-					SMSS_PROJECT_ID: "",
-				},
-				tools: [],
-			},
+	const getMCP = usePixel<{
+		tools: MCPTool[];
+	}>(toolbox ? `GetMCPTools("${toolbox.id}")` : null, {
+		data: {
+			tools: [],
 		},
-	);
+	});
 
-	const toolboxOptions = getApps.data.map((item) => getToolbox(item));
+	const toolboxOptions = getApps.data.map(engineProjectToToolbox);
 
 	return (
 		<>

@@ -36,8 +36,8 @@ interface RoomInputProps {
 	/** Maximum number of rendered rows rows */
 	maxRows: number;
 
-	/** Agent toggle */
-	agent?: React.ReactNode;
+	/** Workspace toggle */
+	workspace?: React.ReactNode;
 
 	/** Configuration toggle */
 	configuration?: React.ReactNode;
@@ -52,7 +52,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		isDisabled,
 		minRows = 2,
 		maxRows = 6,
-		agent = null,
+		workspace = null,
 		configuration = null,
 		onPrompt = () => null,
 	}) => {
@@ -217,7 +217,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 			<>
 				<div className="relative w-full">
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
-						{agent}
+						{workspace}
 					</div>
 					<div className="absolute right-3 bottom-3 z-10 flex flex-row items-center gap-4">
 						<div className="flex flex-row items-center">

@@ -19,8 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components";
 import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
-import { useChat } from "@/hooks";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 /**
  * Renders the Discover Page, allowing users to discover and create agents
@@ -28,13 +27,11 @@ import type { Agent } from "@/types";
  * @component
  */
 export const WorkspacePage = observer(() => {
-	const { chat } = useChat();
-
 	/**
 	 * Library Hooks
 	 */
 	const listWorkspaces = usePixel<{
-		workspaces: Agent[];
+		workspaces: Workspace[];
 	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
 
 	const navigate = useNavigate();
@@ -43,17 +40,24 @@ export const WorkspacePage = observer(() => {
 	 * State
 	 */
 	const [search, setSearch] = useState("");
-	const [isAgentModalOpen, setIsAgentModalOpen] = useState<boolean>(false);
-	const [agentInfo, setAgentInfo] = useState<Agent | null>(null);
+	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
+		useState<boolean>(false);
+	const [workspaceInfo, setWorkspaceInfo] = useState<Workspace | null>(null);
+
+	/**
+	 * CreateRoom
+	 */
+	const createRoom = (workspaceId: string) =>
+		navigate(`/new?workspaceId=${workspaceId}`);
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden px-2">
 			<div className="mx-auto w-full max-w-2xl">
-				<H4 className="mt-16">Discover Agents</H4>
+				<H4 className="mt-16">Discover Workspaces</H4>
 				<div className="mt-4 flex flex-row">
 					<Lead className="flex-1 text-base">
-						Explore and build custom AI agents designed to meet your
-						unique needs and integrate seamlessly into your
+						Explore and build custom AI workspaces designed to meet
+						your unique needs and integrate seamlessly into your
 						processes.
 					</Lead>
 					<Tooltip>
@@ -61,8 +65,8 @@ export const WorkspacePage = observer(() => {
 							<span>
 								<Button
 									onClick={() => {
-										setAgentInfo(null);
-										setIsAgentModalOpen(true);
+										setWorkspaceInfo(null);
+										setIsWorkspaceModalOpen(true);
 									}}
 								>
 									<ComputerIcon />
@@ -70,12 +74,12 @@ export const WorkspacePage = observer(() => {
 								</Button>
 							</span>
 						</TooltipTrigger>
-						<TooltipContent>Create a new agent</TooltipContent>
+						<TooltipContent>Create a new workspace</TooltipContent>
 					</Tooltip>
 				</div>
 				<InputGroup className="mt-12">
 					<InputGroupInput
-						placeholder="Search Agents"
+						placeholder="Search Workspaces"
 						value={search}
 						onChange={(e) => setSearch(e.target.value)}
 					/>
@@ -105,15 +109,13 @@ export const WorkspacePage = observer(() => {
 								{listWorkspaces.data.workspaces.map((w) => (
 									<WorkspaceCard
 										key={w.workspace_id}
-										agent={w}
-										onPrimaryClick={() => {
-											navigate(
-												`/new?agentId=${w.workspace_id}`,
-											);
-										}}
+										workspace={w}
+										onPrimaryClick={() =>
+											createRoom(w.workspace_id)
+										}
 										onSecondaryClick={() => {
-											setAgentInfo(w);
-											setIsAgentModalOpen(true);
+											setWorkspaceInfo(w);
+											setIsWorkspaceModalOpen(true);
 										}}
 									/>
 								))}
@@ -129,18 +131,14 @@ export const WorkspacePage = observer(() => {
 				</ScrollArea>
 			</div>
 
-			{isAgentModalOpen && (
+			{isWorkspaceModalOpen && (
 				<WorkspaceOverlay
-					open={isAgentModalOpen}
-					agentInfo={agentInfo}
-					onOpenChange={(isOpen) => {
-						setIsAgentModalOpen(isOpen);
-					}}
-					onSubmit={async (data) => {
-						const output = await chat.addWorkspace(data);
-
-						if (output) {
-							navigate(`/new?agentId=${output}`);
+					open={isWorkspaceModalOpen}
+					workspaceInfo={workspaceInfo}
+					onClose={(newWorkspaceId) => {
+						setIsWorkspaceModalOpen(false);
+						if (newWorkspaceId) {
+							createRoom(newWorkspaceId);
 						}
 					}}
 				/>
