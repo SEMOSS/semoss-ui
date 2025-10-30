@@ -20,7 +20,6 @@ import {
 	Icon,
 	IconButton,
 	Menu,
-	MenuItem,
 	styled,
 	TreeView,
 	Typography,
@@ -167,7 +166,7 @@ const FolderContextMenu = ({
 			},
 		}}
 	>
-		<MenuItem
+		<Menu.Item
 			value="rename"
 			onClick={() => {
 				onRename();
@@ -193,8 +192,8 @@ const FolderContextMenu = ({
 				}}
 			/>
 			Rename
-		</MenuItem>
-		<MenuItem
+		</Menu.Item>
+		<Menu.Item
 			value="duplicate"
 			onClick={() => {
 				onDuplicate();
@@ -223,8 +222,8 @@ const FolderContextMenu = ({
 				}}
 			/>
 			Duplicate
-		</MenuItem>
-		<MenuItem
+		</Menu.Item>
+		<Menu.Item
 			value="delete"
 			onClick={() => {
 				onDelete();
@@ -250,7 +249,7 @@ const FolderContextMenu = ({
 				}}
 			/>
 			Delete
-		</MenuItem>
+		</Menu.Item>
 	</Menu>
 );
 

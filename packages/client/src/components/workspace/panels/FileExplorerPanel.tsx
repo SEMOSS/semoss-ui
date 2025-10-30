@@ -5,7 +5,7 @@ import {
 	NoteAddOutlined,
 	PublishedWithChangesOutlined,
 } from "@mui/icons-material";
-import Typography from "@semoss/ui";
+import {Typography} from "@semoss/ui";
 import { useEffect, useRef, useState } from "react";
 import { FlexLayout } from "@semoss/shared";
 import {
