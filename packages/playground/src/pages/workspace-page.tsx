@@ -17,7 +17,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { AgentCard, AgentOverlay } from "@/components/agent";
+import { WorkspaceCard } from "@/components";
+import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
 import { useChat } from "@/hooks";
 import type { Agent } from "@/types";
 
@@ -26,7 +27,7 @@ import type { Agent } from "@/types";
  *
  * @component
  */
-export const AgentPage = observer(() => {
+export const WorkspacePage = observer(() => {
 	const { chat } = useChat();
 
 	/**
@@ -102,7 +103,7 @@ export const AgentPage = observer(() => {
 						listWorkspaces.data.workspaces.length > 0 && (
 							<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
 								{listWorkspaces.data.workspaces.map((w) => (
-									<AgentCard
+									<WorkspaceCard
 										key={w.workspace_id}
 										agent={w}
 										onPrimaryClick={() => {
@@ -129,7 +130,7 @@ export const AgentPage = observer(() => {
 			</div>
 
 			{isAgentModalOpen && (
-				<AgentOverlay
+				<WorkspaceOverlay
 					open={isAgentModalOpen}
 					agentInfo={agentInfo}
 					onOpenChange={(isOpen) => {
