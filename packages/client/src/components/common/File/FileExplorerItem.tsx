@@ -16,6 +16,10 @@ import {
 	Typography,
 } from "@semoss/ui";
 import { usePixel } from "@/hooks";
+import {
+	MCP_JSON_FILE_NAME,
+	MCP_PY_FILE_NAME,
+} from "@/pages/app/app.constants";
 
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
 	".MuiCollapse-wrapperInner": {
@@ -131,8 +135,10 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 		});
 	}, []);
 
-	const makeMCPCandidate = path === "version/assets/py/mcp_driver.py" && !isDirectory;
-	const editMCPCandidate = path === "version/assets/mcp/py_mcp.json" && !isDirectory;
+	const makeMCPCandidate =
+		path === `version/assets/py/${MCP_PY_FILE_NAME}` && !isDirectory;
+	const editMCPCandidate =
+		path === `version/assets/mcp/${MCP_JSON_FILE_NAME}` && !isDirectory;
 
 	return (
 		<StyledNode
@@ -169,7 +175,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 					<StyledTypography variant="body2">{name}</StyledTypography>
 					{isHovered ? (
 						<Box>
-							{makeMCPCandidate && 
+							{makeMCPCandidate && (
 								<IconButton
 									title={`Make ${name} MCP`}
 									size="small"
@@ -180,12 +186,11 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 										// trigger
 										onMakeMCPClick(e, path);
 									}}
-									
 								>
-									<SmartToyOutlined fontSize="inherit"/>
+									<SmartToyOutlined fontSize="inherit" />
 								</IconButton>
-							}
-							{editMCPCandidate &&
+							)}
+							{editMCPCandidate && (
 								<IconButton
 									title={`Edit ${name}`}
 									size="small"
@@ -199,7 +204,7 @@ export const FileExplorerItem = (props: FileExplorerItemProps) => {
 								>
 									<EditOutlined fontSize="inherit" />
 								</IconButton>
-							}
+							)}
 							<IconButton
 								title={`Delete ${name}`}
 								onClick={(e) => {
