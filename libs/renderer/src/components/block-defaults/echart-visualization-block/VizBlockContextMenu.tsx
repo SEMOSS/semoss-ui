@@ -1,5 +1,5 @@
 import { observer } from "mobx-react-lite";
-import { Menu} from "@semoss/ui";
+import { Menu } from "@semoss/ui";
 import { useBlock, type useFrame } from "../../../hooks";
 import type { EchartVisualizationBlockDef } from "./VisualizationBlock";
 

@@ -962,6 +962,16 @@ export const AppTileCard = (props: AppTileCardProps) => {
 					}}
 				>
 					<Menu.Item
+						value="edit"
+						onClick={(event: React.MouseEvent) => {
+							navigate(`/app/${app.project_id}/dashboard`);
+							setAnchorEl(null);
+							event.stopPropagation();
+						}}
+					>
+						View Dashboard
+					</Menu.Item>
+					<Menu.Item
 						value="copy"
 						onClick={() => {
 							copyProjectId(app.project_id);

@@ -26,29 +26,29 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
 
-type RoomAgentProps = {
+type RoomWorkspaceProps = {
 	/**
 	 * The Current mode
 	 */
 	mode: {
-		type: "chat" | "plan" | "agent";
-		agent: Agent | null;
+		type: "chat" | "plan" | "workspace";
+		workspace: Workspace | null;
 	};
 
 	/**
 	 * Callback when mode changes
 	 */
 	onModeChange: (mode: {
-		type: "chat" | "plan" | "agent";
-		agent: Agent | null;
+		type: "chat" | "plan" | "workspace";
+		workspace: Workspace | null;
 	}) => void;
 };
 
-export const RoomAgent: React.FC<RoomAgentProps> = observer(
+export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 	({ mode, onModeChange }) => {
 		const [open, setOpen] = useState(false);
 
@@ -60,7 +60,7 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 		 * Library Hooks
 		 */
 		const listWorkspaces = usePixel<{
-			workspaces: Agent[];
+			workspaces: Workspace[];
 		}>(
 			open
 				? `ListWorkspaces(${debouncedSearch ? `filters=[Filter(NAME ?like "${debouncedSearch}")],` : ""} limit=[5]);`
@@ -97,11 +97,11 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 												</span>
 											</>
 										)}
-										{mode.type === "agent" && (
+										{mode.type === "workspace" && (
 											<>
 												<ComputerIcon />
 												<span className="flex-1 truncate">
-													{mode.agent?.name}
+													{mode.workspace?.name}
 												</span>
 											</>
 										)}
@@ -127,7 +127,7 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 												onSelect={() => {
 													onModeChange({
 														type: "chat",
-														agent: null,
+														workspace: null,
 													});
 													setOpen(false);
 												}}
@@ -141,7 +141,7 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 													onSelect={() => {
 														onModeChange({
 															type: "plan",
-															agent: null,
+															workspace: null,
 														});
 														setOpen(false);
 													}}
@@ -152,7 +152,7 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 											)}
 										</CommandGroup>
 										<CommandSeparator />
-										<CommandGroup heading="Agents">
+										<CommandGroup heading="Workspaces">
 											{listWorkspaces.status ===
 												"LOADING" && (
 												<div className="flex w-full flex-row items-center">
@@ -167,15 +167,15 @@ export const RoomAgent: React.FC<RoomAgentProps> = observer(
 														value={w.workspace_id}
 														onSelect={() => {
 															onModeChange({
-																type: "agent",
-																agent: w,
+																type: "workspace",
+																workspace: w,
 															});
 															setOpen(false);
 														}}
 													>
 														{w.name}
 														<CheckIcon
-															className={`ml-auto ${mode.type === "agent" && mode.agent.workspace_id === w.workspace_id ? "opacity-100" : "opacity-0"}`}
+															className={`ml-auto ${mode.type === "workspace" && mode.workspace.workspace_id === w.workspace_id ? "opacity-100" : "opacity-0"}`}
 														/>
 													</CommandItem>
 												),

@@ -1,5 +1,5 @@
 import { XIcon } from "lucide-react";
-import { Button, ScrollArea } from "@semoss/ui/next";
+import { Button } from "@semoss/ui/next";
 
 // Styles are now handled with Tailwind classes inline
 

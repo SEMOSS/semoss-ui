@@ -1,0 +1,140 @@
+import { Refresh } from "@mui/icons-material";
+import { useEffect, useState } from "react";
+import {
+	Button,
+	Menu,
+	Select,
+	Skeleton,
+	Stack,
+	styled,
+	Typography,
+} from "@semoss/ui";
+import { AuditLogsDataTable, AuditLogsTimeline } from "@/components/logs";
+import { NavbarHeader, NavbarLeft } from "@/components/shared";
+import { useRootStore } from "@/hooks";
+import type { EventData } from "@/types";
+
+const DashboardHeader = styled("div")(({ theme }) => ({
+	width: "100%",
+	paddingY: theme.spacing(2),
+	display: "flex",
+	alignItems: "center",
+}));
+
+export const AuditLogsDashboard = ({ catalogName }) => {
+	const { configStore, monolithStore } = useRootStore();
+	const [logs, setLogs] = useState<EventData[]>([]);
+	const [loading, setLoading] = useState<boolean>(true);
+
+	const fetchLogs = async () => {
+		setLoading(true);
+		try {
+			const date = new Date();
+			const yyyy = date.getFullYear();
+			const mm = String(date.getMonth() + 1).padStart(2, "0");
+			const dd = String(date.getDate()).padStart(2, "0");
+			const hh = String(date.getHours()).padStart(2, "0");
+			const min = String(date.getMinutes()).padStart(2, "0");
+			const ss = String(date.getSeconds()).padStart(2, "0");
+
+			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+			const catalogId =
+				window.location.hash.split("/")[catalogName == "Apps" ? 2 : 3];
+			const response = await monolithStore.runQuery(
+				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}"}]);`,
+			);
+			setLogs((response.pixelReturn[0].output as EventData[]) || []);
+		} catch (error) {
+			console.error("Error fetching logs:", error);
+		} finally {
+			setLoading(false);
+		}
+	};
+
+	useEffect(() => {
+		if (catalogName) {
+			setLogs([]);
+			fetchLogs();
+		}
+		//override the parent css which has id = home__content
+		const contentElement = document.getElementById("home__container");
+		if (contentElement) {
+			contentElement.style.padding = "32px";
+			contentElement.style.maxWidth = "none";
+		}
+
+		return () => {
+			if (contentElement) {
+				//restore the original styles
+				contentElement.style.padding = "";
+				contentElement.style.maxWidth = "";
+			}
+		};
+	}, [catalogName]);
+
+	return (
+		<>
+			{catalogName == "Apps" && (
+				<NavbarLeft>
+					<NavbarHeader />
+				</NavbarLeft>
+			)}
+
+			<Stack gap={2}>
+				<DashboardHeader>
+					<Typography variant="h6">
+						{catalogName} Insight Dashboard
+					</Typography>
+					<Stack
+						direction="row"
+						spacing={2}
+						sx={{ marginLeft: "auto" }}
+					>
+						<Select
+							variant="outlined"
+							size="small"
+							onChange={() => {}}
+							sx={{ minWidth: 120 }}
+							value={"Last 30 Days"}
+						>
+							<Menu.Item value="Last 30 Days">
+								Last 30 Days
+							</Menu.Item>
+							<Menu.Item value="Last 90 Days">
+								Last 90 Days
+							</Menu.Item>
+							<Menu.Item value="Last Year">Last Year</Menu.Item>
+						</Select>
+						<Button
+							variant="contained"
+							color="primary"
+							startIcon={<Refresh />}
+							onClick={fetchLogs}
+						>
+							Refresh
+						</Button>
+					</Stack>
+				</DashboardHeader>
+				{loading ? (
+					<Stack gap={2}>
+						<Skeleton
+							variant="rectangular"
+							height={400}
+							width={"100%"}
+						/>{" "}
+						<Skeleton
+							variant="rectangular"
+							height={400}
+							width={"100%"}
+						/>
+					</Stack>
+				) : (
+					<>
+						<AuditLogsTimeline logs={logs} />
+						<AuditLogsDataTable logs={logs} />
+					</>
+				)}
+			</Stack>
+		</>
+	);
+};

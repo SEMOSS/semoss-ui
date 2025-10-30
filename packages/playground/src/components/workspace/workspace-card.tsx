@@ -1,9 +1,9 @@
 import { ArrowRight } from "lucide-react";
 import { Button } from "@semoss/ui/next";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 export interface WorkspaceCardProps {
-	agent: Agent;
+	workspace: Workspace;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
 }
@@ -16,8 +16,13 @@ export interface WorkspaceCardProps {
 export const WorkspaceCard = ({
 	onPrimaryClick,
 	onSecondaryClick,
-	agent,
+	workspace,
 }: WorkspaceCardProps) => {
+	/**
+	 * Constants
+	 */
+	const isWorkspaceValid = workspace !== null;
+
 	return (
 		<button
 			type="button"
@@ -25,17 +30,26 @@ export const WorkspaceCard = ({
 			className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50"
 		>
 			<div className="grid flex-1 gap-1.5 font-normal">
-				<p className="font-medium text-sm leading-none">{agent.name}</p>
+				<p className="font-medium text-sm leading-none">
+					{isWorkspaceValid ? workspace.name : "Unknown Workspace"}
+				</p>
 				<p className="min-h-8 text-muted-foreground text-sm">
-					{agent.description}
+					{isWorkspaceValid
+						? workspace.description
+						: "No description available"}
 				</p>
 				<Button
-					onClick={(e) => {
-						e.stopPropagation();
-						onSecondaryClick?.();
-					}}
+					onClick={
+						onSecondaryClick
+							? (e) => {
+									e.stopPropagation();
+									onSecondaryClick?.();
+								}
+							: onPrimaryClick
+					}
 					size="sm"
 					variant="secondary"
+					disabled={!isWorkspaceValid}
 				>
 					View Details
 					<ArrowRight />

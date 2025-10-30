@@ -3,13 +3,7 @@ import ImageIcon from "@mui/icons-material/Image";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import type { GridBlockDef, PathValue } from "@semoss/renderer";
-import {
-	Box,
-	Button,
-	List,
-	Stack,
-	styled,
-} from "@semoss/ui";
+import { Box, Button, List, Stack, styled } from "@semoss/ui";
 import { useBlockSettings } from "@/hooks";
 import { CellStyling } from "./operations/CellStyling";
 import { ChartTitle } from "./operations/ChartTitle";
@@ -36,10 +30,12 @@ const StyledItemWithoutPadding = styled("div")(() => ({
 }));
 
 const StyledBox = styled(Box)(() => ({
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px'
-}))
+	display: "flex",
+	alignItems: "center",
+	gap: "10px",
+}));
+
+const StyledGridBlockTool = styled("div")();
 
 export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 	const { data, setData } = useBlockSettings<GridBlockDef>(id);
@@ -59,7 +55,7 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 	};
 
 	return (
-		<>
+		<StyledGridBlockTool>
 			<List style={{ width: "100%" }}>
 				{/* Header Styling Section  */}
 				<List.Item disablePadding style={{ display: "block" }}>
@@ -73,7 +69,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "generalchartsettings"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -107,7 +105,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "cellStylingSettings"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -148,7 +148,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "titleSettings"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -182,7 +184,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "colorByValue"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -214,7 +218,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "wrapText"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -246,7 +252,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "rowSpanning"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -279,7 +287,9 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 						}
 						selected={selectedList === "resizing"}
 					>
-						<List.ItemIcon sx={{ minWidth: 0, marginRight: "16px" }}>
+						<List.ItemIcon
+							sx={{ minWidth: 0, marginRight: "16px" }}
+						>
 							<ImageIcon
 								fontSize="large"
 								color={
@@ -326,6 +336,6 @@ export const GridBlockTool = observer<GridBlockToolProps>(({ id }) => {
 					)}
 				</List.Item>
 			</List>
-		</>
+		</StyledGridBlockTool>
 	);
 });

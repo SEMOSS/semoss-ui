@@ -19,6 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -258,7 +259,7 @@ interface JsonType {
 export const MembersTable = (props: MembersTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -486,7 +487,15 @@ export const MembersTable = (props: MembersTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -494,13 +503,13 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.editEngineUserPermissions(
+				response = await editEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.editProjectUserPermissions(
+				response = await editProjectUserPermissions(
 					adminMode,
 					id,
 					requests,
@@ -891,7 +900,9 @@ export const MembersTable = (props: MembersTableProps) => {
 													<StyledCell size="small">
 														<Table.Sort
 															active={true} // sort icon is always visible
-															direction={nameOrder} // direction of the icon, up is asc
+															direction={
+																nameOrder
+															} // direction of the icon, up is asc
 															onClick={() =>
 																handleNameSort()
 															}
@@ -935,7 +946,8 @@ export const MembersTable = (props: MembersTableProps) => {
 											</Table.Head>
 											<Table.Body>
 												{sortedMembers.map((_x, i) => {
-													const user = sortedMembers[i];
+													const user =
+														sortedMembers[i];
 
 													let isSelected = false;
 
@@ -1240,12 +1252,8 @@ export const MembersTable = (props: MembersTableProps) => {
 												}}
 												page={page}
 												rowsPerPage={rowsPerPage}
-												rowsPerPageOptions={[
-													5, 10, 20,
-												]}
-												onRowsPerPageChange={(
-													e,
-												) => {
+												rowsPerPageOptions={[5, 10, 20]}
+												onRowsPerPageChange={(e) => {
 													// set the new limit
 													setRowsPerPage(
 														parseInt(
