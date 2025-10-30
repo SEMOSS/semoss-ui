@@ -1,5 +1,5 @@
 import { Env } from "../env";
-import { get, post } from "../utility";
+import { CSRF, get, post } from "../utility";
 
 /**
  * Allow the user to login
@@ -9,16 +9,16 @@ import { get, post } from "../utility";
  * @returns true if successful
  */
 export const login = async (
-    username: string,
-    password: string,
+	username: string,
+	password: string,
 ): Promise<boolean> => {
-    await post(`${Env.MODULE}/api/auth/login`, {
-        username: username,
-        password: password,
-        disableRedirect: true,
-    });
+	await post(`${Env.MODULE}/api/auth/login`, {
+		username: username,
+		password: password,
+		disableRedirect: true,
+	});
 
-    return true;
+	return true;
 };
 
 /**
@@ -29,68 +29,72 @@ export const login = async (
  * @returns true if successful
  */
 export const oauth = async (
-    provider: string,
-    isPopup = false,
+	provider: string,
+	isPopup = false,
 ): Promise<boolean> => {
-    // check if the user is logged in
-    const response = await get<{ name?: string }>(
-        `${Env.MODULE}/api/auth/userinfo/${provider}`,
-    );
+	// check if the user is logged in
+	const response = await get<{ name?: string }>(
+		`${Env.MODULE}/api/auth/userinfo/${provider}`,
+	);
 
-    //check if they are already logged in
-    if (response.data && response.data.name) {
-        return true;
-    }
+	//check if they are already logged in
+	if (response.data?.name) {
+		return true;
+	}
 
-    // if called from the popup, throw an error as the user was unable to login
-    if (isPopup) {
-        throw new Error("Unable to login");
-    }
+	// if called from the popup, throw an error as the user was unable to login
+	if (isPopup) {
+		throw new Error("Unable to login");
+	}
 
-    return new Promise((resolve, reject) => {
-        if (!window || !window.top) {
-            reject("Unable to login");
-            return;
-        }
+	return new Promise((resolve, reject) => {
+		// only works in browser
+		if (
+			typeof window === "undefined" ||
+			typeof window.top === "undefined"
+		) {
+			reject("Unable to login");
+			return;
+		}
 
-        const url = `${Env.MODULE}/api/auth/login/${provider}`;
-        const popUpWindow = window.top.open(
-            url,
-            "_blank",
-            "height=600,width=400,top=300,left=" + 600,
-        );
+		const url = `${Env.MODULE}/api/auth/login/${provider}`;
+		const popUpWindow = window.top.open(
+			url,
+			"_blank",
+			"height=600,width=400,top=300,left=" + 600,
+		);
 
-        // setup an interval to see if the popup window is closed or successful
-        const interval = setInterval(async () => {
-            try {
-                if (
-                    !popUpWindow ||
-                    popUpWindow.closed ||
-                    popUpWindow.closed === undefined
-                ) {
-                    clearInterval(interval);
-                } else if (
-                    popUpWindow.document.location.href.indexOf(
-                        `${window.location.host}`,
-                    ) > -1
-                ) {
-                    clearInterval(interval);
+		// setup an interval to see if the popup window is closed or successful
+		const interval = setInterval(async () => {
+			try {
+				if (
+					!popUpWindow ||
+					popUpWindow.closed ||
+					popUpWindow.closed === undefined
+				) {
+					clearInterval(interval);
+				} else if (
+					popUpWindow.document.location.href.indexOf(
+						`${window.location.host}`,
+					) > -1
+				) {
+					clearInterval(interval);
 
-                    // close it
-                    popUpWindow.close();
+					// close it
+					popUpWindow.close();
 
-                    // try to get the info again
-                    const response = await oauth(provider, true);
+					// try to get the info again
+					const response = await oauth(provider, true);
 
-                    // close it
-                    resolve(response);
-                }
-            } catch (err) {
-                // do nothing
-                // this is to work around the blocked frame error that comes up
-            }
-        }, 1000);
-    });
+					// close it
+					resolve(response);
+				}
+			} catch (_err) {
+				// do nothing
+				// this is to work around the blocked frame error that comes up
+			}
+		}, 1000);
+	});
 };
 
 /**
@@ -99,8 +103,10 @@ export const oauth = async (
  * @returns true if successful
  */
 export const logout = async (): Promise<boolean> => {
-    // try to logout
-    await get(`${Env.MODULE}/api/auth/logout/all`);
-
-    return true;
+	// we need to disableRedirect because fetch.ts doesn't allow a 302
+	// and even if we bypass the 302 for logout then it requires the payload
+	// to always be valid json
+	await get(`${Env.MODULE}/api/auth/logout/all?disableRedirect=true`);
+	CSRF.token = "";
+	return true;
 };

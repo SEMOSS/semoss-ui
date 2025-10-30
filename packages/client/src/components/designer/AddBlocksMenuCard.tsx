@@ -1,15 +1,15 @@
 import {
 	DeleteOutline,
+	EditOutlined,
 	InfoOutlined,
 	ReportRounded,
 } from "@mui/icons-material";
-import html2canvas from "html2canvas";
 import { observer } from "mobx-react-lite";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ActionMessages, INPUT_BLOCK_TYPES, useBlocks } from "@semoss/renderer";
 import {
 	Box,
-	Button,
+	ButtonGroup,
 	Card,
 	Icon,
 	IconButton,
@@ -20,7 +20,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useDesigner, useRootStore } from "@/hooks";
-import {
+import type {
 	BlockLocalStorageData,
 	DesignerMenuItem,
 } from "../blocks-workspace/menus/menu-types";
@@ -29,7 +29,6 @@ import { BlockCardContent, blockCardWidth } from "./BlockMenuCardContent";
 const StyledCard = styled(Card)({
 	cursor: "grab",
 	border: `1px solid rgba(0, 0, 0, 0.12)`,
-	//TODO: styled needs to be updated to match the theme
 	borderRadius: "6px",
 	justifyContent: "center",
 });
@@ -38,6 +37,47 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 	color: theme.palette.secondary.dark,
 	width: blockCardWidth,
 	userSelect: "none",
+	alignItems: "center",
+}));
+
+const StyledDiv = styled("div")({
+	position: "relative",
+	display: "inline-block",
+	paddingTop: "16px",
+	paddingRight: "16px",
+});
+
+const StyledContainer = styled(Box)({
+	position: "absolute",
+	top: 18, // slightly down from top of card
+	right: -35, // position just outside card (adjust as needed)
+	zIndex: 1000,
+	display: "flex",
+	flexDirection: "column",
+	gap: 1,
+	backgroundColor: "#fff",
+	borderRadius: "8px",
+	p: 0.5,
+});
+
+const StyleButtonGroup = styled(ButtonGroup)(({ theme }) => ({
+	display: "flex",
+	gap: theme.spacing(1),
+	flexDirection: "column",
+	backgroundColor: "white",
+	padding: theme.spacing(1),
+	borderRadius: "6px",
+	boxShadow:
+		"0px 5px 22px rgba(0, 0, 0, 0.10), 0px 4px 4px 0.5px rgba(0, 0, 0, 0.03)",
+	width: "35px",
+	"& .MuiButtonBase-root.MuiButton-root": {
+		justifyContent: "unset",
+	},
+}));
+
+const StyledButtonGroupIconButton = styled(IconButton)(({ theme }) => ({
+	backgroundColor: "white",
+	borderRadius: theme.shape.borderRadius,
 }));
 
 export interface AddBlocksMenuItemProps {
@@ -49,6 +89,9 @@ export interface AddBlocksMenuItemProps {
 
 	/** Handle the trash click */
 	handleOnTrashClick: (blockId: string, blockName: string) => void;
+
+	/** Handle the edit click */
+	handleOnEditClick: (blockId: string, item: DesignerMenuItem) => void;
 }
 
 /**
@@ -61,8 +104,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	const notification = useNotification();
 	const { configStore } = useRootStore();
 
-	const ref = useRef(null);
-	const [imageSrc, setImageSrc] = useState(null);
+	const [imageSrc, _setImageSrc] = useState(null);
 
 	// track if it is this one that is dragging
 	const [local, setLocal] = useState(false);
@@ -97,7 +139,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 	/**
 	 * Handle the mouseup event on the document
 	 */
-	const handleDocumentMouseUp = useCallback(() => {
+	const handleDocumentMouseUp = useCallback(async () => {
 		if (!designer.drag.active) {
 			return;
 		}
@@ -188,7 +230,7 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							return;
 						}
 					}
-					id = state.dispatch({
+					id = (await state.dispatch({
 						message: ActionMessages.ADD_BLOCK,
 						payload: {
 							json: item.json,
@@ -200,10 +242,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 							},
 							isCommunity: isCommunity,
 						},
-					}) as string;
+					})) as string;
 				}
 			} else if (placeholderAction.type === "replace") {
-				id = state.dispatch({
+				id = (await state.dispatch({
 					message: ActionMessages.ADD_BLOCK,
 					payload: {
 						json: item.json,
@@ -213,10 +255,10 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 						},
 						isCommunity: isCommunity,
 					},
-				}) as string;
+				})) as string;
 
 				if (sw.widget === "iteration") {
-					state.dispatch({
+					await state.dispatch({
 						message: ActionMessages.SET_BLOCK_DATA,
 						payload: {
 							id: placeholderAction.id,
@@ -231,13 +273,12 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 		// TODO: REFACTOR
 		// Add variables for all blocks that are inputs from user
 		if (INPUT_BLOCK_TYPES.indexOf(item.json.widget) > -1 && !isCommunity) {
-			state.dispatch({
+			await state.dispatch({
 				message: ActionMessages.ADD_VARIABLE,
 				payload: {
 					id: id,
 					type: "block",
 					to: id,
-					isInput: true,
 				},
 			});
 		}
@@ -278,20 +319,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 		};
 	}, [designer.drag.active, local, handleDocumentMouseUp]);
 
-	// useEffect(() => {
-	//     if (isClient) {
-	//         if (ref.current) {
-	//             html2canvas(ref.current).then((canvas) => {
-	//                 setImageSrc(canvas.toDataURL('image/png'));
-	//             });
-	//         }
-	//     }
-	// }, [isClient]);
-
-	// const randomColor = () => {
-	//     return `#${Math.floor(Math.random() * 16777215).toString(16)}`;
-	// };
-
 	return (
 		<Stack
 			spacing={1}
@@ -299,28 +326,6 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 			height="100%"
 			justifyContent="flex-end"
 		>
-			{/* So we can snapshot picture for client */}
-			{/* {isClient && (
-                <div
-                    ref={ref}
-                    style={{ position: 'absolute', left: '-9999px', top: 0 }}
-                >
-                    <Stack padding={4}>
-                        <StyledTypography variant="body2">
-                            Show snapshot
-                        </StyledTypography>
-                        <button
-                            style={{
-                                backgroundColor: randomColor(),
-                                color: '#fff',
-                            }}
-                        >
-                            {item.name}
-                        </button>
-                    </Stack>
-                </div>
-            )} */}
-
 			<StyledTypography
 				variant="body2"
 				fontWeight="medium"
@@ -334,75 +339,74 @@ export const AddBlocksMenuCard = observer((props: AddBlocksMenuItemProps) => {
 				>
 					{item.name}
 					{item.recentChanges && (
-						<Tooltip
-							title={item.recentChanges}
-							children={
-								<Icon color={"info"} fontSize="small">
-									<InfoOutlined />
-								</Icon>
-							}
-						/>
+						<Tooltip title={item.recentChanges}>
+							<Icon color={"info"} fontSize="small">
+								<InfoOutlined />
+							</Icon>
+						</Tooltip>
 					)}
 					{item.isBeta && (
-						<Tooltip
-							title={"This block is currently in beta"}
-							children={
-								<Icon color={"warning"} fontSize="small">
-									<ReportRounded />
-								</Icon>
-							}
-						/>
+						<Tooltip title={"This block is currently in beta"}>
+							<Icon color={"warning"} fontSize="small">
+								<ReportRounded />
+							</Icon>
+						</Tooltip>
 					)}
 				</Stack>
 			</StyledTypography>
-			<StyledCard onMouseDown={handleMouseDown}>
-				<Tooltip
-					title={item.helperText ?? item.name}
-					arrow
-					placement="bottom"
-					onOpen={() => setHovered(true)}
-					onClose={() => setHovered(false)}
-				>
-					<div style={{ position: "relative" }}>
-						<BlockCardContent
-							image={
-								isCommunity
-									? imageSrc
-									: hovered
-										? item.hoverImage
-										: item.activeImage
-							}
-							name={item.name}
-						/>
-						{hovered &&
-							isCommunity &&
-							configStore.store.user.admin && (
-								<Box
-									sx={{
-										position: "absolute",
-										top: "-5px",
-										right: "-5px",
-										zIndex: 1000,
-									}}
-								>
-									<IconButton
-										size="small"
-										onClick={(e) => {
-											e.stopPropagation();
-											handleOnTrashClick(
-												item["id"],
-												item.name,
-											);
-										}}
-										color="error"
-									>
-										<DeleteOutline />
-									</IconButton>
-								</Box>
-							)}
-					</div>
-				</Tooltip>
-			</StyledCard>
+			<StyledDiv
+				onMouseEnter={() => setHovered(true)}
+				onMouseLeave={() => setHovered(false)}
+				onMouseDown={handleMouseDown}
+			>
+				{/* TODO: FIX */}
+				{hovered && isCommunity && configStore.store.user.admin && (
+					<StyledContainer>
+						<StyleButtonGroup>
+							{/* <StyledButtonGroupIconButton
+                                size="small"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOnEditClick(item['id'], item);
+                                }}
+                            >
+                                <EditOutlined sx={{ color: '#757575' }} />
+                            </StyledButtonGroupIconButton> */}
+							<StyledButtonGroupIconButton
+								size="small"
+								onClick={(e) => {
+									e.stopPropagation();
+									handleOnTrashClick("", item.name);
+								}}
+							>
+								<DeleteOutline sx={{ color: "#757575" }} />
+							</StyledButtonGroupIconButton>
+						</StyleButtonGroup>
+					</StyledContainer>
+				)}
+
+				{/* Card */}
+				<StyledCard>
+					<Tooltip
+						title={item.helperText ?? item.name}
+						arrow
+						placement="bottom"
+					>
+						<div>
+							<BlockCardContent
+								image={
+									isCommunity
+										? imageSrc
+										: hovered
+											? item.hoverImage
+											: item.activeImage
+								}
+								name={item.name}
+							/>
+						</div>
+					</Tooltip>
+				</StyledCard>
+			</StyledDiv>
 		</Stack>
 	);
 });

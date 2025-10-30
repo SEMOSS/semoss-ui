@@ -1,17 +1,15 @@
-import {
-	AccessTimeOutlined,
-	DownloadRounded,
-	TuneRounded,
-} from "@mui/icons-material";
+import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
-	CircularProgress,
+	Badge,
+	Chip,
 	Container,
+	Divider,
 	IconButton,
-	Select,
+	LoadingScreen,
 	Stack,
 	styled,
 	Tooltip,
@@ -19,56 +17,134 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import {
-	OptionsPicker,
-	RoomApp,
-	RoomControls,
+	InputMessage,
+	PlanMessage,
+	ResponseMessage,
+	RoomArtifact,
+	RoomConfiguration,
 	RoomInput,
-	RoomMessage,
 } from "@/components";
-import { useChat } from "@/hooks";
-
-const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+import { useAutoScroll, useChat } from "@/hooks";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
 	height: "100%",
+	padding: "16px 16px 0 16px",
+}));
+
+const StyledPageHeader = styled(Stack)(() => ({
+	width: "100%",
+	padding: "4px 8px",
 }));
 
 const StyledContent = styled(Stack)(() => ({
 	height: "100%",
 	width: "100%",
 	overflow: "hidden",
+	paddingBottom: "16px",
+}));
+
+const StyledScrollContainer = styled("div")(() => ({
+	position: "relative",
+	flex: 1,
+	width: "100%",
+	overflow: "hidden",
 }));
 
 const StyledScroll = styled("div")(() => ({
-	display: "flex",
-	flexDirection: "column-reverse",
-	flex: 1,
+	height: "100%",
 	width: "100%",
 	overflowX: "hidden",
 	overflowY: "auto",
+	position: "relative",
 }));
 
-const StyledSelect = styled(Select)(({ theme }) => ({
-	fontSize: "14px",
-	maxWidth: "220px",
-	"& .MuiOutlinedInput-notchedOutline, &:hover .MuiOutlinedInput-notchedOutline, &.Mui-focused .MuiOutlinedInput-notchedOutline":
-		{
-			border: "none",
-			borderRadius: theme.shape.borderRadiusSm,
-		},
-	"& .MuiSelect-icon": {
-		color: theme.palette.text.primary,
-		top: "calc(50% - 10px)",
-		height: "20px",
-		width: "20px",
+const StyledScrollButton = styled(IconButton)(({ theme }) => ({
+	position: "absolute",
+	bottom: "16px",
+	right: "16px",
+	backgroundColor: theme.palette.primary.main,
+	color: theme.palette.primary.contrastText,
+	boxShadow: theme.shadows[4],
+	zIndex: 1000,
+	"&:hover": {
+		backgroundColor: theme.palette.primary.dark,
+		boxShadow: theme.shadows[6],
 	},
-	"& .MuiSelect-select": {
-		padding: theme.spacing(1),
-	},
-})) as unknown as typeof Select;
+}));
 
+const getDateTitle = (d: string) => {
+	// Convert input to Date object if it's a string
+	const compareDate = new Date(d);
+	const now = new Date();
+
+	// Calculate difference in milliseconds
+	const diffTime = compareDate.getTime() - now.getTime();
+	const absDiffTime = Math.abs(diffTime);
+
+	// Convert to different time units
+	const minutes = Math.floor(absDiffTime / (1000 * 60));
+	const hours = Math.floor(absDiffTime / (1000 * 60 * 60));
+	const days = Math.floor(absDiffTime / (1000 * 60 * 60 * 24));
+	const weeks = Math.floor(days / 7);
+	const months = Math.floor(days / 30);
+	const years = Math.floor(days / 365);
+
+	let message = "";
+
+	// Determine the most appropriate time unit and format
+	if (absDiffTime < 1000) {
+		message = "Just now";
+	} else if (minutes < 1) {
+		const seconds = Math.floor(absDiffTime / 1000);
+		message =
+			diffTime < 0
+				? `${seconds} second${seconds !== 1 ? "s" : ""} ago`
+				: `In ${seconds} second${seconds !== 1 ? "s" : ""}`;
+	} else if (minutes < 60) {
+		message =
+			diffTime < 0
+				? `${minutes} minute${minutes !== 1 ? "s" : ""} ago`
+				: `In ${minutes} minute${minutes !== 1 ? "s" : ""}`;
+	} else if (hours < 24) {
+		message =
+			diffTime < 0
+				? `${hours} hour${hours !== 1 ? "s" : ""} ago`
+				: `In ${hours} hour${hours !== 1 ? "s" : ""}`;
+	} else if (days < 7) {
+		message =
+			diffTime < 0
+				? `${days} day${days !== 1 ? "s" : ""} ago`
+				: `In ${days} day${days !== 1 ? "s" : ""}`;
+	} else if (weeks < 4) {
+		message =
+			diffTime < 0
+				? `${weeks} week${weeks !== 1 ? "s" : ""} ago`
+				: `In ${weeks} week${weeks !== 1 ? "s" : ""}`;
+	} else if (months < 12) {
+		message =
+			diffTime < 0
+				? `${months} month${months !== 1 ? "s" : ""} ago`
+				: `In ${months} month${months !== 1 ? "s" : ""}`;
+	} else {
+		message =
+			diffTime < 0
+				? `${years} year${years !== 1 ? "s" : ""} ago`
+				: `In ${years} year${years !== 1 ? "s" : ""}`;
+	}
+
+	return message;
+};
+
+/**
+ * The page for a room
+ *
+ * @component
+ */
 export const RoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 
 	const notification = useNotification();
@@ -80,110 +156,136 @@ export const RoomPage = observer(() => {
 	// get the room
 	const room = chat.getRoom(roomId);
 
+	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
+	const { scrollRef, scrollToBottom, isUserScrolled } = useAutoScroll(
+		room?.history?.length || 0,
+	);
+
+	/**
+	 * Effects
+	 */
+
 	// load the room
 	useEffect(() => {
 		if (!room || room.isInitialized) {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-			navigate("/");
-		}
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
 	}, [room, notification.add, navigate]);
 
+	// create a listener to process messages from the room
+	useEffect(() => {
+		// ignore if there is no room
+		if (!room) {
+			return;
+		}
+
+		const handleMessage = async (
+			event: MessageEvent<{
+				type: "SMSS_EXEC_TOOL";
+				tool: {
+					type: "MCP";
+					message: string;
+					id: string;
+					name: string;
+					response: string;
+				};
+			}>,
+		) => {
+			try {
+				if (!event.data || event.data.type !== "SMSS_EXEC_TOOL") {
+					return;
+				}
+
+				const tool = event.data.tool;
+
+				room.processTool(
+					tool.message,
+					tool.id,
+					tool.name,
+					tool.response,
+				);
+			} catch {
+				// noop
+			}
+		};
+
+		window.addEventListener("message", handleMessage);
+
+		return () => {
+			window.removeEventListener("message", handleMessage);
+		};
+	}, [room]);
+
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
-		return (
-			<StyledPage
-				direction={"column"}
-				alignItems={"center"}
-				justifyContent={"center"}
-			>
-				<CircularProgress color={"primary"} />;
-			</StyledPage>
-		);
+		// room is valid, but not initialized yet
+		return <LoadingScreen.Trigger />;
+	}
+
+	let isDisabled = false;
+	// If the plan is executing, only the execution step is enabled
+	if (room.mode === "executing") {
+		isDisabled = room.plan?.step?.details.stepType !== "human_intervention";
 	}
 
 	return (
-		<StyledPage direction={"column"} spacing={3}>
-			<Stack
+		<StyledPage direction={"column"} spacing={1}>
+			<StyledPageHeader
 				direction={"row"}
-				padding={1}
 				alignItems={"center"}
-				spacing={1}
-				width={"100%"}
+				spacing={2}
 			>
-				<Stack direction={"row"} alignItems={"center"} spacing={1}>
-					<AccessTimeOutlined fontSize="medium" />
-					<Typography variant={"body2"}>
-						{room?.metadata?.dateCreated}
-					</Typography>
-				</Stack>
 				<Typography
+					title={room?.metadata?.name}
 					variant={"body2"}
 					noWrap={true}
 					sx={{
-						flex: 1,
-						textAlign: "center",
-						textOverflow: "hidden",
+						maxWidth: "40%",
 					}}
 				>
 					{room?.metadata?.name}
 				</Typography>
-				<Stack direction={"row"} alignItems={"center"} spacing={1}>
-					<Tooltip title="Download Chat History">
-						<IconButton
-							size="small"
-							color={"default"}
-							onClick={(e) => {
-								// stop the event propagation
-								e.stopPropagation();
-
-								room?.downloadHistory();
-							}}
-						>
-							<DownloadRounded fontSize="small" />
-						</IconButton>
-					</Tooltip>
-					<Tooltip title="Toggle Chat History">
-						<IconButton
-							size="small"
-							color={
-								room.sidebar.isOpen &&
-								room.sidebar.options.type === "CONTROLS"
-									? "primary"
-									: "default"
-							}
-							onClick={() => {
-								// toggle open / closed based on the state
-								if (
-									room.sidebar.isOpen &&
-									room.sidebar.options.type === "CONTROLS"
-								) {
-									room.closeSidebar();
-								} else {
-									room.openSidebar({
-										type: "CONTROLS",
-									});
-								}
-							}}
-						>
-							<TuneRounded fontSize="small" />
-						</IconButton>
-					</Tooltip>
-				</Stack>
-			</Stack>
+				<Chip
+					color="default"
+					size="small"
+					icon={<QueryBuilder fontSize="small" />}
+					label={`Created ${getDateTitle(room?.metadata?.dateCreated)}`}
+					sx={{
+						background:
+							"linear-gradient(270deg, rgba(183, 218, 242, 0.60) -31.76%, #DCD7F9 89.53%)",
+					}}
+				/>
+				<Stack flex={1} />
+			</StyledPageHeader>
+			<Divider
+				orientation="horizontal"
+				sx={{ borderColor: "secondary.divider" }}
+			/>
 			<Stack
 				flex={1}
 				direction={"row"}
+				alignItems={"center"}
+				spacing={2}
 				width={"100%"}
-				spacing={3}
 				overflow={"hidden"}
 			>
 				<StyledContent
@@ -192,103 +294,140 @@ export const RoomPage = observer(() => {
 					flex={1}
 					alignItems={"center"}
 				>
-					<StyledScroll>
-						<Container maxWidth="md">
-							<Stack direction={"column"} spacing={3}>
+					<StyledScrollContainer>
+						<StyledScroll ref={scrollRef}>
+							<Container maxWidth="xl" disableGutters={true}>
 								{room.history.map((m, mIdx) => {
+									if (!m.visible) {
+										return null;
+									}
+
 									return (
-										<RoomMessage
-											room={room}
-											message={m}
-											key={mIdx}
-										/>
+										<Stack
+											key={m.id}
+											direction="column"
+											sx={{
+												paddingTop: "8px",
+												paddingBottom: "8px",
+											}}
+										>
+											{m.type === "INPUT" && (
+												<InputMessage message={m} />
+											)}
+											{m.type === "RESPONSE" && (
+												<ResponseMessage message={m} />
+											)}
+											{m.type === "PLAN" && (
+												<PlanMessage
+													message={m}
+													isLast={
+														mIdx ===
+														room.history.length - 1
+													}
+												/>
+											)}
+										</Stack>
 									);
 								})}
-							</Stack>
-						</Container>
-					</StyledScroll>
+							</Container>
+						</StyledScroll>
+						{isUserScrolled && (
+							<Tooltip title="Scroll to bottom" placement="top">
+								<StyledScrollButton
+									size="small"
+									color="primary"
+									onClick={() => scrollToBottom()}
+									aria-label="Scroll to bottom"
+								>
+									<KeyboardArrowDown fontSize="medium" />
+								</StyledScrollButton>
+							</Tooltip>
+						)}
+					</StyledScrollContainer>
 					<Stack
 						direction={"row"}
 						justifyContent={"center"}
 						width={"100%"}
 					>
-						<Container maxWidth="md">
-							<Stack direction={"column"} spacing={1}>
-								<RoomInput
-									isLoading={room.isLoading}
-									isDisabled={false}
-									minRows={1}
-									maxRows={6}
-									actions={
-										<>
-											{ENABLE_MODEL_SELECT ? (
-												<StyledSelect
-													size="small"
-													placeholder="Select a Model"
-													value={room.modelId}
-													onChange={(e) => {
-														console.log(e);
-													}}
-												>
-													{chat.models.options.map(
-														(m) => (
-															<Select.Item
-																key={m.app_id}
-																value={m.app_id}
-															>
-																<Tooltip
-																	title={`Open new room with ${m.app_name}`}
-																	placement="top"
-																>
-																	<span>
-																		{
-																			m.app_name
-																		}
-																	</span>
-																</Tooltip>
-															</Select.Item>
-														),
-													)}
-												</StyledSelect>
-											) : null}
-											<Stack flex={1} />
-											<OptionsPicker
-												options={room.options}
-												setOptions={(o) =>
-													room.setOptions({
-														...room.options,
-														...o,
-													})
+						<Container maxWidth="xl" disableGutters={true}>
+							<RoomInput
+								isLoading={room.isLoading}
+								isDisabled={isDisabled}
+								minRows={3}
+								maxRows={8}
+								actions={
+									<Tooltip
+										title={"Configuration"}
+										placement="top"
+									>
+										<span>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Configuration"
+												disabled={room.isLoading}
+												color={
+													room.sidebar.isOpen &&
+													room.sidebar.type ===
+														"CONFIGURATION"
+														? "primary"
+														: "default"
 												}
-												anchorOrigin={{
-													vertical: "top",
-													horizontal: "center",
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
 												}}
-												transformOrigin={{
-													vertical: "bottom",
-													horizontal: "center",
-												}}
-											/>
-										</>
-									}
-									onPrompt={async (prompt, files) => {
-										await room.askModel(prompt, files);
+											>
+												<Badge
+													color="primary"
+													variant="dot"
+													badgeContent={
+														room.options.mcp
+															.length ||
+														room.options
+															.workspace ||
+														room.options
+															.instructions
+															?.length
+															? 1
+															: 0
+													}
+												>
+													<Tune color="inherit" />
+												</Badge>
+											</IconButton>
+										</span>
+									</Tooltip>
+								}
+								onPrompt={async (prompt, files) => {
+									await room.askMessage(prompt, files);
 
-										return true;
-									}}
-								/>
-							</Stack>
+									return true;
+								}}
+							/>
 						</Container>
 					</Stack>
 				</StyledContent>
 				{room.sidebar.isOpen && (
 					<Resizable
+						minWidth={340}
 						defaultSize={{
 							width:
-								room.sidebar.options.type === "APP" ? 600 : 360,
+								room.sidebar.type === "ARTIFACTS"
+									? `70%`
+									: "340px",
 							height: "100%",
 						}}
-						minWidth={280}
 						handleStyles={{
 							top: { pointerEvents: "none" },
 							right: { pointerEvents: "none" },
@@ -299,16 +438,23 @@ export const RoomPage = observer(() => {
 							topLeft: { pointerEvents: "none" },
 						}}
 						style={{
-							// paddingTop: '8px',
-							paddingRight: "8px",
-							paddingBottom: "8px",
+							paddingBottom: "16px",
 						}}
 					>
-						{room.sidebar.options.type === "CONTROLS" && (
-							<RoomControls room={room} />
+						{room.sidebar.type === "CONFIGURATION" && (
+							<RoomConfiguration
+								options={room.options}
+								setOptions={(o) => {
+									room.setOptions(o);
+								}}
+								onClose={() => {
+									room.closeSidebar();
+								}}
+								room={room}
+							/>
 						)}
-						{room.sidebar.options.type === "APP" && (
-							<RoomApp room={room} />
+						{room.sidebar.type === "ARTIFACTS" && (
+							<RoomArtifact room={room} />
 						)}
 					</Resizable>
 				)}

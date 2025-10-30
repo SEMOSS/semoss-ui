@@ -1,4 +1,4 @@
-import { LinearProgress, LinearProgressProps } from "./LinearProgress";
+import { LinearProgress, type LinearProgressProps } from "./LinearProgress";
 
 export type { LinearProgressProps };
 

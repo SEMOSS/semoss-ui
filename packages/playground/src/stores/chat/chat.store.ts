@@ -1,11 +1,13 @@
 import { makeAutoObservable, runInAction } from "mobx";
-import { Insight } from "@semoss/sdk/react";
+import type { Insight } from "@semoss/sdk/react";
+import { engineProjectToToolbox } from "@/components";
 import { MODEL_KEY } from "@/constants";
-import { Engine } from "@/types";
-import { ChatRoom } from "./chat.room";
+import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
+import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -21,7 +23,12 @@ interface ChatStoreInterface {
 	/**
 	 * Map of id to channel
 	 */
-	rooms: Record<string, ChatRoom>;
+	rooms: Record<string, RoomStore>;
+
+	/**
+	 * Map of id to workspace
+	 */
+	workspaces: Record<string, Workspace>;
 
 	/**
 	 * Order of the rooms
@@ -38,20 +45,10 @@ interface ChatStoreInterface {
 		/** The current model */
 		selected: string;
 	};
-
-	/**
-	 * Today's chats
-	 */
-	today: string[];
-
-	/**
-	 * Previous chats
-	 */
-	previousChats: string[];
 }
 
 /**
- * Internal state management of the builder object
+ * Manage the chat
  */
 export class ChatStore {
 	private _actions: Insight["actions"];
@@ -60,13 +57,12 @@ export class ChatStore {
 		isInitialized: false,
 		isLoading: false,
 		rooms: {},
+		workspaces: {},
 		order: [],
 		models: {
 			options: [],
 			selected: "",
 		},
-		today: [],
-		previousChats: [],
 	};
 
 	constructor(actions: Insight["actions"]) {
@@ -112,33 +108,22 @@ export class ChatStore {
 	 *
 	 * @param roomId - message to get
 	 */
-	getRoom(roomId: string): ChatRoom | null {
-		return this._store.rooms[roomId];
+	getRoom(roomId: string): RoomStore | null {
+		return this._store.rooms[roomId] ?? null;
 	}
 
 	/**
-	 * Get the active roomId
+	 * Get the workspaces from the store
+	 */
+	get workspaces() {
+		return this._store.workspaces;
+	}
+
+	/**
+	 * Get the models from the store
 	 */
 	get models() {
 		return this._store.models;
-	}
-
-	/**
-	 * Get available models from the backend
-	 */
-
-	/**
-	 * Get Today's chats
-	 */
-	get todayRooms() {
-		return this._store.today;
-	}
-
-	/**
-	 * Get Previous chats
-	 */
-	get previousRooms() {
-		return this._store.previousChats;
 	}
 
 	/**
@@ -150,6 +135,8 @@ export class ChatStore {
 			Promise.all([
 				// get the room info
 				this.getRooms(),
+				// get the workspace info
+				this.getWorkspaces(),
 				// get the model info
 				this.getModels(),
 			]).finally(() => {
@@ -167,9 +154,9 @@ export class ChatStore {
 	/**
 	 * Create a new room instance
 	 */
-	newRoom = (roomId: string): ChatRoom => {
+	newRoom = (roomId: string): RoomStore => {
 		// create a new room
-		const room = new ChatRoom(roomId);
+		const room = new RoomStore(roomId);
 
 		// store the room
 		this._store.rooms[roomId] = room;
@@ -183,7 +170,12 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	createRoom = async (modelId: string, name: string): Promise<ChatRoom> => {
+	createRoom = async (
+		name: string,
+		mode: RoomStore["mode"],
+		modelId: string,
+		options: RoomStore["options"],
+	): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -209,24 +201,29 @@ export class ChatStore {
 			// get the roomId
 			const roomId = output.roomId;
 
-			const today = new Date();
-
 			// register the room
 			const room = this.newRoom(roomId);
 
 			// set the initial data
-			room.setModel(modelId);
 			room.setMetadata({
 				name: name,
-				dateCreated: today.toDateString(),
+				dateCreated: new Date().toISOString(),
 			});
+			room.setMode(mode);
+			room.setModel(modelId);
+
+			if (options.workspace) {
+				room.legacyLinkWorkspace(options.workspace?.workspace_id);
+			}
+
+			// push options to BE
+			if (Object.keys(options).length > 0) {
+				await room.updateRoomOptions(options);
+			}
 
 			runInAction(() => {
 				// add to the front
 				this._store.order.unshift(roomId);
-
-				// add to today's chats front
-				this._store.today.unshift(roomId);
 			});
 
 			// return the room
@@ -249,24 +246,12 @@ export class ChatStore {
 				this._store.order.splice(idx, 1);
 			}
 
-			// remove from the today's chat room
-			const tIdx = this._store.today.indexOf(roomId);
-			if (this._store.today.indexOf(roomId) > -1) {
-				this._store.today.splice(tIdx, 1);
-			}
-
-			// remove from the previous chat room
-			const pIdx = this._store.previousChats.indexOf(roomId);
-			if (pIdx > -1) {
-				this._store.previousChats.splice(pIdx, 1);
-			}
-
 			// delete the room
 			delete this._store.rooms[roomId];
 
 			// wait for the pixel to run
 			await this._actions.run<[boolean]>(
-				`CloseRoom(roomId=["${roomId}"]);`,
+				`RemoveUserRoom(roomId=["${roomId}"]);`,
 			);
 
 			// throw errors
@@ -297,6 +282,104 @@ export class ChatStore {
 	};
 
 	/**
+	 * Get available MCPs from the backend
+	 */
+	// Record<type, Record<id, MCP>>
+	getMcpMap = async (
+		filterWord?: string,
+	): Promise<Record<string, Record<string, MCP>>> => {
+		try {
+			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
+				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
+			);
+
+			if (
+				!pixelReturn ||
+				pixelReturn.length === 0 ||
+				!pixelReturn[0].output
+			) {
+				throw new Error();
+			}
+
+			const toolBoxes = pixelReturn[0].output.map(engineProjectToToolbox);
+
+			return toolBoxes.reduce(
+				(acc, tool) => {
+					if (!acc[tool.type]) {
+						acc[tool.type] = {};
+					}
+					acc[tool.type][tool.id] = tool;
+					return acc;
+				},
+				{} as Record<string, Record<string, MCP>>,
+			);
+		} catch {
+			throw new Error("Failed to fetch MCPs");
+		}
+	};
+
+	/**
+	 * Add a new workspace
+	 */
+	addWorkspace = async (
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+	): Promise<string> => {
+		try {
+			const esc = (v: string) =>
+				String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+			const name = esc(data.name ?? "");
+			const desc = esc(data.description ?? "");
+			const prompt = esc(data.system_prompt ?? "");
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
+
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcp=${JSON.stringify(mcp)})`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			runInAction(() => {
+				// add to the store
+				this._store.workspaces = {
+					...this._store.workspaces,
+					[pixelReturn[0].output]: {
+						workspace_id: pixelReturn[0].output,
+						name: data.name,
+						date_created: new Date().toISOString(),
+						description: data.description,
+						system_prompt: data.system_prompt,
+						mcp: data.mcp,
+					},
+				};
+			});
+
+			return pixelReturn[0].output;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	deleteWorkspace = async (workspaceId: string) => {
+		try {
+			await this._actions.run(
+				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
+			);
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			return;
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
+	/**
 	 * Helpers
 	 */
 	/**
@@ -317,6 +400,7 @@ export class ChatStore {
 						ROOM_ID: string;
 						ROOM_NAME: string;
 						DATE_CREATED: string;
+						WORKSPACE_ID?: string;
 					}[],
 				]
 			>(`GetUserConversationRooms();`);
@@ -330,8 +414,6 @@ export class ChatStore {
 
 			// get the info
 			const order = [];
-			const previousRooms = [];
-			const todayRooms = [];
 
 			// create room objects for each one. This will not instantiate it.
 			for (const r of output) {
@@ -348,30 +430,64 @@ export class ChatStore {
 					dateCreated: r.DATE_CREATED,
 				});
 
-				// parse current date
-				const today = new Date();
-				today.setHours(0, 0, 0, 0);
-
-				// parse room date
-				const roomDate = new Date(r.DATE_CREATED);
-				roomDate.setHours(0, 0, 0, 0);
-
-				// decide where to push - today's chats or previous chats
-				if (roomDate.getTime() === today.getTime()) {
-					todayRooms.push(r.ROOM_ID);
-				} else {
-					previousRooms.push(r.ROOM_ID);
-				}
+				room.setOptions(room.options);
 
 				// store the order
 				order.push(r.ROOM_ID);
 			}
 
 			runInAction(() => {
-				// clear the room info
+				// set the order
 				this._store.order = order;
-				this._store.previousChats = previousRooms;
-				this._store.today = todayRooms;
+			});
+		} finally {
+			this.setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Get available workspaces from the backend
+	 */
+	private getWorkspaces = async (): Promise<void> => {
+		// workspaces are not enabled, set it to the default
+		if (!ENABLE_WORKSPACE) {
+			this._store.workspaces = {};
+			return;
+		}
+
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// clear the models
+			this._store.workspaces = {};
+
+			// wait for the pixel to run
+			const { pixelReturn } =
+				await this._actions.run<
+					[
+						{
+							workspaces: Workspace[];
+						},
+					]
+				>(` ListWorkspaces()`);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			runInAction(() => {
+				// get the output
+				const { output } = pixelReturn[0];
+				// store the models
+				this._store.workspaces = output.workspaces.reduce(
+					(acc, workspace) => {
+						acc[workspace.workspace_id] = workspace;
+						return acc;
+					},
+					{} as Record<string, Workspace>,
+				);
 			});
 		} finally {
 			this.setIsLoading(false);
@@ -407,7 +523,6 @@ export class ChatStore {
 				` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
 			);
 
-			// throw errors
 			// throw errors
 			if (this._error) {
 				throw new Error(this._error.message);

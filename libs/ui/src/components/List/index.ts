@@ -1,25 +1,25 @@
-import { List, ListProps } from "./List";
-import { ListItem, ListItemProps } from "./ListItem";
-import { ListItemButton, ListItemButtonProps } from "./ListItemButton";
-import { ListItemIcon, ListItemIconProps } from "./ListItemIcon";
-import { ListItemText, ListItemTextProps } from "./ListItemText";
-import { ListItemAvatar, ListItemAvatarProps } from "./ListItemAvatar";
+import { List, type ListProps } from "./List";
+import { ListItem, type ListItemProps } from "./ListItem";
+import { ListItemAvatar, type ListItemAvatarProps } from "./ListItemAvatar";
+import { ListItemButton, type ListItemButtonProps } from "./ListItemButton";
+import { ListItemIcon, type ListItemIconProps } from "./ListItemIcon";
+import { ListItemText, type ListItemTextProps } from "./ListItemText";
 
 const ListNameSpace = Object.assign(List, {
-    Item: ListItem,
-    Icon: ListItemIcon,
-    ItemButton: ListItemButton,
-    ItemText: ListItemText,
-    ItemAvatar: ListItemAvatar,
+	Item: ListItem,
+	ItemIcon: ListItemIcon,
+	ItemButton: ListItemButton,
+	ItemText: ListItemText,
+	ItemAvatar: ListItemAvatar,
 });
 
 export type {
-    ListProps,
-    ListItemProps,
-    ListItemButtonProps,
-    ListItemIconProps,
-    ListItemTextProps,
-    ListItemAvatarProps,
+	ListProps,
+	ListItemProps,
+	ListItemButtonProps,
+	ListItemIconProps,
+	ListItemTextProps,
+	ListItemAvatarProps,
 };
 
 export { ListNameSpace as List };

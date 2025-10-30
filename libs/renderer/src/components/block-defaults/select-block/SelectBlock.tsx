@@ -6,11 +6,11 @@ import {
 	Typography,
 } from "@mui/material";
 import { observer } from "mobx-react-lite";
-import { CSSProperties, useEffect, useMemo, useState } from "react";
+import { type CSSProperties, useEffect, useMemo, useState } from "react";
 import { debounced } from "@semoss/sdk/react";
 import { CircularProgress, InputAdornment } from "@semoss/ui";
 import { useBlock } from "../../../hooks";
-import { BlockComponent, BlockDef, ListenerActions } from "../../../store";
+import type { BlockComponent, BlockDef, ListenerActions } from "../../../store";
 
 const StyledLoading = styled(CircularProgress)(({ theme }) => ({
 	color: theme.palette.divider,
@@ -70,9 +70,22 @@ export const SelectBlock: BlockComponent = observer(({ id }) => {
 			return [];
 		} else if (!Array.isArray(data?.options)) {
 			if (typeof data.options === "string") {
-				const opts: string = data.options;
+				let opts: string = (data.options as string).trim();
+				// If Python-style array, convert to valid JSON
 				if (opts.startsWith("[") && opts.endsWith("]")) {
-					arr = JSON.parse(data.options);
+					// Replace single quotes with double quotes
+					opts = opts.replace(/'/g, '"');
+					// Remove spaces after commas
+					opts = opts.replace(/,\s+/g, ",");
+					try {
+						arr = JSON.parse(opts);
+					} catch (e) {
+						// fallback: try to split manually
+						arr = opts
+							.slice(1, -1)
+							.split(",")
+							.map((s) => s.trim().replace(/^"|"$/g, ""));
+					}
 				}
 			}
 		} else {

@@ -1,47 +1,45 @@
-import { useEffect, useMemo, useRef } from 'react';
-
-import { Env } from '@semoss/sdk/react';
-
-import { Role } from '@/types';
+import { useEffect, useMemo, useRef } from "react";
+import { Env } from "@semoss/sdk/react";
+import type { Role } from "@/types";
 
 /**
  * @desc splits a string at the period
  * Used in the UI Builder and notebook
  */
-export const splitAtPeriod = (str, side = 'left') => {
-    const indexOfPeriod = str.indexOf('.');
-    if (indexOfPeriod === -1) {
-        return str; // No period found, return the entire string
-    }
+export const splitAtPeriod = (str, side = "left") => {
+	const indexOfPeriod = str.indexOf(".");
+	if (indexOfPeriod === -1) {
+		return str; // No period found, return the entire string
+	}
 
-    if (side === 'left') {
-        return str.substring(0, indexOfPeriod);
-    } else if (side === 'right') {
-        return str.substring(indexOfPeriod + 1);
-    } else {
-        throw new Error("Invalid side argument. Choose 'left' or 'right'");
-    }
+	if (side === "left") {
+		return str.substring(0, indexOfPeriod);
+	} else if (side === "right") {
+		return str.substring(indexOfPeriod + 1);
+	} else {
+		throw new Error("Invalid side argument. Choose 'left' or 'right'");
+	}
 };
 
 /**
  * @desc lowercases the whole string
  */
 export const lowercase = (str) => {
-    if (str.length === 0 || str.length === 1) {
-        return str.toLowerCase();
-    }
-    // Identify word boundaries using regular expression
-    const regex = /\b\w+\b/g;
-    const match = regex.exec(str);
-    if (!match) {
-        return str;
-    }
-    const word = match[0].toLowerCase();
-    return str.replace(regex, word);
+	if (str.length === 0 || str.length === 1) {
+		return str.toLowerCase();
+	}
+	// Identify word boundaries using regular expression
+	const regex = /\b\w+\b/g;
+	const match = regex.exec(str);
+	if (!match) {
+		return str;
+	}
+	const word = match[0].toLowerCase();
+	return str.replace(regex, word);
 };
 
 export const capitalizeFirstLetter = (str) => {
-    return str.replace(/\w{1}/, (match) => match.toUpperCase());
+	return str.replace(/\w{1}/, (match) => match.toUpperCase());
 };
 
 /*
@@ -49,9 +47,9 @@ export const capitalizeFirstLetter = (str) => {
  * "hello world" --> "Hello World"
  */
 export const toTitleCase = (str) => {
-    return str.replace(/\w\S*/g, (txt) => {
-        return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
-    });
+	return str.replace(/\w\S*/g, (txt) => {
+		return txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase();
+	});
 };
 
 /**
@@ -59,174 +57,195 @@ export const toTitleCase = (str) => {
  * "this_is_a_string" --> "This is a string"
  */
 export const removeUnderscores = (str: string) => {
-    let i;
-    const frags = str.split('_');
-    for (i = 0; i < frags.length; i++) {
-        frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
-    }
-    return frags.join(' ');
+	let i;
+	const frags = str.split("_");
+	for (i = 0; i < frags.length; i++) {
+		frags[i] = frags[i].charAt(0).toUpperCase() + frags[i].slice(1);
+	}
+	return frags.join(" ");
 };
 
-export const formatPermission = (permission: Role | ''): string => {
-    const errorString = 'No permission found';
+export const formatPermission = (permission: Role | ""): string => {
+	const errorString = "No permission found";
 
-    if (!permission) {
-        return errorString;
-    }
+	if (!permission) {
+		return errorString;
+	}
 
-    switch (permission) {
-        case 'OWNER':
-            return 'Author';
-        case 'EDIT':
-        case 'EDITOR':
-            return 'Editor';
-        case 'READ_ONLY':
-        case 'VIEWER':
-            return 'Read-Only';
-        case 'DISCOVERABLE':
-            return 'Discoverable';
-        default:
-            return errorString;
-    }
+	switch (permission) {
+		case "OWNER":
+			return "Author";
+		case "EDIT":
+		case "EDITOR":
+			return "Editor";
+		case "READ_ONLY":
+		case "VIEWER":
+			return "Read-Only";
+		case "DISCOVERABLE":
+			return "Discoverable";
+		default:
+			return errorString;
+	}
 };
 
 /**
  * @desc Copies string to clipboard
  */
 export const copyTextToClipboard = (text: string, notificationService) => {
-    try {
-        navigator.clipboard.writeText(text);
+	try {
+		navigator.clipboard.writeText(text);
 
-        notificationService.add({
-            color: 'success',
-            message: 'Succesfully copied to clipboard',
-        });
-    } catch (e) {
-        notificationService.add({
-            color: 'error',
-            message: e.message,
-        });
-    }
+		notificationService.add({
+			color: "success",
+			message: "Successfully copied to clipboard",
+		});
+	} catch (e) {
+		notificationService.add({
+			color: "error",
+			message: e.message,
+		});
+	}
 };
 
 export const getSDKSnippet = (
-    type: 'py' | 'js',
-    accessKey?: string,
-    secretKey?: string,
+	type: "py" | "js",
+	accessKey?: string,
+	secretKey?: string,
 ) => {
-    if (type === 'py') {
-        return `
+	if (type === "py") {
+		return `
 # import the ai platform package
 import ai_server
 
 # pass in your access and secret keys to authenticate
 server_connection=ai_server.ServerClient(
     access_key="${
-        accessKey ? accessKey : '<your access key>'
-    }",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
+		accessKey ? accessKey : "<your access key>"
+	}",             # example: "d0033d40-ea83-4083-96ce-17a01451f831"
     secret_key="${
-        secretKey ? secretKey : '<your access key>'
-    }",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
+		secretKey ? secretKey : "<your access key>"
+	}",             # example: "c2b3fae8-20d1-458c-8565-30ae935c4dfb"
     base="${Env.MODULE}/api"
 )
 `;
-    } else {
-        return `
+	} else {
+		return `
 # .env
 MODULE="${Env.MODULE}"
 
 #.env.local
-ACCESS_KEY="${accessKey ? accessKey : '<your access key>'}"
-SECRET_KEY="${secretKey ? secretKey : '<your secret key>'}"
+ACCESS_KEY="${accessKey ? accessKey : "<your access key>"}"
+SECRET_KEY="${secretKey ? secretKey : "<your secret key>"}"
 `;
-    }
+	}
 };
 
 const debounce = (func, wait) => {
-    let timeout;
+	let timeout;
 
-    return function executedFunction(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func(...args);
-        };
+	return function executedFunction(...args) {
+		const later = () => {
+			clearTimeout(timeout);
+			func(...args);
+		};
 
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
+		clearTimeout(timeout);
+		timeout = setTimeout(later, wait);
+	};
 };
 
 /**
  * @desc useDebounce utility function returns a debounced function
  */
 export const debounced = (callback, delay) => {
-    const ref = useRef(() => {
-        console.log('ref');
-    });
+	const ref = useRef(() => {
+		console.log("ref");
+	});
 
-    useEffect(() => {
-        ref.current = callback;
-    }, [callback]);
+	useEffect(() => {
+		ref.current = callback;
+	}, [callback]);
 
-    const debouncedCallback = useMemo(() => {
-        const func = () => {
-            ref.current?.();
-        };
+	const debouncedCallback = useMemo(() => {
+		const func = () => {
+			ref.current?.();
+		};
 
-        return debounce(func, delay);
-    }, []);
+		return debounce(func, delay);
+	}, []);
 
-    return debouncedCallback;
+	return debouncedCallback;
 };
 
 /**
  * @desc Checks if output and verify if its a JSON object
  */
 export const isOutputJSON = (output: unknown) => {
-    if (typeof output === 'object' && output !== null) {
-        return output;
-    }
-    if (typeof output === 'string') {
-        try {
-            return JSON.parse(output);
-        } catch (e) {
-            const validateJsonString = output.replace(/'/g, '"');
-            try {
-                return JSON.parse(validateJsonString);
-            } catch (InnerError) {
-                return null;
-            }
-        }
-    }
-    return null;
+	if (typeof output === "object" && output !== null) {
+		return output;
+	}
+	if (typeof output === "string") {
+		try {
+			return JSON.parse(output);
+		} catch (e) {
+			const validateJsonString = output.replace(/'/g, '"');
+			try {
+				return JSON.parse(validateJsonString);
+			} catch (InnerError) {
+				return null;
+			}
+		}
+	}
+	return null;
 };
 
 export const permissionPriorityMapper = (permission: string | number) => {
-    if (!permission) {
-        console.warn('No permission');
-        return;
+	if (!permission) {
+		console.warn("No permission");
+		return;
+	}
+
+	switch (permission) {
+		case 1:
+		case "OWNER":
+			return { permission: "Author", priority: 1 };
+		case "Author":
+			return { permission: "OWNER", priority: 1 };
+
+		case 2:
+		case "EDIT":
+			return { permission: "Editor", priority: 2 };
+		case "Editor":
+			return { permission: "EDIT", priority: 2 };
+
+		case 3:
+		case "READ_ONLY":
+			return { permission: "Read-Only", priority: 3 };
+		case "Read-Only":
+			return { permission: "READ_ONLY", priority: 3 };
+
+		default:
+			return { permission: "", priority: 0 };
+	}
+};
+
+/**
+ * @name extractInitials
+ *
+ * Extract a initials for a string
+ *
+ * @param str
+ */
+export const extractInitials = (str: string): string => {
+    if (str.length < 1) {
+        return '';
     }
 
-    switch (permission) {
-        case 1:
-        case 'OWNER':
-            return { permission: 'Author', priority: 1 };
-        case 'Author':
-            return { permission: 'OWNER', priority: 1 };
+    return str.split(' ').reduce((prev, curr) => {
+        return prev + (curr[0] || '');
+    }, '');
+}
 
-        case 2:
-        case 'EDIT':
-            return { permission: 'Editor', priority: 2 };
-        case 'Editor':
-            return { permission: 'EDIT', priority: 2 };
-
-        case 3:
-        case 'READ_ONLY':
-            return { permission: 'Read-Only', priority: 3 };
-        case 'Read-Only':
-            return { permission: 'READ_ONLY', priority: 3 };
-
-        default:
-            return { permission: '', priority: 0 };
-    }
+export const formatToDataTestId = (text: string) => {
+	return text.replaceAll(/\(\)/g, "").replaceAll(" ", "-");
 };

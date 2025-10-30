@@ -12,38 +12,56 @@ const fs = require("fs");
  * @returns {string} HTML content for the webview
  */
 function getSeparateChatbotHtml(webview, context) {
-    // Use the extension's file system path
-    const extensionPath = context.extensionPath;
+	// Use the extension's file system path
+	const extensionPath = context.extensionPath;
 
-    // Get paths to the HTML, CSS, and JS files
-    const htmlPath = vscode.Uri.file(
-        path.join(extensionPath, 'src', 'components', 'Chatbot-ui', 'index.html')
-    );
-    const cssPath = vscode.Uri.file(
-        path.join(extensionPath, 'src', 'components', 'Chatbot-ui', 'style.css')
-    );
-    const jsPath = vscode.Uri.file(
-        path.join(extensionPath, 'src', 'components', 'Chatbot-ui', 'script.js')
-    );
+	// Get paths to the HTML, CSS, and JS files
+	const htmlPath = vscode.Uri.file(
+		path.join(
+			extensionPath,
+			"src",
+			"components",
+			"Chatbot-ui",
+			"index.html",
+		),
+	);
+	const cssPath = vscode.Uri.file(
+		path.join(
+			extensionPath,
+			"src",
+			"components",
+			"Chatbot-ui",
+			"style.css",
+		),
+	);
+	const jsPath = vscode.Uri.file(
+		path.join(
+			extensionPath,
+			"src",
+			"components",
+			"Chatbot-ui",
+			"script.js",
+		),
+	);
 
-    // Convert URIs to webview-friendly format
-    const cssUri = webview.asWebviewUri(cssPath);
-    const jsUri = webview.asWebviewUri(jsPath);
+	// Convert URIs to webview-friendly format
+	const cssUri = webview.asWebviewUri(cssPath);
+	const jsUri = webview.asWebviewUri(jsPath);
 
-    // Read the HTML file
-    try {
-        let htmlContent = fs.readFileSync(htmlPath.fsPath, 'utf8');
+	// Read the HTML file
+	try {
+		let htmlContent = fs.readFileSync(htmlPath.fsPath, "utf8");
 
-        // Replace resource references with webview URIs
-        htmlContent = htmlContent
-            .replace('href="style.css"', `href="${cssUri}"`)
-            .replace('src="script.js"', `src="${jsUri}"`);
+		// Replace resource references with webview URIs
+		htmlContent = htmlContent
+			.replace('href="style.css"', `href="${cssUri}"`)
+			.replace('src="script.js"', `src="${jsUri}"`);
 
-        return htmlContent;
-    } catch (error) {
-        console.error('Failed to load chatbot HTML:', error);
-        return getErrorHtml(error);
-    }
+		return htmlContent;
+	} catch (error) {
+		console.error("Failed to load chatbot HTML:", error);
+		return getErrorHtml(error);
+	}
 }
 
 /**
@@ -52,7 +70,12 @@ function getSeparateChatbotHtml(webview, context) {
  * @returns {string} Path to user manual PDF
  */
 function getUserManualPath(context) {
-    return path.join(context.extensionPath, 'assets', 'docs', 'semoss_user_manual.pdf');
+	return path.join(
+		context.extensionPath,
+		"assets",
+		"docs",
+		"semoss_user_manual.pdf",
+	);
 }
 
 /**
@@ -61,7 +84,7 @@ function getUserManualPath(context) {
  * @returns {string} Error HTML
  */
 function getErrorHtml(error) {
-    return `
+	return `
         <!DOCTYPE html>
         <html lang="en">
         <head>
@@ -119,8 +142,8 @@ function getErrorHtml(error) {
  * Exports the original getChatbotHtml and handleChatbotAction functions for backward compatibility
  */
 function handleChatbotAction(action, options) {
-    console.log('handleChatbotAction called with:', action, options);
-    // Implementation can be added here if needed
+	console.log("handleChatbotAction called with:", action, options);
+	// Implementation can be added here if needed
 }
 
 /**
@@ -129,24 +152,28 @@ function handleChatbotAction(action, options) {
  * @returns {string|null} The command string or null if not recognized
  */
 function mapMessageToCommand(msg) {
-    if (!msg || !msg.text) return null;
-    const text = msg.text.toLowerCase();
+	if (!msg || !msg.text) return null;
+	const text = msg.text.toLowerCase();
 
-    if (text.includes('authorize')) return 'semoss.authorize';
-    if (text.includes('create') && text.includes('app')) return 'semoss.createNewApp';
-    if (text.includes('zip') && text.includes('deploy')) return 'semoss.zipanddeploy';
-    if (text.includes('zip')) return 'semoss.ziponly';
-    if (text.includes('deploy')) return 'semoss.deployonly';
-    if (text.includes('remove') && text.includes('instance')) return 'semoss.removeInstance';
-    if (text.includes('select') && text.includes('instance')) return 'semoss.selectInstance';
-    if (text.includes('chatbot')) return 'semoss.openChatbot';
+	if (text.includes("authorize")) return "semoss.authorize";
+	if (text.includes("create") && text.includes("app"))
+		return "semoss.createNewApp";
+	if (text.includes("zip") && text.includes("deploy"))
+		return "semoss.zipanddeploy";
+	if (text.includes("zip")) return "semoss.ziponly";
+	if (text.includes("deploy")) return "semoss.deployonly";
+	if (text.includes("remove") && text.includes("instance"))
+		return "semoss.removeInstance";
+	if (text.includes("select") && text.includes("instance"))
+		return "semoss.selectInstance";
+	if (text.includes("chatbot")) return "semoss.openChatbot";
 
-    return null;
+	return null;
 }
 
-module.exports = { 
-    getSeparateChatbotHtml, 
-    getUserManualPath, 
-    handleChatbotAction, 
-    mapMessageToCommand 
+module.exports = {
+	getSeparateChatbotHtml,
+	getUserManualPath,
+	handleChatbotAction,
+	mapMessageToCommand,
 };

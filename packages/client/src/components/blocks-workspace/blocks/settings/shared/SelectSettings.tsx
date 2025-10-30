@@ -1,125 +1,130 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { computed } from 'mobx';
-import { observer } from 'mobx-react-lite';
-
-import { AutocompleteTwo, TextField } from '@semoss/ui';
+import { computed } from "mobx";
+import { observer } from "mobx-react-lite";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
-    Paths,
-    PathValue,
-    useBlocks,
-    Block,
-    BlockDef,
-    getValueByPath,
-} from '@semoss/renderer';
-
-import { BaseSettingSection } from '../BaseSettingSection';
-import { useBlockSettings } from '@/hooks';
+	type Block,
+	type BlockDef,
+	getValueByPath,
+	type Paths,
+	type PathValue,
+	useBlocks,
+} from "@semoss/renderer";
+import { Autocomplete, TextField } from "@semoss/ui";
+import { useBlockSettings } from "@/hooks";
+import { BaseSettingSection } from "../BaseSettingSection";
 
 interface SelectSettingsProps<D extends BlockDef = BlockDef> {
-    /**
-     * Id of the block that is being worked with
-     */
-    id: string;
+	/**
+	 * Id of the block that is being worked with
+	 */
+	id: string;
 
-    /**
-     * Label to pass into the input
-     */
-    label: string;
+	/**
+	 * Label to pass into the input
+	 */
+	label: string;
 
-    /**
-     * Path to update
-     */
-    path: Paths<Block<D>['data'], 4>;
+	/**
+	 * Path to update
+	 */
+	path: Paths<Block<D>["data"], 4>;
 
-    /**
-     * Options
-     */
-    options: string[];
+	/**
+	 * Options
+	 */
+	options: string[];
+
+	// TODO: ARRAY of options
+	/**
+	 * Multiple options
+	 */
+	multiple: boolean;
 }
 
 export const SelectSettings = observer(
-    <D extends BlockDef = BlockDef>({
-        id,
-        label = '',
-        path,
-        options,
-    }: SelectSettingsProps<D>) => {
-        const { data, setData } = useBlockSettings<D>(id);
-        const { state } = useBlocks();
-        //  track the value
-        const [value, setValue] = useState([]);
+	<D extends BlockDef = BlockDef>({
+		id,
+		label = "",
+		path,
+		options,
+		multiple = true,
+	}: SelectSettingsProps<D>) => {
+		const { data, setData } = useBlockSettings<D>(id);
+		const { state } = useBlocks();
+		//  track the value
+		const [value, setValue] = useState([]);
 
-        // track the ref to debounce the input
-        const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
+		// track the ref to debounce the input
+		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 
-        // get the value of the input (wrapped in usememo because of path prop)
-        const computedValue = useMemo(() => {
-            return computed(() => {
-                if (!data) {
-                    return [];
-                }
+		// get the value of the input (wrapped in usememo because of path prop)
+		const computedValue = useMemo(() => {
+			return computed(() => {
+				if (!data) {
+					return [];
+				}
 
-                const v = getValueByPath(data, path);
-                if (typeof v === 'undefined') {
-                    return [];
-                } else if (typeof v === 'string') {
-                    return (v as string).split(',');
-                }
+				const v = getValueByPath(data, path);
+				if (typeof v === "undefined") {
+					return [];
+				} else if (typeof v === "string") {
+					return (v as string).split(",");
+				}
 
-                return v;
-            });
-        }, [data, path]).get();
+				return v;
+			});
+		}, [data, path]).get();
 
-        // update the value whenever the computed one changes
-        useEffect(() => {
-            setValue(computedValue as string[]);
-        }, [computedValue]);
+		// update the value whenever the computed one changes
+		useEffect(() => {
+			setValue(computedValue as string[]);
+		}, [computedValue]);
 
-        /**
-         * Sync the data on change
-         */
-        const onChange = (value: string[]) => {
-            // set the value
-            setValue(value);
+		/**
+		 * Sync the data on change
+		 */
+		const onChange = (value: string[]) => {
+			// set the value
+			setValue(value);
 
-            // clear out he old timeout
-            if (timeoutRef.current) {
-                clearTimeout(timeoutRef.current);
-                timeoutRef.current = null;
-            }
+			// clear out he old timeout
+			if (timeoutRef.current) {
+				clearTimeout(timeoutRef.current);
+				timeoutRef.current = null;
+			}
 
-            timeoutRef.current = setTimeout(() => {
-                try {
-                    // set the value
-                    setData(path, value as PathValue<D['data'], typeof path>);
-                } catch (e) {
-                    console.log(e);
-                }
-            }, 300);
-        };
+			timeoutRef.current = setTimeout(() => {
+				try {
+					// set the value
+					setData(path, value as PathValue<D["data"], typeof path>);
+				} catch (e) {
+					console.log(e);
+				}
+			}, 300);
+		};
 
-        return (
-            <BaseSettingSection label={label}>
-                <AutocompleteTwo
-                    fullWidth
-                    multiple
-                    value={value}
-                    options={options}
-                    getOptionLabel={(option) => option}
-                    onChange={(_, value) => {
-                        onChange(value);
-                    }}
-                    freeSolo={false}
-                    renderInput={(params) => (
-                        <TextField
-                            {...params}
-                            placeholder="Select extensions"
-                            size="small"
-                            variant="outlined"
-                        />
-                    )}
-                />
-            </BaseSettingSection>
-        );
-    },
+		return (
+			<BaseSettingSection label={label}>
+				<Autocomplete
+					fullWidth
+					multiple={multiple}
+					value={value}
+					options={options}
+					getOptionLabel={(option) => option}
+					onChange={(_, value) => {
+						onChange(value);
+					}}
+					freeSolo={false}
+					renderInput={(params) => (
+						<TextField
+							{...params}
+							placeholder="Select extensions"
+							size="small"
+							variant="outlined"
+						/>
+					)}
+				/>
+			</BaseSettingSection>
+		);
+	},
 );

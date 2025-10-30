@@ -1,0 +1,304 @@
+import { Delete } from "@mui/icons-material";
+import { observer } from "mobx-react-lite";
+import { useState } from "react";
+import {
+	Button,
+	IconButton,
+	List,
+	Menu,
+	Slider,
+	styled,
+	TextField,
+	Typography,
+} from "@semoss/ui";
+import {
+	RightMenu,
+	RightMenuContent,
+	RightMenuTitle,
+	ToolboxOverlay,
+	WorkspaceCard,
+	WorkspaceModal,
+} from "@/components";
+import { useChat } from "@/hooks";
+import type { RoomStore } from "@/stores";
+import type { MCP, MCPConfig } from "@/types";
+
+const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+const ENABLE_TOOLS = import.meta.env.VITE_ENABLE_TOOLS === "true";
+
+const StyledTextField = styled(TextField)(({ theme }) => ({
+	borderRadius: theme.shape.borderRadiusSm,
+	borderColor: theme.palette.secondary.border,
+}));
+
+const marks = [
+	{ value: 0, label: "0" },
+	{ value: 0.2 },
+	{ value: 0.4 },
+	{ value: 0.6 },
+	{ value: 0.8 },
+	{ value: 1, label: "1" },
+];
+
+interface RoomConfigurationProps {
+	/** Options for the room */
+	options: RoomStore["options"];
+
+	/** Update options on change */
+	setOptions: (options: RoomStore["options"]) => void;
+
+	/** Close the Menu */
+	onClose?: () => void;
+
+	/** The room, used to make updates */
+	room?: Pick<RoomStore, "removeMCP" | "setMCPs">;
+}
+
+export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
+	const { options, setOptions, onClose, room } = props;
+
+	/**
+	 * Library hooks
+	 */
+	const { chat } = useChat();
+
+	// get the workspace if there is one
+	const workspaceId = options.workspace?.workspace_id ?? null;
+	const workspace = chat.workspaces[workspaceId] ?? null;
+
+	/**
+	 * State
+	 */
+	const [isToolsOpen, setIsToolsOpen] = useState<boolean>(false);
+	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
+		useState<boolean>(false);
+
+	/**
+	 * Functions
+	 */
+	const handleDeleteMCP = async (mcp: MCPConfig) => {
+		// Remove the MCP from the options
+		if (room) {
+			await room.removeMCP(mcp);
+		} else {
+			// otherwise we're creating a new room, just update the options
+			const updatedMCPs = options.mcp.filter(
+				(t) => !(t.id === mcp.id && t.type === mcp.type),
+			);
+			setOptions({
+				...options,
+				mcp: updatedMCPs,
+			});
+		}
+	};
+
+	const handleMCPClose = async (success: boolean, mcp: MCP[]) => {
+		if (success) {
+			// update the mcp list if successful
+			const mcpConfigs: MCPConfig[] = mcp.map(({ id, type, name }) => ({
+				id,
+				type,
+				name,
+			}));
+			if (room) {
+				await room.setMCPs(mcpConfigs);
+			} else {
+				// otherwise we're creating a new room, just update the options
+				setOptions({
+					...options,
+					mcp: mcpConfigs,
+				});
+			}
+		}
+
+		// close it
+		setIsToolsOpen(false);
+	};
+
+	return (
+		<RightMenu header={"Configuration"} onClose={() => onClose()}>
+			{ENABLE_MODEL_SELECT && (
+				<>
+					<RightMenuTitle name={"Model"} />
+					<RightMenuContent direction="column" spacing={1}>
+						<Typography
+							variant="body2"
+							sx={{
+								color: "text.secondary",
+							}}
+						>
+							Select Model
+						</Typography>
+						<StyledTextField
+							select
+							placeholder="Select a Model"
+							value={chat.models.selected}
+							onChange={(e) => {
+								chat.setSelectedModel(e.target.value);
+							}}
+						>
+							{chat.models.options.map((m) => (
+								<Menu.Item key={m.app_id} value={m.app_id}>
+									{m.app_name}
+								</Menu.Item>
+							))}
+						</StyledTextField>
+					</RightMenuContent>
+				</>
+			)}
+			{workspace && (
+				<>
+					<RightMenuTitle name="Workspace" />
+					<RightMenuContent direction="column" spacing={1}>
+						<WorkspaceCard
+							workspace={workspace}
+							onPrimaryClick={() => setIsWorkspaceModalOpen(true)}
+						/>
+					</RightMenuContent>
+				</>
+			)}
+			<RightMenuTitle name={"Context"} />
+			<RightMenuContent>
+				<StyledTextField
+					size="small"
+					variant="outlined"
+					fullWidth
+					placeholder={"Instructions"}
+					multiline
+					minRows={4}
+					maxRows={6}
+					value={options.instructions}
+					onChange={(e) => {
+						setOptions({
+							...options,
+							instructions: e.target.value,
+						});
+					}}
+				/>
+			</RightMenuContent>
+			{ENABLE_TOOLS && (
+				<>
+					<RightMenuTitle
+						name={"MCPs"}
+						actions={
+							<Button
+								variant="outlined"
+								color="inherit"
+								size="small"
+								onClick={() => {
+									setIsToolsOpen(true);
+								}}
+							>
+								Add
+							</Button>
+						}
+					/>
+
+					<RightMenuContent direction={"column"} spacing={1}>
+						<List dense={true}>
+							{options.mcp.length ? (
+								options.mcp.map((mcp) => {
+									return (
+										<List.Item
+											key={mcp.id}
+											dense={true}
+											secondaryAction={
+												<IconButton
+													edge="end"
+													aria-label="delete"
+													size="small"
+													onClick={() =>
+														handleDeleteMCP(mcp)
+													}
+												>
+													<Delete
+														fontSize={"small"}
+													/>
+												</IconButton>
+											}
+										>
+											<List.ItemText primary={mcp.name} />
+										</List.Item>
+									);
+								})
+							) : (
+								<List.Item dense={true}>
+									<Typography
+										variant="caption"
+										sx={{
+											width: "100%",
+											textAlign: "center",
+										}}
+									>
+										No MCPs added
+									</Typography>
+								</List.Item>
+							)}
+						</List>
+					</RightMenuContent>
+				</>
+			)}
+			<RightMenuTitle name={"Options"} />
+			<RightMenuContent direction="column" spacing={1}>
+				<Typography
+					variant="body2"
+					sx={{
+						color: "text.secondary",
+					}}
+				>
+					Update Token Length:
+				</Typography>
+				<TextField
+					aria-label="Token Length"
+					value={options.tokenLength ?? ""}
+					onChange={(e) =>
+						setOptions({
+							...options,
+							tokenLength:
+								Number(e.target.value?.replace(/\D/g, "")) ||
+								null,
+						})
+					}
+					size="small"
+					variant="outlined"
+					fullWidth={true}
+				/>
+				<Typography
+					variant="body2"
+					sx={{
+						color: "text.secondary",
+					}}
+				>
+					Update Temperature:
+				</Typography>
+				<Slider
+					aria-label="Temperature"
+					value={options.temperature}
+					onChange={(_e, val) =>
+						setOptions({
+							...options,
+							temperature: val as number,
+						})
+					}
+					size="small"
+					valueLabelDisplay="auto"
+					min={0}
+					max={1}
+					step={0.01}
+					marks={marks}
+				/>
+			</RightMenuContent>
+			{isToolsOpen && (
+				<ToolboxOverlay
+					mcp={options.mcp}
+					onClose={(success, mcp) => handleMCPClose(success, mcp)}
+				/>
+			)}
+			<WorkspaceModal
+				workspaceInfo={workspace}
+				open={isWorkspaceModalOpen}
+				onClose={() => setIsWorkspaceModalOpen(false)}
+			/>
+		</RightMenu>
+	);
+});

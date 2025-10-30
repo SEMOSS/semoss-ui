@@ -1,7 +1,7 @@
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "FUNCTION" | "DATABASE" | "KNOWLEDGE";
+	app_type: "STORAGE" | "DATABASE" | "FUNCTION";
 	description?: string;
 }
 
@@ -9,6 +9,16 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
+	project_date_created: string;
+}
+
+export interface Workspace {
+	workspace_id: string;
+	name: string;
+	date_created: string; // ISO string
+	description: string;
+	system_prompt: string;
+	mcp: MCPConfig[];
 }
 
 /**
@@ -25,24 +35,24 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Knowledge {
-	/** Id of the tool */
+export interface MCP {
+	/** Type of the mcp */
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
+
+	/** Id of the mcp */
 	id: string;
 
-	/** Name of the tool */
+	/** Name of the mcp */
 	name: string;
+
+	/** Description of the mcp */
+	description: string;
+
+	/** Tags of the mcp */
+	tags: string[];
 }
 
-export interface Tool {
-	/** Type of the tool */
-	type: "APP" | "FUNCTION" | "DATABASE";
-
-	/** Id of the tool */
-	id: string;
-
-	/** Name of the tool */
-	name: string;
-}
+export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
 
 /**
  * Item from the prompt library
@@ -57,20 +67,6 @@ export interface Prompt {
 	CONTEXT: string;
 	tags: string[];
 }
-
-export type FileObj =
-	| {
-			name: string;
-			lastModified: number;
-			webkitRelativePath: string;
-			size: number;
-			type: string;
-			slice: number;
-			stream: number;
-			text: number;
-			//   arrayBuffer?: string;
-	  }
-	| Record<string, never>;
 
 /**
  * Messages from the backend
@@ -87,15 +83,15 @@ interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
-	ornaments: {
-		chunks: unknown[];
-	};
 }
 
 interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
-	visible: true;
 	inputUIPrompt: string;
+	files: {
+		fileName: string;
+		fileLocation: string;
+	}[];
 	modelId: string;
 	paramMap: {
 		max_new_tokens: number;
@@ -106,49 +102,110 @@ interface InputTextPixelMessage extends AbstractPixelMessage {
 interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TOOL_EXEC";
 	visible: false;
-	toolResponse: {
-		/** tool execution id */
-		id: string;
-
-		/**  TBD? **/
-		name: string;
-
-		/** THIS IS A STRING, but ONLY in playground we parse as an app */
-		/** THIS IS THE FINAL STATE OF A TOOL (what was actually ran) */
-		arguments: {
-			/** App ID */
-			id: string;
-
-			/** Parameters for app */
-			map: Record<string, unknown>;
-		};
-	}[];
+	tool_call_id: string;
+	tool_name: string;
 }
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
-	visible: true;
 	content: string;
+	ornaments: {
+		PLAYGROUND_MESSAGE_TYPE?: "COT";
+	};
 }
+
+export type McpExecution = "auto" | "ask" | "disabled";
 
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
-	visible: true;
-	toolResponse: {
+	tool_responses: {
 		/** tool execution id */
 		id: string;
 
-		/**  TBD? **/
+		/** meta data from the tool */
+		_meta: {
+			map: {
+				SMSS_PROJECT_NAME: string;
+				SMSS_PROJECT_ID: string;
+				SMSS_MCP_EXECUTION: McpExecution;
+			};
+		};
+
+		/**  Display of the tool **/
+		title: string;
+
+		/**  Name of function **/
 		name: string;
 
 		/** THIS IS A STRING, but ONLY in playground we parse as an app */
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
-		arguments: {
-			/** App ID */
-			id: string;
+		arguments: Record<string, unknown>;
+	}[];
+}
 
-			/** Parameters for app */
-			map: Record<string, unknown>;
-		};
+/**
+ * Plan
+ */
+export interface Plan {
+	user_prompt: string;
+	plan_id: string;
+	steps: PlanStep[];
+}
+
+export interface PlanStep {
+	step_number: number;
+	step_name: string;
+	description: string;
+	type:
+		| "tool_call"
+		| "llm_reasoning"
+		| "human_intervention"
+		| "no_tool_available";
+	status: "pending" | "in_progress" | "completed" | "failed";
+	details:
+		| {
+				stepType: "tool_call";
+				tool_name: string;
+				parameters: Record<string, unknown>;
+				rationaleForStep: string;
+				title: string;
+				_meta: {
+					map: {
+						SMSS_PROJECT_NAME: string;
+						SMSS_PROJECT_ID: string;
+					};
+				};
+		  }
+		| {
+				stepType: "llm_reasoning";
+				prompt: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "human_intervention";
+				required_role: string;
+				instructions: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "no_tool_available";
+				missing_capability: string;
+				rationaleForStep: string;
+		  };
+}
+
+export interface MCPTool {
+	description?: string;
+	inputSchema: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
 	};
+	name: string;
+	outputSchema?: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	title?: string;
 }

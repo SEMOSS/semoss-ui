@@ -10,6 +10,10 @@ import { useDesigner } from './useDesigner';
 import { useStepper } from './useStepper';
 import { useWorkspace } from './useWorkspace';
 import { usePage } from './usePage';
+import { useDatabaseStructure } from './useDatabaseStructure';
+import { useQueryExecution } from './useDatabaseQueryExecution';
+import { useQueryEditor } from './useDatabaseQueryEditor';
+import { useQueryResults } from './useDatabaseQueryResults';
 import { useBlockSettings } from './useBlockSettings';
 
 export {
@@ -26,4 +30,8 @@ export {
     useStepper,
     useWorkspace,
     usePage,
+    useDatabaseStructure,
+    useQueryExecution,
+    useQueryEditor,
+    useQueryResults,
 };
