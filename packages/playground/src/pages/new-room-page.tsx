@@ -83,16 +83,32 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
+		if (mode.type === "workspace" && mode.workspace) {
+			options.workspace = {
+				workspace_id: mode.workspace.workspace_id,
+			};
+		}
+
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			mode.type === "plan" ? "planning" : "chat",
 			chat.models.selected,
-			options,
+			mode.type === "workspace" && mode.workspace
+				? {
+						...options,
+						workspace: {
+							workspace_id: mode.workspace.workspace_id,
+						},
+					}
+				: options,
 		);
 
 		// ask the room
 		await room.askMessage(prompt, files);
+
+		// mark the room as initialized
+		room.setInitialized();
 
 		// turn the loading screen off
 		setIsLoading(false);

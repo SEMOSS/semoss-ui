@@ -23,12 +23,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import {
-	RoomSidebar,
-	ToolboxOverlay,
-	WorkspaceCard,
-	WorkspaceOverlay,
-} from "@/components";
+import { RoomSidebar, ToolboxOverlay } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCP, MCPConfig } from "@/types";
@@ -58,16 +53,10 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 	 */
 	const { chat } = useChat();
 
-	// get the workspace if there is one
-	const workspaceId = options.workspace?.workspace_id ?? null;
-	const workspace = chat.workspaces[workspaceId] ?? null;
-
 	/**
 	 * State
 	 */
 	const [isToolsOpen, setIsToolsOpen] = useState<boolean>(false);
-	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
-		useState<boolean>(false);
 
 	/**
 	 * Functions
@@ -149,18 +138,6 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 												</SelectGroup>
 											</SelectContent>
 										</Select>
-									</Field>
-								)}
-
-								{workspace && (
-									<Field>
-										<FieldLabel>Workspace</FieldLabel>
-										<WorkspaceCard
-											workspace={workspace}
-											onPrimaryClick={() =>
-												setIsWorkspaceModalOpen(true)
-											}
-										/>
 									</Field>
 								)}
 
@@ -259,13 +236,6 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 											mcp={options.mcp}
 											onClose={(success, mcp) =>
 												handleMCPClose(success, mcp)
-											}
-										/>
-										<WorkspaceOverlay
-											workspaceInfo={workspace}
-											open={isWorkspaceModalOpen}
-											onClose={() =>
-												setIsWorkspaceModalOpen(false)
 											}
 										/>
 									</>

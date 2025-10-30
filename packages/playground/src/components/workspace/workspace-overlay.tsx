@@ -1,7 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDebouncedValue } from "@semoss/sdk/react";
-import { useNotification } from "@semoss/ui";
 import {
 	Button,
 	Checkbox,
@@ -17,6 +16,7 @@ import {
 	Input,
 	Label,
 	Textarea,
+	toast,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
 import type { MCP, Workspace } from "@/types";
@@ -40,7 +40,6 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	/**
 	 * Library Hooks
 	 */
-	const notification = useNotification();
 	const { chat } = useChat();
 
 	/**
@@ -84,10 +83,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 		} catch (e) {
 			console.error(e);
 
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+			toast.error(e.message);
 		} finally {
 			// stop the loading screen
 			setIsLoading(false);
@@ -106,16 +102,13 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			} catch (e) {
 				console.error(e);
 
-				notification.add({
-					color: "error",
-					message: e.message,
-				});
+				toast.error(e.message);
 			} finally {
 				setIsLoading(false);
 			}
 		};
 		fetchMCPs();
-	}, [chat.getMcpMap, notification.add, debouncedSearchWord]);
+	}, [chat.getMcpMap, debouncedSearchWord]);
 
 	/**
 	 * Constants
