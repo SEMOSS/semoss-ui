@@ -1,20 +1,7 @@
-import { ChevronRight } from "@mui/icons-material";
-import { useEffect, useState } from "react";
-import { Accordion, LinearProgress, Search, styled, Table } from "@semoss/ui";
+import { Accordion, LinearProgress, styled, Table, Stack } from "@semoss/ui";
 import { HistoryRow } from "./HistoryRow";
 import type { HistoryJob } from "./job.types";
-import { Stack } from "@semoss/ui";
 
-const StyledAccordion = styled(Accordion)(() => ({
-	"&:before": {
-		display: "none",
-	},
-}));
-const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
-	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
-		transform: "rotate(90deg)",
-	},
-}));
 const StyledStack = styled(Stack)(() => ({
 	border: '1px solid #E0E0E0',
 	 borderRadius: '0 0 8px 8px'
@@ -45,7 +32,6 @@ export const JobHistory = (props: {
 		historyRowsPerPage,
 		onPageChange,
 		onRowsPerPageChange,
-		onSearchChange,
 	} = props;
 
 	return (

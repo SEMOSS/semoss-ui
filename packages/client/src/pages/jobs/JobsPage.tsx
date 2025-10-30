@@ -1,6 +1,9 @@
+
+import { useEffect, useMemo, useState, useRef } from "react";
+import { useRootStore, useSettings } from "@/hooks";
+import { Navigate, useNavigate } from "react-router-dom";
 import {
 	Add,
-	AvTimer,
 	Bedtime,
 	Delete,
 	DeleteOutline,
@@ -9,16 +12,12 @@ import {
 	Pause,
 } from "@mui/icons-material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
-import { useEffect, useMemo, useState, useRef } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
-import { debounced, runPixel } from "@semoss/sdk/react";
-import { Button, Search, Stack, Tabs, useNotification, styled, Box, ToggleTabsGroup } from "@semoss/ui";
 import AlarmOnIcon from '@mui/icons-material/AlarmOn';
 import SearchIcon from '@mui/icons-material/Search';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
-import { useRootStore, useSettings } from "@/hooks";
+import { debounced, runPixel } from "@semoss/sdk/react";
+import { Button, Search, Stack, Tabs, useNotification, styled, Box, ToggleTabsGroup } from "@semoss/ui";
 import { DeleteJobModal } from "./DeleteJobModal";
-import { JobBuilderModal } from "./JobBuilderModal";
 import { JobCard } from "./JobCard";
 import { JobHistory } from "./JobHistory";
 import { JobsTable } from "./JobsTable";
@@ -26,7 +25,6 @@ import type {
 	HistoryJob,
 	HistoryPaginationProps,
 	Job,
-	JobBuilder,
 	JobUIState,
 	PixelReturnJob,
 	SendEmailJob,
@@ -71,9 +69,6 @@ export function JobsPage() {
 	const [selectedTable, setSelectedTable] = useState(tables[0]);
 	const [failedJobCount, setFailedJobCount] = useState<number>(0);
 
-	const [initalBuilderState, setInitialBuilderState] =
-		useState<JobBuilder>(null);
-
 	const [jobs, setJobs] = useState<Job[]>([]);
 	const [jobsLoading, setJobsLoading] = useState<boolean>(false);
 
@@ -94,7 +89,6 @@ export function JobsPage() {
 	const [historyCount, setHistoryCount] = useState<number>(-1);
 	const { adminMode } = useSettings();
 	const searchRef = useRef(null);
-	const filterRef = useRef(null);
 	const navigate = useNavigate();
 	const [searchOpen, setSearchOpen] = useState(false);
 	const [filterOpen, setFilterOpen] = useState(false);
@@ -816,7 +810,6 @@ export function JobsPage() {
 						rowSelectionModel={rowSelectionModel}
 						setRowSelectionModel={setRowSelectionModel}
 						getHistory={() => getHistory({ reload: true })}
-						setInitialBuilderState={setInitialBuilderState}
 						showDeleteJobModal={(job: Job) => setJobToDelete(job)}
 					/>
 				)}
@@ -853,12 +846,6 @@ export function JobsPage() {
 							}
 				}
 				deleteJob={deleteJob}
-			/>
-			<JobBuilderModal
-				isOpen={initalBuilderState !== null}
-				initialBuilder={initalBuilderState}
-				close={() => setInitialBuilderState(null)}
-				getJobs={getJobs}
 			/>
 		</Stack>
 	);

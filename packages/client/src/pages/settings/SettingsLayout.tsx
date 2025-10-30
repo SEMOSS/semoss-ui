@@ -142,7 +142,6 @@ export const SettingsLayout = observer(() => {
 										Settings
 									</Breadcrumbs.Item>
 									{matchedRoute.history.map((link, idx) => {
-										// Find the route that matches this history link
 										const linkRoute = SETTINGS_ROUTES.find(r => r.path === link || r.path === link.replace("/<id>", "/:id"));
 										const isLastItem = matchedRoute.history.length - 1 === idx;
 										

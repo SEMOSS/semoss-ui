@@ -1,5 +1,5 @@
-import { Stack, RadioGroup, Typography, Autocomplete, TextField } from "@semoss/ui";
 import { useState, useEffect } from "react";
+import { Stack, RadioGroup, Typography, Autocomplete, TextField } from "@semoss/ui";
 import { timezones, FrequencyOptions, Months, DaysOfWeek } from "./job.constants";
 
 export const JobTimeZoneModel = (props: {
@@ -52,6 +52,7 @@ export const JobTimeZoneModel = (props: {
             setCronDayOfWeek(dayOfWeek || "?");
         }
     }, []);
+    
     useEffect(() => {
         setBuilderField(
             "cronExpression",

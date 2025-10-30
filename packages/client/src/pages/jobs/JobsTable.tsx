@@ -1,12 +1,13 @@
+
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import dayjs from "dayjs";
 import { Delete, Edit, PlayArrow } from "@mui/icons-material";
 import {
 	DataGrid,
 	type GridColDef,
 	type GridRowSelectionModel,
 } from "@mui/x-data-grid";
-import dayjs from "dayjs";
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { runPixel } from "@semoss/sdk/react";
 import {
 	Chip,
@@ -20,7 +21,6 @@ import {
 import type { Job, JobBuilder } from "./job.types";
 import { getHumanReadableCronExpression } from "./job.utils";
 import Avatar  from "../../assets/img/Avatar.svg";
-import { time } from "echarts";
 
 const StyledDataGrid = styled(DataGrid)(() => ({
 	".MuiDataGrid-overlayWrapper": {
@@ -54,7 +54,6 @@ export const JobsTable = (props: {
 	rowSelectionModel: GridRowSelectionModel;
 	setRowSelectionModel: (value: GridRowSelectionModel) => void;
 	getHistory: () => void;
-	setInitialBuilderState: (builder: JobBuilder) => void;
 	showDeleteJobModal: (job: Job) => void;
 }) => {
 	const {
@@ -63,7 +62,6 @@ export const JobsTable = (props: {
 		rowSelectionModel,
 		setRowSelectionModel,
 		getHistory,
-		setInitialBuilderState,
 		showDeleteJobModal,
 	} = props;
 	const notification = useNotification();

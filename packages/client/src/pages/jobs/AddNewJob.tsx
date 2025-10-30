@@ -1,10 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import { useSettings } from "@/hooks";
+import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import { Stack, Typography, RadioGroup, Button, styled, useNotification } from "@semoss/ui";
 import { runPixel } from "@semoss/sdk/react";
-import { Navigate, useNavigate, useLocation } from "react-router-dom";
 import type { JobBuilder, } from "./job.types";
-import { JobTypeCustomJob, JobTypeSendEmail, } from "./job.constants";
 import { JobTimeZoneModel } from "./JobTimeZoneModel";
 import { JobDetailsModel } from "./JobDetailsModel";
 import { getEncodeByJobType } from "./job.utils";
@@ -51,26 +50,20 @@ const StyledButtonAdd = styled(Button)(() => ({
     width: "10%",
 }));
 
-export const AddNewJob= (props: {
-	isOpen: boolean;
-	close: () => void;
-	getJobs: () => void;
-	initialBuilder?: JobBuilder;
-}) => {
+export const AddNewJob= () => {
     const { adminMode } = useSettings();
     const notification = useNotification();
     const location = useLocation();
-    
-    if (!adminMode) {
-            return <Navigate to={"/settings"} />;
-    }
-    const { isOpen, close, getJobs, initialBuilder } = props;
     const initialBuilderFromLocation = (location.state as { initialState?: JobBuilder } | undefined)?.initialState;
     const [builder, setBuilder] = useState<JobBuilder>(
         initialBuilderFromLocation ?? emptyBuilder
     );
     const [timeZoneType, setTimeZoneType] = useState("Standard");
     const navigate = useNavigate();
+    
+    if (!adminMode) {
+            return <Navigate to={"/settings"} />;
+    }
 
     const setBuilderField = (field: string, value: string | string[]) => {
         setBuilder((previousBuilder) => ({
@@ -79,143 +72,6 @@ export const AddNewJob= (props: {
         }));
     };
 
-    const isCronExpressionValid: boolean = useMemo(() => {
-            const cronValues = builder.cronExpression.split(" ");
-            if (cronValues.length < 6) {
-                // make sure it's valid cron syntax
-                return false;
-            }
-            if (
-                cronValues[1] !== "*" &&
-                !(
-                    !Number.isNaN(cronValues[1]) &&
-                    parseInt(cronValues[1]) <= 59 &&
-                    parseInt(cronValues[1]) >= 0
-                )
-            ) {
-                return false;
-            }
-            if (
-                cronValues[2] !== "*" &&
-                !(
-                    !Number.isNaN(cronValues[2]) &&
-                    parseInt(cronValues[2]) <= 23 &&
-                    parseInt(cronValues[2]) >= 0
-                )
-            ) {
-                return false;
-            }
-            if (
-                cronValues[3] !== "*" &&
-                !(
-                    !Number.isNaN(cronValues[3]) &&
-                    parseInt(cronValues[3]) <= 31 &&
-                    parseInt(cronValues[3]) >= 0
-                )
-            ) {
-                return false;
-            }
-            if (
-                cronValues[4] !== "*" &&
-                !(
-                    !Number.isNaN(cronValues[4]) &&
-                    parseInt(cronValues[4]) <= 12 &&
-                    parseInt(cronValues[4]) >= 1
-                )
-            ) {
-                return false;
-            }
-            if (
-                cronValues[5] !== "?" &&
-                !(
-                    !Number.isNaN(cronValues[5]) &&
-                    parseInt(cronValues[5]) <= 6 &&
-                    parseInt(cronValues[5]) >= 0
-                )
-            ) {
-                return false;
-            }
-            return true;
-        }, [builder.cronExpression]);
-    
-        const isBaseFormValid: boolean = useMemo(() => {
-            switch (builder.jobType) {
-                case JobTypeSendEmail:
-                    return (
-                        !!builder.formType &&
-                        !!builder.name &&
-                        !!builder.smtpHost &&
-                        !!builder.smtpPort &&
-                        !!builder.subject &&
-                        !!builder.jobType &&
-                        !!builder.to &&
-                        !!builder.from &&
-                        !!builder.message &&
-                        !!builder.username &&
-                        !!builder.password &&
-                        !!builder.cronTz
-                    );
-                case JobTypeCustomJob:
-                    return !!builder.name && !!builder.pixel && !!builder.cronTz;
-            }
-        }, [
-            builder.name,
-            builder.pixel,
-            builder.cronTz,
-            builder.smtpHost,
-            builder.smtpPort,
-            builder.subject,
-            builder.jobType,
-            builder.to,
-            builder.from,
-            builder.message,
-            builder.username,
-            builder.password,
-        ]);
-
-    const hasChanges: boolean = useMemo(() => {
-            if (builder.id == null) {
-                return true;
-            }
-    
-            return (
-                builder.formType !== initialBuilder?.formType ||
-                builder.name !== initialBuilder.name ||
-                builder.pixel !== initialBuilder.pixel ||
-                JSON.stringify(builder.tags) !==
-                    JSON.stringify(initialBuilder.tags) ||
-                builder.cronTz !== initialBuilder.cronTz ||
-                builder.cronExpression !== initialBuilder.cronExpression ||
-                builder.smtpHost !== initialBuilder.smtpHost ||
-                builder.smtpPort !== initialBuilder.smtpPort ||
-                builder.subject !== initialBuilder.subject ||
-                builder.jobType !== initialBuilder.jobType ||
-                JSON.stringify(builder.to) !== JSON.stringify(initialBuilder.to) ||
-                JSON.stringify(builder.cc) !== JSON.stringify(initialBuilder.cc) ||
-                JSON.stringify(builder.bcc) !==
-                    JSON.stringify(initialBuilder.bcc) ||
-                builder.from !== initialBuilder.from ||
-                builder.message !== initialBuilder.message ||
-                builder.username !== initialBuilder.username ||
-                builder.password !== initialBuilder.password
-            );
-        }, [
-            builder.name,
-            builder.pixel,
-            builder.tags,
-            builder.cronTz,
-            builder.cronExpression,
-            builder.smtpHost,
-            builder.smtpPort,
-            builder.subject,
-            builder.jobType,
-            builder.to,
-            builder.from,
-            builder.message,
-            builder.username,
-            builder.password,
-        ]);
-    
     const addJob = async () => {
             try {
                 const encode = getEncodeByJobType(builder);
@@ -354,11 +210,6 @@ export const AddNewJob= (props: {
 				<StyledButtonAdd
                     size="large"
                     type="submit"
-                    // disabled={
-					// 		!isBaseFormValid ||
-					// 		!isCronExpressionValid ||
-					// 		!hasChanges
-				    // }
                     onClick={builder.formType === "edit" ? updateJob : addJob}
                 >
                     {builder.formType === "edit" ? "Update Job" : "Add Job"}

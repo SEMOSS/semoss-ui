@@ -1,4 +1,3 @@
-import { useState } from "react";
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
 import { Autocomplete, Stack, TextField, Typography, createFilterOptions } from "@semoss/ui";
 import type { JobBuilder } from "./job.types";
