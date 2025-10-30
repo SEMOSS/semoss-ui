@@ -1,7 +1,6 @@
 import { observer } from "mobx-react-lite";
 import { useEffect, useReducer, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatPostcssSourceMap } from "vite";
 import { debounced } from "@semoss/sdk/react";
 import {
 	Button,
@@ -17,7 +16,6 @@ import { EngineLandscapeCard } from "@/components/engine";
 import { Help } from "@/components/help";
 import { Filterbox } from "@/components/ui";
 import { usePixel, useRootStore } from "@/hooks";
-import { ENGINE_TYPES } from "@/types";
 import { formatToDataTestId, removeUnderscores } from "@/utility";
 import type { ENGINE_ROUTES } from "./engine.constants";
 
@@ -130,7 +128,10 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 
 		const offsetRef = useRef(0);
 		offsetRef.current = offset;
-		let scrollEle :HTMLDivElement, scrollTimeout : ReturnType<typeof setTimeout>, currentScroll :number, previousScroll :number;
+		let scrollEle: HTMLDivElement,
+			scrollTimeout: ReturnType<typeof setTimeout>,
+			currentScroll: number,
+			previousScroll: number;
 
 		const [inputValue, setInputValue] = useState("");
 		const [search, setSearch] = useState("");
@@ -403,7 +404,7 @@ export const EngineIndexPage: React.FC<EngineIndexPageProps> = observer(
 				}
 			}
 
-			const mutateListWithVotes = databases;
+			const mutateListWithVotes = [];
 
 			getDatabases.data.forEach((db) => {
 				mutateListWithVotes.push({
