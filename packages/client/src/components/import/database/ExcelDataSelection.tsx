@@ -407,97 +407,99 @@ const ExcelDataSelection = ({
 	}
 
 	const handleImport = () => {
-	const payloadArray = files.map((file, fileIndex) => {
-		const dataTypeMap: Record<
-			string,
-			Record<string, Record<string, string>>
-		> = {};
-		const newHeaders: Record<
-			string,
-			Record<string, Record<string, string>>
-		> = {};
-		const additionalDataTypes: Record<
-			string,
-			Record<string, Record<string, string>>
-		> = {};
-		const descriptionMap: Record<
-			string,
-			Record<string, Record<string, string>>
-		> = {};
-		const logicalNamesMap: Record<
-			string,
-			Record<string, Record<string, string[]>>
-		> = {};
+		const payloadArray = files.map((file, fileIndex) => {
+			const dataTypeMap: Record<
+				string,
+				Record<string, Record<string, string>>
+			> = {};
+			const newHeaders: Record<
+				string,
+				Record<string, Record<string, string>>
+			> = {};
+			const additionalDataTypes: Record<
+				string,
+				Record<string, Record<string, string>>
+			> = {};
+			const descriptionMap: Record<
+				string,
+				Record<string, Record<string, string>>
+			> = {};
+			const logicalNamesMap: Record<
+				string,
+				Record<string, Record<string, string[]>>
+			> = {};
 
-		const tables: Record<string, Record<string, string>> = {};
+			const tables: Record<string, Record<string, string>> = {};
 
-		const sheetNames = Object.keys(file || {});
-		sheetNames.forEach((sheetName) => {
-			const range = Object.keys(file[sheetName])[0];
-			const sheetKey = `${fileIndex}-${sheetName}`;
-			const parsedData = file[sheetName][range];
-			const state = tableStates[sheetKey];
-			if (!parsedData || !state) return;
+			const sheetNames = Object.keys(file || {});
+			sheetNames.forEach((sheetName) => {
+				const range = Object.keys(file[sheetName])[0];
+				const sheetKey = `${fileIndex}-${sheetName}`;
+				const parsedData = file[sheetName][range];
+				const state = tableStates[sheetKey];
+				if (!parsedData || !state) return;
 
-			const editedRange = editedRanges[sheetKey] ?? range;
-			const tableName = state.tableName?.trim() || sheetName;
+				const editedRange = editedRanges[sheetKey] ?? range;
+				const tableName = state.tableName?.trim() || sheetName;
 
-			tables[sheetName] = { [editedRange]: tableName };
+				tables[sheetName] = { [editedRange]: tableName };
 
-			dataTypeMap[sheetName] = { [editedRange]: {} };
-			newHeaders[sheetName] = {};
-			additionalDataTypes[sheetName] = { [editedRange]: {} };
+				dataTypeMap[sheetName] = { [editedRange]: {} };
+				newHeaders[sheetName] = {};
+				additionalDataTypes[sheetName] = { [editedRange]: {} };
 
-			descriptionMap[sheetName] = { [editedRange]: {} };
-			logicalNamesMap[sheetName] = { [editedRange]: {} };
+				descriptionMap[sheetName] = { [editedRange]: {} };
+				logicalNamesMap[sheetName] = { [editedRange]: {} };
 
-			state.cleanHeaders?.forEach((header) => {
-				const alias = state.columnMetadata[header]?.alias || header;
+				state.cleanHeaders?.forEach((header, index) => {
+					if (!state.rowEditableState[index]) return;
+					const alias = state.columnMetadata[header]?.alias || header;
 
-				dataTypeMap[sheetName][editedRange][alias] =
-					state.columnMetadata[header]?.dataType || "STRING";
+					dataTypeMap[sheetName][editedRange][alias] =
+						state.columnMetadata[header]?.dataType || "STRING";
 
-				if (alias !== header) {
-					if (!newHeaders[sheetName][editedRange])
-						newHeaders[sheetName][editedRange] = {};
-					newHeaders[sheetName][editedRange][alias] = header;
-				}
+					if (alias !== header) {
+						if (!newHeaders[sheetName][editedRange])
+							newHeaders[sheetName][editedRange] = {};
+						newHeaders[sheetName][editedRange][alias] = header;
+					}
 
-				if (state.columnMetadata[header]?.format) {
-					additionalDataTypes[sheetName][editedRange][alias] =
-						state.columnMetadata[header]?.format!;
-				}
+					if (state.columnMetadata[header]?.format) {
+						additionalDataTypes[sheetName][editedRange][alias] =
+							state.columnMetadata[header]?.format!;
+					}
 
-				if (state.columnMetadata[header]?.description) {
-					descriptionMap[sheetName][editedRange][alias] =
-						state.columnMetadata[header]?.description!;
-				}
+					if (state.columnMetadata[header]?.description) {
+						descriptionMap[sheetName][editedRange][alias] =
+							state.columnMetadata[header]?.description!;
+					}
 
-				if (
-					Array.isArray(state.columnMetadata[header]?.logicalName) &&
-					state.columnMetadata[header]!.logicalName!.length > 0
-				) {
-					logicalNamesMap[sheetName][editedRange][alias] =
-						state.columnMetadata[header]!.logicalName!;
-				}
+					if (
+						Array.isArray(
+							state.columnMetadata[header]?.logicalName,
+						) &&
+						state.columnMetadata[header]!.logicalName!.length > 0
+					) {
+						logicalNamesMap[sheetName][editedRange][alias] =
+							state.columnMetadata[header]!.logicalName!;
+					}
+				});
 			});
+
+			return {
+				filePath: [fileName[fileIndex]],
+				dataTypeMap,
+				newHeaders,
+				additionalDataTypes,
+				descriptionMap: [descriptionMap],
+				logicalNamesMap: [logicalNamesMap],
+				tables: [tables],
+				existing: fileIndex > 0 ? true : false,
+			};
 		});
 
-		return {
-			filePath: [fileName[fileIndex]],
-			dataTypeMap,
-			newHeaders,
-			additionalDataTypes,
-			descriptionMap: [descriptionMap],
-			logicalNamesMap: [logicalNamesMap],
-			tables: [tables],
-			existing: fileIndex > 0 ? true : false,
-		};
-	});
-
-	onImport(payloadArray);
-};
-
+		onImport(payloadArray);
+	};
 
 	return (
 		<>
@@ -770,6 +772,12 @@ const ExcelDataSelection = ({
 															editedRanges[
 																sheetKey
 															] ?? range;
+														const userTyped =
+															Object.hasOwn(
+																editedRanges,
+																sheetKey,
+															); // detects if user changed the field
+
 														const isValidFormat =
 															/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.test(
 																currentValue,
@@ -777,22 +785,24 @@ const ExcelDataSelection = ({
 														const isSameRange =
 															currentValue.toUpperCase() ===
 															range.toUpperCase();
-														const isValidRange =
+														const isSmaller =
 															isValidFormat &&
 															isSmallerRange(
 																range,
 																currentValue,
-															) &&
-															!isSameRange;
+															);
+														const enablePreview =
+															userTyped &&
+															isValidFormat &&
+															(isSameRange ||
+																isSmaller);
 
-														return !isValidRange ? (
+														return !enablePreview ? (
 															<Tooltip
 																title={
 																	!isValidFormat
 																		? "Invalid format (e.g. A1:H51)"
-																		: isSameRange
-																			? "Range must differ from the actual range"
-																			: "Range must be smaller than the actual range"
+																		: "Range must be smaller or equal to the actual range"
 																}
 															>
 																<span>
