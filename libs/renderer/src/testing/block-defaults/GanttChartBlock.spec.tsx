@@ -31,6 +31,9 @@ const mockGanttBlocks = {
 						],
 					},
 				],
+				customSettings: {
+					columnDetails: {},
+				},
 			},
 			show: true,
 			columns: [],
@@ -56,7 +59,30 @@ const mockGanttBlocks = {
 	ganttChartNoData: {
 		id: "ganttChartNoData",
 		widget: "e-chart",
-		data: {},
+		data: {
+			variation: "echart-gantt-chart",
+			frame: { name: "test-frame" },
+			style: {
+				width: "600px",
+				height: "400px",
+				display: undefined,
+				padding: undefined,
+				gap: undefined,
+			},
+			option: null,
+			show: true,
+			columns: [],
+			aggregate: {},
+			contextMenu: {
+				hideUnfilter: false,
+				hideFilter: false,
+				hideExclude: false,
+			},
+			facet: {
+				facetList: [],
+				facetSelected: [],
+			},
+		},
 		listeners: {
 			preProcess: {
 				type: "sync",
