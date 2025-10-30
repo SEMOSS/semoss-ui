@@ -56,7 +56,7 @@ const getTool = (item: Engine | App): Toolbox => {
 	};
 };
 
-export interface WorkspaceOverlayProps {
+export interface AgentOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
@@ -70,7 +70,7 @@ export interface WorkspaceOverlayProps {
 	onSubmit: (data?: NewAgentForm) => Promise<void>;
 }
 
-export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
+export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 	open,
 	onOpenChange,
 	onSubmit,
