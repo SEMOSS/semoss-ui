@@ -34,7 +34,6 @@ export const ACTIONS_DISPLAY = {
 	[ActionMessages.RUN_QUERY]: "Run Query",
 	[ActionMessages.RUN_CELL]: "Run Cell",
 	[ActionMessages.DISPATCH_EVENT]: "Dispatch Event",
-	[ActionMessages.COPY_TO_CLIPBOARD]: "Copy to Clipboard",
 	[ActionMessages.DISPATCH_OPEN_EVENT]: "Navigate",
 	[ActionMessages.MODIFY_VARIABLE]: "Modify Variable",
 };

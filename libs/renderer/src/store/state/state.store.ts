@@ -733,10 +733,6 @@ export class StateStore {
 				const { destinationType, destination } = action.payload;
 
 				this.dispatchOpenEvent(destinationType, destination);
-			} else if (ActionMessages.COPY_TO_CLIPBOARD === action.message) {
-				const { text } = action.payload;
-
-				this.copyVariableToClipboard(text);
 			} else if (ActionMessages.MODIFY_VARIABLE === action.message) {
 				const { blockId, variable, value } = action.payload;
 
@@ -2022,37 +2018,6 @@ export class StateStore {
 		this._utils.queryPromises[key] = p;
 	};
 
-	/**
-	 * Copy a variable's value to the clipboard
-	 * @param variableName - the variable to copy
-	 */
-	private copyVariableToClipboard = (variableName: string): void => {
-		let value = this.parseVariable(`{{${variableName}}}`);
-		// If found MobX observable/proxy, convert to plain JS using toJS and then stringify for clipboard
-		if (value && typeof value === "object") {
-			value = toJS(value);
-			try {
-				value = JSON.stringify(value, null, 2);
-			} catch {
-				value = String(value);
-			}
-		}
-		if (value !== undefined && value !== null) {
-			navigator.clipboard
-				.writeText(String(value))
-				.then(() => {
-					console.log(
-						`Variable "${variableName}" copied to clipboard:`,
-						value,
-					);
-				})
-				.catch((err) => {
-					console.error("Failed to copy variable to clipboard:", err);
-				});
-		} else {
-			console.error(`Value of variable "${variableName}" not found.`);
-		}
-	};
 
 	/**
 	 * Dispatch a custom event

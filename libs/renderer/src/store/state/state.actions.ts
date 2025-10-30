@@ -48,7 +48,6 @@ export enum ActionMessages {
 	RUN_QUERY = "RUN_QUERY",
 	DISPATCH_EVENT = "DISPATCH_EVENT",
 	DISPATCH_OUTPUTS_EVENT = "DISPATCH_OUTPUTS_EVENT",
-	COPY_TO_CLIPBOARD = "COPY_TO_CLIPBOARD",
 	DISPATCH_OPEN_EVENT = "DISPATCH_OPEN_EVENT",
 	MODIFY_VARIABLE = "MODIFY_VARIABLE",
 }
@@ -80,7 +79,6 @@ export type Actions =
 	| EditVariableAction
 	| DeleteVariableAction
 	| SetSheetExecutionOrderAction
-	| CopyToClipboardAction
 	| ModifyVariableAction;
 
 /**
@@ -135,12 +133,6 @@ export interface RenameVariableAction extends Action {
 	};
 }
 
-export interface CopyToClipboardAction extends Action {
-	message: ActionMessages.COPY_TO_CLIPBOARD;
-	payload: {
-		text: string;
-	};
-}
 
 export interface DeleteVariableAction extends Action {
 	message: ActionMessages.DELETE_VARIABLE;

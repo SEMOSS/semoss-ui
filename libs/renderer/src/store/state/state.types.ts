@@ -2,7 +2,6 @@ import type React from "react";
 import type { CellState } from "./cell.state";
 import type { QueryStateConfig } from "./query.state";
 import type {
-	CopyToClipboardAction,
 	DispatchEventAction,
 	DispatchOpenEventAction,
 	ModifyVariableAction,
@@ -252,7 +251,6 @@ export type RegistryUnwrap<R extends Registry<BlockDef>> = R extends Registry<
  * Listener Actions
  */
 export type ListenerActions =
-	| CopyToClipboardAction
 	| RunQueryAction
 	| DispatchEventAction
 	| RunCellAction
