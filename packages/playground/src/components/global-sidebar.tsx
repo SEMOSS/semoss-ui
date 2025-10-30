@@ -36,7 +36,7 @@ import { useChat } from "@/hooks";
 import { AppLogo } from "./app-logo";
 import { NavUser } from "./nav-user";
 
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
+const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 export const GlobalSidebar = observer(() => {
 	const { chat } = useChat();
@@ -94,15 +94,18 @@ export const GlobalSidebar = observer(() => {
 						</NavLink>
 					</Button>
 
-					{ENABLE_AGENT && (
+					{ENABLE_WORKSPACE && (
 						<SidebarMenuItem>
 							<SidebarMenuButton
 								asChild
-								isActive={!!matchPath("/agent", pathname)}
+								isActive={!!matchPath("/workspace", pathname)}
 							>
-								<Link to={"/agent"} aria-label={"Agents"}>
+								<Link
+									to={"/workspace"}
+									aria-label={"Workspace"}
+								>
 									<ComputerIcon />
-									Agents
+									Workspaces
 								</Link>
 							</SidebarMenuButton>
 						</SidebarMenuItem>

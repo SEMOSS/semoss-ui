@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -16,131 +16,124 @@ import {
 	Input,
 	Label,
 	Textarea,
+	toast,
 } from "@semoss/ui/next";
-import type { Agent, App, Engine, Toolbox } from "@/types";
+import { useChat } from "@/hooks";
+import type { MCP, Workspace } from "@/types";
 
-type NewAgentForm = {
-	AGENT_NAME: string;
-	AGENT_DESCRIPTION: string;
-	AGENT_CONTEXT: string;
-	AGENT_TOOLS: string[] | null;
-};
-
-/**
- * Get a unique key for a tool
- * @param tool The tool to get the key for
- * @returns The unique key for the tool
- */
-const getTool = (item: Engine | App): Toolbox => {
-	let id = "";
-	let name = "";
-	let type: Toolbox["type"] = "DATABASE";
-
-	// Type guard to check if item is App
-	if ("project_id" in item && "project_name" in item) {
-		id = item.project_id;
-		type = "APP";
-		name = item.project_name;
-	} else if ("app_id" in item && "app_name" in item) {
-		id = item.app_id;
-		name = item.app_name;
-		type = item.app_type;
-	}
-
-	return {
-		id: id,
-		type: type,
-		name: name,
-		description: "",
-		tags: [],
-	};
-};
-
-export interface AgentOverlayProps {
+export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
-	/** Agent to edit */
-	agentInfo: Agent | null;
+	/** Workspace to edit */
+	workspaceInfo: Workspace | null;
 
-	/** Update the state of the overlay */
-	onOpenChange: (isOpen: boolean) => void;
-
-	/** Callback triggered  */
-	onSubmit: (data?: NewAgentForm) => Promise<void>;
+	/** On close */
+	onClose: (newWorkspaceId?: string) => void;
 }
 
-export const AgentOverlay: React.FC<AgentOverlayProps> = ({
+export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	open,
-	onOpenChange,
-	onSubmit,
-	agentInfo,
+	workspaceInfo,
+	onClose,
 }) => {
+	/**
+	 * Library Hooks
+	 */
+	const { chat } = useChat();
+
+	/**
+	 * IDs
+	 */
 	const nameId = useId();
 	const descriptionId = useId();
 	const contextId = useId();
-	const selectAllId = useId();
+
+	/**
+	 * State
+	 */
+	const [isLoading, setIsLoading] = useState<boolean>(false);
+	const [mcpMap, setMcpMap] = useState<Record<string, Record<string, MCP>>>(
+		{},
+	);
+	const { handleSubmit, control, watch } = useForm<
+		Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">
+	>({
+		defaultValues: {
+			name: "",
+			system_prompt: "",
+			description: "",
+			mcp: [],
+		},
+	});
+	const [searchWord] = useState<string>("");
+	const debouncedSearchWord = useDebouncedValue(searchWord);
+
+	/**
+	 * Method that is called to create the app
+	 */
+	const onSubmit = handleSubmit(async (data) => {
+		try {
+			// start the loading screen
+			setIsLoading(true);
+
+			const output = await chat.addWorkspace(data);
+			// get new app id and return in the onclose
+			onClose(output);
+		} catch (e) {
+			console.error(e);
+
+			toast.error(e.message);
+		} finally {
+			// stop the loading screen
+			setIsLoading(false);
+		}
+	});
+
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		const fetchMCPs = async () => {
+			setIsLoading(true);
+			try {
+				const mcpMap = await chat.getMcpMap(debouncedSearchWord);
+				setMcpMap(mcpMap);
+			} catch (e) {
+				console.error(e);
+
+				toast.error(e.message);
+			} finally {
+				setIsLoading(false);
+			}
+		};
+		fetchMCPs();
+	}, [chat.getMcpMap, debouncedSearchWord]);
+
 	/**
 	 * Constants
 	 */
-	const isCreatingNew = agentInfo === null;
-
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [tools, setTools] = useState([]);
-
-	// pixel call to get all tools
-	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=[""])`,
-		{
-			data: [],
-		},
-	);
-
-	useEffect(() => {
-		if (getApps.status !== "SUCCESS") {
-			setIsLoading(true);
-			return;
-		}
-
-		const tools = getApps.data.map((tool) => getTool(tool));
-		setTools(tools);
-		setIsLoading(false);
-	}, [getApps.status, getApps.data]);
-
-	const { handleSubmit, control, watch } = useForm<NewAgentForm>({
-		defaultValues: {
-			AGENT_NAME: "",
-			AGENT_DESCRIPTION: "",
-			AGENT_CONTEXT: "",
-			AGENT_TOOLS: null,
-		},
-	});
-
-	const isFormValid = !!watch("AGENT_NAME");
+	const isCreatingNew = workspaceInfo === null;
+	const isFormValid = !!watch("name");
+	const mcpArray: MCP[] = Object.values(mcpMap).flatMap(Object.values);
 
 	return (
-		<Dialog open={open} onOpenChange={(open) => onOpenChange(open)}>
+		<Dialog open={open} onOpenChange={() => onClose()}>
 			<DialogContent
-				aria-describedby="Edit the agent"
+				aria-describedby="Edit the workspace"
 				className="sm:max-w-lg"
 			>
 				<DialogHeader>
 					<DialogTitle>
-						{isCreatingNew ? "Create Agent" : "View Agent"}
+						{isCreatingNew ? "Create Workspace" : "View Workspace"}
 					</DialogTitle>
 				</DialogHeader>
-				<form
-					onSubmit={handleSubmit(async (data) => {
-						await onSubmit(data);
-
-						onOpenChange(false);
-					})}
-				>
+				<form onSubmit={onSubmit}>
 					{isCreatingNew ? (
 						<FieldSet>
 							<FieldGroup>
 								<Controller
-									name={"AGENT_NAME"}
+									name={"name"}
 									control={control}
 									rules={{ required: true }}
 									render={({ field }) => {
@@ -159,14 +152,14 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 															e.target.value,
 														)
 													}
-													data-testid="newAgentModal-textField-name"
+													data-testid="newWorkspaceModal-textField-name"
 												/>
 											</Field>
 										);
 									}}
 								/>
 								<Controller
-									name={"AGENT_DESCRIPTION"}
+									name={"description"}
 									control={control}
 									rules={{ required: false }}
 									render={({ field }) => {
@@ -187,25 +180,25 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 															e.target.value,
 														)
 													}
-													data-testid="newAgentModal-description-txt"
+													data-testid="newWorkspaceModal-description-txt"
 												/>
 											</Field>
 										);
 									}}
 								/>
 								<Controller
-									name={"AGENT_CONTEXT"}
+									name={"system_prompt"}
 									control={control}
 									rules={{}}
 									render={({ field }) => {
 										return (
 											<Field>
 												<FieldLabel htmlFor={contextId}>
-													Context
+													System prompt
 												</FieldLabel>
 												<Textarea
 													id={contextId}
-													placeholder="Context"
+													placeholder="Systemt prompt"
 													value={field.value || ""}
 													onChange={(e) =>
 														field.onChange(
@@ -213,22 +206,20 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 														)
 													}
 													rows={4}
-													data-testid="newAgentModal-context-txt"
+													data-testid="newWorkspaceModal-system_prompt-txt"
 												/>
 											</Field>
 										);
 									}}
 								/>
 								<Controller
-									name={"AGENT_TOOLS"}
+									name={"mcp"}
 									control={control}
 									rules={{}}
 									render={({ field }) => {
-										const selectedToolIds =
-											field.value || [];
-										const allSelected =
-											selectedToolIds.length ===
-											tools.length;
+										const selectedMCPIds =
+											field.value.map((mcp) => mcp.id) ||
+											[];
 
 										return (
 											<Field>
@@ -236,52 +227,16 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 													Use These Tools
 												</FieldLabel>
 												<div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
-													{/* Select All option */}
-													<div className="flex items-center space-x-2 border-b pb-2">
-														<Checkbox
-															id={selectAllId}
-															checked={
-																allSelected
-															}
-															onCheckedChange={(
-																checked,
-															) => {
-																if (checked) {
-																	field.onChange(
-																		tools.map(
-																			(
-																				t,
-																			) =>
-																				t.id,
-																		),
-																	);
-																} else {
-																	field.onChange(
-																		[],
-																	);
-																}
-															}}
-															disabled={isLoading}
-														/>
-														<Label
-															htmlFor={
-																selectAllId
-															}
-															className="cursor-pointer font-medium text-sm"
-														>
-															Select All
-														</Label>
-													</div>
 													{/* Individual tool options */}
-													{tools.map((tool) => (
+													{mcpArray.map((mcp) => (
 														<div
-															key={tool.id}
+															key={mcp.id}
 															className="flex items-center space-x-2"
 														>
 															<Checkbox
-																id={`tool-${tool.id}`}
-																checked={selectedToolIds.includes(
-																	tool.id,
+																id={`tool-${mcp.id}`}
+																checked={selectedMCPIds.includes(
+																	mcp.id,
 																)}
 																onCheckedChange={(
 																	checked,
@@ -291,18 +246,18 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 																	) {
 																		field.onChange(
 																			[
-																				...selectedToolIds,
-																				tool.id,
+																				...field.value,
+																				mcp,
 																			],
 																		);
 																	} else {
 																		field.onChange(
-																			selectedToolIds.filter(
+																			field.value.filter(
 																				(
-																					toolId: string,
+																					mcpInArr,
 																				) =>
-																					toolId !==
-																					tool.id,
+																					mcpInArr.id !==
+																					mcp.id,
 																			),
 																		);
 																	}
@@ -312,10 +267,10 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 																}
 															/>
 															<Label
-																htmlFor={`tool-${tool.id}`}
+																htmlFor={`tool-${mcp.id}`}
 																className="cursor-pointer font-normal text-sm"
 															>
-																{tool.name}
+																{mcp.name}
 															</Label>
 														</div>
 													))}
@@ -331,27 +286,30 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 							<FieldGroup>
 								<Field>
 									<FieldLabel>Name</FieldLabel>
-									<Input disabled value={agentInfo.name} />
+									<Input
+										disabled
+										value={workspaceInfo.name}
+									/>
 								</Field>
 								<Field>
 									<FieldLabel>ID</FieldLabel>
 									<Input
 										disabled
-										value={agentInfo.workspace_id}
+										value={workspaceInfo.workspace_id}
 									/>
 								</Field>
 								<Field>
 									<FieldLabel>Description</FieldLabel>
 									<Input
 										disabled
-										value={agentInfo.description}
+										value={workspaceInfo.description}
 									/>
 								</Field>
 								<Field>
-									<FieldLabel>Context</FieldLabel>
+									<FieldLabel>System prompt</FieldLabel>
 									<Textarea
 										disabled
-										value={agentInfo.system_prompt}
+										value={workspaceInfo.system_prompt}
 										rows={4}
 									/>
 								</Field>
@@ -359,24 +317,21 @@ export const AgentOverlay: React.FC<AgentOverlayProps> = ({
 									<FieldLabel>Date Created</FieldLabel>
 									<Input
 										disabled
-										value={agentInfo.date_created}
+										value={workspaceInfo.date_created}
 									/>
 								</Field>
 							</FieldGroup>
 						</FieldSet>
 					)}
 					<DialogFooter>
-						<Button
-							variant="ghost"
-							onClick={() => onOpenChange(false)}
-						>
+						<Button variant="ghost" onClick={() => onClose()}>
 							Cancel
 						</Button>
 						{isCreatingNew && (
 							<Button
 								type="submit"
 								disabled={isLoading || !isFormValid}
-								data-testid="newAgentModal-create-btn"
+								data-testid="newWorkspaceModal-create-btn"
 							>
 								Add
 							</Button>

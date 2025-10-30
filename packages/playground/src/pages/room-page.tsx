@@ -65,13 +65,17 @@ export const RoomPage = observer(() => {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			toast.error(e.message);
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				toast.error(e.message);
 
-			navigate("/");
-		}
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
 	}, [room, navigate]);
 
 	// create a listener to process messages from the room
@@ -306,6 +310,7 @@ export const RoomPage = observer(() => {
 										onClose={() => {
 											room.closeSidebar();
 										}}
+										room={room}
 									/>
 								</ResizablePanel>
 							</>

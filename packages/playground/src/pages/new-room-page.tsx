@@ -13,11 +13,11 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import background from "@/assets/img/background.svg";
-import { RoomAgent, RoomConfiguration, RoomInput } from "@/components";
+import { RoomConfiguration, RoomInput, RoomWorkspace } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Agent } from "@/types";
+import type { Workspace } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
@@ -36,12 +36,20 @@ export const NewRoomPage = observer(() => {
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const [mode, setMode] = useState<{
-		type: "chat" | "plan" | "agent";
-		agent: Agent | null;
+		type: "chat" | "plan" | "workspace";
+		workspace: Workspace | null;
 	}>({
 		type: "chat",
-		agent: null,
+		workspace: null,
 	});
+	const workspaceId = searchParams.get("workspaceId");
+
+	const getWorkspace = usePixel<Workspace | null>(
+		workspaceId ? `GetWorkspace("${workspaceId}");` : null,
+		{
+			data: null,
+		},
+	);
 
 	/**
 	 * State
@@ -49,9 +57,10 @@ export const NewRoomPage = observer(() => {
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		tools: [],
+		mcp: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
+		workspace: null,
 	});
 
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -74,17 +83,32 @@ export const NewRoomPage = observer(() => {
 		// turn the loading screen
 		setIsLoading(true);
 
+		if (mode.type === "workspace" && mode.workspace) {
+			options.workspace = {
+				workspace_id: mode.workspace.workspace_id,
+			};
+		}
+
 		// create a new room
 		const room = await chat.createRoom(
 			prompt,
 			mode.type === "plan" ? "planning" : "chat",
 			chat.models.selected,
-			options,
-			mode.type === "agent" && mode.agent ? mode.agent : undefined,
+			mode.type === "workspace" && mode.workspace
+				? {
+						...options,
+						workspace: {
+							workspace_id: mode.workspace.workspace_id,
+						},
+					}
+				: options,
 		);
 
 		// ask the room
 		await room.askMessage(prompt, files);
+
+		// mark the room as initialized
+		room.setInitialized();
 
 		// turn the loading screen off
 		setIsLoading(false);
@@ -93,15 +117,10 @@ export const NewRoomPage = observer(() => {
 		navigate(`/room/${room.roomId}`);
 	};
 
-	const agentId = searchParams.get("agentId");
-	const getWorkspace = usePixel<Agent | null>(
-		agentId ? `GetWorkspace("${agentId}");` : null,
-		{
-			data: null,
-		},
-	);
-
-	// if the agentId is passed in, use taht to set the mode
+	/**
+	 * Effects
+	 */
+	// if the workspaceId is passed in, use that to set the mode
 	useEffect(() => {
 		if (getWorkspace.status !== "SUCCESS") {
 			return;
@@ -109,8 +128,8 @@ export const NewRoomPage = observer(() => {
 
 		if (getWorkspace.data) {
 			setMode({
-				type: "agent",
-				agent: getWorkspace.data,
+				type: "workspace",
+				workspace: getWorkspace.data,
 			});
 		}
 	}, [getWorkspace.status, getWorkspace.data]);
@@ -137,13 +156,17 @@ export const NewRoomPage = observer(() => {
 						<RoomInput
 							isLoading={
 								isLoading ||
-								(agentId && getWorkspace.status !== "SUCCESS")
+								(workspaceId &&
+									getWorkspace.status !== "SUCCESS")
 							}
 							isDisabled={false}
 							minRows={4}
 							maxRows={8}
-							agent={
-								<RoomAgent mode={mode} onModeChange={setMode} />
+							workspace={
+								<RoomWorkspace
+									mode={mode}
+									onModeChange={setMode}
+								/>
 							}
 							configuration={
 								<Tooltip>

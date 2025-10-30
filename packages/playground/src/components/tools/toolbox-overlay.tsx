@@ -22,8 +22,8 @@ import {
 	ScrollArea,
 	Spinner,
 } from "@semoss/ui/next";
-import type { App, Engine, Toolbox } from "@/types";
-import { getToolbox } from "./utility";
+import type { App, Engine, MCP, MCPConfig } from "@/types";
+import { engineProjectToToolbox } from "./utility";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -33,43 +33,38 @@ const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 
 interface ToolboxOverlayProps {
 	/** Tools loaded into the room */
-	tools: Toolbox[];
+	mcp: MCPConfig[];
+
+	/** Callback triggered when the tool model is closed */
+	onClose: (success: boolean, mcp?: MCP[]) => void;
 
 	/** Open */
 	open: boolean;
-
-	/** Triggered */
-	onOpenChange: (open: boolean) => void;
-
-	/** Callback triggered when the tool model is closed */
-	onSubmit: (tools?: Toolbox[]) => Promise<void>;
 }
 
 export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
-	const { tools, open, onOpenChange, onSubmit = () => null } = props;
+	const { mcp, open, onClose } = props;
 
-	const [updatedTools, setUpdatedTools] = useState<Record<string, Toolbox>>(
-		() => {
-			return tools.reduce((acc, val) => {
-				acc[val.id] = val;
+	const [updatedMCP, setUpdatedMCP] = useState<Record<string, MCP>>(() => {
+		return mcp.reduce((acc, val) => {
+			acc[val.id] = val;
 
-				return acc;
-			}, {});
-		},
-	);
+			return acc;
+		}, {});
+	});
 
-	const updatedToolsArray = Object.values(updatedTools);
+	const updatedMCPArray = Object.values(updatedMCP);
 
-	// update when tools change
+	// update when mcps change
 	useEffect(() => {
-		const toolsMap = tools.reduce((acc, val) => {
+		const mcpMap = mcp.reduce((acc, val) => {
 			acc[val.id] = val;
 
 			return acc;
 		}, {});
 
-		setUpdatedTools(toolsMap);
-	}, [tools]);
+		setUpdatedMCP(mcpMap);
+	}, [mcp]);
 
 	const [search, setSearch] = useState<string>("");
 
@@ -77,63 +72,62 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	const debouncedSearch = useDebouncedValue(search);
 
 	/**
-	 * Get all of the groups
+	 * Get all of the available MCPs
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		open
-			? `MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`
-			: "",
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
 		{
 			data: [],
 		},
 	);
+	const availableMCPs = getApps.data.map(engineProjectToToolbox);
 
 	/**
-	 * Track if the tool is selected
+	 * Track if the MCP is selected
 	 */
-	const isToolSelected = (toolId: string): boolean => {
-		return Object.hasOwn(updatedTools, toolId);
+	const isMCPSelected = (mcpId: string): boolean => {
+		return Object.hasOwn(updatedMCP, mcpId);
 	};
 
 	/**
-	 * Select a tool and update the arraw
+	 * Select a mcp and update the array
 	 */
-	const onToolSelect = (tool: Toolbox) => {
+	const onMCPSelect = (mcp: MCP) => {
 		// copy for react
-		const updated = { ...updatedTools };
+		const updated = { ...updatedMCP };
 
-		if (isToolSelected(tool.id)) {
+		if (isMCPSelected(mcp.id)) {
 			// remove it
-			delete updated[tool.id];
+			delete updated[mcp.id];
 		} else {
 			// add it
-			updated[tool.id] = tool;
+			updated[mcp.id] = mcp;
 		}
 
-		setUpdatedTools(updated);
+		setUpdatedMCP(updated);
 	};
 
 	/**
-	 * Select a tool and update the arraw
+	 * Select a mcp and update the array
 	 */
-	const onToolDelete = (t: Toolbox) => {
+	const onMCPDelete = (mcp: MCP) => {
 		// copy for react
-		const updated = { ...updatedTools };
+		const updated = { ...updatedMCP };
 
 		// remove it
-		delete updated[t.id];
+		delete updated[mcp.id];
 
-		setUpdatedTools(updated);
+		setUpdatedMCP(updated);
 	};
 
 	return (
-		<Dialog open={open} onOpenChange={(o) => onOpenChange(o)}>
+		<Dialog open={open} onOpenChange={() => onClose(false)}>
 			<DialogContent
 				className="sm:max-w-lg"
-				aria-describedby="Add a Toolbox"
+				aria-describedby="Add an MCP"
 			>
 				<DialogHeader>
-					<DialogTitle>Add Toolbox</DialogTitle>
+					<DialogTitle>Add MCP</DialogTitle>
 					<DialogDescription>
 						Add existing or create{" "}
 						<a
@@ -143,9 +137,9 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 						>
 							new
 						</a>{" "}
-						tools for the agent. The agent will use tools to
-						interact with external sources to help perform actions
-						and answer questions.
+						MCPs for the agent. The agent will use tools to interact
+						with external sources to help perform actions and answer
+						questions.
 					</DialogDescription>
 				</DialogHeader>
 
@@ -169,53 +163,45 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 									)}
 									{getApps.status === "SUCCESS" && (
 										<div className="grid h-full w-full grid-cols-2 gap-2">
-											{getApps.data.map((item) => {
-												const tool = getToolbox(item);
-
-												return (
-													<Label
-														key={tool.id}
-														className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-primary dark:has-[[aria-checked=true]]:bg-secondary"
-													>
-														<Checkbox
-															checked={isToolSelected(
-																tool.id,
-															)}
-															onCheckedChange={() => {
-																onToolSelect(
-																	tool,
-																);
-															}}
-															className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary"
-														/>
-														<div className="grid gap-1.5 font-normal">
-															<p className="font-medium text-sm leading-none">
-																{tool.name}
-															</p>
-															<p className="min-h-8 text-muted-foreground text-sm">
-																{
-																	tool.description
-																}
-															</p>
-														</div>
-													</Label>
-												);
-											})}
+											{availableMCPs.map((mcp) => (
+												<Label
+													key={mcp.id}
+													className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-primary dark:has-[[aria-checked=true]]:bg-secondary"
+												>
+													<Checkbox
+														checked={isMCPSelected(
+															mcp.id,
+														)}
+														onCheckedChange={() => {
+															onMCPSelect(mcp);
+														}}
+														className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary"
+													/>
+													<div className="grid gap-1.5 font-normal">
+														<p className="font-medium text-sm leading-none">
+															{mcp.name}
+														</p>
+														<p className="min-h-8 text-muted-foreground text-sm">
+															{mcp.description}
+														</p>
+													</div>
+												</Label>
+											))}
 										</div>
 									)}
 								</ScrollArea>
 							</Field>
-							{updatedToolsArray.length > 0 && (
+							{updatedMCPArray.length > 0 && (
 								<Field>
 									<FieldLabel>Selected Tools</FieldLabel>
 									<ScrollArea>
-										{updatedToolsArray.map((t) => (
+										{updatedMCPArray.map((mcp) => (
 											<Badge
-												key={t.id}
+												key={mcp.id}
 												variant="secondary"
 												className="mr-2 text-sm"
 											>
-												{t.name}
+												{mcp.name}
 												<Button
 													className="ml-1"
 													type="button"
@@ -223,7 +209,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 													size="icon-sm"
 													onClick={() => {
 														// should delete since it is selected
-														onToolDelete(t);
+														onMCPDelete(mcp);
 													}}
 												>
 													<XIcon />
@@ -238,15 +224,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 				</form>
 				<DialogFooter>
 					<DialogClose asChild>
-						<Button
-							variant="ghost"
-							onClick={() => {
-								// get the new keys
-								const updated = Object.values(updatedTools);
-
-								onSubmit(updated);
-							}}
-						>
+						<Button variant="ghost" onClick={() => onClose(false)}>
 							Cancel
 						</Button>
 					</DialogClose>
@@ -255,9 +233,9 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 							variant="default"
 							onClick={() => {
 								// get the new keys
-								const updated = Object.values(updatedTools);
+								const updated = Object.values(updatedMCP);
 
-								onSubmit(updated);
+								onClose(true, updated);
 							}}
 						>
 							Save
