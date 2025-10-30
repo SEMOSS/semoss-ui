@@ -289,8 +289,8 @@ export const TerminalPanel: React.FC = observer(() => {
 				/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?)/g,
 				(match) => {
 					if (/:$/.test(match)) {
-						// key (yellow)
-						return `\x1b[33m${match}\x1b[0m`;
+						// key (yellow: 33m), (blue: 34m)
+						return `\x1b[34m${match}\x1b[0m`;
 					} else {
 						// string value (green)
 						return `\x1b[32m${match}\x1b[0m`;
