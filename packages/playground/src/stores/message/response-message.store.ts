@@ -1,6 +1,8 @@
 import { makeObservable, observable, runInAction } from "mobx";
+import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type {
 	InputToolExecPixelMessage,
+	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
 	ResponseToolPixelMessage,
@@ -34,7 +36,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** meta data from the tool */
 		_meta: {
 			map: {
-				autoExecute: boolean;
+				SMSS_MCP_EXECUTION: McpExecution;
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
 			};
@@ -84,8 +86,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				id: t.id,
 				_meta: {
 					map: {
+						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
 						...t._meta.map,
-						autoExecute: false,
 					},
 				},
 				title: t.title,
@@ -119,9 +121,6 @@ export class ResponseMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// get a list of tool ids
-		const tools: string[] = room.options.tools.map((t) => t.id, []);
-
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<
 			[
@@ -136,7 +135,6 @@ roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
@@ -157,7 +155,7 @@ paramValues=[${JSON.stringify({
 		inputMessage.addChild(responseMessage);
 
 		// start running tools if there are any
-		this.startToolExecution();
+		responseMessage.startToolExecution();
 	};
 
 	/**
@@ -292,7 +290,7 @@ paramValues=[${JSON.stringify({
 		}
 
 		// only run if it is set to auto execute
-		if (!tool._meta.map.autoExecute) {
+		if (tool._meta.map.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
 			return;
 		}
 
