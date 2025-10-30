@@ -9,7 +9,7 @@ export interface WorkspaceCardProps {
 }
 
 /**
- * Renders a card representing an agent
+ * Renders a card representing a workspace
  *
  * @component
  */

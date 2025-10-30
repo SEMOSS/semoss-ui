@@ -22,7 +22,7 @@ import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
 import type { Workspace } from "@/types";
 
 /**
- * Renders the Discover Page, allowing users to discover and create agents
+ * Renders the Discover Page, allowing users to discover and create workspaces
  *
  * @component
  */

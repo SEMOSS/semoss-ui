@@ -120,12 +120,12 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	return (
 		<Dialog open={open} onOpenChange={() => onClose()}>
 			<DialogContent
-				aria-describedby="Edit the agent"
+				aria-describedby="Edit the workspace"
 				className="sm:max-w-lg"
 			>
 				<DialogHeader>
 					<DialogTitle>
-						{isCreatingNew ? "Create Agent" : "View Agent"}
+						{isCreatingNew ? "Create Workspace" : "View Workspace"}
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
@@ -152,7 +152,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 															e.target.value,
 														)
 													}
-													data-testid="newAgentModal-textField-name"
+													data-testid="newWorkspaceModal-textField-name"
 												/>
 											</Field>
 										);
@@ -180,7 +180,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 															e.target.value,
 														)
 													}
-													data-testid="newAgentModal-description-txt"
+													data-testid="newWorkspaceModal-description-txt"
 												/>
 											</Field>
 										);
@@ -206,7 +206,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 														)
 													}
 													rows={4}
-													data-testid="newAgentModal-system_prompt-txt"
+													data-testid="newWorkspaceModal-system_prompt-txt"
 												/>
 											</Field>
 										);
@@ -331,7 +331,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 							<Button
 								type="submit"
 								disabled={isLoading || !isFormValid}
-								data-testid="newAgentModal-create-btn"
+								data-testid="newWorkspaceModal-create-btn"
 							>
 								Add
 							</Button>
