@@ -32,12 +32,24 @@ function Markdown({
 	const defaultComponents: Components = React.useMemo(
 		() => ({
 			h1: ({ children, ...props }) => <H1 {...props}>{children}</H1>,
-			h2: ({ children, ...props }) => <H2 {...props}>{children}</H2>,
-			h3: ({ children, ...props }) => <H3 {...props}>{children}</H3>,
-			h4: ({ children, ...props }) => <H4 {...props}>{children}</H4>,
+			h2: ({ children, ...props }) => (
+				<H2 className="mt-10" {...props}>
+					{children}
+				</H2>
+			),
+			h3: ({ children, ...props }) => (
+				<H3 className="mt-8" {...props}>
+					{children}
+				</H3>
+			),
+			h4: ({ children, ...props }) => (
+				<H4 className="mt-6" {...props}>
+					{children}
+				</H4>
+			),
 			h5: ({ children, ...props }) => (
 				<h5
-					className="scroll-m-20 font-semibold text-lg tracking-tight"
+					className="mt-4 scroll-m-20 font-semibold text-lg tracking-tight"
 					{...props}
 				>
 					{children}
@@ -45,13 +57,17 @@ function Markdown({
 			),
 			h6: ({ children, ...props }) => (
 				<h6
-					className="scroll-m-20 font-semibold text-base tracking-tight"
+					className="mt-4 scroll-m-20 font-semibold text-base tracking-tight"
 					{...props}
 				>
 					{children}
 				</h6>
 			),
-			p: ({ children, ...props }) => <P {...props}>{children}</P>,
+			p: ({ children, ...props }) => (
+				<P className="mt-6" {...props}>
+					{children}
+				</P>
+			),
 			a: ({ children, href, ...props }) => (
 				<a
 					href={href}
@@ -71,7 +87,9 @@ function Markdown({
 			),
 			li: ({ children, ...props }) => <li {...props}>{children}</li>,
 			blockquote: ({ children, ...props }) => (
-				<Quote {...props}>{children}</Quote>
+				<Quote className="mt-6" {...props}>
+					{children}
+				</Quote>
 			),
 			hr: ({ ...props }) => <Separator {...props} />,
 			table: ({ ...props }) => <Table {...props} />,
