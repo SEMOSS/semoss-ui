@@ -2,8 +2,9 @@ import { KeyboardArrowDown, QueryBuilder, Tune } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
 import { useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
+	Badge,
 	Chip,
 	Container,
 	Divider,
@@ -24,7 +25,6 @@ import {
 	RoomInput,
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
-import { ResponseMessageStore } from "@/stores";
 
 const StyledPage = styled(Stack)(() => ({
 	width: "100%",
@@ -136,7 +136,15 @@ const getDateTitle = (d: string) => {
 	return message;
 };
 
+/**
+ * The page for a room
+ *
+ * @component
+ */
 export const RoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 
 	const notification = useNotification();
@@ -153,22 +161,30 @@ export const RoomPage = observer(() => {
 		room?.history?.length || 0,
 	);
 
+	/**
+	 * Effects
+	 */
+
 	// load the room
 	useEffect(() => {
 		if (!room || room.isInitialized) {
 			return;
 		}
 
-		try {
-			room.initialize();
-		} catch (e) {
-			notification.add({
-				color: "error",
-				message: e.message,
-			});
+		const initializeRoom = async () => {
+			try {
+				await room.initialize();
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
 
-			navigate("/");
-		}
+				navigate("/");
+			}
+		};
+
+		initializeRoom();
 	}, [room, notification.add, navigate]);
 
 	// create a listener to process messages from the room
@@ -197,29 +213,12 @@ export const RoomPage = observer(() => {
 
 				const tool = event.data.tool;
 
-				const message = room.getMessage(tool.message);
-				if (
-					!message ||
-					message instanceof ResponseMessageStore !== true
-				) {
-					return;
-				}
-
-				// save the response with the tool
-				await message.saveTool(
+				room.processTool(
+					tool.message,
 					tool.id,
 					tool.name,
 					tool.response,
-					room.mode !== "executing",
 				);
-
-				// TODO: Fix. This works because we only execute one step at a time.
-				// if it is executing, continue the plan
-				if (room.mode === "executing") {
-					if (room.plan) {
-						room.plan.saveTool();
-					}
-				}
 			} catch {
 				// noop
 			}
@@ -232,8 +231,20 @@ export const RoomPage = observer(() => {
 		};
 	}, [room]);
 
+	if (!room && chat.isInitialized) {
+		// if the chat is initialized and there is no room, the room id is invalid - go back to home
+		return <Navigate to="/" replace={true} />;
+	}
+
 	if (!room || !room.isInitialized) {
+		// room is valid, but not initialized yet
 		return <LoadingScreen.Trigger />;
+	}
+
+	let isDisabled = false;
+	// If the plan is executing, only the execution step is enabled
+	if (room.mode === "executing") {
+		isDisabled = room.plan?.step?.details.stepType !== "human_intervention";
 	}
 
 	return (
@@ -341,43 +352,61 @@ export const RoomPage = observer(() => {
 						<Container maxWidth="xl" disableGutters={true}>
 							<RoomInput
 								isLoading={room.isLoading}
-								isDisabled={room.mode === "executing"}
+								isDisabled={isDisabled}
 								minRows={3}
 								maxRows={8}
 								actions={
 									<Tooltip
-										title={"Open Configuration Menu"}
+										title={"Configuration"}
 										placement="top"
 									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={room.isLoading}
-											color={
-												room.sidebar.isOpen &&
-												room.sidebar.type ===
-													"CONFIGURATION"
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												// toggle open / closed based on the state
-												if (
+										<span>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Configuration"
+												disabled={room.isLoading}
+												color={
 													room.sidebar.isOpen &&
 													room.sidebar.type ===
 														"CONFIGURATION"
-												) {
-													room.closeSidebar();
-												} else {
-													room.openSidebar(
-														"CONFIGURATION",
-													);
+														? "primary"
+														: "default"
 												}
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
+												onClick={() => {
+													// toggle open / closed based on the state
+													if (
+														room.sidebar.isOpen &&
+														room.sidebar.type ===
+															"CONFIGURATION"
+													) {
+														room.closeSidebar();
+													} else {
+														room.openSidebar(
+															"CONFIGURATION",
+														);
+													}
+												}}
+											>
+												<Badge
+													color="primary"
+													variant="dot"
+													badgeContent={
+														room.options.mcp
+															.length ||
+														room.options
+															.workspace ||
+														room.options
+															.instructions
+															?.length
+															? 1
+															: 0
+													}
+												>
+													<Tune color="inherit" />
+												</Badge>
+											</IconButton>
+										</span>
 									</Tooltip>
 								}
 								onPrompt={async (prompt, files) => {
@@ -421,6 +450,7 @@ export const RoomPage = observer(() => {
 								onClose={() => {
 									room.closeSidebar();
 								}}
+								room={room}
 							/>
 						)}
 						{room.sidebar.type === "ARTIFACTS" && (

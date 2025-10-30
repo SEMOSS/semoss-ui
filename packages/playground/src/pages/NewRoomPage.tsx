@@ -5,10 +5,11 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { Resizable } from "re-resizable";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import {
+	Badge,
 	Container,
 	IconButton,
 	Stack,
@@ -54,10 +55,19 @@ const StyledButton = styled("button")(({ theme }) => ({
 	},
 }));
 
+/**
+ * The page to create a new room
+ *
+ * @component
+ */
 export const NewRoomPage = observer(() => {
+	/**
+	 * Library Hooks
+	 */
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const { system } = useInsight();
+	const { workspaceId } = useParams() as { workspaceId?: string };
 
 	const loginType = Object.keys(system.config.logins)[0];
 	const userName: string =
@@ -65,18 +75,25 @@ export const NewRoomPage = observer(() => {
 			? (system.config.logins[loginType] as unknown as string)
 			: "";
 
+	/**
+	 * State
+	 */
 	const [isLoading, setIsLoading] = useState(false);
 	const [options, setOptions] = useState<RoomStore["options"]>({
 		instructions: "",
-		knowledge: null,
-		tools: [],
+		mcp: [],
 		tokenLength: TOKEN_LENGTH,
 		temperature: TEMPERATURE,
+		workspace: null,
 	});
 
 	const [isPlanning, setIsPlanning] = useState(false);
 	const [isMenuOpen, setIsMenuOpen] = useState(false);
 	const [isPromptLibraryOpen, setIsPromptLibraryOpen] = useState(false);
+
+	/**
+	 * Functions
+	 */
 
 	/**
 	 * Ask the model
@@ -100,6 +117,9 @@ export const NewRoomPage = observer(() => {
 			options,
 		);
 
+		// set the initialized state
+		room.setInitialized();
+
 		// ask the room
 		await room.askMessage(prompt, files);
 
@@ -109,6 +129,18 @@ export const NewRoomPage = observer(() => {
 		// go to the new room
 		navigate(`/room/${room.roomId}`);
 	};
+
+	/**
+	 * Effects
+	 */
+	useEffect(() => {
+		if (workspaceId) {
+			setOptions((prev) => ({
+				...prev,
+				workspace: { workspace_id: workspaceId },
+			}));
+		}
+	}, [workspaceId]);
 
 	return (
 		<StyledPage direction={"row"} spacing={2}>
@@ -150,27 +182,42 @@ export const NewRoomPage = observer(() => {
 							minRows={4}
 							maxRows={8}
 							actions={
-								<>
+								<Stack direction="row" alignItems="center">
 									<Tooltip
 										title={"Open Configuration Menu"}
 										placement="top"
 									>
-										<IconButton
-											size={"medium"}
-											type="button"
-											aria-label="Open Configuration Menu"
-											disabled={isLoading}
-											color={
-												isMenuOpen
-													? "primary"
-													: "default"
-											}
-											onClick={() => {
-												setIsMenuOpen(!isMenuOpen);
-											}}
-										>
-											<Tune color="inherit" />
-										</IconButton>
+										<span>
+											<IconButton
+												size={"medium"}
+												type="button"
+												aria-label="Open Configuration Menu"
+												disabled={isLoading}
+												color={
+													isMenuOpen
+														? "primary"
+														: "default"
+												}
+												onClick={() => {
+													setIsMenuOpen(!isMenuOpen);
+												}}
+											>
+												<Badge
+													badgeContent={
+														options.mcp.length ||
+														options.workspace ||
+														options.instructions
+															?.length
+															? 1
+															: 0
+													}
+													color="primary"
+													variant="dot"
+												>
+													<Tune color="inherit" />
+												</Badge>
+											</IconButton>
+										</span>
 									</Tooltip>
 									{ENABLE_PLANNING && (
 										<Tooltip
@@ -197,7 +244,7 @@ export const NewRoomPage = observer(() => {
 											</IconButton>
 										</Tooltip>
 									)}
-								</>
+								</Stack>
 							}
 							onPrompt={async (prompt, files) => {
 								await askMessage(prompt, files);

@@ -1,9 +1,8 @@
-import { computed, makeObservable } from "mobx";
 import type { PixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
-import { InputMessageStore } from "./input-message.store";
-import { PlanMessageStore } from "./plan-message.store";
-import { ResponseMessageStore } from "./response-message.store";
+import type { InputMessageStore } from "./input-message.store";
+import type { PlanMessageStore } from "./plan-message.store";
+import type { ResponseMessageStore } from "./response-message.store";
 import { createMessageStore } from "./utility";
 
 /**
@@ -19,41 +18,6 @@ export class RootMessageStore extends AbstractMessageStore {
 			visible: false,
 			dateCreated: new Date().toString(),
 		});
-
-		makeObservable(this, {
-			history: computed,
-		});
-	}
-	/**
-	 * Get the history of the room based on the active children
-	 */
-	get history(): (
-		| InputMessageStore
-		| ResponseMessageStore
-		| PlanMessageStore
-	)[] {
-		let current: AbstractMessageStore = this;
-
-		const history = [];
-		while (current) {
-			if (current.activeChild) {
-				// save it
-				if (current.activeChild instanceof InputMessageStore) {
-					history.push(current.activeChild);
-				} else if (
-					current.activeChild instanceof ResponseMessageStore
-				) {
-					history.push(current.activeChild);
-				} else if (current.activeChild instanceof PlanMessageStore) {
-					history.push(current.activeChild);
-				}
-			}
-
-			// move forward
-			current = current.activeChild;
-		}
-
-		return history;
 	}
 
 	/**
@@ -61,7 +25,9 @@ export class RootMessageStore extends AbstractMessageStore {
 	 * @param parentMessage - parent message to connect to
 	 * @param inputMessage - input message to send
 	 */
-	runMessage = async (inputMessage: InputMessageStore): Promise<void> => {
+	runMessage = async (
+		inputMessage: InputMessageStore,
+	): Promise<PlanMessageStore | ResponseMessageStore> => {
 		const room = this.room;
 
 		// connect to the parent
@@ -73,9 +39,6 @@ export class RootMessageStore extends AbstractMessageStore {
 			context = room.options?.instructions;
 		}
 
-		// get a list of tool ids
-		const tools: string[] = room.options.tools.map((t) => t.id, []);
-
 		let pixel = "";
 		if (room.mode === "chat") {
 			pixel = `AskPlayground(
@@ -84,7 +47,6 @@ roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
@@ -97,14 +59,13 @@ roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
 ${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
-${tools.length ? `mcpToolID=${JSON.stringify(tools)},` : "mcpToolID=[],"}
 paramValues=[${JSON.stringify({
 				max_new_tokens: room.options.tokenLength,
 				temperature: room.options.temperature,
 			})}]
 );`;
 		} else {
-			throw new Error(`Unknown mode: ${room.mode}`);
+			throw new Error(`Cannot start with mode: ${room.mode}`);
 		}
 
 		// wait for the pixel to run
@@ -127,7 +88,14 @@ paramValues=[${JSON.stringify({
 		const responseMessage = createMessageStore(
 			room,
 			output.responseMessage,
-		);
+		) as PlanMessageStore | ResponseMessageStore;
 		inputMessage.addChild(responseMessage);
+
+		// start running tools if there are any
+		if (responseMessage.type === "RESPONSE") {
+			responseMessage.startToolExecution();
+		}
+
+		return responseMessage;
 	};
 }

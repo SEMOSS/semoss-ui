@@ -30,7 +30,7 @@ const APP_NAME = import.meta.env.VITE_APP_NAME
 const LOGO_FULL_PATH = import.meta.env.VITE_LOGO_FULL_PATH
 	? import.meta.env.VITE_LOGO_FULL_PATH
 	: "";
-const ENABLE_AGENT = import.meta.env.VITE_ENABLE_AGENT === "true";
+const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 const DRAWER_OPEN_WIDTH = 320;
 
@@ -253,11 +253,11 @@ export const Sidebar = observer(() => {
 							path={"/new"}
 						/>
 
-						{ENABLE_AGENT && (
+						{ENABLE_WORKSPACE && (
 							<SidebarLink
-								name={"Agents"}
+								name={"Workspaces"}
 								icon={<PublicOutlined color="inherit" />}
-								path={"/agent"}
+								path={"/workspace"}
 							/>
 						)}
 					</Stack>

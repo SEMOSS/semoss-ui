@@ -19,6 +19,7 @@ import {
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { editEngineUserPermissions, editProjectUserPermissions } from "@/api";
 import FilteredIcon from "@/assets/img/FilteredIcon.png";
 import { useAPI, useRootStore, useSettings } from "@/hooks";
 import type { ALL_TYPES } from "@/types";
@@ -179,6 +180,17 @@ const StyledRadioGroup = styled(RadioGroup)({
 	flexWrap: "nowrap",
 });
 
+const StyledCell = styled(Table.Cell)(({ theme }) => ({
+	whiteSpace: "nowrap",
+	overflow: "hidden",
+	textOverflow: "ellipsis",
+}));
+
+const StyledFooter = styled(Table.Footer)(({ theme }) => ({
+	display: "flex",
+	justifyContent: "flex-end",
+}));
+
 const formatValue = (input: string) => {
 	if (input !== undefined) {
 		const mappings: Record<string, string> = {
@@ -247,7 +259,7 @@ interface JsonType {
 export const MembersTable = (props: MembersTableProps) => {
 	const { id, type, onChange = () => null } = props;
 
-	const { monolithStore, configStore } = useRootStore();
+	const { configStore } = useRootStore();
 	const notification = useNotification();
 	const { adminMode } = useSettings();
 
@@ -475,7 +487,15 @@ export const MembersTable = (props: MembersTableProps) => {
 				return;
 			}
 
-			let response: AxiosResponse<{ success: boolean }> | null = null;
+			let response:
+				| AxiosResponse<{ success: boolean }>
+				| {
+						response: Response;
+						data: {
+							success: boolean;
+						};
+				  }
+				| null = null;
 			if (
 				type === "DATABASE" ||
 				type === "STORAGE" ||
@@ -483,13 +503,13 @@ export const MembersTable = (props: MembersTableProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await monolithStore.editEngineUserPermissions(
+				response = await editEngineUserPermissions(
 					adminMode,
 					id,
 					requests,
 				);
 			} else if (type === "APP") {
-				response = await monolithStore.editProjectUserPermissions(
+				response = await editProjectUserPermissions(
 					adminMode,
 					id,
 					requests,
@@ -842,409 +862,411 @@ export const MembersTable = (props: MembersTableProps) => {
 						<Box>
 							{hasMembers ? (
 								<>
-									<StyledMemberTable>
-										<Table.Head>
-											<Table.Row>
-												<Table.Cell
-													size="small"
-													padding="checkbox"
-												>
-													<Checkbox
-														disabled={
-															userPermission ===
-															"Read-Only"
-														}
-														checked={
-															selectedMembers.length ===
-																renderedMembers.length &&
-															renderedMembers.length >
-																0
-														}
-														onChange={() => {
-															if (
-																selectedMembers.length !==
-																renderedMembers.length
-															) {
-																setSelectedMembers(
-																	renderedMembers,
-																);
-															} else {
-																setSelectedMembers(
-																	[],
-																);
+									<Box sx={{ overflowX: "auto" }}>
+										<StyledMemberTable>
+											<Table.Head>
+												<Table.Row>
+													<StyledCell
+														size="small"
+														padding="checkbox"
+													>
+														<Checkbox
+															disabled={
+																userPermission ===
+																"Read-Only"
 															}
-														}}
-													/>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<Table.Sort
-														active={true} // sort icon is always visible
-														direction={nameOrder} // direction of the icon, up is asc
-														onClick={() =>
-															handleNameSort()
-														}
-													>
-														Name
-													</Table.Sort>
-												</Table.Cell>
-												<Table.Cell size="small">
-													<Table.Sort
-														active={true}
-														direction={
-															permissionOrder
-														}
-														onClick={() =>
-															handlePermissionSort()
-														}
-													>
-														Permission
-													</Table.Sort>
-												</Table.Cell>
-												<Table.Cell size="small">
-													Permission Date
-												</Table.Cell>
-												{type === "MODEL" && (
-													<>
-														<Table.Cell size="small">
-															Model Limit Type
-														</Table.Cell>
-														<Table.Cell size="small">
-															Limit Value
-														</Table.Cell>
-														<Table.Cell size="small">
-															Frequency
-														</Table.Cell>
-													</>
-												)}
-												<Table.Cell size="small">
-													Actions
-												</Table.Cell>
-											</Table.Row>
-										</Table.Head>
-										<Table.Body>
-											{sortedMembers.map((_x, i) => {
-												const user = sortedMembers[i];
-
-												let isSelected = false;
-
-												if (user) {
-													isSelected =
-														selectedMembers.some(
-															(value) => {
-																return (
-																	value.id ===
-																	user.id
-																);
-															},
-														);
-												}
-
-												if (user) {
-													const RowComponent =
-														isSelected
-															? StyledSelectedTableRow
-															: Table.Row;
-													return (
-														<RowComponent
-															key={user.id}
+															checked={
+																selectedMembers.length ===
+																	renderedMembers.length &&
+																renderedMembers.length >
+																	0
+															}
+															onChange={() => {
+																if (
+																	selectedMembers.length !==
+																	renderedMembers.length
+																) {
+																	setSelectedMembers(
+																		renderedMembers,
+																	);
+																} else {
+																	setSelectedMembers(
+																		[],
+																	);
+																}
+															}}
+														/>
+													</StyledCell>
+													<StyledCell size="small">
+														<Table.Sort
+															active={true} // sort icon is always visible
+															direction={nameOrder} // direction of the icon, up is asc
+															onClick={() =>
+																handleNameSort()
+															}
 														>
-															<StyledTableCell
-																size="medium"
-																padding="checkbox"
+															Name
+														</Table.Sort>
+													</StyledCell>
+													<StyledCell size="small">
+														<Table.Sort
+															active={true}
+															direction={
+																permissionOrder
+															}
+															onClick={() =>
+																handlePermissionSort()
+															}
+														>
+															Permission
+														</Table.Sort>
+													</StyledCell>
+													<StyledCell size="small">
+														Permission Date
+													</StyledCell>
+													{type === "MODEL" && (
+														<>
+															<StyledCell size="small">
+																Model Limit Type
+															</StyledCell>
+															<StyledCell size="small">
+																Limit Value
+															</StyledCell>
+															<StyledCell size="small">
+																Frequency
+															</StyledCell>
+														</>
+													)}
+													<StyledCell size="small">
+														Actions
+													</StyledCell>
+												</Table.Row>
+											</Table.Head>
+											<Table.Body>
+												{sortedMembers.map((_x, i) => {
+													const user = sortedMembers[i];
+
+													let isSelected = false;
+
+													if (user) {
+														isSelected =
+															selectedMembers.some(
+																(value) => {
+																	return (
+																		value.id ===
+																		user.id
+																	);
+																},
+															);
+													}
+
+													if (user) {
+														const RowComponent =
+															isSelected
+																? StyledSelectedTableRow
+																: Table.Row;
+														return (
+															<RowComponent
+																key={user.id}
 															>
-																<StyledCheckbox
-																	disabled={
-																		userPermission ===
-																		"Read-Only"
-																	}
-																	checked={
-																		isSelected
-																	}
-																	onChange={() => {
-																		if (
+																<StyledTableCell
+																	size="medium"
+																	padding="checkbox"
+																>
+																	<StyledCheckbox
+																		disabled={
+																			userPermission ===
+																			"Read-Only"
+																		}
+																		checked={
 																			isSelected
-																		) {
-																			const selMembers =
-																				[];
-																			selectedMembers.forEach(
-																				(
-																					u,
-																				) => {
-																					if (
-																						u.id !==
-																						user.id
-																					)
-																						selMembers.push(
-																							u,
-																						);
-																				},
-																			);
-																			setSelectedMembers(
-																				selMembers,
-																			);
-																		} else {
-																			setSelectedMembers(
+																		}
+																		onChange={() => {
+																			if (
+																				isSelected
+																			) {
+																				const selMembers =
+																					[];
+																				selectedMembers.forEach(
+																					(
+																						u,
+																					) => {
+																						if (
+																							u.id !==
+																							user.id
+																						)
+																							selMembers.push(
+																								u,
+																							);
+																					},
+																				);
+																				setSelectedMembers(
+																					selMembers,
+																				);
+																			} else {
+																				setSelectedMembers(
+																					[
+																						...selectedMembers,
+																						user,
+																					],
+																				);
+																			}
+																		}}
+																	/>
+																</StyledTableCell>
+																<StyledCell>
+																	<StyledCenteredBox>
+																		<StyledNameStack
+																			direction="row"
+																			onMouseEnter={(
+																				event,
+																			) => {
+																				setAnchorEl(
+																					event.currentTarget,
+																				);
+																				setHoveredUser(
+																					user,
+																				);
+																			}}
+																			onMouseLeave={() =>
+																				handlePopoverClose
+																			}
+																			aria-owns="mouse-over-popover"
+																			aria-haspopup="true"
+																		>
+																			<AvatarWrapper>
+																				<Avatar>
+																					{user.name[0].toUpperCase()}
+																				</Avatar>
+																			</AvatarWrapper>
+																			{
+																				user.name
+																			}
+																		</StyledNameStack>
+																	</StyledCenteredBox>
+																</StyledCell>
+																<StyledCell size="medium">
+																	<StyledRadioGroup
+																		row
+																		defaultValue={
+																			permissionPriorityMapper(
+																				user.permission,
+																			)
+																				?.permission
+																		}
+																		onChange={(
+																			e,
+																		) => {
+																			updateSelectedUsers(
 																				[
-																					...selectedMembers,
 																					user,
 																				],
+																				permissionPriorityMapper(
+																					e
+																						.target
+																						.value,
+																				)
+																					?.permission,
 																			);
-																		}
-																	}}
-																/>
-															</StyledTableCell>
-															<Table.Cell>
-																<StyledCenteredBox>
-																	<StyledNameStack
-																		direction="row"
-																		onMouseEnter={(
-																			event,
-																		) => {
-																			setAnchorEl(
-																				event.currentTarget,
+																		}}
+																	>
+																		<RadioGroup.Item
+																			value="Author"
+																			label="Author"
+																			disabled={
+																				(!configStore.isEngineOperationAvailable(
+																					type,
+																					"access",
+																				) ||
+																					permissionPriorityMapper(
+																						userPermission,
+																					)
+																						.priority >
+																						1) &&
+																				!adminMode
+																			}
+																		/>
+																		<RadioGroup.Item
+																			value="Editor"
+																			label="Editor"
+																			disabled={
+																				isLastAuthor(
+																					user,
+																				) ||
+																				(((userPermission ===
+																					"Editor" &&
+																					user.permission ===
+																						"OWNER") ||
+																					!configStore.isEngineOperationAvailable(
+																						type,
+																						"access",
+																					) ||
+																					permissionPriorityMapper(
+																						userPermission,
+																					)
+																						?.priority >
+																						2) &&
+																					!adminMode)
+																			}
+																		/>
+																		<RadioGroup.Item
+																			value="Read-Only"
+																			label="Read-Only"
+																			disabled={
+																				isLastAuthor(
+																					user,
+																				) ||
+																				(((userPermission ===
+																					"Editor" &&
+																					user.permission ===
+																						"OWNER") ||
+																					!configStore.isEngineOperationAvailable(
+																						type,
+																						"access",
+																					) ||
+																					permissionPriorityMapper(
+																						userPermission,
+																					)
+																						?.priority >=
+																						3 ||
+																					readOnlyRestricted(
+																						user,
+																					)) &&
+																					!adminMode)
+																			}
+																		/>
+																	</StyledRadioGroup>
+																</StyledCell>
+																<StyledCell>
+																	{user?.date_added ??
+																		"Not Available"}
+																</StyledCell>
+																{type ===
+																	"MODEL" && (
+																	<>
+																		<StyledCell>
+																			{(
+																				user as User
+																			)
+																				?.usage_restriction !==
+																			undefined
+																				? formatValue(
+																						(
+																							user as User
+																						)
+																							?.usage_restriction,
+																					)
+																				: formatValue(
+																						"null",
+																					)}
+																		</StyledCell>
+																		<StyledCell>
+																			{(
+																				user as User
+																			)
+																				?.usage_restriction ===
+																				"compute" &&
+																				`${(user as User)?.max_response_time?.toLocaleString()} ms`}
+
+																			{(
+																				user as User
+																			)
+																				?.usage_restriction ===
+																				"token" &&
+																				`${(user as User)?.max_tokens?.toLocaleString()}`}
+																		</StyledCell>
+																		<StyledCell>
+																			{formatValue(
+																				(
+																					user as User
+																				)
+																					?.usage_frequency,
+																			)}
+																		</StyledCell>
+																	</>
+																)}
+																<StyledCell size="medium">
+																	<IconButton
+																		onClick={() => {
+																			setAddMembersModal(
+																				true,
 																			);
-																			setHoveredUser(
+
+																			setAddModalUser(
+																				user,
+																			);
+																			console.log(
 																				user,
 																			);
 																		}}
-																		onMouseLeave={() =>
-																			handlePopoverClose
-																		}
-																		aria-owns="mouse-over-popover"
-																		aria-haspopup="true"
-																	>
-																		<AvatarWrapper>
-																			<Avatar>
-																				{user.name[0].toUpperCase()}
-																			</Avatar>
-																		</AvatarWrapper>
-																		{
-																			user.name
-																		}
-																	</StyledNameStack>
-																</StyledCenteredBox>
-															</Table.Cell>
-															<Table.Cell size="medium">
-																<StyledRadioGroup
-																	row
-																	defaultValue={
-																		permissionPriorityMapper(
-																			user.permission,
-																		)
-																			?.permission
-																	}
-																	onChange={(
-																		e,
-																	) => {
-																		updateSelectedUsers(
-																			[
-																				user,
-																			],
-																			permissionPriorityMapper(
-																				e
-																					.target
-																					.value,
-																			)
-																				?.permission,
-																		);
-																	}}
-																>
-																	<RadioGroup.Item
-																		value="Author"
-																		label="Author"
 																		disabled={
-																			(!configStore.isEngineOperationAvailable(
+																			!configStore.isEngineOperationAvailable(
 																				type,
 																				"access",
 																			) ||
-																				permissionPriorityMapper(
-																					userPermission,
-																				)
-																					.priority >
-																					1) &&
-																			!adminMode
+																			userPermission ===
+																				"Read-Only"
 																		}
-																	/>
-																	<RadioGroup.Item
-																		value="Editor"
-																		label="Editor"
-																		disabled={
-																			isLastAuthor(
-																				user,
-																			) ||
-																			(((userPermission ===
-																				"Editor" &&
-																				user.permission ===
-																					"OWNER") ||
-																				!configStore.isEngineOperationAvailable(
-																					type,
-																					"access",
-																				) ||
-																				permissionPriorityMapper(
-																					userPermission,
-																				)
-																					?.priority >
-																					2) &&
-																				!adminMode)
-																		}
-																	/>
-																	<RadioGroup.Item
-																		value="Read-Only"
-																		label="Read-Only"
-																		disabled={
-																			isLastAuthor(
-																				user,
-																			) ||
-																			(((userPermission ===
-																				"Editor" &&
-																				user.permission ===
-																					"OWNER") ||
-																				!configStore.isEngineOperationAvailable(
-																					type,
-																					"access",
-																				) ||
-																				permissionPriorityMapper(
-																					userPermission,
-																				)
-																					?.priority >=
-																					3 ||
-																				readOnlyRestricted(
+																	>
+																		<Edit />
+																	</IconButton>
+																	<IconButton
+																		onClick={() => {
+																			openDeleteMembersModal(
+																				[
 																					user,
-																				)) &&
-																				!adminMode)
+																				],
+																			);
+																		}}
+																		disabled={
+																			!configStore.isEngineOperationAvailable(
+																				type,
+																				"access",
+																			) ||
+																			userPermission ===
+																				"Read-Only"
 																		}
-																	/>
-																</StyledRadioGroup>
-															</Table.Cell>
-															<Table.Cell>
-																{user?.date_added ??
-																	"Not Available"}
-															</Table.Cell>
-															{type ===
-																"MODEL" && (
-																<>
-																	<Table.Cell>
-																		{(
-																			user as User
-																		)
-																			?.usage_restriction !==
-																		undefined
-																			? formatValue(
-																					(
-																						user as User
-																					)
-																						?.usage_restriction,
-																				)
-																			: formatValue(
-																					"null",
-																				)}
-																	</Table.Cell>
-																	<Table.Cell>
-																		{(
-																			user as User
-																		)
-																			?.usage_restriction ===
-																			"compute" &&
-																			`${(user as User)?.max_response_time?.toLocaleString()} ms`}
-
-																		{(
-																			user as User
-																		)
-																			?.usage_restriction ===
-																			"token" &&
-																			`${(user as User)?.max_tokens?.toLocaleString()}`}
-																	</Table.Cell>
-																	<Table.Cell>
-																		{formatValue(
-																			(
-																				user as User
-																			)
-																				?.usage_frequency,
-																		)}
-																	</Table.Cell>
-																</>
-															)}
-															<Table.Cell size="medium">
-																<IconButton
-																	onClick={() => {
-																		setAddMembersModal(
-																			true,
-																		);
-
-																		setAddModalUser(
-																			user,
-																		);
-																		console.log(
-																			user,
-																		);
-																	}}
-																	disabled={
-																		!configStore.isEngineOperationAvailable(
-																			type,
-																			"access",
-																		) ||
-																		userPermission ===
-																			"Read-Only"
-																	}
-																>
-																	<Edit />
-																</IconButton>
-																<IconButton
-																	onClick={() => {
-																		openDeleteMembersModal(
-																			[
-																				user,
-																			],
-																		);
-																	}}
-																	disabled={
-																		!configStore.isEngineOperationAvailable(
-																			type,
-																			"access",
-																		) ||
-																		userPermission ===
-																			"Read-Only"
-																	}
-																>
-																	<Delete></Delete>
-																</IconButton>
-															</Table.Cell>
-														</RowComponent>
-													);
-												}
-
-												return null;
-											})}
-										</Table.Body>
-										<Table.Footer>
-											<Table.Row>
-												<Table.Pagination
-													disabled={isLoading}
-													onPageChange={(_e, v) => {
-														setPage(v);
-														setSelectedMembers([]);
-													}}
-													page={page}
-													rowsPerPage={rowsPerPage}
-													rowsPerPageOptions={[
-														5, 10, 20,
-													]}
-													onRowsPerPageChange={(
-														e,
-													) => {
-														// set the new limit
-														setRowsPerPage(
-															parseInt(
-																e.target.value,
-																10,
-															),
+																	>
+																		<Delete></Delete>
+																	</IconButton>
+																</StyledCell>
+															</RowComponent>
 														);
-													}}
-													count={totalMembers}
-												/>
-											</Table.Row>
-										</Table.Footer>
-									</StyledMemberTable>
+													}
+
+													return null;
+												})}
+											</Table.Body>
+										</StyledMemberTable>
+									</Box>
+									<StyledFooter>
+										<Table.Row>
+											<Table.Pagination
+												disabled={isLoading}
+												onPageChange={(_e, v) => {
+													setPage(v);
+													setSelectedMembers([]);
+												}}
+												page={page}
+												rowsPerPage={rowsPerPage}
+												rowsPerPageOptions={[
+													5, 10, 20,
+												]}
+												onRowsPerPageChange={(
+													e,
+												) => {
+													// set the new limit
+													setRowsPerPage(
+														parseInt(
+															e.target.value,
+															10,
+														),
+													);
+												}}
+												count={totalMembers}
+											/>
+										</Table.Row>
+									</StyledFooter>
 									<UserPopover
 										hoveredUser={
 											hoveredUser

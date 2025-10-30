@@ -686,7 +686,7 @@ export const QueryInputSettings = observer(
 						size="small"
 						freeSolo
 						style={{ marginTop: "10px" }}
-                        multiple={false}
+						multiple={false}
 						value={value}
 						inputValue={inputValue}
 						onInputChange={handleInputChange}

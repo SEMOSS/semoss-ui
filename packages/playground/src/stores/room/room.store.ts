@@ -6,11 +6,11 @@ import {
 	type AbstractMessageStore,
 	createMessageStore,
 	InputMessageStore,
-	type PlanMessageStore,
-	type ResponseMessageStore,
+	PlanMessageStore,
+	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { PixelMessage, Toolbox } from "@/types";
+import type { MCP, MCPConfig, PixelMessage } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -68,9 +68,9 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * Tools loaded into the room
+		 * MCPs loaded into the room
 		 */
-		tools: Toolbox[];
+		mcp: MCPConfig[];
 
 		/*
 		 * Length of the token
@@ -81,6 +81,13 @@ interface RoomStoreInterface {
 		 * Temperature of the model
 		 */
 		temperature: number;
+
+		/*
+		 * Workspace associated with the room
+		 */
+		workspace?: {
+			workspace_id: string;
+		};
 	};
 
 	/**
@@ -123,7 +130,7 @@ export class RoomStore {
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			tools: [],
+			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
@@ -224,7 +231,28 @@ export class RoomStore {
 		| ResponseMessageStore
 		| PlanMessageStore
 	)[] {
-		return this._store.root.history || [];
+		let current: AbstractMessageStore = this._store.root;
+
+		const history = [];
+		while (current) {
+			if (current.activeChild) {
+				// save it
+				if (current.activeChild instanceof InputMessageStore) {
+					history.push(current.activeChild);
+				} else if (
+					current.activeChild instanceof ResponseMessageStore
+				) {
+					history.push(current.activeChild);
+				} else if (current.activeChild instanceof PlanMessageStore) {
+					history.push(current.activeChild);
+				}
+			}
+
+			// move forward
+			current = current.activeChild;
+		}
+
+		return history;
 	}
 
 	/**
@@ -242,6 +270,10 @@ export class RoomStore {
 	 * Get the most recent plan
 	 */
 	get plan(): PlanMessageStore | null {
+		if (this.mode !== "executing") {
+			return null;
+		}
+
 		// Search through history in reverse order to find the most recent plan
 		for (let i = this.history.length - 1; i >= 0; i--) {
 			const message = this.history[i];
@@ -303,7 +335,7 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set the mdetadata
+	 * Set the metadata
 	 * @param metadata - metadata
 	 */
 	setMetadata = (metadata: Partial<RoomStoreInterface["metadata"]>) => {
@@ -314,7 +346,7 @@ export class RoomStore {
 	};
 	/** Actions */
 	/**
-	 * Initialize the room and load messages if they are there
+	 * Initialize the room and load messages and options if they are there
 	 */
 	initialize = async () => {
 		try {
@@ -326,12 +358,15 @@ export class RoomStore {
 			// turn on the loading screen
 			this.setIsLoading(true);
 
-			// get all of the messages in historical order (sorted)
-			const response = await this.runRoomPixel<[PixelMessage[]]>(
-				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]);`,
+			// get all of the messages, get all the options
+			const response = await this.runRoomPixel<
+				(PixelMessage[] | { OPTIONS: RoomStoreInterface["options"] })[]
+			>(
+				`GetPlaygroundMessages(roomId=["${this._store.roomId}"]); GetRoomOptions(roomId=${JSON.stringify(this._store.roomId)});`,
 			);
 
-			const { output } = response.pixelReturn[0];
+			const { output: messageOutput } = response.pixelReturn[0];
+			const { output: optionsOutput } = response.pixelReturn[1];
 
 			const root = new RootMessageStore(this);
 			const messages: Record<
@@ -347,22 +382,11 @@ export class RoomStore {
 
 			// store the last model
 			let activeModelId = this._store.modelId;
-			let activeOptions: Pick<
-				RoomStoreInterface["options"],
-				"tokenLength" | "temperature"
-			> = {
-				...this._store.options,
-			};
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
-			for (const pixelMessage of output) {
+			for (const pixelMessage of messageOutput as PixelMessage[]) {
 				if (pixelMessage.type === "INPUT_TEXT") {
 					activeModelId = pixelMessage.modelId;
-					activeOptions = {
-						...activeOptions,
-						temperature: pixelMessage.paramMap.temperature,
-						tokenLength: pixelMessage.paramMap.max_new_tokens,
-					};
 				}
 
 				// create the message
@@ -387,10 +411,22 @@ export class RoomStore {
 				}
 			}
 
+			// options
+			const newOptions = (
+				optionsOutput as {
+					OPTIONS: RoomStoreInterface["options"];
+				}
+			).OPTIONS;
+			if (!newOptions.workspace?.workspace_id) {
+				delete newOptions.workspace;
+			}
+
 			runInAction(() => {
-				// set the model + options based on the history
+				// set the model based on the history
 				this.setModel(activeModelId);
-				this.setOptions(activeOptions);
+
+				// set the options based on the history
+				this.setOptions(newOptions);
 
 				// store it
 				this._store.root = root;
@@ -398,10 +434,83 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+		} catch (e) {
+			throw new Error(e.message || "Error initializing room");
 		} finally {
-			// turn off the loading screen
 			this.setIsLoading(false);
 		}
+	};
+
+	/**
+	 * Link Workspace
+	 * @param workspaceId - Workspace id to link to the room
+	 */
+	legacyLinkWorkspace = async (workspaceId: string) => {
+		try {
+			const { errors } = await this.runRoomPixel<
+				[
+					{
+						roomId: string;
+					},
+				]
+			>(
+				`SetRoomWorkspace(roomId=${JSON.stringify(this._store.roomId)}, workspaceId=${JSON.stringify(workspaceId)});`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+		} catch (e) {
+			throw new Error(e.message || "Error linking workspace");
+		}
+	};
+
+	/**
+	 * UpdateRoomOptions
+	 * @param options - full set of new options
+	 */
+	updateRoomOptions = async (options: RoomStore["options"]) => {
+		try {
+			const { errors } = await this.runRoomPixel(
+				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
+					options,
+				)}]);`,
+			);
+
+			if (errors?.length > 0) {
+				throw new Error(errors?.join(", ") || undefined);
+			}
+			this._store.options = options;
+		} catch (e) {
+			throw new Error(e.message || "Error updating room options");
+		}
+	};
+
+	/**
+	 * Set MCPs for a room
+	 * @param mcp - list of mcps to set
+	 */
+	setMCPs = async (mcp: (MCP | MCPConfig)[]) => {
+		const newOptions = { ...this._store.options };
+		newOptions.mcp = mcp.map(({ id, type, name }) => ({
+			id,
+			type,
+			name,
+		}));
+		this._store.options = newOptions;
+		await this.updateRoomOptions(newOptions);
+	};
+
+	/**
+	 * Remove MCP
+	 * @param mcp - MCP to remove
+	 */
+	removeMCP = async (mcp: MCPConfig) => {
+		const newOptions = { ...this._store.options };
+		newOptions.mcp = newOptions.mcp.filter(
+			(t) => !(t.id === mcp.id && t.type === mcp.type),
+		);
+		await this.updateRoomOptions(newOptions);
 	};
 
 	/**
@@ -473,6 +582,13 @@ export class RoomStore {
 	};
 
 	/**
+	 * Mark a room as initialized
+	 */
+	setInitialized = (): void => {
+		this._store.isInitialized = true;
+	};
+
+	/**
 	 * Ask a message to the room
 	 * @param prompt - user message
 	 * @param files - files
@@ -514,9 +630,57 @@ export class RoomStore {
 		}
 
 		// run the message
-		await parentMessage.runMessage(inputMessage);
+		try {
+			await parentMessage.runMessage(inputMessage);
 
-		// go next if we want
+			// if it is executing continue the execution
+			this.plan?.verifyHumanInterventionStepExecution();
+		} catch (e) {
+			this.plan?.failStepExecution();
+
+			throw e;
+		}
+	};
+
+	/**
+	 * Process a tool call
+	 * @param messageId - id of the message
+	 * @param toolId - id of the tool
+	 * @param toolName - name of the tool
+	 * @param toolResponse - response from the tool
+	 */
+	processTool = async (
+		messageId: string,
+		toolId: string,
+		toolName: string,
+		toolResponse: string,
+	): Promise<void> => {
+		try {
+			const message = this.getMessage(messageId);
+			if (!message || message instanceof ResponseMessageStore !== true) {
+				return;
+			}
+
+			const tool = message.getTool(toolId, toolName);
+			if (!tool) {
+				return;
+			}
+
+			// save the response with the tool
+			await message.saveToolExecution(
+				tool,
+				toolResponse,
+				this.mode === "executing",
+			);
+
+			// verify if it is correct if executing
+			this.plan?.verifyToolStepExecution(
+				tool._meta.map.SMSS_PROJECT_ID,
+				tool.name,
+			);
+		} catch {
+			this.plan?.failStepExecution();
+		}
 	};
 
 	/**
