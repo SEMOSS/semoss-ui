@@ -18,64 +18,80 @@ const createComponent = <T extends HTMLElement>(
 	return Component;
 };
 
-export const H1 = createComponent<HTMLHeadingElement>("h1", "heading-xl", "H1");
+export const H1 = createComponent<HTMLHeadingElement>(
+	"h1",
+	"font-extrabold text-5xl leading-normal",
+	"H1",
+);
 
-export const H2 = createComponent<HTMLHeadingElement>("h2", "heading-lg", "H2");
+export const H2 = createComponent<HTMLHeadingElement>(
+	"h2",
+	"font-semibold text-3xl leading-normal",
+	"H2",
+);
 
-export const H3 = createComponent<HTMLHeadingElement>("h3", "heading-md", "H3");
+export const H3 = createComponent<HTMLHeadingElement>(
+	"h3",
+	"font-semibold text-2xl leading-normal",
+	"H3",
+);
 
-export const H4 = createComponent<HTMLHeadingElement>("h4", "heading-sm", "H4");
+export const H4 = createComponent<HTMLHeadingElement>(
+	"h4",
+	"font-semibold text-xl leading-normal",
+	"H4",
+);
 
 export const Lead = createComponent<HTMLParagraphElement>(
 	"p",
-	"text-xl text-muted-foreground",
+	"font-normal text-muted-foreground text-xl leading-normal",
 	"Lead",
 );
 
 export const P = createComponent<HTMLParagraphElement>(
 	"p",
-	"leading-7 [&:not(:first-child)]:mt-6",
+	"font-normal text-base leading-normal",
 	"P",
 );
 
 export const Large = createComponent<HTMLDivElement>(
 	"div",
-	"text-lg font-semibold",
+	"font-semibold text-lg leading-normal",
 	"Large",
 );
 
 export const Small = createComponent<HTMLParagraphElement>(
 	"p",
-	"text-sm font-medium leading-none",
+	"font-medium text-lg leading-sm",
 	"Small",
 );
 
 export const Muted = createComponent<HTMLSpanElement>(
 	"span",
-	"text-sm text-muted-foreground",
+	"font-medium text-muted-foreground text-sm leading-normal",
 	"Muted",
 );
 
 export const InlineCode = createComponent<HTMLSpanElement>(
 	"code",
-	"relative rounded-sm bg-muted px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold",
+	"inline-flex items-center justify-center rounded-sm bg-muted px-[4.8px] py-[3.2px] font-mono font-normal text-foreground text-sm leading-5",
 	"InlineCode",
 );
 
 export const MultilineCode = createComponent<HTMLPreElement>(
 	"pre",
-	"relative rounded-sm bg-muted p-4 font-mono text-sm font-semibold overflow-x-auto",
+	"flex flex-col items-center justify-center rounded-lg border-border bg-zinc-900 p-4 font-mono font-normal text-base text-white leading-6",
 	"MultilineCode",
 );
 
 export const List = createComponent<HTMLUListElement>(
 	"ul",
-	"my-6 ml-6 list-disc [&>li]:mt-2",
+	"inline-flex list-disc flex-col items-start gap-2 py-6 pl-6 font-normal font-sans text-base text-foreground",
 	"List",
 );
 
 export const Quote = createComponent<HTMLQuoteElement>(
 	"blockquote",
-	"mt-6 border-l-2 pl-6 italic text-muted-foreground",
+	"flex items-center gap-2 self-stretch border-border border-l-2 pl-6 text-base text-foreground italic leading-normal",
 	"Quote",
 );
