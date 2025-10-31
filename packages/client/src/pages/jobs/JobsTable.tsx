@@ -67,10 +67,10 @@ export const JobsTable = (props: {
 	const notification = useNotification();
 	const navigate = useNavigate();
 
-	const [runJobLoading, setRunJobLoading] = useState<boolean>(false);
+	const [runJobLoading, setRunJobLoading] = useState<Set<string>>(new Set());
 
 	const runJob = async (job: Job) => {
-		setRunJobLoading(true);
+		setRunJobLoading(prev => new Set(prev).add(job.id));
 		try {
 			await runPixel(
 				`META | ExecuteScheduledJob ( jobId = [ "${job.id}" ] , jobGroup = [ "${job.group}" ] ) ;`,
@@ -89,7 +89,11 @@ export const JobsTable = (props: {
 				message: "Could not retrieve job history.",
 			});
 		}
-		setRunJobLoading(false);
+		setRunJobLoading(prev => {
+			const newSet = new Set(prev);
+			newSet.delete(job.id);
+			return newSet;
+		});
 	};
 
 	const JobColumns: GridColDef[] = [
@@ -204,10 +208,11 @@ export const JobsTable = (props: {
 			minWidth: 150,
 			renderCell: (params) => {
 				const job = jobs?.find((job) => job.id === params?.value);
+				const isJobRunning = runJobLoading.has(params?.value);
 				return (
 					<>
 						<IconButton
-							disabled={runJobLoading}
+							disabled={isJobRunning}
 							color="primary"
 							size="medium"
 							onClick={() => {
@@ -215,7 +220,7 @@ export const JobsTable = (props: {
 							}}
 							data-testid={"jobsTable-play-btn"}
 						>
-							{runJobLoading ? (
+							{isJobRunning ? (
 								<CircularProgress
 									size="0.75em"
 									variant="indeterminate"
@@ -227,7 +232,7 @@ export const JobsTable = (props: {
 						<IconButton
 							color="primary"
 							size="medium"
-							disabled={runJobLoading}
+							disabled={isJobRunning}
 							onClick={() => {
 								navigate(`/settings/edit-job/${job?.id}`, {
 									state: {
@@ -260,7 +265,7 @@ export const JobsTable = (props: {
 							<Edit />
 						</IconButton>
 						<IconButton
-							disabled={runJobLoading}
+							disabled={isJobRunning}
 							color="error"
 							size="medium"
 							onClick={() => {
