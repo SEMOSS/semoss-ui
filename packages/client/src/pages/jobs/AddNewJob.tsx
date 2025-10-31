@@ -7,6 +7,7 @@ import type { JobBuilder, } from "./job.types";
 import { JobTimeZoneModel } from "./JobTimeZoneModel";
 import { JobDetailsModel } from "./JobDetailsModel";
 import { getEncodeByJobType } from "./job.utils";
+import { AddPixelModal } from "./AddPixelModal";
 
 const emptyBuilder: JobBuilder = {
     formType: "",
@@ -58,6 +59,7 @@ export const AddNewJob= () => {
     const [builder, setBuilder] = useState<JobBuilder>(
         initialBuilderFromLocation ?? emptyBuilder
     );
+    const [pixelOpen, setPixelOpen] = useState(false);
     const [timeZoneType, setTimeZoneType] = useState("Standard");
     const navigate = useNavigate();
     
@@ -151,7 +153,7 @@ export const AddNewJob= () => {
             <Stack direction="row" flex={5} gap={11} alignItems="center">
                 <Stack>
                     <Typography variant={"h6"}>Select Time Zone</Typography>
-                    <Typography variant={"subtitle1"} color="secondary">Please select the time zone for the job you are adding.</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">Please select the time zone for the job you are adding.</Typography>
                 </Stack>
                 <Stack direction="row" gap={5}>
                     <RadioGroup
@@ -172,13 +174,14 @@ export const AddNewJob= () => {
             <Stack direction="row" flex={5} gap={10}>
                 <Stack width="41%">
                     <Typography variant={"h6"}>Job Details</Typography>
-                    <Typography variant={"subtitle1"} color="secondary">Kindly provide the name, type, pixel and tags to procced with</Typography>
-                    <Typography variant={"subtitle1"} color="secondary">adding the new job.</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">Kindly provide the name, type, pixel and tags to procced with</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">adding the new job.</Typography>
                 </Stack>
                 <Stack width="50%">
                     <JobDetailsModel
                         builder={builder}
                         setBuilderField={setBuilderField}
+                        setPixelOpen={setPixelOpen}
                     />
                 </Stack>
             </Stack>
@@ -186,8 +189,8 @@ export const AddNewJob= () => {
             <Stack direction="row" flex={5} gap={5} alignItems="center">
                 <Stack width="43%">
                     <Typography variant={"h6"}>Job Time</Typography>
-                    <Typography variant={"subtitle1"} color="secondary">Kindly provide the Time zone, Frequency and time to procced</Typography>
-                    <Typography variant={"subtitle1"} color="secondary">with adding the new job.</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">Kindly provide the Time zone, Frequency and time to procced</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">with adding the new job.</Typography>
                 </Stack>
                 <Stack width="53%">
                     <JobTimeZoneModel
@@ -215,6 +218,12 @@ export const AddNewJob= () => {
                     {builder.formType === "edit" ? "Update Job" : "Add Job"}
 				</StyledButtonAdd>   
             </Stack>
+            <AddPixelModal 
+                isOpen={pixelOpen}
+                setPixelOpen={setPixelOpen}
+                builder={builder}
+                setBuilderField={setBuilderField}
+            />
         </Stack>
     );
 }

@@ -66,7 +66,7 @@ export const JobTimeZoneModel = (props: {
                 <Stack>
                     <Stack direction="row" gap={5}>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Time Zone</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Time Zone</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={builder.timeZone}
@@ -88,7 +88,7 @@ export const JobTimeZoneModel = (props: {
                             />
                         </Stack>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Frequency</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Frequency</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={builder.frequency}
@@ -111,7 +111,7 @@ export const JobTimeZoneModel = (props: {
                         </Stack>
                     </Stack>
                     <Stack width="100%">
-                        <Typography variant={"subtitle1"} color="secondary">Time</Typography>
+                        <Typography variant={"subtitle1"} color="textSecondary">Time</Typography>
                         <TextField
                             placeholder="Select Time"
                             size="small"
@@ -144,7 +144,7 @@ export const JobTimeZoneModel = (props: {
                 <Stack>
                     <Stack direction="row" gap={5}>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Time Zone</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Time Zone</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={builder.timeZone}
@@ -166,7 +166,7 @@ export const JobTimeZoneModel = (props: {
                             />
                         </Stack>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Minute</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Minute</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={cronMinute}
@@ -190,7 +190,7 @@ export const JobTimeZoneModel = (props: {
                     </Stack>
                     <Stack direction="row" gap={5}>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Hours</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Hours</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={cronHour}
@@ -212,7 +212,7 @@ export const JobTimeZoneModel = (props: {
                             />
                         </Stack>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Day of Month</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Day of Month</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={cronDayOfMonth}
@@ -240,7 +240,7 @@ export const JobTimeZoneModel = (props: {
                     </Stack>
                     <Stack direction="row" gap={5}>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Month</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Month</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={cronMonth}
@@ -265,7 +265,7 @@ export const JobTimeZoneModel = (props: {
                             />
                         </Stack>
                         <Stack width="100%">
-                            <Typography variant={"subtitle1"} color="secondary">Day of Week</Typography>
+                            <Typography variant={"subtitle1"} color="textSecondary">Day of Week</Typography>
                             <Autocomplete
                                 multiple={false}
                                 value={cronDayOfWeek}
@@ -300,7 +300,7 @@ export const JobTimeZoneModel = (props: {
             {selected === "Custom" && jobType === "Custom" && (
                 <Stack>
                     <Stack>
-                        <Typography variant={"subtitle1"} color="secondary">Cron Time Zone</Typography>
+                        <Typography variant={"subtitle1"} color="textSecondary">Cron Time Zone</Typography>
                         <Autocomplete
                             multiple={false}
                             value={builder.cronTz}
@@ -322,7 +322,7 @@ export const JobTimeZoneModel = (props: {
                         />
                     </Stack>
                     <Stack width="100%">
-                        <Typography variant={"subtitle1"} color="secondary">Cron Expression</Typography>
+                        <Typography variant={"subtitle1"} color="textSecondary">Cron Expression</Typography>
                         <TextField
                             size="small"
                             value={builder.cronExpression}

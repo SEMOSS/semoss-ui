@@ -237,7 +237,7 @@ export const SettingsLayout = observer(() => {
 								</IconButton>
 							</IdContainer>
 						) : null}
-						<Typography variant="body1" color="secondary">
+						<Typography variant="body1" color="textSecondary">
 							{!adminMode || matchedRoute.path !== ""
 								? matchedRoute.description
 								: matchedRoute.adminDescription}

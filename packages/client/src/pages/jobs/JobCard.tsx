@@ -35,7 +35,7 @@ export const JobCard = (props: {
 				</StyledAvatar>
 				<Stack spacing={1} justifyContent="start" alignItems="flex-start">
 					<Typography variant="body1">{title}</Typography>
-					<Typography variant="caption" color="secondary">{count}</Typography>
+					<Typography variant="caption" color="textSecondary">{count}</Typography>
 				</Stack>
 			</Stack>
 		</StyledBox>

@@ -1,5 +1,5 @@
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import { Autocomplete, Stack, TextField, Typography, createFilterOptions } from "@semoss/ui";
+import { Autocomplete, Box, Stack, TextField, Typography, createFilterOptions } from "@semoss/ui";
 import type { JobBuilder } from "./job.types";
 import {
     JobTypeOptions,
@@ -8,14 +8,15 @@ import {
 export const JobDetailsModel = (props: {
 	builder: JobBuilder;
 	setBuilderField: (field: string, value: string | string[]) => void;
+    setPixelOpen: (open: boolean) => void;
 }) => {
-    const { builder, setBuilderField } = props;
+    const { builder, setBuilderField, setPixelOpen } = props;
     const filter = createFilterOptions<string>();
     return (
         <Stack>
             <Stack direction="row" gap={5}>
                 <Stack width="100%">
-                    <Typography variant={"subtitle1"} color="secondary">Name</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">Name</Typography>
                     <TextField
                         size="small"
                         variant="outlined"
@@ -28,7 +29,7 @@ export const JobDetailsModel = (props: {
                     />
                 </Stack>
                 <Stack width="100%">
-                    <Typography variant={"subtitle1"} color="secondary">Type</Typography>
+                    <Typography variant={"subtitle1"} color="textSecondary">Type</Typography>
                     <Autocomplete
                         size="small"
                         multiple={false}
@@ -48,24 +49,26 @@ export const JobDetailsModel = (props: {
                 </Stack>
             </Stack>
             <Stack>
-                 <Typography variant={"subtitle1"} color="secondary">Pixel</Typography>
-                <TextField
-                    placeholder="Enter Pixel"
-                    size="small"
-                    value={builder.pixel}
-                    onChange={(e) => setBuilderField("pixel", e.target.value)}
-                    multiline
-                    rows={3}
-                    variant="outlined"
-                    InputProps={{
-                        endAdornment: (
-                            <OpenInFullIcon style={{ opacity: 0.7, color: "#888" }} />
-                        ),
-                    }}
-                />
+                <Typography variant={"subtitle1"} color="textSecondary">Pixel</Typography>
+                <Box onClick={() => setPixelOpen(true)}>
+                    <TextField
+                        placeholder="Enter Pixel"
+                        size="small"
+                        value={builder.pixel}
+                        onChange={(e) => setBuilderField("pixel", e.target.value)}
+                        multiline
+                        rows={3}
+                        variant="outlined"
+                        InputProps={{
+                            endAdornment: (
+                                <OpenInFullIcon style={{ opacity: 0.7, color: "#888" }} />
+                            ),
+                        }}
+                    />
+                </Box>
             </Stack>
             <Stack>
-                 <Typography variant={"subtitle1"} color="secondary">Tags</Typography>
+                 <Typography variant={"subtitle1"} color="textSecondary">Tags</Typography>
                  <Autocomplete
                     value={(builder.tags as string[]) ?? []}
                     fullWidth
