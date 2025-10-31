@@ -69,10 +69,10 @@ export const JobTimeZoneModel = (props: {
                             <Typography variant={"subtitle1"} color="textSecondary">Time Zone</Typography>
                             <Autocomplete
                                 multiple={false}
-                                value={builder.timeZone}
+                                value={builder.cronTz}
                                 options={timezones}
                                 onChange={(_, value) =>
-                                    setBuilderField("timeZone", value)
+                                    setBuilderField("cronTz", value)
                                 }
                                 size="small"
                                 getOptionLabel={(option: string) =>
@@ -147,10 +147,10 @@ export const JobTimeZoneModel = (props: {
                             <Typography variant={"subtitle1"} color="textSecondary">Time Zone</Typography>
                             <Autocomplete
                                 multiple={false}
-                                value={builder.timeZone}
+                                value={builder.cronTz}
                                 options={timezones}
                                 onChange={(_, value) =>
-                                    setBuilderField("timeZone", value)
+                                    setBuilderField("cronTz", value)
                                 }
                                 size="small"
                                 getOptionLabel={(option: string) =>
