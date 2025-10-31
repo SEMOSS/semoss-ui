@@ -10,8 +10,6 @@ import {
 	DropdownMenu,
 	DropdownMenuContent,
 	DropdownMenuItem,
-	DropdownMenuLabel,
-	DropdownMenuSeparator,
 	DropdownMenuTrigger,
 	SidebarMenu,
 	SidebarMenuButton,
@@ -47,22 +45,19 @@ export function NavUser() {
 						className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
 						asChild
 					>
-						<DropdownMenuTrigger>
-							<Avatar className="h-8 w-8 rounded-lg grayscale">
+						<DropdownMenuTrigger className="flex w-full items-center gap-2">
+							<Avatar className="h-8 w-8 flex-shrink-0 rounded-lg grayscale">
 								<AvatarImage src={""} alt={userName} />
 								<AvatarFallback className="rounded-lg">
-									CN
+									{initials}
 								</AvatarFallback>
 							</Avatar>
-							<div className="grid flex-1 text-left text-sm leading-tight">
-								<span className="truncate font-medium">
+							<div className="flex min-w-0 flex-1 items-center">
+								<span className="truncate font-medium text-sm">
 									{userName}
 								</span>
-								<span className="truncate text-muted-foreground text-xs">
-									&nbsp;
-								</span>
 							</div>
-							<EllipsisVerticalIcon className="ml-auto size-4" />
+							<EllipsisVerticalIcon className="ml-auto size-4 flex-shrink-0" />
 						</DropdownMenuTrigger>
 					</SidebarMenuButton>
 
@@ -72,25 +67,6 @@ export function NavUser() {
 						align="end"
 						sideOffset={4}
 					>
-						<DropdownMenuLabel className="p-0 font-normal">
-							<div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-								<Avatar className="h-8 w-8 rounded-lg">
-									<AvatarImage src={""} alt={userName} />
-									<AvatarFallback className="rounded-lg">
-										{initials}
-									</AvatarFallback>
-								</Avatar>
-								<div className="grid flex-1 text-left text-sm leading-tight">
-									<span className="truncate font-medium">
-										{userName}
-									</span>
-									<span className="truncate text-xs">
-										&nbsp;
-									</span>
-								</div>
-							</div>
-						</DropdownMenuLabel>
-						<DropdownMenuSeparator />
 						<DropdownMenuItem
 							onClick={async () => {
 								await actions.logout();
