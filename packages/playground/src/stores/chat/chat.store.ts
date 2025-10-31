@@ -7,7 +7,6 @@ import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
-const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -24,11 +23,6 @@ interface ChatStoreInterface {
 	 * Map of id to channel
 	 */
 	rooms: Record<string, RoomStore>;
-
-	/**
-	 * Map of id to workspace
-	 */
-	workspaces: Record<string, Workspace>;
 
 	/**
 	 * Order of the rooms
@@ -57,7 +51,6 @@ export class ChatStore {
 		isInitialized: false,
 		isLoading: false,
 		rooms: {},
-		workspaces: {},
 		order: [],
 		models: {
 			options: [],
@@ -113,13 +106,6 @@ export class ChatStore {
 	}
 
 	/**
-	 * Get the workspaces from the store
-	 */
-	get workspaces() {
-		return this._store.workspaces;
-	}
-
-	/**
 	 * Get the models from the store
 	 */
 	get models() {
@@ -135,8 +121,6 @@ export class ChatStore {
 			Promise.all([
 				// get the room info
 				this.getRooms(),
-				// get the workspace info
-				this.getWorkspaces(),
 				// get the model info
 				this.getModels(),
 			]).finally(() => {
@@ -342,21 +326,6 @@ export class ChatStore {
 				throw new Error(this._error.message);
 			}
 
-			runInAction(() => {
-				// add to the store
-				this._store.workspaces = {
-					...this._store.workspaces,
-					[pixelReturn[0].output]: {
-						workspace_id: pixelReturn[0].output,
-						name: data.name,
-						date_created: new Date().toISOString(),
-						description: data.description,
-						system_prompt: data.system_prompt,
-						mcp: data.mcp,
-					},
-				};
-			});
-
 			return pixelReturn[0].output;
 		} catch (e) {
 			throw e instanceof Error ? e : new Error(String(e));
@@ -439,55 +408,6 @@ export class ChatStore {
 			runInAction(() => {
 				// set the order
 				this._store.order = order;
-			});
-		} finally {
-			this.setIsLoading(false);
-		}
-	};
-
-	/**
-	 * Get available workspaces from the backend
-	 */
-	private getWorkspaces = async (): Promise<void> => {
-		// workspaces are not enabled, set it to the default
-		if (!ENABLE_WORKSPACE) {
-			this._store.workspaces = {};
-			return;
-		}
-
-		try {
-			// turn on the loading screen
-			this.setIsLoading(true);
-
-			// clear the models
-			this._store.workspaces = {};
-
-			// wait for the pixel to run
-			const { pixelReturn } =
-				await this._actions.run<
-					[
-						{
-							workspaces: Workspace[];
-						},
-					]
-				>(` ListWorkspaces()`);
-
-			// throw errors
-			if (this._error) {
-				throw new Error(this._error.message);
-			}
-
-			runInAction(() => {
-				// get the output
-				const { output } = pixelReturn[0];
-				// store the models
-				this._store.workspaces = output.workspaces.reduce(
-					(acc, workspace) => {
-						acc[workspace.workspace_id] = workspace;
-						return acc;
-					},
-					{} as Record<string, Workspace>,
-				);
 			});
 		} finally {
 			this.setIsLoading(false);
