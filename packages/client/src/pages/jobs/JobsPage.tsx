@@ -8,7 +8,7 @@ import {
 	Delete,
 	DeleteOutline,
 	ErrorRounded,
-	NotStartedOutlined,
+	PlayArrowSharp,
 	Pause,
 } from "@mui/icons-material";
 import type { GridRowSelectionModel } from "@mui/x-data-grid";
@@ -642,7 +642,7 @@ export function JobsPage() {
 									<Button
 										disabled={selectedPausedJobs.length === 0}
 										variant="outlined"
-										startIcon={<NotStartedOutlined />}
+										startIcon={<PlayArrowSharp />}
 										size="medium"
 										onClick={() => resumeJobs()}
 										data-testid={"jobsPage-resume-btn"}
