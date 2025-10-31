@@ -59,8 +59,6 @@ The above will search all test file names that include the name `accordion` and 
 pnpm run test AccordionBlock.spec.tsx
 ```
 
-Unit testing will also run inside the pre-commit hook after linting.
-
 ## `it` vs `test`
 
 Both `it` and `test` function the same; both are aliases of each other. For readability purposes, use `it` when a test "should" do something

@@ -1,8 +1,8 @@
 import { expect, test } from "vitest";
 import "@testing-library/jest-dom";
-import type { ListenerActions } from "@/store";
 import { FlipCardBlock } from "../../components/block-defaults/flip-card-block/FlipCardBlock";
-import { fireEvent, render, screen } from "../utils/index";
+import type { ListenerActions } from "../../store";
+import { fireEvent, render } from "../utils/index";
 
 const blocks = {
 	"front-text": {
@@ -81,18 +81,24 @@ const blocks = {
 
 describe("Flip Card Block", () => {
 	test("renders correctly with mocked provider", async () => {
-		const { container } = render(<FlipCardBlock id="flip-card" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<FlipCardBlock id={blocks["flip-card"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='flip-card']");
 		expect(element).toBeInTheDocument();
 	});
 
 	test("flip with correct text on both sides", async () => {
-		const { container } = render(<FlipCardBlock id="flip-card" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<FlipCardBlock id={blocks["flip-card"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='flip-card']");
 
@@ -102,9 +108,12 @@ describe("Flip Card Block", () => {
 	});
 
 	test("renders with correct styling", async () => {
-		const { container } = render(<FlipCardBlock id="flip-card" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<FlipCardBlock id={blocks["flip-card"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelectorAll("div.MuiCard-root");
 

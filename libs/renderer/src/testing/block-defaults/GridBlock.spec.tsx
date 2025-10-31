@@ -1,9 +1,9 @@
+import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { expect, vi } from "vitest";
+import { GridBlock } from "../../components/block-defaults/grid-block";
+import * as useFrameHook from "../../hooks/useFrame";
 import { render } from "../utils";
-import "@testing-library/jest-dom";
-import { GridBlock } from "@/components/block-defaults/grid-block";
-import * as useFrameHook from "@/hooks/useFrame";
 
 const blocks = {
 	grid: {
@@ -60,7 +60,7 @@ describe("grid block", () => {
 			filter: undefined,
 			unfilter: undefined,
 		});
-		const { container } = render(<GridBlock id="grid" />, {
+		const { container } = render(<GridBlock id={blocks.grid.id} />, {
 			blocks: blocks,
 		});
 

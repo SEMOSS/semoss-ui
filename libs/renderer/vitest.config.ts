@@ -24,6 +24,7 @@ export default defineConfig({
 		},
 	},
 	test: {
+		name: "renderer",
 		environment: "jsdom",
 		globals: true,
 		setupFiles: ["./vitest.setup.ts"],
@@ -41,13 +42,18 @@ export default defineConfig({
 		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
-			inline: [
-				"vega",
-				"vega-lite",
-				"vega-embed",
-				"react-vega",
-				/^vega-/, // This catches any vega-* packages
-			],
+			optimizer: {
+				web: {
+					include: [
+						"vitest-canvas-mock",
+						"vega",
+						"vega-lite",
+						"vega-embed",
+						"react-vega",
+						/^vega-/, // This catches any vega-* packages
+					],
+				},
+			},
 		},
 	},
 });

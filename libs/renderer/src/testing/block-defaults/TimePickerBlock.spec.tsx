@@ -1,6 +1,6 @@
-import { expect } from "vitest";
 import "@testing-library/jest-dom";
-import { TimePickerBlock } from "@/components/block-defaults/time-picker-block/TimePickerBlock";
+import { expect } from "vitest";
+import { TimePickerBlock } from "../../components/block-defaults/time-picker-block/TimePickerBlock";
 import { fireEvent, render, screen } from "../utils";
 
 const blocks = {
@@ -67,9 +67,12 @@ const blocks = {
 
 describe("time picker block", () => {
 	it("renders correctly with mocked provider", async () => {
-		const { container } = render(<TimePickerBlock id="time-picker" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<TimePickerBlock id={blocks["time-picker"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='time-picker']");
 		const inputElement = container.querySelector("input");
@@ -80,9 +83,12 @@ describe("time picker block", () => {
 	});
 
 	it("renders time value correctly", async () => {
-		const { container } = render(<TimePickerBlock id="time-picker2" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<TimePickerBlock id={blocks["time-picker2"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='time-picker2']");
 		const inputElement = container.querySelector("input");

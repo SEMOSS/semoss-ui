@@ -1,7 +1,6 @@
 import { expect } from "vitest";
 import "@testing-library/jest-dom";
-
-import { IframeBlock } from "@/components/block-defaults/iframe-block/IframeBlock";
+import { IframeBlock } from "../../components/block-defaults/iframe-block/IframeBlock";
 import { render } from "../utils";
 
 const blocks = {
@@ -22,7 +21,7 @@ const blocks = {
 
 describe("Iframe Block", () => {
 	it("renders the iframe with correct attributes", async () => {
-		const { container } = render(<IframeBlock id="iframe" />, {
+		const { container } = render(<IframeBlock id={blocks.iframe.id} />, {
 			blocks: blocks,
 		});
 
@@ -47,7 +46,7 @@ describe("Iframe Block", () => {
 			},
 		};
 
-		const { container } = render(<IframeBlock id="iframe" />, {
+		const { container } = render(<IframeBlock id={blocks.iframe.id} />, {
 			blocks: disabledBlocks,
 		});
 
@@ -67,7 +66,7 @@ describe("Iframe Block", () => {
 			},
 		};
 
-		const { container } = render(<IframeBlock id="iframe" />, {
+		const { container } = render(<IframeBlock id={blocks.iframe.id} />, {
 			blocks: hiddenBlocks,
 		});
 
@@ -88,7 +87,7 @@ describe("Iframe Block", () => {
 			},
 		};
 
-		const { container } = render(<IframeBlock id="iframe" />, {
+		const { container } = render(<IframeBlock id={blocks.iframe.id} />, {
 			blocks: styledBlocks,
 		});
 
@@ -109,7 +108,7 @@ describe("Iframe Block", () => {
 				},
 			},
 		};
-		const { container } = render(<IframeBlock id="iframe" />, {
+		const { container } = render(<IframeBlock id={blocks.iframe.id} />, {
 			blocks: noStyleBlocks,
 		});
 		const wrapper = container.querySelector("span");

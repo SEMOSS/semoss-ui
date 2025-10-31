@@ -1,9 +1,9 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { describe, expect, test } from "vitest";
-import { render } from "../utils/index";
 import "@testing-library/jest-dom";
-
+import { screen } from "@testing-library/react";
+import { useId } from "react";
+import { describe, expect } from "vitest";
 import { ChipBlock } from "../../components/block-defaults/chip-block/ChipBlock";
+import { render } from "../utils/index";
 
 const blocks = {
 	chip: {
@@ -66,7 +66,7 @@ const blocks = {
 
 describe("chip block", () => {
 	it("should render correctly with mocked provider", async () => {
-		const { container } = render(<ChipBlock id="chip" />, {
+		const { container } = render(<ChipBlock id={useId()} />, {
 			blocks: blocks,
 		});
 
@@ -75,7 +75,7 @@ describe("chip block", () => {
 	});
 
 	it("should show correct variant", async () => {
-		const { container } = render(<ChipBlock id="icon-chip" />, {
+		render(<ChipBlock id={useId()} />, {
 			blocks: blocks,
 		});
 
@@ -84,7 +84,7 @@ describe("chip block", () => {
 	});
 
 	it("should render correct appearance variants", async () => {
-		const { container } = render(<ChipBlock id="appearance-chip" />, {
+		const { container } = render(<ChipBlock id={useId()} />, {
 			blocks: blocks,
 		});
 

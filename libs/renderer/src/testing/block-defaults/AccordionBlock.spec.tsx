@@ -1,9 +1,9 @@
 import { fireEvent, waitFor } from "@testing-library/react";
 import { expect, test } from "vitest";
-import { render } from "../utils/index";
 import "@testing-library/jest-dom";
-
+import { useId } from "react";
 import { AccordionBlock } from "../../components/block-defaults/accordion-block/AccordionBlock";
+import { render } from "../utils/index";
 
 const blocks = {
 	accordion: {
@@ -36,7 +36,7 @@ const blocks = {
 
 describe("accordion block", () => {
 	test("renders correctly with mocked provider", async () => {
-		const { container } = render(<AccordionBlock id="accordion" />, {
+		const { container } = render(<AccordionBlock id={useId()} />, {
 			blocks: blocks,
 		});
 
@@ -45,7 +45,7 @@ describe("accordion block", () => {
 	});
 
 	test("renders header properly", async () => {
-		const { container } = render(<AccordionBlock id="accordion" />, {
+		const { container } = render(<AccordionBlock id={useId()} />, {
 			blocks: blocks,
 		});
 
@@ -59,7 +59,7 @@ describe("accordion block", () => {
 	});
 
 	test("toggles content on click", async () => {
-		const { container } = render(<AccordionBlock id="accordion" />, {
+		const { container } = render(<AccordionBlock id={useId()} />, {
 			blocks: blocks,
 		});
 

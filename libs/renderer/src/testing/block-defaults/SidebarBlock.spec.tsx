@@ -1,4 +1,4 @@
-import { SidebarBlock } from "@/components/block-defaults/sidebar-block/SidebarBlock";
+import { SidebarBlock } from "../../components/block-defaults/sidebar-block/SidebarBlock";
 import { render, screen } from "../utils";
 
 const blocks = {
@@ -46,7 +46,7 @@ const blocks = {
 };
 describe("Testing the Sidebar Block", async () => {
 	it("Should render the sidebar", async () => {
-		const { container } = render(<SidebarBlock id="test-sidebar" />, {
+		render(<SidebarBlock id={blocks["test-sidebar"].id} />, {
 			blocks: blocks,
 		});
 		const exist = container.querySelector("[data-block='test-sidebar']");
@@ -54,13 +54,13 @@ describe("Testing the Sidebar Block", async () => {
 		expect(exist).toBeInTheDocument();
 	});
 	it("Should render the sidebar in its closed state and content to not be visible", async () => {
-		const { container } = render(<SidebarBlock id="test-sidebar" />, {
+		render(<SidebarBlock id={blocks["test-sidebar"].id} />, {
 			blocks: blocks,
 		});
 		expect(screen.queryByText("Hello world")).not.toBeVisible();
 	});
 	it("Should render the sidebar in its open state and content to be visible", async () => {
-		const { container } = render(<SidebarBlock id="test-sidebar" />, {
+		render(<SidebarBlock id={blocks["test-sidebar"].id} />, {
 			blocks: {
 				"hello-text": {
 					...blocks["hello-text"],
