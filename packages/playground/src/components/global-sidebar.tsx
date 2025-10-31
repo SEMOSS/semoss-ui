@@ -77,7 +77,7 @@ export const GlobalSidebar = observer(() => {
 
 				<SidebarMenu className="gap-2 p-2">
 					<Button
-						className="w-full bg-sidebar-primary text-sidebar-primary-foreground shadow-none"
+						className="w-full bg-primary text-primary-foreground shadow-none"
 						size="sm"
 						variant="outline"
 						asChild

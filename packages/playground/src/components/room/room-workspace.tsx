@@ -29,6 +29,7 @@ import {
 import type { Workspace } from "@/types";
 
 const ENABLE_PLANNING = import.meta.env.VITE_ENABLE_PLANNING === "true";
+const IS_PRODUCTION = !import.meta.env.DEV;
 
 type RoomWorkspaceProps = {
 	/**
@@ -135,21 +136,22 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 												<MessageCircle />
 												Ask
 											</CommandItem>
-											{ENABLE_PLANNING && (
-												<CommandItem
-													value="plan"
-													onSelect={() => {
-														onModeChange({
-															type: "plan",
-															workspace: null,
-														});
-														setOpen(false);
-													}}
-												>
-													<ListTodoIcon />
-													Plan
-												</CommandItem>
-											)}
+											{!IS_PRODUCTION &&
+												ENABLE_PLANNING && (
+													<CommandItem
+														value="plan"
+														onSelect={() => {
+															onModeChange({
+																type: "plan",
+																workspace: null,
+															});
+															setOpen(false);
+														}}
+													>
+														<ListTodoIcon />
+														Plan
+													</CommandItem>
+												)}
 										</CommandGroup>
 										<CommandSeparator />
 										<CommandGroup heading="Workspaces">

@@ -160,9 +160,12 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 									<>
 										<Field>
 											<FieldLabel
-												onClick={() =>
-													setIsToolsOpen(true)
-												}
+												onClick={(event) => {
+													event.preventDefault();
+													event.stopPropagation();
+
+													setIsToolsOpen(true);
+												}}
 											>
 												<div className="flex-1">
 													MCPs
@@ -177,6 +180,7 @@ export const RoomConfiguration = observer((props: RoomConfigurationProps) => {
 																onClick={(
 																	event,
 																) => {
+																	event.preventDefault();
 																	event.stopPropagation();
 
 																	setIsToolsOpen(
