@@ -371,27 +371,29 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					>
 						{ENABLE_ATTACHMENT && (
 							<Tooltip title={"Attach Document"} placement="top">
-								<IconButton
-									size={"small"}
-									type="button"
-									color="default"
-									aria-label="Attach Documents"
-									disabled={isDisabled || isLoading}
-									onClick={() => {
-										fileRef.current?.click();
-									}}
-								>
-									<Badge
-										color={"primary"}
-										variant="dot"
-										invisible={files.length === 0}
+								<span>
+									<IconButton
+										size={"small"}
+										type="button"
+										color="default"
+										aria-label="Attach Documents"
+										disabled={isDisabled || isLoading}
+										onClick={() => {
+											fileRef.current?.click();
+										}}
 									>
-										<AttachFileRounded
-											color={"inherit"}
-											fontSize="medium"
-										/>
-									</Badge>
-								</IconButton>
+										<Badge
+											color={"primary"}
+											variant="dot"
+											invisible={files.length === 0}
+										>
+											<AttachFileRounded
+												color={"inherit"}
+												fontSize="medium"
+											/>
+										</Badge>
+									</IconButton>
+								</span>
 							</Tooltip>
 						)}
 						{actions}

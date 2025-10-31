@@ -10,7 +10,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { PixelMessage, Toolbox } from "@/types";
+import type { MCP, MCPConfig, PixelMessage } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -68,14 +68,9 @@ interface RoomStoreInterface {
 		instructions: string;
 
 		/*
-		 * Tools loaded into the room
+		 * MCPs loaded into the room
 		 */
-		tools: Toolbox[];
-
-		/*
-		 * MCP ids loaded into the room - should eventually be part of tools
-		 */
-		mcpToolID: string[];
+		mcp: MCPConfig[];
 
 		/*
 		 * Length of the token
@@ -135,8 +130,7 @@ export class RoomStore {
 		root: new RootMessageStore(this),
 		options: {
 			instructions: "",
-			tools: [],
-			mcpToolID: [],
+			mcp: [],
 			tokenLength: TOKEN_LENGTH,
 			temperature: TEMPERATURE,
 		},
@@ -417,18 +411,22 @@ export class RoomStore {
 				}
 			}
 
+			// options
+			const newOptions = (
+				optionsOutput as {
+					OPTIONS: RoomStoreInterface["options"];
+				}
+			).OPTIONS;
+			if (!newOptions.workspace?.workspace_id) {
+				delete newOptions.workspace;
+			}
+
 			runInAction(() => {
 				// set the model based on the history
 				this.setModel(activeModelId);
 
 				// set the options based on the history
-				this.setOptions(
-					(
-						optionsOutput as {
-							OPTIONS: RoomStoreInterface["options"];
-						}
-					).OPTIONS,
-				);
+				this.setOptions(newOptions);
 
 				// store it
 				this._store.root = root;
@@ -489,30 +487,28 @@ export class RoomStore {
 	};
 
 	/**
-	 * Set Tools for a room, including MCP tools for now
-	 * @param tools - list of tools to set
+	 * Set MCPs for a room
+	 * @param mcp - list of mcps to set
 	 */
-	setTools = async (tools: Toolbox[]) => {
+	setMCPs = async (mcp: (MCP | MCPConfig)[]) => {
 		const newOptions = { ...this._store.options };
-		newOptions.tools = tools;
-		newOptions.mcpToolID = tools
-			.filter((t) => t.type === "PROJECT")
-			.map((t) => t.id);
+		newOptions.mcp = mcp.map(({ id, type, name }) => ({
+			id,
+			type,
+			name,
+		}));
 		this._store.options = newOptions;
 		await this.updateRoomOptions(newOptions);
 	};
 
 	/**
-	 * Remove MCP Tool
-	 * @param mcpToolID - MCP tool ID to remove
+	 * Remove MCP
+	 * @param mcp - MCP to remove
 	 */
-	removeMcpTool = async (mcpToolID: string) => {
+	removeMCP = async (mcp: MCPConfig) => {
 		const newOptions = { ...this._store.options };
-		newOptions.tools = newOptions.tools.filter(
-			(t) => !(t.id === mcpToolID && t.type === "PROJECT"),
-		);
-		newOptions.mcpToolID = newOptions.mcpToolID.filter(
-			(id) => id !== mcpToolID,
+		newOptions.mcp = newOptions.mcp.filter(
+			(t) => !(t.id === mcp.id && t.type === mcp.type),
 		);
 		await this.updateRoomOptions(newOptions);
 	};
