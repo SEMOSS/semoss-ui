@@ -1,4 +1,9 @@
-import { ContentCopy, ContentPaste } from "@mui/icons-material";
+import {
+	ContentCopy,
+	ContentPaste,
+	DarkMode,
+	LightModeOutlined,
+} from "@mui/icons-material";
 import { IconButton, type SxProps, styled } from "@mui/material";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -17,55 +22,126 @@ const StyledTerminal = styled("div")({
 	overflow: "hidden",
 });
 
-const StyledOption = styled("div")({
-	height: "100px",
-	width: "fit-content",
-	position: "absolute",
-	bottom: 0,
-	left: "20px",
-	right: "20px",
-	overflowY: "auto",
-	backgroundColor: "#1e1e1e",
-	color: "#ffffff",
-	padding: "10px",
-	borderRadius: "5px",
-	maxHeight: "110px",
-	overflowX: "scroll",
-	zIndex: 1000,
-	"ul > li": {
-		"&:hover": {
-			cursor: "pointer",
-			backgroundColor: "#4e4e4e",
+const StyledOption = styled("div")<{ darkThemeStyle: string }>(
+	({ darkThemeStyle }) => ({
+		height: "100px",
+		width: "fit-content",
+		position: "absolute",
+		bottom: 0,
+		left: "20px",
+		right: "20px",
+		overflowY: "auto",
+		backgroundColor: darkThemeStyle === "dark" ? "#1e1e1e" : "#fcf9f9",
+		color: darkThemeStyle === "dark" ? "#ffffff" : "#000000",
+		padding: "10px",
+		border: "1px solid #000",
+		borderRadius: "5px",
+		maxHeight: "110px",
+		overflowX: "scroll",
+		zIndex: 1000,
+		"ul > li": {
+			"&:hover": {
+				cursor: "pointer",
+				backgroundColor:
+					darkThemeStyle === "dark" ? "#4e4e4e" : "#E0E0E0",
+			},
 		},
-	},
-	"ul > li.selected": {
-		backgroundColor: "#b4b1b1ff",
-		"&:hover": {
-			cursor: "pointer",
-			backgroundColor: "#4e4e4e",
+		"ul > li.selected": {
+			backgroundColor:
+				darkThemeStyle === "dark" ? "#b4b1b1ff" : "#E0E0E0",
+			"&:hover": {
+				cursor: "pointer",
+				backgroundColor:
+					darkThemeStyle === "dark" ? "#4e4e4e" : "#E0E0E0",
+			},
 		},
-	},
-});
+	}),
+);
 
-const StyledCopyButton = styled("div")({
-	position: "absolute",
-	top: 15,
-	right: 5,
-	cursor: "pointer",
-	zIndex: 1000,
-	color: "#000",
-	padding: "5px",
-	borderRadius: "5px",
-	display: "flex",
-	flexDirection: "row",
-	gap: "10px",
-	"> button": {
-		backgroundColor: "#686a6c",
-		"&:hover": {
-			backgroundColor: "#cbcdd0",
+const StyledCopyButton = styled("div")<{ darkThemeStyle: string }>(
+	({ darkThemeStyle }) => ({
+		position: "absolute",
+		top: 15,
+		right: 5,
+		cursor: "pointer",
+		zIndex: 1000,
+		color: "#000",
+		padding: "5px",
+		borderRadius: "5px",
+		display: "flex",
+		flexDirection: "row",
+		gap: "10px",
+		"> button": {
+			backgroundColor: darkThemeStyle === "dark" ? "#686a6c" : "#cbcdd0",
+			"&:hover": {
+				backgroundColor:
+					darkThemeStyle === "dark" ? "#cbcdd0" : "#686a6c",
+			},
 		},
+	}),
+);
+
+const THEME_OPTIONS = {
+	darkTheme: {
+		foreground: "#E9E9E9",
+		background: "#262626",
+		selectionBackground: "#4E4E4E",
+		cursor: "#8BCAFF",
+
+		black: "#000000",
+		brightBlack: "#515151",
+
+		red: "#BF0D02",
+		brightRed: "#DA291C",
+
+		green: "#00B4A4",
+		brightGreen: "#008674",
+
+		yellow: "#EF8326",
+		brightYellow: "#FA9F2C",
+
+		blue: "#22A4FF",
+		brightBlue: "#0094FF",
+
+		magenta: "#FF4E90",
+		brightMagenta: "#D62C71",
+
+		cyan: "#975FE4",
+		brightCyan: "#6A32CE",
+
+		white: "#FAFAFA",
+		brightWhite: "#FFFFFF",
 	},
-});
+	lightTheme: {
+		foreground: "#262626", // Dark text for high contrast
+		background: "#FAFAFA", // Light background
+		selectionBackground: "#E0E0E0", // Subtle gray for selection
+		cursor: "#0074D9", // Blue accent for cursor (can keep same as dark or a darker blue)
+
+		black: "#000000",
+		brightBlack: "#757575", // Muted gray
+		red: "#BF0D02", // Keep red shades for semantic consistency
+		brightRed: "#DA291C",
+
+		green: "#008674", // Choose the "bright" green for a slightly more visible accent
+		brightGreen: "#00B4A4",
+
+		yellow: "#EF8326",
+		brightYellow: "#FA9F2C",
+
+		blue: "#0074D9", // Often, a medium/darker blue works for light backgrounds
+		brightBlue: "#0094FF",
+
+		magenta: "#D62C71", // Use bright for better visibility
+		brightMagenta: "#FF4E90",
+
+		cyan: "#6A32CE", // Use bright for better visibility
+		brightCyan: "#975FE4",
+
+		white: "#E9E9E9", // Slightly off-white
+		brightWhite: "#FFFFFF",
+	},
+};
 
 // prompt for new input
 const PROMPT = `\x1b[1;30m> \x1b[0m`;
@@ -149,6 +225,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 		chosenSuggestionIndex: -1,
 	});
 	const [customHideOption, setCustomHideOption] = useState(false);
+	const [terminalTheme, setTerminalTheme] = useState("dark");
 
 	const isDisabled = loading || disabled;
 
@@ -163,36 +240,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 			cursorBlink: true,
 			cursorStyle: "bar",
 			allowTransparency: true,
-			theme: {
-				foreground: "#E9E9E9",
-				background: "#262626",
-				selectionBackground: "#4E4E4E",
-				cursor: "#8BCAFF",
-
-				black: "#000000",
-				brightBlack: "#515151",
-
-				red: "#BF0D02",
-				brightRed: "#DA291C",
-
-				green: "#00B4A4",
-				brightGreen: "#008674",
-
-				yellow: "#EF8326",
-				brightYellow: "#FA9F2C",
-
-				blue: "#22A4FF",
-				brightBlue: "#0094FF",
-
-				magenta: "#FF4E90",
-				brightMagenta: "#D62C71",
-
-				cyan: "#975FE4",
-				brightCyan: "#6A32CE",
-
-				white: "#FAFAFA",
-				brightWhite: "#FFFFFF",
-			},
+			theme: THEME_OPTIONS.darkTheme,
 			fontFamily: 'Menlo, Monaco, "Courier New", monospace',
 			fontSize: 14,
 			lineHeight: 1.2,
@@ -258,12 +306,13 @@ export const Terminal: React.FC<TerminalProps> = ({
 		if (
 			filteredSuggestions.length === 0 ||
 			filteredSuggestions?.[0] === buffer.command ||
-			buffer.command === ""
+			buffer.command === "" ||
+			customHideOption
 		) {
 			return [];
 		}
 		return filteredSuggestions;
-	}, [buffer.command, suggestions]);
+	}, [buffer.command, suggestions, customHideOption]);
 
 	//handle the suggestions click
 	const handleSuggestionClick = useCallback(
@@ -309,7 +358,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 			switch (key) {
 				// Enter
 				case "\r": {
-					if (showOptionList.length === 0) {
+					if (showOptionList.length === 0 || customHideOption) {
 						if (updatedBuffer?.command?.trim() === "") {
 							// If command is empty, ignore
 							break;
@@ -375,7 +424,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 				// Arrow Up
 				case "\x1b[A": {
-					if (showOptionList.length === 0) {
+					if (showOptionList.length === 0 || customHideOption) {
 						console.log("in if");
 						// decrement and make sure it is always greater than 0
 						updatedHistoryPosition--;
@@ -446,7 +495,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 
 				// Arrow Down
 				case "\x1b[B": {
-					if (showOptionList.length === 0) {
+					if (showOptionList.length === 0 || customHideOption) {
 						// increment and make sure it is not longer than the history
 						updatedHistoryPosition++;
 						if (updatedHistoryPosition > history.length) {
@@ -579,6 +628,14 @@ export const Terminal: React.FC<TerminalProps> = ({
 					}
 					if (key === String.fromCharCode(27)) {
 						setCustomHideOption(true);
+						setSuggesstionData((prevSuggestion) => {
+							return {
+								...prevSuggestion,
+								selectedSuggestion: "",
+								chosenSuggestion: "",
+								chosenSuggestionIndex: -1,
+							};
+						});
 					} else {
 						setCustomHideOption(false);
 					}
@@ -722,6 +779,17 @@ export const Terminal: React.FC<TerminalProps> = ({
 			console.log("failed to paste");
 		}
 	};
+	const handleThemeChange = () => {
+		setTerminalInstance((prevTerminalInstance) => {
+			const currentTerminalInstance = prevTerminalInstance;
+			currentTerminalInstance.options.theme =
+				terminalTheme === "dark"
+					? THEME_OPTIONS.lightTheme
+					: THEME_OPTIONS.darkTheme;
+			return currentTerminalInstance;
+		});
+		setTerminalTheme(terminalTheme === "dark" ? "light" : "dark");
+	};
 	// // reset historyPosition when history changes
 	// useEffect(() => {
 	//     setHistoryPosition(history.length);
@@ -735,12 +803,19 @@ export const Terminal: React.FC<TerminalProps> = ({
 	return (
 		<>
 			{
-				<StyledCopyButton>
+				<StyledCopyButton darkThemeStyle={terminalTheme}>
 					<IconButton onClick={handleCopyButtonClick}>
 						<ContentCopy />
 					</IconButton>
 					<IconButton onClick={handlePasteButtonClick}>
 						<ContentPaste />
+					</IconButton>
+					<IconButton onClick={handleThemeChange}>
+						{terminalTheme === "dark" ? (
+							<LightModeOutlined />
+						) : (
+							<DarkMode />
+						)}
 					</IconButton>
 				</StyledCopyButton>
 			}
@@ -752,6 +827,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 						top: `${positionData.current.top}px`,
 					}}
 					ref={suggesstionRef}
+					darkThemeStyle={terminalTheme}
 				>
 					<ul
 						style={{ listStyleType: "none", padding: 0, margin: 0 }}
@@ -765,6 +841,28 @@ export const Terminal: React.FC<TerminalProps> = ({
 									onClick={() =>
 										handleSuggestionClick(suggestion)
 									}
+									onFocus={() => {
+										setSuggesstionData(
+											(prevSuggesstionData) => {
+												return {
+													...prevSuggesstionData,
+													chosenSuggestion:
+														suggestion,
+												};
+											},
+										);
+									}}
+									onMouseOver={() => {
+										setSuggesstionData(
+											(prevSuggesstionData) => {
+												return {
+													...prevSuggesstionData,
+													chosenSuggestion:
+														suggestion,
+												};
+											},
+										);
+									}}
 									className={`${suggesstionData.chosenSuggestion === suggestion ? "selected" : ""}`}
 									aria-roledescription="option"
 								>
