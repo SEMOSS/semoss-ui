@@ -133,7 +133,6 @@ export interface RenameVariableAction extends Action {
 	};
 }
 
-
 export interface DeleteVariableAction extends Action {
 	message: ActionMessages.DELETE_VARIABLE;
 	payload: {

@@ -2018,7 +2018,6 @@ export class StateStore {
 		this._utils.queryPromises[key] = p;
 	};
 
-
 	/**
 	 * Dispatch a custom event
 	 * @param name - name of the event
