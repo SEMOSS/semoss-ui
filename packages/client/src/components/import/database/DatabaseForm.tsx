@@ -357,7 +357,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 	const submitTablePixel = async (payloadObject, formValues) => {
 		console.log(payloadObject,"payloadObject");
 		const pixel = payloadObject.map((pixel) => {
-			return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}]);`;
+			return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
 		}).join("");
 
 		try {
@@ -861,7 +861,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								data-testid="database-form-submit"
 								disabled={!formState.isValid}
 							>
-								Create Database
+								{title ==="Excel" ||title === "CSV"? "Next": "Create Database" }
 							</StyledSubmitButton>
 						</StyledFlexEnd>
 					</StyledBox>

@@ -115,6 +115,7 @@ const StyledFooterWrapper = styled("div")(({ theme }) => ({
 	justifyContent: "space-between",
 	marginTop: theme.spacing(2),
 	gap: theme.spacing(2),
+	marginBottom: theme.spacing(3),
 }));
 
 interface ParsedResult {
@@ -149,6 +150,8 @@ const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionPro
 	const [rowEditableStateList, setRowEditableStateList] = useState<
 		Record<number, boolean>[]
 	>([]);
+	const [tableNames, setTableNames] = useState<string[]>(fileName);
+	const [tableNameErrors, setTableNameErrors] = useState<string[]>(fileName.map(() => ""));
 
 	// Initialize column metadata and row states for each file
 	useEffect(() => {
@@ -203,59 +206,86 @@ const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionPro
 		setOpenModal(true);
 	};
 
+	const handleTableNameChange = (index: number, newValue: string) => {
+	setTableNames((prev) => {
+		const updated = [...prev];
+		updated[index] = newValue;
+		return updated;
+	});
+
+	// Live validation
+	setTableNameErrors((prev) => {
+		const updated = [...prev];
+		if (!newValue.trim()) {
+			updated[index] = "Enter valid table name";
+		} else {
+			updated[index] = "";
+		}
+		return updated;
+	});
+};
+
+
 	const handleImport = () => {
-		const tables = files.map((parsedData, fileIdx) => {
-			const originalHeaders = parsedData.cleanHeaders;
-			const metadata = columnMetadataList[fileIdx];
+	if (tableNames.some((name) => !name.trim())) {
+		setTableNameErrors(
+			tableNames.map((n) => (!n.trim() ? "Enter valid table name" : "")),
+		);
+		return;
+	}
 
-			const updatedHeaders = originalHeaders.map(
-				(header) => metadata[header]?.alias || header,
-			);
+	const tables = files.map((parsedData, fileIdx) => {
+		const originalHeaders = parsedData.cleanHeaders;
+		const metadata = columnMetadataList[fileIdx];
+		const rowState = rowEditableStateList[fileIdx];
 
-			const dataTypeMap: Record<string, string> = {};
-			const newHeaders: Record<string, string> = {};
-			const descriptionMap: Record<string, string> = {};
-			const logicalNamesMap: Record<string, string[]> = {};
-			const additionalDataTypes: Record<string, string> = {};
+		const activeHeaders = originalHeaders.filter(
+			(_, index) => rowState[index],
+		);
 
-			originalHeaders.forEach((original, index) => {
-				const updated = updatedHeaders[index];
-				const userMeta = metadata[original] || {};
-				const dataType = userMeta.dataType || parsedData.dataTypes[original];
-				const alias = userMeta.alias;
+		const dataTypeMap: Record<string, string> = {};
+		const newHeaders: Record<string, string> = {};
+		const descriptionMap: Record<string, string> = {};
+		const logicalNamesMap: Record<string, string[]> = {};
+		const additionalDataTypes: Record<string, string> = {};
 
-				dataTypeMap[updated] = dataType;
+		activeHeaders.forEach((original) => {
+			const userMeta = metadata[original] || {};
+			const updated = userMeta.alias || original;
+			const dataType = userMeta.dataType || parsedData.dataTypes[original];
 
-				if (alias && alias !== original) {
-					newHeaders[updated] = original;
-				}
+			dataTypeMap[updated] = dataType;
 
-				if (userMeta.description) {
-					descriptionMap[updated] = userMeta.description;
-				}
-
-				if (Array.isArray(userMeta.logicalName) && userMeta.logicalName.length > 0) {
-					logicalNamesMap[updated] = userMeta.logicalName;
-				}
-
-				if (userMeta.format) {
-					additionalDataTypes[updated] = userMeta.format;
-				}
-			});
-
-			return {
-				fileName: fileName[fileIdx],
-				filePath:[fileName[fileIdx]],
-				dataTypeMap,
-				newHeaders,
-				descriptionMap,
-				logicalNamesMap,
-				additionalDataTypes,
-				existing: fileIdx > 0 ? true : false,
-			};
+			if (userMeta.alias && userMeta.alias !== original) {
+				newHeaders[updated] = original;
+			}
+			if (userMeta.description) {
+				descriptionMap[updated] = userMeta.description;
+			}
+			if (Array.isArray(userMeta.logicalName) && userMeta.logicalName.length > 0) {
+				logicalNamesMap[updated] = userMeta.logicalName;
+			}
+			if (userMeta.format) {
+				additionalDataTypes[updated] = userMeta.format;
+			}
 		});
-		onImport( tables );
-	};
+
+		return {
+			fileName: fileName[fileIdx],
+			table: tableNames[fileIdx],
+			filePath: [fileName[fileIdx]],
+			dataTypeMap,
+			newHeaders,
+			descriptionMap,
+			logicalNamesMap,
+			additionalDataTypes,
+			existing: fileIdx > 0 ? true : false,
+		};
+	});
+
+	onImport(tables);
+};
+const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 
 	return (
 		<>
@@ -305,10 +335,36 @@ const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionPro
 						<Collapse in={collapseAll[fileIdx]}>
 							<Box>
 								<StyledInnerBox>
-									<StyledTypographyTitle variant="h6">
-										Table Name: {fileName[fileIdx]}
-									</StyledTypographyTitle>
-								</StyledInnerBox>
+  <Stack direction="row" alignItems="flex-start" spacing={2}>
+    <StyledTypographyTitle variant="h6" sx={{ whiteSpace: "nowrap",
+	position: "relative",
+	top: "6px",
+	}}>
+      Table Name:
+    </StyledTypographyTitle>
+
+    <Box sx={{ flex: 1 }}>
+      <TextField
+        fullWidth
+        size="small"
+        placeholder="Enter table name"
+        value={tableNames[fileIdx] || ""}
+        onChange={(e) => handleTableNameChange(fileIdx, e.target.value)}
+        error={!tableNames[fileIdx]?.trim()}
+      />
+      {!tableNames[fileIdx]?.trim() && (
+        <Typography
+          variant="caption"
+          color="error"
+          sx={{ mt: 0.3, display: "block" }}
+        >
+          Enter a valid table name
+        </Typography>
+      )}
+    </Box>
+  </Stack>
+</StyledInnerBox>
+
 
 								{/* Table Section */}
 								<StyledTableContainer>
@@ -417,7 +473,7 @@ const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionPro
 				<Button variant="outlined" color="primary" onClick={onCancel}>
 					Back
 				</Button>
-				<Button variant="contained" color="primary" onClick={handleImport}>
+				<Button variant="contained" color="primary" onClick={handleImport} disabled={isAnyTableNameInvalid}>
 					Import
 				</Button>
 			</StyledFooterWrapper>
