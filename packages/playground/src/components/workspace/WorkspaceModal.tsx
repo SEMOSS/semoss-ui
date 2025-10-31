@@ -1,10 +1,12 @@
 import { Close } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
+import { useDebouncedValue } from "@semoss/sdk/react";
 import {
 	Autocomplete,
 	Button,
 	Checkbox,
+	CircularProgress,
 	IconButton,
 	Modal,
 	Stack,
@@ -74,6 +76,8 @@ export const WorkspaceModal = ({
 			mcp: [],
 		},
 	});
+	const [searchWord, setSearchWord] = useState<string>("");
+	const debouncedSearchWord = useDebouncedValue(searchWord);
 
 	/**
 	 * Method that is called to create the app
@@ -106,7 +110,7 @@ export const WorkspaceModal = ({
 		const fetchMCPs = async () => {
 			setIsLoading(true);
 			try {
-				const mcpMap = await chat.getMcpMap();
+				const mcpMap = await chat.getMcpMap(debouncedSearchWord);
 				setMcpMap(mcpMap);
 			} catch (e) {
 				console.error(e);
@@ -120,14 +124,14 @@ export const WorkspaceModal = ({
 			}
 		};
 		fetchMCPs();
-	}, [chat.getMcpMap, notification.add]);
+	}, [chat.getMcpMap, notification.add, debouncedSearchWord]);
 
 	/**
 	 * Constants
 	 */
 	const isCreatingNew = workspaceInfo === null;
 	const isFormValid = !!watch("name");
-	const mcpArray = Object.values(mcpMap).flatMap(Object.values);
+	const mcpArray: MCP[] = Object.values(mcpMap).flatMap(Object.values);
 
 	return (
 		<StyledModal open={open} fullWidth>
@@ -224,7 +228,7 @@ export const WorkspaceModal = ({
 										fullWidth
 										multiple
 										disableCloseOnSelect
-										disabled={isLoading}
+										onClose={() => setSearchWord("")}
 										options={mcpArray}
 										isOptionEqualToValue={(
 											option: MCP,
@@ -234,22 +238,22 @@ export const WorkspaceModal = ({
 											option.type === value.type
 										}
 										value={field.value || []}
-										onChange={
-											(_, val: MCP[]) =>
-												field.onChange(
-													val.map(
-														({
-															id,
-															type,
-															name,
-														}): MCPConfig => ({
-															id,
-															type,
-															name,
-														}),
-													),
-												) // only send id and type to backend
-										}
+										onChange={(_, val: MCP[]) => {
+											field.onChange(
+												val.map(
+													({
+														id,
+														type,
+														name,
+													}): MCPConfig => ({
+														id,
+														type,
+														name,
+													}),
+												),
+											); // only send id and type to backend
+											setSearchWord("");
+										}}
 										getOptionLabel={(option: MCPConfig) =>
 											option.name
 										}
@@ -275,11 +279,38 @@ export const WorkspaceModal = ({
 												</li>
 											);
 										}}
+										filterOptions={(x) => x}
 										renderInput={(params) => (
 											<TextField
 												{...params}
 												label="Use These MCPs"
 												placeholder="MCPs"
+												value={searchWord}
+												onChange={(e) =>
+													setSearchWord(
+														e.target.value,
+													)
+												}
+												InputProps={{
+													...params.InputProps,
+													endAdornment: (
+														<>
+															{searchWord !==
+																debouncedSearchWord ||
+															isLoading ? (
+																<CircularProgress
+																	color="inherit"
+																	size={20}
+																/>
+															) : null}
+															{
+																params
+																	.InputProps
+																	.endAdornment
+															}
+														</>
+													),
+												}}
 											/>
 										)}
 									/>
