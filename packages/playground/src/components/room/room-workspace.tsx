@@ -68,6 +68,17 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 			{ data: { workspaces: [] } },
 		);
 
+		/**
+		 * Constants
+		 */
+		const workspaceMap = listWorkspaces.data.workspaces.reduce(
+			(acc, curr) => {
+				acc[curr.workspace_id] = curr;
+				return acc;
+			},
+			{} as Record<string, Workspace>,
+		);
+
 		return (
 			<Tooltip>
 				<TooltipTrigger asChild>
@@ -110,7 +121,31 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 								</span>
 							</PopoverTrigger>
 							<PopoverContent className="p-0">
-								<Command>
+								<Command
+									filter={(val, search) => {
+										if (val === "chat") {
+											return "ask".includes(
+												search.toLowerCase(),
+											)
+												? 1
+												: 0;
+										} else if (
+											val
+												.toLowerCase()
+												.includes(search.toLowerCase())
+										) {
+											return 1;
+										} else if (
+											workspaceMap[val]?.name
+												.toLowerCase()
+												.includes(search.toLowerCase())
+										) {
+											return 1;
+										}
+
+										return 0;
+									}}
+								>
 									<CommandInput
 										placeholder="Search"
 										value={search}
@@ -153,8 +188,9 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 										</CommandGroup>
 										<CommandSeparator />
 										<CommandGroup heading="Workspaces">
-											{listWorkspaces.status ===
-												"LOADING" && (
+											{(listWorkspaces.status ===
+												"LOADING" ||
+												search !== debouncedSearch) && (
 												<div className="flex w-full flex-row items-center">
 													<Spinner />
 												</div>
