@@ -3,6 +3,7 @@ import {
 	DescriptionOutlined,
 	EditOutlined,
 	MoreVert,
+	SmartToyOutlined,
 	TopicOutlined,
 } from "@mui/icons-material";
 import DoneIcon from "@mui/icons-material/Done";
@@ -16,6 +17,7 @@ import {
 import {
 	Button,
 	Checkbox,
+	Box,
 	CircularProgress,
 	Icon,
 	IconButton,
@@ -26,6 +28,10 @@ import {
 } from "@semoss/ui";
 import { usePixel } from "@/hooks";
 import DuplicateIcon from "../../../assets/img/Duplicate.svg";
+import {
+	MCP_JSON_FILE_NAME,
+	MCP_PY_FILE_NAME,
+} from "@/pages/app/app.constants";
 
 const StyledNode = styled(TreeView.Item)(({ theme }) => ({
 	".MuiCollapse-wrapperInner": {
@@ -255,6 +261,18 @@ const FolderContextMenu = ({
 
 export interface FileExplorerItemHandle {
 	expandAndLoad: () => Promise<void>;
+
+	/** Triggered when the Make MCP Icon is clicked */
+	onMakeMCPClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => boolean | void;
+
+	/** Triggered when the Edit MCP Icon is clicked */
+	onMCPEditClick?: (
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
+	) => boolean | void;
 }
 
 export const FileExplorerItem = forwardRef<
@@ -291,6 +309,8 @@ export const FileExplorerItem = forwardRef<
 		endIcon,
 		expandIcon,
 		collapseIcon,
+		onMakeMCPClick = () => null,
+		onMCPEditClick = () => null,
 	} = props;
 
 	const [isHovered, setIsHovered] = useState(false);
@@ -413,6 +433,11 @@ export const FileExplorerItem = forwardRef<
 			e.stopImmediatePropagation();
 		});
 	}, []);
+
+	const makeMCPCandidate =
+		path === `version/assets/py/${MCP_PY_FILE_NAME}` && !isDirectory;
+	const editMCPCandidate =
+		path === `version/assets/mcp/${MCP_JSON_FILE_NAME}` && !isDirectory;
 
 	return (
 		<StyledNode
@@ -590,6 +615,55 @@ export const FileExplorerItem = forwardRef<
 							)}
 						</>
 					)}
+					<StyledTypography variant="body2">{name}</StyledTypography>
+					{isHovered ? (
+						<Box>
+							{makeMCPCandidate && (
+								<IconButton
+									title={`Make ${name} MCP`}
+									size="small"
+									color={"default"}
+									onClick={(e) => {
+										// don't allow it to propagate
+										e.stopPropagation();
+										// trigger
+										onMakeMCPClick(e, path);
+									}}
+								>
+									<SmartToyOutlined fontSize="inherit" />
+								</IconButton>
+							)}
+							{editMCPCandidate && (
+								<IconButton
+									title={`Edit ${name}`}
+									size="small"
+									color={"default"}
+									onClick={(e) => {
+										// don't allow it to propagate
+										e.stopPropagation();
+										// trigger
+										onMCPEditClick(e, path);
+									}}
+								>
+									<EditOutlined fontSize="inherit" />
+								</IconButton>
+							)}
+							<IconButton
+								title={`Delete ${name}`}
+								onClick={(e) => {
+									// don't allow it to propagate
+									e.stopPropagation();
+
+									// trigger
+									onTrashClick(e, path);
+								}}
+								size="small"
+								color={"default"}
+							>
+								<DeleteOutline fontSize="inherit" />
+							</IconButton>
+						</Box>
+					) : null}
 				</StyledLabel>
 			}
 		>
@@ -651,6 +725,12 @@ export const FileExplorerItem = forwardRef<
 										onDuplicateClickFunc={
 											onDuplicateClickFunc
 										}
+										onMakeMCPClick={(e, path) => {
+											onMakeMCPClick(e, path);
+										}}
+										onMCPEditClick={(e, path) => {
+											onMCPEditClick(e, path);
+										}}
 									/>
 								);
 							})
