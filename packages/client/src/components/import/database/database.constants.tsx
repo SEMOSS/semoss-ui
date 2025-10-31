@@ -308,7 +308,7 @@ export const DATABASE_CONNECTION = {
     Connections: [
       {
         name: "Aster",
-        disable: false,
+        disable: true,
         icon: ASTER,
         fields: [
           {
@@ -493,7 +493,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Athena",
-        disable: false,
+        disable: true,
         icon: ATHENA,
         fields: [
           {
@@ -679,7 +679,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "BigQuery",
-        disable: false,
+        disable: true,
         icon: BIGQUERY,
         fields: [
           {
@@ -829,7 +829,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Cassandra",
-        disable: false,
+        disable: true,
         icon: CASSANDRA,
         fields: [
           {
@@ -1015,7 +1015,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Clickhouse",
-        disable: false,
+        disable: true,
         icon: CLICKHOUSE,
         fields: [
           {
@@ -1211,7 +1211,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "DATABRICKS",
-        disable: false,
+        disable: true,
         icon: DATABRICKS,
         fields: [
           {
@@ -1527,7 +1527,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "DB2",
-        disable: false,
+        disable: true,
         icon: DB2,
         fields: [
           {
@@ -1713,7 +1713,7 @@ export const DATABASE_CONNECTION = {
 
       {
         name: "Derby",
-        disable: false,
+        disable: true,
         icon: DERBY,
         fields: [
           {
@@ -1900,7 +1900,7 @@ export const DATABASE_CONNECTION = {
 
       {
         name: "Elastic Search",
-        disable: false,
+        disable: true,
         icon: ELASTIC_SEARCH,
         fields: [
           {
@@ -2030,7 +2030,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "H2",
-        disable: false,
+        disable: true,
         icon: H2_DB,
         fields: [
           {
@@ -2217,7 +2217,7 @@ export const DATABASE_CONNECTION = {
 
       {
         name: "Hive",
-        disable: false,
+        disable: true,
         icon: HIVE,
         fields: [
           {
@@ -2404,7 +2404,7 @@ export const DATABASE_CONNECTION = {
 
       {
         name: "Impala",
-        disable: false,
+        disable: true,
         icon: IMPALA,
         fields: [
           {
@@ -2590,7 +2590,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "MariaDB",
-        disable: false,
+        disable: true,
         icon: MARIA_DB,
         fields: [
           {
@@ -2776,7 +2776,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "MySQL",
-        disable: false,
+        disable: true,
         icon: MYSQL,
         fields: [
           {
@@ -2961,7 +2961,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Open Search",
-        disable: false,
+        disable: true,
         icon: OPEN_SEARCH,
         fields: [
           {
@@ -3091,7 +3091,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Oracle",
-        disable: false,
+        disable: true,
         icon: ORACLE,
         fields: [
           {
@@ -3277,7 +3277,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Phoenix",
-        disable: false,
+        disable: true,
         icon: PHOENIX,
         fields: [
           {
@@ -3463,7 +3463,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Postgres",
-        disable: false,
+        disable: true,
         icon: POSTGRES,
         fields: [
           {
@@ -3659,7 +3659,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Redshift",
-        disable: false,
+        disable: true,
         icon: REDSHIFT,
         fields: [
           {
@@ -3855,7 +3855,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "SAP Hana",
-        disable: false,
+        disable: true,
         icon: SAP_HANA,
         fields: [
           {
@@ -4041,7 +4041,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "SEMOSS",
-        disable: false,
+        disable: true,
         icon: SEMOSS,
         fields: [
           {
@@ -4267,7 +4267,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Snowflake",
-        disable: false,
+        disable: true,
         icon: SNOWFLAKE,
         fields: [
           {
@@ -4484,7 +4484,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "SQL Server",
-        disable: false,
+        disable: true,
         icon: SQL_SERVER,
         fields: [
           {
@@ -4681,7 +4681,7 @@ export const DATABASE_CONNECTION = {
 
       {
         name: "SQLITE",
-        disable: false,
+        disable: true,
         icon: SQLITE,
         fields: [
           {
@@ -4857,7 +4857,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Teradata",
-        disable: false,
+        disable: true,
         icon: TERADATA,
         fields: [
           {
@@ -5033,7 +5033,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Tibco",
-        disable: false,
+        disable: true,
         icon: TIBCO,
         fields: [
           {
@@ -5219,7 +5219,7 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "Trino",
-        disable: false,
+        disable: true,
         icon: TRINO,
         fields: [
           {

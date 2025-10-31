@@ -97,7 +97,6 @@ export const DatabaseForm = ({ title, description, fields }) => {
 	const [resolvedFields, setResolvedFields] = useState(fields);
 	const [parsedData, setParsedData] = useState<ParsedResult[]>([]);
 	const [excelfileName, setExcelFileName] = useState<string[]>([]);
-	const [fileName, setFileName] = useState<string>("");
 	const [filePath, setFilePath] = useState<string>();
 	const [uploadedFile, setUploadedFile] = useState<File[]>([]);
 	const [formValues, setFormValues] = useState({});
@@ -250,9 +249,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				if (filePathFromExpression) {
 					const name =
 						filePathFromExpression.split(/[/\\]/).pop() || "";
-					title === "Excel"
-						? fileNames.push(name)
-						: setFileName(name);
+						fileNames.push(name)
 				}
 				setFilePath(filePathFromExpression);
 				parsedResults.push(output);
@@ -358,19 +355,10 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		}
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
-		const pixel = `RdbmsUploadTableData(
-            database=["${formValues.DATABASE_NAME}"],
-            filePath=["${watchFile}"],
-            delimiter=["${formValues.DELIMITER}"],
-            dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],
-            newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],
-            additionalDataTypes=[${JSON.stringify(
-				payloadObject.additionalDataTypes,
-			)}],
-            descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],
-            logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],
-            existing=[false]
-          );`;
+		console.log(payloadObject,"payloadObject");
+		const pixel = payloadObject.map((pixel) => {
+			return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}]);`;
+		}).join("");
 
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -894,7 +882,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				) : (
 					<DataSelection
 						files={parsedData}
-						fileName={fileName}
+						fileName={excelfileName}
 						onImport={(payload) =>
 							submitTablePixel(payload, formValues)
 						}

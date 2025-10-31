@@ -4,6 +4,7 @@ import {
 	Box,
 	Button,
 	IconButton,
+	Menu,
 	Modal,
 	Select,
 	Stack,
@@ -13,7 +14,6 @@ import {
 	Tabs,
 	TextField,
 	Typography,
-    Menu
 } from "@semoss/ui";
 import { formatOptions } from "./formatOptions.constants";
 
@@ -200,7 +200,7 @@ const ColumnEditModal = ({
 					<Tab label="Settings" />
 					<Tab label="Description" />
 					<Tab label="Logical Names" />
-					<Tab label="Sample Instances" />
+					<Tab label="Sample Instances" disabled />
 				</StyledTabs>
 				<StyledModalBox>
 					{tab === 0 && (
@@ -263,13 +263,13 @@ const ColumnEditModal = ({
 								onChange={(e) => setDescription(e.target.value)}
 								sx={{ mb: 2 }}
 							/>
-							<Button
+							{/* <Button
 								variant="outlined"
 								color="secondary"
 								disabled
 							>
 								Predict
-							</Button>
+							</Button> */}
 						</StyledFormDiv>
 					)}
 
@@ -353,13 +353,13 @@ const ColumnEditModal = ({
 									<Add />
 								</IconButton>
 							</Stack>
-							<Button
+							{/* <Button
 								variant="outlined"
 								color="secondary"
 								disabled
 							>
 								Predict
-							</Button>
+							</Button> */}
 						</StyledFormDiv>
 					)}
 
