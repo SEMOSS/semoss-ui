@@ -2,16 +2,59 @@ import {
 	Cancel,
 	CheckCircle as CheckCircleIcon,
 	Close as CloseIcon,
+	DragIndicator as DragIndicatorIcon,
 } from "@mui/icons-material";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box, IconButton, styled, Typography } from "@semoss/ui";
 
-const DrawerContainer = styled(Box)({
-	width: 500,
+const DrawerContainer = styled(Box)(({ theme }) => ({
+	position: "relative",
+	minWidth: 500,
 	height: "100%",
-	backgroundColor: "#fff",
+	backgroundColor: theme.palette.common.white,
 	display: "flex",
 	flexDirection: "column",
-});
+}));
+
+const DragHandle = styled(Box)(({ theme }) => ({
+	position: "absolute",
+	left: -4,
+	top: "50%",
+	transform: "translateY(-50%)",
+	width: "16px",
+	height: "32px",
+	cursor: "ew-resize",
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "center",
+	backgroundColor: theme.palette.common.white,
+	border: `1px solid ${theme.palette.divider}`,
+	borderRadius: theme.shape.borderRadius / 2,
+	zIndex: 1,
+	"&:hover": {
+		backgroundColor: theme.palette.action.hover,
+		borderColor: theme.palette.action.selected,
+		".dragIcon": {
+			opacity: 1,
+			color: theme.palette.primary.main,
+		},
+	},
+	"&:active": {
+		backgroundColor: theme.palette.action.selected,
+		borderColor: theme.palette.action.selected,
+		".dragIcon": {
+			opacity: 1,
+			color: theme.palette.primary.main,
+		},
+	},
+	".dragIcon": {
+		opacity: 0.5,
+		transition: theme.transitions.create("all"),
+		color: theme.palette.text.secondary,
+		pointerEvents: "none",
+		fontSize: "16px",
+	},
+}));
 
 const DrawerHeader = styled(Box)({
 	display: "flex",
@@ -89,17 +132,57 @@ const ContentText = styled(Typography)({
 
 const TimeDateFormatter = (timeStamp: string | number) => {
 	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split('.')[0];
-    const date = formattedDate.split("T")[0];
-    const time = formattedDate.split("T")[1];
-    return { date, time };
+	const formattedDate = tempDate.toISOString().split(".")[0];
+	const date = formattedDate.split("T")[0];
+	const time = formattedDate.split("T")[1];
+	return { date, time };
 };
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails, handleDrawerClose } = props;
+	const [width, setWidth] = useState(500);
+	const drawerRef = useRef(null);
+	const isDragging = useRef(false);
+	const startX = useRef(0);
+	const startWidth = useRef(0);
+
+	const handleMouseDown = useCallback(
+		(e) => {
+			isDragging.current = true;
+			startX.current = e.clientX;
+			startWidth.current = width;
+			document.addEventListener("mousemove", handleMouseMove);
+			document.addEventListener("mouseup", handleMouseUp);
+		},
+		[width],
+	);
+
+	const handleMouseMove = useCallback((e) => {
+		if (!isDragging.current) return;
+		const delta = startX.current - e.clientX;
+		const newWidth = Math.max(500, startWidth.current + delta);
+		setWidth(newWidth);
+	}, []);
+
+	const handleMouseUp = useCallback(() => {
+		isDragging.current = false;
+		document.removeEventListener("mousemove", handleMouseMove);
+		document.removeEventListener("mouseup", handleMouseUp);
+	}, [handleMouseMove]);
+
+	useEffect(() => {
+		return () => {
+			document.removeEventListener("mousemove", handleMouseMove);
+			document.removeEventListener("mouseup", handleMouseUp);
+		};
+	}, [handleMouseMove, handleMouseUp]);
+
 	if (!logDetails)
 		return <Typography variant="body2">No details available</Typography>;
 	return (
-		<DrawerContainer>
+		<DrawerContainer ref={drawerRef} sx={{ width: `${width}px` }}>
+			<DragHandle onMouseDown={handleMouseDown}>
+				<DragIndicatorIcon className="dragIcon" fontSize="small" />
+			</DragHandle>
 			<DrawerHeader>
 				<Typography variant="body1" color="primary">
 					Audit Details
