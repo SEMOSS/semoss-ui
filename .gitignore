@@ -25,3 +25,6 @@ yarn-error.log
 *.tgz
 .vscode/.ropeproject
 .idea/
+
+# Ignore legacy
+packages/legacy
