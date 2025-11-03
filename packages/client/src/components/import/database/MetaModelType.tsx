@@ -167,6 +167,7 @@ type MetamodelNode = {
 	position: { x: number; y: number };
 	hidden?: boolean;
 	description?: string;
+	connections?: Edge[]; // optional, may be attached by helper
 };
 
 type Edge = {
@@ -187,7 +188,7 @@ type FlowNode = {
 	[key: string]: unknown;
 };
 
-type FlowData = { nodes: FlowNode[]; edges: Edge[] };
+type FlowData = { nodes: (MetamodelNode | FlowNode)[]; edges: Edge[] };
 
 export interface NodeData {
 	name?: string;
@@ -233,22 +234,20 @@ export const MetaModelType = observer(
 		const [openCreateConnectionModal, setopenCreateConnectionModal] =
 			useState(false);
 		const [isFullHeight, setIsFullHeight] = useState(false);
-		const [metamodelData, setMetamodelData] = useState(() => ({
+		// SINGLE unified state replacing data + metamodelData
+		const [flow, setFlow] = useState<FlowData>({
 			nodes: [],
 			edges: [],
-		}));
+		});
 		const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 		const [anchorNodesMenu, setAnchorNodesMenu] =
 			useState<HTMLElement | null>(null);
 
-		const [data, setData] = useState<FlowData>({
-			nodes: [],
-			edges: [],
-		});
-
 		const closecreateConnectionModal = () => {
 			setopenCreateConnectionModal(false);
 		};
+
+		// compute nodes from parsed original input (unchanged)
 		const nodes = useMemo(() => {
 			if (!parsed?.positions) return [];
 
@@ -308,77 +307,46 @@ export const MetaModelType = observer(
 				(p: { name: string }): string => p.name,
 			) || [];
 
+		// initialize flow once parsed nodes/edges are present
 		useEffect(() => {
 			if (nodes.length > 0) {
-				const initial = {
+				const initial: FlowData = {
 					nodes: nodes as FlowNode[],
 					edges: edges as Edge[],
 				};
-				setData(initial);
-
-				setMetamodelData({
-					nodes: JSON.parse(
-						JSON.stringify(initial.nodes),
-					) as MetamodelNode[],
-					edges: JSON.parse(JSON.stringify(initial.edges)) as Edge[],
-				});
+				// we *attach* connections lazily when we need them; but store snapshot nodes here
+				setFlow(initial);
 			}
 		}, [nodes, edges]);
 
 		const didInitRef = useRef(false);
 		useEffect(() => {
-			if (!data?.nodes || data.nodes.length === 0) return;
+			if (!flow?.nodes || flow.nodes.length === 0) return;
 			if (!didInitRef.current) {
-				setSelectedNodeIds(data.nodes.map((n) => n.id));
+				setSelectedNodeIds(flow.nodes.map((n) => n.id));
 				didInitRef.current = true;
 			}
-		}, [data.nodes]);
-
-		useEffect(() => {
-			if (!Array.isArray(selectedNodeIds) || selectedNodeIds.length === 0)
-				return;
-
-			const metaNodeIds = Array.isArray(metamodelData?.nodes)
-				? new Set(metamodelData.nodes.map((n) => n.id))
-				: new Set<string>();
-
-			const missingIds = selectedNodeIds.filter(
-				(id) => !metaNodeIds.has(id),
-			);
-			if (missingIds.length === 0) return;
-
-			const sourceNodes = Array.isArray(data?.nodes) ? data.nodes : [];
-			const nodesToAdd = missingIds
-				.map((id) => sourceNodes.find((n) => n.id === id))
-				.filter(Boolean) as typeof sourceNodes;
-
-			if (nodesToAdd.length === 0) {
-				return;
-			}
-			setMetamodelData((prev) => {
-				const prevNodes = Array.isArray(prev?.nodes) ? prev.nodes : [];
-
-				const existingIds = new Set(prevNodes.map((n) => n.id));
-
-				const filteredToAdd = nodesToAdd.filter(
-					(n) => !existingIds.has(n.id),
-				);
-				if (filteredToAdd.length === 0) return prev;
-
-				return {
-					...prev,
-					nodes: [...prevNodes, ...filteredToAdd],
-				};
-			});
-		}, [
-			JSON.stringify(selectedNodeIds ?? []),
-			JSON.stringify(metamodelData?.nodes?.map((n) => n.id) ?? []),
-			JSON.stringify(data?.nodes?.map((n) => n.id) ?? []),
-		]);
+		}, [flow.nodes]);
 
 		const handleNodesMenuOpen = (e: React.MouseEvent<HTMLElement>) =>
 			setAnchorNodesMenu(e.currentTarget);
 		const handleNodesMenuClose = () => setAnchorNodesMenu(null);
+
+		const attachConnectionsToNodes = (
+			nodesInput: (MetamodelNode | FlowNode)[],
+			edgesInput: Edge[],
+		) => {
+			return (nodesInput ?? []).map((n) => {
+				const nodeId = n.id;
+				const nodeConnections = (edgesInput ?? []).filter(
+					(e) => e.source === nodeId || e.target === nodeId,
+				);
+				return {
+					...n,
+					connections: nodeConnections.map((e) => ({ ...e })),
+				} as MetamodelNode & { connections?: Edge[] };
+			});
+		};
 
 		const handleToggleSelectNode = (nodeId: string) => {
 			const isSelected = selectedNodeIds.includes(nodeId);
@@ -386,52 +354,35 @@ export const MetaModelType = observer(
 				? selectedNodeIds.filter((id) => id !== nodeId)
 				: [...selectedNodeIds, nodeId];
 
-			if (isSelected) {
-				const newEdges: Edge[] = data.edges.filter(
-					(e) => e.source !== nodeId && e.target !== nodeId,
+			const nextSelectedSet = new Set(nextSelected);
+			const prevNodes = Array.isArray(flow.nodes) ? flow.nodes : [];
+
+			let newEdges: Edge[] = (flow.edges ?? []).filter(
+				(e) =>
+					nextSelectedSet.has(e.source) &&
+					nextSelectedSet.has(e.target),
+			);
+
+			if (!isSelected) {
+				const candidateEdges = (edges ?? []).filter(
+					(e) =>
+						nextSelectedSet.has(e.source) &&
+						nextSelectedSet.has(e.target) &&
+						!newEdges.some((ne) => ne.id === e.id),
 				);
 
-				const prevNodes: MetamodelNode[] = Array.isArray(
-					metamodelData?.nodes,
-				)
-					? metamodelData.nodes
-					: (data.nodes as MetamodelNode[]);
-
-				const attached = attachConnectionsToNodes(prevNodes, newEdges);
-
-				setData((prev) => ({ ...prev, edges: newEdges }));
-				setMetamodelData((prevMeta) => ({
-					...prevMeta,
-					edges: newEdges,
-					nodes: attached,
-				}));
-			} else {
-				const prevNodes: MetamodelNode[] = Array.isArray(
-					metamodelData?.nodes,
-				)
-					? metamodelData.nodes
-					: [];
-
-				if (!prevNodes.some((n) => n.id === nodeId)) {
-					const nodeFromFlow = data.nodes.find(
-						(n) => n.id === nodeId,
-					);
-					if (nodeFromFlow) {
-						const newNodes = [
-							...prevNodes,
-							nodeFromFlow as MetamodelNode,
-						];
-						const attached = attachConnectionsToNodes(
-							newNodes,
-							metamodelData?.edges ?? data.edges ?? [],
-						);
-						setMetamodelData((prevMeta) => ({
-							...prevMeta,
-							nodes: attached,
-						}));
-					}
+				if (candidateEdges.length > 0) {
+					newEdges = [...newEdges, ...candidateEdges];
 				}
 			}
+
+			const attached = attachConnectionsToNodes(prevNodes, newEdges);
+
+			setFlow((prev) => ({
+				...prev,
+				nodes: attached,
+				edges: newEdges,
+			}));
 
 			setSelectedNodeIds(nextSelected);
 		};
@@ -441,17 +392,16 @@ export const MetaModelType = observer(
 
 			const newEdges: Edge[] = [];
 
-			const prevNodes: MetamodelNode[] = Array.isArray(
-				metamodelData?.nodes,
+			const prevNodes: (MetamodelNode | FlowNode)[] = Array.isArray(
+				flow.nodes,
 			)
-				? metamodelData.nodes
-				: (data.nodes as MetamodelNode[]);
+				? flow.nodes
+				: [];
 
 			const attached = attachConnectionsToNodes(prevNodes, newEdges);
 
-			setData((prev) => ({ ...prev, edges: newEdges }));
-			setMetamodelData((prevMeta) => ({
-				...prevMeta,
+			setFlow((prev) => ({
+				...prev,
 				edges: newEdges,
 				nodes: attached,
 			}));
@@ -460,19 +410,41 @@ export const MetaModelType = observer(
 		};
 
 		const handleRefreshMetamodel = () => {
-			const clonedNodes = JSON.parse(
-				JSON.stringify(data.nodes || []),
-			) as MetamodelNode[];
-			const clonedEdges = JSON.parse(
-				JSON.stringify(data.edges || []),
-			) as Edge[];
+			// If parsed-derived nodes are available, rebuild from them;
+			// otherwise fall back to current flow snapshot.
+			try {
+				// `nodes` and `edges` are the useMemo values derived from parsed.
+				const rebuiltNodes = (nodes ?? []).map((n) =>
+					// deep clone to avoid mutating original memos
+					JSON.parse(JSON.stringify(n)),
+				) as (MetamodelNode | FlowNode)[];
 
-			setMetamodelData({
-				nodes: clonedNodes,
-				edges: clonedEdges,
-			});
-			setSelectedNodeIds(data.nodes.map((n) => n.id));
-			setCounter((prev) => prev + 1);
+				const rebuiltEdges = JSON.parse(
+					JSON.stringify(edges ?? []),
+				) as Edge[];
+
+				// ensure nodes have their `connections` array computed
+				const nodesWithConnections = attachConnectionsToNodes(
+					rebuiltNodes,
+					rebuiltEdges,
+				);
+
+				// set the unified state (single source of truth)
+				setFlow({
+					nodes: nodesWithConnections,
+					edges: rebuiltEdges,
+				});
+
+				// make all nodes selected by default after refresh
+				setSelectedNodeIds(nodesWithConnections.map((n) => n.id));
+
+				// bump counter so components using the key re-render if needed
+				setCounter((prev) => prev + 1);
+			} catch (err) {
+				// fallback: keep previous flow but still increment counter to indicate refresh attempt
+				console.warn("Refresh failed, keeping previous flow:", err);
+				setCounter((prev) => prev + 1);
+			}
 		};
 
 		const toggleHeight = () => {
@@ -489,11 +461,12 @@ export const MetaModelType = observer(
 			parentTable: string;
 			childTable: string;
 		}) => {
-			const sourceNode = data.nodes.find(
-				(n) => n.data.name === parentTable,
+			// resolve nodes by display names (data.name) or ids
+			const sourceNode = flow.nodes.find(
+				(n) => n.data?.name === parentTable || n.id === parentTable,
 			);
-			const targetNode = data.nodes.find(
-				(n) => n.data.name === childTable,
+			const targetNode = flow.nodes.find(
+				(n) => n.data?.name === childTable || n.id === childTable,
 			);
 
 			if (!sourceNode || !targetNode) {
@@ -506,7 +479,7 @@ export const MetaModelType = observer(
 				"_",
 			);
 
-			if (data.edges.some((e) => e.id === newEdgeId)) {
+			if (flow.edges.some((e) => e.id === newEdgeId)) {
 				console.warn("Edge already exists");
 				return;
 			}
@@ -518,23 +491,18 @@ export const MetaModelType = observer(
 				type: "floating",
 			};
 
-			const next: FlowData = { ...data, edges: [...data.edges, newEdge] };
+			const next: FlowData = { ...flow, edges: [...flow.edges, newEdge] };
 
 			const edgesCopy: Edge[] = JSON.parse(JSON.stringify(next.edges));
-			const nodesForSnapshot: MetamodelNode[] =
-				metamodelData &&
-				Array.isArray(metamodelData.nodes) &&
-				metamodelData.nodes.length > 0
-					? metamodelData.nodes
-					: (next.nodes as MetamodelNode[]);
+			const nodesForSnapshot: (MetamodelNode | FlowNode)[] =
+				next.nodes ?? [];
 
 			const attachedNodes = attachConnectionsToNodes(
 				nodesForSnapshot,
 				edgesCopy,
 			);
 
-			setData(next);
-			setMetamodelData({ nodes: attachedNodes, edges: edgesCopy });
+			setFlow({ nodes: attachedNodes, edges: edgesCopy });
 		};
 
 		const handleEditConnection = (updated: {
@@ -543,7 +511,7 @@ export const MetaModelType = observer(
 			childTable: string;
 		}) => {
 			const nodesMap = new Map(
-				data.nodes.map((n) => [n.data.name, n.id]),
+				flow.nodes.map((n) => [n.data?.name, n.id]),
 			);
 			const newSourceId =
 				nodesMap.get(updated.parentTable) ?? updated.parentTable;
@@ -553,13 +521,13 @@ export const MetaModelType = observer(
 
 			const providedId = updated.id ?? null;
 			const idxById = providedId
-				? data.edges.findIndex((e) => e.id === providedId)
+				? flow.edges.findIndex((e) => e.id === providedId)
 				: -1;
 
-			let newEdges: Edge[] = [...data.edges];
+			let newEdges: Edge[] = [...flow.edges];
 
 			if (idxById !== -1) {
-				const existing = data.edges[idxById];
+				const existing = flow.edges[idxById];
 				newEdges[idxById] = {
 					...existing,
 					id: newId,
@@ -591,85 +559,120 @@ export const MetaModelType = observer(
 				}
 			}
 
-			const next: FlowData = { ...data, edges: newEdges };
+			const next: FlowData = { ...flow, edges: newEdges };
 
 			const edgesCopy: Edge[] = JSON.parse(JSON.stringify(next.edges));
-			const nodesForSnapshot: MetamodelNode[] =
-				metamodelData &&
-				Array.isArray(metamodelData.nodes) &&
-				metamodelData.nodes.length > 0
-					? metamodelData.nodes
-					: (next.nodes as MetamodelNode[]);
+			const nodesForSnapshot: (MetamodelNode | FlowNode)[] =
+				next.nodes ?? [];
 
 			const attachedNodes = attachConnectionsToNodes(
 				nodesForSnapshot,
 				edgesCopy,
 			);
 
-			setData(next);
-			setMetamodelData({ nodes: attachedNodes, edges: edgesCopy });
+			setFlow({ nodes: attachedNodes, edges: edgesCopy });
 		};
 
 		const handleDeleteConnection = (id: string) => {
 			const next: FlowData = {
-				...data,
-				edges: data.edges.filter((e) => e.id !== id),
+				...flow,
+				edges: flow.edges.filter((e) => e.id !== id),
 			};
 
 			const edgesCopy: Edge[] = JSON.parse(JSON.stringify(next.edges));
-			const nodesForSnapshot: MetamodelNode[] =
-				metamodelData &&
-				Array.isArray(metamodelData.nodes) &&
-				metamodelData.nodes.length > 0
-					? metamodelData.nodes
-					: (next.nodes as MetamodelNode[]);
+			const nodesForSnapshot: (MetamodelNode | FlowNode)[] =
+				next.nodes ?? [];
 
 			const attachedNodes = attachConnectionsToNodes(
 				nodesForSnapshot,
 				edgesCopy,
 			);
 
-			setData(next);
-			setMetamodelData({ nodes: attachedNodes, edges: edgesCopy });
+			setFlow({ nodes: attachedNodes, edges: edgesCopy });
 		};
 
+		// robust nodesForMetamodel: prefer flow.nodes, fallback to parsed `nodes` when missing
 		const nodesForMetamodel = useMemo(() => {
-			const all = metamodelData?.nodes ?? [];
-			if (!selectedNodeIds?.length) return [];
-			return all
-				.filter((n) => selectedNodeIds.includes(n.id))
-				.map((n) => ({
-					...n,
-					data: {
-						...n.data,
-						properties: Array.isArray(n.data?.properties)
-							? n.data.properties.map((p) => ({
-									...p,
-									type:
-										typeof p.type === "string"
-											? p.type
-											: "",
-								}))
-							: [],
-					},
-				}));
+			// canonical source (parsed derived)
+			const canonical = nodes ?? [];
+
+			// current flow nodes snapshot
+			const flowNodes = flow?.nodes ?? [];
+
+			// helper that normalizes a node to the shape Metamodel expects
+			const normalize = (n: MetamodelNode | FlowNode) => ({
+				...n,
+				// ensure data and properties exist and each property has a string type
+				data: {
+					name: n.data?.name ?? n.id,
+					properties: Array.isArray(n.data?.properties)
+						? n.data!.properties.map((p) => ({
+								...p,
+								type: typeof p.type === "string" ? p.type : "",
+							}))
+						: [],
+					// keep any other data keys
+					...(n.data ?? {}),
+				},
+			});
+
+			// If nothing is selected, return empty array (same behavior as before)
+			if (!selectedNodeIds || selectedNodeIds.length === 0) return [];
+
+			// Build a map for quick lookup of flowNodes by id
+			const flowMap = new Map(flowNodes.map((x) => [x.id, x]));
+
+			// Build a map for canonical nodes as backup
+			const canonicalMap = new Map(canonical.map((x) => [x.id, x]));
+
+			// For each selected id, prefer the flow node; otherwise restore from canonical
+			const result: (MetamodelNode | FlowNode)[] = selectedNodeIds.map(
+				(id) => {
+					const fn = flowMap.get(id);
+					if (fn) return normalize(fn);
+
+					const cn = canonicalMap.get(id);
+					if (cn) return normalize(cn);
+
+					// not found anywhere — create a minimal placeholder so Metamodel gets something
+					return normalize({
+						id,
+						type: "metamodel",
+						data: { name: id, properties: [] },
+						position: { x: 0, y: 0 },
+					} as MetamodelNode);
+				},
+			);
+
+			return result;
 		}, [
-			selectedNodeIds,
-			JSON.stringify(metamodelData?.nodes?.map((n) => n.id)),
+			// dependencies: selected IDs, flow, canonical nodes, counter for forced rerenders
+			JSON.stringify(selectedNodeIds ?? []),
+			JSON.stringify(flow?.nodes?.map((n) => n.id) ?? []),
+			JSON.stringify(nodes?.map((n) => n.id) ?? []),
 			counter,
 		]);
 
+		// edgesForMetamodel: filter flow.edges but ensure ids map correctly
 		const edgesForMetamodel = useMemo(() => {
-			const allEdges = data.edges ?? [];
+			const allEdges = flow?.edges ?? [];
+
 			if (!selectedNodeIds || selectedNodeIds.length === 0) return [];
+
 			const selectedSet = new Set(selectedNodeIds);
+
+			// If there is any mismatch between display names and ids (rare),
+			// you may need to map display-name -> id here. We assume ids in selectedNodeIds are actual node ids.
 			return allEdges.filter(
 				(e) => selectedSet.has(e.source) || selectedSet.has(e.target),
 			);
-		}, [data.edges, selectedNodeIds]);
+		}, [
+			JSON.stringify(flow?.edges ?? []),
+			JSON.stringify(selectedNodeIds ?? []),
+		]);
 
 		const createConnectionNodes = useMemo(() => {
-			const source = metamodelData?.nodes ?? nodes;
+			const source = flow?.nodes ?? nodes;
 
 			return (source || []).map((n) => ({
 				id: n.id,
@@ -696,38 +699,21 @@ export const MetaModelType = observer(
 				};
 				position: { x: number; y: number };
 			}[];
-		}, [metamodelData, nodes]);
-
-		const attachConnectionsToNodes = (
-			nodes: MetamodelNode[] | FlowNode[],
-			edges: Edge[],
-		) => {
-			return (nodes ?? []).map((n) => {
-				const nodeId = n.id;
-				const nodeConnections = (edges ?? []).filter(
-					(e) => e.source === nodeId || e.target === nodeId,
-				);
-				return {
-					...n,
-					connections: nodeConnections.map((e) => ({ ...e })),
-				} as MetamodelNode & { connections?: Edge[] };
-			});
-		};
+		}, [flow, nodes]);
 
 		const handleClearConnections = () => {
 			const newEdges: Edge[] = [];
 
-			const prevNodes: MetamodelNode[] = Array.isArray(
-				metamodelData?.nodes,
+			const prevNodes: (MetamodelNode | FlowNode)[] = Array.isArray(
+				flow.nodes,
 			)
-				? metamodelData.nodes
-				: (data.nodes as MetamodelNode[]);
+				? flow.nodes
+				: [];
 
 			const attached = attachConnectionsToNodes(prevNodes, newEdges);
 
-			setData((prev) => ({ ...prev, edges: newEdges }));
-			setMetamodelData((prevMeta) => ({
-				...prevMeta,
+			setFlow((prev) => ({
+				...prev,
 				edges: newEdges,
 				nodes: attached,
 			}));
@@ -735,7 +721,13 @@ export const MetaModelType = observer(
 
 		const handleSelectAll = (isChecked: boolean) => {
 			if (isChecked) {
-				setSelectedNodeIds((data.nodes ?? []).map((n) => n.id));
+				setSelectedNodeIds((nodes ?? []).map((n) => n.id));
+				// ensure flow has all nodes from nodes
+				const restored = attachConnectionsToNodes(
+					JSON.parse(JSON.stringify(nodes ?? [])),
+					flow.edges ?? [],
+				);
+				setFlow((prev) => ({ ...prev, nodes: restored }));
 			} else {
 				handleClearConnections();
 				setSelectedNodeIds([]);
@@ -796,25 +788,23 @@ export const MetaModelType = observer(
 												<Checkbox
 													onChange={(
 														e: React.ChangeEvent<HTMLInputElement>,
-													) => {
+													) =>
 														handleSelectAll(
 															e.target.checked,
-														);
-													}}
+														)
+													}
 													checked={
-														Array.isArray(
-															data.nodes,
-														) &&
-														data.nodes.length > 0 &&
+														Array.isArray(nodes) &&
+														nodes.length > 0 &&
 														selectedNodeIds.length ===
-															data.nodes.length
+															nodes.length
 													}
 												/>
 												<List.ItemText primary="Select All" />
 											</StyledMenuItem>
 
 											<StyledList>
-												{(data.nodes ?? []).map((n) => (
+												{(nodes ?? []).map((n) => (
 													<StyledMenuItem key={n.id}>
 														<Checkbox
 															onChange={() =>
@@ -864,9 +854,7 @@ export const MetaModelType = observer(
 											variant="outlined"
 											onClick={() => {
 												const payload =
-													transformMetaToParsed(
-														metamodelData,
-													);
+													transformMetaToParsed(flow);
 
 												if (
 													!payload ||
@@ -880,10 +868,10 @@ export const MetaModelType = observer(
 													return;
 												}
 
-												onImport?.(payload);
+												//onImport?.(payload);
 												console.log(
-													"metamodelData to import:",
-													metamodelData,
+													"flow to import:",
+													flow,
 												);
 												console.log(
 													"Metamodel Snapshot:",
@@ -923,12 +911,12 @@ export const MetaModelType = observer(
 												const nodesCopy = JSON.parse(
 													JSON.stringify(snapshot),
 												) as MetamodelNode[];
-												setMetamodelData((prev) => ({
+												setFlow((prev) => ({
 													...prev,
 													nodes: nodesCopy,
 												}));
 											} catch {
-												setMetamodelData((prev) => ({
+												setFlow((prev) => ({
 													...prev,
 													nodes: snapshot,
 												}));
@@ -1058,10 +1046,10 @@ export const MetaModelType = observer(
 						onCreateConnection={handleCreateConnection}
 						nodes={createConnectionNodes}
 						initialConnections={edgesForMetamodel.map((e) => {
-							const sourceNode = data.nodes.find(
+							const sourceNode = flow.nodes.find(
 								(n) => n.id === e.source,
 							);
-							const targetNode = data.nodes.find(
+							const targetNode = flow.nodes.find(
 								(n) => n.id === e.target,
 							);
 
