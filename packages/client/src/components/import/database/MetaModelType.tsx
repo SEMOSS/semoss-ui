@@ -167,7 +167,7 @@ type MetamodelNode = {
 	position: { x: number; y: number };
 	hidden?: boolean;
 	description?: string;
-	connections?: Edge[]; // optional, may be attached by helper
+	connections?: Edge[];
 };
 
 type Edge = {
@@ -234,7 +234,6 @@ export const MetaModelType = observer(
 		const [openCreateConnectionModal, setopenCreateConnectionModal] =
 			useState(false);
 		const [isFullHeight, setIsFullHeight] = useState(false);
-		// SINGLE unified state replacing data + metamodelData
 		const [flow, setFlow] = useState<FlowData>({
 			nodes: [],
 			edges: [],
@@ -247,7 +246,6 @@ export const MetaModelType = observer(
 			setopenCreateConnectionModal(false);
 		};
 
-		// compute nodes from parsed original input (unchanged)
 		const nodes = useMemo(() => {
 			if (!parsed?.positions) return [];
 
@@ -307,14 +305,12 @@ export const MetaModelType = observer(
 				(p: { name: string }): string => p.name,
 			) || [];
 
-		// initialize flow once parsed nodes/edges are present
 		useEffect(() => {
 			if (nodes.length > 0) {
 				const initial: FlowData = {
 					nodes: nodes as FlowNode[],
 					edges: edges as Edge[],
 				};
-				// we *attach* connections lazily when we need them; but store snapshot nodes here
 				setFlow(initial);
 			}
 		}, [nodes, edges]);
@@ -410,12 +406,8 @@ export const MetaModelType = observer(
 		};
 
 		const handleRefreshMetamodel = () => {
-			// If parsed-derived nodes are available, rebuild from them;
-			// otherwise fall back to current flow snapshot.
 			try {
-				// `nodes` and `edges` are the useMemo values derived from parsed.
 				const rebuiltNodes = (nodes ?? []).map((n) =>
-					// deep clone to avoid mutating original memos
 					JSON.parse(JSON.stringify(n)),
 				) as (MetamodelNode | FlowNode)[];
 
@@ -423,25 +415,20 @@ export const MetaModelType = observer(
 					JSON.stringify(edges ?? []),
 				) as Edge[];
 
-				// ensure nodes have their `connections` array computed
 				const nodesWithConnections = attachConnectionsToNodes(
 					rebuiltNodes,
 					rebuiltEdges,
 				);
 
-				// set the unified state (single source of truth)
 				setFlow({
 					nodes: nodesWithConnections,
 					edges: rebuiltEdges,
 				});
 
-				// make all nodes selected by default after refresh
 				setSelectedNodeIds(nodesWithConnections.map((n) => n.id));
 
-				// bump counter so components using the key re-render if needed
 				setCounter((prev) => prev + 1);
 			} catch (err) {
-				// fallback: keep previous flow but still increment counter to indicate refresh attempt
 				console.warn("Refresh failed, keeping previous flow:", err);
 				setCounter((prev) => prev + 1);
 			}
@@ -461,7 +448,6 @@ export const MetaModelType = observer(
 			parentTable: string;
 			childTable: string;
 		}) => {
-			// resolve nodes by display names (data.name) or ids
 			const sourceNode = flow.nodes.find(
 				(n) => n.data?.name === parentTable || n.id === parentTable,
 			);
@@ -591,18 +577,11 @@ export const MetaModelType = observer(
 			setFlow({ nodes: attachedNodes, edges: edgesCopy });
 		};
 
-		// robust nodesForMetamodel: prefer flow.nodes, fallback to parsed `nodes` when missing
 		const nodesForMetamodel = useMemo(() => {
-			// canonical source (parsed derived)
 			const canonical = nodes ?? [];
-
-			// current flow nodes snapshot
 			const flowNodes = flow?.nodes ?? [];
-
-			// helper that normalizes a node to the shape Metamodel expects
 			const normalize = (n: MetamodelNode | FlowNode) => ({
 				...n,
-				// ensure data and properties exist and each property has a string type
 				data: {
 					name: n.data?.name ?? n.id,
 					properties: Array.isArray(n.data?.properties)
@@ -611,21 +590,15 @@ export const MetaModelType = observer(
 								type: typeof p.type === "string" ? p.type : "",
 							}))
 						: [],
-					// keep any other data keys
 					...(n.data ?? {}),
 				},
 			});
 
-			// If nothing is selected, return empty array (same behavior as before)
 			if (!selectedNodeIds || selectedNodeIds.length === 0) return [];
-
-			// Build a map for quick lookup of flowNodes by id
 			const flowMap = new Map(flowNodes.map((x) => [x.id, x]));
 
-			// Build a map for canonical nodes as backup
 			const canonicalMap = new Map(canonical.map((x) => [x.id, x]));
 
-			// For each selected id, prefer the flow node; otherwise restore from canonical
 			const result: (MetamodelNode | FlowNode)[] = selectedNodeIds.map(
 				(id) => {
 					const fn = flowMap.get(id);
@@ -634,7 +607,6 @@ export const MetaModelType = observer(
 					const cn = canonicalMap.get(id);
 					if (cn) return normalize(cn);
 
-					// not found anywhere — create a minimal placeholder so Metamodel gets something
 					return normalize({
 						id,
 						type: "metamodel",
@@ -646,14 +618,12 @@ export const MetaModelType = observer(
 
 			return result;
 		}, [
-			// dependencies: selected IDs, flow, canonical nodes, counter for forced rerenders
 			JSON.stringify(selectedNodeIds ?? []),
 			JSON.stringify(flow?.nodes?.map((n) => n.id) ?? []),
 			JSON.stringify(nodes?.map((n) => n.id) ?? []),
 			counter,
 		]);
 
-		// edgesForMetamodel: filter flow.edges but ensure ids map correctly
 		const edgesForMetamodel = useMemo(() => {
 			const allEdges = flow?.edges ?? [];
 
@@ -661,8 +631,6 @@ export const MetaModelType = observer(
 
 			const selectedSet = new Set(selectedNodeIds);
 
-			// If there is any mismatch between display names and ids (rare),
-			// you may need to map display-name -> id here. We assume ids in selectedNodeIds are actual node ids.
 			return allEdges.filter(
 				(e) => selectedSet.has(e.source) || selectedSet.has(e.target),
 			);
@@ -670,6 +638,16 @@ export const MetaModelType = observer(
 			JSON.stringify(flow?.edges ?? []),
 			JSON.stringify(selectedNodeIds ?? []),
 		]);
+		const handleSave = () => {
+			const payload = transformMetaToParsed(flow);
+
+			if (!payload || Object.keys(payload.nodeProp ?? {}).length === 0) {
+				console.warn("No metamodel data to save.");
+				return;
+			}
+
+			onImport?.(payload);
+		};
 
 		const createConnectionNodes = useMemo(() => {
 			const source = flow?.nodes ?? nodes;
@@ -722,7 +700,6 @@ export const MetaModelType = observer(
 		const handleSelectAll = (isChecked: boolean) => {
 			if (isChecked) {
 				setSelectedNodeIds((nodes ?? []).map((n) => n.id));
-				// ensure flow has all nodes from nodes
 				const restored = attachConnectionsToNodes(
 					JSON.parse(JSON.stringify(nodes ?? [])),
 					flow.edges ?? [],
@@ -852,32 +829,7 @@ export const MetaModelType = observer(
 										</Button>
 										<Button
 											variant="outlined"
-											onClick={() => {
-												const payload =
-													transformMetaToParsed(flow);
-
-												if (
-													!payload ||
-													Object.keys(
-														payload.nodeProp ?? {},
-													).length === 0
-												) {
-													console.warn(
-														"No metamodel data to save.",
-													);
-													return;
-												}
-
-												//onImport?.(payload);
-												console.log(
-													"flow to import:",
-													flow,
-												);
-												console.log(
-													"Metamodel Snapshot:",
-													payload,
-												);
-											}}
+											onClick={handleSave}
 										>
 											Save
 										</Button>
