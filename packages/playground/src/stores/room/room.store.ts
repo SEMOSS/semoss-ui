@@ -10,7 +10,7 @@ import {
 	ResponseMessageStore,
 	RootMessageStore,
 } from "@/stores";
-import type { MCP, MCPConfig, PixelMessage } from "@/types";
+import type { MCPConfig, PixelMessage } from "@/types";
 
 interface RoomStoreInterface {
 	/**
@@ -97,18 +97,15 @@ interface RoomStoreInterface {
 		/** Track if the sidebar is open */
 		isOpen: boolean;
 
-		/** type of sidebar to open */
-		type: "CONFIGURATION" | "ARTIFACTS";
-	};
-
-	/**
-	 * Artifact information
-	 **/
-	artifact: {
 		/**
 		 * FlexLayout model
 		 */
-		model: FlexLayout.Model | null;
+		model: FlexLayout.Model;
+
+		/**
+		 * Count of the model;
+		 */
+		counter: number;
 	};
 }
 
@@ -136,9 +133,6 @@ export class RoomStore {
 		},
 		sidebar: {
 			isOpen: false,
-			type: "CONFIGURATION",
-		},
-		artifact: {
 			model: FlexLayout.Model.fromJson({
 				global: {},
 				borders: [],
@@ -148,6 +142,7 @@ export class RoomStore {
 					children: [],
 				},
 			}),
+			counter: 0,
 		},
 	};
 
@@ -157,6 +152,11 @@ export class RoomStore {
 
 		// make it observable
 		makeAutoObservable(this);
+
+		// increment the counter whenever the model changes
+		this._store.sidebar.model.addChangeListener(() => {
+			this.tickSidebar();
+		});
 	}
 
 	/**
@@ -297,13 +297,6 @@ export class RoomStore {
 	 */
 	get sidebar() {
 		return this._store.sidebar;
-	}
-
-	/**
-	 * Get the artifact information
-	 */
-	get artifact() {
-		return this._store.artifact;
 	}
 
 	/** Setters */
@@ -471,46 +464,16 @@ export class RoomStore {
 	 */
 	updateRoomOptions = async (options: RoomStore["options"]) => {
 		try {
-			const { errors } = await this.runRoomPixel(
+			await this.runRoomPixel(
 				`UpdateRoomOptions(roomId=${JSON.stringify(this._store.roomId)}, roomOptions=[${JSON.stringify(
 					options,
 				)}]);`,
 			);
 
-			if (errors?.length > 0) {
-				throw new Error(errors?.join(", ") || undefined);
-			}
-			this._store.options = options;
+			this.setOptions(options);
 		} catch (e) {
 			throw new Error(e.message || "Error updating room options");
 		}
-	};
-
-	/**
-	 * Set MCPs for a room
-	 * @param mcp - list of mcps to set
-	 */
-	setMCPs = async (mcp: (MCP | MCPConfig)[]) => {
-		const newOptions = { ...this._store.options };
-		newOptions.mcp = mcp.map(({ id, type, name }) => ({
-			id,
-			type,
-			name,
-		}));
-		this._store.options = newOptions;
-		await this.updateRoomOptions(newOptions);
-	};
-
-	/**
-	 * Remove MCP
-	 * @param mcp - MCP to remove
-	 */
-	removeMCP = async (mcp: MCPConfig) => {
-		const newOptions = { ...this._store.options };
-		newOptions.mcp = newOptions.mcp.filter(
-			(t) => !(t.id === mcp.id && t.type === mcp.type),
-		);
-		await this.updateRoomOptions(newOptions);
 	};
 
 	/**
@@ -553,14 +516,58 @@ export class RoomStore {
 	 * Sidebar
 	 */
 	/**
-	 * Open the sidebar
-	 * @param options - options to pass in
+	 * Add a sidebar node and open it
+	 * @param node - node to open. This will select and/or create the node
 	 */
-	openSidebar = async (
-		type: RoomStoreInterface["sidebar"]["type"],
-	): Promise<void> => {
+	addSidebarNode = (
+		nodeId: string,
+		options: {
+			[key: string]: unknown;
+		},
+	): void => {
+		// mark as open
 		this._store.sidebar.isOpen = true;
-		this._store.sidebar.type = type;
+
+		// select the node if there
+		const selectedNode = this._store.sidebar.model.getNodeById(nodeId);
+		if (selectedNode) {
+			this._store.sidebar.model.doAction(
+				FlexLayout.Actions.selectTab(selectedNode.getId()),
+			);
+			return;
+		}
+
+		// create the node if it is not there
+		// where to add the node
+		const addId =
+			this._store.sidebar.model.getActiveTabset()?.getId() ||
+			this._store.sidebar.model.getRoot().getChildren()[0]?.getId() ||
+			"";
+
+		// create and select the panel
+		this._store.sidebar.model.doAction(
+			FlexLayout.Actions.addNode(
+				{
+					...options,
+					id: nodeId,
+				},
+				addId,
+				FlexLayout.DockLocation.CENTER,
+				-1,
+				true,
+			),
+		);
+	};
+
+	/**
+	 * Remove a sidebar node and close if last one
+	 * @param node - node to remove
+	 */
+	removeSidebarNode = (nodeId: string): void => {
+		// trigger the action to remove it
+		this._store.sidebar.model.doAction(
+			FlexLayout.Actions.deleteTab(nodeId),
+		);
 	};
 
 	/**
@@ -571,6 +578,26 @@ export class RoomStore {
 	};
 
 	/**
+	 * Increment the counter and close if there are no nodes
+	 */
+	tickSidebar = async (): Promise<void> => {
+		this._store.sidebar.counter += 1;
+
+		// check if there are any tabs left
+		let hasTabs = false;
+		this._store.sidebar.model.visitNodes((node) => {
+			if (node.getType() === "tab") {
+				hasTabs = true;
+				return;
+			}
+		});
+
+		if (!hasTabs) {
+			this.closeSidebar();
+		}
+	};
+
+	/**f
 	 * Helpers
 	 */
 	/**
