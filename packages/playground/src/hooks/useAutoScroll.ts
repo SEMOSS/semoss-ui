@@ -12,13 +12,6 @@ export const useAutoScroll = <T>(dependency: T) => {
 	const prevDependencyRef = useRef<T>(dependency);
 
 	/**
-	 * Callback ref function to capture the scroll element
-	 */
-	const scrollRef = useCallback((node: HTMLDivElement | null) => {
-		setScrollEle(node);
-	}, []);
-
-	/**
 	 * Check if the user is near the bottom of the scroll container
 	 */
 	const isNearBottom = useCallback(() => {
@@ -119,7 +112,7 @@ export const useAutoScroll = <T>(dependency: T) => {
 	}, [scrollEle, handleScroll]);
 
 	return {
-		scrollRef,
+		setScrollEle,
 		scrollToBottom,
 		isUserScrolled,
 		shouldAutoScroll,
