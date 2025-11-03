@@ -1,5 +1,7 @@
+import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
+import svgr from "vite-plugin-svgr";
 import { resolve } from "node:path";
 
 export default defineConfig(({ mode }) => {
@@ -12,7 +14,11 @@ export default defineConfig(({ mode }) => {
 
 	return {
 		base: "./",
-		plugins: [react({ include: /\.(js|jsx|ts|tsx)$/ })],
+		plugins: [
+			tailwindcss(),
+			svgr(),
+			react({ include: /\.(js|jsx|ts|tsx)$/ }),
+		],
 		resolve: {
 			alias: [{ find: "@", replacement: resolve(__dirname, "./src") }],
 		},
