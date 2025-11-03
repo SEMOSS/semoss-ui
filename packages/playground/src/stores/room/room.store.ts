@@ -516,6 +516,29 @@ export class RoomStore {
 	 * Sidebar
 	 */
 	/**
+	 * Check if a sidebar node is selected
+	 * @param nodeId - node id to check
+	 */
+	isSidebarNodeSelected = (nodeId: string): boolean => {
+		if (!this._store.sidebar.isOpen) {
+			return false;
+		}
+
+		let isSelected = false;
+		this._store.sidebar.model.visitNodes((node) => {
+			if (node.getType() === "tabset") {
+				const tabset = node as FlexLayout.TabSetNode;
+				if (tabset.getSelectedNode()?.getId() === nodeId) {
+					isSelected = true;
+					return;
+				}
+			}
+		});
+
+		return isSelected;
+	};
+
+	/**
 	 * Add a sidebar node and open it
 	 * @param node - node to open. This will select and/or create the node
 	 */

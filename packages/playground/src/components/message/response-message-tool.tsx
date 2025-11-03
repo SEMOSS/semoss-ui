@@ -51,7 +51,7 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 						: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
 				}`}
 				onClick={() => {
-					if (isActive) {
+					if (room.isSidebarNodeSelected(nodeId)) {
 						room.removeSidebarNode(nodeId);
 					} else {
 						// open the sidebar

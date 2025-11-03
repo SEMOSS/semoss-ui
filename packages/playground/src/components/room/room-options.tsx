@@ -87,199 +87,193 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 	};
 
 	return (
-		<div className="h-full w-full px-2 py-4">
-			<ScrollArea className="h-full w-full">
-				<form>
-					<FieldGroup>
-						<FieldSet>
-							<FieldGroup>
-								{ENABLE_MODEL_SELECT && (
+		<ScrollArea className="h-full w-full">
+			<form className="px-2 py-4">
+				<FieldGroup>
+					<FieldSet>
+						<FieldGroup>
+							{ENABLE_MODEL_SELECT && (
+								<Field>
+									<FieldLabel>Model</FieldLabel>
+									<Select
+										value={chat.models.selected}
+										onValueChange={(value) => {
+											chat.setSelectedModel(value);
+										}}
+									>
+										<SelectTrigger className="w-full">
+											<SelectValue placeholder="Select Model" />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectGroup>
+												<SelectLabel>Model</SelectLabel>
+
+												{chat.models.options.map(
+													(m) => (
+														<SelectItem
+															key={m.app_id}
+															value={m.app_id}
+														>
+															{m.app_name}
+														</SelectItem>
+													),
+												)}
+											</SelectGroup>
+										</SelectContent>
+									</Select>
+								</Field>
+							)}
+
+							<Field>
+								<FieldLabel>System Prompt</FieldLabel>
+								<Textarea
+									placeholder="Update System Prompt"
+									className="min-h-[220px] resize-none"
+									value={options.instructions}
+									onChange={(e) => {
+										setOptions({
+											...options,
+											instructions: e.target.value,
+										});
+									}}
+								/>
+							</Field>
+
+							{ENABLE_TOOLS && (
+								<>
 									<Field>
-										<FieldLabel>Model</FieldLabel>
-										<Select
-											value={chat.models.selected}
-											onValueChange={(value) => {
-												chat.setSelectedModel(value);
+										<FieldLabel
+											onClick={(event) => {
+												event.preventDefault();
+												event.stopPropagation();
+
+												setIsToolsOpen(true);
 											}}
 										>
-											<SelectTrigger className="w-full">
-												<SelectValue placeholder="Select Model" />
-											</SelectTrigger>
-											<SelectContent>
-												<SelectGroup>
-													<SelectLabel>
-														Model
-													</SelectLabel>
+											<div className="flex-1">MCPs</div>
 
-													{chat.models.options.map(
-														(m) => (
-															<SelectItem
-																key={m.app_id}
-																value={m.app_id}
-															>
-																{m.app_name}
-															</SelectItem>
-														),
-													)}
-												</SelectGroup>
-											</SelectContent>
-										</Select>
-									</Field>
-								)}
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<Button
+															variant="outline"
+															size="sm"
+															onClick={(
+																event,
+															) => {
+																event.preventDefault();
+																event.stopPropagation();
 
-								<Field>
-									<FieldLabel>System Prompt</FieldLabel>
-									<Textarea
-										placeholder="Update System Prompt"
-										className="min-h-[220px] resize-none"
-										value={options.instructions}
-										onChange={(e) => {
-											setOptions({
-												...options,
-												instructions: e.target.value,
-											});
-										}}
-									/>
-								</Field>
-
-								{ENABLE_TOOLS && (
-									<>
-										<Field>
-											<FieldLabel
-												onClick={(event) => {
-													event.preventDefault();
-													event.stopPropagation();
-
-													setIsToolsOpen(true);
-												}}
-											>
-												<div className="flex-1">
-													MCPs
-												</div>
-
-												<Tooltip>
-													<TooltipTrigger asChild>
-														<span>
+																setIsToolsOpen(
+																	true,
+																);
+															}}
+														>
+															<PlusIcon />
+														</Button>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													Add Tools
+												</TooltipContent>
+											</Tooltip>
+										</FieldLabel>
+										<div className="space-y-2">
+											{options.mcp.length ? (
+												options.mcp.map((mcp) => {
+													return (
+														<div
+															key={mcp.id}
+															className="group flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 hover:bg-muted/50"
+														>
+															<HammerIcon className="size-4" />
+															<span className="flex-1 truncate text-sm">
+																{mcp.name}
+															</span>
 															<Button
-																variant="outline"
-																size="sm"
-																onClick={(
-																	event,
-																) => {
-																	event.preventDefault();
-																	event.stopPropagation();
-
-																	setIsToolsOpen(
-																		true,
-																	);
-																}}
+																variant="ghost"
+																size="icon-sm"
+																className="invisible text-error group-hover:visible"
+																onClick={() =>
+																	handleDeleteMCP(
+																		mcp,
+																	)
+																}
 															>
-																<PlusIcon />
+																<TrashIcon />
 															</Button>
-														</span>
-													</TooltipTrigger>
-													<TooltipContent>
-														Add Tools
-													</TooltipContent>
-												</Tooltip>
-											</FieldLabel>
-											<div className="space-y-2">
-												{options.mcp.length ? (
-													options.mcp.map((mcp) => {
-														return (
-															<div
-																key={mcp.id}
-																className="group flex items-center justify-between gap-2 rounded-md border border-border px-3 py-2 hover:bg-muted/50"
-															>
-																<HammerIcon className="size-4" />
-																<span className="flex-1 truncate text-sm">
-																	{mcp.name}
-																</span>
-																<Button
-																	variant="ghost"
-																	size="icon-sm"
-																	className="invisible text-error group-hover:visible"
-																	onClick={() =>
-																		handleDeleteMCP(
-																			mcp,
-																		)
-																	}
-																>
-																	<TrashIcon />
-																</Button>
-															</div>
-														);
-													})
-												) : (
-													<button
-														type="button"
-														className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
-														onClick={() =>
-															setIsToolsOpen(true)
-														}
-													>
-														<span className="text-muted-foreground text-xs">
-															No MCPs added
-														</span>
-													</button>
-												)}
-											</div>
-										</Field>
-										<ToolboxOverlay
-											open={isToolsOpen}
-											mcp={options.mcp}
-											onClose={(success, mcp) =>
-												handleMCPClose(success, mcp)
-											}
-										/>
-									</>
-								)}
-							</FieldGroup>
-						</FieldSet>
-						<FieldSeparator />
-						<FieldSet>
-							<FieldGroup>
-								<Field>
-									<FieldLabel>Max Token</FieldLabel>
-									<Input
-										type="number"
-										placeholder="Update token length"
-										value={options.tokenLength}
-										onChange={(e) =>
-											setOptions({
-												...options,
-												tokenLength:
-													Number(e.target.value) || 0,
-											})
+														</div>
+													);
+												})
+											) : (
+												<button
+													type="button"
+													className="w-full cursor-pointer rounded-md border border-border py-4 text-center dark:bg-input/30"
+													onClick={() =>
+														setIsToolsOpen(true)
+													}
+												>
+													<span className="text-muted-foreground text-xs">
+														No MCPs added
+													</span>
+												</button>
+											)}
+										</div>
+									</Field>
+									<ToolboxOverlay
+										open={isToolsOpen}
+										mcp={options.mcp}
+										onClose={(success, mcp) =>
+											handleMCPClose(success, mcp)
 										}
-										min={0}
-										className="w-full"
 									/>
-								</Field>
+								</>
+							)}
+						</FieldGroup>
+					</FieldSet>
+					<FieldSeparator />
+					<FieldSet>
+						<FieldGroup>
+							<Field>
+								<FieldLabel>Max Token</FieldLabel>
+								<Input
+									type="number"
+									placeholder="Update token length"
+									value={options.tokenLength}
+									onChange={(e) =>
+										setOptions({
+											...options,
+											tokenLength:
+												Number(e.target.value) || 0,
+										})
+									}
+									min={0}
+									className="w-full"
+								/>
+							</Field>
 
-								<Field>
-									<FieldLabel>
-										Temperature (
-										{options.temperature?.toFixed(2)})
-									</FieldLabel>
-									<Slider
-										min={0}
-										max={1}
-										step={0.01}
-										value={[options.temperature]}
-										onValueChange={(value) =>
-											setOptions({
-												...options,
-												temperature: value[0],
-											})
-										}
-									/>
-								</Field>
-							</FieldGroup>
-						</FieldSet>
-					</FieldGroup>
-				</form>
-			</ScrollArea>
-		</div>
+							<Field>
+								<FieldLabel>
+									Temperature (
+									{options.temperature?.toFixed(2)})
+								</FieldLabel>
+								<Slider
+									min={0}
+									max={1}
+									step={0.01}
+									value={[options.temperature]}
+									onValueChange={(value) =>
+										setOptions({
+											...options,
+											temperature: value[0],
+										})
+									}
+								/>
+							</Field>
+						</FieldGroup>
+					</FieldSet>
+				</FieldGroup>
+			</form>
+		</ScrollArea>
 	);
 });

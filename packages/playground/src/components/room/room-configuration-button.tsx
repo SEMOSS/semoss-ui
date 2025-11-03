@@ -39,7 +39,11 @@ export const RoomConfigurationButton = observer(
 							aria-label="Open Configuration Menu"
 							disabled={room.isLoading}
 							onClick={() => {
-								if (isActive) {
+								if (
+									room.isSidebarNodeSelected(
+										ROOM_CONFIGURATION_ID,
+									)
+								) {
 									room.removeSidebarNode(
 										ROOM_CONFIGURATION_ID,
 									);
