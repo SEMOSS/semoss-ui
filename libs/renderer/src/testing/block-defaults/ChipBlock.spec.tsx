@@ -1,6 +1,5 @@
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { useId } from "react";
 import { describe, expect } from "vitest";
 import { ChipBlock } from "../../components/block-defaults/chip-block/ChipBlock";
 import { render } from "../utils/index";
@@ -66,7 +65,7 @@ const blocks = {
 
 describe("chip block", () => {
 	it("should render correctly with mocked provider", async () => {
-		const { container } = render(<ChipBlock id={useId()} />, {
+		const { container } = render(<ChipBlock id={blocks.chip.id} />, {
 			blocks: blocks,
 		});
 
@@ -75,7 +74,7 @@ describe("chip block", () => {
 	});
 
 	it("should show correct variant", async () => {
-		render(<ChipBlock id={useId()} />, {
+		render(<ChipBlock id={blocks["icon-chip"].id} />, {
 			blocks: blocks,
 		});
 
@@ -84,9 +83,12 @@ describe("chip block", () => {
 	});
 
 	it("should render correct appearance variants", async () => {
-		const { container } = render(<ChipBlock id={useId()} />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<ChipBlock id={blocks["appearance-chip"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const chip = container.querySelector("[data-block='appearance-chip']");
 		expect(chip.querySelector(".MuiChip-outlined")).toBeInTheDocument();

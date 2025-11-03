@@ -62,9 +62,12 @@ describe("button block", () => {
 	});
 
 	it("renders button with correct color, variant, dimensions", async () => {
-		const { container } = render(<ButtonBlock id={blocks.button.id} />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<ButtonBlock id={blocks.styledButton.id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='styledButton']");
 		const buttonElement = container.querySelector("button");

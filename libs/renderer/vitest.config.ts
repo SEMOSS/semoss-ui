@@ -29,16 +29,14 @@ export default defineConfig({
 		globals: true,
 		setupFiles: ["./vitest.setup.ts"],
 		reporters: ["default"],
+		pool: "threads",
 		coverage: {
+			enabled: true,
 			provider: "v8",
-			reporter: ["text", "html"],
+			reporter: ["json"],
+			reportOnFailure: true,
 			reportsDirectory: "./coverage/packages/renderer",
-			// thresholds: {
-			//     statements: 60,
-			//     functions: 60,
-			//     branches: 60,
-			//     lines: 60,
-			// },
+			exclude: ["node_modules", "dist"],
 		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
@@ -54,6 +52,7 @@ export default defineConfig({
 					],
 				},
 			},
+			external: ["@semoss/ui", "@semoss/sdk"],
 		},
 	},
 });
