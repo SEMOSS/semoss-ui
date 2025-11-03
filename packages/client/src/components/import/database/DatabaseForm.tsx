@@ -230,7 +230,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 					(file) =>
 						`UploadDatabase(filePath=["${file.fileLocation}"],space=[""])`,
 				);
-			}			
+			}
 
 			const parsedResults: ParsedResult[] = [];
 			const fileNames: string[] = [];
@@ -249,13 +249,13 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				if (filePathFromExpression) {
 					const name =
 						filePathFromExpression.split(/[/\\]/).pop() || "";
-						fileNames.push(name)
+					fileNames.push(name);
 				}
 				setFilePath(filePathFromExpression);
 				parsedResults.push(output);
-				if(title==="ZIP"){
-				navigate(`/engine/database/${output.database_id}`);
-			}
+				if (title === "ZIP") {
+					navigate(`/engine/database/${output.database_id}`);
+				}
 			}
 			setExcelFileName(fileNames);
 			setParsedData(parsedResults);
@@ -274,59 +274,94 @@ export const DatabaseForm = ({ title, description, fields }) => {
 	const watchFile = filePath;
 	const newHeaders: Record<string, unknown> = {};
 
-	const submitMetamodelPixel = async (parsedData, formValues) => {
+	const submitMetamodelPixel = async (
+		payload: ParsedResult | ParsedResult[],
+		formValuesLocal: Record<string, unknown>,
+	) => {
 		setIsLoading(true);
-		if (!parsedData?.length || !parsedData[0]) {
-			notification.add({
-				color: "error",
-				message: "Data is missing or invalid.",
-			});
-			return;
-		}
 
-		const { dataTypes, additionalDataTypes, relation, nodeProp } =
-			parsedData[0];
-		const logicalNamesMap = {};
-		const descriptionMap = {};
-		const metamodel = [
-			{
-				relation,
-				nodeProp,
-			},
-		];
-		const pixel = `
-            databaseVar = RdbmsCsvUpload(
-                database=["${formValues.DATABASE_NAME}"],
-                filePath=["${watchFile}"],
-                delimiter=["${formValues.DELIMITER}"],
-                metamodel=${JSON.stringify(metamodel)},
-                newHeaders=[${JSON.stringify(newHeaders)}],
-                additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
-                dataTypeMap=[${JSON.stringify(dataTypes)}],
-                descriptionMap=[${JSON.stringify(descriptionMap)}],
-                logicalNamesMap=[${JSON.stringify(logicalNamesMap)}],
-                existing=[false]
-            );
-            ExtractDatabaseMeta(database=[databaseVar]);
-           
-        `;
-		const response = await monolithStore.runQuery(pixel);
+		try {
+			// Normalize payload -> we use the first ParsedResult if an array is passed
+			const parsed =
+				Array.isArray(payload) && payload.length > 0
+					? payload[0]
+					: payload;
 
-		const { output, operationType } = response.pixelReturn[0];
-		if (operationType.indexOf("ERROR") > -1) {
-			notification.add({
-				color: "error",
-				message: output,
-			});
-			setIsLoading(false);
-			return;
-		} else {
+			if (!parsed) {
+				notification.add({
+					color: "error",
+					message: "Data is missing or invalid.",
+				});
+				setIsLoading(false);
+				return;
+			}
+
+			// destructure the fields we need (safely)
+			const {
+				dataTypes = {},
+				additionalDataTypes = {},
+				relation = [],
+				nodeProp = {},
+				logicalNames = {},
+				description = {},
+			} = parsed as ParsedResult & {
+				additionalDataTypes?: Record<string, unknown>;
+				logicalNames?: Record<string, unknown>;
+				description?: Record<string, unknown>;
+			};
+
+			const metamodel = [
+				{
+					relation,
+					nodeProp,
+				},
+			];
+
+			const logicalNamesMap = logicalNames ?? {};
+			const descriptionMap = description ?? {};
+
+			const pixel = `
+      databaseVar = RdbmsCsvUpload(
+          database=["${formValuesLocal.DATABASE_NAME}"],
+          filePath=["${watchFile}"],
+          delimiter=["${formValuesLocal.DELIMITER}"],
+          metamodel=${JSON.stringify(metamodel)},
+          newHeaders=[${JSON.stringify(newHeaders)}],
+          additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
+          dataTypeMap=[${JSON.stringify(dataTypes)}],
+          descriptionMap=[${JSON.stringify(descriptionMap)}],
+          logicalNamesMap=[${JSON.stringify(logicalNamesMap)}],
+          existing=[false]
+      );
+      ExtractDatabaseMeta(database=[databaseVar]);
+    `;
+
+			const response = await monolithStore.runQuery(pixel);
+
+			const { output, operationType } = response.pixelReturn[0];
+			if (operationType.indexOf("ERROR") > -1) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+				setIsLoading(false);
+				return;
+			}
+
 			notification.add({
 				color: "success",
 				message: "success",
 			});
 			setIsLoading(false);
+
 			navigate(`/engine/database/${output.database_id}`);
+		} catch (err) {
+			console.error("submitMetamodelPixel error:", err);
+			notification.add({
+				color: "error",
+				message: "An error occurred while submitting the metamodel.",
+			});
+			setIsLoading(false);
 		}
 	};
 
@@ -355,10 +390,12 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		}
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
-		console.log(payloadObject,"payloadObject");
-		const pixel = payloadObject.map((pixel) => {
-			return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
-		}).join("");
+		console.log(payloadObject, "payloadObject");
+		const pixel = payloadObject
+			.map((pixel) => {
+				return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
+			})
+			.join("");
 
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -861,7 +898,9 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								data-testid="database-form-submit"
 								disabled={!formState.isValid}
 							>
-								{title ==="Excel" ||title === "CSV"? "Next": "Create Database" }
+								{title === "Excel" || title === "CSV"
+									? "Next"
+									: "Create Database"}
 							</StyledSubmitButton>
 						</StyledFlexEnd>
 					</StyledBox>
@@ -893,8 +932,8 @@ export const DatabaseForm = ({ title, description, fields }) => {
 			{step === "metaModel" && parsedData && parsedData.length > 0 && (
 				<MetaModelType
 					parsedData={parsedData}
-					onImport={() =>
-						submitMetamodelPixel(parsedData, formValues)
+					onImport={(payload: ParsedResult | ParsedResult[]) =>
+						submitMetamodelPixel(payload, formValues)
 					}
 					onCancel={handleCancel}
 				/>
