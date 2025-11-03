@@ -33,9 +33,10 @@ export default defineConfig({
 		coverage: {
 			enabled: true,
 			provider: "v8",
-			reporter: ["json"],
+			reporter: ["text"],
 			reportOnFailure: true,
 			reportsDirectory: "./coverage/packages/renderer",
+			include: ["**/src/components"],
 			exclude: ["node_modules", "dist"],
 		},
 		deps: {
