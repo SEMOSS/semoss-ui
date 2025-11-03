@@ -1,6 +1,8 @@
 import { makeObservable, observable, runInAction } from "mobx";
+import { MCP_EXECUTION_ASK, MCP_EXECUTION_AUTO } from "@/constants";
 import type {
 	InputToolExecPixelMessage,
+	McpExecution,
 	PixelMessage,
 	ResponseTextPixelMessage,
 	ResponseToolPixelMessage,
@@ -34,7 +36,7 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		/** meta data from the tool */
 		_meta: {
 			map: {
-				autoExecute: boolean;
+				SMSS_MCP_EXECUTION: McpExecution;
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
 			};
@@ -84,8 +86,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				id: t.id,
 				_meta: {
 					map: {
+						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
 						...t._meta.map,
-						autoExecute: false,
 					},
 				},
 				title: t.title,
@@ -153,7 +155,7 @@ paramValues=[${JSON.stringify({
 		inputMessage.addChild(responseMessage);
 
 		// start running tools if there are any
-		this.startToolExecution();
+		responseMessage.startToolExecution();
 	};
 
 	/**
@@ -288,7 +290,7 @@ paramValues=[${JSON.stringify({
 		}
 
 		// only run if it is set to auto execute
-		if (!tool._meta.map.autoExecute) {
+		if (tool._meta.map.SMSS_MCP_EXECUTION !== MCP_EXECUTION_AUTO) {
 			return;
 		}
 
