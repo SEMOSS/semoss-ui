@@ -1,183 +1,130 @@
 import "@testing-library/jest-dom";
-import { IterationBlock } from "../../components/block-defaults/iteration-block/IterationBlock";
-import { render } from "../utils";
+import {
+	IterationBlock,
+	type IterationBlockDef,
+} from "../../components/block-defaults/iteration-block/IterationBlock";
+import { useBlock } from "../../hooks";
+import { render, renderHook, screen } from "../utils";
 
 const blocks = {
-	blocks: {
-		"page-1": {
-			slots: {
-				content: {
-					children: ["container--1"],
-					name: "content",
+	iterationBlock: {
+		id: "iterationBlock",
+		widget: "iteration",
+		data: {
+			style: {
+				display: "flex",
+				flexDirection: "column",
+			},
+			source: [1, 2, 3, 4, 5],
+			child: {
+				id: "button--1",
+				widget: "button",
+				parent: {
+					id: "iterationBlock",
+					slot: "children",
 				},
-			},
-			widget: "page",
-			data: {
-				route: "{{listArray}}",
-				style: {
-					padding: "24px",
-					fontFamily: "roboto",
-					flexDirection: "column",
-					display: "flex",
-					gap: "8px",
+				data: {
+					style: {},
+					label: "Submit",
+					loading: false,
+					disabled: false,
+					variant: "contained",
+					color: "primary",
+					show: true,
+					type: "button",
 				},
-			},
-			listeners: {
-				onPageLoad: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "page-1",
-		},
-		"container--1": {
-			parent: {
-				id: "page-1",
-				slot: "content",
-			},
-			slots: {
-				children: {
-					children: ["iteration--1"],
-					name: "children",
-				},
-			},
-			widget: "container",
-			data: {
-				style: {
-					padding: "4px",
-					overflow: "hidden",
-					flexWrap: "wrap",
-					flexDirection: "column",
-					display: "flex",
-					gap: "8px",
-				},
-			},
-			listeners: {
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			id: "container--1",
-		},
-		"iteration--1": {
-			id: "iteration--1",
-			widget: "iteration",
-			parent: {
-				id: "container--1",
-				slot: "children",
-			},
-			data: {
-				style: {
-					display: "flex",
-					flexDirection: "column",
-				},
-				source: " {{listArray}} ",
-				child: {
-					id: "button--1",
-					widget: "button",
-					parent: {
-						id: "iteration--1",
-						slot: "children",
+				listeners: {
+					onClick: {
+						type: "sync",
+						order: [],
 					},
-					data: {
-						style: {},
-						label: "Submit",
-						loading: false,
-						disabled: false,
-						variant: "contained",
-						color: "primary",
-						show: true,
-						type: "button",
+					preProcess: {
+						type: "sync",
+						order: [],
 					},
-					listeners: {
-						onClick: {
-							type: "sync",
-							order: [],
-						},
-						preProcess: {
-							type: "sync",
-							order: [],
-						},
-					},
-					slots: {},
-					communityBlockMapping: {},
 				},
-				show: "true",
+				slots: {},
+				communityBlockMapping: {},
 			},
-			listeners: {
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			slots: {
-				children: {
-					name: "children",
-					children: ["button--1"],
-				},
-			},
-			communityBlockMapping: {},
+			show: "true",
 		},
-		"button--1": {
-			id: "button--1",
-			widget: "button",
-			parent: {
-				id: "iteration--1",
-				slot: "children",
+		listeners: {
+			preProcess: {
+				type: "sync",
+				order: [],
 			},
-			data: {
-				style: {},
-				label: "Submit",
-				loading: false,
-				disabled: false,
-				variant: "contained",
-				color: "primary",
-				show: true,
-				type: "button",
-			},
-			listeners: {
-				onClick: {
-					type: "sync",
-					order: [],
-				},
-				preProcess: {
-					type: "sync",
-					order: [],
-				},
-			},
-			slots: {},
-			communityBlockMapping: {},
 		},
+		slots: {
+			children: {
+				name: "children",
+				children: ["button--1"],
+			},
+		},
+		communityBlockMapping: {},
 	},
-	variables: {
-		mcp_driver: {
-			to: "mcp_driver",
-			type: "query",
+	"button--1": {
+		id: "button--1",
+		widget: "button",
+		parent: {
+			id: "iterationBlock",
+			slot: "children",
 		},
-		"mcp_driver--1": {
-			to: "mcp_driver",
-			type: "cell",
-			cellId: "1",
+		data: {
+			style: {},
+			label: "Submit",
+			loading: false,
+			disabled: false,
+			variant: "contained",
+			color: "primary",
+			show: true,
+			type: "button",
 		},
-		listArray: {
-			type: "array",
-			value: [1, 2, 3, 4, 5],
+		listeners: {
+			onClick: {
+				type: "sync",
+				order: [],
+			},
+			preProcess: {
+				type: "sync",
+				order: [],
+			},
 		},
+		slots: {},
+		communityBlockMapping: {},
 	},
-	executionOrder: ["mcp_driver"],
-	version: "1.0.0-alpha.17",
 };
 
-describe("iterator block", () => {
-	it("render the iterator block", async () => {
-		const { container } = render(
-			<IterationBlock id={crypto.randomUUID()} />,
+describe("Iterator block component", () => {
+	const id = crypto.randomUUID();
+
+	it("should use useBlock hook", async () => {
+		const { result } = renderHook(
+			() => useBlock<IterationBlockDef>("iterationBlock"),
 			{
 				blocks: blocks,
+				renderEngineId: "iterationBlock",
 			},
 		);
 
-		console.log({ container });
+		expect(result.current).toBeDefined();
+	});
+	it("should render iterator block", async () => {
+		const { container } = render(<IterationBlock id={id} />, {
+			blocks: blocks,
+		});
+
+		const iterator = container.querySelector(`[data-block='${id}']`);
+		expect(iterator).toBeInTheDocument();
+	});
+
+	it("should render 5 buttons", async () => {
+		render(<IterationBlock id={id} />, {
+			blocks: blocks,
+		});
+
+		// screen.debug();
+		const buttons = screen.getAllByRole("button", { name: /Submit/i });
+
+		expect(buttons).toHaveLength(5);
 	});
 });
