@@ -1,12 +1,12 @@
 import { HashRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
-import { LoadingScreen } from "@semoss/ui";
-import { AuthenticatedLayout } from "./AuthenticatedLayout";
-import { LoginPage } from "./LoginPage";
-import { MainLayout } from "./MainLayout";
-import { NewRoomPage } from "./NewRoomPage";
-import { RoomPage } from "./RoomPage";
-import { WorkspacePage } from "./WorkspacePage";
+import { Spinner } from "@semoss/ui/next";
+import { AuthenticatedLayout } from "./authenticated-layout";
+import { LoginPage } from "./login-page";
+import { MainLayout } from "./main-layout";
+import { NewRoomPage } from "./new-room-page";
+import { RoomPage } from "./room-page";
+import { WorkspacePage } from "./workspace-page";
 
 /**
  * The main router for the application. It handles the routing logic and renders the appropriate components based on the current URL.
@@ -16,7 +16,11 @@ export const Router = () => {
 
 	// don't load anything if it is pending
 	if (!isInitialized) {
-		return <LoadingScreen.Trigger />;
+		return (
+			<div className="flex h-full w-full items-center justify-center">
+				<Spinner />
+			</div>
+		);
 	}
 
 	if (error) {
@@ -35,13 +39,7 @@ export const Router = () => {
 					<Route element={<MainLayout />}>
 						<Route path="new" element={<NewRoomPage />} />
 						<Route path="room/:roomId" element={<RoomPage />} />
-						<Route path="workspace">
-							<Route index element={<WorkspacePage />} />
-							<Route
-								path=":workspaceId/new"
-								element={<NewRoomPage />}
-							/>
-						</Route>
+						<Route path="workspace" element={<WorkspacePage />} />
 						<Route
 							path="*"
 							element={<Navigate to="/new" replace />}
