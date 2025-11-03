@@ -37,8 +37,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		_meta: {
 			map: {
 				SMSS_MCP_EXECUTION: McpExecution;
-				SMSS_PROJECT_NAME: string;
-				SMSS_PROJECT_ID: string;
+				SMSS_PROJECT_NAME?: string;
+				SMSS_PROJECT_ID?: string;
 			};
 		};
 
@@ -82,19 +82,52 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		}
 
 		if (message.type === "RESPONSE_TOOL") {
-			this.tools = message.tool_responses.map((t) => ({
-				id: t.id,
-				_meta: {
-					map: {
-						SMSS_MCP_EXECUTION: MCP_EXECUTION_ASK,
-						...t._meta.map,
+			this.tools = message.tool_responses.map((t) => {
+				// defensive meta map extraction
+				const incomingMap =
+					(t && (t as any)._meta && (t as any)._meta.map) || {};
+
+				// defensive parsing of arguments (may be stringified JSON or object)
+				let params: Record<string, unknown> = {};
+				try {
+					const rawArgs = (t as any).arguments;
+					if (typeof rawArgs === "string") {
+						try {
+							params = JSON.parse(rawArgs);
+						} catch {
+							params = { raw: rawArgs };
+						}
+					} else if (rawArgs && typeof rawArgs === "object") {
+						params = rawArgs;
+					}
+				} catch (e) {
+					// fallback if reading arguments throws
+					params = {};
+				}
+
+				return {
+					id: t.id,
+					_meta: {
+						map: {
+							SMSS_MCP_EXECUTION:
+								incomingMap.SMSS_MCP_EXECUTION ??
+								MCP_EXECUTION_AUTO,
+							SMSS_PROJECT_NAME:
+								incomingMap.SMSS_PROJECT_NAME === undefined
+									? ""
+									: incomingMap.SMSS_PROJECT_NAME,
+							SMSS_PROJECT_ID:
+								incomingMap.SMSS_PROJECT_ID === undefined
+									? ""
+									: incomingMap.SMSS_PROJECT_ID,
+						},
 					},
-				},
-				title: t.title,
-				name: t.name,
-				parameters: t.arguments,
-				response: "",
-			}));
+					title: t.title,
+					name: t.name,
+					parameters: params,
+					response: t.response,
+				};
+			});
 		}
 
 		makeObservable(this, {
@@ -296,7 +329,7 @@ paramValues=[${JSON.stringify({
 
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<[string]>(
-			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], engine=["${tool.parameters.database}"], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 		);
 
 		const { output } = response.pixelReturn[0];
