@@ -14,7 +14,7 @@ interface ToolArtifactProps {
 	node: FlexLayout.TabNode;
 }
 
-export const ToolArtifact: React.FC<ToolArtifactProps> = observer(
+export const ToolsArtifact: React.FC<ToolArtifactProps> = observer(
 	({ node }) => {
 		const config: {
 			app: string;
