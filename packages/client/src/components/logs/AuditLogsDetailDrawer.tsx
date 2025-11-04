@@ -2,10 +2,20 @@ import {
 	Cancel,
 	CheckCircle as CheckCircleIcon,
 	Close as CloseIcon,
-	DragIndicator as DragIndicatorIcon,
+	KeyboardArrowDown as KeyboardArrowDownIcon,
+	KeyboardArrowRight as KeyboardArrowRightIcon,
+	UnfoldLess as UnfoldLessIcon,
+	UnfoldMore as UnfoldMoreIcon,
 } from "@mui/icons-material";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Box, IconButton, styled, Typography } from "@semoss/ui";
+import {
+	Box,
+	Button,
+	IconButton,
+	styled,
+	Typography,
+	useTheme,
+} from "@semoss/ui";
 
 const DrawerContainer = styled(Box)(({ theme }) => ({
 	position: "relative",
@@ -18,70 +28,45 @@ const DrawerContainer = styled(Box)(({ theme }) => ({
 
 const DragHandle = styled(Box)(({ theme }) => ({
 	position: "absolute",
-	left: -4,
-	top: "50%",
-	transform: "translateY(-50%)",
-	width: "16px",
-	height: "32px",
+	left: 0,
+	top: 0,
+	bottom: 0,
+	width: "4px",
 	cursor: "ew-resize",
-	display: "flex",
-	alignItems: "center",
-	justifyContent: "center",
-	backgroundColor: theme.palette.common.white,
-	border: `1px solid ${theme.palette.divider}`,
-	borderRadius: theme.shape.borderRadius / 2,
-	zIndex: 1,
 	"&:hover": {
 		backgroundColor: theme.palette.action.hover,
-		borderColor: theme.palette.action.selected,
-		".dragIcon": {
-			opacity: 1,
-			color: theme.palette.primary.main,
-		},
 	},
 	"&:active": {
 		backgroundColor: theme.palette.action.selected,
-		borderColor: theme.palette.action.selected,
-		".dragIcon": {
-			opacity: 1,
-			color: theme.palette.primary.main,
-		},
-	},
-	".dragIcon": {
-		opacity: 0.5,
-		transition: theme.transitions.create("all"),
-		color: theme.palette.text.secondary,
-		pointerEvents: "none",
-		fontSize: "16px",
 	},
 }));
 
-const DrawerHeader = styled(Box)({
+const DrawerHeader = styled(Box)(({ theme }) => ({
 	display: "flex",
 	justifyContent: "space-between",
 	alignItems: "center",
 	padding: "8px 12px",
-	borderBottom: "1px solid #e6e6e6",
-	backgroundColor: "#ebf4fe",
-});
+	borderBottom: `1px solid ${theme.palette.divider}`,
+	backgroundColor: theme.palette.primary.hover,
+}));
 
-const DrawerContent = styled(Box)({
+const DrawerContent = styled(Box)(({ theme }) => ({
 	flex: 1,
 	padding: "0",
 	overflowY: "auto",
-	backgroundColor: "#fff",
-});
+	backgroundColor: theme.palette.common.white,
+}));
 
 const SummarySection = styled(Box)({
 	padding: "20px",
 	borderBottom: "1px solid #e9ecef",
 });
 
-const SummaryTitle = styled(Typography)({
+const SummaryTitle = styled(Typography)(({ theme }) => ({
 	fontWeight: 600,
-	color: "#495057",
-	marginBottom: "12px",
-});
+	color: theme.palette.text.primary,
+	marginBottom: "16px",
+}));
 
 const SummaryGrid = styled(Box)({
 	display: "grid",
@@ -96,39 +81,192 @@ const SummaryItem = styled(Box)({
 	gap: "4px",
 });
 
-const SummaryLabel = styled(Typography)({
-	color: "#6c757d",
+const SummaryLabel = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.secondary,
 	fontWeight: 500,
-});
+}));
 
-const SummaryValue = styled(Typography)({
-	color: "#212529",
+const SummaryValue = styled(Typography)(({ theme }) => ({
+	color: theme.palette.text.primary,
 	fontWeight: 600,
-});
+}));
 
-const ContentTitle = styled(Typography)({
+const ContentTitle = styled(Typography)(({ theme }) => ({
 	fontWeight: 600,
-	color: "#495057",
-	marginBottom: "8px",
+	color: theme.palette.text.primary,
 	display: "flex",
 	alignItems: "center",
 	gap: "8px",
+}));
+
+const ContentTitleWrapper = styled(Box)({
+	display: "flex",
+	justifyContent: "space-between",
+	alignItems: "center",
+	marginBottom: "8px",
 });
 
-const ContentBox = styled(Box)({
-	backgroundColor: "#f8f9fa",
-	border: "1px solid #e9ecef",
+const ContentBox = styled(Box)(({ theme }) => ({
+	backgroundColor: theme.palette.background.paper2,
+	border: `1px solid ${theme.palette.divider}`,
 	borderRadius: "6px",
-	padding: "16px",
+	padding: "4px",
 	marginBottom: "16px",
-});
+}));
 
-const ContentText = styled(Typography)({
+const ContentText = styled(Typography)(({ theme }) => ({
 	lineHeight: 1.6,
-	color: "#495057",
+	color: theme.palette.text.primary,
 	wordBreak: "break-word",
 	whiteSpace: "pre-wrap",
+}));
+
+const JSONTreeContainer = styled(Box)(({ theme }) => ({
+	fontSize: "13px",
+	fontFamily: "Monaco, monospace",
+	lineHeight: "1.4",
+	color: theme.palette.text.primary,
+	padding: "12px",
+	borderRadius: "4px",
+	overflowX: "auto",
+}));
+
+const JSONKey = styled("span")(({ theme }) => ({
+	color: theme.palette.primary.main, // Blue for keys
+}));
+
+const JSONString = styled("span")(({ theme }) => ({
+	color: theme.palette.error.main, // Red for strings
+}));
+
+const JSONNumber = styled("span")(({ theme }) => ({
+	color: theme.palette.success.main, // Green for numbers
+}));
+
+const JSONBoolean = styled("span")(({ theme }) => ({
+	color: theme.palette.info.main, // Blue for booleans
+}));
+
+const JSONNull = styled("span")(({ theme }) => ({
+	color: theme.palette.info.main, // Blue for null
+}));
+
+const ExpandButton = styled(Box)({
+	display: "inline-flex",
+	alignItems: "center",
+	cursor: "pointer",
+	padding: "0 4px",
+	marginRight: "4px",
+	"& svg": {
+		fontSize: "16px",
+	},
 });
+
+interface JSONTreeViewProps {
+	data: unknown;
+	expandAll?: boolean;
+	isChild?: boolean;
+}
+
+const JSONTreeView = ({
+	data,
+	isChild = false,
+	expandAll,
+}: JSONTreeViewProps) => {
+	const [isExpanded, setIsExpanded] = useState(!isChild);
+	const hasChildren = data !== null && typeof data === "object";
+	const theme = useTheme();
+
+	useEffect(() => {
+		if (expandAll !== undefined && hasChildren && isChild) {
+			setIsExpanded(expandAll);
+		}
+	}, [expandAll, hasChildren, isChild]);
+
+	const toggleExpand = () => {
+		setIsExpanded(!isExpanded);
+	};
+
+	const renderValue = (value: unknown) => {
+		if (value === null) return <JSONNull>null</JSONNull>;
+		if (typeof value === "string")
+			return <JSONString>"{value}"</JSONString>;
+		if (typeof value === "number") return <JSONNumber>{value}</JSONNumber>;
+		if (typeof value === "boolean")
+			return <JSONBoolean>{value.toString()}</JSONBoolean>;
+		return null;
+	};
+
+	if (!hasChildren) {
+		return <Box component="span">{renderValue(data)}</Box>;
+	}
+
+	const isArray = Array.isArray(data);
+
+	return (
+		<Box sx={{ ml: isChild ? 3 : 0 }}>
+			<Box sx={{ display: "flex", alignItems: "center" }}>
+				{isChild && (
+					<ExpandButton onClick={toggleExpand}>
+						{isExpanded ? (
+							<KeyboardArrowDownIcon />
+						) : (
+							<KeyboardArrowRightIcon />
+						)}
+					</ExpandButton>
+				)}
+				{isChild && (
+					<>
+						{isArray ? "" : <JSONKey>"</JSONKey>}
+						<Box
+							component="span"
+							sx={{
+								color: () => theme.palette.primary.main,
+							}}
+						>
+							{isArray ? "[" : "{"}
+						</Box>
+					</>
+				)}
+			</Box>
+			{isExpanded && (
+				<Box>
+					{Object.entries(data).map(([key, value]) => (
+						<Box key={key} sx={{ ml: isChild ? 4 : 0 }}>
+							{!isArray && (
+								<>
+									<JSONKey>"{key}"</JSONKey>:{" "}
+								</>
+							)}
+							<JSONTreeView
+								data={value}
+								isChild
+								expandAll={expandAll}
+							/>
+						</Box>
+					))}
+				</Box>
+			)}
+			{isExpanded && isChild && (
+				<Box sx={{ ml: isChild ? 0 : 4 }}>{isArray ? "]" : "}"}</Box>
+			)}
+		</Box>
+	);
+};
+
+const hasExpandableContent = (data: unknown): boolean => {
+	if (data === null || typeof data !== "object") {
+		return false;
+	}
+
+	for (const value of Object.values(data)) {
+		if (value !== null && typeof value === "object") {
+			return true;
+		}
+	}
+
+	return false;
+};
 
 const TimeDateFormatter = (timeStamp: string | number) => {
 	const tempDate = new Date(timeStamp);
@@ -137,9 +275,16 @@ const TimeDateFormatter = (timeStamp: string | number) => {
 	const time = formattedDate.split("T")[1];
 	return { date, time };
 };
+
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails, handleDrawerClose } = props;
 	const [width, setWidth] = useState(500);
+	const [promptExpandAll, setPromptExpandAll] = useState<boolean | undefined>(
+		undefined,
+	);
+	const [responseExpandAll, setResponseExpandAll] = useState<
+		boolean | undefined
+	>(undefined);
 	const drawerRef = useRef(null);
 	const isDragging = useRef(false);
 	const startX = useRef(0);
@@ -176,13 +321,42 @@ export const AuditLogsDetailDrawer = (props) => {
 		};
 	}, [handleMouseMove, handleMouseUp]);
 
+	const handlePromptToggle = () => {
+		setPromptExpandAll((prev) => (prev === true ? false : true));
+	};
+
+	const handleResponseToggle = () => {
+		setResponseExpandAll((prev) => (prev === true ? false : true));
+	};
+
+	const getPromptData = () => {
+		try {
+			return JSON.parse(logDetails.payload);
+		} catch {
+			return null;
+		}
+	};
+
+	const getResponseData = () => {
+		try {
+			return JSON.parse(logDetails.response);
+		} catch {
+			return null;
+		}
+	};
+
+	const promptData = logDetails ? getPromptData() : null;
+	const responseData = logDetails ? getResponseData() : null;
+	const showPromptExpandButton =
+		promptData && hasExpandableContent(promptData);
+	const showResponseExpandButton =
+		responseData && hasExpandableContent(responseData);
+
 	if (!logDetails)
 		return <Typography variant="body2">No details available</Typography>;
 	return (
 		<DrawerContainer ref={drawerRef} sx={{ width: `${width}px` }}>
-			<DragHandle onMouseDown={handleMouseDown}>
-				<DragIndicatorIcon className="dragIcon" fontSize="small" />
-			</DragHandle>
+			<DragHandle onMouseDown={handleMouseDown} />
 			<DrawerHeader>
 				<Typography variant="body1" color="primary">
 					Audit Details
@@ -198,20 +372,90 @@ export const AuditLogsDetailDrawer = (props) => {
 						<SummaryTitle variant="subtitle2">
 							Event Summary
 						</SummaryTitle>
-						<ContentTitle variant="subtitle2">Prompt</ContentTitle>
+						<ContentTitleWrapper>
+							<ContentTitle variant="subtitle2">
+								Request
+							</ContentTitle>
+							{showPromptExpandButton && (
+								<Button
+									variant="contained"
+									size="small"
+									onClick={handlePromptToggle}
+									startIcon={
+										promptExpandAll ? (
+											<UnfoldLessIcon />
+										) : (
+											<UnfoldMoreIcon />
+										)
+									}
+								>
+									{promptExpandAll
+										? "Collapse All"
+										: "Expand All"}
+								</Button>
+							)}
+						</ContentTitleWrapper>
 						<ContentBox>
-							<ContentText variant="body2">
-								{logDetails.payload}
-							</ContentText>
+							{(() => {
+								if (promptData) {
+									return (
+										<JSONTreeContainer>
+											<JSONTreeView
+												data={promptData}
+												expandAll={promptExpandAll}
+											/>
+										</JSONTreeContainer>
+									);
+								}
+								return (
+									<ContentText variant="body2">
+										{logDetails.payload}
+									</ContentText>
+								);
+							})()}
 						</ContentBox>
 
-						<ContentTitle variant="subtitle2">
-							Response
-						</ContentTitle>
+						<ContentTitleWrapper>
+							<ContentTitle variant="subtitle2">
+								Response
+							</ContentTitle>
+							{showResponseExpandButton && (
+								<Button
+									variant="contained"
+									size="small"
+									onClick={handleResponseToggle}
+									startIcon={
+										responseExpandAll ? (
+											<UnfoldLessIcon />
+										) : (
+											<UnfoldMoreIcon />
+										)
+									}
+								>
+									{responseExpandAll
+										? "Collapse All"
+										: "Expand All"}
+								</Button>
+							)}
+						</ContentTitleWrapper>
 						<ContentBox>
-							<ContentText variant="body2">
-								{logDetails.response}
-							</ContentText>
+							{(() => {
+								if (responseData) {
+									return (
+										<JSONTreeContainer>
+											<JSONTreeView
+												data={responseData}
+												expandAll={responseExpandAll}
+											/>
+										</JSONTreeContainer>
+									);
+								}
+								return (
+									<ContentText variant="body2">
+										{logDetails.response}
+									</ContentText>
+								);
+							})()}
 						</ContentBox>
 					</SummarySection>
 
@@ -279,6 +523,22 @@ export const AuditLogsDetailDrawer = (props) => {
 										{logDetails.status}
 									</Typography>
 								</Box>
+							</SummaryValue>
+						</SummaryItem>
+						<SummaryItem>
+							<SummaryLabel variant="caption">
+								User Id
+							</SummaryLabel>
+							<SummaryValue variant="body2">
+								{logDetails.userId}
+							</SummaryValue>
+						</SummaryItem>
+						<SummaryItem>
+							<SummaryLabel variant="caption">
+								Session Id
+							</SummaryLabel>
+							<SummaryValue variant="body2">
+								{logDetails.sessionId}
 							</SummaryValue>
 						</SummaryItem>
 					</SummaryGrid>
