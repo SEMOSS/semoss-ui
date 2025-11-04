@@ -1,77 +1,80 @@
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { useState } from "react";
 import { type BlockComponent, useBlock } from "@semoss/renderer";
-import { Accordion, Stack, styled } from "@semoss/ui";
-import {
-	DEFAULT_FALSE_VARIABLE,
-	DEFAULT_TRUE_VARIABLE,
-} from "../../../block-settings/block-defaults.constants";
-import {
-	AIGenerationSettings,
-	CodeEditorSettings,
-	JsonSettings,
-	QueryInputSettings,
-} from "../../";
+import { Stack, styled, ToggleTabsGroup } from "@semoss/ui";
+import { JsonSettings } from "../../";
+import { VegaGenerationSettings } from "./VegaGenerationsSettings";
 
-const trueSegment = DEFAULT_TRUE_VARIABLE;
-const falseSegment = DEFAULT_FALSE_VARIABLE;
-
-const StyledAccordionTrigger = styled(Accordion.Trigger)(() => ({
-	"& .MuiAccordionSummary-expandIconWrapper.Mui-expanded": {
-		transform: "rotate(180deg)",
+const StyledToggleTabsGroup = styled(ToggleTabsGroup)(({ theme }) => ({
+	minHeight: "42px",
+	color: theme.palette.secondary.light,
+	borderRadius: theme.shape.borderRadius,
+	alignItems: "center",
+	padding: "0px 3px",
+	width: "100%",
+	margin: "0 auto",
+	display: "flex",
+	justifyContent: "space-between",
+	">.MuiTabs-scroller": {
+		display: "flex",
+		justifyContent: "space-around",
+		".MuiTabs-flexContainer": {
+			flex: 1,
+		},
 	},
 }));
-const StyledSpan = styled("span")(() => ({
-	fontSize: "14px",
-	fontStyle: "normal",
-	lineHeight: "143%",
-	letterSpacing: "0.17px",
-	fontFamily: '"Inter", sans-serif',
-	textTransform: "uppercase",
-	fontWeight: "bold",
+const StyledToggleTabsGroupItem = styled(ToggleTabsGroup.Item)(({ theme }) => ({
+	height: "38px",
+	padding: "8px 16px",
+	"&.MuiTab-root": {
+		borderRadius: theme.shape.borderRadius,
+	},
+	"&.Mui-selected": {
+		boxShadow: "0px 4px 4px 0px rgba(0, 0, 0, 0.05)",
+	},
+}));
+const StyledStack = styled(Stack)(() => ({
+	">.MuiBox-root": {
+		width: "90%",
+		margin: "auto",
+	},
+}));
+const StyledAIStack = styled(Stack)(() => ({
+	padding: "0 16px",
+	display: "flex",
 }));
 export const VegaVisualizationBlockMenu: BlockComponent = ({ id }) => {
 	const { data } = useBlock(id);
-	const [expandAccordion, setExpandAccordion] = useState(true);
+	// const [expandAccordion, setExpandAccordion] = useState(true);
+	const [mode, setMode] = useState("tool");
 	return (
-		<Stack padding={2} height="100%">
-			<Accordion
-				expanded={expandAccordion}
-				onChange={() =>
-					setExpandAccordion((expandAccordion) => !expandAccordion)
-				}
+		<StyledStack spacing={2}>
+			<StyledToggleTabsGroup
+				value={mode}
+				onChange={(e: React.SyntheticEvent, val) => {
+					setMode(val as string);
+				}}
+				variant="fullWidth"
 			>
-				<StyledAccordionTrigger expandIcon={<ExpandMoreIcon />}>
-					<StyledSpan>CONDITIONAL</StyledSpan>
-				</StyledAccordionTrigger>
-				<Accordion.Content>
-					<QueryInputSettings
-						id={id}
-						label="Show Block"
-						path="show"
-						defaultPathMap={{
-							...trueSegment,
-							...falseSegment,
-						}}
-					/>
-				</Accordion.Content>
-			</Accordion>
-			{/* CodeEditorSettings is a dup of JsonSettings with LLM prompting and wordwrap added to the editor and ability to work with HTML as well as JSON */}
-			{/* Not sure if we want to delete JsonSettings but it's no longer in use here */}
-			<JsonSettings id={id} path="specJson" />
-
-			{/* <CodeEditorSettings id={id} path="specJson" /> */}
-			{!data.variation && (
-				<AIGenerationSettings
-					id={id}
-					path="specJson"
-					appendPrompt={
-						'Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure "data" is a top-level key in the JSON object.'
-					}
-					placeholder="Ex: Generate a bar graph."
-					valueAsObject
-				/>
+				<StyledToggleTabsGroupItem value="tool" label="Tool" />
+				<StyledToggleTabsGroupItem value="json" label="JSON" />
+			</StyledToggleTabsGroup>
+			{mode === "json" && (
+				<JsonSettings id={id} path="specJson" height="90vh" />
 			)}
-		</Stack>
+			{mode === "tool" && !data.variation && (
+				<StyledAIStack>
+					<VegaGenerationSettings
+						id={id}
+						path="specJson"
+						appendPrompt={
+							'Use vega lite version 5 and make the schema as simple as possible. Return the response as JSON. Ensure "data" is a top-level key in the JSON object.'
+						}
+						placeholder="Ex: Generate a bar graph."
+						showFileUpload
+						label=""
+					/>
+				</StyledAIStack>
+			)}
+		</StyledStack>
 	);
 };
