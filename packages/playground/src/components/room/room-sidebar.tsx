@@ -1,29 +1,18 @@
 import { Maximize2Icon, Minimize2Icon, XIcon } from "lucide-react";
+import { observer } from "mobx-react-lite";
 import { useState } from "react";
+import { FlexLayout } from "@semoss/shared";
 import { Button } from "@semoss/ui/next";
-
-// Styles are now handled with Tailwind classes inline
+import type { RoomStore } from "@/stores";
+import { RoomConfiguration } from "./room-configuration";
+import { RoomTool } from "./room-tool";
 
 interface RoomSidebarProps {
-	/** Header in the menu */
-	header: React.ReactNode;
-
-	/** Content */
-	children: React.ReactNode;
-
-	/** Allow the menu to be maximized */
-	maximize?: boolean;
-
-	/** Close the Menu */
-	onClose?: () => void;
+	/** Room to render */
+	room: RoomStore;
 }
 
-export const RoomSidebar = ({
-	children,
-	header,
-	maximize = false,
-	onClose = () => null,
-}: RoomSidebarProps) => {
+export const RoomSidebar: React.FC<RoomSidebarProps> = observer(({ room }) => {
 	const [isMaximized, setIsMaximized] = useState(false);
 
 	return (
@@ -36,42 +25,58 @@ export const RoomSidebar = ({
 				}`}
 			/>
 			<div
-				className={`flex flex-col gap-2 overflow-hidden rounded-lg border border-sidebar-border bg-sidebar p-2 shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
+				className={`flex flex-col overflow-hidden rounded-lg border border-border bg-background shadow-sm transition-all duration-200 ease-in-out ${isMaximized ? "fixed inset-4 z-50" : "h-full w-full"}`}
 			>
-				<div className="flow-row flex items-center justify-between overflow-hidden">
+				<div className="flow-row flex items-center justify-between overflow-hidden px-2 pt-2">
 					<div className="flex-1 truncate font-medium text-base">
-						{header}
+						&nbsp;
 					</div>
-					{maximize ? (
-						<Button
-							variant="ghost"
-							size="icon-sm"
-							onClick={() => {
-								setIsMaximized(!isMaximized);
-							}}
-						>
-							{isMaximized ? (
-								<Minimize2Icon />
-							) : (
-								<Maximize2Icon />
-							)}
-						</Button>
-					) : null}
+
 					<Button
 						variant="ghost"
 						size="icon-sm"
 						onClick={() => {
+							setIsMaximized(!isMaximized);
+						}}
+					>
+						{isMaximized ? <Minimize2Icon /> : <Maximize2Icon />}
+					</Button>
+
+					<Button
+						variant="ghost"
+						size="icon-sm"
+						onClick={() => {
+							// turn off maximized state when closing sidebar
 							setIsMaximized(false);
-							onClose();
+
+							room.closeSidebar();
 						}}
 					>
 						<XIcon />
 					</Button>
 				</div>
 				<div className="w-full flex-1 overflow-hidden rounded-md">
-					{children}
+					<div className="relative h-full w-full overflow-hidden">
+						<FlexLayout.Layout
+							model={room.sidebar.model}
+							factory={(node) => {
+								const component = node.getComponent();
+
+								if (component === "room-tool") {
+									return <RoomTool node={node} />;
+								} else if (component === "room-configuration") {
+									return <RoomConfiguration room={room} />;
+								}
+
+								return null;
+							}}
+							icons={{
+								close: <XIcon />,
+							}}
+						/>
+					</div>
 				</div>
 			</div>
 		</div>
 	);
-};
+});

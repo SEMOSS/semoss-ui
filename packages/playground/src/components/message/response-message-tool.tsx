@@ -1,6 +1,5 @@
 import { CheckIcon, HammerIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import { FlexLayout } from "@semoss/shared";
 import type { ResponseMessageStore } from "@/stores";
 
 // Styled component replaced with Tailwind classes inline
@@ -15,6 +14,15 @@ interface ResponseMessageToolProps {
 export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 	({ message, tool }) => {
 		const { room } = message;
+
+		// this will render the component whenever the sidebar model changes
+		room.sidebar.counter;
+
+		const nodeId = `message-${message.id}-tool-${tool.id}`;
+
+		// track if it is active
+		const isActive =
+			room.sidebar.isOpen && !!room.sidebar.model.getNodeById(nodeId);
 
 		// TODO: if the plan is executing, only the execution step is enabled
 		let isDisabled = false;
@@ -40,60 +48,29 @@ export const ResponseMessageTool: React.FC<ResponseMessageToolProps> = observer(
 				className={`group flex w-full flex-row items-center gap-3 rounded-lg border border-border p-2 text-left ${
 					isDisabled
 						? "cursor-not-allowed opacity-50"
-						: "cursor-pointer hover:bg-accent"
+						: `cursor-pointer hover:bg-accent ${isActive ? "border-primary" : ""}`
 				}`}
 				onClick={() => {
-					// open the sidebar
-					room.openSidebar("ARTIFACTS");
-
-					// set the id
-					const toolNodeId = `message-${message.id}-tool-${tool.id}`;
-
-					// select the node if there
-					const selectedNode =
-						room.artifact.model.getNodeById(toolNodeId);
-					if (selectedNode) {
-						room.artifact.model.doAction(
-							FlexLayout.Actions.selectTab(selectedNode.getId()),
-						);
-						return;
-					}
-
-					// create the node if it is not there
-					// where to add the node
-					const addId =
-						room.artifact.model.getActiveTabset()?.getId() ||
-						room.artifact.model
-							.getRoot()
-							.getChildren()[0]
-							?.getId() ||
-						"";
-
-					// create and select the panel
-					room.artifact.model.doAction(
-						FlexLayout.Actions.addNode(
-							{
-								id: toolNodeId,
-								type: "tab",
-								name: tool.title,
-								component: "tools-artifact",
-								config: {
-									app: tool._meta.map.SMSS_PROJECT_ID,
-									tool: {
-										message: message.id,
-										id: tool.id,
-										name: tool.name,
-										parameters: tool.parameters,
-									},
+					if (room.isSidebarNodeSelected(nodeId)) {
+						room.removeSidebarNode(nodeId);
+					} else {
+						// open the sidebar
+						room.addSidebarNode(nodeId, {
+							type: "tab",
+							name: tool.title,
+							component: "room-tool",
+							config: {
+								app: tool._meta.map.SMSS_PROJECT_ID,
+								tool: {
+									message: message.id,
+									id: tool.id,
+									name: tool.name,
+									parameters: tool.parameters,
 								},
-								enableClose: true,
 							},
-							addId,
-							FlexLayout.DockLocation.CENTER,
-							-1,
-							true,
-						),
-					);
+							enableClose: true,
+						});
+					}
 				}}
 			>
 				<div
