@@ -364,6 +364,7 @@ const DataSelection = ({
 						<StyledCollapseButton
 							variant="outlined"
 							size="large"
+							data-testid="collapse-button"
 							onClick={() =>
 								setCollapseAll((prev) =>
 									prev.map((v, i) => (i === fileIdx ? !v : v))
@@ -387,7 +388,7 @@ const DataSelection = ({
 							<StyledTypographyTitle variant="h6">
 								Sheet Name: {fileName[fileIdx]}
 							</StyledTypographyTitle>
-							<StyledExpandMoreIcon collapse={collapseAll[fileIdx]}>
+							<StyledExpandMoreIcon collapse={collapseAll[fileIdx]} data-testid="expand-icon">
 								<ExpandMore />
 							</StyledExpandMoreIcon>
 						</StyledSummaryHeader>
@@ -409,6 +410,7 @@ const DataSelection = ({
 												onChange={(e) =>
 													handleTableNameChange(fileIdx, e.target.value)
 												}
+												data-testid="table-name-input"
 												// @ts-expect-error TODO FIX
 												error={!tableNames[fileIdx]?.trim()}
 											/>
@@ -446,9 +448,9 @@ const DataSelection = ({
 
 										<Table.Body>
 											{parsedData.cleanHeaders.map((column, index) => (
-												<Table.Row key={column}>
+												<Table.Row key={column} data-testid={`table-row-${fileIdx}-${index}`}>
 													{/* Name */}
-													<StyledBaseTableCellName>
+													<StyledBaseTableCellName data-testid={`table-cell-name-${fileIdx}-${index}`}>
 														<StyedNameTextField
 															fullWidth
 															value={
@@ -461,11 +463,12 @@ const DataSelection = ({
 															variant="outlined"
 															size="small"
 															disabled={!rowEditableStateList[fileIdx]?.[index]}
+															data-testid={`column-name-input-${fileIdx}-${index}`}
 														/>
-													</StyledBaseTableCellName>
+													</StyledBaseTableCellName >
 
 													{/* Data Type */}
-													<StyledBaseTableCell>
+													<StyledBaseTableCell data-testid={`table-cell-datatype-${fileIdx}-${index}`}>
 														<Typography
 															variant="h6"
 															sx={{
@@ -474,32 +477,35 @@ const DataSelection = ({
 																	? "#9E9E9E"
 																	: "#212121",
 															}}
+															data-testid={`column-datatype-${fileIdx}-${index}`}
 														>
 															{columnMetadataList[fileIdx]?.[column]
 																?.dataType || "STRING"}
 														</Typography>
-													</StyledBaseTableCell>
+													</StyledBaseTableCell >
 
 													{/* Edit */}
-													<StyledBaseTableCellIcon>
+													<StyledBaseTableCellIcon data-testid={`table-cell-edit-${fileIdx}-${index}`}>
 														<IconButton
 															size="small"
 															onClick={() => handleOpenModal(fileIdx, column)}
 															disabled={!rowEditableStateList[fileIdx]?.[index]}
+															data-testid={`edit-button-${fileIdx}-${index}`}
 														>
 															<CreateOutlined />
 														</IconButton>
 													</StyledBaseTableCellIcon>
 
 													{/* Toggle */}
-													<StyledBaseTableCellIcon>
+													<StyledBaseTableCellIcon data-testid={`table-cell-toggle-${fileIdx}-${index}`}>
 														<IconButton
 															onClick={() => toggleRowEditState(fileIdx, index)}
+															data-testid={`toggle-button-${fileIdx}-${index}`}
 														>
 															{rowEditableStateList[fileIdx]?.[index] ? (
-																<CloseIcon color="error" />
+																<CloseIcon color="error" data-testid={`toggle-icon-close-${fileIdx}-${index}`} />
 															) : (
-																<AddIcon color="success" />
+																<AddIcon color="success" data-testid={`toggle-icon-add-${fileIdx}-${index}`}/>
 															)}
 														</IconButton>
 													</StyledBaseTableCellIcon>
@@ -516,7 +522,7 @@ const DataSelection = ({
 
 			{/* Footer */}
 			<StyledFooterWrapper>
-				<Button variant="outlined" color="primary" onClick={onCancel}>
+				<Button variant="outlined" color="primary" onClick={onCancel} data-testid="back-button">
 					Back
 				</Button>
 				<Button
@@ -524,6 +530,7 @@ const DataSelection = ({
 					color="primary"
 					onClick={handleImport}
 					disabled={isAnyTableNameInvalid}
+					data-testid="import-button"
 				>
 					Import
 				</Button>

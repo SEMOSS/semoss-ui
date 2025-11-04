@@ -276,9 +276,124 @@ export const DATABASE_CONNECTION = {
       },
       {
         name: "TSV",
-        disable: true,
+        disable: false,
         icon: TSV,
-        fields: [],
+        fields: [
+          {
+            fieldName: "DATABASE_NAME",
+            label: "Enter Database Name",
+            defaultValue: "",
+            section: "general",
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: true },
+          },
+          {
+            fieldName: "DATABASE_DESCRIPTION",
+            label: "Enter Database Description",
+            defaultValue: "",
+            section: "general",
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: true },
+          },
+          {
+            fieldName: "DATABASE_TAG",
+            label: "Enter Database Tag",
+            defaultValue: "",
+            section: "general",
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: true },
+          },
+          {
+            fieldName: "DELIMITER",
+            label: "Enter Delimiter",
+            defaultValue: "\t",
+            section: "Database",
+            options: {
+              component: "text-field",
+            },
+            disabled: false,
+            rules: { required: false },
+          },
+          {
+            fieldName: "DATABASE_TYPE",
+            label: "Enter Database Type",
+            defaultValue: "",
+            section: "Database",
+            options: {
+              component: "select",
+              options: [
+                { display: "H2", value: "h2" },
+                { display: "R", value: "r" },
+              ],
+            },
+            disabled: false,
+            rules: { required: true },
+          },
+          {
+            fieldName: "METAMODEL_TYPE",
+            label: "Enter Metamodel Type",
+            defaultValue: "",
+            section: "Database",
+            options: {
+              component: "select",
+              options: [
+                {
+                  display: "As Flat Table",
+                  value: "asFlatTable",
+                },
+                {
+                  display: "As Suggested Metamodel",
+                  value: "asSuggestedMetaModel",
+                },
+                {
+                  display: "From Scratch",
+                  value: "fromScratch",
+                },
+                {
+                  display: "From Prop File",
+                  value: "frompropFile",
+                },
+              ],
+            },
+            disabled: false,
+            rules: {
+              required: true,
+              conditionalOptions: [
+                {
+                  whenField: "DATABASE_TYPE",
+                  whenValue: "r",
+                  allowedValues: ["asFlatTable"],
+                  restrictOtherValues: true,
+                },
+              ],
+            },
+          },
+          {
+            fieldName: "FILE_UPLOAD",
+            label: "File Upload",
+            defaultValue: null,
+            options: {
+              component: "file-upload",
+              extensions:[".tsv"]
+            },
+            disabled: false,
+            rules: {
+              required: {
+                value: true,
+                message: "Please upload file / files.",
+              },
+            },
+          },
+        ],
       },
       {
         name: "SQLite",

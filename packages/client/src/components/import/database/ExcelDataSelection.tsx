@@ -567,21 +567,17 @@ const ExcelDataSelection = ({
 			{files.map((file, fileIndex) => (
 				<Box
 					key={fileName[fileIndex]}
-					data-testid={`excel-file-box-${fileIndex}`}
 				>
 					<StyledHeaderWrapper
 						key={fileName[fileIndex]}
-						data-testid={`excel-file-header-${fileIndex}`}
 					>
 						<Stack direction={"row"}>
 							<img
 								src={CSV_UPLOAD_ICONS.FILE_EXCEL}
 								alt="Excel File"
-								data-testid={"excel-file-icon"}
 							/>
 							<StyledTypography
 								variant="h6"
-								data-testid={`excel-file-name-${fileIndex}`}
 							>
 								{fileName[fileIndex]}
 							</StyledTypography>
@@ -609,11 +605,10 @@ const ExcelDataSelection = ({
 								<StyledSummaryHeader onClick={() => toggleCollapse(sheetKey)}>
 									<StyledTypographyTitle
 										variant="h6"
-										data-testid={`excel-sheet-name-${sheetKey}`}
 									>
 										Sheet Name: {sheetName}
 									</StyledTypographyTitle>
-									<StyledExpandMoreIcon collapse={state.collapseAll}>
+									<StyledExpandMoreIcon collapse={state.collapseAll} data-testid="expand-icon">
 										<ExpandMore />
 									</StyledExpandMoreIcon>
 								</StyledSummaryHeader>
@@ -631,6 +626,7 @@ const ExcelDataSelection = ({
 													onChange={(e) =>
 														handleTableNameChange(sheetKey, e.target.value)
 													}
+													data-testid="table-name-input"
 												/>
 											</Stack>
 
@@ -639,6 +635,7 @@ const ExcelDataSelection = ({
 												variant="text"
 												color="primary"
 												onClick={() => handleSelectAllToggle(sheetKey)}
+												data-testid="select-all-button"
 											>
 												{Object.values(state.rowEditableState).every((v) => v)
 													? "Unselect All"
@@ -710,6 +707,7 @@ const ExcelDataSelection = ({
 																				border: showError ? "none" : undefined,
 																			},
 																		}}
+																		data-testid="range-input"
 																	/>
 																	<StyledTextFieldBox>
 																		{showError && (
@@ -777,6 +775,7 @@ const ExcelDataSelection = ({
 																		sheetName
 																	)
 																}
+																data-testid="preview-button"
 															>
 																Preview
 															</StyledButton>
@@ -811,7 +810,7 @@ const ExcelDataSelection = ({
 
 												<Table.Body>
 													{state.cleanHeaders?.map((column, index) => (
-														<Table.Row key={column}>
+														<Table.Row key={column} data-testid={`column-row-${column}-${index}`}>
 															<StyledBaseTableCellName>
 																<StyedNameTextField
 																	fullWidth
@@ -829,6 +828,7 @@ const ExcelDataSelection = ({
 																	variant="outlined"
 																	size="small"
 																	disabled={!state.rowEditableState[index]}
+																	data-testid={`column-name-input-${column}-${index}`}
 																/>
 															</StyledBaseTableCellName>
 
@@ -848,6 +848,7 @@ const ExcelDataSelection = ({
 																			? "#9E9E9E"
 																			: "#212121",
 																	}}
+																	data-testid={`column-datatype-${column}-${index}`}
 																>
 																	{state.columnMetadata[column]?.dataType ||
 																		"STRING"}
@@ -861,6 +862,7 @@ const ExcelDataSelection = ({
 																		handleOpenModal(sheetKey, column)
 																	}
 																	disabled={!state.rowEditableState[index]}
+																	data-testid={`edit-button-${column}-${index}`}
 																>
 																	<CreateOutlined />
 																</IconButton>
@@ -871,6 +873,7 @@ const ExcelDataSelection = ({
 																	onClick={() =>
 																		toggleRowEditState(sheetKey, index)
 																	}
+																	data-testid={`toggle-editable-button-${column}-${index}`}
 																>
 																	{state.rowEditableState[index] ? (
 																		<CloseIcon color="error" />
@@ -897,7 +900,7 @@ const ExcelDataSelection = ({
 					variant="outlined"
 					color="primary"
 					onClick={onCancel}
-					data-test-id={"excel-cancel-button"}
+					data-testid={"excel-cancel-button"}
 				>
 					Back
 				</Button>
@@ -905,7 +908,7 @@ const ExcelDataSelection = ({
 					variant="contained"
 					color="primary"
 					onClick={handleImport}
-					data-test-id={"excel-import-button"}
+					data-testid={"excel-import-button"}
 				>
 					Import
 				</Button>

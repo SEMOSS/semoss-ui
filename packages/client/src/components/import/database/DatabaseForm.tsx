@@ -864,7 +864,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								data-testid="database-form-submit"
 								disabled={!formState.isValid}
 							>
-								{title ==="Excel" ||title === "CSV"? "Next": "Create Database" }
+								{title ==="Excel" ||title === "CSV" || title === "TSV"? "Next": "Create Database" }
 							</StyledSubmitButton>
 						</StyledFlexEnd>
 					</StyledBox>
