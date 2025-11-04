@@ -59,7 +59,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 	return (
 		<>
 			<Field>
-				<FieldLabel htmlFor={toolboxId}>Toolbox</FieldLabel>
+				<FieldLabel htmlFor={toolboxId}>MCP</FieldLabel>
 				<Select
 					value={toolbox?.id || ""}
 					onValueChange={(value) => {
@@ -74,14 +74,8 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>
-							<SelectLabel>Toolbox</SelectLabel>
-							{/* {getApps.status === "LOADING" ? (
-								<SelectItem value="" disabled>
-									Loading...
-								</SelectItem>
-							) : (
-								
-							)} */}
+							<SelectLabel>MCP</SelectLabel>
+
 							{toolboxOptions.map((option) => (
 								<SelectItem key={option.id} value={option.id}>
 									{option.name}
