@@ -81,11 +81,175 @@ const StyledCopyButton = styled("div")<{ darkThemeStyle: string }>(
 	}),
 );
 
+const StyledTerminalWrapper = styled("div")<{ darkThemeStyle: string }>(
+	({ darkThemeStyle }) => ({
+		".xterm": {
+			padding: "8px",
+			height: "100%",
+			width: "100%",
+			cursor: "text",
+			position: "relative",
+			userSelect: "none",
+			"& .xterm:focus": {
+				outline: "none",
+			},
+			"& .xterm-helpers": {
+				position: "absolute",
+				top: 0,
+				zIndex: 5,
+			},
+			"& .xterm-helper-textarea": {
+				padding: 0,
+				border: 0,
+				margin: 0,
+				position: "absolute",
+				opacity: 0,
+				left: "-9999em",
+				top: 0,
+				width: 0,
+				height: 0,
+				zIndex: -5,
+				whiteSpace: "nowrap",
+				overflow: "hidden",
+				resize: "none",
+			},
+			"& .composition-view": {
+				/* TODO: Composition position got messed up somewhere */
+				background: "#000",
+				color: "#FFF",
+				display: "none",
+				position: "absolute",
+				whiteSpace: "nowrap",
+				zIndex: 1,
+				"& .active": {
+					display: "block",
+				},
+			},
+			"& .xterm-viewport": {
+				backgroundColor: "#000",
+				overflowY: "scroll",
+				cursor: "default",
+				position: "absolute",
+				right: 0,
+				left: 0,
+				top: 0,
+				bottom: 0,
+			},
+			"& .xterm-screen": {
+				position: "relative",
+				"& canvas": {
+					position: "absolute",
+					left: 0,
+					top: 0,
+				},
+			},
+			"& .xterm-scroll-area": {
+				visibility: "hidden",
+			},
+			"& .enable-mouse-events": {
+				cursor: "default",
+			},
+			"& .xterm-cursor-pointer": {
+				cursor: "pointer",
+			},
+			"& .column-select.focus": {
+				cursor: "crosshair",
+			},
+			"& .xterm-accessibility:not(.debug)": {
+				position: "absolute",
+				left: 0,
+				top: 0,
+				bottom: 0,
+				right: 0,
+				zIndex: 10,
+				color: "transparent",
+				pointerEvents: "none",
+			},
+			"& .xterm-message": {
+				position: "absolute",
+				left: 0,
+				top: 0,
+				bottom: 0,
+				right: 0,
+				zIndex: 10,
+				color: "transparent",
+				pointerEvents: "none",
+			},
+			"& .xterm-accessibility-tree:not(.debug) *::selection": {
+				color: "transparent",
+			},
+			"& .xterm-accessibility-tree": {
+				userSelect: "text",
+				whiteSpace: "pre",
+			},
+			"& .live-region": {
+				position: "absolute",
+				left: "-9999px",
+				width: "1px",
+				height: "1px",
+				overflow: "hidden",
+			},
+		},
+		".xterm-char-measure-element": {
+			display: "inline-block",
+			visibility: "hidden",
+			position: "absolute",
+			top: 0,
+			left: "-9999em",
+			lineHeight: "normal",
+		},
+		".xterm-dim": {
+			opacity: "1 !important",
+		},
+		".xterm-underline-1": { texDecoration: "underline" },
+		".xterm-underline-2": { textDecoration: "double underline" },
+		".xterm-underline-3": { textDecoration: "wavy underline" },
+		".xterm-underline-4": { textDecoration: "dotted underline" },
+		".xterm-underline-5": { textDecoration: "dashed underline" },
+		".xterm-overline": { textDecoration: "overline" },
+		".xterm-overline.xterm-underline-1": {
+			textDecoration: "overline underline",
+		},
+		".xterm-overline.xterm-underline-2": {
+			textDecoration: "overline double underline",
+		},
+		".xterm-overline.xterm-underline-3": {
+			textDecoration: "overline wavy underline",
+		},
+		".xterm-overline.xterm-underline-4": {
+			textDecoration: "overline dotted underline",
+		},
+		".xterm-overline.xterm-underline-5": {
+			textDecoration: "overline dashed underline",
+		},
+		".xterm-strikethrough": { textDecoration: "line-through" },
+		".xterm-screen .xterm-decoration-container .xterm-decoration": {
+			zIndex: 6,
+			position: "absolute",
+		},
+		".xterm-screen .xterm-decoration-container .xterm-decoration.xterm-decoration-top-layer":
+			{
+				zIndex: 7,
+			},
+		".xterm-decoration-overview-ruler": {
+			zIndex: 8,
+			position: "absolute",
+			top: 0,
+			right: 0,
+			pointerEvents: "none",
+		},
+		".xterm-decoration-top": {
+			zIndex: 2,
+			position: "relative",
+		},
+	}),
+);
+
 const THEME_OPTIONS = {
 	darkTheme: {
 		foreground: "#E9E9E9",
 		background: "#262626",
-		selectionBackground: "#4E4E4E",
+		selectionBackground: "#aaa6a6ff",
 		cursor: "#8BCAFF",
 
 		black: "#000000",
@@ -115,7 +279,7 @@ const THEME_OPTIONS = {
 	lightTheme: {
 		foreground: "#262626", // Dark text for high contrast
 		background: "#FAFAFA", // Light background
-		selectionBackground: "#E0E0E0", // Subtle gray for selection
+		selectionBackground: "#d3d3d3", // Subtle gray for selection
 		cursor: "#0074D9", // Blue accent for cursor (can keep same as dark or a darker blue)
 
 		black: "#000000",
@@ -801,7 +965,7 @@ export const Terminal: React.FC<TerminalProps> = ({
 	// }, [defaultCommand]);
 
 	return (
-		<>
+		<StyledTerminalWrapper darkThemeStyle={terminalTheme}>
 			{
 				<StyledCopyButton darkThemeStyle={terminalTheme}>
 					<IconButton onClick={handleCopyButtonClick}>
@@ -872,6 +1036,6 @@ export const Terminal: React.FC<TerminalProps> = ({
 					</ul>
 				</StyledOption>
 			)}
-		</>
+		</StyledTerminalWrapper>
 	);
 };
