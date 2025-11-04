@@ -37,16 +37,10 @@ describe("Progress Block", async () => {
 				renderEngineId: "progress-id",
 			},
 		);
-		console.log({ result });
 
 		expect(result.current).toBeDefined();
 		expect(result.current.data.type).toBe("linear");
 		// screen.debug()
-
-		// await console.log({ result: result });
-		// await act(async () => {
-		// 	await waitFor(() => console.log({result}))
-		// });
 	});
 	it("Should render the Progress Block", async () => {
 		render(

@@ -31,7 +31,7 @@ export default defineConfig({
 		reporters: ["default"],
 		pool: "threads",
 		coverage: {
-			enabled: true,
+			enabled: false,
 			provider: "v8",
 			reporter: ["text"],
 			reportOnFailure: true,
