@@ -75,7 +75,9 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 	 * Get all of the available MCPs
 	 */
 	const getApps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`,
+		open
+			? `MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"], filterWord=["${debouncedSearch}"])`
+			: null,
 		{
 			data: [],
 		},
