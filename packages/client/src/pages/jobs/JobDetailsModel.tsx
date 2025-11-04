@@ -1,9 +1,13 @@
 import OpenInFullIcon from '@mui/icons-material/OpenInFull';
-import { Autocomplete, Box, Stack, TextField, Typography, createFilterOptions } from "@semoss/ui";
+import { Autocomplete, Box, Stack, TextField, Typography, createFilterOptions, styled } from "@semoss/ui";
 import type { JobBuilder } from "./job.types";
 import {
     JobTypeOptions,
 } from "./job.constants";
+
+const StyledTextField = styled(TextField)({
+    width: '100%',
+});
 
 export const JobDetailsModel = (props: {
 	builder: JobBuilder;
@@ -50,8 +54,8 @@ export const JobDetailsModel = (props: {
             </Stack>
             <Stack>
                 <Typography variant={"subtitle1"} color="textSecondary">Pixel</Typography>
-                <Box onClick={() => setPixelOpen(true)}>
-                    <TextField
+                <Box onClick={() => setPixelOpen(true)} sx={{width: "100%"}}>
+                    <StyledTextField
                         placeholder="Enter Pixel"
                         size="small"
                         value={builder.pixel}

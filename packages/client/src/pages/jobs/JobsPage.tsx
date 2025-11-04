@@ -220,6 +220,7 @@ export function JobsPage() {
 						? setDeleteMultiple(false)
 						: "";
 					getJobs();
+					getFailedJobCount();
 				} else {
 					throw new Error(response.errors[0]);
 				}
