@@ -200,11 +200,6 @@ export class ChatStore {
 				room.legacyLinkWorkspace(options.workspace?.workspace_id);
 			}
 
-			// push options to BE
-			if (Object.keys(options).length > 0) {
-				await room.updateRoomOptions(options);
-			}
-
 			runInAction(() => {
 				// add to the front
 				this._store.order.unshift(roomId);
