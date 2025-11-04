@@ -7,7 +7,7 @@
   "module": "./dist/index.mjs",
   "types": "./dist/types/index.d.ts",
   "exports": {
-    "./globals.css": "./src/styles/globals.css",
+    "./globals.css": "./dist/index.css",
     ".": {
       "types": "./dist/types/index.d.ts",
       "default": "./dist/index.mjs"
