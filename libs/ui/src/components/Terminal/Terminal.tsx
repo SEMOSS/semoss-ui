@@ -1,5 +1,5 @@
 import { type SxProps, styled } from "@mui/material";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import "@xterm/xterm/css/xterm.css";
 import "./terminal.css";
