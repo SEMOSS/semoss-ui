@@ -10,6 +10,7 @@ export interface App {
 	project_name: string;
 	description?: string;
 	project_date_created: string;
+	project_type: string;
 }
 
 export interface Workspace {
