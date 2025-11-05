@@ -29,17 +29,16 @@ export const updateDatabaseSmssProperties = async (
 	databaseId: string,
 	smssProps: string,
 ) => {
-	const url = `${Env.MODULE}/api/e-${databaseId}/updateSmssFile`;
-	const postData = {
-		smss: smssProps,
-		engineId: databaseId,
-	};
-	const response = await post<{
+	return await post<{
 		success: boolean;
-	}>(url, postData, {}).catch((error) => {
-		throw Error(error);
-	});
-	return response;
+	}>(
+		`${Env.MODULE}/api/e-${databaseId}/updateSmssFile`,
+		{
+			smss: smssProps,
+			engineId: databaseId,
+		},
+		{},
+	);
 };
 
 export const setDatabaseDiscoverable = async (
