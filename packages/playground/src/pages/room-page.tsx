@@ -1,4 +1,4 @@
-import { MoveDownIcon, Settings2Icon } from "lucide-react";
+import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import React, { useEffect } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
@@ -24,9 +24,9 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomArtifact,
-	RoomConfiguration,
+	RoomConfigurationButton,
 	RoomInput,
+	RoomSidebar,
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
 
@@ -241,49 +241,13 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								configuration={
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span>
-												<Button
-													size="sm"
-													className={`${
-														room.sidebar.isOpen &&
-														room.sidebar.type ===
-															"CONFIGURATION"
-															? "text-primary"
-															: ""
-													}`}
-													variant={"ghost"}
-													type="button"
-													aria-label="Open Configuration Menu"
-													disabled={room.isLoading}
-													onClick={() => {
-														// toggle open / closed based on the state
-														if (
-															room.sidebar
-																.isOpen &&
-															room.sidebar
-																.type ===
-																"CONFIGURATION"
-														) {
-															room.closeSidebar();
-														} else {
-															room.openSidebar(
-																"CONFIGURATION",
-															);
-														}
-													}}
-												>
-													<Settings2Icon />
-												</Button>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											Open Configuration Menu
-										</TooltipContent>
-									</Tooltip>
+									<RoomConfigurationButton room={room} />
 								}
 								onPrompt={async (prompt, files) => {
+									// update the options
+									await room.updateRoomOptions(room.options);
+
+									// ask the room
 									await room.askMessage(prompt, files);
 
 									return true;
@@ -291,39 +255,17 @@ export const RoomPage = observer(() => {
 							/>
 						</div>
 					</ResizablePanel>
-					{room.sidebar.isOpen &&
-						room.sidebar.type === "CONFIGURATION" && (
-							<>
-								<ResizableHandle className="my-auto h-32" />
-								<ResizablePanel
-									className={"relative p-2"}
-									defaultSize={25}
-								>
-									<RoomConfiguration
-										options={room.options}
-										setOptions={(o) => {
-											room.setOptions(o);
-										}}
-										onClose={() => {
-											room.closeSidebar();
-										}}
-										room={room}
-									/>
-								</ResizablePanel>
-							</>
-						)}
-					{room.sidebar.isOpen &&
-						room.sidebar.type === "ARTIFACTS" && (
-							<>
-								<ResizableHandle className="my-auto h-32" />
-								<ResizablePanel
-									className={"relative p-2"}
-									defaultSize={70}
-								>
-									<RoomArtifact room={room} />
-								</ResizablePanel>
-							</>
-						)}
+					{room.sidebar.isOpen && (
+						<>
+							<ResizableHandle />
+							<ResizablePanel
+								className={"relative p-2"}
+								defaultSize={70}
+							>
+								<RoomSidebar room={room} />
+							</ResizablePanel>
+						</>
+					)}
 				</ResizablePanelGroup>
 			</div>
 		</div>

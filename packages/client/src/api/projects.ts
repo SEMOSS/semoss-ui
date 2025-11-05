@@ -447,3 +447,19 @@ const processPostData = (data: Record<string, unknown>) => {
 	});
 	return postRecordData;
 };
+
+export const updateProjectSmssProperties = async (
+	projectId: string,
+	smssProps: string,
+) => {
+	return await post<{
+		success: boolean;
+	}>(
+		`${Env.MODULE}/api/project-${projectId}/updateSmssFile`,
+		{
+			smss: smssProps,
+			engineId: projectId,
+		},
+		{},
+	);
+};
