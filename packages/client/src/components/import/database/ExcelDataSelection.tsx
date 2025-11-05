@@ -3,6 +3,7 @@ import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import { useEffect, useState } from "react";
 import {
+	Autocomplete,
 	Box,
 	Button,
 	Collapse,
@@ -91,10 +92,6 @@ const StyledBaseTableCell = styled(Table.Cell)(({ theme }) => ({
 	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
 }));
 
-const StyledTableCell = styled(StyledBaseTableCell)(({ theme }) => ({
-	padding: theme.spacing(1, 3, 1, 2),
-}));
-
 const StyedNameTextField = styled(TextField)({
 	"& .MuiOutlinedInput-root.Mui-disabled .MuiOutlinedInput-notchedOutline": {
 		borderStyle: "dotted",
@@ -118,36 +115,18 @@ const StyledTextField = styled(TextField)({
 		padding: "4px 8px",
 	},
 });
-const StyledTypographyRange = styled(Typography)({
-	fontSize: "16px",
-	color: "#212121",
-	"&.MuiTypography-root": {
-		marginBottom: "32px",
-	},
-});
 
 const StyledStack = styled(Stack)({
 	flexDirection: "row",
 	alignItems: "flex-start",
 	flexWrap: "wrap",
 	gap: "16px",
+	width: "100%",
 });
 
 const StyledBox = styled(Box)({
 	display: "flex",
 	flexDirection: "column",
-});
-
-const StyledBoxName = styled(Box)({
-	position: "relative",
-	width: "250px",
-});
-
-const StyledTextFieldBox = styled(Box)({
-	minHeight: "30px",
-	mt: 0.3,
-	width: "100%",
-	overflow: "hidden",
 });
 
 const StyledErrorTypography = styled(Typography)({
@@ -188,9 +167,6 @@ const StyledBaseTableCellIcon = styled(Table.Cell)(({ theme }) => ({
 	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
 	width: "7%",
 }));
-const StyledButton = styled(Button)({
-	bottom: "8px",
-});
 
 interface ParsedResult {
 	headers: string[];
@@ -211,6 +187,12 @@ interface ColumnMetadata {
 	description?: string;
 	logicalName?: string[];
 }
+
+interface RangeOption {
+	label: string;
+	value: "actual" | "custom" | "typed";
+}
+
 
 const ExcelDataSelection = ({
 	files,
@@ -235,6 +217,8 @@ const ExcelDataSelection = ({
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
 	const [selectedSheetKey, setSelectedSheetKey] = useState<string | null>(null);
+	const [selectedRangeOption, setSelectedRangeOption] = useState<Record<string, "actual" | "custom" | "typed">>({});
+	const [customRangeValues, setCustomRangeValues] = useState<Record<string, string>>({});
 	const [editedRanges, setEditedRanges] = useState<Record<string, string>>({});
 
 	const { monolithStore } = useRootStore();
@@ -242,13 +226,20 @@ const ExcelDataSelection = ({
 	const handlePreviewRange = async (
 		filePath: string,
 		sheetKey: string,
-		sheetName: string
+		sheetName: string,
+		customRangeValues: string
 	) => {
-		const range = editedRanges[sheetKey];
-		if (!range) return;
+		setEditedRanges((prev) => ({
+			...prev,
+			[sheetKey]: customRangeValues,
+		}));
+		setSelectedRangeOption((prev) => ({
+			...prev,
+			[sheetKey]: "actual",
+		}));
 
 		try {
-			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${range}"]);`;
+			const pixelExpression = `META|PredictExcelRangeMetadata(filePath=["${filePath}"], sheetName=["${sheetName}"], sheetRange=["${customRangeValues}"]);`;
 			const response = await monolithStore.runQuery(pixelExpression);
 
 			const result: ParsedResult = response.pixelReturn[0].output;
@@ -643,149 +634,178 @@ const ExcelDataSelection = ({
 											</StyledSelectAllButton>
 										</StyledInnerBox>
 
-										<Stack
-											spacing={2}
-											padding={2}
-											direction="row"
-											alignItems="center"
-										>
-											<StyledTypographyRange variant="h6">
-												Range:
-											</StyledTypographyRange>
-											{/* Add your Range textfield + Preview button */}
+										<Stack padding={2}>
 											<Stack spacing={1}>
-												<StyledStack>
+												<Stack>
 													{(() => {
-														const currentValue =
-															editedRanges[sheetKey] ?? range;
+														const currentValue = editedRanges[sheetKey] ?? range;
+														const optionValue =
+															selectedRangeOption[sheetKey] ??
+															(currentValue === range ? "actual" : "custom");
 
-														const isValidFormat =
-															/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.test(
-																currentValue
-															);
-														const isSameRange =
-															currentValue.toUpperCase() ===
-															range.toUpperCase();
+														const customValue =
+															customRangeValues[sheetKey] ?? currentValue;
+
+														const isValidFormat = /^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.test(customValue);
+														const isSameRange = customValue.toUpperCase() === range.toUpperCase();
 														const showError =
-															!isValidFormat ||
-															(!isSmallerRange(range, currentValue) &&
-																!isSameRange);
+															optionValue === "custom" &&
+															(!isValidFormat ||
+																(!isSmallerRange(range, customValue) && !isSameRange));
+
 														const errorText = !isValidFormat
 															? "Invalid format. Use A1:H51 style."
 															: isSameRange
 																? "Range must differ from the actual range."
-																: !isSmallerRange(range, currentValue)
-																	? "Range must be smaller than the actual range."
+																: !isSmallerRange(range, customValue)
+																	? `Range must be smaller than the actual rangeActual range: ${range} .`
 																	: "";
 
 														return (
 															<StyledBox>
-																<StyledBoxName>
-																	<TextField
-																		size="medium"
-																		value={currentValue}
-																		onChange={(e) =>
+																{/* Dropdown for selecting range type */}
+																<Autocomplete<RangeOption, false, false, false>
+																	size="small"
+																	freeSolo={false}
+																	fullWidth
+																	label="Select Range"
+																	options={
+																		[
+																			{ label: range, value: "actual" },
+																			{ label: "Custom Range", value: "custom" },
+																		]
+																	}
+																	value={
+																		selectedRangeOption[sheetKey] === "custom"
+																			? { label: "Custom Range", value: "custom" }
+																			: { label: editedRanges[sheetKey] || range, value: "actual" }
+																	}
+																	onChange={async (_event, newValue: RangeOption | null) => {
+																		if (!newValue) return;
+
+																		if (newValue.value === "custom") {
+																			// Show empty textfield
+																			setSelectedRangeOption((prev) => ({
+																				...prev,
+																				[sheetKey]: "custom",
+																			}));
+																			setCustomRangeValues((prev) => ({
+																				...prev,
+																				[sheetKey]: "",
+																			}));
+																		} else {
+																			setSelectedRangeOption((prev) => ({
+																				...prev,
+																				[sheetKey]: "actual",
+																			}));
 																			setEditedRanges((prev) => ({
 																				...prev,
-																				[sheetKey]: e.target.value
-																					.toUpperCase()
-																					.replace(/\s+/g, ""),
-																			}))
+																				[sheetKey]: range,
+																			}));
+																			setCustomRangeValues((prev) => ({
+																				...prev,
+																				[sheetKey]: "",
+																			}));
+																			await handlePreviewRange(fileName[fileIndex], sheetKey, sheetName, range);
+
 																		}
-																		placeholder="Enter range (e.g. A1:G20)"
-																		sx={{
-																			width: "100%",
-																			border: showError
-																				? "1px solid #d32f2f"
-																				: undefined,
-																			borderRadius: 1,
-																			"& input": {
-																				height: "20px",
-																				boxSizing: "border-box",
-																			},
-																			"& fieldset": {
-																				border: showError ? "none" : undefined,
-																			},
-																		}}
-																		data-testid="range-input"
-																	/>
-																	<StyledTextFieldBox>
+																	}}
+																	filterOptions={(options) => options}
+																	getOptionLabel={(option: RangeOption) => option?.label ?? String(option)}
+																	 renderInput={(params) => (
+    <TextField
+      {...params}
+      label="Select Range"
+      placeholder=""
+      InputProps={{
+        ...params.InputProps,
+        endAdornment: params.InputProps.endAdornment, // keeps dropdown arrow
+      }}
+    />
+  )}
+																/>
+																{/* Only show text field + preview if "Custom Range" is selected */}
+																{optionValue === "custom" && (
+																	<Stack spacing={1} mt={2}>
+																		<StyledTypographyTitle variant="h6">
+																			Custom Range
+																		</StyledTypographyTitle>
+																		<Stack direction={"row"} spacing={1} alignItems={"center"} justifyContent="center">
+																			<TextField
+																				size="medium"
+																				value={customValue}
+																				onChange={(e) =>
+																					setCustomRangeValues((prev) => ({
+																						...prev,
+																						[sheetKey]: e.target.value
+																							.toUpperCase()
+																							.replace(/\s+/g, ""),
+																					}))
+																				}
+																				placeholder="Enter range (e.g. A1:G20)"
+																				sx={{
+																					width: "100%",
+																					border: showError ? "1px solid #d32f2f" : undefined,
+																					borderRadius: 1,
+																					"& input": {
+																						height: "20px",
+																						boxSizing: "border-box",
+																					},
+																					"& fieldset": { border: showError ? "none" : undefined },
+																				}}
+																			/>
+
+																			{(() => {
+																				const userTyped = customValue.trim().length > 0;
+																				const isSmaller =
+																					isValidFormat && isSmallerRange(range, customValue);
+																				const enablePreview =
+																					userTyped && isValidFormat && (isSameRange || isSmaller);
+
+																				return !enablePreview ? (
+																					<Tooltip
+																						title={
+																							!isValidFormat
+																								? "Invalid format (e.g. A1:H51)"
+																								: "Range must be smaller or equal to the actual range"
+																						}
+																					>
+																						<span>
+																							<Button
+																								size="medium"
+																								variant="outlined"
+																								color="primary"
+																								disabled
+																							>
+																								Preview
+																							</Button>
+																						</span>
+																					</Tooltip>
+																				) : (
+																					<Button
+																						size="medium"
+																						variant="outlined"
+																						color="primary"
+																						onClick={() => handlePreviewRange(fileName[fileIndex], sheetKey, sheetName, customValue)}
+																						data-testid="preview-button"
+																					>
+																						Preview
+																					</Button>
+																				);
+																			})()}
+																		</Stack>
+
 																		{showError && (
 																			<StyledErrorTypography variant="body2">
 																				{errorText}
 																			</StyledErrorTypography>
 																		)}
-																	</StyledTextFieldBox>
-																</StyledBoxName>
+																	</Stack>
+																)}
 															</StyledBox>
 														);
 													})()}
-
-													{(() => {
-														const currentValue =
-															editedRanges[sheetKey] ?? range;
-														const userTyped = Object.hasOwn(
-															editedRanges,
-															sheetKey
-														); // detects if user changed the field
-
-														const isValidFormat =
-															/^([A-Z]+)(\d+):([A-Z]+)(\d+)$/i.test(
-																currentValue
-															);
-														const isSameRange =
-															currentValue.toUpperCase() ===
-															range.toUpperCase();
-														const isSmaller =
-															isValidFormat &&
-															isSmallerRange(range, currentValue);
-														const enablePreview =
-															userTyped &&
-															isValidFormat &&
-															(isSameRange || isSmaller);
-
-														return !enablePreview ? (
-															<Tooltip
-																title={
-																	!isValidFormat
-																		? "Invalid format (e.g. A1:H51)"
-																		: "Range must be smaller or equal to the actual range"
-																}
-															>
-																<span>
-																	<StyledButton
-																		size="small"
-																		variant="outlined"
-																		color="primary"
-																		disabled
-																	>
-																		Preview
-																	</StyledButton>
-																</span>
-															</Tooltip>
-														) : (
-															<StyledButton
-																size="small"
-																variant="outlined"
-																color="primary"
-																onClick={() =>
-																	handlePreviewRange(
-																		fileName[fileIndex],
-																		sheetKey,
-																		sheetName
-																	)
-																}
-																data-testid="preview-button"
-															>
-																Preview
-															</StyledButton>
-														);
-													})()}
-
-													<StyledRangeTypography variant="body2">
-														Actual range: {range}
-													</StyledRangeTypography>
-												</StyledStack>
+												</Stack>
 											</Stack>
 										</Stack>
 
