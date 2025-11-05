@@ -34,6 +34,7 @@ export * from "./sonner";
 export * from "./spinner";
 export * from "./stepper";
 export * from "./table";
+export * from "./tabs";
 export * from "./textarea";
 export * from "./theme-provider";
 export * from "./tooltip";
