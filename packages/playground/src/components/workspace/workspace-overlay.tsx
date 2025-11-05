@@ -45,7 +45,6 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 		workspaceId ? `GetWorkspace(${JSON.stringify(workspaceId)});` : null,
 		{ data: null },
 	);
-	console.log(workspaceId, getWorkspace.data);
 
 	/**
 	 * IDs
