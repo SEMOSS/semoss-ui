@@ -22,7 +22,6 @@ import {
 import ColumnEditModal from "./ColumnEditModal";
 import { CSV_UPLOAD_ICONS } from "./database.constants";
 
-
 const StyledHeaderWrapper = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
@@ -76,7 +75,7 @@ const StyledExpandMoreIcon = styled(Icon)<{ collapse?: boolean }>(
 	({ collapse }) => ({
 		transform: collapse ? "rotate(180deg)" : "rotate(0deg)",
 		transition: "transform 0.3s",
-	}),
+	})
 );
 
 const StyledInnerBox = styled(Box)(({ theme }) => ({
@@ -86,12 +85,6 @@ const StyledInnerBox = styled(Box)(({ theme }) => ({
 	padding: theme.spacing(2),
 }));
 
-const StyledSelectAllButton = styled(Button)({
-	textTransform: "capitalize",
-	fontSize: "14px",
-	fontWeight: 600,
-});
-
 const StyledTableContainer = styled(Table.Container)({
 	maxHeight: "400px",
 	overflow: "auto",
@@ -100,10 +93,6 @@ const StyledTableContainer = styled(Table.Container)({
 const StyledBaseTableCell = styled(Table.Cell)(({ theme }) => ({
 	borderBottom: 0,
 	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
-}));
-
-const StyledTableCell = styled(StyledBaseTableCell)(({ theme }) => ({
-	padding: theme.spacing(1, 3, 1, 2),
 }));
 
 const StyedNameTextField = styled(TextField)({
@@ -120,6 +109,56 @@ const StyledFooterWrapper = styled("div")(({ theme }) => ({
 	justifyContent: "space-between",
 	marginTop: theme.spacing(2),
 	gap: theme.spacing(2),
+	marginBottom: theme.spacing(3),
+}));
+
+const StyleFileNameBox = styled(Box)(({ theme }) => ({
+	marginBottom: "15px",
+}));
+
+const StyledTypographyTableTitle = styled(Typography)({
+	fontSize: "16px",
+	color: "#212121",
+	whiteSpace: "nowrap",
+	position: "relative",
+	top: "14px",
+});
+
+const StyledTableStack = styled(Stack)({
+	flexDirection: "row",
+	alignItems: "flex-start",
+	gap: "6px",
+});
+
+const StyledTextFieldBox = styled(Box)({
+	flex: 1,
+});
+
+const StyledTextFieldTypography = styled(Typography)({
+	mt: 0.3,
+	display: "block",
+});
+const StyledTableCellName = styled(StyledBaseTableCell)(({ theme }) => ({
+	padding: theme.spacing(1, 3, 1, 2),
+	width: "66%",
+}));
+const StyledTableCellDataType = styled(StyledBaseTableCell)(({ theme }) => ({
+	padding: theme.spacing(1, 3, 1, 2),
+	width: "20%",
+}));
+const StyledTable = styled(StyledBaseTableCell)(({ theme }) => ({
+	padding: theme.spacing(1, 3, 1, 2),
+	width: "7%",
+}));
+const StyledBaseTableCellName = styled(Table.Cell)(({ theme }) => ({
+	borderBottom: 0,
+	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
+	width: "66%",
+}));
+const StyledBaseTableCellIcon = styled(Table.Cell)(({ theme }) => ({
+	borderBottom: 0,
+	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
+	width: "7%",
 }));
 
 interface ParsedResult {
@@ -129,8 +168,8 @@ interface ParsedResult {
 }
 interface DataSelectionProps {
 	files: ParsedResult[];
-	fileName: string;
-	onImport: (payload: Record<string, unknown>) => Promise<void>;
+	fileName: string[];
+	onImport: (payload: Record<string, unknown>[]) => Promise<void>;
 	onCancel: () => void;
 }
 
@@ -148,24 +187,30 @@ const DataSelection = ({
 	onImport,
 	onCancel,
 }: DataSelectionProps) => {
-	const parsedData = files[0];
-	const [rowEditableState, setRowEditableState] = useState<{
-		[key: number]: boolean;
-	}>(
-		Object.fromEntries(
-			parsedData.cleanHeaders.map((_, index) => [index, true]),
-		),
-	);
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
-	const [columnMetadata, setColumnMetadata] = useState<{
-		[column: string]: ColumnMetadata;
-	}>({});
-	const [collapseAll, setCollapseAll] = useState(true);
+	const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(
+		null
+	);
 
+	const [columnMetadataList, setColumnMetadataList] = useState<
+		Record<string, ColumnMetadata>[]
+	>([]);
+	const [collapseAll, setCollapseAll] = useState<boolean[]>(
+		files.map(() => true)
+	);
+	const [rowEditableStateList, setRowEditableStateList] = useState<
+		Record<number, boolean>[]
+	>([]);
+	const [tableNames, setTableNames] = useState<string[]>(fileName);
+	const [tableNameErrors, setTableNameErrors] = useState<string[]>(
+		fileName.map(() => "")
+	);
+
+	// Initialize column metadata and row states for each file
 	useEffect(() => {
-		if (parsedData?.cleanHeaders) {
-			const initialMeta = Object.fromEntries(
+		const metaList = files.map((parsedData) =>
+			Object.fromEntries(
 				parsedData.cleanHeaders.map((header) => [
 					header,
 					{
@@ -175,316 +220,341 @@ const DataSelection = ({
 						description: "",
 						logicalName: [],
 					},
-				]),
-			);
-			setColumnMetadata(initialMeta);
-		}
-	}, [parsedData]);
+				])
+			)
+		);
+		setColumnMetadataList(metaList);
 
-	const handleNameChange = (index: number, newValue: string) => {
-		const column = parsedData.cleanHeaders[index];
-		setColumnMetadata((prev) => ({
-			...prev,
-			[column]: { ...prev[column], alias: newValue },
-		}));
+		const rowStateList = files.map((parsedData) =>
+			Object.fromEntries(
+				parsedData.cleanHeaders.map((_, index) => [index, true])
+			)
+		);
+		setRowEditableStateList(rowStateList);
+	}, [files]);
+
+	const handleNameChange = (
+		fileIdx: number,
+		index: number,
+		newValue: string
+	) => {
+		const column = files[fileIdx].cleanHeaders[index];
+		setColumnMetadataList((prev) => {
+			const clone = [...prev];
+			clone[fileIdx] = {
+				...clone[fileIdx],
+				[column]: { ...clone[fileIdx][column], alias: newValue },
+			};
+			return clone;
+		});
 	};
 
-	const toggleRowEditState = (index: number) => {
-		setRowEditableState((prev) => ({
-			...prev,
-			[index]: !prev[index],
-		}));
+	const toggleRowEditState = (fileIdx: number, index: number) => {
+		setRowEditableStateList((prev) => {
+			const clone = [...prev];
+			clone[fileIdx] = {
+				...clone[fileIdx],
+				[index]: !clone[fileIdx][index],
+			};
+			return clone;
+		});
 	};
 
-	const handleOpenModal = (column: string) => {
+	const handleOpenModal = (fileIdx: number, column: string) => {
 		setSelectedColumn(column);
+		setSelectedFileIndex(fileIdx);
 		setOpenModal(true);
 	};
 
-	const handleImport = () => {
-		const originalHeaders = parsedData.cleanHeaders;
-		const updatedHeaders = originalHeaders.map(
-			(header) => columnMetadata[header]?.alias || header,
-		);
-
-		const dataTypeMap: Record<string, string> = {};
-		const newHeaders: Record<string, string> = {};
-		const descriptionMap: Record<string, string> = {};
-		const logicalNamesMap: Record<string, string[]> = {};
-		const additionalDataTypes: Record<string, string> = {};
-
-		originalHeaders.forEach((original, index) => {
-			const updated = updatedHeaders[index];
-			const userMeta = columnMetadata[original] || {};
-			const dataType =
-				userMeta.dataType || parsedData.dataTypes[original];
-			const alias = userMeta.alias;
-
-			dataTypeMap[updated] = dataType;
-
-			if (alias && alias !== original) {
-				newHeaders[updated] = original;
-			}
-
-			if (userMeta.description) {
-				descriptionMap[updated] = userMeta.description;
-			}
-
-			if (
-				Array.isArray(userMeta.logicalName) &&
-				userMeta.logicalName.length > 0
-			) {
-				logicalNamesMap[updated] = userMeta.logicalName;
-			}
-
-			if (userMeta.format) {
-				additionalDataTypes[updated] = userMeta.format;
-			}
+	const handleTableNameChange = (index: number, newValue: string) => {
+		setTableNames((prev) => {
+			const updated = [...prev];
+			updated[index] = newValue;
+			return updated;
 		});
 
-		onImport({
-			...files,
-			dataTypeMap,
-			newHeaders,
-			descriptionMap: Object.keys(descriptionMap).length
-				? descriptionMap
-				: {},
-			logicalNamesMap: Object.keys(logicalNamesMap).length
-				? logicalNamesMap
-				: {},
-			additionalDataTypes: Object.keys(additionalDataTypes).length
-				? additionalDataTypes
-				: {},
+		// Live validation
+		setTableNameErrors((prev) => {
+			const updated = [...prev];
+			if (!newValue.trim()) {
+				updated[index] = "Enter valid table name";
+			} else {
+				updated[index] = "";
+			}
+			return updated;
 		});
 	};
 
+	const handleImport = () => {
+		if (tableNames.some((name) => !name.trim())) {
+			setTableNameErrors(
+				tableNames.map((n) => (!n.trim() ? "Enter valid table name" : ""))
+			);
+			return;
+		}
+
+		const tables = files.map((parsedData, fileIdx) => {
+			const originalHeaders = parsedData.cleanHeaders;
+			const metadata = columnMetadataList[fileIdx];
+			const rowState = rowEditableStateList[fileIdx];
+
+			const activeHeaders = originalHeaders.filter(
+				(_, index) => rowState[index]
+			);
+
+			const dataTypeMap: Record<string, string> = {};
+			const newHeaders: Record<string, string> = {};
+			const descriptionMap: Record<string, string> = {};
+			const logicalNamesMap: Record<string, string[]> = {};
+			const additionalDataTypes: Record<string, string> = {};
+
+			activeHeaders.forEach((original) => {
+				const userMeta = metadata[original] || {};
+				const updated = userMeta.alias || original;
+				const dataType = userMeta.dataType || parsedData.dataTypes[original];
+
+				dataTypeMap[updated] = dataType;
+
+				if (userMeta.alias && userMeta.alias !== original) {
+					newHeaders[updated] = original;
+				}
+				if (userMeta.description) {
+					descriptionMap[updated] = userMeta.description;
+				}
+				if (
+					Array.isArray(userMeta.logicalName) &&
+					userMeta.logicalName.length > 0
+				) {
+					logicalNamesMap[updated] = userMeta.logicalName;
+				}
+				if (userMeta.format) {
+					additionalDataTypes[updated] = userMeta.format;
+				}
+			});
+
+			return {
+				fileName: fileName[fileIdx],
+				table: tableNames[fileIdx],
+				filePath: [fileName[fileIdx]],
+				dataTypeMap,
+				newHeaders,
+				descriptionMap,
+				logicalNamesMap,
+				additionalDataTypes,
+				existing: fileIdx > 0 ? true : false,
+			};
+		});
+
+		onImport(tables);
+	};
+	const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
+
 	return (
 		<>
-			<StyledHeaderWrapper>
-				<Stack direction={"row"}>
-					<img src={CSV_UPLOAD_ICONS.FILE_EXCEL} alt="Excel File" />
-					<StyledTypography variant="h6">{fileName}</StyledTypography>
-				</Stack>
-				<StyledCollapseButton
-					variant="outlined"
-					size="large"
-					onClick={() => setCollapseAll(!collapseAll)}
-					startIcon={collapseAll ? <UnfoldLess /> : <UnfoldMore />}
-				>
-					{collapseAll ? "Collapse All" : "Expand All"}
-				</StyledCollapseButton>
-			</StyledHeaderWrapper>
+			{files.map((parsedData, fileIdx) => (
+				<StyleFileNameBox key={fileName[fileIdx]}>
+					{/* Header Section */}
+					<StyledHeaderWrapper>
+						<Stack direction={"row"}>
+							<img src={CSV_UPLOAD_ICONS.FILE_EXCEL} alt="Excel File" />
+							<StyledTypography variant="h6">
+								{fileName[fileIdx]}
+							</StyledTypography>
+						</Stack>
+						<StyledCollapseButton
+							variant="outlined"
+							size="large"
+							data-testid="collapse-button"
+							onClick={() =>
+								setCollapseAll((prev) =>
+									prev.map((v, i) => (i === fileIdx ? !v : v))
+								)
+							}
+							startIcon={collapseAll[fileIdx] ? <UnfoldLess /> : <UnfoldMore />}
+						>
+							{collapseAll[fileIdx] ? "Collapse All" : "Expand All"}
+						</StyledCollapseButton>
+					</StyledHeaderWrapper>
 
-			<StyledBodyWrapper>
-				{/* Summary Header */}
-				<StyledSummaryHeader
-					onClick={() => setCollapseAll(!collapseAll)}
-				>
-					<StyledTypographyTitle variant="h6">
-						Sheet Name : {fileName}
-					</StyledTypographyTitle>
-					<StyledExpandMoreIcon collapse={collapseAll}>
-						<ExpandMore />
-					</StyledExpandMoreIcon>
-				</StyledSummaryHeader>
-
-				{/* Collapsible Content */}
-				<Collapse in={collapseAll}>
-					<Box>
-						<StyledInnerBox>
+					{/* Body Section */}
+					<StyledBodyWrapper>
+						<StyledSummaryHeader
+							onClick={() =>
+								setCollapseAll((prev) =>
+									prev.map((v, i) => (i === fileIdx ? !v : v))
+								)
+							}
+						>
 							<StyledTypographyTitle variant="h6">
-								Table Name: {fileName}
+								Sheet Name: {fileName[fileIdx]}
 							</StyledTypographyTitle>
-							<StyledSelectAllButton
-								size="small"
-								variant="text"
-								color="primary"
-								onClick={() => {
-									const areAllSelected = Object.values(
-										rowEditableState,
-									).every((row) => row);
-									const newState = Object.fromEntries(
-										Object.keys(rowEditableState).map(
-											(key) => [key, !areAllSelected],
-										),
-									);
-									setRowEditableState(newState);
-								}}
-							>
-								{Object.values(rowEditableState).every((v) => v)
-									? "Unselect All"
-									: "Select All"}
-							</StyledSelectAllButton>
-						</StyledInnerBox>
+							<StyledExpandMoreIcon collapse={collapseAll[fileIdx]} data-testid="expand-icon">
+								<ExpandMore />
+							</StyledExpandMoreIcon>
+						</StyledSummaryHeader>
 
-						{/* Table */}
-						<StyledTableContainer>
-							<Table>
-								<Table.Head>
-									<Table.Row>
-										<StyledTableCell sx={{ width: "66%" }}>
-											<StyledTableTypography variant="h6">
-												Name
-											</StyledTableTypography>
-										</StyledTableCell>
-										<StyledTableCell
-											sx={{
-												width: "20%",
-											}}
-										>
-											<StyledTableTypography variant="h6">
-												Data Type
-											</StyledTableTypography>
-										</StyledTableCell>
-										<StyledTableCell
-											sx={{
-												width: "7%",
-											}}
-										/>
-										<StyledTableCell
-											sx={{
-												width: "7%",
-											}}
-										/>
-									</Table.Row>
-								</Table.Head>
+						<Collapse in={collapseAll[fileIdx]}>
+							<Box>
+								<StyledInnerBox>
+									<StyledTableStack>
+										<StyledTypographyTableTitle variant="h6">
+											Table Name:
+										</StyledTypographyTableTitle>
 
-								<Table.Body>
-									{parsedData.cleanHeaders.map(
-										(column, index) => (
-											<Table.Row key={column}>
-												{/* Name */}
-												<StyledBaseTableCell
-													sx={{
-														width: "66%",
-													}}
+										<StyledTextFieldBox>
+											<TextField
+												fullWidth
+												size="small"
+												placeholder="Enter table name"
+												value={tableNames[fileIdx] || ""}
+												onChange={(e) =>
+													handleTableNameChange(fileIdx, e.target.value)
+												}
+												data-testid="table-name-input"
+												// @ts-expect-error TODO FIX
+												error={!tableNames[fileIdx]?.trim()}
+											/>
+											{!tableNames[fileIdx]?.trim() && (
+												<StyledTextFieldTypography
+													variant="caption"
+													color="error"
 												>
-													<StyedNameTextField
-														fullWidth
-														value={
-															columnMetadata[
-																column
-															]?.alias ?? column
-														}
-														onChange={(e) =>
-															handleNameChange(
-																index,
-																e.target.value,
-															)
-														}
-														variant="outlined"
-														size="small"
-														disabled={
-															!rowEditableState[
-																index
-															]
-														}
-													/>
-												</StyledBaseTableCell>
+													Enter a valid table name
+												</StyledTextFieldTypography>
+											)}
+										</StyledTextFieldBox>
+									</StyledTableStack>
+								</StyledInnerBox>
 
-												{/* Data Type */}
-												<StyledBaseTableCell
-													sx={{
-														width: "20%",
-														pointerEvents:
-															!rowEditableState[
-																index
-															]
-																? "none"
-																: "auto",
-													}}
-												>
-													<Typography
-														variant="h6"
-														sx={{
-															fontSize: "14px",
-															color: !rowEditableState[
-																index
-															]
-																? "#9E9E9E"
-																: "#212121",
-														}}
-													>
-														{columnMetadata[column]
-															?.dataType ||
-															"STRING"}
-													</Typography>
-												</StyledBaseTableCell>
-
-												{/* Edit Button */}
-												<StyledBaseTableCell
-													sx={{
-														width: "7%",
-													}}
-												>
-													<IconButton
-														size="small"
-														onClick={() =>
-															handleOpenModal(
-																column,
-															)
-														}
-														disabled={
-															!rowEditableState[
-																index
-															]
-														}
-													>
-														<CreateOutlined />
-													</IconButton>
-												</StyledBaseTableCell>
-												{/* Toggle Button */}
-												<StyledBaseTableCell
-													sx={{
-														width: "7%",
-													}}
-												>
-													<IconButton
-														onClick={() =>
-															toggleRowEditState(
-																index,
-															)
-														}
-													>
-														{rowEditableState[
-															index
-														] ? (
-															<CloseIcon color="error" />
-														) : (
-															<AddIcon color="success" />
-														)}
-													</IconButton>
-												</StyledBaseTableCell>
+								{/* Table Section */}
+								<StyledTableContainer>
+									<Table>
+										<Table.Head>
+											<Table.Row>
+												<StyledTableCellName>
+													<StyledTableTypography variant="h6">
+														Name
+													</StyledTableTypography>
+												</StyledTableCellName>
+												<StyledTableCellDataType>
+													<StyledTableTypography variant="h6">
+														Data Type
+													</StyledTableTypography>
+												</StyledTableCellDataType>
+												<StyledTable />
+												<StyledTable />
 											</Table.Row>
-										),
-									)}
-								</Table.Body>
-							</Table>
-						</StyledTableContainer>
-					</Box>
-				</Collapse>
-			</StyledBodyWrapper>
+										</Table.Head>
 
+										<Table.Body>
+											{parsedData.cleanHeaders.map((column, index) => (
+												<Table.Row key={column} data-testid={`table-row-${fileIdx}-${index}`}>
+													{/* Name */}
+													<StyledBaseTableCellName data-testid={`table-cell-name-${fileIdx}-${index}`}>
+														<StyedNameTextField
+															fullWidth
+															value={
+																columnMetadataList[fileIdx]?.[column]?.alias ??
+																column
+															}
+															onChange={(e) =>
+																handleNameChange(fileIdx, index, e.target.value)
+															}
+															variant="outlined"
+															size="small"
+															disabled={!rowEditableStateList[fileIdx]?.[index]}
+															data-testid={`column-name-input-${fileIdx}-${index}`}
+														/>
+													</StyledBaseTableCellName >
+
+													{/* Data Type */}
+													<StyledBaseTableCell data-testid={`table-cell-datatype-${fileIdx}-${index}`}>
+														<Typography
+															variant="h6"
+															sx={{
+																fontSize: "14px",
+																color: !rowEditableStateList[fileIdx]?.[index]
+																	? "#9E9E9E"
+																	: "#212121",
+															}}
+															data-testid={`column-datatype-${fileIdx}-${index}`}
+														>
+															{columnMetadataList[fileIdx]?.[column]
+																?.dataType || "STRING"}
+														</Typography>
+													</StyledBaseTableCell >
+
+													{/* Edit */}
+													<StyledBaseTableCellIcon data-testid={`table-cell-edit-${fileIdx}-${index}`}>
+														<IconButton
+															size="small"
+															onClick={() => handleOpenModal(fileIdx, column)}
+															disabled={!rowEditableStateList[fileIdx]?.[index]}
+															data-testid={`edit-button-${fileIdx}-${index}`}
+														>
+															<CreateOutlined />
+														</IconButton>
+													</StyledBaseTableCellIcon>
+
+													{/* Toggle */}
+													<StyledBaseTableCellIcon data-testid={`table-cell-toggle-${fileIdx}-${index}`}>
+														<IconButton
+															onClick={() => toggleRowEditState(fileIdx, index)}
+															data-testid={`toggle-button-${fileIdx}-${index}`}
+														>
+															{rowEditableStateList[fileIdx]?.[index] ? (
+																<CloseIcon color="error" data-testid={`toggle-icon-close-${fileIdx}-${index}`} />
+															) : (
+																<AddIcon color="success" data-testid={`toggle-icon-add-${fileIdx}-${index}`}/>
+															)}
+														</IconButton>
+													</StyledBaseTableCellIcon>
+												</Table.Row>
+											))}
+										</Table.Body>
+									</Table>
+								</StyledTableContainer>
+							</Box>
+						</Collapse>
+					</StyledBodyWrapper>
+				</StyleFileNameBox>
+			))}
+
+			{/* Footer */}
 			<StyledFooterWrapper>
-				<Button variant="outlined" color="primary" onClick={onCancel}>
+				<Button variant="outlined" color="primary" onClick={onCancel} data-testid="back-button">
 					Back
 				</Button>
 				<Button
 					variant="contained"
 					color="primary"
 					onClick={handleImport}
+					disabled={isAnyTableNameInvalid}
+					data-testid="import-button"
 				>
 					Import
 				</Button>
 			</StyledFooterWrapper>
 
-			<ColumnEditModal
-				open={openModal}
-				onClose={() => setOpenModal(false)}
-				selectedColumn={selectedColumn}
-				columnMetadata={columnMetadata}
-				setColumnMetadata={setColumnMetadata}
-			/>
+			{/* Modal */}
+			{selectedFileIndex !== null && (
+				<ColumnEditModal
+					open={openModal}
+					onClose={() => setOpenModal(false)}
+					selectedColumn={selectedColumn}
+					columnMetadata={columnMetadataList[selectedFileIndex]}
+					setColumnMetadata={(updated) =>
+						setColumnMetadataList((prev) => {
+							const clone = [...prev];
+							clone[selectedFileIndex] =
+								typeof updated === "function"
+									? updated(clone[selectedFileIndex])
+									: updated;
+							return clone;
+						})
+					}
+				/>
+			)}
 		</>
 	);
 };
