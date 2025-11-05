@@ -1036,7 +1036,7 @@ export const ImportForm = (props) => {
 													<Typography
 														variant={"body1"}
 													>
-														{val.label}
+														{val.label}{val.rules.required ? " *" : ""}
 													</Typography>
 													<FileDropzone
 														multiple={false}
