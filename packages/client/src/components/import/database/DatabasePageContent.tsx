@@ -21,7 +21,10 @@ import {
 import { uploadFile } from "@/api";
 import { useRootStore } from "@/hooks";
 import { DatabaseForm } from "./DatabaseForm";
-import { DATABASE_CONNECTION } from "./database.constants";
+import {
+	CATEGORY_DESCRIPTIONS,
+	DATABASE_CONNECTION,
+} from "./database.constants";
 
 const StyledContainer = styled("div")({
 	display: "flex",
@@ -201,6 +204,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const [filedata, setFiledata] = useState(null);
 
 	const DatabaseOptions = DATABASE_CONNECTION;
+	const CategoryDescription = CATEGORY_DESCRIPTIONS;
 
 	const pageTitle = "Connect to database";
 	const pageDescription =
@@ -385,6 +389,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 						description={`Fill out ${selectedDatabase.name} details in order to add database to catalog`}
 						fields={selectedDatabase.fields}
 						advanced={selectedDatabase.advanced}
+						categoryDescription={CategoryDescription}
 					/>
 				</div>
 			) : (

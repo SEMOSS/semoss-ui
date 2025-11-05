@@ -1528,192 +1528,192 @@ export const DATABASE_CONNECTION = {
 			],
 		},
 
-      {
-        name: "Derby",
-        disable: true,
-        icon: DERBY,
-        fields: [
-          {
-            fieldName: "RDBMS_TYPE",
-            label: "Driver Name",
-            defaultValue: "DERBY",
-            options: {
-              component: "text-field",
-            },
-            disabled: true,
-            rules: { required: true },
-            hidden: true,
-          },
-          {
-            fieldName: "NAME",
-            label: "Catalog Name",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: {
-              required: true,
-              pattern: {
-                value: /^[\w\-\s]+$/,
-                message:
-                  "Catalog names can only contain alphanumeric characters and dashes.",
-              },
-              custom: {
-                value: 'CheckEngineName ( "[VALUE]") ;',
-                message:
-                  "This Catalog name has already been used, please try another.",
-              },
-            },
-          },
-          {
-            fieldName: "DATABASE_DESCRIPTION",
-            label: "Database Description",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "DATABASE_TAGS",
-            label: "Tags",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "hostname",
-            label: "Host Name",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: true },
-          },
-          {
-            fieldName: "port",
-            label: "Port",
-            defaultValue: "1527",
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            rules: { required: false, min: 0 },
-          },
-          {
-            fieldName: "schema",
-            label: "Schema",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "USERNAME",
-            label: "Username",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "PASSWORD",
-            label: "Password",
-            defaultValue: "",
-            options: {
-              component: "password",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "additional",
-            label: "Additional Parameters",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "CONNECTION_URL",
-            label: "JDBC Url",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
+		{
+			name: "Derby",
+			disable: true,
+			icon: DERBY,
+			fields: [
+				{
+					fieldName: "RDBMS_TYPE",
+					label: "Driver Name",
+					defaultValue: "DERBY",
+					options: {
+						component: "text-field",
+					},
+					disabled: true,
+					rules: { required: true },
+					hidden: true,
+				},
+				{
+					fieldName: "NAME",
+					label: "Catalog Name",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: {
+						required: true,
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					fieldName: "DATABASE_DESCRIPTION",
+					label: "Database Description",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "DATABASE_TAGS",
+					label: "Tags",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "hostname",
+					label: "Host Name",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: true },
+				},
+				{
+					fieldName: "port",
+					label: "Port",
+					defaultValue: "1527",
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					rules: { required: false, min: 0 },
+				},
+				{
+					fieldName: "schema",
+					label: "Schema",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "USERNAME",
+					label: "Username",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "PASSWORD",
+					label: "Password",
+					defaultValue: "",
+					options: {
+						component: "password",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "additional",
+					label: "Additional Parameters",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "CONNECTION_URL",
+					label: "JDBC Url",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
 
-          {
-            fieldName: "FETCH_SIZE",
-            label: "Fetch Size",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "CONNECTION_TIMEOUT",
-            label: "Connection Timeout",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "USE_CONNECTION_POOLING",
-            label: "Use Connection Pooling",
-            defaultValue: false,
-            rules: { required: false },
-            options: {
-              component: "checkbox",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "POOL_MIN_SIZE",
-            label: "Pool Min Size",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "POOL_MAX_SIZE",
-            label: "Pool Max Size",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-        ],
-      },
+				{
+					fieldName: "FETCH_SIZE",
+					label: "Fetch Size",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "CONNECTION_TIMEOUT",
+					label: "Connection Timeout",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "USE_CONNECTION_POOLING",
+					label: "Use Connection Pooling",
+					defaultValue: false,
+					rules: { required: false },
+					options: {
+						component: "checkbox",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "POOL_MIN_SIZE",
+					label: "Pool Min Size",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "POOL_MAX_SIZE",
+					label: "Pool Max Size",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+			],
+		},
 		{
 			name: "Derby",
 			disable: false,
@@ -2157,192 +2157,192 @@ export const DATABASE_CONNECTION = {
 			],
 		},
 
-      {
-        name: "Hive",
-        disable: true,
-        icon: HIVE,
-        fields: [
-          {
-            fieldName: "RDBMS_TYPE",
-            label: "Driver Name",
-            defaultValue: "HIVE",
-            options: {
-              component: "text-field",
-            },
-            disabled: true,
-            rules: { required: true },
-            hidden: true,
-          },
-          {
-            fieldName: "NAME",
-            label: "Catalog Name",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: {
-              required: true,
-              pattern: {
-                value: /^[\w\-\s]+$/,
-                message:
-                  "Catalog names can only contain alphanumeric characters and dashes.",
-              },
-              custom: {
-                value: 'CheckEngineName ( "[VALUE]") ;',
-                message:
-                  "This Catalog name has already been used, please try another.",
-              },
-            },
-          },
-          {
-            fieldName: "DATABASE_DESCRIPTION",
-            label: "Database Description",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "DATABASE_TAGS",
-            label: "Tags",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "hostname",
-            label: "Host Name",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: true },
-          },
-          {
-            fieldName: "port",
-            label: "Port",
-            defaultValue: "1000",
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            rules: { required: false, min: 0 },
-          },
-          {
-            fieldName: "schema",
-            label: "Schema",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "USERNAME",
-            label: "Username",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "PASSWORD",
-            label: "Password",
-            defaultValue: "",
-            options: {
-              component: "password",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "additional",
-            label: "Additional Parameters",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
-          {
-            fieldName: "CONNECTION_URL",
-            label: "JDBC Url",
-            defaultValue: "",
-            options: {
-              component: "text-field",
-            },
-            disabled: false,
-            rules: { required: false },
-          },
+		{
+			name: "Hive",
+			disable: true,
+			icon: HIVE,
+			fields: [
+				{
+					fieldName: "RDBMS_TYPE",
+					label: "Driver Name",
+					defaultValue: "HIVE",
+					options: {
+						component: "text-field",
+					},
+					disabled: true,
+					rules: { required: true },
+					hidden: true,
+				},
+				{
+					fieldName: "NAME",
+					label: "Catalog Name",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: {
+						required: true,
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
+				},
+				{
+					fieldName: "DATABASE_DESCRIPTION",
+					label: "Database Description",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "DATABASE_TAGS",
+					label: "Tags",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "hostname",
+					label: "Host Name",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: true },
+				},
+				{
+					fieldName: "port",
+					label: "Port",
+					defaultValue: "1000",
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					rules: { required: false, min: 0 },
+				},
+				{
+					fieldName: "schema",
+					label: "Schema",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "USERNAME",
+					label: "Username",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "PASSWORD",
+					label: "Password",
+					defaultValue: "",
+					options: {
+						component: "password",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "additional",
+					label: "Additional Parameters",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
+				{
+					fieldName: "CONNECTION_URL",
+					label: "JDBC Url",
+					defaultValue: "",
+					options: {
+						component: "text-field",
+					},
+					disabled: false,
+					rules: { required: false },
+				},
 
-          {
-            fieldName: "FETCH_SIZE",
-            label: "Fetch Size",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "CONNECTION_TIMEOUT",
-            label: "Connection Timeout",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "USE_CONNECTION_POOLING",
-            label: "Use Connection Pooling",
-            defaultValue: false,
-            rules: { required: false },
-            options: {
-              component: "checkbox",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "POOL_MIN_SIZE",
-            label: "Pool Min Size",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-          {
-            fieldName: "POOL_MAX_SIZE",
-            label: "Pool Max Size",
-            defaultValue: "",
-            rules: { required: false, min: 0 },
-            options: {
-              component: "number",
-            },
-            disabled: false,
-            advanced: true,
-          },
-        ],
-      },
+				{
+					fieldName: "FETCH_SIZE",
+					label: "Fetch Size",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "CONNECTION_TIMEOUT",
+					label: "Connection Timeout",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "USE_CONNECTION_POOLING",
+					label: "Use Connection Pooling",
+					defaultValue: false,
+					rules: { required: false },
+					options: {
+						component: "checkbox",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "POOL_MIN_SIZE",
+					label: "Pool Min Size",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+				{
+					fieldName: "POOL_MAX_SIZE",
+					label: "Pool Max Size",
+					defaultValue: "",
+					rules: { required: false, min: 0 },
+					options: {
+						component: "number",
+					},
+					disabled: false,
+					advanced: true,
+				},
+			],
+		},
 		{
 			name: "Hive",
 			disable: false,
@@ -5126,6 +5126,16 @@ export const DATABASE_CONNECTION = {
 		},
 	],
 };
+
+export const CATEGORY_DESCRIPTIONS = {
+	General:
+		"Contains descriptive and organizational details about the database, such as name, description, and tags.",
+	Settings:
+		"Defines the technical configuration needed to connect to the database, including host, port, schema, and connection parameters.",
+	Credentials:
+		"Stores authentication details required to securely access the database, such as username and password.",
+};
+
 export const ENGINE_IMAGES = {
 	DATABASE: [
 		{

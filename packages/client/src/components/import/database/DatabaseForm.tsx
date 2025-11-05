@@ -59,7 +59,13 @@ export interface ParsedResult {
 	nodeProp: Record<string, string[]>;
 }
 
-export const DatabaseForm = ({ title, description, fields, advanced }) => {
+export const DatabaseForm = ({
+	title,
+	description,
+	fields,
+	advanced,
+	categoryDescription,
+}) => {
 	const [step, setStep] = useState<
 		"fileupload" | "table" | "metaModel" | "propFile"
 	>("fileupload");
@@ -109,6 +115,7 @@ export const DatabaseForm = ({ title, description, fields, advanced }) => {
 
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
+	const categoryDescriptions = categoryDescription;
 
 	const databaseType = watch("DATABASE_TYPE");
 
@@ -225,7 +232,7 @@ export const DatabaseForm = ({ title, description, fields, advanced }) => {
 				if (filePathFromExpression) {
 					const name =
 						filePathFromExpression.split(/[/\\]/).pop() || "";
-						fileNames.push(name)
+					fileNames.push(name);
 				}
 				setFilePath(filePathFromExpression);
 				parsedResults.push(output);
@@ -332,9 +339,11 @@ export const DatabaseForm = ({ title, description, fields, advanced }) => {
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
 		setIsLoading(true);
-		const pixel = payloadObject.map((pixel) => {
-			return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
-		}).join("");
+		const pixel = payloadObject
+			.map((pixel) => {
+				return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
+			})
+			.join("");
 
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -359,8 +368,7 @@ export const DatabaseForm = ({ title, description, fields, advanced }) => {
 				message: "An error occurred while processing the request.",
 			});
 			console.error("Error executing query:", error);
-		}
-		finally {
+		} finally {
 			setIsLoading(false);
 		}
 	};
@@ -753,15 +761,16 @@ export const DatabaseForm = ({ title, description, fields, advanced }) => {
 											>
 												{category}
 											</Typography>
-											{/* <Typography
-								variant="body2"
-								data-testId={`model-importForm-category-description`}
-								color="textSecondary"
-							>
-								{importableModelsCategory[selectedProvider]?.[
-									category
-								] ?? "No description available."}
-							 </Typography> */}
+											<Typography
+												variant="body2"
+												data-testId={`model-importForm-category-description`}
+												color="textSecondary"
+											>
+												{categoryDescriptions[
+													category
+												] ??
+													"No description available."}
+											</Typography>
 										</Stack>
 										<Stack spacing={2} sx={{ flex: 2 }}>
 											{grouped[category].map((f) =>
@@ -811,7 +820,11 @@ export const DatabaseForm = ({ title, description, fields, advanced }) => {
 								data-testid="database-form-submit"
 								disabled={!formState.isValid}
 							>
-								{title ==="Excel" ||title === "CSV" || title === "TSV"? "Next": "Create Database" }
+								{title === "Excel" ||
+								title === "CSV" ||
+								title === "TSV"
+									? "Next"
+									: "Create Database"}
 							</StyledSubmitButton>
 						</StyledFlexEnd>
 					</StyledBox>
