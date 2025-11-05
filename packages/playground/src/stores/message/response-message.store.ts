@@ -39,6 +39,8 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				SMSS_MCP_EXECUTION: McpExecution;
 				SMSS_PROJECT_NAME?: string;
 				SMSS_PROJECT_ID?: string;
+				SMSS_ENGINE_ID?: string;
+				SMSS_ENGINE_NAME?: string;
 			};
 		};
 
@@ -329,7 +331,7 @@ paramValues=[${JSON.stringify({
 
 		// wait for the pixel to run
 		const response = await room.runRoomPixel<[string]>(
-			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], engine=["${tool.parameters.database}"], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
+			`RunMCPTool(project = [ "${tool._meta.map.SMSS_PROJECT_ID}" ], engine=["${tool._meta.map.SMSS_ENGINE_ID}"], function=[ "${tool.name}" ], paramValues=[ ${JSON.stringify(tool.parameters)} ]);`,
 		);
 
 		const { output } = response.pixelReturn[0];
