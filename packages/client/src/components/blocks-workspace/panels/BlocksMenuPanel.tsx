@@ -177,10 +177,10 @@ export const BlocksMenuPanel = observer((props: AddBlocksMenuProps) => {
 		runPixel(`DeleteBlock(blockId = "${blockId}", hardDelete = true)`).then(
 			(res) => {
 				const { errors } = res;
-				if (errors.length) {
+				if (errors.length || !res.pixelReturn[0].output) {
 					notification.add({
 						color: "error",
-						message: errors.join(""),
+						message: errors.join("") ?? "Error deleting block",
 					});
 				} else {
 					notification.add({

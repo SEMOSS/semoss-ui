@@ -1,3 +1,3 @@
-export * from "./InputMessage";
-export * from "./PlanMessage";
-export * from "./ResponseMessage";
+export * from "./input-message";
+export * from "./plan-message";
+export * from "./response-message";

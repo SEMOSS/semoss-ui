@@ -33,6 +33,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useWorkspace } from "@/hooks";
+import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
@@ -114,7 +115,7 @@ const StyledCard = styled(Card, {
 	const shape = theme.shape as CustomShapeOptions;
 
 	return {
-		overflow: "hidden",
+		overflow: "visible", // Changed from hidden to visible for display (Pixel) reactor methods auto-complete suggestions
 		flexGrow: 1,
 		cursor: isCardCellSelected ? "inherit" : "pointer",
 		border: isCardCellSelected
@@ -524,6 +525,8 @@ export const NotebookCell = observer(
 					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
 				);
 
+				workspace.setLoading(false);
+
 				// Handle pixel call errors
 				if (errors?.length) {
 					notification.add({
@@ -587,7 +590,6 @@ export const NotebookCell = observer(
 						},
 					},
 				});
-				workspace.setLoading(false);
 			} catch (error) {
 				console.error("Error in makeCellMCP:", error);
 				workspace.setLoading(false);
@@ -637,25 +639,26 @@ export const NotebookCell = observer(
 					<StyledCellActions in={showCellActions}>
 						<Stack gap={1} direction={"row"} alignItems={"center"}>
 							<StyledButtonGroup variant="outlined">
-								<StyledButtonGroupButton
-									title="Make Available through MCP"
-									size="small"
-									disabled={
-										cell.isLoading ||
-										!workspace.agentModelEngine ||
-										cell.config.widget !== "code"
-									}
-									onClick={(e) => {
-										// stop propogation to card parent so newly created cell will be selected
-										e.stopPropagation();
-										// helper fn to make the cell mcp
-										makeCellMCP();
-									}}
-								>
-									<StyledButtonLabel>
-										<SmartToy />
-									</StyledButtonLabel>
-								</StyledButtonGroupButton>
+								{cell.query.id === MCP_NOTEBOOK_NAME && (
+									<StyledButtonGroupButton
+										title="Make Available through MCP"
+										size="small"
+										disabled={
+											cell.isLoading ||
+											!workspace.agentModelEngine
+										}
+										onClick={(e) => {
+											// stop propogation to card parent so newly created cell will be selected
+											e.stopPropagation();
+											// helper fn to make the cell mcp
+											makeCellMCP();
+										}}
+									>
+										<StyledButtonLabel>
+											<SmartToy />
+										</StyledButtonLabel>
+									</StyledButtonGroupButton>
+								)}
 								<StyledButtonGroupButton
 									title="Run this cell and below"
 									size="small"
