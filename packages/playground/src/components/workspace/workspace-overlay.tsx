@@ -1,6 +1,6 @@
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
-import { useDebouncedValue } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Checkbox,
@@ -25,8 +25,8 @@ export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
-	/** Workspace to edit */
-	workspaceInfo: Workspace | null;
+	/** WorkspaceId to view */
+	workspaceId: string | null;
 
 	/** On close */
 	onClose: (newWorkspaceId?: string) => void;
@@ -34,13 +34,18 @@ export interface WorkspaceOverlayProps {
 
 export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	open,
-	workspaceInfo,
+	workspaceId,
 	onClose,
 }) => {
 	/**
 	 * Library Hooks
 	 */
 	const { chat } = useChat();
+	const getWorkspace = usePixel<Workspace>(
+		workspaceId ? `GetWorkspace(${JSON.stringify(workspaceId)});` : null,
+		{ data: null },
+	);
+	console.log(workspaceId, getWorkspace.data);
 
 	/**
 	 * IDs
@@ -113,7 +118,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	/**
 	 * Constants
 	 */
-	const isCreatingNew = workspaceInfo === null;
+	const isCreatingNew = workspaceId === null;
 	const isFormValid = !!watch("name");
 	const mcpArray: MCP[] = Object.values(mcpMap).flatMap(Object.values);
 
@@ -288,28 +293,28 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 									<FieldLabel>Name</FieldLabel>
 									<Input
 										disabled
-										value={workspaceInfo.name}
+										value={getWorkspace.data?.name}
 									/>
 								</Field>
 								<Field>
 									<FieldLabel>ID</FieldLabel>
 									<Input
 										disabled
-										value={workspaceInfo.workspace_id}
+										value={getWorkspace.data?.workspace_id}
 									/>
 								</Field>
 								<Field>
 									<FieldLabel>Description</FieldLabel>
 									<Input
 										disabled
-										value={workspaceInfo.description}
+										value={getWorkspace.data?.description}
 									/>
 								</Field>
 								<Field>
 									<FieldLabel>System prompt</FieldLabel>
 									<Textarea
 										disabled
-										value={workspaceInfo.system_prompt}
+										value={getWorkspace.data?.system_prompt}
 										rows={4}
 									/>
 								</Field>
@@ -317,7 +322,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 									<FieldLabel>Date Created</FieldLabel>
 									<Input
 										disabled
-										value={workspaceInfo.date_created}
+										value={getWorkspace.data?.date_created}
 									/>
 								</Field>
 							</FieldGroup>
