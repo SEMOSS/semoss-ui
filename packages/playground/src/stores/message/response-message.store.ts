@@ -377,7 +377,7 @@ roomId = ["${room.roomId}"],
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 toolId = ["${tool.id}"],
 toolName=["${tool.name}"],
-toolExecutionResponse=["<encode>${toolResponse}</encode>"],
+toolExecutionResponse=["<encode>${JSON.stringify(toolResponse)}</encode>"],
 paramValues=[${JSON.stringify(paramValues)}]
 );`,
 		);
