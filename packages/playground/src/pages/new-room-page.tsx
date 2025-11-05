@@ -12,8 +12,8 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import background from "@/assets/img/background.svg";
-import { RoomConfiguration, RoomInput, RoomWorkspace } from "@/components";
+import background from "@/assets/img/background.png";
+import { RoomInput, RoomOptions, RoomWorkspace } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
@@ -104,6 +104,9 @@ export const NewRoomPage = observer(() => {
 				: options,
 		);
 
+		// update the options
+		await room.updateRoomOptions(options);
+
 		// ask the room
 		await room.askMessage(prompt, files);
 
@@ -135,7 +138,7 @@ export const NewRoomPage = observer(() => {
 	}, [getWorkspace.status, getWorkspace.data]);
 
 	return (
-		<div className="h-full w-full">
+		<div className="h-[calc(100vh-theme(space.2))] w-full overflow-hidden">
 			<ResizablePanelGroup direction="horizontal">
 				<ResizablePanel className="relative flex flex-col items-center justify-center overflow-auto p-2">
 					<img
@@ -202,20 +205,21 @@ export const NewRoomPage = observer(() => {
 
 				{isMenuOpen && (
 					<>
-						<ResizableHandle className="my-auto h-32" />
+						<ResizableHandle />
 						<ResizablePanel
-							className="relative p-2"
+							className="relative h-full w-full p-2"
 							defaultSize={25}
 						>
-							<RoomConfiguration
-								options={options}
-								setOptions={(o) => {
-									setOptions(o);
-								}}
-								onClose={() => {
-									setIsMenuOpen(false);
-								}}
-							/>
+							<div
+								className={`h-full w-full overflow-hidden rounded-lg border border-border bg-background shadow-sm`}
+							>
+								<RoomOptions
+									options={options}
+									setOptions={(o) => {
+										setOptions(o);
+									}}
+								/>
+							</div>
 						</ResizablePanel>
 					</>
 				)}

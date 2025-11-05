@@ -28,8 +28,6 @@ import {
 } from "@semoss/ui/next";
 import type { Workspace } from "@/types";
 
-const IS_PRODUCTION = !import.meta.env.DEV;
-
 type RoomWorkspaceProps = {
 	/**
 	 * The Current mode
@@ -135,21 +133,31 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 												<MessageCircle />
 												Ask
 											</CommandItem>
-											{!IS_PRODUCTION && (
-												<CommandItem
-													value="plan"
-													onSelect={() => {
-														onModeChange({
-															type: "plan",
-															workspace: null,
-														});
-														setOpen(false);
-													}}
-												>
-													<ListTodoIcon />
-													Plan
-												</CommandItem>
-											)}
+
+											<Tooltip>
+												<TooltipTrigger asChild>
+													<span>
+														<CommandItem
+															value="plan"
+															onSelect={() => {
+																onModeChange({
+																	type: "plan",
+																	workspace:
+																		null,
+																});
+																setOpen(false);
+															}}
+														>
+															<ListTodoIcon />
+															Plan
+														</CommandItem>
+													</span>
+												</TooltipTrigger>
+												<TooltipContent>
+													Note: This is an
+													experimental feature.
+												</TooltipContent>
+											</Tooltip>
 										</CommandGroup>
 										<CommandSeparator />
 										<CommandGroup heading="Workspaces">
