@@ -101,7 +101,6 @@ const UploadButton = styled(Button)(({ theme }) => ({
 	borderColor: theme.palette.action.disabled,
 	color: theme.palette.text.primary,
 	borderRadius: "12px",
-	padding: theme.spacing(1.25, 2),
 	alignSelf: "flex-start",
 }));
 
@@ -335,13 +334,13 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				open={isFileUploadModalOpen}
 				maxWidth="xl"
 				onClose={() => setIsFileUploadModalOpen(false)}
-				data-testid="model-zip-upload-modal"
+				data-testid="database-zip-upload-modal"
 			>
 				<Modal.Content sx={{ width: "600px" }}>
 					<StyledDropzoneField>
 						<Typography
 							variant={"body1"}
-							data-testid="model-zip-upload-title"
+							data-testid="database-zip-upload-title"
 						>
 							Zip File
 						</Typography>
@@ -360,16 +359,16 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								size="small"
 								variant="text"
 								onClick={() => setIsFileUploadModalOpen(false)}
-								data-testid="model-upload-close-button"
+								data-testid="database-upload-close-button"
 							>
 								Close
 							</CloseButton>
 							<SubmitUploadButton
 								size="small"
 								variant="contained"
-								//disabled={!filedata || formLoading}
+								disabled={!filedata}
 								onClick={() => onSubmit(filedata)}
-								data-testid="model-upload-submit-button"
+								data-testid="database-upload-submit-button"
 							>
 								Upload
 							</SubmitUploadButton>
@@ -420,7 +419,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								size="medium"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
-								data-tesId={"model-upload-file-button"}
+								data-tesId={"database-upload-file-button"}
 							>
 								<FileUploadOutlined fontSize="small" />
 							</UploadButton>
