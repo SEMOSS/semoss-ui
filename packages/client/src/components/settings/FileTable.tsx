@@ -657,7 +657,7 @@ export const FileTable = (props: FileTableProps) => {
 						<Button
 							type="submit"
 							variant={"contained"}
-							disabled={isLoading}
+							disabled={isLoading || watch("PROJECT_UPLOAD").length === 0}
 							startIcon={
 								isLoading ? (
 									<CircularProgress size="1em" />
