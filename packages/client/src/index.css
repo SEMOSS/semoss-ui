@@ -1,3 +1,10 @@
 @import "@semoss/ui/globals.css";
 
 @source "./**/*.{ts,tsx}";
+
+/* Define layer order: base (Tailwind) < components < utilities < mui (Material UI) */
+/* This ensures Material UI styles override Tailwind base styles */
+@layer mui {
+  /* Material UI styles injected by Emotion will be in this layer */
+  /* This layer comes after Tailwind's base layer, ensuring Material UI takes precedence */
+}

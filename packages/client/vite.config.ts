@@ -28,6 +28,9 @@ export default defineConfig(({ mode }) => {
 		build: {
 			minify: isProduction,
 			commonjsOptions: { transformMixedEsModules: true },
+			cssCodeSplit: true,
+			cssMinify: isProduction,
+			cssTarget: "chrome80",
 		},
 		server: {
 			proxy: {
