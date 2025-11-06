@@ -394,7 +394,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 						<Alert.Title>
 							<StyledBlock>
 								{/* Single Lock Icon on the left */}
-								<StyledIcon>
+								<StyledIcon data-testid="lock-icon">
 									<LockIcon />
 								</StyledIcon>
 
@@ -403,10 +403,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<Typography
 										variant="body1"
 										fontWeight="medium"
+										data-testid="private-text"
 									>
 										Private
 									</Typography>
-									<Typography variant="body2">
+									<Typography variant="body2" data-testid="private-description">
 										No one outside of the specified member
 										group can access
 									</Typography>
@@ -451,10 +452,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<StyledBlock>
 										{/* Single Lock Icon on the left */}
 										<StyledIcon>
-											<VisibilityOffIcon />
+											<VisibilityOffIcon  data-testid="non-discoverable-icon" />
 										</StyledIcon>
 										{/* Text Stack on the right */}
-										<Box>
+										<Box data-testid="discoverable-text">
 											<Typography
 												variant="body1"
 												fontWeight="medium"
@@ -505,11 +506,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<StyledBlock>
 									{/* Single Lock Icon on the left */}
 									<StyledIcon>
-										<VisibilityOffIcon />
+										<VisibilityOffIcon data-testid="non-discoverable-icon"/>
 									</StyledIcon>
 
 									{/* Text Stack on the right */}
-									<Box>
+									<Box data-testid="discoverable-text">
 										<Typography
 											variant="body1"
 											fontWeight="medium"
@@ -558,10 +559,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 										height: "22px",
 										marginTop: "2px",
 									}}
+									data-testid="database-icon"
 								/>
 
 								{/* Text Stack on the right */}
-								<Box>
+								<Box data-testid="delete-vector-text">
 									<Typography variant="body2">
 										Users cannot request access to this
 										database if private
@@ -581,7 +583,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							delete this {name}.
 						</Modal.Content>
 						<Modal.Actions>
-							<Button onClick={() => setDeleteModal(false)}>
+							<Button onClick={() => setDeleteModal(false)} data-testid={formatToDataTestId(
+								`settingsTiles-${name}-confirmCancel-btn`,
+							)}>
 								Cancel
 							</Button>
 							<Button
@@ -672,11 +676,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							<StyledBlock>
 								{/* Single Lock Icon on the left */}
 								<StyledIcon>
-									<LockIcon />
+									<LockIcon data-testid="lock-icon" />
 								</StyledIcon>
 
 								{/* Text Stack on the right */}
-								<Box>
+								<Box data-testid="private-text">
 									<Typography
 										variant="body1"
 										fontWeight="medium"
@@ -729,11 +733,11 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<StyledBlock>
 										{/* Single Lock Icon on the left */}
 										<StyledIcon>
-											<VisibilityOffIcon />
+											<VisibilityOffIcon data-testid="non-discoverable-icon" />
 										</StyledIcon>
 
 										{/* Text Stack on the right */}
-										<Box>
+										<Box data-testid="discoverable-text">
 											<Typography
 												variant="body1"
 												fontWeight="medium"
