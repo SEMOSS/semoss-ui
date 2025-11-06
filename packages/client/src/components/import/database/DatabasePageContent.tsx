@@ -287,7 +287,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				sx={{ cursor: selectedDatabase ? "pointer" : "default" }}
 				data-testid="breadcrumb-page"
 			>
-				Connect to database Database
+				Connect to Database
 			</Breadcrumbs.Item>
 
 			{selectedDatabase && (
