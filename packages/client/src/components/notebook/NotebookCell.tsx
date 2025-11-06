@@ -513,6 +513,10 @@ export const NotebookCell = observer(
 			}
 		};
 
+		/**
+		 * @description
+		 * Revert MCP cell back to original code cell
+		 */
 		const revertMCPToCell = async () => {
 			try {
 				workspace.setLoading(true);
@@ -539,6 +543,10 @@ export const NotebookCell = observer(
 		const makeCellMCP = async () => {
 			try {
 				workspace.setLoading(true);
+				// Save current app state before making MCP tool
+				await runPixel(
+					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
+				);
 				// Make pixel call to generate MCP tool
 				const { errors, pixelReturn } = await runPixel(
 					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
@@ -671,7 +679,9 @@ export const NotebookCell = observer(
 										size="small"
 										disabled={
 											cell.isLoading ||
-											!workspace.agentModelEngine
+											cell.widget === "mcp-tool"
+												? false
+												: !workspace.agentModelEngine
 										}
 										onClick={(e) => {
 											// stop propogation to card parent so newly created cell will be selected
