@@ -1,7 +1,7 @@
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "STORAGE" | "DATABASE" | "FUNCTION";
+	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION";
 	description?: string;
 }
 
@@ -88,11 +88,15 @@ interface AbstractPixelMessage {
 interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	inputUIPrompt: string;
-	files: {
+	modelId: string;
+	imageInfos: {
 		fileName: string;
 		fileLocation: string;
+		base64Data?: string;
+		fileFormat?: "png";
+		mimeType?: string;
+		imageType?: "FILE";
 	}[];
-	modelId: string;
 	paramMap: {
 		max_new_tokens: number;
 		temperature: number;
