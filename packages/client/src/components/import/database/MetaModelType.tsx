@@ -7,7 +7,14 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import type React from "react";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+	useCallback,
+	useEffect,
+	useId,
+	useMemo,
+	useRef,
+	useState,
+} from "react";
 import {
 	Box,
 	Button,
@@ -399,8 +406,11 @@ export const MetaModelType = observer(
 			}
 		};
 
-		const makeEdgeIdFromNodeIds = (sourceId: string, targetId: string) =>
-			`${sourceId}_${targetId}`?.replace(/\s+/g, "_");
+		const makeEdgeIdFromNodeIds = useCallback(
+			(sourceId: string, targetId: string) =>
+				`${sourceId}_${targetId}`?.replace(/\s+/g, "_"),
+			[],
+		);
 
 		const getInitialConnections = () => {
 			return edgesForMetamodel.map((e) => {
@@ -557,8 +567,6 @@ export const MetaModelType = observer(
 				console.warn("No metamodel data to save.");
 				return;
 			}
-			console.log("Save Payload", flow);
-			console.log("Save Payload", payload);
 			onImport?.(payload);
 		};
 		const createConnectionNodes = useMemo(() => {
