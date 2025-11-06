@@ -91,7 +91,7 @@ export const VegaGenerationSettings = observer(
 				setResponseLoading(true);
 
 				const pixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", frame= "${selectedFrame}", insightName="${workspace.insightId}")`;
-				const res = await runPixel(pixel);
+				const res = await runPixel(pixel, workspace.insightId);
 				const { output } = res.pixelReturn[0];
 
 				console.log("user prompt:", prompt);
@@ -144,7 +144,7 @@ export const VegaGenerationSettings = observer(
 					options={frames}
 					size="small"
 					label={"Select Frame"}
-					onChange={(e, val) => {
+					onChange={(val) => {
 						setSelectedFrame(val as unknown as string);
 					}}
 				/>
