@@ -32,10 +32,10 @@ export const EngineOverviewPage = observer(() => {
 	return (
 		<StyledPage>
 			<Section>
-				<Section.Header>Details</Section.Header>
+				<Section.Header data-testid="engine-overview-header">Details</Section.Header>
 				{active.metadata.markdown ? (
 					<StyledMarkdownContainer>
-						<Markdown>
+						<Markdown data-testid="engine-overview-markdown">
 							{active.metadata.markdown as string}
 						</Markdown>
 					</StyledMarkdownContainer>
@@ -72,6 +72,7 @@ export const EngineOverviewPage = observer(() => {
 												key={tag}
 												label={tag}
 												color={"primary"}
+												data-testid="tag-chip"
 											></Chip>
 										);
 									},

@@ -409,6 +409,7 @@ export const FileTable = (props: FileTableProps) => {
 							onChange={(e) => {
 								setValue("SEARCH_FILTER", e.target.value);
 							}}
+							data-testid="file-search"
 						/>
 						{selectedFiles.length > 0 && (
 							<Button
@@ -416,6 +417,7 @@ export const FileTable = (props: FileTableProps) => {
 								color="error"
 								sx={{ marginRight: "10px" }}
 								onClick={() => setDeleteFilesModal(true)}
+								data-testid="delete-files-btn"
 							>
 								Delete Selected
 							</Button>
@@ -435,6 +437,7 @@ export const FileTable = (props: FileTableProps) => {
 									downloadSelectedFiles(selectedFiles)
 								}
 								style={{ marginRight: "10px" }}
+								data-testid="download-files-btn"
 							>
 								Download
 							</Button>
@@ -443,6 +446,7 @@ export const FileTable = (props: FileTableProps) => {
 							startIcon={<StyledIcon fontSize="small" />}
 							onClick={() => setOpen(true)}
 							variant="contained"
+							data-testid="embed-new-document-btn"
 						>
 							Embed New Document
 						</Button>
@@ -468,6 +472,7 @@ export const FileTable = (props: FileTableProps) => {
 										setSelectedFiles([]);
 									}
 								}}
+								data-testid="files-checkbox"
 							/>
 						</Table.Cell>
 						<Table.Cell size="small">
@@ -555,6 +560,7 @@ export const FileTable = (props: FileTableProps) => {
 															]);
 														}
 													}}
+													data-testid={`file-checkbox-${file.fileName}`}
 												/>
 											</Table.Cell>
 											<Table.Cell

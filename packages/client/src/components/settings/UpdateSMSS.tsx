@@ -141,6 +141,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 						onClick={() => {
 							updateSMSSProperties();
 						}}
+						data-test-id={`updateSMSS-updateSNSS-btn`}
 					>
 						Update SMSS
 					</Button>
@@ -163,6 +164,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 						borderRadius: "8px",
 					},
 				}}
+				data-test-id={`SMSS-editor-container`}
 			>
 				{!readOnly && (
 					<Box
@@ -182,6 +184,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 							color: "#1976d2",
 							zIndex: 1,
 						}}
+						data-test-id={`SMSS-edit-mode-banner`}
 					>
 						Edit Mode
 					</Box>
@@ -196,6 +199,7 @@ export const UpdateSMSS = (props: UpdateSMSSProps) => {
 							// Handle changes in the editor's content.
 							setValue(newValue);
 						}}
+						data-test-id={`SMSS-editor`}
 					/>
 				</Suspense>
 			</StyledPaper>

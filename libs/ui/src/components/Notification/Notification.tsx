@@ -169,7 +169,9 @@ export const Notification = (props: NotificationProps): JSX.Element => {
 								sx={{ width: "100%" }}
 								data-testid={`notification-${active.color}-alert`}
 							>
-								{active.message}
+								<span data-testid={`notification-${active.color}-message`}>
+									{active.message}
+								</span>
 							</Alert>
 						</>
 					) : (
