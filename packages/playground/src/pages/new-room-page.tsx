@@ -13,11 +13,16 @@ import {
 	TooltipTrigger,
 } from "@semoss/ui/next";
 import background from "@/assets/img/background.png";
-import { RoomInput, RoomOptions, RoomWorkspace } from "@/components";
+import {
+	RoomInput,
+	RoomOptions,
+	RoomWorkspace,
+	workspaceToApp,
+} from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Workspace } from "@/types";
+import type { App, Workspace } from "@/types";
 
 const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
 	? import.meta.env.VITE_APP_DESCRIPTION
@@ -37,7 +42,7 @@ export const NewRoomPage = observer(() => {
 	const [searchParams] = useSearchParams();
 	const [mode, setMode] = useState<{
 		type: "chat" | "plan" | "workspace";
-		workspace: Workspace | null;
+		workspace: App | null;
 	}>({
 		type: "chat",
 		workspace: null,
@@ -85,7 +90,7 @@ export const NewRoomPage = observer(() => {
 
 		if (mode.type === "workspace" && mode.workspace) {
 			options.workspace = {
-				workspace_id: mode.workspace.workspace_id,
+				workspace_id: mode.workspace.project_id,
 			};
 		}
 
@@ -98,7 +103,7 @@ export const NewRoomPage = observer(() => {
 				? {
 						...options,
 						workspace: {
-							workspace_id: mode.workspace.workspace_id,
+							workspace_id: mode.workspace.project_id,
 						},
 					}
 				: options,
@@ -132,7 +137,7 @@ export const NewRoomPage = observer(() => {
 		if (getWorkspace.data) {
 			setMode({
 				type: "workspace",
-				workspace: getWorkspace.data,
+				workspace: workspaceToApp(getWorkspace.data),
 			});
 		}
 	}, [getWorkspace.status, getWorkspace.data]);
