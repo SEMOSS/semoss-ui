@@ -125,9 +125,9 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 							)}
 
 							<Field>
-								<FieldLabel>System Prompt</FieldLabel>
+								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
-									placeholder="Update System Prompt"
+									placeholder="Update Instructions"
 									className="min-h-[220px] resize-none"
 									value={options.instructions}
 									onChange={(e) => {

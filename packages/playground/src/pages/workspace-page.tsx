@@ -42,7 +42,7 @@ export const WorkspacePage = observer(() => {
 	const [search, setSearch] = useState("");
 	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
 		useState<boolean>(false);
-	const [workspaceInfo, setWorkspaceInfo] = useState<Workspace | null>(null);
+	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
 
 	/**
 	 * CreateRoom
@@ -65,7 +65,7 @@ export const WorkspacePage = observer(() => {
 							<span>
 								<Button
 									onClick={() => {
-										setWorkspaceInfo(null);
+										setWorkspaceId(null);
 										setIsWorkspaceModalOpen(true);
 									}}
 								>
@@ -114,7 +114,7 @@ export const WorkspacePage = observer(() => {
 											createRoom(w.workspace_id)
 										}
 										onSecondaryClick={() => {
-											setWorkspaceInfo(w);
+											setWorkspaceId(w.workspace_id);
 											setIsWorkspaceModalOpen(true);
 										}}
 									/>
@@ -134,7 +134,7 @@ export const WorkspacePage = observer(() => {
 			{isWorkspaceModalOpen && (
 				<WorkspaceOverlay
 					open={isWorkspaceModalOpen}
-					workspaceInfo={workspaceInfo}
+					workspaceId={workspaceId}
 					onClose={(newWorkspaceId) => {
 						setIsWorkspaceModalOpen(false);
 						if (newWorkspaceId) {
