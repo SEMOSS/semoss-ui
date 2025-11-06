@@ -12,7 +12,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import background from "@/assets/img/background.svg";
+import background from "@/assets/img/background.png";
 import { RoomInput, RoomOptions, RoomWorkspace } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
 import { useChat } from "@/hooks";
