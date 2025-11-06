@@ -668,7 +668,7 @@ const ExcelDataSelection = ({
 																	size="small"
 																	freeSolo={false}
 																	fullWidth
-																	label="Select Range"
+																	label="Selected Table"
 																	options={
 																		[
 																			{ label: range, value: "actual" },
@@ -712,17 +712,17 @@ const ExcelDataSelection = ({
 																	}}
 																	filterOptions={(options) => options}
 																	getOptionLabel={(option: RangeOption) => option?.label ?? String(option)}
-																	 renderInput={(params) => (
-    <TextField
-      {...params}
-      label="Select Range"
-      placeholder=""
-      InputProps={{
-        ...params.InputProps,
-        endAdornment: params.InputProps.endAdornment, // keeps dropdown arrow
-      }}
-    />
-  )}
+																	renderInput={(params) => (
+																		<TextField
+																			{...params}
+																			label="Select Range"
+																			placeholder=""
+																			InputProps={{
+																				...params.InputProps,
+																				endAdornment: params.InputProps.endAdornment, // keeps dropdown arrow
+																			}}
+																		/>
+																	)}
 																/>
 																{/* Only show text field + preview if "Custom Range" is selected */}
 																{optionValue === "custom" && (
