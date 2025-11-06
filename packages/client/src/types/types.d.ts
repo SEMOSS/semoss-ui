@@ -97,6 +97,6 @@ export interface EventData {
 	status: string | null;
 	engineName: string;
 	engineType: string;
-	empty?: boolean;
-    mapType?: string;
+	userId: string;
+	sessionId: string;
 }

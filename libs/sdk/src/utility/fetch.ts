@@ -102,6 +102,7 @@ export const get = async <O>(path: string, options: RequestInit = {}) => {
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||
+			errorData.errorMessage ||
 			`Request failed with status ${response.status}`;
 		throw new Error(errorMessage);
 	}
@@ -181,6 +182,7 @@ export const post = async <O>(
 		const errorMessage =
 			errorData.message ||
 			errorData.error ||
+			errorData.errorMessage ||
 			`Request failed with status ${response.status}`;
 		throw new Error(errorMessage);
 	}

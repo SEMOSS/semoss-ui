@@ -224,27 +224,27 @@ jobs:
             - name: Build Component Library
               run: |
                 cd libs/ui
-                pnpm run build
+                pnpm run build:dev
 
             - name: Build SDK
               run: |
                 cd libs/sdk
-                pnpm run build    
+                pnpm run build:dev    
 
             - name: Build Renderer Library
               run: |
                 cd libs/renderer
-                pnpm run build
+                pnpm run build:dev
 
             - name: Build semoss-ui
               run: |
                 cd packages/client
-                pnpm run build
+                pnpm run build:dev
 
             - name: Build playground
               run: |
                 cd packages/playground
-                pnpm run build
+                pnpm run build:dev
 
             # ---------- Download and Set Up semoss/bi -----------
             

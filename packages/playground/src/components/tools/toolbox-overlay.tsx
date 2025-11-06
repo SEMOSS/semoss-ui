@@ -168,7 +168,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 											{availableMCPs.map((mcp) => (
 												<Label
 													key={mcp.id}
-													className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-blue-50 dark:has-[[aria-checked=true]]:border-primary dark:has-[[aria-checked=true]]:bg-secondary"
+													className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-secondary"
 												>
 													<Checkbox
 														checked={isMCPSelected(
@@ -177,7 +177,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 														onCheckedChange={() => {
 															onMCPSelect(mcp);
 														}}
-														className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white dark:data-[state=checked]:border-primary dark:data-[state=checked]:bg-primary"
+														className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
 													/>
 													<div className="grid gap-1.5 font-normal">
 														<p className="font-medium text-sm leading-none">
