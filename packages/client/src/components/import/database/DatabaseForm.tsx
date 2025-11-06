@@ -9,7 +9,6 @@ import {
 	Divider,
 	FileDropzone,
 	FormControlLabel,
-	Grid,
 	IconButton,
 	Menu,
 	RadioGroup,
@@ -27,11 +26,8 @@ import ExcelDataSelection from "./ExcelDataSelection";
 import { MetaModelType } from "./MetaModelType";
 
 const StyledBox = styled(Box)({
-	boxShadow: "0px 5px 22px 0px rgba(0, 0, 0, 0.06)",
-	width: "100%",
-	padding: "16px 16px 16px 16px",
 	marginBottom: "32px",
-	marginTop: "15px",
+	marginTop: "16px",
 });
 
 const StyledFlexEnd = styled("div")(({ theme }) => ({
@@ -46,32 +42,6 @@ const StyledSubmitButton = styled(Button)({
 	minWidth: "128px",
 });
 
-const StyledNoSection = styled("div")(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: theme.spacing(1),
-	marginBottom: theme.spacing(2),
-}));
-
-const SectionContainer = styled(Grid)({
-	padding: "20px",
-});
-
-const SectionLeft = styled(Grid)(({ theme }) => ({
-	display: "flex",
-	flexDirection: "column",
-	justifyContent: "flex-start",
-	paddingRight: theme.spacing(2),
-	width: "40%",
-}));
-
-const SectionRight = styled(Grid)(() => ({
-	display: "flex",
-	flexDirection: "column",
-	gap: "16px",
-	width: "60%",
-}));
-
 const AdvancedHeader = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
@@ -80,7 +50,7 @@ const AdvancedHeader = styled("div")(({ theme }) => ({
 	padding: theme.spacing(2, 0),
 }));
 
-interface ParsedResult {
+export interface ParsedResult {
 	headers: string[];
 	dataTypes: Record<string, string>;
 	cleanHeaders: string[];
@@ -89,7 +59,13 @@ interface ParsedResult {
 	nodeProp: Record<string, string[]>;
 }
 
-export const DatabaseForm = ({ title, description, fields }) => {
+export const DatabaseForm = ({
+	title,
+	description,
+	fields,
+	advanced,
+	categoryDescription,
+}) => {
 	const [step, setStep] = useState<
 		"fileupload" | "table" | "metaModel" | "propFile"
 	>("fileupload");
@@ -126,7 +102,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 			mode: "onChange",
 			reValidateMode: "onChange",
 			defaultValues: fields.reduce((acc, f) => {
-				acc[f.fieldName] = f.defaultValue || "";
+				acc[f.key] = f.value || "";
 				return acc;
 			}, {}),
 		});
@@ -137,15 +113,16 @@ export const DatabaseForm = ({ title, description, fields }) => {
 	const navigate = useNavigate();
 	const { setIsLoading } = useStepper();
 
-	const defaultFields = resolvedFields.filter((f) => !f.advanced);
-	const advancedFields = resolvedFields.filter((f) => f.advanced);
+	const defaultFields = resolvedFields;
+	const advancedFields = advanced;
+	const categoryDescriptions = categoryDescription;
 
 	const databaseType = watch("DATABASE_TYPE");
 
 	useEffect(() => {
 		setResolvedFields((prev) =>
 			prev.map((f) => {
-				if (f.fieldName === "METAMODEL_TYPE") {
+				if (f.key === "METAMODEL_TYPE") {
 					if (databaseType?.toLowerCase() === "r") {
 						return {
 							...f,
@@ -163,8 +140,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								...f.options,
 								options:
 									fields.find(
-										(orig) =>
-											orig.fieldName === "METAMODEL_TYPE",
+										(orig) => orig.key === "METAMODEL_TYPE",
 									)?.options.options || f.options.options,
 							},
 						};
@@ -174,6 +150,13 @@ export const DatabaseForm = ({ title, description, fields }) => {
 			}),
 		);
 	}, [databaseType, fields]);
+
+	//  Group fields by category
+	const grouped = defaultFields.reduce((acc, f) => {
+		if (!acc[f.category]) acc[f.category] = [];
+		acc[f.category].push(f);
+		return acc;
+	}, {});
 
 	const onFormSubmit = async (formData) => {
 		setIsLoading(true);
@@ -390,7 +373,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		}
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
-		console.log(payloadObject, "payloadObject");
+		setIsLoading(true);
 		const pixel = payloadObject
 			.map((pixel) => {
 				return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
@@ -420,6 +403,8 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				message: "An error occurred while processing the request.",
 			});
 			console.error("Error executing query:", error);
+		} finally {
+			setIsLoading(false);
 		}
 	};
 
@@ -442,11 +427,11 @@ export const DatabaseForm = ({ title, description, fields }) => {
 			});
 
 			if (pixel && !hasParameterizedValue(pixel)) {
-				executeWatchedFieldPixel(f.fieldName, pixel, "value");
+				executeWatchedFieldPixel(f.key, pixel, "value");
 			}
 
 			if (optionsPixel && !hasParameterizedValue(optionsPixel)) {
-				executeWatchedFieldPixel(f.fieldName, optionsPixel, "options");
+				executeWatchedFieldPixel(f.key, optionsPixel, "options");
 			}
 		});
 	}, []);
@@ -472,7 +457,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 
 	const hasParameterizedValue = (str) => /<([^>]+)>/.test(str);
 
-	const executeWatchedFieldPixel = async (fieldName, pixelStr, type) => {
+	const executeWatchedFieldPixel = async (key, pixelStr, type) => {
 		const response = await monolithStore.runQuery(pixelStr);
 		const output = response.pixelReturn[0].output;
 		const operationType = response.pixelReturn[0].operationType;
@@ -483,14 +468,14 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		}
 
 		if (type === "value") {
-			setValue(fieldName, output);
+			setValue(key, output);
 			return;
 		}
 
 		if (type === "options") {
 			setResolvedFields((prev) =>
 				prev.map((f) =>
-					f.fieldName === fieldName
+					f.key === key
 						? {
 								...f,
 								options: {
@@ -524,7 +509,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		}
 
 		if (output.exists) {
-			setFocus(field.fieldName);
+			setFocus(field.key);
 			return false;
 		}
 
@@ -533,14 +518,14 @@ export const DatabaseForm = ({ title, description, fields }) => {
 
 	const checkForDisplayRulesSet = (field, value) => {
 		const selectedDefaultField = resolvedFields.find(
-			(f) => f.fieldName === field.name,
+			(f) => f.key === field.name,
 		);
 		if (selectedDefaultField?.displayRules?.hideOtherFields) {
 			selectedDefaultField.displayRules.hideOtherFields.forEach((fth) => {
 				const optionValue = fth.value;
 				setResolvedFields((prev) =>
 					prev.map((f) =>
-						f.fieldName === fth.fieldName
+						f.key === fth.key
 							? { ...f, hidden: optionValue.includes(value) }
 							: f,
 					),
@@ -551,11 +536,11 @@ export const DatabaseForm = ({ title, description, fields }) => {
 
 	const renderControllerField = (val) => (
 		<Controller
-			key={val.fieldName}
-			name={val.fieldName}
+			key={val.key}
+			name={val.key}
 			control={control}
 			rules={{
-				required: val.rules?.required,
+				required: val?.required,
 				pattern: val.rules?.pattern,
 				validate: val.rules?.custom && {
 					checkField: async (fieldVal) =>
@@ -563,19 +548,21 @@ export const DatabaseForm = ({ title, description, fields }) => {
 				},
 			}}
 			render={({ field, fieldState: { error } }) => {
-				switch (val.options.component) {
-					case "text-field":
+				switch (val.type) {
+					case "text":
 						return (
 							<TextField
 								{...field}
 								fullWidth
 								label={val.label}
 								disabled={val.disabled}
-								required={val.rules?.required}
+								variant="outlined"
+								required={val?.required}
+								sx={{ display: val.hidden ? "none" : "block" }}
 								// @ts-expect-error TODO FIX
 								error={!!error}
 								helperText={getHelperText(error, val)}
-								data-testid={`database-form-input-${val.fieldName}`}
+								data-testid={`database-form-input-${val.key}`}
 							/>
 						);
 
@@ -587,11 +574,11 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								fullWidth
 								label={val.label}
 								disabled={val.disabled}
-								required={val.rules?.required}
+								required={val?.required}
 								// @ts-expect-error TODO FIX
 								error={!!error}
 								helperText={getHelperText(error, val)}
-								data-testid={`database-form-input-${val.fieldName}`}
+								data-testid={`database-form-input-${val.key}`}
 							/>
 						);
 
@@ -603,11 +590,12 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								fullWidth
 								label={val.label}
 								disabled={val.disabled}
-								required={val.rules?.required}
+								required={val?.required}
+								sx={{ display: val.hidden ? "none" : "block" }}
 								// @ts-expect-error TODO FIX
 								error={!!error}
 								helperText={getHelperText(error, val)}
-								data-testid={`database-form-input-${val.fieldName}`}
+								data-testid={`database-form-input-${val.key}`}
 							/>
 						);
 
@@ -618,7 +606,8 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								fullWidth
 								label={val.label}
 								disabled={val.disabled}
-								required={val.rules?.required}
+								required={val?.required}
+								sx={{ display: val.hidden ? "none" : "block" }}
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								onChange={(e) => {
@@ -628,13 +617,13 @@ export const DatabaseForm = ({ title, description, fields }) => {
 										e.target.value,
 									);
 								}}
-								data-testid={`database-form-input-${val.fieldName}`}
+								data-testid={`database-form-input-${val.key}`}
 							>
 								{val?.options?.options?.map((opt) => (
 									<Menu.Item
 										key={opt.value}
 										value={opt.value}
-										data-testid={`database-form-option-${val.fieldName}-${opt.value}`}
+										data-testid={`database-form-option-${val.key}-${opt.value}`}
 									>
 										{opt.display}
 									</Menu.Item>
@@ -648,7 +637,8 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								row
 								value={field.value || ""}
 								onChange={(e) => field.onChange(e.target.value)}
-								data-testid={`database-form-input-${val.fieldName}`}
+								data-testid={`database-form-input-${val.key}`}
+								sx={{ display: val.hidden ? "none" : "block" }}
 							>
 								{val.options.options.map((opt) => (
 									<FormControlLabel
@@ -656,7 +646,7 @@ export const DatabaseForm = ({ title, description, fields }) => {
 										value={opt.value}
 										control={
 											<RadioGroup.Item
-												data-testid={`database-form-radio-${val.fieldName}-${opt.value}`}
+												data-testid={`database-form-radio-${val.key}-${opt.value}`}
 												label={""}
 											/>
 										}
@@ -683,13 +673,13 @@ export const DatabaseForm = ({ title, description, fields }) => {
 										field.onChange(files);
 										onFileUpload(files);
 									}}
-									data-testid={`database-form-input-${val.fieldName}`}
+									data-testid={`database-form-input-${val.key}`}
 								/>
 								{error && (
 									<Typography
 										variant="body1"
 										color="error"
-										data-testid={`database-form-error-${val.fieldName}`}
+										data-testid={`database-form-error-${val.key}`}
 									>
 										{getHelperText(error, val)}
 									</Typography>
@@ -707,13 +697,13 @@ export const DatabaseForm = ({ title, description, fields }) => {
 									onChange={(newValues) =>
 										field.onChange(newValues)
 									}
-									data-testid={`database-form-input-${val.fieldName}`}
+									data-testid={`database-form-input-${val.key}`}
 								/>
 								{error && (
 									<Typography
 										variant="caption"
 										color="error"
-										data-testid={`database-form-error-${val.fieldName}`}
+										data-testid={`database-form-error-${val.key}`}
 									>
 										{getHelperText(error, val)}
 									</Typography>
@@ -725,19 +715,22 @@ export const DatabaseForm = ({ title, description, fields }) => {
 						return (
 							<>
 								<Checkbox
-									required={val.rules.required}
+									required={val?.required}
 									label={val.label}
 									disabled={val.disabled}
 									checked={field.value ? field.value : false}
 									onChange={(value) => field.onChange(value)}
-									data-testid={`database-form-input-${val.fieldName}`}
+									data-testid={`database-form-input-${val.key}`}
+									sx={{
+										display: val.hidden ? "none" : "block",
+									}}
 								/>
 								{error && (
 									<Typography
 										variant="body1"
 										color="error"
 										sx={{ mt: 0.5, display: "block" }}
-										data-testid={`database-form-error-${val.fieldName}`}
+										data-testid={`database-form-error-${val.key}`}
 									>
 										{error.message}
 									</Typography>
@@ -759,13 +752,6 @@ export const DatabaseForm = ({ title, description, fields }) => {
 		return error.message;
 	};
 
-	const SECTION_ORDER = Array.from(
-		new Set<string>(
-			defaultFields.map((f) => f.section?.toLowerCase()).filter(Boolean),
-		),
-	);
-	console.log(parsedData, "parsedData");
-
 	return (
 		<>
 			{step === "fileupload" && (
@@ -778,90 +764,62 @@ export const DatabaseForm = ({ title, description, fields }) => {
 					</Typography>
 					<Typography
 						variant="body1"
+						color="textSecondary"
 						data-testid="database-form-description"
+						sx={{ marginTop: "4px" }}
 					>
 						{description}
 					</Typography>
-
 					<StyledBox data-testid="database-form-box">
 						<Stack rowGap={4}>
-							{SECTION_ORDER.map((sectionKey) => {
-								const sectionFields = defaultFields.filter(
-									(f) =>
-										f.section?.toLowerCase() === sectionKey,
-								);
-								if (!sectionFields.length) return null;
-
-								const sectionDesc =
-									sectionFields[0]?.sectiondescription || "";
-
-								return (
-									<div
-										data-testid={`database-form-section-${sectionKey}`}
-										key={sectionKey}
+							{Object.keys(grouped).map((category) => (
+								<Box
+									key={category}
+									sx={{
+										display: "flex",
+										gap: 4,
+										mb: 4,
+										flexDirection: "column",
+									}}
+								>
+									<Box
+										sx={{
+											display: "flex",
+											gap: 4,
+											alignItems: "flex-start",
+										}}
 									>
-										<SectionContainer container spacing={2}>
-											<SectionLeft>
-												<Typography
-													variant="h6"
-													gutterBottom
-													data-testid={`database-form-section-title-${sectionKey}`}
-												>
-													{sectionKey.toUpperCase()}
-												</Typography>
-												<Typography
-													variant="body2"
-													color="textSecondary"
-													data-testid={`database-form-section-desc-${sectionKey}`}
-												>
-													{sectionDesc}
-												</Typography>
-											</SectionLeft>
-											<SectionRight
-												data-testid={`database-form-section-fields-${sectionKey}`}
+										<Stack sx={{ flex: 1 }}>
+											<Typography
+												variant="h6"
+												data-testId={`database-importForm-category-title`}
 											>
-												{sectionFields.map((val) => (
-													<div
-														key={val.fieldName}
-														data-testid={`database-form-field-${val.fieldName}`}
-													>
-														{renderControllerField(
-															val,
-														)}
-													</div>
-												))}
-											</SectionRight>
-										</SectionContainer>
-										<Divider
-											data-testid={`database-form-section-divider-${sectionKey}`}
-										/>
-									</div>
-								);
-							})}
-
-							{defaultFields.filter((f) => !f.section).length >
-								0 && (
-								<SectionContainer data-testid="database-form-no-section">
-									{defaultFields
-										.filter((f) => !f.section)
-										.map((val) => (
-											<StyledNoSection
-												key={val.fieldName}
-												data-testid={`database-form-field-${val.fieldName}`}
+												{category}
+											</Typography>
+											<Typography
+												variant="body2"
+												data-testId={`model-importForm-category-description`}
+												color="textSecondary"
 											>
-												<Typography variant="body1">
-													{val.label}
-												</Typography>
-												{renderControllerField(val)}
-											</StyledNoSection>
-										))}
-								</SectionContainer>
-							)}
-
-							{advancedFields.length ? (
+												{categoryDescriptions[
+													category
+												] ??
+													"No description available."}
+											</Typography>
+										</Stack>
+										<Stack spacing={2} sx={{ flex: 2 }}>
+											{grouped[category].map((f) =>
+												renderControllerField(f),
+											)}
+										</Stack>
+									</Box>
+									<Divider sx={{ color: "secondary" }} />
+								</Box>
+							))}
+							{advancedFields?.length ? (
 								<>
 									<AdvancedHeader data-testid="database-form-advanced-header">
-										<Typography variant="body1">
+										<Typography variant="h6">
 											ADVANCED SETTINGS
 										</Typography>
 										<IconButton
@@ -877,12 +835,11 @@ export const DatabaseForm = ({ title, description, fields }) => {
 											)}
 										</IconButton>
 									</AdvancedHeader>
-
 									{openAdvanced &&
-										advancedFields.map((val) => (
+										advancedFields?.map((val) => (
 											<div
-												key={val.fieldName}
-												data-testid={`database-form-field-${val.fieldName}`}
+												key={val.key}
+												data-testid={`database-form-field-${val.key}`}
 											>
 												{renderControllerField(val)}
 											</div>
@@ -898,7 +855,9 @@ export const DatabaseForm = ({ title, description, fields }) => {
 								data-testid="database-form-submit"
 								disabled={!formState.isValid}
 							>
-								{title === "Excel" || title === "CSV"
+								{title === "Excel" ||
+								title === "CSV" ||
+								title === "TSV"
 									? "Next"
 									: "Create Database"}
 							</StyledSubmitButton>

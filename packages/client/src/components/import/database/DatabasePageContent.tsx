@@ -1,20 +1,30 @@
+import { FileUploadOutlined } from "@mui/icons-material";
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
 	Box,
 	Breadcrumbs,
+	Button,
+	FileDropzone,
 	Grid,
 	Link,
+	Modal,
 	Search,
 	Stack,
 	styled,
 	Tabs,
 	Tooltip,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
+import { uploadFile } from "@/api";
+import { useRootStore } from "@/hooks";
 import { DatabaseForm } from "./DatabaseForm";
-import { DATABASE_CONNECTION } from "./database.constants";
+import {
+	CATEGORY_DESCRIPTIONS,
+	DATABASE_CONNECTION,
+} from "./database.constants";
 
 const StyledContainer = styled("div")({
 	display: "flex",
@@ -90,8 +100,38 @@ const StyledTab = styled(Tabs.Item)(() => ({
 	color: "rgba(0, 0, 0, 0.60)",
 }));
 
+const UploadButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.text.primary,
+	borderRadius: "12px",
+	alignSelf: "flex-start",
+}));
+
+const StyledDropzoneField = styled("div")(({ theme }) => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: theme.spacing(2),
+	width: "100%",
+	height: "100%",
+}));
+
+const SubmitUploadButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.background.default,
+	borderRadius: "12px",
+	alignSelf: "flex-start",
+}));
+
+const CloseButton = styled(Button)(({ theme }) => ({
+	borderColor: theme.palette.action.disabled,
+	color: theme.palette.secondary.dark,
+	borderRadius: "12px",
+	alignSelf: "flex-start",
+}));
+
 interface database {
 	fields: [];
+	advanced: [];
 	id: number;
 	name: string;
 	icon: string;
@@ -152,19 +192,25 @@ const DatabaseCard = ({
 
 export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
+	const { monolithStore, configStore } = useRootStore();
+	const notification = useNotification();
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
 	const [selectedDatabase, setSelectedDatabase] = useState<database | null>(
 		null,
 	);
 
-	const DatabaseOptions = DATABASE_CONNECTION.DATABASE;
+	const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false);
+	const [filedata, setFiledata] = useState(null);
+
+	const DatabaseOptions = DATABASE_CONNECTION;
+	const CategoryDescription = CATEGORY_DESCRIPTIONS;
 
 	const pageTitle = "Connect to database";
 	const pageDescription =
 		"In an era fueled by information, the seamless interlinking of various databases stands as a cornerstone for unlocking the untapped potential of LLM applications.";
 
-	const tabLabels = useMemo(() => ["All", "Connections", "File Uploads"], []);
+	const tabLabels = useMemo(() => ["Connections", "File Uploads"], []);
 	const allDatabases = useMemo(() => {
 		return [
 			...(DatabaseOptions.Connections || []),
@@ -176,6 +222,40 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 		if (tabLabels[selectedTab] === "All") return allDatabases;
 		return DatabaseOptions[tabLabels[selectedTab]] || [];
 	}, [selectedTab, tabLabels, DatabaseOptions, allDatabases]);
+
+	const onSubmit = async (data) => {
+		//setFormLoading(true);
+		try {
+			const uploadedFiles = await uploadFile(
+				[data],
+				configStore.store.insightID,
+			);
+
+			if (!uploadedFiles || !Array.isArray(uploadedFiles)) {
+				notification.add({
+					color: "error",
+					message: "Upload failed or returned invalid response.",
+				});
+				return;
+			}
+			const pixelExpressions = uploadedFiles.map(
+				(file) =>
+					`UploadDatabase(filePath=["${file.fileLocation}"],space=[""])`,
+			);
+			for (const pixelString of pixelExpressions) {
+				const response = await monolithStore.runQuery(pixelString);
+				const output = response?.pixelReturn?.[0]?.output;
+				navigate(`/engine/database/${output.database_id}`);
+			}
+		} catch {
+			notification.add({
+				color: "error",
+				message: "Upload failed or returned invalid response.",
+			});
+			return;
+		}
+		return;
+	};
 
 	const renderBreadcrumbs = () => (
 		<Breadcrumbs separator="/" data-testid="breadcrumbs">
@@ -207,7 +287,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				sx={{ cursor: selectedDatabase ? "pointer" : "default" }}
 				data-testid="breadcrumb-page"
 			>
-				Connect to Database
+				Connect to database Database
 			</Breadcrumbs.Item>
 
 			{selectedDatabase && (
@@ -246,10 +326,60 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 		</Grid>
 	);
 
+	const handleFileUpload = (flag: boolean) => {
+		// Open or close the file upload modal based on the provided flag
+		setIsFileUploadModalOpen(flag);
+	};
+
 	return (
 		<>
 			{renderBreadcrumbs()}
-
+			<Modal
+				open={isFileUploadModalOpen}
+				maxWidth="xl"
+				onClose={() => setIsFileUploadModalOpen(false)}
+				data-testid="database-zip-upload-modal"
+			>
+				<Modal.Content sx={{ width: "600px" }}>
+					<StyledDropzoneField>
+						<Typography
+							variant={"body1"}
+							data-testid="database-zip-upload-title"
+						>
+							Zip File
+						</Typography>
+						<FileDropzone
+							multiple={false}
+							onChange={(newValues) => {
+								setFiledata(newValues);
+							}}
+						/>
+						<Stack
+							spacing={2}
+							direction="row"
+							justifyContent="flex-end"
+						>
+							<CloseButton
+								size="small"
+								variant="text"
+								onClick={() => setIsFileUploadModalOpen(false)}
+								data-testid="database-upload-close-button"
+							>
+								Close
+							</CloseButton>
+							<SubmitUploadButton
+								size="small"
+								variant="contained"
+								disabled={!filedata}
+								onClick={() => onSubmit(filedata)}
+								data-testid="database-upload-submit-button"
+							>
+								Upload
+							</SubmitUploadButton>
+						</Stack>
+					</StyledDropzoneField>
+				</Modal.Content>
+			</Modal>
 			{selectedDatabase ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
@@ -258,6 +388,8 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 						title={selectedDatabase.name}
 						description={`Fill out ${selectedDatabase.name} details in order to add database to catalog`}
 						fields={selectedDatabase.fields}
+						advanced={selectedDatabase.advanced}
+						categoryDescription={CategoryDescription}
 					/>
 				</div>
 			) : (
@@ -272,7 +404,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 						</Typography>
 						<Typography
 							variant="body1"
-							color="secondary"
+							color="textSecondary"
 							data-testid="page-description"
 						>
 							{pageDescription}
@@ -288,6 +420,14 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								fullWidth
 								data-testid="search-box"
 							/>
+							<UploadButton
+								size="medium"
+								variant="outlined"
+								onClick={() => handleFileUpload(true)}
+								data-tesId={"database-upload-file-button"}
+							>
+								<FileUploadOutlined fontSize="small" />
+							</UploadButton>
 						</StyledSearchbarContainer>
 
 						<Box sx={{ width: "100%" }}>

@@ -58,6 +58,13 @@
 			},
 			"a11y": {
 				"useAltText": "error"
+			},
+			"nursery": {
+				"useSortedClasses": {
+					"level": "warn",
+					"fix": "safe",
+					"options": {}
+				}
 			}
 		}
 	},

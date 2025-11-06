@@ -22,7 +22,6 @@ import {
 import ColumnEditModal from "./ColumnEditModal";
 import { CSV_UPLOAD_ICONS } from "./database.constants";
 
-
 const StyledHeaderWrapper = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
@@ -76,7 +75,7 @@ const StyledExpandMoreIcon = styled(Icon)<{ collapse?: boolean }>(
 	({ collapse }) => ({
 		transform: collapse ? "rotate(180deg)" : "rotate(0deg)",
 		transition: "transform 0.3s",
-	}),
+	})
 );
 
 const StyledInnerBox = styled(Box)(({ theme }) => ({
@@ -86,7 +85,6 @@ const StyledInnerBox = styled(Box)(({ theme }) => ({
 	padding: theme.spacing(2),
 }));
 
-
 const StyledTableContainer = styled(Table.Container)({
 	maxHeight: "400px",
 	overflow: "auto",
@@ -95,10 +93,6 @@ const StyledTableContainer = styled(Table.Container)({
 const StyledBaseTableCell = styled(Table.Cell)(({ theme }) => ({
 	borderBottom: 0,
 	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
-}));
-
-const StyledTableCell = styled(StyledBaseTableCell)(({ theme }) => ({
-	padding: theme.spacing(1, 3, 1, 2),
 }));
 
 const StyedNameTextField = styled(TextField)({
@@ -116,6 +110,55 @@ const StyledFooterWrapper = styled("div")(({ theme }) => ({
 	marginTop: theme.spacing(2),
 	gap: theme.spacing(2),
 	marginBottom: theme.spacing(3),
+}));
+
+const StyleFileNameBox = styled(Box)(({ theme }) => ({
+	marginBottom: "15px",
+}));
+
+const StyledTypographyTableTitle = styled(Typography)({
+	fontSize: "16px",
+	color: "#212121",
+	whiteSpace: "nowrap",
+	position: "relative",
+	top: "14px",
+});
+
+const StyledTableStack = styled(Stack)({
+	flexDirection: "row",
+	alignItems: "flex-start",
+	gap: "6px",
+});
+
+const StyledTextFieldBox = styled(Box)({
+	flex: 1,
+});
+
+const StyledTextFieldTypography = styled(Typography)({
+	mt: 0.3,
+	display: "block",
+});
+const StyledTableCellName = styled(StyledBaseTableCell)(({ theme }) => ({
+	padding: theme.spacing(1, 3, 1, 2),
+	width: "66%",
+}));
+const StyledTableCellDataType = styled(StyledBaseTableCell)(({ theme }) => ({
+	padding: theme.spacing(1, 3, 1, 2),
+	width: "20%",
+}));
+const StyledTable = styled(StyledBaseTableCell)(({ theme }) => ({
+	padding: theme.spacing(1, 3, 1, 2),
+	width: "7%",
+}));
+const StyledBaseTableCellName = styled(Table.Cell)(({ theme }) => ({
+	borderBottom: 0,
+	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
+	width: "66%",
+}));
+const StyledBaseTableCellIcon = styled(Table.Cell)(({ theme }) => ({
+	borderBottom: 0,
+	boxShadow: `0px -1px 0px 0px ${theme.palette.grey[300]} inset`,
+	width: "7%",
 }));
 
 interface ParsedResult {
@@ -138,20 +181,31 @@ interface ColumnMetadata {
 	logicalName?: string[];
 }
 
-const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionProps) => {
+const DataSelection = ({
+	files,
+	fileName,
+	onImport,
+	onCancel,
+}: DataSelectionProps) => {
 	const [openModal, setOpenModal] = useState(false);
 	const [selectedColumn, setSelectedColumn] = useState<string | null>(null);
-	const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(null);
+	const [selectedFileIndex, setSelectedFileIndex] = useState<number | null>(
+		null
+	);
 
 	const [columnMetadataList, setColumnMetadataList] = useState<
 		Record<string, ColumnMetadata>[]
 	>([]);
-	const [collapseAll, setCollapseAll] = useState<boolean[]>(files.map(() => true));
+	const [collapseAll, setCollapseAll] = useState<boolean[]>(
+		files.map(() => true)
+	);
 	const [rowEditableStateList, setRowEditableStateList] = useState<
 		Record<number, boolean>[]
 	>([]);
 	const [tableNames, setTableNames] = useState<string[]>(fileName);
-	const [tableNameErrors, setTableNameErrors] = useState<string[]>(fileName.map(() => ""));
+	const [tableNameErrors, setTableNameErrors] = useState<string[]>(
+		fileName.map(() => "")
+	);
 
 	// Initialize column metadata and row states for each file
 	useEffect(() => {
@@ -166,18 +220,24 @@ const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionPro
 						description: "",
 						logicalName: [],
 					},
-				]),
-			),
+				])
+			)
 		);
 		setColumnMetadataList(metaList);
 
 		const rowStateList = files.map((parsedData) =>
-			Object.fromEntries(parsedData.cleanHeaders.map((_, index) => [index, true])),
+			Object.fromEntries(
+				parsedData.cleanHeaders.map((_, index) => [index, true])
+			)
 		);
 		setRowEditableStateList(rowStateList);
 	}, [files]);
 
-	const handleNameChange = (fileIdx: number, index: number, newValue: string) => {
+	const handleNameChange = (
+		fileIdx: number,
+		index: number,
+		newValue: string
+	) => {
 		const column = files[fileIdx].cleanHeaders[index];
 		setColumnMetadataList((prev) => {
 			const clone = [...prev];
@@ -207,90 +267,92 @@ const DataSelection = ({ files, fileName, onImport, onCancel }: DataSelectionPro
 	};
 
 	const handleTableNameChange = (index: number, newValue: string) => {
-	setTableNames((prev) => {
-		const updated = [...prev];
-		updated[index] = newValue;
-		return updated;
-	});
-
-	// Live validation
-	setTableNameErrors((prev) => {
-		const updated = [...prev];
-		if (!newValue.trim()) {
-			updated[index] = "Enter valid table name";
-		} else {
-			updated[index] = "";
-		}
-		return updated;
-	});
-};
-
-
-	const handleImport = () => {
-	if (tableNames.some((name) => !name.trim())) {
-		setTableNameErrors(
-			tableNames.map((n) => (!n.trim() ? "Enter valid table name" : "")),
-		);
-		return;
-	}
-
-	const tables = files.map((parsedData, fileIdx) => {
-		const originalHeaders = parsedData.cleanHeaders;
-		const metadata = columnMetadataList[fileIdx];
-		const rowState = rowEditableStateList[fileIdx];
-
-		const activeHeaders = originalHeaders.filter(
-			(_, index) => rowState[index],
-		);
-
-		const dataTypeMap: Record<string, string> = {};
-		const newHeaders: Record<string, string> = {};
-		const descriptionMap: Record<string, string> = {};
-		const logicalNamesMap: Record<string, string[]> = {};
-		const additionalDataTypes: Record<string, string> = {};
-
-		activeHeaders.forEach((original) => {
-			const userMeta = metadata[original] || {};
-			const updated = userMeta.alias || original;
-			const dataType = userMeta.dataType || parsedData.dataTypes[original];
-
-			dataTypeMap[updated] = dataType;
-
-			if (userMeta.alias && userMeta.alias !== original) {
-				newHeaders[updated] = original;
-			}
-			if (userMeta.description) {
-				descriptionMap[updated] = userMeta.description;
-			}
-			if (Array.isArray(userMeta.logicalName) && userMeta.logicalName.length > 0) {
-				logicalNamesMap[updated] = userMeta.logicalName;
-			}
-			if (userMeta.format) {
-				additionalDataTypes[updated] = userMeta.format;
-			}
+		setTableNames((prev) => {
+			const updated = [...prev];
+			updated[index] = newValue;
+			return updated;
 		});
 
-		return {
-			fileName: fileName[fileIdx],
-			table: tableNames[fileIdx],
-			filePath: [fileName[fileIdx]],
-			dataTypeMap,
-			newHeaders,
-			descriptionMap,
-			logicalNamesMap,
-			additionalDataTypes,
-			existing: fileIdx > 0 ? true : false,
-		};
-	});
+		// Live validation
+		setTableNameErrors((prev) => {
+			const updated = [...prev];
+			if (!newValue.trim()) {
+				updated[index] = "Enter valid table name";
+			} else {
+				updated[index] = "";
+			}
+			return updated;
+		});
+	};
 
-	onImport(tables);
-};
-const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
+	const handleImport = () => {
+		if (tableNames.some((name) => !name.trim())) {
+			setTableNameErrors(
+				tableNames.map((n) => (!n.trim() ? "Enter valid table name" : ""))
+			);
+			return;
+		}
+
+		const tables = files.map((parsedData, fileIdx) => {
+			const originalHeaders = parsedData.cleanHeaders;
+			const metadata = columnMetadataList[fileIdx];
+			const rowState = rowEditableStateList[fileIdx];
+
+			const activeHeaders = originalHeaders.filter(
+				(_, index) => rowState[index]
+			);
+
+			const dataTypeMap: Record<string, string> = {};
+			const newHeaders: Record<string, string> = {};
+			const descriptionMap: Record<string, string> = {};
+			const logicalNamesMap: Record<string, string[]> = {};
+			const additionalDataTypes: Record<string, string> = {};
+
+			activeHeaders.forEach((original) => {
+				const userMeta = metadata[original] || {};
+				const updated = userMeta.alias || original;
+				const dataType = userMeta.dataType || parsedData.dataTypes[original];
+
+				dataTypeMap[updated] = dataType;
+
+				if (userMeta.alias && userMeta.alias !== original) {
+					newHeaders[updated] = original;
+				}
+				if (userMeta.description) {
+					descriptionMap[updated] = userMeta.description;
+				}
+				if (
+					Array.isArray(userMeta.logicalName) &&
+					userMeta.logicalName.length > 0
+				) {
+					logicalNamesMap[updated] = userMeta.logicalName;
+				}
+				if (userMeta.format) {
+					additionalDataTypes[updated] = userMeta.format;
+				}
+			});
+
+			return {
+				fileName: fileName[fileIdx],
+				table: tableNames[fileIdx],
+				filePath: [fileName[fileIdx]],
+				dataTypeMap,
+				newHeaders,
+				descriptionMap,
+				logicalNamesMap,
+				additionalDataTypes,
+				existing: fileIdx > 0 ? true : false,
+			};
+		});
+
+		onImport(tables);
+	};
+	const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 
 	return (
 		<>
 			{files.map((parsedData, fileIdx) => (
-				<Box key={fileName[fileIdx]} sx={{marginBottom:"15px"}}>
+				<StyleFileNameBox key={fileName[fileIdx]}>
 					{/* Header Section */}
 					<StyledHeaderWrapper>
 						<Stack direction={"row"}>
@@ -302,14 +364,13 @@ const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 						<StyledCollapseButton
 							variant="outlined"
 							size="large"
+							data-testid="collapse-button"
 							onClick={() =>
 								setCollapseAll((prev) =>
-									prev.map((v, i) => (i === fileIdx ? !v : v)),
+									prev.map((v, i) => (i === fileIdx ? !v : v))
 								)
 							}
-							startIcon={
-								collapseAll[fileIdx] ? <UnfoldLess /> : <UnfoldMore />
-							}
+							startIcon={collapseAll[fileIdx] ? <UnfoldLess /> : <UnfoldMore />}
 						>
 							{collapseAll[fileIdx] ? "Collapse All" : "Expand All"}
 						</StyledCollapseButton>
@@ -320,14 +381,14 @@ const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 						<StyledSummaryHeader
 							onClick={() =>
 								setCollapseAll((prev) =>
-									prev.map((v, i) => (i === fileIdx ? !v : v)),
+									prev.map((v, i) => (i === fileIdx ? !v : v))
 								)
 							}
 						>
 							<StyledTypographyTitle variant="h6">
 								Sheet Name: {fileName[fileIdx]}
 							</StyledTypographyTitle>
-							<StyledExpandMoreIcon collapse={collapseAll[fileIdx]}>
+							<StyledExpandMoreIcon collapse={collapseAll[fileIdx]} data-testid="expand-icon">
 								<ExpandMore />
 							</StyledExpandMoreIcon>
 						</StyledSummaryHeader>
@@ -335,62 +396,61 @@ const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 						<Collapse in={collapseAll[fileIdx]}>
 							<Box>
 								<StyledInnerBox>
-  <Stack direction="row" alignItems="flex-start" spacing={2}>
-    <StyledTypographyTitle variant="h6" sx={{ whiteSpace: "nowrap",
-	position: "relative",
-	top: "6px",
-	}}>
-      Table Name:
-    </StyledTypographyTitle>
+									<StyledTableStack>
+										<StyledTypographyTableTitle variant="h6">
+											Table Name:
+										</StyledTypographyTableTitle>
 
-    <Box sx={{ flex: 1 }}>
-      <TextField
-        fullWidth
-        size="small"
-        placeholder="Enter table name"
-        value={tableNames[fileIdx] || ""}
-        onChange={(e) => handleTableNameChange(fileIdx, e.target.value)}
-        error={!tableNames[fileIdx]?.trim()}
-      />
-      {!tableNames[fileIdx]?.trim() && (
-        <Typography
-          variant="caption"
-          color="error"
-          sx={{ mt: 0.3, display: "block" }}
-        >
-          Enter a valid table name
-        </Typography>
-      )}
-    </Box>
-  </Stack>
-</StyledInnerBox>
-
+										<StyledTextFieldBox>
+											<TextField
+												fullWidth
+												size="small"
+												placeholder="Enter table name"
+												value={tableNames[fileIdx] || ""}
+												onChange={(e) =>
+													handleTableNameChange(fileIdx, e.target.value)
+												}
+												data-testid="table-name-input"
+												// @ts-expect-error TODO FIX
+												error={!tableNames[fileIdx]?.trim()}
+											/>
+											{!tableNames[fileIdx]?.trim() && (
+												<StyledTextFieldTypography
+													variant="caption"
+													color="error"
+												>
+													Enter a valid table name
+												</StyledTextFieldTypography>
+											)}
+										</StyledTextFieldBox>
+									</StyledTableStack>
+								</StyledInnerBox>
 
 								{/* Table Section */}
 								<StyledTableContainer>
 									<Table>
 										<Table.Head>
 											<Table.Row>
-												<StyledTableCell sx={{ width: "66%" }}>
+												<StyledTableCellName>
 													<StyledTableTypography variant="h6">
 														Name
 													</StyledTableTypography>
-												</StyledTableCell>
-												<StyledTableCell sx={{ width: "20%" }}>
+												</StyledTableCellName>
+												<StyledTableCellDataType>
 													<StyledTableTypography variant="h6">
 														Data Type
 													</StyledTableTypography>
-												</StyledTableCell>
-												<StyledTableCell sx={{ width: "7%" }} />
-												<StyledTableCell sx={{ width: "7%" }} />
+												</StyledTableCellDataType>
+												<StyledTable />
+												<StyledTable />
 											</Table.Row>
 										</Table.Head>
 
 										<Table.Body>
 											{parsedData.cleanHeaders.map((column, index) => (
-												<Table.Row key={column}>
+												<Table.Row key={column} data-testid={`table-row-${fileIdx}-${index}`}>
 													{/* Name */}
-													<StyledBaseTableCell sx={{ width: "66%" }}>
+													<StyledBaseTableCellName data-testid={`table-cell-name-${fileIdx}-${index}`}>
 														<StyedNameTextField
 															fullWidth
 															value={
@@ -398,22 +458,17 @@ const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 																column
 															}
 															onChange={(e) =>
-																handleNameChange(
-																	fileIdx,
-																	index,
-																	e.target.value,
-																)
+																handleNameChange(fileIdx, index, e.target.value)
 															}
 															variant="outlined"
 															size="small"
-															disabled={
-																!rowEditableStateList[fileIdx]?.[index]
-															}
+															disabled={!rowEditableStateList[fileIdx]?.[index]}
+															data-testid={`column-name-input-${fileIdx}-${index}`}
 														/>
-													</StyledBaseTableCell>
+													</StyledBaseTableCellName >
 
 													{/* Data Type */}
-													<StyledBaseTableCell sx={{ width: "20%" }}>
+													<StyledBaseTableCell data-testid={`table-cell-datatype-${fileIdx}-${index}`}>
 														<Typography
 															variant="h6"
 															sx={{
@@ -422,41 +477,38 @@ const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 																	? "#9E9E9E"
 																	: "#212121",
 															}}
+															data-testid={`column-datatype-${fileIdx}-${index}`}
 														>
-															{columnMetadataList[fileIdx]?.[column]?.dataType ||
-																"STRING"}
+															{columnMetadataList[fileIdx]?.[column]
+																?.dataType || "STRING"}
 														</Typography>
-													</StyledBaseTableCell>
+													</StyledBaseTableCell >
 
 													{/* Edit */}
-													<StyledBaseTableCell sx={{ width: "7%" }}>
+													<StyledBaseTableCellIcon data-testid={`table-cell-edit-${fileIdx}-${index}`}>
 														<IconButton
 															size="small"
-															onClick={() =>
-																handleOpenModal(fileIdx, column)
-															}
-															disabled={
-																!rowEditableStateList[fileIdx]?.[index]
-															}
+															onClick={() => handleOpenModal(fileIdx, column)}
+															disabled={!rowEditableStateList[fileIdx]?.[index]}
+															data-testid={`edit-button-${fileIdx}-${index}`}
 														>
 															<CreateOutlined />
 														</IconButton>
-													</StyledBaseTableCell>
+													</StyledBaseTableCellIcon>
 
 													{/* Toggle */}
-													<StyledBaseTableCell sx={{ width: "7%" }}>
+													<StyledBaseTableCellIcon data-testid={`table-cell-toggle-${fileIdx}-${index}`}>
 														<IconButton
-															onClick={() =>
-																toggleRowEditState(fileIdx, index)
-															}
+															onClick={() => toggleRowEditState(fileIdx, index)}
+															data-testid={`toggle-button-${fileIdx}-${index}`}
 														>
 															{rowEditableStateList[fileIdx]?.[index] ? (
-																<CloseIcon color="error" />
+																<CloseIcon color="error" data-testid={`toggle-icon-close-${fileIdx}-${index}`} />
 															) : (
-																<AddIcon color="success" />
+																<AddIcon color="success" data-testid={`toggle-icon-add-${fileIdx}-${index}`}/>
 															)}
 														</IconButton>
-													</StyledBaseTableCell>
+													</StyledBaseTableCellIcon>
 												</Table.Row>
 											))}
 										</Table.Body>
@@ -465,15 +517,21 @@ const isAnyTableNameInvalid = tableNames.some((name) => !name?.trim());
 							</Box>
 						</Collapse>
 					</StyledBodyWrapper>
-				</Box>
+				</StyleFileNameBox>
 			))}
 
 			{/* Footer */}
 			<StyledFooterWrapper>
-				<Button variant="outlined" color="primary" onClick={onCancel}>
+				<Button variant="outlined" color="primary" onClick={onCancel} data-testid="back-button">
 					Back
 				</Button>
-				<Button variant="contained" color="primary" onClick={handleImport} disabled={isAnyTableNameInvalid}>
+				<Button
+					variant="contained"
+					color="primary"
+					onClick={handleImport}
+					disabled={isAnyTableNameInvalid}
+					data-testid="import-button"
+				>
 					Import
 				</Button>
 			</StyledFooterWrapper>
