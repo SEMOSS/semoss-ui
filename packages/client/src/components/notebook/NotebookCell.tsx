@@ -33,6 +33,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { useWorkspace } from "@/hooks";
+import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
@@ -114,7 +115,7 @@ const StyledCard = styled(Card, {
 	const shape = theme.shape as CustomShapeOptions;
 
 	return {
-		overflow: "hidden",
+		overflow: "visible", // Changed from hidden to visible for display (Pixel) reactor methods auto-complete suggestions
 		flexGrow: 1,
 		cursor: isCardCellSelected ? "inherit" : "pointer",
 		border: isCardCellSelected
@@ -345,46 +346,50 @@ export const NotebookCell = observer(
 		/**
 		 * Create a duplicate cell
 		 */
-		console.log(cell, 'important')
-const duplicateCell = async () => {
-    try {
-        let parameters = { ...cell.parameters };
+		console.log(cell, "important");
+		const duplicateCell = async () => {
+			try {
+				let parameters = { ...cell.parameters };
 
-        if (cell.widget === "query-import" || cell.widget === "data-import" || cell.widget === "text-to-sql") {
-            parameters = {
-                ...parameters,
-                frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
-            };
-        }
+				if (
+					cell.widget === "query-import" ||
+					cell.widget === "data-import" ||
+					cell.widget === "text-to-sql"
+				) {
+					parameters = {
+						...parameters,
+						frameVariableName: `FRAME_${Math.floor(Math.random() * 100000)}`,
+					};
+				}
 
-        // copy and add the step to the end
-        const newCellId = (await state.dispatch({
-            message: ActionMessages.NEW_CELL,
-            payload: {
-                queryId: queryId,
-                previousCellId: cellId,
-                config: {
-                    widget: cell.widget,
-                    parameters,
-                },
-            },
-        })) as string;
+				// copy and add the step to the end
+				const newCellId = (await state.dispatch({
+					message: ActionMessages.NEW_CELL,
+					payload: {
+						queryId: queryId,
+						previousCellId: cellId,
+						config: {
+							widget: cell.widget,
+							parameters,
+						},
+					},
+				})) as string;
 
-        state.dispatch({
-            message: ActionMessages.ADD_VARIABLE,
-            payload: {
-                id: `${queryId}--${newCellId}`,
-                type: "cell",
-                to: queryId,
-                cellId: newCellId,
-            },
-        });
+				state.dispatch({
+					message: ActionMessages.ADD_VARIABLE,
+					payload: {
+						id: `${queryId}--${newCellId}`,
+						type: "cell",
+						to: queryId,
+						cellId: newCellId,
+					},
+				});
 
-        notebook.selectCell(queryId, newCellId);
-    } catch (e) {
-        console.error(e);
-    }
-};
+				notebook.selectCell(queryId, newCellId);
+			} catch (e) {
+				console.error(e);
+			}
+		};
 
 		const deleteCell = () => {
 			try {
@@ -520,6 +525,8 @@ const duplicateCell = async () => {
 					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
 				);
 
+				workspace.setLoading(false);
+
 				// Handle pixel call errors
 				if (errors?.length) {
 					notification.add({
@@ -583,7 +590,6 @@ const duplicateCell = async () => {
 						},
 					},
 				});
-				workspace.setLoading(false);
 			} catch (error) {
 				console.error("Error in makeCellMCP:", error);
 				workspace.setLoading(false);
@@ -633,25 +639,26 @@ const duplicateCell = async () => {
 					<StyledCellActions in={showCellActions}>
 						<Stack gap={1} direction={"row"} alignItems={"center"}>
 							<StyledButtonGroup variant="outlined">
-								<StyledButtonGroupButton
-									title="Make Available through MCP"
-									size="small"
-									disabled={
-										cell.isLoading ||
-										!workspace.agentModelEngine ||
-										cell.config.widget !== "code"
-									}
-									onClick={(e) => {
-										// stop propogation to card parent so newly created cell will be selected
-										e.stopPropagation();
-										// helper fn to make the cell mcp
-										makeCellMCP();
-									}}
-								>
-									<StyledButtonLabel>
-										<SmartToy />
-									</StyledButtonLabel>
-								</StyledButtonGroupButton>
+								{cell.query.id === MCP_NOTEBOOK_NAME && (
+									<StyledButtonGroupButton
+										title="Make Available through MCP"
+										size="small"
+										disabled={
+											cell.isLoading ||
+											!workspace.agentModelEngine
+										}
+										onClick={(e) => {
+											// stop propogation to card parent so newly created cell will be selected
+											e.stopPropagation();
+											// helper fn to make the cell mcp
+											makeCellMCP();
+										}}
+									>
+										<StyledButtonLabel>
+											<SmartToy />
+										</StyledButtonLabel>
+									</StyledButtonGroupButton>
+								)}
 								<StyledButtonGroupButton
 									title="Run this cell and below"
 									size="small"
@@ -1026,6 +1033,11 @@ const duplicateCell = async () => {
 																						output={
 																							cell.output
 																						}
+																						cellData={{
+																							cellId: cell.id.toString(),
+																							queryId:
+																								queryId.toString(),
+																						}}
 																					/>
 																				);
 																			},

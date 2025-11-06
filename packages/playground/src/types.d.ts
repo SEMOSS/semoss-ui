@@ -9,6 +9,16 @@ export interface App {
 	project_id: string;
 	project_name: string;
 	description?: string;
+	project_date_created: string;
+}
+
+export interface Workspace {
+	workspace_id: string;
+	name: string;
+	date_created: string; // ISO string
+	description: string;
+	system_prompt: string;
+	mcp: MCPConfig[];
 }
 
 /**
@@ -25,30 +35,24 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Knowledge {
-	/** Id of the tool */
+export interface MCP {
+	/** Type of the mcp */
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
+
+	/** Id of the mcp */
 	id: string;
 
-	/** Name of the tool */
-	name: string;
-}
-
-export interface Tool {
-	/** Type of the tool */
-	type: "APP" | "STORAGE" | "DATABASE" | "FUNCTION";
-
-	/** Id of the tool */
-	id: string;
-
-	/** Name of the tool */
+	/** Name of the mcp */
 	name: string;
 
-	/** Description of the tool */
+	/** Description of the mcp */
 	description: string;
 
-	/** Tags of the tool */
+	/** Tags of the mcp */
 	tags: string[];
 }
+
+export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
 
 /**
  * Item from the prompt library
@@ -79,14 +83,10 @@ interface AbstractPixelMessage {
 	parentMessageId?: string;
 	visible: boolean;
 	dateCreated: string;
-	ornaments: {
-		chunks: unknown[];
-	};
 }
 
 interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
-	visible: true;
 	inputUIPrompt: string;
 	files: {
 		fileName: string;
@@ -108,13 +108,16 @@ interface InputToolExecPixelMessage extends AbstractPixelMessage {
 
 interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
-	visible: true;
 	content: string;
+	ornaments: {
+		PLAYGROUND_MESSAGE_TYPE?: "COT";
+	};
 }
+
+export type McpExecution = "auto" | "ask" | "disabled";
 
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
-	visible: true;
 	tool_responses: {
 		/** tool execution id */
 		id: string;
@@ -124,6 +127,7 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			map: {
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
+				SMSS_MCP_EXECUTION: McpExecution;
 			};
 		};
 
@@ -137,4 +141,71 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
 	}[];
+}
+
+/**
+ * Plan
+ */
+export interface Plan {
+	user_prompt: string;
+	plan_id: string;
+	steps: PlanStep[];
+}
+
+export interface PlanStep {
+	step_number: number;
+	step_name: string;
+	description: string;
+	type:
+		| "tool_call"
+		| "llm_reasoning"
+		| "human_intervention"
+		| "no_tool_available";
+	status: "pending" | "in_progress" | "completed" | "failed";
+	details:
+		| {
+				stepType: "tool_call";
+				tool_name: string;
+				parameters: Record<string, unknown>;
+				rationaleForStep: string;
+				title: string;
+				_meta: {
+					map: {
+						SMSS_PROJECT_NAME: string;
+						SMSS_PROJECT_ID: string;
+					};
+				};
+		  }
+		| {
+				stepType: "llm_reasoning";
+				prompt: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "human_intervention";
+				required_role: string;
+				instructions: string;
+				rationaleForStep: string;
+		  }
+		| {
+				stepType: "no_tool_available";
+				missing_capability: string;
+				rationaleForStep: string;
+		  };
+}
+
+export interface MCPTool {
+	description?: string;
+	inputSchema: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	name: string;
+	outputSchema?: {
+		properties?: { [key: string]: object };
+		required?: string[];
+		type: "object";
+	};
+	title?: string;
 }

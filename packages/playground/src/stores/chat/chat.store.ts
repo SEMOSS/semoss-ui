@@ -1,11 +1,13 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import type { Insight } from "@semoss/sdk/react";
+import { engineProjectToToolbox } from "@/components";
 import { MODEL_KEY } from "@/constants";
-import type { Engine } from "@/types";
+import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 import { RoomStore } from "../room";
 
 const DEFAUlT_MODEL = import.meta.env.VITE_DEFAUlT_MODEL || "";
 const ENABLE_MODEL_SELECT = import.meta.env.VITE_ENABLE_MODEL_SELECT === "true";
+const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
 interface ChatStoreInterface {
 	/**
@@ -22,6 +24,11 @@ interface ChatStoreInterface {
 	 * Map of id to channel
 	 */
 	rooms: Record<string, RoomStore>;
+
+	/**
+	 * Map of id to workspace
+	 */
+	workspaces: Record<string, Workspace>;
 
 	/**
 	 * Order of the rooms
@@ -50,6 +57,7 @@ export class ChatStore {
 		isInitialized: false,
 		isLoading: false,
 		rooms: {},
+		workspaces: {},
 		order: [],
 		models: {
 			options: [],
@@ -101,11 +109,18 @@ export class ChatStore {
 	 * @param roomId - message to get
 	 */
 	getRoom(roomId: string): RoomStore | null {
-		return this._store.rooms[roomId];
+		return this._store.rooms[roomId] ?? null;
 	}
 
 	/**
-	 * Get the active roomId
+	 * Get the workspaces from the store
+	 */
+	get workspaces() {
+		return this._store.workspaces;
+	}
+
+	/**
+	 * Get the models from the store
 	 */
 	get models() {
 		return this._store.models;
@@ -120,6 +135,8 @@ export class ChatStore {
 			Promise.all([
 				// get the room info
 				this.getRooms(),
+				// get the workspace info
+				this.getWorkspaces(),
 				// get the model info
 				this.getModels(),
 			]).finally(() => {
@@ -153,7 +170,12 @@ export class ChatStore {
 	 * @param modelId - modelId to open the room with
 	 * @param name - name of the room
 	 */
-	createRoom = async (modelId: string, name: string): Promise<RoomStore> => {
+	createRoom = async (
+		name: string,
+		mode: RoomStore["mode"],
+		modelId: string,
+		options: RoomStore["options"],
+	): Promise<RoomStore> => {
 		try {
 			// turn on the loading screen
 			this.setIsLoading(true);
@@ -183,11 +205,16 @@ export class ChatStore {
 			const room = this.newRoom(roomId);
 
 			// set the initial data
-			room.setModel(modelId);
 			room.setMetadata({
 				name: name,
-				dateCreated: new Date().toDateString(),
+				dateCreated: new Date().toISOString(),
 			});
+			room.setMode(mode);
+			room.setModel(modelId);
+
+			if (options.workspace) {
+				room.legacyLinkWorkspace(options.workspace?.workspace_id);
+			}
 
 			runInAction(() => {
 				// add to the front
@@ -219,7 +246,7 @@ export class ChatStore {
 
 			// wait for the pixel to run
 			await this._actions.run<[boolean]>(
-				`CloseRoom(roomId=["${roomId}"]);`,
+				`RemoveUserRoom(roomId=["${roomId}"]);`,
 			);
 
 			// throw errors
@@ -250,6 +277,104 @@ export class ChatStore {
 	};
 
 	/**
+	 * Get available MCPs from the backend
+	 */
+	// Record<type, Record<id, MCP>>
+	getMcpMap = async (
+		filterWord?: string,
+	): Promise<Record<string, Record<string, MCP>>> => {
+		try {
+			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
+				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
+			);
+
+			if (
+				!pixelReturn ||
+				pixelReturn.length === 0 ||
+				!pixelReturn[0].output
+			) {
+				throw new Error();
+			}
+
+			const toolBoxes = pixelReturn[0].output.map(engineProjectToToolbox);
+
+			return toolBoxes.reduce(
+				(acc, tool) => {
+					if (!acc[tool.type]) {
+						acc[tool.type] = {};
+					}
+					acc[tool.type][tool.id] = tool;
+					return acc;
+				},
+				{} as Record<string, Record<string, MCP>>,
+			);
+		} catch {
+			throw new Error("Failed to fetch MCPs");
+		}
+	};
+
+	/**
+	 * Add a new workspace
+	 */
+	addWorkspace = async (
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+	): Promise<string> => {
+		try {
+			const esc = (v: string) =>
+				String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+			const name = esc(data.name ?? "");
+			const desc = esc(data.description ?? "");
+			const prompt = esc(data.system_prompt ?? "");
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
+
+			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcp=${JSON.stringify(mcp)})`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			runInAction(() => {
+				// add to the store
+				this._store.workspaces = {
+					...this._store.workspaces,
+					[pixelReturn[0].output]: {
+						workspace_id: pixelReturn[0].output,
+						name: data.name,
+						date_created: new Date().toISOString(),
+						description: data.description,
+						system_prompt: data.system_prompt,
+						mcp: data.mcp,
+					},
+				};
+			});
+
+			return pixelReturn[0].output;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	deleteWorkspace = async (workspaceId: string) => {
+		try {
+			await this._actions.run(
+				`DeleteWorkspace(workspaceId=['${workspaceId}'])`,
+			);
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			return;
+		} catch (e) {
+			console.error(e);
+		}
+	};
+
+	/**
 	 * Helpers
 	 */
 	/**
@@ -270,6 +395,7 @@ export class ChatStore {
 						ROOM_ID: string;
 						ROOM_NAME: string;
 						DATE_CREATED: string;
+						WORKSPACE_ID?: string;
 					}[],
 				]
 			>(`GetUserConversationRooms();`);
@@ -299,6 +425,8 @@ export class ChatStore {
 					dateCreated: r.DATE_CREATED,
 				});
 
+				room.setOptions(room.options);
+
 				// store the order
 				order.push(r.ROOM_ID);
 			}
@@ -306,6 +434,55 @@ export class ChatStore {
 			runInAction(() => {
 				// set the order
 				this._store.order = order;
+			});
+		} finally {
+			this.setIsLoading(false);
+		}
+	};
+
+	/**
+	 * Get available workspaces from the backend
+	 */
+	private getWorkspaces = async (): Promise<void> => {
+		// workspaces are not enabled, set it to the default
+		if (!ENABLE_WORKSPACE) {
+			this._store.workspaces = {};
+			return;
+		}
+
+		try {
+			// turn on the loading screen
+			this.setIsLoading(true);
+
+			// clear the models
+			this._store.workspaces = {};
+
+			// wait for the pixel to run
+			const { pixelReturn } =
+				await this._actions.run<
+					[
+						{
+							workspaces: Workspace[];
+						},
+					]
+				>(` ListWorkspaces()`);
+
+			// throw errors
+			if (this._error) {
+				throw new Error(this._error.message);
+			}
+
+			runInAction(() => {
+				// get the output
+				const { output } = pixelReturn[0];
+				// store the models
+				this._store.workspaces = output.workspaces.reduce(
+					(acc, workspace) => {
+						acc[workspace.workspace_id] = workspace;
+						return acc;
+					},
+					{} as Record<string, Workspace>,
+				);
 			});
 		} finally {
 			this.setIsLoading(false);
@@ -341,7 +518,6 @@ export class ChatStore {
 				` MyEngines ( metaKeys = [] , metaFilters = [{ "tag" : "text-generation" }] , engineTypes = [ 'MODEL' ] )`,
 			);
 
-			// throw errors
 			// throw errors
 			if (this._error) {
 				throw new Error(this._error.message);

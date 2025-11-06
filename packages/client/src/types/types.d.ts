@@ -8,7 +8,7 @@ export type Role =
 
 export interface PixelCommand {
 	type: string;
-	components: any[];
+	components: unknown[];
 	terminal?: boolean;
 	meta?: boolean;
 }
@@ -86,3 +86,17 @@ export type PathValue<
 		? PathValue<Idx<T, Key>, Rest>
 		: never
 	: Idx<T, P>;
+
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	payload: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+}
