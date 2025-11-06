@@ -12,6 +12,7 @@ import {
 	PlayArrowRounded,
 	PlayCircle,
 	SmartToy,
+	SwapHoriz,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
@@ -512,6 +513,24 @@ export const NotebookCell = observer(
 			}
 		};
 
+		const revertMCPToCell = async () => {
+			try {
+				workspace.setLoading(true);
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						path: "",
+						value: cell.parameters["originalParams"],
+					},
+				});
+				workspace.setLoading(false);
+			} catch (e) {
+				console.error(e);
+			}
+		};
+
 		/**
 		 * @description
 		 * 1. make pixel call to generate python tool for cell
@@ -585,7 +604,10 @@ export const NotebookCell = observer(
 						parameters: {
 							name: toolName,
 							projectId: workspace.appId,
-							originalParams: { ...cell.parameters },
+							originalParams: {
+								widget: cell.widget,
+								parameters: cell.parameters,
+							},
 							params,
 						},
 					},
@@ -641,7 +663,11 @@ export const NotebookCell = observer(
 							<StyledButtonGroup variant="outlined">
 								{cell.query.id === MCP_NOTEBOOK_NAME && (
 									<StyledButtonGroupButton
-										title="Make Available through MCP"
+										title={
+											cell.widget === "mcp-tool"
+												? "Revert to Code"
+												: "Make Available through MCP"
+										}
 										size="small"
 										disabled={
 											cell.isLoading ||
@@ -650,12 +676,21 @@ export const NotebookCell = observer(
 										onClick={(e) => {
 											// stop propogation to card parent so newly created cell will be selected
 											e.stopPropagation();
-											// helper fn to make the cell mcp
-											makeCellMCP();
+											if (cell.widget !== "mcp-tool") {
+												// helper fn to make the cell mcp
+												makeCellMCP();
+											} else {
+												// helper fn to revert the cell to code
+												revertMCPToCell();
+											}
 										}}
 									>
 										<StyledButtonLabel>
-											<SmartToy />
+											{cell.widget === "mcp-tool" ? (
+												<SwapHoriz />
+											) : (
+												<SmartToy />
+											)}
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
 								)}
