@@ -42,6 +42,7 @@ import {
 	fetchMainUses,
 	type modelledDependency,
 } from "@/components/app";
+import { UpdateSMSS } from "@/components/settings";
 import { ShareOverlay } from "@/components/ui";
 import { SettingsContext } from "@/contexts";
 import { useRootStore } from "@/hooks";
@@ -560,7 +561,13 @@ export const AppDetailPage = observer(() => {
 		setResponseStatus(true);
 	};
 	const TABS_BY_PERMISSION: Record<string, string[]> = {
-		author: ["Overview", "Access Control", "Dependencies", "Settings"],
+		author: [
+			"Overview",
+			"Access Control",
+			"Dependencies",
+			"Settings",
+			"SMSS",
+		],
 		editor: ["Overview", "Access Control"],
 		readOnly: ["Overview"],
 		discoverable: ["Overview"],
@@ -758,6 +765,13 @@ export const AppDetailPage = observer(() => {
 											value="Settings"
 										/>
 									)}
+									{visibleTabs.includes("SMSS") && (
+										<StyledToggleTabsGroupItem
+											label="SMSS"
+											value="SMSS"
+										/>
+									)}
+									Hi
 								</StyledToggleTabsGroup>
 							</StyledContentContainer>
 							<StyledTabsSection>
@@ -819,6 +833,15 @@ export const AppDetailPage = observer(() => {
 										}}
 									>
 										<SettingsTab id={appId} />
+									</SettingsContext.Provider>
+								)}
+								{selectedTab === "SMSS" && (
+									<SettingsContext.Provider
+										value={{
+											adminMode: false,
+										}}
+									>
+										<UpdateSMSS type={"APP"} id={appId} />
 									</SettingsContext.Provider>
 								)}
 							</StyledTabsSection>

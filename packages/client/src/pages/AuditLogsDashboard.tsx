@@ -12,7 +12,7 @@ import {
 import { AuditLogsDataTable, AuditLogsTimeline } from "@/components/logs";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
 import { useRootStore } from "@/hooks";
-import { EventData } from "@/types";
+import type { EventData } from "@/types";
 
 const DashboardHeader = styled("div")(({ theme }) => ({
 	width: "100%",
@@ -24,26 +24,33 @@ const DashboardHeader = styled("div")(({ theme }) => ({
 export const AuditLogsDashboard = ({ catalogName }) => {
 	const { configStore, monolithStore } = useRootStore();
 	const [logs, setLogs] = useState<EventData[]>([]);
+	const [page, setPage] = useState(0);
+	const [rowsPerPage, setRowsPerPage] = useState(10);
+	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
 
-	const fetchLogs = async () => {
+	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
 		try {
 			const date = new Date();
 			const yyyy = date.getFullYear();
-			const mm = String(date.getMonth() + 1).padStart(2, '0');
-			const dd = String(date.getDate()).padStart(2, '0');
-			const hh = String(date.getHours()).padStart(2, '0');
-			const min = String(date.getMinutes()).padStart(2, '0');
-			const ss = String(date.getSeconds()).padStart(2, '0');
+			const mm = String(date.getMonth() + 1).padStart(2, "0");
+			const dd = String(date.getDate()).padStart(2, "0");
+			const hh = String(date.getHours()).padStart(2, "0");
+			const min = String(date.getMinutes()).padStart(2, "0");
+			const ss = String(date.getSeconds()).padStart(2, "0");
 
 			const dateTime = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 			const catalogId =
-				window.location.hash.split("/")[catalogName == "Apps" ? 2 : 3];
+				window.location.hash.split("/")[catalogName === "Apps" ? 2 : 3];
 			const response = await monolithStore.runQuery(
-				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName == "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}"}]);`,
+				`AuditLogReport(paramValues=[{"userId": "${configStore.store.user.id}", "${catalogName === "Apps" ? "projectId" : "engineId"}": "${catalogId}","dateTime":"${dateTime}","limit":"${limit}","offset":"${offset}"}]);`,
 			);
-			setLogs(response.pixelReturn[0].output as EventData[] || []);
+			const responseData = response.pixelReturn[0].output;
+			setLogs((responseData?.logs as EventData[]) || responseData || []);
+			setTotalCount(
+				responseData?.totalCount || responseData?.length || 0,
+			);
 		} catch (error) {
 			console.error("Error fetching logs:", error);
 		} finally {
@@ -51,10 +58,20 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 		}
 	};
 
+	const handlePaginationChange = (
+		newPage: number,
+		newRowsPerPage: number,
+	) => {
+		const offset = newPage * newRowsPerPage;
+		setPage(newPage);
+		setRowsPerPage(newRowsPerPage);
+		fetchLogs(newRowsPerPage, offset);
+	};
+
 	useEffect(() => {
 		if (catalogName) {
 			setLogs([]);
-			fetchLogs();
+			fetchLogs(rowsPerPage, page * rowsPerPage);
 		}
 		//override the parent css which has id = home__content
 		const contentElement = document.getElementById("home__container");
@@ -74,7 +91,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 
 	return (
 		<>
-			{catalogName == "Apps" && (
+			{catalogName === "Apps" && (
 				<NavbarLeft>
 					<NavbarHeader />
 				</NavbarLeft>
@@ -109,7 +126,9 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 							variant="contained"
 							color="primary"
 							startIcon={<Refresh />}
-							onClick={fetchLogs}
+							onClick={() =>
+								fetchLogs(rowsPerPage, page * rowsPerPage)
+							}
 						>
 							Refresh
 						</Button>
@@ -131,7 +150,13 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 				) : (
 					<>
 						<AuditLogsTimeline logs={logs} />
-						<AuditLogsDataTable logs={logs} />
+						<AuditLogsDataTable
+							logs={logs}
+							totalCount={totalCount}
+							page={page}
+							rowsPerPage={rowsPerPage}
+							onPaginationChange={handlePaginationChange}
+						/>
 					</>
 				)}
 			</Stack>
