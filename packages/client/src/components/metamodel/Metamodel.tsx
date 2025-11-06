@@ -7,11 +7,11 @@ import {
 	useEdgesState,
 	useNodesState,
 } from "@xyflow/react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import { Button } from "@semoss/ui";
 import { MetamodelContext } from "@/contexts";
-import type { Property } from "../import/database/MetaModelType";
+import type { Property } from "../import/database/MetamodelTypes";
 import Editmetamodel from "./Editmetamodel";
 import EditTable from "./Edittable";
 import { FloatingEdge } from "./FloatingEdge";
@@ -44,6 +44,10 @@ interface MetamodelProps {
 
 	onMetaModelUpdate?: (snapshot: MetamodelNodeType[]) => void;
 }
+export interface ColumnOption {
+	id: string;
+	name: string;
+}
 
 export const Metamodel = (props: MetamodelProps) => {
 	const {
@@ -57,7 +61,10 @@ export const Metamodel = (props: MetamodelProps) => {
 		onMetaModelUpdate,
 	} = props;
 
-	const [data, setData] = useState<{ nodes; edges }>({
+	const [data, setData] = useState<{
+		nodes: MetamodelNodeType[];
+		edges: Edge[];
+	}>({
 		nodes: nodes ?? [],
 		edges: edges ?? [],
 	});
@@ -82,12 +89,12 @@ export const Metamodel = (props: MetamodelProps) => {
 		nodeId: string;
 		name: string;
 	}>(null);
-	const [availableColumnNames, setAvailableColumnNames] = useState<string[]>(
-		[],
-	);
-	const [localNodesData, setLocalNodesData] = useState<MetamodelNodeType[]>(
-		[],
-	);
+	const [availableColumnNames, setAvailableColumnNames] = useState<
+		ColumnOption[]
+	>([]);
+
+	const isInitialMount = useRef(true);
+
 	const openEditForColumn = useCallback(
 		(payload: {
 			nodeId: string;
@@ -109,26 +116,41 @@ export const Metamodel = (props: MetamodelProps) => {
 	}, []);
 
 	const openEditTable = useCallback(
-		(payload: { nodeId: string; name: string }) => {
+		(payload: { nodeId: string; name: string; description?: string }) => {
 			setTableToEdit(payload);
 			setOpenEditTableModal(true);
 		},
 		[],
 	);
 
-	const getAllColumnNamesFromNodes = (nodes) => {
-		const result = [];
-		if (!Array.isArray(nodes)) return result;
-		for (const n of nodes) {
-			const props = n?.data?.properties || [];
-			for (const p of props) {
-				const name = p?.name;
-				if (!name) continue;
-				if (!result.includes(name)) result.push(name);
+	const getAllColumnNamesFromNodes = useCallback(
+		(nodes: MetamodelNodeType[]): ColumnOption[] => {
+			const result: ColumnOption[] = [];
+			const seen = new Set<string>();
+
+			if (!Array.isArray(nodes)) return result;
+
+			for (const n of nodes) {
+				const props = n?.data?.properties || [];
+
+				for (const p of props) {
+					const id = p?.id;
+					const name = p?.name;
+					if (!name && !id) continue;
+
+					const key = id ?? name;
+
+					if (!seen.has(key)) {
+						seen.add(key);
+						result.push({ id, name });
+					}
+				}
 			}
-		}
-		return result;
-	};
+
+			return result;
+		},
+		[],
+	);
 
 	const applyReplaceColumnsForNode = useCallback(
 		(
@@ -148,124 +170,115 @@ export const Metamodel = (props: MetamodelProps) => {
 			const chosenType = payload.type ?? "varchar";
 			const { description, alias } = payload;
 
-			const node = data.nodes.find((n) => n.id === nodeId);
-			const existingProps = node?.data?.properties || [];
-
-			const newProps = names.map((nm) => {
-				const existing = existingProps.find((p) => p.name === nm);
-				if (existing) return existing;
-				let newId = `${nodeId}.${nm.replace(/\s+/g, "_")}`;
-				if (existingProps.some((p) => p.id === newId)) {
-					newId = `${newId}_${Date.now()}`;
-				}
-				return { id: newId, name: nm, type: chosenType };
-			});
-
-			const newlyCreatedNames = newProps
-				.map((p) => p.name)
-				.filter((n) => n && !availableColumnNames.includes(n));
-			if (newlyCreatedNames.length > 0) {
-				setAvailableColumnNames((prev) =>
-					Array.from(new Set([...prev, ...newlyCreatedNames])),
-				);
-			}
-
 			setData((prev) => {
+				const node = prev.nodes.find((n) => n.id === nodeId);
+				if (!node) return prev;
+
+				const existingProps = node.data?.properties || [];
+
+				const newProps = names.map((nm) => {
+					const existing = existingProps.find((p) => p.name === nm);
+					if (existing) return existing;
+
+					const matchedAvailable =
+						Array.isArray(availableColumnNames) &&
+						availableColumnNames.find(
+							(c) => c.name === nm || c.id === nm,
+						);
+
+					let newId =
+						matchedAvailable?.id ??
+						`${nodeId}.${nm.replace(/\s+/g, "_")}`;
+
+					if (existingProps.some((p) => p.id === newId)) {
+						newId = `${newId}_${Date.now()}`;
+					}
+
+					return { id: newId, name: nm, type: chosenType };
+				});
+
+				const updatedNodeData = {
+					properties: newProps,
+					description: description !== undefined ? description : "",
+					name: alias !== undefined ? alias : node.data?.name,
+				};
+
 				const newNodes = prev.nodes.map((n) =>
 					n.id === nodeId
 						? {
 								...n,
 								data: {
 									...n.data,
-									properties: newProps,
-									description:
-										description !== undefined
-											? description
-											: n.data?.description,
-									name:
-										alias !== undefined
-											? alias
-											: n.data?.name,
+									...updatedNodeData,
 								},
 							}
 						: n,
 				);
+
+				// Call callbacks synchronously within the state update
+				if (callback) {
+					callback({ nodes: newNodes, edges: prev.edges });
+				}
+
+				if (onMetaModelUpdate) {
+					try {
+						onMetaModelUpdate(JSON.parse(JSON.stringify(newNodes)));
+					} catch {
+						onMetaModelUpdate(newNodes);
+					}
+				}
+
 				return { ...prev, nodes: newNodes };
 			});
 
-			setFlowNodes((cur) =>
-				Array.isArray(cur)
-					? cur.map((n) =>
-							n.id === nodeId
-								? {
-										...n,
-										data: {
-											...n.data,
-											properties: newProps,
-											description:
-												description !== undefined
-													? description
-													: n.id,
-											name:
-												alias !== undefined
-													? alias
-													: n.data?.name,
-										},
-									}
-								: n,
-						)
-					: cur,
-			);
+			// Update flowNodes separately, outside of setData
+			setFlowNodes((cur) => {
+				if (!Array.isArray(cur)) return cur;
 
-			setLocalNodesData((prev) => {
-				const newMetadata = prev.map((n) =>
-					n.id === nodeId
-						? {
-								...n,
-								data: {
-									...n.data,
-									properties: newProps,
-									description:
-										description !== undefined
-											? description
-											: n.id,
-									name:
-										alias !== undefined
-											? alias
-											: n.data?.name,
-								},
+				return cur.map((n) => {
+					if (n.id !== nodeId) return n;
+
+					const updatedNodeData = {
+						properties: names.map((nm) => {
+							const existing = n.data?.properties?.find(
+								(p) => p.name === nm,
+							);
+							if (existing) return existing;
+
+							const matchedAvailable =
+								Array.isArray(availableColumnNames) &&
+								availableColumnNames.find(
+									(c) => c.name === nm || c.id === nm,
+								);
+
+							let newId =
+								matchedAvailable?.id ??
+								`${nodeId}.${nm.replace(/\s+/g, "_")}`;
+
+							if (
+								n.data?.properties?.some((p) => p.id === newId)
+							) {
+								newId = `${newId}_${Date.now()}`;
 							}
-						: n,
-				);
-				onMetaModelUpdate?.(newMetadata);
-				return newMetadata;
+
+							return { id: newId, name: nm, type: chosenType };
+						}),
+						description:
+							description !== undefined ? description : "",
+						name: alias !== undefined ? alias : n.data?.name,
+					};
+
+					return {
+						...n,
+						data: {
+							...n.data,
+							...updatedNodeData,
+						},
+					};
+				});
 			});
-
-			if (callback) {
-				const cur = data || { nodes: [], edges: [] };
-				const newNodes = cur.nodes.map((n) =>
-					n.id === nodeId
-						? {
-								...n,
-								data: {
-									...n.data,
-									properties: newProps,
-									description:
-										description !== undefined
-											? description
-											: n.data?.description,
-									name:
-										alias !== undefined
-											? alias
-											: n.data?.name,
-								},
-							}
-						: n,
-				);
-				callback({ nodes: newNodes, edges: cur.edges });
-			}
 		},
-		[data, callback, availableColumnNames, props],
+		[availableColumnNames, callback, onMetaModelUpdate],
 	);
 
 	const applyColumnEdit = useCallback(
@@ -276,6 +289,7 @@ export const Metamodel = (props: MetamodelProps) => {
 			logicalNames?: string[];
 		}) => {
 			if (!columnToEdit) return;
+
 			const { nodeId, columnId } = columnToEdit;
 			const newName = (payload.name ?? "").trim();
 			const newType = payload.type ?? undefined;
@@ -284,157 +298,144 @@ export const Metamodel = (props: MetamodelProps) => {
 				? payload.logicalNames
 				: undefined;
 
-			const node = data.nodes.find((n) => n.id === nodeId);
-			if (!node) {
-				closeEditModal();
-				return;
-			}
+			const updateProperties = (oldProps: Property[]) => {
+				let targetIdx = oldProps.findIndex((p) => p.id === columnId);
+				if (targetIdx === -1) {
+					targetIdx = oldProps.findIndex((p) => p.name === columnId);
+				}
+				if (targetIdx === -1) return null;
 
-			const oldProps: Property[] = Array.isArray(node.data.properties)
-				? node.data.properties
-				: [];
+				const targetProp = oldProps[targetIdx];
+				const oldName = targetProp.name;
 
-			let targetIdx = oldProps.findIndex((p) => p.id === columnId);
-			if (targetIdx === -1) {
-				targetIdx = oldProps.findIndex((p) => p.name === columnId);
-			}
-			if (targetIdx === -1) {
-				closeEditModal();
-				return;
-			}
+				const nameUnchanged = !newName || newName === oldName;
+				const typeUnchanged =
+					newType === undefined || newType === targetProp.type;
+				const descUnchanged =
+					newDescription === undefined ||
+					newDescription === targetProp.description;
+				const logicalNamesUnchanged =
+					newLogicalNames === undefined ||
+					JSON.stringify(newLogicalNames) ===
+						JSON.stringify(targetProp.logicalNames || []);
 
-			const targetProp = oldProps[targetIdx];
-			const oldName = targetProp.name;
+				if (
+					nameUnchanged &&
+					typeUnchanged &&
+					descUnchanged &&
+					logicalNamesUnchanged
+				) {
+					return null;
+				}
 
-			const nameUnchanged = !newName || newName === oldName;
-			const typeUnchanged =
-				newType === undefined || newType === targetProp.type;
-			const descUnchanged =
-				newDescription === undefined ||
-				newDescription === targetProp.description;
-			const logicalNamesUnchanged =
-				newLogicalNames === undefined ||
-				JSON.stringify(newLogicalNames) ===
-					JSON.stringify(targetProp.logicalNames || []);
-
-			if (
-				nameUnchanged &&
-				typeUnchanged &&
-				descUnchanged &&
-				logicalNamesUnchanged
-			) {
-				closeEditModal();
-				return;
-			}
-
-			const updatedProps = oldProps.map((p, idx) =>
-				idx === targetIdx
-					? {
-							...p,
-							id: p.id,
-							name: newName || p.name,
-							type: newType ?? p.type,
-							description:
-								newDescription !== undefined
-									? newDescription
-									: p.description,
-							logicalNames:
-								newLogicalNames !== undefined
-									? newLogicalNames
-									: p.logicalNames,
-						}
-					: p,
-			);
-
-			const dupIdx = updatedProps.findIndex(
-				(p, idx) =>
-					idx !== targetIdx &&
-					p.name === updatedProps[targetIdx].name,
-			);
-			let updatedPropsForSave = updatedProps;
-			if (dupIdx !== -1) {
-				updatedPropsForSave = updatedProps.filter(
-					(_, idx) => idx !== dupIdx,
+				const updatedProps = oldProps.map((p, idx) =>
+					idx === targetIdx
+						? {
+								...p,
+								name: newName || p.name,
+								type: newType ?? p.type,
+								description:
+									newDescription !== undefined
+										? newDescription
+										: p.description,
+								logicalNames:
+									newLogicalNames !== undefined
+										? newLogicalNames
+										: p.logicalNames,
+							}
+						: p,
 				);
-			}
+
+				const dupIdx = updatedProps.findIndex(
+					(p, idx) =>
+						idx !== targetIdx &&
+						p.name === updatedProps[targetIdx].name,
+				);
+
+				return dupIdx !== -1
+					? updatedProps.filter((_, idx) => idx !== dupIdx)
+					: updatedProps;
+			};
 
 			setData((prev) => {
+				const node = prev.nodes.find((n) => n.id === nodeId);
+				if (!node) {
+					closeEditModal();
+					return prev;
+				}
+
+				const oldProps: Property[] = Array.isArray(node.data.properties)
+					? node.data.properties
+					: [];
+
+				const updatedProps = updateProperties(oldProps);
+				if (!updatedProps) {
+					closeEditModal();
+					return prev;
+				}
+
 				const newNodes = prev.nodes.map((n) =>
 					n.id === nodeId
 						? {
 								...n,
 								data: {
 									...n.data,
-									properties: updatedPropsForSave,
+									properties: updatedProps,
 								},
 							}
 						: n,
 				);
+
+				if (callback) {
+					callback({ nodes: newNodes, edges: prev.edges });
+				}
+
+				if (onMetaModelUpdate) {
+					try {
+						onMetaModelUpdate(JSON.parse(JSON.stringify(newNodes)));
+					} catch {
+						onMetaModelUpdate(newNodes);
+					}
+				}
+
+				closeEditModal();
 				return { ...prev, nodes: newNodes };
 			});
 
-			setFlowNodes((cur) =>
-				(cur || []).map((n) =>
-					n.id === nodeId
-						? {
-								...n,
-								data: {
-									...n.data,
-									properties: updatedPropsForSave,
-								},
-							}
-						: n,
-				),
-			);
+			setFlowNodes((cur) => {
+				if (!Array.isArray(cur)) return cur;
 
-			setLocalNodesData((prev) => {
-				const newSnapshot = (prev || []).map((n) =>
-					n.id === nodeId
-						? {
-								...n,
-								data: {
-									...n.data,
-									properties: updatedPropsForSave,
-								},
-							}
-						: n,
-				);
-				try {
-					props.onMetaModelUpdate?.(
-						JSON.parse(JSON.stringify(newSnapshot)),
-					);
-				} catch {
-					props.onMetaModelUpdate?.(newSnapshot);
-				}
-				return newSnapshot;
+				return cur.map((n) => {
+					if (n.id !== nodeId) return n;
+
+					const oldProps: Property[] = Array.isArray(
+						n.data?.properties,
+					)
+						? n.data.properties
+						: [];
+
+					const updatedProps = updateProperties(oldProps);
+					if (!updatedProps) return n;
+
+					return {
+						...n,
+						data: {
+							...n.data,
+							properties: updatedProps,
+						},
+					};
+				});
 			});
-
-			if (callback) {
-				const cur = data || { nodes: [], edges: [] };
-				const newNodes = cur.nodes.map((n) =>
-					n.id === nodeId
-						? {
-								...n,
-								data: {
-									...n.data,
-									properties: updatedPropsForSave,
-								},
-							}
-						: n,
-				);
-				callback({ nodes: newNodes, edges: cur.edges });
-			}
-
-			closeEditModal();
 		},
-		[columnToEdit, data, callback, closeEditModal, props],
+		[columnToEdit, callback, closeEditModal, onMetaModelUpdate],
 	);
-
 	const injectIsAction = useCallback(
-		(incomingNodes): MetamodelNodeType[] =>
+		(incomingNodes: MetamodelNodeType[]): MetamodelNodeType[] =>
 			incomingNodes.map((n) => ({
 				...n,
 				data: {
+					name: n.data?.name || "",
+					properties: n.data?.properties || [],
 					...(n.data || {}),
 					isAction: !!isAction,
 					openEditForColumn: openEditForColumn,
@@ -486,7 +487,18 @@ export const Metamodel = (props: MetamodelProps) => {
 		if (!edgeIdsEqual(flowEdges, edges || [])) {
 			setFlowEdges(edges || []);
 		}
-	}, [nodes, edges, isAction, injectIsAction, nodeIdsEqual, edgeIdsEqual]);
+	}, [
+		nodes,
+		edges,
+		isAction,
+		injectIsAction,
+		nodeIdsEqual,
+		edgeIdsEqual,
+		flowNodes,
+		flowEdges,
+		setFlowNodes,
+		setFlowEdges,
+	]);
 
 	useEffect(() => {
 		if (!isAction) return;
@@ -499,76 +511,96 @@ export const Metamodel = (props: MetamodelProps) => {
 		if (!edgeIdsEqual(flowEdges, edges || [])) {
 			setFlowEdges(edges || []);
 		}
-	}, [nodes, edges, isAction, injectIsAction]);
+	}, [nodes, edges, isAction, edgeIdsEqual, flowEdges, setFlowEdges]);
 
 	useEffect(() => {
-		if (typeof props.onMetaModelUpdate === "function") {
-			try {
-				const cloned = JSON.parse(JSON.stringify(localNodesData));
-				props.onMetaModelUpdate(cloned);
-			} catch {
-				props.onMetaModelUpdate(localNodesData);
+		const columnNames = getAllColumnNamesFromNodes(nodes || []);
+		setAvailableColumnNames(columnNames);
+
+		if (isInitialMount.current) {
+			const nodeCopy = Array.isArray(nodes)
+				? JSON.parse(JSON.stringify(nodes))
+				: [];
+			const edgesCopy = Array.isArray(edges)
+				? JSON.parse(JSON.stringify(edges))
+				: [];
+
+			setData({ nodes: nodeCopy, edges: edgesCopy });
+
+			if (onMetaModelUpdate) {
+				onMetaModelUpdate(nodeCopy);
+			}
+
+			isInitialMount.current = false;
+		} else if (isAction) {
+			if (!edgeIdsEqual(data.edges, edges || [])) {
+				setData((prev) => ({
+					...prev,
+					edges: edges || [],
+				}));
+			}
+
+			if (!edgeIdsEqual(flowEdges, edges || [])) {
+				setFlowEdges(edges || []);
 			}
 		}
-	}, [localNodesData]);
+	}, [
+		nodes,
+		edges,
+		isAction,
+		getAllColumnNamesFromNodes,
+		onMetaModelUpdate,
+		edgeIdsEqual,
+		flowEdges,
+		setFlowEdges,
+		data.edges,
+	]);
 
-	useEffect(() => {
-		setAvailableColumnNames(
-			getAllColumnNamesFromNodes(nodes || []).flatMap((n) =>
-				(n.data?.properties || []).map((p) => p.name),
-			),
-		);
-		setLocalNodesData(
-			Array.isArray(nodes) ? JSON.parse(JSON.stringify(nodes)) : [],
-		);
-		if (props.onMetaModelUpdate) {
-			props.onMetaModelUpdate(
-				Array.isArray(nodes) ? JSON.parse(JSON.stringify(nodes)) : [],
-			);
-		}
-	}, [nodes]);
+	const updateData = useCallback((nodeData, action) => {
+		setData((prev) => {
+			const temp = { ...prev };
 
-	const updateData = (nodeData, action) => {
-		const temp = data;
-		if (action === "COLUMN_NAME_CHANGE") {
-			for (const node of temp.nodes) {
-				if (node.id === nodeData.table.id) {
-					for (const col of node.data.properties) {
-						if (col.name === nodeData.prevName) {
-							col.name = nodeData.newName;
-							col.id = nodeData.newName;
-							setData({ ...temp });
+			if (action === "COLUMN_NAME_CHANGE") {
+				for (const node of temp.nodes) {
+					if (node.id === nodeData.table.id) {
+						for (const col of node.data.properties) {
+							if (col.name === nodeData.prevName) {
+								col.name = nodeData.newName;
+								col.id = nodeData.newName;
+							}
 						}
 					}
 				}
+				return { ...temp };
 			}
-		}
-		if (action === "COLUMN_TYPE_CHANGE") {
-			// handle column type change
-		}
-		if (action === "COLUMN_DESCRIPTION_CHANGE") {
-			// handle column type change
-		}
-		if (action === "COLUMN_LOGICAL_NAME_CHANGE") {
-			// handle column type change
-		}
+			if (action === "COLUMN_TYPE_CHANGE") {
+				// handle column type change
+			}
+			if (action === "COLUMN_DESCRIPTION_CHANGE") {
+				// handle column type change
+			}
+			if (action === "COLUMN_LOGICAL_NAME_CHANGE") {
+				// handle column type change
+			}
 
-		if (action === "TABLE_NAME_CHANGE") {
-			// handle table name change
-		}
-		if (action === "TABLE_DESCRIPTION_CHANGE") {
-			// handle table relationship change
-		}
-		if (action === "TABLE_RELATIONSHIP_CHANGE") {
-			// handle table relationship change
-		}
-		if (action === "TABLE_POSITION_CHANGE") {
-			// handle table relationship change
-		}
-		// if action === 'column data type change'
-	};
+			if (action === "TABLE_NAME_CHANGE") {
+				// handle table name change
+			}
+			if (action === "TABLE_DESCRIPTION_CHANGE") {
+				// handle table relationship change
+			}
+			if (action === "TABLE_RELATIONSHIP_CHANGE") {
+				// handle table relationship change
+			}
+			if (action === "TABLE_POSITION_CHANGE") {
+				// handle table relationship change
+			}
 
-	const onSubmit = () => {
+			return prev;
+		});
+	}, []);
+
+	const onSubmit = useCallback(() => {
 		const payloadObj = {
 			metamodel: { relation: [], nodeProp: {} },
 			dataTypeMap: {},
@@ -606,9 +638,8 @@ export const Metamodel = (props: MetamodelProps) => {
 			payloadObj.metamodel.nodeProp[node.data.name] = [];
 		}
 
-		// callback(payloadObj);
 		callback(payloadObj);
-	};
+	}, [data, callback]);
 
 	const onSelectNodeId = useCallback(
 		(id) => {
@@ -629,17 +660,8 @@ export const Metamodel = (props: MetamodelProps) => {
 			}
 			onSelectNode(node);
 		},
-		[nodes],
+		[nodes, onSelectNode],
 	);
-
-	useEffect(() => {
-		const fromNodes = getAllColumnNamesFromNodes(nodes || []);
-		setAvailableColumnNames((prev) => {
-			const merged = Array.from(new Set([...prev, ...fromNodes]));
-			return merged;
-		});
-	}, [nodes]);
-
 	return (
 		<MetamodelContext.Provider
 			value={{
@@ -701,12 +723,6 @@ export const Metamodel = (props: MetamodelProps) => {
 						: null
 				}
 				columnOptions={availableColumnNames}
-				initialDescription={
-					tableToEdit
-						? (data.nodes.find((n) => n.id === tableToEdit.nodeId)
-								?.data?.description ?? "")
-						: ""
-				}
 				initialAlias={
 					tableToEdit
 						? (data.nodes.find((n) => n.id === tableToEdit.nodeId)

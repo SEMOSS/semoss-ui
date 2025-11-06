@@ -96,7 +96,6 @@ interface Conn {
 interface ConnectionProps {
 	open: boolean;
 	onClose: () => void;
-	isEdit?: boolean;
 	nodes: CustomNode[];
 	onCreateConnection: (params: Conn) => void;
 	initialConnections?: Conn[];
@@ -131,7 +130,6 @@ const StyledRequired = styled("span")(({ theme }) => ({
 export const CreateConnection: React.FC<ConnectionProps> = ({
 	open,
 	onClose,
-	isEdit = false,
 	nodes,
 	onCreateConnection,
 	initialConnections = [],
@@ -298,7 +296,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 			scroll="paper"
 		>
 			<ModalTitle>
-				{isEdit ? "Edit Connection Builder" : "Create Connection"}
+				Create Connection
 				<StyledCloseIconButton
 					onClick={onClose}
 					aria-label="close"

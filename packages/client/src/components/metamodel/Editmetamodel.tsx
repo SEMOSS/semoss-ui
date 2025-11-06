@@ -62,6 +62,7 @@ const StyledLabel = styled(Typography)(() => ({
 const StyledTabsBox = styled(Box)(() => ({
 	borderBottom: "8px",
 	borderColor: "divider",
+	margin: "24px",
 }));
 
 const StyledBox = styled(Box)(() => ({
@@ -210,9 +211,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 				<StyledLabel variant={"subtitle1"}>Column name</StyledLabel>
 				<TextField
 					variant="outlined"
-					placeholder={
-						isEdit ? "Edit column name" : "Type new column name"
-					}
+					placeholder={"Edit column name"}
 					value={singleNameVal}
 					onChange={(e) => setSingleNameVal(e.target.value)}
 					fullWidth

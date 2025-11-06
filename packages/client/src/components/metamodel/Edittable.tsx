@@ -14,6 +14,7 @@ import {
 	TextArea,
 	TextField,
 } from "@semoss/ui";
+import type { ColumnOption } from "./Metamodel";
 
 const StyledBox = styled(Box)(() => ({
 	p: 2,
@@ -22,6 +23,7 @@ const StyledBox = styled(Box)(() => ({
 const StyledTabs = styled(Box)(() => ({
 	borderBottom: 1,
 	borderColor: "divider",
+	margin: "24px",
 }));
 
 interface NodeShape {
@@ -29,8 +31,19 @@ interface NodeShape {
 	data: {
 		name: string;
 		description?: string;
-		properties?: { id: string; name: string; type?: string }[];
+		properties?: {
+			id: string;
+			name: string;
+			type?: string;
+			isSelected?: boolean;
+		}[];
 	};
+}
+
+interface Option {
+	id?: string;
+	name: string;
+	label: string;
 }
 
 interface EditTableProps {
@@ -38,9 +51,8 @@ interface EditTableProps {
 	onClose: () => void;
 
 	node?: NodeShape | null;
-	columnOptions?: string[];
+	columnOptions?: ColumnOption[];
 
-	initialDescription?: string;
 	initialAlias?: string;
 	onSave: (payload: {
 		nodeId: string;
@@ -85,7 +97,7 @@ const EditTable: React.FC<EditTableProps> = ({
 	columnOptions = [],
 	onSave,
 }) => {
-	const [selectedNames, setSelectedNames] = useState<string[]>([]);
+	const [selectedNames, setSelectedNames] = useState<Option[]>([]);
 
 	const [tabIndex, setTabIndex] = useState<number>(0);
 
@@ -100,18 +112,46 @@ const EditTable: React.FC<EditTableProps> = ({
 
 	useEffect(() => {
 		if (!open) return;
-		const existing = (node?.data?.properties || []).map((p) => p.name);
-		setSelectedNames(existing);
+
+		const props = (node?.data?.properties || []).map((p) => ({
+			...p,
+			isSelected: true,
+		}));
 
 		setAliasVal(node?.data?.name ?? "");
 		setDescriptionVal(node?.data?.description ?? "");
-	}, [open, node]);
 
-	useEffect(() => {
-		if (!open) return;
-		const existing = (node?.data?.properties || []).map((p) => p.name);
+		if (node && node.data) {
+			node.data = {
+				...node.data,
+				properties: props,
+			};
+		}
+
+		const available = columnOptions ?? [];
+
+		const availableKeys = new Set(
+			available.map((c) => c.id ?? c.name).filter(Boolean),
+		);
+		const existing: Option[] = props
+			.filter((p) => {
+				if (!p?.isSelected) return false;
+				const key = p.id ?? p.name;
+				return availableKeys.has(key);
+			})
+			.map((p) => {
+				const match = available.find(
+					(c) => c.id === p.id || c.name === p.name,
+				);
+
+				return {
+					id: p.id,
+					name: match?.name ?? p.name,
+					label: match?.name ?? p.name,
+				};
+			});
 		setSelectedNames(existing);
-	}, [open, node]);
+	}, [open, node, columnOptions]);
 
 	useEffect(() => {
 		if (open) setTabIndex(0);
@@ -123,8 +163,11 @@ const EditTable: React.FC<EditTableProps> = ({
 		const cleaned = Array.from(
 			new Set(
 				(selectedNames || [])
-					.map((s) => (s || "").trim())
-					.filter(Boolean),
+					.map((s) =>
+						typeof s === "string" ? s : s.name || s.label || "",
+					)
+					.map((v) => v.trim())
+					.filter((v) => v.length > 0),
 			),
 		);
 
@@ -138,8 +181,62 @@ const EditTable: React.FC<EditTableProps> = ({
 		onClose();
 	};
 
-	const safeOptions = useMemo(() => columnOptions || [], [columnOptions]);
+	const safeOptions: Option[] = useMemo(() => {
+		return (columnOptions ?? []).map((opt) => ({
+			id: opt.id,
+			label: opt.name,
+			name: opt.name,
+		}));
+	}, [columnOptions]);
 
+	const toOptionObject = (v) => {
+		if (!v && v !== "") return null;
+		if (typeof v === "string") return { id: undefined, name: v, label: v };
+		return {
+			id: v.id,
+			name: v.name ?? v.label ?? String(v),
+			label: v.label ?? v.name ?? String(v),
+		};
+	};
+
+	const isOptionEqualToValue = (option, value) => {
+		if (!option || !value) return false;
+		if (option.id && value.id) return option.id === value.id;
+		return (option.name ?? option.label) === (value.name ?? value.label);
+	};
+
+	const handleChange = (
+		_e: React.SyntheticEvent,
+		newValue: (string | Option)[],
+	) => {
+		const flattened = Array.isArray(newValue)
+			? newValue.flatMap((v) => (Array.isArray(v) ? v : [v]))
+			: [];
+		const normalized = flattened.map((v) => toOptionObject(v));
+		const seen = new Map<string, Option>();
+		for (const item of normalized) {
+			const key = item.id ?? item.name;
+			if (!seen.has(key)) seen.set(key, item);
+		}
+		const deduped = Array.from(seen.values());
+		setSelectedNames(deduped);
+		if (node && node.data) {
+			const props = node.data.properties || [];
+			const updatedProps = props.map((p) => {
+				const match = deduped.find(
+					(sel) => sel.id === p.id || sel.name === p.name,
+				);
+				return {
+					...p,
+					isSelected: !!match,
+				};
+			});
+			node.data = {
+				...node.data,
+				properties: updatedProps,
+			};
+		}
+	};
 	return (
 		<Modal
 			open={open}
@@ -212,28 +309,19 @@ const EditTable: React.FC<EditTableProps> = ({
 								options={safeOptions}
 								multiple
 								freeSolo
-								value={selectedNames}
-								onChange={(
-									_e,
-									newValue: (string | string[])[],
-								) => {
-									const flattened = Array.isArray(newValue)
-										? newValue.flatMap((v) =>
-												Array.isArray(v) ? v : [v],
-											)
-										: [];
-									setSelectedNames(
-										flattened.map((v) =>
-											(v || "").toString(),
-										),
-									);
-								}}
+								value={selectedNames.map((v) =>
+									toOptionObject(v),
+								)}
+								getOptionLabel={(opt) =>
+									typeof opt === "string" ? opt : opt.label
+								}
+								isOptionEqualToValue={isOptionEqualToValue}
+								onChange={handleChange}
 								renderInput={(params) => (
 									<TextField
 										{...params}
 										variant="outlined"
 										placeholder="Type or pick column names"
-										inputProps={{ ...params.inputProps }}
 									/>
 								)}
 							/>

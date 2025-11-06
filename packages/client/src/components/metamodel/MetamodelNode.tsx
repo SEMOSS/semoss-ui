@@ -184,7 +184,11 @@ type MetamodelNodeProps = NodeProps<
 			name: string;
 			type: string;
 		}) => void;
-		openEditTable?: (payload: { nodeId: string; name: string }) => void;
+		openEditTable?: (payload: {
+			nodeId: string;
+			name: string;
+			description?: string;
+		}) => void;
 		properties: {
 			id: string;
 			name: string;
