@@ -40,7 +40,7 @@ export const WorkspacePage = observer(() => {
 	 */
 	const debouncedSearch = useDebouncedValue(search);
 	const listWorkspaces = usePixel<App[]>(
-		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}" ) ;`,
+		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
 		{ data: [] },
 	);
 	const navigate = useNavigate();

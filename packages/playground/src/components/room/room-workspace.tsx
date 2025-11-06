@@ -59,7 +59,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 		 */
 		const listWorkspaces = usePixel<App[]>(
 			open
-				? `MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}" ) ;`
+				? `MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`
 				: null,
 			{ data: [] },
 		);
