@@ -94,9 +94,9 @@ const SortableItems = ({
  * Render a sheet in the notebook (contains the individual steps)
  */
 export const Notebook = observer((props: NotebookProps): JSX.Element => {
-	const { id } = props;
-	const { state } = useBlocks();
-	const [cellPlayCounter, setCellPlayCounter] = useState(null);
+    const { id } = props;
+    const { state } = useBlocks();
+    const [cellPlayCounter, setCellPlayCounter] = useState<number | null>(null);
 
 	/**
 	 * Handle drag end
@@ -109,20 +109,18 @@ export const Notebook = observer((props: NotebookProps): JSX.Element => {
 			return;
 		}
 
-		// If the active item is over a different item, swap them
-		if (over && active.id !== over.id) {
-			const oldIndex = Number(active.id);
-			const newIndex = Number(over.id);
-			state.dispatch({
-				message: ActionMessages.MOVE_CELL,
-				payload: {
-					queryId: id,
-					activeCellId: active.id,
-					overCellId: over.id,
-				},
-			});
-		}
-	};
+        // If the active item is over a different item, swap them
+        if (over && active.id !== over.id) {
+            state.dispatch({
+                message: ActionMessages.MOVE_CELL,
+                payload: {
+                    queryId: id,
+                    activeCellId: active.id,
+                    overCellId: over.id,
+                },
+            });
+        }
+    };
 
 	// need a notebook to render it
 	const notebook = state.getQuery(id);
