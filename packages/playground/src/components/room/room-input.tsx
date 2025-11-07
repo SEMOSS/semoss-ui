@@ -152,13 +152,12 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 					return;
 				}
 
-				// clear the input
-				setInput("");
-
 				// ask the room
 				const success = await onPrompt(input, files);
 				if (success) {
-					// noop
+					// clear the input + files
+					setInput("");
+					setFiles([]);
 				} else {
 					throw new Error(`Error processing chat`);
 				}
@@ -224,21 +223,17 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 							{ENABLE_ATTACHMENT && (
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span>
-											<Button
-												aria-label="Attach Documents"
-												disabled={
-													isDisabled || isLoading
-												}
-												variant="ghost"
-												size="icon-sm"
-												onClick={() => {
-													fileRef.current?.click();
-												}}
-											>
-												<PaperclipIcon />
-											</Button>
-										</span>
+										<Button
+											aria-label="Attach Documents"
+											disabled={isDisabled || isLoading}
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												fileRef.current?.click();
+											}}
+										>
+											<PaperclipIcon />
+										</Button>
 									</TooltipTrigger>
 									<TooltipContent>
 										Attach Document
@@ -250,29 +245,27 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 							<Tooltip>
 								<TooltipTrigger asChild>
-									<span>
-										<Button
-											variant={"ghost"}
-											aria-label="Record the Model"
-											size="icon-sm"
-											disabled={
-												!canListen ||
-												isDisabled ||
-												isLoading
+									<Button
+										variant={"ghost"}
+										aria-label="Record the Model"
+										size="icon-sm"
+										disabled={
+											!canListen ||
+											isDisabled ||
+											isLoading
+										}
+										onClick={() => {
+											if (isListening) {
+												stopListening();
+											} else {
+												startListening();
 											}
-											onClick={() => {
-												if (isListening) {
-													stopListening();
-												} else {
-													startListening();
-												}
-											}}
-										>
-											<MicIcon
-												className={`${isListening ? "animate-pulse text-error" : ""}`}
-											/>
-										</Button>
-									</span>
+										}}
+									>
+										<MicIcon
+											className={`${isListening ? "animate-pulse text-error" : ""}`}
+										/>
+									</Button>
 								</TooltipTrigger>
 								<TooltipContent>
 									{isListening ? "Stop Recording" : "Record"}
@@ -281,20 +274,18 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 						</div>
 						<Tooltip>
 							<TooltipTrigger asChild>
-								<span>
-									<Button
-										variant="default"
-										aria-label="Prompt the Model"
-										disabled={
-											isDisabled || isLoading || isEmpty
-										}
-										onClick={() => {
-											promptModel(input);
-										}}
-									>
-										{isLoading ? <Spinner /> : <SendIcon />}
-									</Button>
-								</span>
+								<Button
+									variant="default"
+									aria-label="Prompt the Model"
+									disabled={
+										isDisabled || isLoading || isEmpty
+									}
+									onClick={() => {
+										promptModel(input);
+									}}
+								>
+									{isLoading ? <Spinner /> : <SendIcon />}
+								</Button>
 							</TooltipTrigger>
 							<TooltipContent>
 								{(() => {
