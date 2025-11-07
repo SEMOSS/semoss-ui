@@ -81,43 +81,39 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 					<span>
 						<Popover open={open} onOpenChange={setOpen}>
 							<PopoverTrigger asChild>
-								<span>
-									<Button
-										className="w-36 text-left text-muted-foreground"
-										variant="outline"
-										role="combobox"
-										aria-expanded={open}
-									>
-										{mode.type === "chat" && (
-											<>
-												<MessageCircle />
-												<span className="flex-1 truncate">
-													Ask
-												</span>
-											</>
-										)}
-										{mode.type === "plan" && (
-											<>
-												<ListTodoIcon />
-												<span className="flex-1 truncate">
-													Plan
-												</span>
-											</>
-										)}
-										{mode.type === "workspace" && (
-											<>
-												<ComputerIcon />
-												<span className="flex-1 truncate">
-													{
-														mode.workspace
-															?.project_name
-													}
-												</span>
-											</>
-										)}
-										<ChevronsUpDown className="opacity-50" />
-									</Button>
-								</span>
+								<Button
+									className="w-36 text-left text-muted-foreground"
+									variant="outline"
+									role="combobox"
+									aria-expanded={open}
+								>
+									{mode.type === "chat" && (
+										<>
+											<MessageCircle />
+											<span className="flex-1 truncate">
+												Ask
+											</span>
+										</>
+									)}
+									{mode.type === "plan" && (
+										<>
+											<ListTodoIcon />
+											<span className="flex-1 truncate">
+												Plan
+											</span>
+										</>
+									)}
+									{mode.type === "workspace" && (
+										<>
+											<ComputerIcon />
+											<span className="flex-1 truncate">
+												{mode.workspace?.project_name ||
+													""}
+											</span>
+										</>
+									)}
+									<ChevronsUpDown className="opacity-50" />
+								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="p-0">
 								<Command

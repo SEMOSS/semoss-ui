@@ -455,7 +455,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 						}}
 					>
 						<StyledTableTitleDiv>
-							<Typography variant={"h6"} data-testid={"pendingMembers-section-title"}>
+							<Typography
+								variant={"h6"}
+								data-testid={"pendingMembers-section-title"}
+							>
 								Pending Requests
 							</Typography>
 						</StyledTableTitleDiv>
@@ -468,7 +471,10 @@ export const PendingMembersTable = (props: PendingMemberTableProps) => {
 										justifyContent={"flex-start"}
 										direction={"row"}
 									>
-										<Typography variant={"body1"} data-testid="pending-requests-count">
+										<Typography
+											variant={"body1"}
+											data-testid="pending-requests-count"
+										>
 											{renderedMembers.length === 1
 												? `${renderedMembers.length} pending request`
 												: `${renderedMembers.length} pending requests`}

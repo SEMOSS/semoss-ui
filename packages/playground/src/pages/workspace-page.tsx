@@ -69,17 +69,15 @@ export const WorkspacePage = observer(() => {
 					</Lead>
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span>
-								<Button
-									onClick={() => {
-										setWorkspaceId(null);
-										setIsWorkspaceModalOpen(true);
-									}}
-								>
-									<ComputerIcon />
-									Build
-								</Button>
-							</span>
+							<Button
+								onClick={() => {
+									setWorkspaceId(null);
+									setIsWorkspaceModalOpen(true);
+								}}
+							>
+								<ComputerIcon />
+								Build
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Create a new workspace</TooltipContent>
 					</Tooltip>

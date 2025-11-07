@@ -11,6 +11,7 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import background from "@/assets/img/background.png";
 import {
@@ -73,56 +74,54 @@ export const NewRoomPage = observer(() => {
 	/**
 	 * Functions
 	 */
-
 	/**
-	 * Ask the model
+	 * Create a new room and ask the model
 	 *
-	 * @param - input
+	 * @param prompt The prompt to ask
+	 * @param files The files to upload
 	 */
-	const askMessage = async (prompt: string, files: File[]) => {
+	const createRoom = async (prompt: string, files: File[]) => {
 		// ignore if loading
 		if (isLoading) {
 			return;
 		}
 
-		// turn the loading screen
-		setIsLoading(true);
+		try {
+			// turn the loading screen
+			setIsLoading(true);
 
-		if (mode.type === "workspace" && mode.workspace) {
-			options.workspace = {
-				workspace_id: mode.workspace.project_id,
-			};
+			// add workspace option if in workspace mode
+			if (mode.type === "workspace" && mode.workspace) {
+				options.workspace = {
+					workspace_id: mode.workspace.project_id,
+				};
+			}
+
+			// create a new room
+			const roomId = await chat.createRoom(
+				prompt,
+				files,
+				mode.type === "plan" ? "planning" : "chat",
+				chat.models.selected.app_id,
+				mode.type === "workspace" && mode.workspace
+					? {
+							...options,
+							workspace: {
+								workspace_id: mode.workspace.project_id,
+							},
+						}
+					: options,
+			);
+
+			// go to the new room
+			navigate(`/room/${roomId}`);
+		} catch (error) {
+			toast.error(
+				`An error occurred while creating the room. Error: ${error.message}`,
+			);
+		} finally {
+			setIsLoading(false);
 		}
-
-		// create a new room
-		const room = await chat.createRoom(
-			prompt,
-			mode.type === "plan" ? "planning" : "chat",
-			chat.models.selected,
-			mode.type === "workspace" && mode.workspace
-				? {
-						...options,
-						workspace: {
-							workspace_id: mode.workspace.project_id,
-						},
-					}
-				: options,
-		);
-
-		// update the options
-		await room.updateRoomOptions(options);
-
-		// ask the room
-		await room.askMessage(prompt, files);
-
-		// mark the room as initialized
-		room.setInitialized();
-
-		// turn the loading screen off
-		setIsLoading(false);
-
-		// go to the new room
-		navigate(`/room/${room.roomId}`);
 	};
 
 	/**
@@ -179,20 +178,18 @@ export const NewRoomPage = observer(() => {
 							configuration={
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span>
-											<Button
-												aria-label="Open Configuration Menu"
-												className={`${isMenuOpen ? "text-primary" : ""}`}
-												disabled={isLoading}
-												variant="ghost"
-												size="icon-sm"
-												onClick={() => {
-													setIsMenuOpen(!isMenuOpen);
-												}}
-											>
-												<Settings2Icon />
-											</Button>
-										</span>
+										<Button
+											aria-label="Open Configuration Menu"
+											className={`${isMenuOpen ? "text-primary" : ""}`}
+											disabled={isLoading}
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												setIsMenuOpen(!isMenuOpen);
+											}}
+										>
+											<Settings2Icon />
+										</Button>
 									</TooltipTrigger>
 									<TooltipContent>
 										Open Configuration Menu
@@ -200,7 +197,7 @@ export const NewRoomPage = observer(() => {
 								</Tooltip>
 							}
 							onPrompt={async (prompt, files) => {
-								await askMessage(prompt, files);
+								await createRoom(prompt, files);
 
 								return true;
 							}}

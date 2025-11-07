@@ -140,7 +140,9 @@ export const EngineHeader: React.FC = () => {
 				</Breadcrumbs>
 				<StyledName direction="column" spacing={0}>
 					<Stack direction="row" alignItems={"center"}>
-						<Typography variant="h4" data-testid="Title">{active.name}</Typography>
+						<Typography variant="h4" data-testid="Title">
+							{active.name}
+						</Typography>
 						<Stack flex={1}> &nbsp;</Stack>
 						<Stack direction="row" spacing={2}>
 							<EngineAccessButton />
@@ -226,7 +228,12 @@ export const EngineHeader: React.FC = () => {
 						alignItems={"center"}
 						spacing={0.5}
 					>
-						<Typography variant="body2" data-testid={`engineHeader-${name}-id`}>{active.id}</Typography>
+						<Typography
+							variant="body2"
+							data-testid={`engineHeader-${name}-id`}
+						>
+							{active.id}
+						</Typography>
 						<IconButton
 							aria-label={`copy ${name} ID`}
 							size="small"
@@ -262,7 +269,10 @@ export const EngineHeader: React.FC = () => {
 			</Stack>
 			<StyledInfo>
 				<StyledInfoLeft>
-					<StyledInfoDescription variant={"subtitle1"} data-testid="Description">
+					<StyledInfoDescription
+						variant={"subtitle1"}
+						data-testid="Description"
+					>
 						{(active.metadata.description as unknown as string) ||
 							""}
 					</StyledInfoDescription>
@@ -290,16 +300,28 @@ export const EngineHeader: React.FC = () => {
 				<StyledInfoRight>
 					<Stack alignItems={"flex-end"} spacing={1}>
 						{active?.PERMISSIONGRANTEDBY ? (
-							<Typography variant={"caption"} color="disabled" data-testid="PublishedBy">
+							<Typography
+								variant={"caption"}
+								color="disabled"
+								data-testid="PublishedBy"
+							>
 								{`Published by ${active.PERMISSIONGRANTEDBY}`}
 							</Typography>
 						) : (
-							<Typography variant={"caption"} color="disabled" data-testid="CreatedBy">
+							<Typography
+								variant={"caption"}
+								color="disabled"
+								data-testid="CreatedBy"
+							>
 								{`Created by ${active.database_created_by}`}
 							</Typography>
 						)}
 						{active?.DATEADDED && (
-							<Typography variant={"caption"} color="disabled" data-testid="DateAdded">
+							<Typography
+								variant={"caption"}
+								color="disabled"
+								data-testid="DateAdded"
+							>
 								{`on ${active.DATEADDED}`}
 							</Typography>
 						)}
