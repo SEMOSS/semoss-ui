@@ -561,7 +561,11 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 	}, [isScrollBottom]);
 
 	return (
-		<Modal open={open} maxWidth="lg" data-testid="members-add-overlay-modal">
+		<Modal
+			open={open}
+			maxWidth="lg"
+			data-testid="members-add-overlay-modal"
+		>
 			<Modal.Title data-testid="members-add-overlay-modal-title">
 				{" "}
 				{user === null ? "Add Members" : "Edit Member"}
@@ -697,7 +701,12 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 					)}
 				</StyledOuterBox>
 
-				<Typography variant="subtitle1" data-testid="members-permissions">Permissions</Typography>
+				<Typography
+					variant="subtitle1"
+					data-testid="members-permissions"
+				>
+					Permissions
+				</Typography>
 				<StyledSelection>
 					<RadioGroup
 						label={""}
@@ -887,7 +896,10 @@ export const MembersAddOverlay = (props: MembersAddOverlayProps) => {
 
 				{type === "MODEL" && (
 					<>
-						<Typography variant="subtitle1" data-testid="model-limit-restrictions">
+						<Typography
+							variant="subtitle1"
+							data-testid="model-limit-restrictions"
+						>
 							Model Limit Restrictions
 						</Typography>
 						<Stack direction={"column"} gap={1}>

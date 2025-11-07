@@ -711,7 +711,12 @@ export const MembersTable = (props: MembersTableProps) => {
 				<StyledTableContainer>
 					<StyledTableTitleContainer>
 						<StyledTableTitleDiv>
-							<Typography variant={"h6"} data-testid="permissions-title">Permissions</Typography>
+							<Typography
+								variant={"h6"}
+								data-testid="permissions-title"
+							>
+								Permissions
+							</Typography>
 						</StyledTableTitleDiv>
 						<StyledTableTitleMemberContainer>
 							{Avatars.length > 0 ? (
@@ -731,7 +736,10 @@ export const MembersTable = (props: MembersTableProps) => {
 							) : null}
 							<StyledTableTitleMemberCountContainer>
 								<StyledTableTitleMemberCount>
-									<Typography variant={"caption"} data-testid="membersTable-memberCount">
+									<Typography
+										variant={"caption"}
+										data-testid="membersTable-memberCount"
+									>
 										{totalMembers} member
 									</Typography>
 								</StyledTableTitleMemberCount>
@@ -904,7 +912,9 @@ export const MembersTable = (props: MembersTableProps) => {
 													<StyledCell size="small">
 														<Table.Sort
 															active={true} // sort icon is always visible
-															direction={nameOrder} // direction of the icon, up is asc
+															direction={
+																nameOrder
+															} // direction of the icon, up is asc
 															onClick={() =>
 																handleNameSort()
 															}
@@ -948,7 +958,8 @@ export const MembersTable = (props: MembersTableProps) => {
 											</Table.Head>
 											<Table.Body>
 												{sortedMembers.map((_x, i) => {
-													const user = sortedMembers[i];
+													const user =
+														sortedMembers[i];
 
 													let isSelected = false;
 
@@ -1256,12 +1267,8 @@ export const MembersTable = (props: MembersTableProps) => {
 												}}
 												page={page}
 												rowsPerPage={rowsPerPage}
-												rowsPerPageOptions={[
-													5, 10, 20,
-												]}
-												onRowsPerPageChange={(
-													e,
-												) => {
+												rowsPerPageOptions={[5, 10, 20]}
+												onRowsPerPageChange={(e) => {
 													// set the new limit
 													setRowsPerPage(
 														parseInt(

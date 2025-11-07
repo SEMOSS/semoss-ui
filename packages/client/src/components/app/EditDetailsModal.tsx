@@ -184,7 +184,11 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 								freeSolo
 								onChange={(_, val) => field.onChange(val)}
 								renderInput={(params) => (
-									<TextField {...params} label="Tags" data-testid="tags" />
+									<TextField
+										{...params}
+										label="Tags"
+										data-testid="tags"
+									/>
 								)}
 								filterOptions={(options, params) => {
 									const filtered = filter(options, params);
@@ -373,14 +377,24 @@ export const EditDetailsModal = (props: EditDetailsModalProps) => {
 							/>
 						);
 					}
+
+					return null;
 				})}
 			</StyledModalContent>
 
 			<Modal.Actions data-testid="edit-app-details-modal-actions">
-				<Button onClick={() => onClose(true)} variant="text" data-testid="cancel">
+				<Button
+					onClick={() => onClose(true)}
+					variant="text"
+					data-testid="cancel"
+				>
 					Cancel
 				</Button>
-				<Button onClick={handleEditAppDetails} variant="contained" data-testid="save">
+				<Button
+					onClick={handleEditAppDetails}
+					variant="contained"
+					data-testid="save"
+				>
 					Save
 				</Button>
 			</Modal.Actions>

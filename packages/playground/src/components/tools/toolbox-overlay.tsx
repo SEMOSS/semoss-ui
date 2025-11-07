@@ -23,7 +23,7 @@ import {
 	Spinner,
 } from "@semoss/ui/next";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
-import { engineProjectToToolbox } from "./utility";
+import { engineProjectToMCP } from "./utility";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -82,7 +82,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 			data: [],
 		},
 	);
-	const availableMCPs = getApps.data.map(engineProjectToToolbox);
+	const availableMCPs = getApps.data.map(engineProjectToMCP);
 
 	/**
 	 * Track if the MCP is selected

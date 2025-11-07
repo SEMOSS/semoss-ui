@@ -311,17 +311,9 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 				type === "VECTOR" ||
 				type === "FUNCTION"
 			) {
-				response = await setEngineGlobal(
-					adminMode,
-					id,
-					!global,
-				);
+				response = await setEngineGlobal(adminMode, id, !global);
 			} else if (type === "APP") {
-				response = await setProjectGlobal(
-					adminMode,
-					id,
-					!global,
-				);
+				response = await setProjectGlobal(adminMode, id, !global);
 			}
 
 			// ignore if there is no response
@@ -407,7 +399,10 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									>
 										Private
 									</Typography>
-									<Typography variant="body2" data-testid="private-description">
+									<Typography
+										variant="body2"
+										data-testid="private-description"
+									>
 										No one outside of the specified member
 										group can access
 									</Typography>
@@ -452,7 +447,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 									<StyledBlock>
 										{/* Single Lock Icon on the left */}
 										<StyledIcon>
-											<VisibilityOffIcon  data-testid="non-discoverable-icon" />
+											<VisibilityOffIcon data-testid="non-discoverable-icon" />
 										</StyledIcon>
 										{/* Text Stack on the right */}
 										<Box data-testid="discoverable-text">
@@ -506,7 +501,7 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 								<StyledBlock>
 									{/* Single Lock Icon on the left */}
 									<StyledIcon>
-										<VisibilityOffIcon data-testid="non-discoverable-icon"/>
+										<VisibilityOffIcon data-testid="non-discoverable-icon" />
 									</StyledIcon>
 
 									{/* Text Stack on the right */}
@@ -583,9 +578,12 @@ export const SettingsTiles = (props: SettingsTilesProps) => {
 							delete this {name}.
 						</Modal.Content>
 						<Modal.Actions>
-							<Button onClick={() => setDeleteModal(false)} data-testid={formatToDataTestId(
-								`settingsTiles-${name}-confirmCancel-btn`,
-							)}>
+							<Button
+								onClick={() => setDeleteModal(false)}
+								data-testid={formatToDataTestId(
+									`settingsTiles-${name}-confirmCancel-btn`,
+								)}
+							>
 								Cancel
 							</Button>
 							<Button

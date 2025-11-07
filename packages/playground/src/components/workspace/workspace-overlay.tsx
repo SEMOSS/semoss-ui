@@ -25,7 +25,7 @@ export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
-	/** WorkspaceId to edit */
+	/** WorkspaceId to view */
 	workspaceId: string | null;
 
 	/** On close */
@@ -42,9 +42,8 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	 */
 	const { chat } = useChat();
 	const getWorkspace = usePixel<Workspace>(
-		workspaceId
-			? `GetWorkspace( workspaceId=${JSON.stringify(workspaceId)} )`
-			: null,
+		workspaceId ? `GetWorkspace(${JSON.stringify(workspaceId)});` : null,
+		{ data: null },
 	);
 
 	/**
