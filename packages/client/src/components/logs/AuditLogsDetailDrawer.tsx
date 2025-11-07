@@ -520,21 +520,6 @@ export const AuditLogsDetailDrawer = (props) => {
 						</SummaryItem>
 						<SummaryItem>
 							<SummaryLabel variant="caption">
-								Log TimeStamp
-							</SummaryLabel>
-							<SummaryValue variant="body2">
-								{
-									TimeDateFormatter(logDetails.logTimestamp)
-										.time
-								}{" "}
-								{
-									TimeDateFormatter(logDetails.logTimestamp)
-										.date
-								}
-							</SummaryValue>
-						</SummaryItem>
-						<SummaryItem>
-							<SummaryLabel variant="caption">
 								User Id
 							</SummaryLabel>
 							<SummaryValue variant="body2">
@@ -547,6 +532,21 @@ export const AuditLogsDetailDrawer = (props) => {
 							</SummaryLabel>
 							<SummaryValue variant="body2">
 								{logDetails.sessionId}
+							</SummaryValue>
+						</SummaryItem>
+						<SummaryItem>
+							<SummaryLabel variant="caption">
+								Log Timestamp
+							</SummaryLabel>
+							<SummaryValue variant="body2">
+								{
+									TimeDateFormatter(logDetails.logTimestamp)
+										.time
+								}{" "}
+								{
+									TimeDateFormatter(logDetails.logTimestamp)
+										.date
+								}
 							</SummaryValue>
 						</SummaryItem>
 					</SummaryGrid>
