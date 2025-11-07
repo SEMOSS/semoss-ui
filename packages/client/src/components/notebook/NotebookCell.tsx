@@ -12,6 +12,7 @@ import {
 	PlayArrowRounded,
 	PlayCircle,
 	SmartToy,
+	SwapHoriz,
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
@@ -115,7 +116,7 @@ const StyledCard = styled(Card, {
 	const shape = theme.shape as CustomShapeOptions;
 
 	return {
-		overflow: "hidden",
+		overflow: "visible", // Changed from hidden to visible for display (Pixel) reactor methods auto-complete suggestions
 		flexGrow: 1,
 		cursor: isCardCellSelected ? "inherit" : "pointer",
 		border: isCardCellSelected
@@ -514,12 +515,38 @@ export const NotebookCell = observer(
 
 		/**
 		 * @description
+		 * Revert MCP cell back to original code cell
+		 */
+		const revertMCPToCell = async () => {
+			try {
+				workspace.setLoading(true);
+				state.dispatch({
+					message: ActionMessages.UPDATE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+						path: "",
+						value: cell.parameters["originalParams"],
+					},
+				});
+				workspace.setLoading(false);
+			} catch (e) {
+				console.error(e);
+			}
+		};
+
+		/**
+		 * @description
 		 * 1. make pixel call to generate python tool for cell
 		 * 2. Swap cell config in place for mcp config
 		 */
 		const makeCellMCP = async () => {
 			try {
 				workspace.setLoading(true);
+				// Save current app state before making MCP tool
+				await runPixel(
+					`SaveAppBlocksJson(project=["${workspace.appId}"], json=["<encode>${JSON.stringify(state.toJSON())}</encode>"]);`,
+				);
 				// Make pixel call to generate MCP tool
 				const { errors, pixelReturn } = await runPixel(
 					`MakeNotebookCellMCP(project="${workspace.appId}", model="${workspace.agentModelEngine}", cellId="${cell.id}")`,
@@ -585,7 +612,10 @@ export const NotebookCell = observer(
 						parameters: {
 							name: toolName,
 							projectId: workspace.appId,
-							originalParams: { ...cell.parameters },
+							originalParams: {
+								widget: cell.widget,
+								parameters: cell.parameters,
+							},
 							params,
 						},
 					},
@@ -641,21 +671,36 @@ export const NotebookCell = observer(
 							<StyledButtonGroup variant="outlined">
 								{cell.query.id === MCP_NOTEBOOK_NAME && (
 									<StyledButtonGroupButton
-										title="Make Available through MCP"
+										title={
+											cell.widget === "mcp-tool"
+												? "Revert to Code"
+												: "Make Available through MCP"
+										}
 										size="small"
 										disabled={
 											cell.isLoading ||
-											!workspace.agentModelEngine
+											cell.widget === "mcp-tool"
+												? false
+												: !workspace.agentModelEngine
 										}
 										onClick={(e) => {
 											// stop propogation to card parent so newly created cell will be selected
 											e.stopPropagation();
-											// helper fn to make the cell mcp
-											makeCellMCP();
+											if (cell.widget !== "mcp-tool") {
+												// helper fn to make the cell mcp
+												makeCellMCP();
+											} else {
+												// helper fn to revert the cell to code
+												revertMCPToCell();
+											}
 										}}
 									>
 										<StyledButtonLabel>
-											<SmartToy />
+											{cell.widget === "mcp-tool" ? (
+												<SwapHoriz />
+											) : (
+												<SmartToy />
+											)}
 										</StyledButtonLabel>
 									</StyledButtonGroupButton>
 								)}
