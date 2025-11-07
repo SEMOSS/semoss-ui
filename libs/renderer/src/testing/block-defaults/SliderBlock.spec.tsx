@@ -1,6 +1,4 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-
 import { SliderBlock } from "../../components/block-defaults/slider-block/SliderBlock";
 import { render, screen } from "../utils";
 

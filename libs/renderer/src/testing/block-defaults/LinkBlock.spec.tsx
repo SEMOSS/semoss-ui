@@ -1,6 +1,4 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-
 import { LinkBlock } from "../../components/block-defaults/link-block/LinkBlock";
 import { render, screen } from "../utils";
 

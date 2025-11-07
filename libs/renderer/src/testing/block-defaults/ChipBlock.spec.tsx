@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { describe, expect } from "vitest";
 import { ChipBlock } from "../../components/block-defaults/chip-block/ChipBlock";

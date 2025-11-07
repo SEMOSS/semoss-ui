@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
 import { expect } from "vitest";
 import { DividerBlock } from "../../components/block-defaults/divider-block";

@@ -1,6 +1,4 @@
 import { expect, test } from "vitest";
-import "@testing-library/jest-dom";
-
 import { InputBlock } from "../../components/block-defaults/input-block/InputBlock";
 import { render, screen } from "../utils/index";
 

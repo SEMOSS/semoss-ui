@@ -1,9 +1,7 @@
 import { waitFor } from "@testing-library/react";
 import { expect } from "vitest";
-import { render } from "../utils";
-import "@testing-library/jest-dom";
-
 import { ModalBlock } from "../../components/block-defaults/modal-block/ModalBlock";
+import { render } from "../utils";
 
 const blocks = {
 	"modal-test": {

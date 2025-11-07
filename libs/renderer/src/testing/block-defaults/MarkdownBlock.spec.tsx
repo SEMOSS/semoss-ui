@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom";
 import { expect } from "vitest";
 import { MarkdownBlock } from "../../components/block-defaults/markdown-block/MarkdownBlock";
 import { render, screen, waitFor } from "../utils";

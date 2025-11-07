@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom";
 import { expect } from "vitest";
 import { SidebarBlock } from "../../components/block-defaults/sidebar-block/SidebarBlock";
 import { render, screen } from "../utils";

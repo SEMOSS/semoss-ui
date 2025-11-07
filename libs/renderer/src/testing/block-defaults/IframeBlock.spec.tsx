@@ -1,5 +1,4 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 import { IframeBlock } from "../../components/block-defaults/iframe-block/IframeBlock";
 import { render } from "../utils";
 

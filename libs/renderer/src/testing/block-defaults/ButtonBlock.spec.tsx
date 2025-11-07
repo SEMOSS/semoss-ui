@@ -1,5 +1,4 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
 import { ButtonBlock } from "../../components/block-defaults/button-block/ButtonBlock";
 import { render, screen } from "../utils";
 

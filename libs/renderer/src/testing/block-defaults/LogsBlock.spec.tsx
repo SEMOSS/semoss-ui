@@ -1,4 +1,3 @@
-import "@testing-library/jest-dom";
 import { expect } from "vitest";
 import { LogsBlock } from "../../components/block-defaults/logs-block/LogsBlock";
 import type { QueryStateConfig } from "../../store";
@@ -48,7 +47,6 @@ describe("logs block", () => {
 		});
 
 		const element = container.querySelector("[data-block='logs']");
-		console.log({ element });
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");
@@ -62,7 +60,6 @@ describe("logs block", () => {
 		});
 
 		const element = container.querySelector("[data-block='logs']");
-		console.log({ element });
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");

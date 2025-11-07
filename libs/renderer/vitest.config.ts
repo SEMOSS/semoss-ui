@@ -1,6 +1,7 @@
 /// <reference types="vitest" />
 
 import react from "@vitejs/plugin-react";
+import { playwright } from "@vitest/browser-playwright";
 import { defineConfig } from "vitest/config";
 import { resolve } from "node:path";
 
@@ -29,7 +30,9 @@ export default defineConfig({
 		globals: true,
 		setupFiles: ["./vitest.setup.ts"],
 		reporters: ["default"],
-		pool: "threads",
+		pool: "vmForks",
+		testTimeout: 10000, // Set global timeout to 10 seconds
+		hookTimeout: 10000,
 		coverage: {
 			enabled: false,
 			provider: "v8",
@@ -37,7 +40,7 @@ export default defineConfig({
 			reportOnFailure: true,
 			reportsDirectory: "./coverage/packages/renderer",
 			include: ["**/src/components"],
-			exclude: ["node_modules", "dist"],
+			exclude: ["**/node_modules", "**/dist"],
 		},
 		deps: {
 			// Force these packages to be processed by Vite instead of Node
@@ -54,6 +57,11 @@ export default defineConfig({
 				},
 			},
 			external: ["@semoss/ui", "@semoss/sdk"],
+		},
+		browser: {
+			enabled: false,
+			instances: [{ browser: "chromium" }],
+			provider: playwright(),
 		},
 	},
 });
