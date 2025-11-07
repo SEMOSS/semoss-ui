@@ -166,13 +166,13 @@ export const NotificationItem: React.FC<NotificationItemProps> = ({
 									{getNotificationMessage(n, loggedInUser)}
 								</Typography>
 
-								{n.notification_createdat && (
+								{n.notification_createddate && (
 									<StyledTimeFormat
 										variant="caption"
 										color="textSecondary"
-										title={n.notification_createdat}
+										title={n.notification_createddate}
 									>
-										{formatDate(n.notification_createdat)}
+										{formatDate(n.notification_createddate)}
 										{href && (
 											<StyledLink
 												href={href}
