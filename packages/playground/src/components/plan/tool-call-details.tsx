@@ -12,7 +12,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from "@semoss/ui/next";
-import { engineProjectToToolbox } from "@/components";
+import { engineProjectToMCP } from "@/components";
 import type { App, Engine, MCP, MCPTool, PlanStep } from "@/types";
 
 type ToolCallDetails = Extract<PlanStep["details"], { stepType: "tool_call" }>;
@@ -54,7 +54,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 		},
 	});
 
-	const toolboxOptions = getApps.data.map(engineProjectToToolbox);
+	const toolboxOptions = getApps.data.map(engineProjectToMCP);
 
 	return (
 		<>
