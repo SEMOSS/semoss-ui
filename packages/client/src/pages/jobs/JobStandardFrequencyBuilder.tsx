@@ -1,7 +1,18 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Autocomplete, Stack, TextField } from "@semoss/ui";
 import { DaysOfWeek, FrequencyOptions, Months } from "./job.constants";
 import type { DayOfWeek, Frequencies, JobBuilder, Month } from "./job.types";
+
+type MonthObject = {
+	month: Month;
+	value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
+	days: 28 | 29 | 30 | 31;
+};
+
+type DayOfWeekObject = {
+	day: DayOfWeek;
+	value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+};
 
 export const JobStandardFrequencyBuilder = (props: {
 	builder: JobBuilder;
@@ -9,21 +20,14 @@ export const JobStandardFrequencyBuilder = (props: {
 }) => {
 	const { builder, setBuilderField } = props;
 
-	// Flag to prevent circular updates
-	const isParsingCron = useRef(false);
+	// Flag to prevent circular updates - UPDATE: switched to useState from useRef
+	const [isParsingCon, setIsParsingCron] = useState(false);
 
 	const [frequency, setFrequency] = useState<Frequencies>("Daily");
 	const [time, setTime] = useState<string>("12:00");
-	const [dayOfWeek, setDayOfWeek] = useState<{
-		day: DayOfWeek;
-		value: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-	}>(DaysOfWeek[0]);
+	const [dayOfWeek, setDayOfWeek] = useState<DayOfWeekObject>(DaysOfWeek[0]);
 	const [dayOfMonth, setDayOfMonth] = useState<number>(1);
-	const [month, setMonth] = useState<{
-		month: Month;
-		value: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12;
-		days: 28 | 29 | 30 | 31;
-	}>(Months[0]);
+	const [month, setMonth] = useState<MonthObject>(Months[0]);
 
 	useEffect(() => {
 		const cronValues = builder.cronExpression.split(" ");
@@ -39,7 +43,7 @@ export const JobStandardFrequencyBuilder = (props: {
 		}
 
 		// Set flag to prevent circular updates
-		isParsingCron.current = true;
+		setIsParsingCron(true);
 
 		// set time - cronValues[2] is hours, cronValues[1] is minutes
 		const hours = cronValues[2].padStart(2, "0");
@@ -91,12 +95,12 @@ export const JobStandardFrequencyBuilder = (props: {
 
 		// Reset flag after state updates have been queued
 		setTimeout(() => {
-			isParsingCron.current = false;
+			setIsParsingCron(false);
 		}, 0);
 	}, [builder.cronExpression]);
 	useEffect(() => {
 		// Don't update cron expression if we're currently parsing one
-		if (isParsingCron.current) {
+		if (isParsingCon) {
 			return;
 		}
 
@@ -164,34 +168,38 @@ export const JobStandardFrequencyBuilder = (props: {
 				<Autocomplete
 					size="small"
 					options={DaysOfWeek}
-					value={dayOfWeek as any} // Type assertion needed due to complex generic inference with MUI Autocomplete
+					value={dayOfWeek} // Type assertion needed due to complex generic inference with MUI Autocomplete
 					multiple={false}
 					renderInput={(params) => {
 						return <TextField {...params} label="Day of Week" />;
 					}}
 					fullWidth
-					isOptionEqualToValue={(option, value) =>
-						option.value === value.value
+					isOptionEqualToValue={(
+						option: DayOfWeekObject,
+						value: DayOfWeekObject,
+					) => option.value === value.value}
+					getOptionLabel={(option: DayOfWeekObject) => option.day}
+					onChange={(_, value: DayOfWeekObject) =>
+						setDayOfWeek(value)
 					}
-					getOptionLabel={(option) => option.day}
-					onChange={(_, value) => setDayOfWeek(value)}
 				/>
 			) : null}
 			{frequency === "Yearly" ? (
 				<Autocomplete
 					size="small"
 					options={Months}
-					value={month as any} // Type assertion needed due to complex generic inference with MUI Autocomplete
+					value={month}
 					multiple={false}
 					renderInput={(params) => {
 						return <TextField {...params} label="Month" />;
 					}}
 					fullWidth
-					isOptionEqualToValue={(option, value) =>
-						option.value === value.value
-					}
-					getOptionLabel={(option) => option.month}
-					onChange={(_, value) => setMonth(value)}
+					isOptionEqualToValue={(
+						option: MonthObject,
+						value: MonthObject,
+					) => option.value === value.value}
+					getOptionLabel={(option: MonthObject) => option.month}
+					onChange={(_, value: MonthObject) => setMonth(value)}
 				/>
 			) : null}
 			{frequency === "Monthly" || frequency === "Yearly" ? (
@@ -200,10 +208,22 @@ export const JobStandardFrequencyBuilder = (props: {
 					value={Number.isNaN(dayOfMonth) ? "" : dayOfMonth}
 					type="number"
 					label="Day of Month"
-					error={
-						dayOfMonth
-							? !(dayOfMonth <= daysInMonth && dayOfMonth > 0)
-							: false
+					sx={
+						Number.isNaN(dayOfMonth) ||
+						dayOfMonth === 0 ||
+						(dayOfMonth &&
+							!(dayOfMonth <= daysInMonth && dayOfMonth > 0))
+							? {
+									"& .MuiOutlinedInput-root": {
+										"& fieldset": {
+											borderColor: "error.main",
+										},
+										"&:hover fieldset": {
+											borderColor: "error.main",
+										},
+									},
+								}
+							: undefined
 					}
 					fullWidth
 					onChange={(e) =>

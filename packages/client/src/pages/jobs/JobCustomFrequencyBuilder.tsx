@@ -51,8 +51,21 @@ export const JobCustomFrequencyBuilder = (props: {
 					key={label}
 					label={label}
 					value={cronFields[idx]}
-					error={!isValidExpression}
 					size="small"
+					sx={
+						!isValidExpression
+							? {
+									"& .MuiOutlinedInput-root": {
+										"& fieldset": {
+											borderColor: "error.main",
+										},
+										"&:hover fieldset": {
+											borderColor: "error.main",
+										},
+									},
+								}
+							: undefined
+					}
 					onChange={(e) => handleFieldChange(idx, e.target.value)}
 				/>
 			))}

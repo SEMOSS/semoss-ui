@@ -217,20 +217,17 @@ export const JobBuilderModal = (props: {
 				}","cronTimeZone":"${builder.cronTz}", "recipeParameters":""}',triggerOnLoad=[false],triggerNow=[false]);`,
 			);
 			if (response.errors.length) {
-				await notification.add({
-					color: "error",
-					message: response.errors[0], // fixed typo: should be response.errors[0]
-				});
-				setIsLoading(false);
-				return; // Don't close modal
+				throw new Error(response.errors[0]);
 			}
-		} catch (_e) {
+			notification.add({
+				color: "success",
+				message: "Job added successfully",
+			});
+		} catch {
 			await notification.add({
 				color: "error",
 				message: "Unable to add job",
 			});
-			setIsLoading(false);
-			return; // Don't close modal
 		}
 		getJobs();
 		closeModal();
