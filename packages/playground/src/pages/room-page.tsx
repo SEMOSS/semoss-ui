@@ -1,6 +1,6 @@
 import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
 	Breadcrumb,
@@ -29,6 +29,7 @@ import {
 	RoomSidebar,
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
+import { RoomStore } from "@/stores";
 
 // Styled components removed - using Tailwind CSS classes directly
 
@@ -41,19 +42,24 @@ export const RoomPage = observer(() => {
 	const { chat } = useChat();
 
 	const navigate = useNavigate();
+	const { open } = useSidebar();
 
 	// set the get the room based on the params
 	const { roomId } = useParams();
 
-	// get the room
-	const room = chat.getRoom(roomId);
+	// create the room
+	const room = useMemo(() => {
+		if (!roomId) {
+			return null;
+		}
+
+		return new RoomStore(roomId);
+	}, [roomId]);
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
 	);
-
-	const { open } = useSidebar();
 
 	/**
 	 * Effects
@@ -65,17 +71,12 @@ export const RoomPage = observer(() => {
 			return;
 		}
 
-		const initializeRoom = async () => {
-			try {
-				await room.initialize();
-			} catch (e) {
-				toast.error(e.message);
+		// if it doesn't load successfully, go back to home
+		room.initialize().catch((e) => {
+			toast.error(e.message);
 
-				navigate("/");
-			}
-		};
-
-		initializeRoom();
+			navigate("/");
+		});
 	}, [room, navigate]);
 
 	// create a listener to process messages from the room
