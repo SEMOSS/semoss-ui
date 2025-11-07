@@ -272,6 +272,12 @@ interface MultiSelectProps
 	 * Optional, defaults to false.
 	 */
 	closeOnSelect?: boolean;
+
+	/**
+	 * Logic for controlled search value (for advanced use cases).
+	 */
+	searchValue?: string;
+	setSearchValue?: (value: string) => void;
 }
 
 /**
@@ -327,6 +333,8 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 			deduplicateOptions = false,
 			resetOnDefaultValueChange = true,
 			closeOnSelect = false,
+			searchValue: controlledSearchValue = undefined,
+			setSearchValue: setControlledSearchValue = undefined,
 			...props
 		},
 		ref,
@@ -335,7 +343,11 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 			React.useState<string[]>(defaultValue);
 		const [isPopoverOpen, setIsPopoverOpen] = React.useState(false);
 		const [isAnimating, setIsAnimating] = React.useState(false);
-		const [searchValue, setSearchValue] = React.useState("");
+		const [internalSearchValue, setInternalSearchValue] =
+			React.useState("");
+		const searchValue = controlledSearchValue ?? internalSearchValue;
+		const setSearchValue =
+			setControlledSearchValue ?? setInternalSearchValue;
 
 		const [politeMessage, setPoliteMessage] = React.useState("");
 		const [assertiveMessage, setAssertiveMessage] = React.useState("");
@@ -387,7 +399,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 			setIsPopoverOpen(false);
 			setSearchValue("");
 			onValueChange(defaultValue);
-		}, [defaultValue, onValueChange]);
+		}, [defaultValue, onValueChange, setSearchValue]);
 
 		const buttonRef = React.useRef<HTMLButtonElement>(null);
 
@@ -729,7 +741,7 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 			if (!isPopoverOpen) {
 				setSearchValue("");
 			}
-		}, [isPopoverOpen]);
+		}, [isPopoverOpen, setSearchValue]);
 
 		React.useEffect(() => {
 			const selectedCount = selectedValues.length;

@@ -19,7 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { engineProjectToMCP } from "@/components";
 import { useChat } from "@/hooks";
-import type { App, Engine, MCP, Workspace } from "@/types";
+import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 
 export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
@@ -58,7 +58,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			mcp: [],
 		},
 	});
-	const [searchWord] = useState<string>("");
+	const [searchWord, setSearchWord] = useState<string>("");
 	const debouncedSearchWord = useDebouncedValue(searchWord);
 
 	/**
@@ -234,6 +234,18 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 								render={({ field }) => {
 									const selectedMCPIds =
 										field.value?.map((mcp) => mcp.id) || [];
+									const optionsMap: Record<
+										string,
+										MCPConfig
+									> = {};
+									mcpArray.forEach((mcp) => {
+										optionsMap[mcp.id] = mcp;
+									});
+									field.value.forEach((mcp) => {
+										if (!optionsMap[mcp.id]) {
+											optionsMap[mcp.id] = mcp;
+										}
+									});
 
 									return (
 										<Field>
@@ -241,12 +253,12 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 												Use These MCPs
 											</FieldLabel>
 											<MultiSelect
-												options={mcpArray.map(
-													(mcp) => ({
-														label: mcp.name,
-														value: mcp.id,
-													}),
-												)}
+												options={Object.values(
+													optionsMap,
+												).map((mcp) => ({
+													label: mcp.name,
+													value: mcp.id,
+												}))}
 												onValueChange={(newVals) => {
 													field.onChange(
 														newVals.map((id) =>
@@ -260,6 +272,9 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 												}}
 												value={selectedMCPIds}
 												placeholder="Select MCPs"
+												hideSelectAll
+												searchValue={searchWord}
+												setSearchValue={setSearchWord}
 											/>
 										</Field>
 									);
