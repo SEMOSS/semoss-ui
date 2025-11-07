@@ -37,7 +37,7 @@ const StyledSearchbarContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	alignItems: "flex-start",
-	gap: theme.spacing(3),
+	gap: theme.spacing(2),
 }));
 
 const StyledStack = styled("div")(({ theme }) => ({
@@ -287,7 +287,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				sx={{ cursor: selectedDatabase ? "pointer" : "default" }}
 				data-testid="breadcrumb-page"
 			>
-				Connect to database Database
+				Connect to Database
 			</Breadcrumbs.Item>
 
 			{selectedDatabase && (
@@ -421,12 +421,12 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								data-testid="search-box"
 							/>
 							<UploadButton
-								size="medium"
+								size="large"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
-								data-tesId={"database-upload-file-button"}
+								data-testid={"database-upload-file-button"}
 							>
-								<FileUploadOutlined fontSize="small" />
+								<FileUploadOutlined fontSize="medium" />
 							</UploadButton>
 						</StyledSearchbarContainer>
 

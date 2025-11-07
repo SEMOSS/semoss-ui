@@ -67,7 +67,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "general",
 					category: "General",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: true,
 				},
@@ -87,7 +87,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "Database",
 					category: "Database",
-          type: "select",
+					type: "select",
 					options: {
 						options: [
 							{ display: "H2", value: "h2" },
@@ -103,7 +103,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "Database",
 					category: "Database",
-          type: "select",
+					type: "select",
 					options: {
 						options: [
 							{
@@ -189,7 +189,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "general",
 					category: "General",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: true,
 				},
@@ -286,7 +286,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "general",
 					category: "General",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: true,
 				},
@@ -306,7 +306,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "Database",
 					category: "Database",
-          type: "select",
+					type: "select",
 					options: {
 						options: [
 							{ display: "H2", value: "h2" },
@@ -322,7 +322,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "Database",
 					category: "Database",
-          type: "select",
+					type: "select",
 					options: {
 						options: [
 							{

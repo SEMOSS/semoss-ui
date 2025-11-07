@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
+	Autocomplete,
 	Box,
 	Button,
 	Checkbox,
@@ -322,12 +323,25 @@ export const DatabaseForm = ({
 
 		try {
 			const response = await monolithStore.runQuery(pixelStatements);
-			const { output, operationType } = response.pixelReturn[0];
-			if (operationType.includes("ERROR")) {
-				notification.add({ color: "error", message: output });
-				return;
+			const { output } = response.pixelReturn[0];
+			const hasError = response.pixelReturn.some((res) =>
+				res.operationType.includes("ERROR"),
+			);
+			if (hasError) {
+				response.pixelReturn.forEach((res) => {
+					if (res.operationType.includes("ERROR")) {
+						notification.add({
+							color: "error",
+							message: res.output,
+						});
+					}
+				});
+			} else {
+				notification.add({
+					color: "success",
+					message: "Successfully Created Database",
+				});
 			}
-			notification.add({ color: "success", message: "Success" });
 			navigate(`/engine/database/${output.database_id}`);
 		} catch (error) {
 			notification.add({
@@ -701,6 +715,37 @@ export const DatabaseForm = ({
 									</Typography>
 								)}
 							</>
+						);
+					case "tags":
+						return (
+							<Autocomplete
+								multiple
+								freeSolo
+								options={val.options?.options || []}
+								value={field.value || []}
+								onChange={(_, newValue) =>
+									field.onChange(newValue)
+								}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										fullWidth
+										label={val.label}
+										placeholder='Press "Enter" to add tag'
+										variant="outlined"
+										// @ts-expect-error TODO FIX
+										error={!!error}
+										helperText={getHelperText(error, val)}
+										disabled={val.disabled}
+										sx={{
+											display: val.hidden
+												? "none"
+												: "block",
+										}}
+									/>
+								)}
+								data-testid={`database-form-input-${val.key}`}
+							/>
 						);
 
 					default:
