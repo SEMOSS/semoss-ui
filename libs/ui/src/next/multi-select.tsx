@@ -820,6 +820,11 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 			getAllOptions,
 		]);
 
+		console.log(
+			"Attempting to render the following filtered options:",
+			JSON.stringify(filteredOptions),
+		);
+
 		return (
 			<>
 				<div className="sr-only">
@@ -1283,6 +1288,12 @@ export const MultiSelect = React.forwardRef<MultiSelectRef, MultiSelectProps>(
 												selectedValues.includes(
 													option.value,
 												);
+											console.log(
+												"Attempting to render the following option:",
+												JSON.stringify(option),
+												"Selected:",
+												isSelected,
+											);
 											return (
 												<CommandItem
 													key={option.value}
