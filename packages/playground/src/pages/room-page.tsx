@@ -1,6 +1,6 @@
-import { MoveDownIcon, Settings2Icon } from "lucide-react";
+import { MoveDownIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { Navigate, useNavigate, useParams } from "react-router-dom";
 import {
 	Breadcrumb,
@@ -24,11 +24,12 @@ import {
 	InputMessage,
 	PlanMessage,
 	ResponseMessage,
-	RoomArtifact,
-	RoomConfiguration,
+	RoomConfigurationButton,
 	RoomInput,
+	RoomSidebar,
 } from "@/components";
 import { useAutoScroll, useChat } from "@/hooks";
+import { RoomStore } from "@/stores";
 
 // Styled components removed - using Tailwind CSS classes directly
 
@@ -41,19 +42,24 @@ export const RoomPage = observer(() => {
 	const { chat } = useChat();
 
 	const navigate = useNavigate();
+	const { open } = useSidebar();
 
 	// set the get the room based on the params
 	const { roomId } = useParams();
 
-	// get the room
-	const room = chat.getRoom(roomId);
+	// create the room
+	const room = useMemo(() => {
+		if (!roomId) {
+			return null;
+		}
+
+		return new RoomStore(roomId);
+	}, [roomId]);
 
 	// Auto-scroll hook - tracks room history length to trigger scroll on new messages
 	const { setScrollEle, scrollToBottom, isUserScrolled } = useAutoScroll(
 		room?.history?.length || 0,
 	);
-
-	const { open } = useSidebar();
 
 	/**
 	 * Effects
@@ -65,17 +71,12 @@ export const RoomPage = observer(() => {
 			return;
 		}
 
-		const initializeRoom = async () => {
-			try {
-				await room.initialize();
-			} catch (e) {
-				toast.error(e.message);
+		// if it doesn't load successfully, go back to home
+		room.initialize().catch((e) => {
+			toast.error(e.message);
 
-				navigate("/");
-			}
-		};
-
-		initializeRoom();
+			navigate("/");
+		});
 	}, [room, navigate]);
 
 	// create a listener to process messages from the room
@@ -241,49 +242,13 @@ export const RoomPage = observer(() => {
 								minRows={3}
 								maxRows={8}
 								configuration={
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<span>
-												<Button
-													size="sm"
-													className={`${
-														room.sidebar.isOpen &&
-														room.sidebar.type ===
-															"CONFIGURATION"
-															? "text-primary"
-															: ""
-													}`}
-													variant={"ghost"}
-													type="button"
-													aria-label="Open Configuration Menu"
-													disabled={room.isLoading}
-													onClick={() => {
-														// toggle open / closed based on the state
-														if (
-															room.sidebar
-																.isOpen &&
-															room.sidebar
-																.type ===
-																"CONFIGURATION"
-														) {
-															room.closeSidebar();
-														} else {
-															room.openSidebar(
-																"CONFIGURATION",
-															);
-														}
-													}}
-												>
-													<Settings2Icon />
-												</Button>
-											</span>
-										</TooltipTrigger>
-										<TooltipContent>
-											Open Configuration Menu
-										</TooltipContent>
-									</Tooltip>
+									<RoomConfigurationButton room={room} />
 								}
 								onPrompt={async (prompt, files) => {
+									// update the options
+									await room.updateRoomOptions(room.options);
+
+									// ask the room
 									await room.askMessage(prompt, files);
 
 									return true;
@@ -291,39 +256,17 @@ export const RoomPage = observer(() => {
 							/>
 						</div>
 					</ResizablePanel>
-					{room.sidebar.isOpen &&
-						room.sidebar.type === "CONFIGURATION" && (
-							<>
-								<ResizableHandle className="my-auto h-32" />
-								<ResizablePanel
-									className={"relative p-2"}
-									defaultSize={25}
-								>
-									<RoomConfiguration
-										options={room.options}
-										setOptions={(o) => {
-											room.setOptions(o);
-										}}
-										onClose={() => {
-											room.closeSidebar();
-										}}
-										room={room}
-									/>
-								</ResizablePanel>
-							</>
-						)}
-					{room.sidebar.isOpen &&
-						room.sidebar.type === "ARTIFACTS" && (
-							<>
-								<ResizableHandle className="my-auto h-32" />
-								<ResizablePanel
-									className={"relative p-2"}
-									defaultSize={70}
-								>
-									<RoomArtifact room={room} />
-								</ResizablePanel>
-							</>
-						)}
+					{room.sidebar.isOpen && (
+						<>
+							<ResizableHandle />
+							<ResizablePanel
+								className={"relative p-2"}
+								defaultSize={70}
+							>
+								<RoomSidebar room={room} />
+							</ResizablePanel>
+						</>
+					)}
 				</ResizablePanelGroup>
 			</div>
 		</div>

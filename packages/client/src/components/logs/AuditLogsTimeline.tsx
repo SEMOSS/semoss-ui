@@ -155,10 +155,10 @@ interface AuditLogsTimelineProps {
 
 const TimeDateFormatter = (timeStamp: string | number) => {
 	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split('.')[0];
-    const date = formattedDate.split("T")[0];
-    const time = formattedDate.split("T")[1];
-    return { date, time };
+	const formattedDate = tempDate.toISOString().split(".")[0];
+	const date = formattedDate.split("T")[0];
+	const time = formattedDate.split("T")[1];
+	return { date, time };
 };
 
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
@@ -381,7 +381,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     margin-bottom: 4px; 
                     text-transform: uppercase; 
                     letter-spacing: 0.5px;
-                  ">Prompt</div>
+                  ">Request</div>
                   <div style="
                     font-size: 12px; 
                     line-height: 1.4; 
@@ -550,7 +550,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					},
 				},
 				legend: {
-					data: ["Prompt", "Response"],
+					data: ["Request", "Response"],
 					bottom: 0,
 					left: 15,
 					itemGap: 30,
@@ -565,7 +565,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				},
 				series: [
 					{
-						name: "Prompt",
+						name: "Request",
 						type: "custom",
 						data: eventData,
 						clip: true,
