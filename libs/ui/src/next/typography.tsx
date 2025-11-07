@@ -20,13 +20,13 @@ const createComponent = <T extends HTMLElement>(
 
 export const H1 = createComponent<HTMLHeadingElement>(
 	"h1",
-	"font-extrabold text-5xl leading-normal",
+	"font-bold text-4xl leading-normal",
 	"H1",
 );
 
 export const H2 = createComponent<HTMLHeadingElement>(
 	"h2",
-	"font-semibold text-3xl leading-normal",
+	"font-bold text-3xl leading-normal",
 	"H2",
 );
 
