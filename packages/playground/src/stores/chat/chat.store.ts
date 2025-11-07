@@ -154,7 +154,7 @@ export class ChatStore {
 
 		// run the first message
 		if (mode === "chat") {
-			pixel = `AskPlayground(
+			pixel += `AskPlayground(
 engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
@@ -166,7 +166,7 @@ paramValues=[${JSON.stringify({
 			})}]
 );`;
 		} else if (mode === "planning") {
-			pixel = `AskCOTRoom(
+			pixel += `AskCOTRoom(
 engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
