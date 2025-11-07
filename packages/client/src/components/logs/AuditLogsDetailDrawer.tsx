@@ -324,7 +324,7 @@ export const AuditLogsDetailDrawer = (props) => {
 
 	const getPromptData = () => {
 		try {
-			return JSON.parse(logDetails.payload);
+			return JSON.parse(logDetails.request);
 		} catch {
 			return null;
 		}
@@ -402,7 +402,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								}
 								return (
 									<ContentText variant="body2">
-										{logDetails.payload}
+										{logDetails.request}
 									</ContentText>
 								);
 							})()}

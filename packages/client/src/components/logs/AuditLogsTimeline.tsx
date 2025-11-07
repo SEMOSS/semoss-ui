@@ -387,7 +387,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     display: flex;
                     align-items: center;
                     overflow: hidden;
-                  ">${truncateText(eventData.payload)}</div>
+                  ">${truncateText(eventData.request)}</div>
                 </div>
                 
                 <div style="margin-bottom: 8px;">

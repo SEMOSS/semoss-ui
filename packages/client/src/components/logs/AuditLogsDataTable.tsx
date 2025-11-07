@@ -493,7 +493,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					log.engineType?.toLowerCase().includes(query) ||
 					log.userId?.toLowerCase().includes(query) ||
 					log.sessionId?.toLowerCase().includes(query) ||
-					log.payload?.toLowerCase().includes(query) ||
+					log.request?.toLowerCase().includes(query) ||
 					log.response?.toLowerCase().includes(query) ||
 					log.latency?.toString().toLowerCase().includes(query) ||
 					log.tokens?.toString().toLowerCase().includes(query),
@@ -1095,9 +1095,9 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 									<StyledTableCell>
 										<Typography
 											variant="body2"
-											title={event.payload}
+											title={event.request}
 										>
-											{ellipsed(event.payload)}
+											{ellipsed(event.request)}
 										</Typography>
 									</StyledTableCell>
 									<StyledTableCell>
