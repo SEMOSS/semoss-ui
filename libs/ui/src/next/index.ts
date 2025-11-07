@@ -20,6 +20,7 @@ export * from "./input-group";
 export * from "./item";
 export * from "./label";
 export * from "./markdown";
+export * from "./multi-select";
 export * from "./popover";
 export * from "./progress";
 export * from "./radio-group";

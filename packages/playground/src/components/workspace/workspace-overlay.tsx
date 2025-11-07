@@ -3,7 +3,6 @@ import { Controller, useForm } from "react-hook-form";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	Checkbox,
 	Dialog,
 	DialogContent,
 	DialogFooter,
@@ -14,7 +13,7 @@ import {
 	FieldLabel,
 	FieldSet,
 	Input,
-	Label,
+	MultiSelect,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -251,53 +250,29 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 									return (
 										<Field>
 											<FieldLabel>
-												Use These Tools
+												Use These MCPs
 											</FieldLabel>
-											<div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
-												{/* Individual tool options */}
-												{mcpArray.map((mcp) => (
-													<div
-														key={mcp.id}
-														className="flex items-center space-x-2"
-													>
-														<Checkbox
-															id={`tool-${mcp.id}`}
-															checked={selectedMCPIds.includes(
-																mcp.id,
-															)}
-															onCheckedChange={(
-																checked,
-															) => {
-																if (checked) {
-																	field.onChange(
-																		[
-																			...field.value,
-																			mcp,
-																		],
-																	);
-																} else {
-																	field.onChange(
-																		field.value.filter(
-																			(
-																				mcpInArr,
-																			) =>
-																				mcpInArr.id !==
-																				mcp.id,
-																		),
-																	);
-																}
-															}}
-															disabled={isLoading}
-														/>
-														<Label
-															htmlFor={`tool-${mcp.id}`}
-															className="cursor-pointer font-normal text-sm"
-														>
-															{mcp.name}
-														</Label>
-													</div>
-												))}
-											</div>
+											<MultiSelect
+												options={mcpArray.map(
+													(mcp) => ({
+														label: mcp.name,
+														value: mcp.id,
+													}),
+												)}
+												onValueChange={(newVals) => {
+													field.onChange(
+														newVals.map((id) =>
+															mcpArray.find(
+																(mcp) =>
+																	mcp.id ===
+																	id,
+															),
+														),
+													);
+												}}
+												value={selectedMCPIds}
+												placeholder="Select MCPs"
+											/>
 										</Field>
 									);
 								}}
