@@ -1,8 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel, upload } from "@semoss/sdk/react";
-import { engineProjectToMCP } from "@/components";
 import { MODEL_KEY } from "@/constants";
-import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
+import type { Engine, MCPConfig, Workspace } from "@/types";
 import type { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
@@ -241,43 +240,6 @@ paramValues=[${JSON.stringify({
 				MODEL_KEY,
 				JSON.stringify(this.models.selected),
 			);
-		}
-	};
-
-	/**
-	 * Get available MCPs from the backend
-	 */
-	// Record<type, Record<id, MCP>>
-	getMcpMap = async (
-		filterWord?: string,
-	): Promise<Record<string, Record<string, MCP>>> => {
-		try {
-			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
-				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
-			);
-
-			if (
-				!pixelReturn ||
-				pixelReturn.length === 0 ||
-				!pixelReturn[0].output
-			) {
-				throw new Error();
-			}
-
-			const toolBoxes = pixelReturn[0].output.map(engineProjectToMCP);
-
-			return toolBoxes.reduce(
-				(acc, tool) => {
-					if (!acc[tool.type]) {
-						acc[tool.type] = {};
-					}
-					acc[tool.type][tool.id] = tool;
-					return acc;
-				},
-				{} as Record<string, Record<string, MCP>>,
-			);
-		} catch {
-			throw new Error("Failed to fetch MCPs");
 		}
 	};
 

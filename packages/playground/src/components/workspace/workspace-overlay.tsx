@@ -17,8 +17,9 @@ import {
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { engineProjectToMCP } from "@/components";
 import { useChat } from "@/hooks";
-import type { MCP, Workspace } from "@/types";
+import type { App, Engine, MCP, Workspace } from "@/types";
 
 export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
@@ -37,15 +38,6 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	onClose,
 }) => {
 	/**
-	 * Library Hooks
-	 */
-	const { chat } = useChat();
-	const getWorkspace = usePixel<Workspace>(
-		workspaceId ? `GetWorkspace(${JSON.stringify(workspaceId)});` : null,
-		{ data: null },
-	);
-
-	/**
 	 * IDs
 	 */
 	const nameId = useId();
@@ -55,11 +47,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	/**
 	 * State
 	 */
-	const [isLoadingMcps, setIsLoadingMcps] = useState<boolean>(false);
 	const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
-	const [mcpMap, setMcpMap] = useState<Record<string, Record<string, MCP>>>(
-		{},
-	);
 	const { handleSubmit, control, watch, reset } = useForm<
 		Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">
 	>({
@@ -72,6 +60,21 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	});
 	const [searchWord] = useState<string>("");
 	const debouncedSearchWord = useDebouncedValue(searchWord);
+
+	/**
+	 * Library Hooks
+	 */
+	const { chat } = useChat();
+	const getWorkspace = usePixel<Workspace>(
+		workspaceId ? `GetWorkspace(${JSON.stringify(workspaceId)});` : null,
+		{ data: null },
+	);
+	const getMcps = usePixel<(Engine | App)[]>(
+		`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${debouncedSearchWord ? `, filterWord=${JSON.stringify(debouncedSearchWord)}` : ""})`,
+		{
+			data: [],
+		},
+	);
 
 	/**
 	 * Method that is called to create the app
@@ -101,23 +104,6 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	 * Effects
 	 */
 	useEffect(() => {
-		const fetchMCPs = async () => {
-			setIsLoadingMcps(true);
-			try {
-				const mcpMap = await chat.getMcpMap(debouncedSearchWord);
-				setMcpMap(mcpMap);
-			} catch (e) {
-				console.error(e);
-
-				toast.error(e.message);
-			} finally {
-				setIsLoadingMcps(false);
-			}
-		};
-		fetchMCPs();
-	}, [chat.getMcpMap, debouncedSearchWord]);
-
-	useEffect(() => {
 		if (getWorkspace.data) {
 			const workspace = getWorkspace.data;
 			reset({
@@ -141,7 +127,9 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	 */
 	const isCreatingNew = workspaceId === null;
 	const isFormValid = !!watch("name");
-	const mcpArray: MCP[] = Object.values(mcpMap).flatMap(Object.values);
+	const mcpArray: MCP[] = getMcps.data.map(engineProjectToMCP);
+	const isLoadingMcps =
+		searchWord !== debouncedSearchWord || getMcps.status !== "SUCCESS";
 	const isLoading =
 		isLoadingMcps ||
 		isLoadingSubmit ||
