@@ -6,6 +6,7 @@ import {
 	Stack,
 	styled,
 	Typography,
+	useNotification,
 } from "@semoss/ui";
 import { AuditLogsDataTable, AuditLogsTimeline } from "@/components/logs";
 import { NavbarHeader, NavbarLeft } from "@/components/shared";
@@ -19,14 +20,16 @@ const DashboardHeader = styled("div")(({ theme }) => ({
 	alignItems: "center",
 }));
 
-export const TimeDateFormatter = (timeStamp: string | number | null | undefined) => {
+export const TimeDateFormatter = (
+	timeStamp: string | number | null | undefined,
+) => {
 	if (!timeStamp) {
 		return { date: "", time: "" };
 	}
-	
+
 	try {
 		const tempDate = new Date(timeStamp);
-		
+
 		// Check if date is invalid
 		if (Number.isNaN(tempDate.getTime())) {
 			return { date: "", time: "" };
@@ -64,6 +67,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 	const [rowsPerPage, setRowsPerPage] = useState(10);
 	const [totalCount, setTotalCount] = useState(0);
 	const [loading, setLoading] = useState<boolean>(true);
+	const notification = useNotification();
 
 	const fetchLogs = async (limit: number, offset: number) => {
 		setLoading(true);
@@ -88,6 +92,11 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 				responseData?.totalCount || responseData?.length || 0,
 			);
 		} catch (error) {
+			setLogs([]);
+			notification.add({
+				color: "error",
+				message: `Error fetching logs: ${error}`,
+			});
 			console.error("Error fetching logs:", error);
 		} finally {
 			setLoading(false);
