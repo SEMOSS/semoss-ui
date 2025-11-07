@@ -13,6 +13,7 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
+import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
 
 // Type definitions
@@ -152,14 +153,6 @@ const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
 interface AuditLogsTimelineProps {
 	logs: EventData[];
 }
-
-const TimeDateFormatter = (timeStamp: string | number) => {
-	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split(".")[0];
-	const date = formattedDate.split("T")[0];
-	const time = formattedDate.split("T")[1];
-	return { date, time };
-};
 
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,

@@ -16,6 +16,7 @@ import {
 	Typography,
 	useTheme,
 } from "@semoss/ui";
+import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 
 const DrawerContainer = styled(Box)(({ theme }) => ({
 	position: "relative",
@@ -266,14 +267,6 @@ const hasExpandableContent = (data: unknown): boolean => {
 	}
 
 	return false;
-};
-
-const TimeDateFormatter = (timeStamp: string | number) => {
-	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split(".")[0];
-	const date = formattedDate.split("T")[0];
-	const time = formattedDate.split("T")[1];
-	return { date, time };
 };
 
 export const AuditLogsDetailDrawer = (props) => {

@@ -2,8 +2,6 @@ import { Refresh } from "@mui/icons-material";
 import { useEffect, useState } from "react";
 import {
 	Button,
-	Menu,
-	Select,
 	Skeleton,
 	Stack,
 	styled,
@@ -20,6 +18,44 @@ const DashboardHeader = styled("div")(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 }));
+
+export const TimeDateFormatter = (timeStamp: string | number | null | undefined) => {
+	if (!timeStamp) {
+		return { date: "", time: "" };
+	}
+	
+	try {
+		const tempDate = new Date(timeStamp);
+		
+		// Check if date is invalid
+		if (Number.isNaN(tempDate.getTime())) {
+			return { date: "", time: "" };
+		}
+
+		const formattedDate = tempDate.toLocaleTimeString("en-US", {
+			year: "numeric",
+			month: "2-digit",
+			day: "2-digit",
+			hour: "2-digit",
+			minute: "2-digit",
+			second: "2-digit",
+			hour12: true,
+		});
+
+		try {
+			const [datePart, timePart] = formattedDate.split(", ");
+			const date = datePart || "";
+			const time = timePart ? timePart.split(" ")[0] : "";
+			return { date, time };
+		} catch (_formatError) {
+			// Handle string parsing errors
+			return { date: "", time: "" };
+		}
+	} catch (_dateError) {
+		// Handle date creation errors
+		return { date: "", time: "" };
+	}
+};
 
 export const AuditLogsDashboard = ({ catalogName }) => {
 	const { configStore, monolithStore } = useRootStore();
@@ -107,7 +143,8 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 						spacing={2}
 						sx={{ marginLeft: "auto" }}
 					>
-						<Select
+						{/* Disabled for now */}
+						{/* <Select
 							variant="outlined"
 							size="small"
 							onChange={() => {}}
@@ -121,7 +158,7 @@ export const AuditLogsDashboard = ({ catalogName }) => {
 								Last 90 Days
 							</Menu.Item>
 							<Menu.Item value="Last Year">Last Year</Menu.Item>
-						</Select>
+						</Select> */}
 						<Button
 							variant="contained"
 							color="primary"
