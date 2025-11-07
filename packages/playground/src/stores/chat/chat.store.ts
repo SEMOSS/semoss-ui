@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel, upload } from "@semoss/sdk/react";
-import { engineProjectToToolbox } from "@/components";
+import { engineProjectToMCP } from "@/components";
 import { MODEL_KEY } from "@/constants";
 import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 import type { RoomStore } from "../room";
@@ -259,7 +259,7 @@ paramValues=[${JSON.stringify({
 				throw new Error();
 			}
 
-			const toolBoxes = pixelReturn[0].output.map(engineProjectToToolbox);
+			const toolBoxes = pixelReturn[0].output.map(engineProjectToMCP);
 
 			return toolBoxes.reduce(
 				(acc, tool) => {

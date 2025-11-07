@@ -26,7 +26,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import type { Workspace } from "@/types";
+import type { App } from "@/types";
 
 type RoomWorkspaceProps = {
 	/**
@@ -34,7 +34,7 @@ type RoomWorkspaceProps = {
 	 */
 	mode: {
 		type: "chat" | "plan" | "workspace";
-		workspace: Workspace | null;
+		workspace: App | null;
 	};
 
 	/**
@@ -42,7 +42,7 @@ type RoomWorkspaceProps = {
 	 */
 	onModeChange: (mode: {
 		type: "chat" | "plan" | "workspace";
-		workspace: Workspace | null;
+		workspace: App | null;
 	}) => void;
 };
 
@@ -57,13 +57,22 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 		/**
 		 * Library Hooks
 		 */
-		const listWorkspaces = usePixel<{
-			workspaces: Workspace[];
-		}>(
+		const listWorkspaces = usePixel<App[]>(
 			open
-				? `ListWorkspaces(${debouncedSearch ? `filters=[Filter(NAME ?like "${debouncedSearch}")],` : ""} limit=[5]);`
+				? `MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`
 				: null,
-			{ data: { workspaces: [] } },
+			{ data: [] },
+		);
+
+		/**
+		 * Constants
+		 */
+		const workspaceMap = listWorkspaces.data.reduce(
+			(acc, curr) => {
+				acc[curr.project_id] = curr;
+				return acc;
+			},
+			{} as Record<string, App>,
 		);
 
 		return (
@@ -98,7 +107,8 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 										<>
 											<ComputerIcon />
 											<span className="flex-1 truncate">
-												{mode.workspace?.name}
+												{mode.workspace?.project_name ||
+													""}
 											</span>
 										</>
 									)}
@@ -106,7 +116,31 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 								</Button>
 							</PopoverTrigger>
 							<PopoverContent className="p-0">
-								<Command>
+								<Command
+									filter={(val, search) => {
+										if (val === "chat") {
+											return "ask".includes(
+												search.toLowerCase(),
+											)
+												? 1
+												: 0;
+										} else if (
+											val
+												.toLowerCase()
+												.includes(search.toLowerCase())
+										) {
+											return 1;
+										} else if (
+											workspaceMap[val]?.project_name
+												.toLowerCase()
+												.includes(search.toLowerCase())
+										) {
+											return 1;
+										}
+
+										return 0;
+									}}
+								>
 									<CommandInput
 										placeholder="Search"
 										value={search}
@@ -159,33 +193,32 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 										</CommandGroup>
 										<CommandSeparator />
 										<CommandGroup heading="Workspaces">
-											{listWorkspaces.status ===
-												"LOADING" && (
+											{(listWorkspaces.status ===
+												"LOADING" ||
+												search !== debouncedSearch) && (
 												<div className="flex w-full flex-row items-center">
 													<Spinner />
 												</div>
 											)}
 
-											{listWorkspaces.data.workspaces.map(
-												(w) => (
-													<CommandItem
-														key={w.workspace_id}
-														value={w.workspace_id}
-														onSelect={() => {
-															onModeChange({
-																type: "workspace",
-																workspace: w,
-															});
-															setOpen(false);
-														}}
-													>
-														{w.name}
-														<CheckIcon
-															className={`ml-auto ${mode.type === "workspace" && mode.workspace.workspace_id === w.workspace_id ? "opacity-100" : "opacity-0"}`}
-														/>
-													</CommandItem>
-												),
-											)}
+											{listWorkspaces.data.map((w) => (
+												<CommandItem
+													key={w.project_id}
+													value={w.project_id}
+													onSelect={() => {
+														onModeChange({
+															type: "workspace",
+															workspace: w,
+														});
+														setOpen(false);
+													}}
+												>
+													{w.project_name}
+													<CheckIcon
+														className={`ml-auto ${mode.type === "workspace" && mode.workspace.project_id === w.project_id ? "opacity-100" : "opacity-0"}`}
+													/>
+												</CommandItem>
+											))}
 										</CommandGroup>
 									</CommandList>
 								</Command>
