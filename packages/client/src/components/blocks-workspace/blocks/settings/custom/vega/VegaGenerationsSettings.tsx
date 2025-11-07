@@ -165,11 +165,11 @@ export const VegaGenerationSettings = observer(
 				/>
 
 				<Button
-					disabled={responseLoading}
+					disabled={responseLoading} // disabled if no selected frames
 					loading={responseLoading}
 					variant="outlined"
 					endIcon={<AutoAwesome />}
-					onClick={generateAIResponse}
+					onClick={generateAIResponse} // call QueryAll() at the same time. Store into a variable just to have. Then bind the data from this QueryAll into the values section of the vega template
 				>
 					Generate with AI
 				</Button>
