@@ -147,6 +147,11 @@ export class ChatStore {
 
 		let pixel = ``;
 
+		// set the options
+		pixel += `UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(
+			options,
+		)}]);`;
+
 		// run the first message
 		if (mode === "chat") {
 			pixel = `AskPlayground(
