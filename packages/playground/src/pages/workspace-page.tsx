@@ -2,7 +2,7 @@ import { ComputerIcon, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	H4,
@@ -19,7 +19,7 @@ import {
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components";
 import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
-import type { Workspace } from "@/types";
+import type { App } from "@/types";
 
 /**
  * Renders the Discover Page, allowing users to discover and create workspaces
@@ -28,27 +28,34 @@ import type { Workspace } from "@/types";
  */
 export const WorkspacePage = observer(() => {
 	/**
-	 * Library Hooks
-	 */
-	const listWorkspaces = usePixel<{
-		workspaces: Workspace[];
-	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
-
-	const navigate = useNavigate();
-
-	/**
 	 * State
 	 */
 	const [search, setSearch] = useState("");
 	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
 		useState<boolean>(false);
-	const [workspaceInfo, setWorkspaceInfo] = useState<Workspace | null>(null);
+	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+
+	/**
+	 * Library Hooks
+	 */
+	const debouncedSearch = useDebouncedValue(search);
+	const listWorkspaces = usePixel<App[]>(
+		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
+		{ data: [] },
+	);
+	const navigate = useNavigate();
 
 	/**
 	 * CreateRoom
 	 */
 	const createRoom = (workspaceId: string) =>
 		navigate(`/new?workspaceId=${workspaceId}`);
+
+	/**
+	 * Constants
+	 */
+	const isLoading =
+		listWorkspaces.status === "LOADING" || search !== debouncedSearch;
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden px-2">
@@ -62,17 +69,15 @@ export const WorkspacePage = observer(() => {
 					</Lead>
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span>
-								<Button
-									onClick={() => {
-										setWorkspaceInfo(null);
-										setIsWorkspaceModalOpen(true);
-									}}
-								>
-									<ComputerIcon />
-									Build
-								</Button>
-							</span>
+							<Button
+								onClick={() => {
+									setWorkspaceId(null);
+									setIsWorkspaceModalOpen(true);
+								}}
+							>
+								<ComputerIcon />
+								Build
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Create a new workspace</TooltipContent>
 					</Tooltip>
@@ -90,31 +95,35 @@ export const WorkspacePage = observer(() => {
 						{listWorkspaces.status === "LOADING" ? (
 							<Spinner />
 						) : (
-							`${listWorkspaces.data.workspaces.length} results`
+							`${listWorkspaces.data.length} results`
 						)}
 					</InputGroupAddon>
 				</InputGroup>
 			</div>
 			<div className="mx-auto w-full max-w-5xl flex-1 pt-10">
 				<ScrollArea className="h-full w-full">
-					{listWorkspaces.status === "LOADING" && (
+					{isLoading && (
 						<div className="flex items-center justify-center py-12">
 							<Spinner />
 						</div>
 					)}
 
 					{listWorkspaces.status === "SUCCESS" &&
-						listWorkspaces.data.workspaces.length > 0 && (
+						listWorkspaces.data.length > 0 && (
 							<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-								{listWorkspaces.data.workspaces.map((w) => (
+								{listWorkspaces.data.map((w) => (
 									<WorkspaceCard
-										key={w.workspace_id}
-										workspace={w}
+										key={w.project_id}
+										workspace={{
+											workspace_id: w.project_id,
+											name: w.project_name,
+											description: w.description,
+										}}
 										onPrimaryClick={() =>
-											createRoom(w.workspace_id)
+											createRoom(w.project_id)
 										}
 										onSecondaryClick={() => {
-											setWorkspaceInfo(w);
+											setWorkspaceId(w.project_id);
 											setIsWorkspaceModalOpen(true);
 										}}
 									/>
@@ -123,7 +132,7 @@ export const WorkspacePage = observer(() => {
 						)}
 
 					{listWorkspaces.status === "SUCCESS" &&
-						listWorkspaces.data.workspaces.length === 0 && (
+						listWorkspaces.data.length === 0 && (
 							<div className="flex items-center justify-center py-12">
 								<Muted>No results found</Muted>
 							</div>
@@ -134,7 +143,7 @@ export const WorkspacePage = observer(() => {
 			{isWorkspaceModalOpen && (
 				<WorkspaceOverlay
 					open={isWorkspaceModalOpen}
-					workspaceInfo={workspaceInfo}
+					workspaceId={workspaceId}
 					onClose={(newWorkspaceId) => {
 						setIsWorkspaceModalOpen(false);
 						if (newWorkspaceId) {

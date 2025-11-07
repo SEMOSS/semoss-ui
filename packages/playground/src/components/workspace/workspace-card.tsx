@@ -3,7 +3,7 @@ import { Button } from "@semoss/ui/next";
 import type { Workspace } from "@/types";
 
 export interface WorkspaceCardProps {
-	workspace: Workspace;
+	workspace: Pick<Workspace, "workspace_id" | "name" | "description"> | null;
 	onPrimaryClick?: () => void;
 	onSecondaryClick?: () => void;
 }
