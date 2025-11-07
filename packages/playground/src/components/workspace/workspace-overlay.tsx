@@ -1,8 +1,11 @@
+import { XIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
+	Badge,
 	Button,
+	Checkbox,
 	Dialog,
 	DialogContent,
 	DialogFooter,
@@ -13,6 +16,9 @@ import {
 	FieldLabel,
 	FieldSet,
 	Input,
+	Label,
+	ScrollArea,
+	Spinner,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -57,7 +63,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			mcp: [],
 		},
 	});
-	const [searchWord] = useState<string>("");
+	const [searchWord, setSearchWord] = useState<string>("");
 	const debouncedSearchWord = useDebouncedValue(searchWord);
 
 	/**
@@ -69,7 +75,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 		{ data: null },
 	);
 	const getMcps = usePixel<(Engine | App)[]>(
-		`MyEngineProject (limit = 20, metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${debouncedSearchWord ? `, filterWord=${JSON.stringify(debouncedSearchWord)}` : ""})`,
+		`MyEngineProject (limit = 20, metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "VECTOR"]${debouncedSearchWord ? `, filterWord=${JSON.stringify(debouncedSearchWord)}` : ""})`,
 		{
 			data: [],
 		},
@@ -231,27 +237,110 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 								control={control}
 								rules={{}}
 								render={({ field }) => {
-									const selectedMCPIds =
-										field.value?.map((mcp) => mcp.id) || [];
-									const optionsMap: Record<
+									const selectedMCPMap: Record<
 										string,
 										MCPConfig
 									> = {};
-									mcpArray.forEach((mcp) => {
-										optionsMap[mcp.id] = mcp;
+									field.value?.forEach((mcp) => {
+										selectedMCPMap[mcp.id] = mcp;
 									});
-									field.value.forEach((mcp) => {
-										if (!optionsMap[mcp.id]) {
-											optionsMap[mcp.id] = mcp;
+
+									const onMCPChange = (mcp: MCPConfig) => {
+										const updatedMap = {
+											...selectedMCPMap,
+										};
+										if (updatedMap[mcp.id]) {
+											delete updatedMap[mcp.id];
+										} else {
+											updatedMap[mcp.id] = mcp;
 										}
-									});
-									console.log(selectedMCPIds);
+										field.onChange(
+											Object.values(updatedMap),
+										);
+									};
 
 									return (
 										<Field>
 											<FieldLabel>
 												Use These MCPs
 											</FieldLabel>
+											<Input
+												placeholder="Search"
+												value={searchWord}
+												onChange={(e) => {
+													setSearchWord(
+														e.target.value,
+													);
+												}}
+											/>
+											<ScrollArea className="flex h-[300px] max-h-[250px] flex-col items-center justify-center overflow-auto">
+												{isLoadingMcps && <Spinner />}
+												<div className="grid h-full w-full grid-cols-2 gap-2">
+													{mcpArray.map((mcp) => (
+														<Label
+															key={mcp.id}
+															className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-secondary"
+														>
+															<Checkbox
+																checked={Boolean(
+																	selectedMCPMap[
+																		mcp.id
+																	],
+																)}
+																onCheckedChange={() =>
+																	onMCPChange(
+																		mcp,
+																	)
+																}
+																className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
+															/>
+															<div className="grid gap-1.5 font-normal">
+																<p className="font-medium text-sm leading-none">
+																	{mcp.name}
+																</p>
+																<p className="min-h-8 text-muted-foreground text-sm">
+																	{
+																		mcp.description
+																	}
+																</p>
+															</div>
+														</Label>
+													))}
+												</div>
+											</ScrollArea>
+											{field.value.length > 0 && (
+												<>
+													<FieldLabel>
+														Selected Tools
+													</FieldLabel>
+													<ScrollArea>
+														{field.value.map(
+															(mcp) => (
+																<Badge
+																	key={mcp.id}
+																	variant="secondary"
+																	className="mr-2 text-sm"
+																>
+																	{mcp.name}
+																	<Button
+																		className="ml-1"
+																		type="button"
+																		variant="ghost"
+																		size="icon-sm"
+																		onClick={() =>
+																			onMCPChange(
+																				mcp,
+																			)
+																		}
+																	>
+																		<XIcon />
+																	</Button>
+																</Badge>
+															),
+														)}
+													</ScrollArea>
+												</>
+											)}
 										</Field>
 									);
 								}}
