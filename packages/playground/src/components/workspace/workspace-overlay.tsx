@@ -84,7 +84,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 
 			const output = await (isCreatingNew
 				? chat.addWorkspace(data)
-				: null);
+				: chat.editWorkspace(workspaceId, data));
 
 			// get new app id and return in the onclose
 			onClose(output);
