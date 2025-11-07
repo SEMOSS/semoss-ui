@@ -13,7 +13,6 @@ import {
 	FieldLabel,
 	FieldSet,
 	Input,
-	MultiSelect,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
@@ -58,7 +57,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			mcp: [],
 		},
 	});
-	const [searchWord, setSearchWord] = useState<string>("");
+	const [searchWord] = useState<string>("");
 	const debouncedSearchWord = useDebouncedValue(searchWord);
 
 	/**
@@ -246,36 +245,13 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 											optionsMap[mcp.id] = mcp;
 										}
 									});
+									console.log(selectedMCPIds);
 
 									return (
 										<Field>
 											<FieldLabel>
 												Use These MCPs
 											</FieldLabel>
-											<MultiSelect
-												options={Object.values(
-													optionsMap,
-												).map((mcp) => ({
-													label: mcp.name,
-													value: mcp.id,
-												}))}
-												onValueChange={(newVals) => {
-													field.onChange(
-														newVals.map((id) =>
-															mcpArray.find(
-																(mcp) =>
-																	mcp.id ===
-																	id,
-															),
-														),
-													);
-												}}
-												value={selectedMCPIds}
-												placeholder="Select MCPs"
-												hideSelectAll
-												searchValue={searchWord}
-												setSearchValue={setSearchWord}
-											/>
 										</Field>
 									);
 								}}
