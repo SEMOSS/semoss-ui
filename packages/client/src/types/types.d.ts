@@ -90,7 +90,8 @@ export type PathValue<
 export interface EventData {
 	startTime: string;
 	endTime: string;
-	payload: string;
+	logTimestamp: string;
+	request: string;
 	response: string;
 	tokens: string | null;
 	latency: number;
@@ -99,4 +100,5 @@ export interface EventData {
 	engineType: string;
 	userId: string;
 	sessionId: string;
+	spanId:string
 }
