@@ -154,7 +154,7 @@ export class ChatStore {
 
 		// run the first message
 		if (mode === "chat") {
-			pixel = `AskPlayground(
+			pixel += `AskPlayground(
 engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
@@ -166,7 +166,7 @@ paramValues=[${JSON.stringify({
 			})}]
 );`;
 		} else if (mode === "planning") {
-			pixel = `AskCOTRoom(
+			pixel += `AskCOTRoom(
 engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
@@ -288,16 +288,11 @@ paramValues=[${JSON.stringify({
 		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
 	): Promise<string> => {
 		try {
-			const esc = (v: string) =>
-				String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-			const name = esc(data.name ?? "");
-			const desc = esc(data.description ?? "");
-			const prompt = esc(data.system_prompt ?? "");
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcp=${JSON.stringify(mcp)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -306,6 +301,32 @@ paramValues=[${JSON.stringify({
 			}
 
 			return pixelReturn[0].output;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	/**
+	 * Edit a workspace
+	 */
+	editWorkspace = async (
+		workspaceId: string,
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+	): Promise<string> => {
+		try {
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
+
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error || !pixelReturn[0].output) {
+				throw new Error(this._error.message);
+			}
+
+			return workspaceId;
 		} catch (e) {
 			throw e instanceof Error ? e : new Error(String(e));
 		}
