@@ -132,7 +132,14 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	 */
 	const isCreatingNew = workspaceId === null;
 	const isFormValid = !!watch("name");
-	const mcpArray: MCP[] = getMcps.data.map(engineProjectToMCP);
+	const mcpMap = getMcps.data.reduce(
+		(acc, engineProject) => {
+			const mcp = engineProjectToMCP(engineProject);
+			acc[mcp.id] = mcp;
+			return acc;
+		},
+		{} as Record<string, MCP>,
+	);
 	const isLoadingMcps =
 		searchWord !== debouncedSearchWord || getMcps.status !== "SUCCESS";
 	const isLoading =
@@ -242,7 +249,9 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 										MCPConfig
 									> = {};
 									field.value?.forEach((mcp) => {
-										selectedMCPMap[mcp.id] = mcp;
+										if (mcpMap[mcp.id])
+											selectedMCPMap[mcp.id] =
+												mcpMap[mcp.id];
 									});
 
 									const onMCPChange = (mcp: MCPConfig) => {
@@ -276,36 +285,41 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 											<ScrollArea className="flex h-[300px] max-h-[250px] flex-col items-center justify-center overflow-auto">
 												{isLoadingMcps && <Spinner />}
 												<div className="grid h-full w-full grid-cols-2 gap-2">
-													{mcpArray.map((mcp) => (
-														<Label
-															key={mcp.id}
-															className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-secondary"
-														>
-															<Checkbox
-																checked={Boolean(
-																	selectedMCPMap[
-																		mcp.id
-																	],
-																)}
-																onCheckedChange={() =>
-																	onMCPChange(
-																		mcp,
-																	)
-																}
-																className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
-															/>
-															<div className="grid gap-1.5 font-normal">
-																<p className="font-medium text-sm leading-none">
-																	{mcp.name}
-																</p>
-																<p className="min-h-8 text-muted-foreground text-sm">
-																	{
-																		mcp.description
+													{Object.values(mcpMap).map(
+														(mcp) => (
+															<Label
+																key={mcp.id}
+																className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-secondary"
+															>
+																<Checkbox
+																	checked={Boolean(
+																		selectedMCPMap[
+																			mcp
+																				.id
+																		],
+																	)}
+																	onCheckedChange={() =>
+																		onMCPChange(
+																			mcp,
+																		)
 																	}
-																</p>
-															</div>
-														</Label>
-													))}
+																	className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
+																/>
+																<div className="grid gap-1.5 font-normal">
+																	<p className="font-medium text-sm leading-none">
+																		{
+																			mcp.name
+																		}
+																	</p>
+																	<p className="min-h-8 text-muted-foreground text-sm">
+																		{
+																			mcp.description
+																		}
+																	</p>
+																</div>
+															</Label>
+														),
+													)}
 												</div>
 											</ScrollArea>
 											{field.value.length > 0 && (
@@ -314,30 +328,30 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 														Selected Tools
 													</FieldLabel>
 													<ScrollArea>
-														{field.value.map(
-															(mcp) => (
-																<Badge
-																	key={mcp.id}
-																	variant="secondary"
-																	className="mr-2 text-sm"
+														{Object.values(
+															selectedMCPMap,
+														).map((mcp) => (
+															<Badge
+																key={mcp.id}
+																variant="secondary"
+																className="mr-2 text-sm"
+															>
+																{mcp.name}
+																<Button
+																	className="ml-1"
+																	type="button"
+																	variant="ghost"
+																	size="icon-sm"
+																	onClick={() =>
+																		onMCPChange(
+																			mcp,
+																		)
+																	}
 																>
-																	{mcp.name}
-																	<Button
-																		className="ml-1"
-																		type="button"
-																		variant="ghost"
-																		size="icon-sm"
-																		onClick={() =>
-																			onMCPChange(
-																				mcp,
-																			)
-																		}
-																	>
-																		<XIcon />
-																	</Button>
-																</Badge>
-															),
-														)}
+																	<XIcon />
+																</Button>
+															</Badge>
+														))}
 													</ScrollArea>
 												</>
 											)}
