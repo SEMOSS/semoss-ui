@@ -501,6 +501,9 @@ LoadPyFromFile(alias="${alias}", filePath="temp.py");
 					return false;
 				}
 
+				// turn off authorized
+				this._store.isAuthorized = false;
+
 				// success
 				return true;
 			} catch (error) {
