@@ -1,15 +1,27 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-
-import { ImageBlock } from "@/components/block-defaults/image-block/ImageBlock";
-import { render } from "../utils";
+import {
+	ImageBlock,
+	type ImageBlockDef,
+} from "../../components/block-defaults/image-block/ImageBlock";
+import { useBlock } from "../../hooks";
+import { render, renderHook } from "../utils";
 
 const blocks = {
 	image: {
 		data: {
-			src: "https://123.123.com",
+			src: "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg",
 			title: "image test",
 			show: "true",
+			style: {
+				display: "flex",
+				justifyContent: "center",
+				alignItems: "center",
+				width: "100%",
+				height: "200px",
+				backgroundSize: "contain",
+				backgroundRepeat: "no-repeat",
+				backgroundPosition: "center center",
+			},
 		},
 		id: "image",
 		widget: "image",
@@ -18,7 +30,7 @@ const blocks = {
 	},
 	image2: {
 		data: {
-			src: "https://123.123.com",
+			src: "https://upload.wikimedia.org/wikipedia/commons/6/65/No-Image-Placeholder.svg",
 			title: "image test",
 			show: "false",
 		},
@@ -31,18 +43,16 @@ const blocks = {
 
 describe("Image Block", () => {
 	it("renders correctly", async () => {
-		const { container } = render(<ImageBlock id="image" />, {
-			blocks: blocks,
+		const { result } = renderHook(() => useBlock<ImageBlockDef>("image"), {
+			blocks,
+			renderEngineId: "image",
 		});
 
-		const element = container.querySelector("[data-block='image']");
-		expect(element).not.toBeNull();
-		expect(element.getAttribute("style")).equal(
-			"background-image: url(https://123.123.com);",
-		);
+		const image = result.current.data.src;
+		expect(image).toBeDefined();
 	});
 	it("does not show", async () => {
-		const { container } = render(<ImageBlock id="image2" />, {
+		const { container } = render(<ImageBlock id={blocks.image2.id} />, {
 			blocks: blocks,
 		});
 

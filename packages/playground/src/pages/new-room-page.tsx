@@ -90,13 +90,6 @@ export const NewRoomPage = observer(() => {
 			// turn the loading screen
 			setIsLoading(true);
 
-			// add workspace option if in workspace mode
-			if (mode.type === "workspace" && mode.workspace) {
-				options.workspace = {
-					workspace_id: mode.workspace.project_id,
-				};
-			}
-
 			// create a new room
 			const roomId = await chat.createRoom(
 				prompt,
