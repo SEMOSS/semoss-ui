@@ -1,7 +1,5 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-
-import { HTMLBlock } from "@/components/block-defaults/html-block/HTMLBlock";
+import { HTMLBlock } from "../../components/block-defaults/html-block/HTMLBlock";
 import { render } from "../utils";
 
 const blocks = {
@@ -27,7 +25,7 @@ const blocks = {
 
 describe("HTML Block", () => {
 	it("renders sanitized HTML content", async () => {
-		const { container } = render(<HTMLBlock id="html" />, {
+		const { container } = render(<HTMLBlock id={blocks.html.id} />, {
 			blocks: blocks,
 		});
 
@@ -40,7 +38,7 @@ describe("HTML Block", () => {
 	});
 
 	it("renders nothing when HTML content is empty", async () => {
-		const { container } = render(<HTMLBlock id="emptyHtml" />, {
+		const { container } = render(<HTMLBlock id={blocks.emptyHtml.id} />, {
 			blocks: blocks,
 		});
 
@@ -61,7 +59,7 @@ describe("HTML Block", () => {
 			},
 		};
 
-		const { container } = render(<HTMLBlock id="html" />, {
+		const { container } = render(<HTMLBlock id={blocks.html.id} />, {
 			blocks: unsafeBlocks,
 		});
 

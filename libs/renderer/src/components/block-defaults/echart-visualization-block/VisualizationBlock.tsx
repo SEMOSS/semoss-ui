@@ -12,6 +12,7 @@ import { Map as MapChart } from "./variant/map-chart/Map";
 import { Pie } from "./variant/pie-chart/Pie";
 import { ScatterPlotBlock } from "./variant/scatter-plot/ScatterPlot";
 import { StackChart } from "./variant/stack-chart/StackChart";
+import { Cloud } from "./variant/word-cloud/Cloud";
 
 const StyledNoDataContainer = styled("div", {
 	shouldForwardProp: (prop) => prop !== "error",
@@ -181,6 +182,9 @@ export const VisualizationBlock: BlockComponent = observer(
 						{data.variation === "echart-dendrogram-chart" && (
 							<Dendrogram id={id} updateJson={updateChartJson} />
 						)}
+						{data.variation === "echart-word-cloud" && (
+							<Cloud id={id} updateJson={updateChartJson} />
+						)}
 					</StyledNoDataContainer>
 				);
 			} catch {
@@ -216,6 +220,9 @@ export const VisualizationBlock: BlockComponent = observer(
 				)}
 				{data.variation === "echart-dendrogram-chart" && (
 					<Dendrogram id={id} updateJson={updateChartJson} />
+				)}
+				{data.variation === "echart-word-cloud" && (
+					<Cloud id={id} updateJson={updateChartJson} />
 				)}
 			</StyledDataContainer>
 		);

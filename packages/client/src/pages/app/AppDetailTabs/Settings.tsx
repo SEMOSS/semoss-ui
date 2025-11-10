@@ -1,4 +1,4 @@
-import { InsertLink, OpenInBrowser } from "@mui/icons-material";
+import { OpenInBrowser } from "@mui/icons-material";
 import LockIcon from "@mui/icons-material/Lock";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
@@ -8,13 +8,13 @@ import {
 	FileDropzone,
 	Grid,
 	LoadingScreen,
-	Switch,
 	styled,
 	Table,
 	TextField,
 	Typography,
 	useNotification,
 } from "@semoss/ui";
+import { setProjectPortal, uploadFile as uploadFileAPI } from "@/api";
 import { Java } from "@/assets/img/Java";
 import { usePixel, useRootStore, useSettings } from "@/hooks";
 
@@ -61,13 +61,13 @@ const StyledReactor = styled(Box)({
 	gap: 2,
 });
 // Root container
-const RootGrid = styled(Grid)(({ theme }) => ({
+const _RootGrid = styled(Grid)(({ theme }) => ({
 	marginBottom: theme.spacing(4),
 	width: "100%",
 }));
 
 // Column wrapper box
-const ColumnBox = styled(Box)(({ theme }) => ({
+const _ColumnBox = styled(Box)(({ theme }) => ({
 	display: "flex",
 	justifyContent: "space-between",
 	gap: theme.spacing(2),
@@ -78,19 +78,19 @@ const ColumnBox = styled(Box)(({ theme }) => ({
 }));
 
 // Left text block container
-const LeftTextContainer = styled(Box)(({ theme }) => ({
+const _LeftTextContainer = styled(Box)(({ theme }) => ({
 	display: "flex",
 	alignItems: "flex-start",
 	gap: theme.spacing(1),
 }));
 
 // Styled Lock icon
-const StyledLockIcon = styled(LockIcon)(({ theme }) => ({
+const _StyledLockIcon = styled(LockIcon)(({ theme }) => ({
 	color: theme.palette.text.disabled,
 }));
 
 // Publish title
-const PublishTitle = styled(Typography)(({ theme }) => ({
+const _PublishTitle = styled(Typography)(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	fontSize: "16px",
@@ -103,12 +103,12 @@ const Description = styled(Typography)({
 	fontSize: "14px",
 });
 
-const PublishPortalDescription = styled(Typography)({
+const _PublishPortalDescription = styled(Typography)({
 	marginBottom: "0.5px",
 });
 
 // Second column container
-const SecondColumnBox = styled(Box)(({ theme }) => ({
+const _SecondColumnBox = styled(Box)(({ theme }) => ({
 	gap: theme.spacing(2),
 	border: `1px solid ${theme.palette.secondary.main}`,
 	borderRadius: theme.shape.borderRadius * 2,
@@ -118,7 +118,7 @@ const SecondColumnBox = styled(Box)(({ theme }) => ({
 }));
 
 // Header section inside second column
-const SecondColumnHeader = styled(Box)(({ theme }) => ({
+const _SecondColumnHeader = styled(Box)(({ theme }) => ({
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "space-between",
@@ -128,7 +128,7 @@ const SecondColumnHeader = styled(Box)(({ theme }) => ({
 }));
 
 // Custom text field
-const StyledTextField = styled(TextField)({
+const _StyledTextField = styled(TextField)({
 	"& .MuiOutlinedInput-root": {
 		borderRadius: "8px",
 	},
@@ -362,7 +362,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	 * @name publish
 	 * @desc Publishes Portal
 	 */
-	const publish = () => {
+	const _publish = () => {
 		const pixelString = `PublishProject(project='${id}', release=true);`;
 		monolithStore
 			.runQuery(pixelString)
@@ -399,9 +399,8 @@ export const SettingsTab = (props: AppSettingsProps) => {
 	/**
 	 * @name enablePublishing
 	 */
-	const enablePublishing = () => {
-		monolithStore
-			.setProjectPortal(admin, id, !portalDetails.project_has_portal)
+	const _enablePublishing = () => {
+		setProjectPortal(admin, id, !portalDetails.project_has_portal)
 			.then((resp) => {
 				if (resp.data) {
 					setPortalDetails({
@@ -452,7 +451,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			);
 
 			// upload the file
-			const upload = await monolithStore.uploadFile(
+			const upload = await uploadFileAPI(
 				[data.PROJECT_UPLOAD],
 				configStore.store.insightID,
 				id,
@@ -470,7 +469,7 @@ export const SettingsTab = (props: AppSettingsProps) => {
 			);
 
 			// set the app portal
-			await monolithStore.setProjectPortal(false, id, true, "public");
+			await setProjectPortal(false, id, true, "public");
 
 			// Publish the app the insight classes
 			await monolithStore.runQuery(

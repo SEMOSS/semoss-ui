@@ -201,7 +201,7 @@ export const FrameOperations = observer(
 					},
 					["yAxis"]: {
 						...parsedValue["yAxis"],
-						name: "",
+						name: [],
 						pixelname: [],
 						pixelvalue: [],
 					},
@@ -253,6 +253,13 @@ export const FrameOperations = observer(
 					},
 				};
 			} else if (data.variation === "echart-stack-chart") {
+				parsedValue = {
+					...parsedValue,
+					["_state"]: {
+						["fields"]: {},
+					},
+				};
+			} else if (data.variation === "echart-word-cloud") {
 				parsedValue = {
 					...parsedValue,
 					["_state"]: {
@@ -718,6 +725,41 @@ export const FrameOperations = observer(
 					setSelectedColumn((preVCol) => tempStoredColumns);
 				}
 			}
+			if (data.variation === "echart-word-cloud") {
+				const parsedOption = JSON.parse(computedValue) || {};
+				if (
+					Object.hasOwn(parsedOption, "_state") &&
+					Object.hasOwn(parsedOption["_state"], "fields") &&
+					Object.hasOwn(parsedOption["_state"]["fields"], "words") &&
+					Object.hasOwn(parsedOption["_state"]["fields"], "size")
+				) {
+					const dataTypeList = {};
+					["words", "size", "tooltip"].forEach((item) => {
+						if (parsedOption["_state"]["fields"][item]) {
+							dataTypeList[item] = columnsSelector
+								.filter((col) =>
+									parsedOption["_state"]["fields"][
+										item
+									].includes(col.name),
+								)
+								.map((col) => col.dataType);
+						}
+					});
+					const tempStoredColumns = chart.map((item) => {
+						const fieldValues =
+							parsedOption["_state"]["fields"][item.label] || [];
+						return {
+							name: item.name,
+							label: item.label,
+							values: fieldValues,
+							selectors: fieldValues,
+							dataType: dataTypeList[item.label],
+						};
+					});
+					tempStoredColumnsForDropped = tempStoredColumns;
+					setSelectedColumn((preVCol) => tempStoredColumns);
+				}
+			}
 			//run the dropped columns update when block is changed
 			if (Object.keys(tempStoredColumnsForDropped).length > 0) {
 				const dragAndDropColumns = getDraggedColumns(
@@ -813,7 +855,7 @@ export const FrameOperations = observer(
 					columns[secondColumn?.label] = [];
 					secondColumn.values.forEach((item, index) => {
 						columns[secondColumn?.label].push({
-							["name"]: item,
+							["name"]: secondColumn.values[index] || "",
 							["selector"]: secondColumn.selectors[index],
 							["width"]: undefined,
 						});
@@ -872,9 +914,11 @@ export const FrameOperations = observer(
 					];
 					const pixelName = [],
 						pixelValue = [];
+					const axisName = [];
 					columns[secondColumn?.label].forEach(
 						(columItem, columIndex) => {
 							pixelName.push(columItem?.name);
+							axisName.push(columItem?.name);
 							pixelValue.push(columItem?.selector);
 							columnsmerged.push({
 								name: columItem?.name,
@@ -885,9 +929,7 @@ export const FrameOperations = observer(
 					if (columns[secondColumn?.label]?.length) {
 						tempVal[secondColumn?.label] = {
 							...tempVal[secondColumn?.label],
-							["name"]:
-								columns[secondColumn?.label][0]?.name ||
-								pixelName[0],
+							["name"]: axisName || pixelName[0],
 							["pixelname"]: pixelName,
 							["pixelvalue"]: pixelValue,
 						};
@@ -1515,6 +1557,40 @@ export const FrameOperations = observer(
 				}
 				setData("columns", formattedArray);
 			}
+			if (variation === "echart-word-cloud") {
+				const fieldsData = {};
+				const parsedJson = JSON.parse(computedValue) || {};
+
+				// Initialize _state if it doesn't exist
+				if (!parsedJson._state) {
+					parsedJson._state = { fields: {} };
+				}
+				if (!parsedJson._state.fields) {
+					parsedJson._state.fields = {};
+				}
+
+				// Process each column type (words, size, tooltip)
+				columnsValue.forEach((column, index) => {
+					if (column?.values?.values?.length > 0) {
+						const columnValues = column.values.values;
+
+						// Store simple arrays like other chart types, not objects
+						fieldsData[column.label] = columnValues;
+					} else {
+						// Empty field for this column type
+						fieldsData[column.label] = [];
+					}
+				});
+
+				// Update the parsed JSON with the new fields data
+				parsedJson._state.fields = {
+					...parsedJson._state.fields,
+					...fieldsData,
+				};
+
+				setValue(JSON.stringify(parsedJson));
+				setData("option", parsedJson);
+			}
 			if (variation == "echart-dendrogram-chart") {
 				let columnsToPush = [];
 				let dimensionElement = columnsValue.find(
@@ -1725,6 +1801,7 @@ export const FrameOperations = observer(
 			<>
 				{accordionSection.map((item, index) => (
 					<Accordion
+						key={item[accordionList[index]].title}
 						expanded={item[accordionList[index]].expanded}
 						onChange={(e) => {
 							const accordionSectionToUp = accordionSection;
@@ -1957,7 +2034,10 @@ export const FrameOperations = observer(
 																						...prev,
 																					};
 																				if (
-																					(e.target as HTMLInputElement).checked
+																					(
+																						e.target as HTMLInputElement
+																					)
+																						.checked
 																				) {
 																					// Add the column name if checked
 																					if (

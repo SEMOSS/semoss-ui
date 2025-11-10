@@ -1,4 +1,5 @@
 import { makeObservable, observable } from "mobx";
+import type { InputTextPixelMessage } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 
 /**
@@ -15,39 +16,27 @@ export class InputMessageStore extends AbstractMessageStore {
 	/**
 	 * Files associated with the message
 	 */
-	files: {
+	imageInfos: {
 		fileName: string;
 		fileLocation: string;
+		base64Data?: string;
+		fileFormat?: "png";
+		mimeType?: string;
+		imageType?: "FILE";
 	}[];
-
-	/**
-	 * Parameters associated with the message
-	 */
-	parameters: {
-		max_new_tokens: number;
-		temperature: number;
-	} = {
-		max_new_tokens: -1,
-		temperature: 0.7,
-	};
 
 	constructor(
 		room: AbstractMessageStore["room"],
-		id: string,
-		text: string,
-		files: {
-			fileName: string;
-			fileLocation: string;
-		}[],
+		message: InputTextPixelMessage,
 	) {
-		super(room, id);
+		super(room, message);
 
-		this.text = text;
-		this.files = files;
+		this.text = message.inputUIPrompt;
+		this.imageInfos = message.imageInfos;
 
 		makeObservable(this, {
 			text: observable,
-			files: observable,
+			imageInfos: observable,
 		});
 	}
 }

@@ -1,5 +1,6 @@
 import { observer } from "mobx-react-lite";
-import { useBlocksPixel } from "@semoss/renderer";
+import { useMemo } from "react";
+import { useBlocks, useBlocksPixel } from "@semoss/renderer";
 import { LinearProgress, styled, Table, Typography } from "@semoss/ui";
 
 const StyledTableContainer = styled(Table.Container)(() => ({
@@ -19,18 +20,36 @@ export interface FrameOperationProps {
 		/** Type of the frame */
 		type: "NATIVE" | "PY" | "GRID" | "R";
 	};
+	cellData?: {
+		cellId: string;
+		queryId: string;
+	};
 }
 
 export const FrameOperation = observer((props: FrameOperationProps) => {
 	const { output } = props;
+	const { state } = useBlocks();
+	let cellDetail = null;
+	if (props?.cellData) {
+		const queryDetail = state.getQuery(props.cellData.queryId.toString());
+		cellDetail = queryDetail.getCell(props.cellData.cellId.toString());
+	}
 
+	const addLimit = cellDetail?.parameters?.dataLimit
+		? (Number(cellDetail.parameters.dataLimit) ?? -1)
+		: -1;
+	const queryToRun = useMemo(
+		() =>
+			`Frame(frame=[${output.name}] )|QueryAll()|Limit(${addLimit})|CollectAll();`,
+		[output],
+	);
 	// get the data from the frame
 	const getData = useBlocksPixel<{
 		data: {
 			values: (string | number | boolean)[][];
 			headers: string[];
 		};
-	}>(`Frame(frame=[${output.name}] )|QueryAll()|Limit(20)|CollectAll();`);
+	}>(queryToRun);
 
 	// get the count of data in the frame
 	const getCount = useBlocksPixel<number>(
@@ -51,8 +70,12 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 					<Table.Head>
 						<Table.Row>
 							{getData.status === "SUCCESS" &&
-								getData.data.data.headers.map((h, hIdx) => (
-									<Table.Cell key={hIdx}>{h}</Table.Cell>
+								getData.data.data.headers.map((h, _hIdx) => (
+									<Table.Cell
+										key={`header-${_hIdx}-${h[_hIdx]}`}
+									>
+										{h}
+									</Table.Cell>
 								))}
 						</Table.Row>
 					</Table.Head>
@@ -68,10 +91,14 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 							</Table.Cell>
 						)}
 						{getData.status === "SUCCESS" &&
-							getData.data.data.values.map((r, rIdx) => (
-								<Table.Row key={rIdx}>
-									{r.map((v, vIdx) => (
-										<Table.Cell key={`${rIdx}-${vIdx}`}>
+							getData.data.data.values.map((r, _rIdx) => (
+								<Table.Row
+									key={`data-row-${getData.data.data.headers[_rIdx]}-${_rIdx}`}
+								>
+									{r.map((v, _vIdx) => (
+										<Table.Cell
+											key={`data-row-col-${getData.data.data.headers[_rIdx]}-${_rIdx}-${_vIdx}`}
+										>
 											{v}
 										</Table.Cell>
 									))}
