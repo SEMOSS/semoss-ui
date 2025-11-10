@@ -1,7 +1,8 @@
+import { XIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { Controller, useForm } from "react-hook-form";
-import { useDebouncedValue } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
+	Badge,
 	Button,
 	Checkbox,
 	Dialog,
@@ -15,18 +16,21 @@ import {
 	FieldSet,
 	Input,
 	Label,
+	ScrollArea,
+	Spinner,
 	Textarea,
 	toast,
 } from "@semoss/ui/next";
+import { engineProjectToMCP } from "@/components";
 import { useChat } from "@/hooks";
-import type { MCP, Workspace } from "@/types";
+import type { App, Engine, MCP, Workspace } from "@/types";
 
 export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
 	open: boolean;
 
-	/** Workspace to edit */
-	workspaceInfo: Workspace | null;
+	/** WorkspaceId to view */
+	workspaceId: string | null;
 
 	/** On close */
 	onClose: (newWorkspaceId?: string) => void;
@@ -34,50 +38,111 @@ export interface WorkspaceOverlayProps {
 
 export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	open,
-	workspaceInfo,
+	workspaceId,
 	onClose,
 }) => {
-	/**
-	 * Library Hooks
-	 */
-	const { chat } = useChat();
-
 	/**
 	 * IDs
 	 */
 	const nameId = useId();
 	const descriptionId = useId();
-	const contextId = useId();
+	const instructionId = useId();
 
 	/**
 	 * State
 	 */
-	const [isLoading, setIsLoading] = useState<boolean>(false);
-	const [mcpMap, setMcpMap] = useState<Record<string, Record<string, MCP>>>(
+	const [name, setName] = useState<string>("");
+	const [description, setDescription] = useState<string>("");
+	const [instructions, setInstructions] = useState<string>("");
+	const [selectedMCPMap, setSelectedMCPMap] = useState<Record<string, MCP>>(
 		{},
 	);
-	const { handleSubmit, control, watch } = useForm<
-		Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">
-	>({
-		defaultValues: {
-			name: "",
-			system_prompt: "",
-			description: "",
-			mcp: [],
-		},
-	});
-	const [searchWord] = useState<string>("");
+
+	const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
+	const [searchWord, setSearchWord] = useState<string>("");
 	const debouncedSearchWord = useDebouncedValue(searchWord);
+
+	/**
+	 * Library Hooks
+	 */
+	const { chat } = useChat();
+	const getWorkspace = usePixel<Workspace>(
+		workspaceId ? `GetWorkspace(${JSON.stringify(workspaceId)});` : null,
+		{ data: null },
+	);
+	const getMcps = usePixel<(Engine | App)[]>(
+		`MyEngineProject (limit = 20, metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION", "VECTOR"]${debouncedSearchWord ? `, filterWord=${JSON.stringify(debouncedSearchWord)}` : ""})`,
+		{
+			data: [],
+		},
+	);
+
+	// reset on open
+	useEffect(() => {
+		if (!open) {
+			return;
+		}
+
+		setName("");
+		setDescription("");
+		setInstructions("");
+		setSelectedMCPMap({});
+	}, [open]);
+
+	/**
+	 * Constants
+	 */
+	const isCreatingNew = workspaceId === null;
+	const mcpMap = getMcps.data.reduce(
+		(acc, engineProject) => {
+			const mcp = engineProjectToMCP(engineProject);
+			acc[mcp.id] = mcp;
+			return acc;
+		},
+		{} as Record<string, MCP>,
+	);
+
+	const isLoading =
+		getMcps.status === "LOADING" ||
+		isLoadingSubmit ||
+		(workspaceId && getWorkspace.status !== "SUCCESS");
+
+	const onMCPSelect = (mcp: MCP) => {
+		const updatedSelectedMCPMap = { ...selectedMCPMap };
+		if (updatedSelectedMCPMap[mcp.id]) {
+			delete updatedSelectedMCPMap[mcp.id];
+		} else {
+			updatedSelectedMCPMap[mcp.id] = mcp;
+		}
+		setSelectedMCPMap(updatedSelectedMCPMap);
+	};
 
 	/**
 	 * Method that is called to create the app
 	 */
-	const onSubmit = handleSubmit(async (data) => {
+	const onSubmit = async () => {
 		try {
 			// start the loading screen
-			setIsLoading(true);
+			setIsLoadingSubmit(true);
 
-			const output = await chat.addWorkspace(data);
+			const data = {
+				name: name,
+				system_prompt: instructions,
+				description: description,
+				mcp: Object.values(selectedMCPMap).map((mcp) => ({
+					id: mcp.id,
+					type: mcp.type,
+					name: mcp.name,
+				})),
+			};
+
+			let output = "";
+			if (isCreatingNew) {
+				output = await chat.addWorkspace(data);
+			} else {
+				output = await chat.editWorkspace(workspaceId, data);
+			}
+
 			// get new app id and return in the onclose
 			onClose(output);
 		} catch (e) {
@@ -86,36 +151,9 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			toast.error(e.message);
 		} finally {
 			// stop the loading screen
-			setIsLoading(false);
+			setIsLoadingSubmit(false);
 		}
-	});
-
-	/**
-	 * Effects
-	 */
-	useEffect(() => {
-		const fetchMCPs = async () => {
-			setIsLoading(true);
-			try {
-				const mcpMap = await chat.getMcpMap(debouncedSearchWord);
-				setMcpMap(mcpMap);
-			} catch (e) {
-				console.error(e);
-
-				toast.error(e.message);
-			} finally {
-				setIsLoading(false);
-			}
-		};
-		fetchMCPs();
-	}, [chat.getMcpMap, debouncedSearchWord]);
-
-	/**
-	 * Constants
-	 */
-	const isCreatingNew = workspaceInfo === null;
-	const isFormValid = !!watch("name");
-	const mcpArray: MCP[] = Object.values(mcpMap).flatMap(Object.values);
+	};
 
 	return (
 		<Dialog open={open} onOpenChange={() => onClose()}>
@@ -125,217 +163,148 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			>
 				<DialogHeader>
 					<DialogTitle>
-						{isCreatingNew ? "Create Workspace" : "View Workspace"}
+						{isCreatingNew ? "Create Workspace" : "Edit Workspace"}
 					</DialogTitle>
 				</DialogHeader>
 				<form onSubmit={onSubmit}>
-					{isCreatingNew ? (
-						<FieldSet>
-							<FieldGroup>
-								<Controller
-									name={"name"}
-									control={control}
-									rules={{ required: true }}
-									render={({ field }) => {
-										return (
-											<Field>
-												<FieldLabel htmlFor={nameId}>
-													Name
-												</FieldLabel>
-												<Input
-													id={nameId}
-													placeholder="Add Name"
-													value={field.value || ""}
-													disabled={isLoading}
-													onChange={(e) =>
-														field.onChange(
-															e.target.value,
-														)
-													}
-													data-testid="newWorkspaceModal-textField-name"
-												/>
-											</Field>
-										);
-									}}
+					<FieldSet>
+						<FieldGroup>
+							<Field>
+								<FieldLabel htmlFor={nameId}>Name</FieldLabel>
+								<Input
+									id={nameId}
+									placeholder="Add Name"
+									value={name}
+									disabled={isLoading}
+									onChange={(e) => setName(e.target.value)}
+									data-testid="newWorkspaceModal-textField-name"
 								/>
-								<Controller
-									name={"description"}
-									control={control}
-									rules={{ required: false }}
-									render={({ field }) => {
-										return (
-											<Field>
-												<FieldLabel
-													htmlFor={descriptionId}
-												>
-													Description
-												</FieldLabel>
-												<Input
-													id={descriptionId}
-													placeholder="Description"
-													value={field.value || ""}
-													disabled={isLoading}
-													onChange={(e) =>
-														field.onChange(
-															e.target.value,
-														)
-													}
-													data-testid="newWorkspaceModal-description-txt"
-												/>
-											</Field>
-										);
-									}}
+							</Field>
+							<Field>
+								<FieldLabel htmlFor={descriptionId}>
+									Description
+								</FieldLabel>
+								<Input
+									id={descriptionId}
+									placeholder="Description"
+									value={description}
+									disabled={isLoading}
+									onChange={(e) =>
+										setDescription(e.target.value)
+									}
+									data-testid="newWorkspaceModal-description-txt"
 								/>
-								<Controller
-									name={"system_prompt"}
-									control={control}
-									rules={{}}
-									render={({ field }) => {
-										return (
-											<Field>
-												<FieldLabel htmlFor={contextId}>
-													System prompt
-												</FieldLabel>
-												<Textarea
-													id={contextId}
-													placeholder="Systemt prompt"
-													value={field.value || ""}
-													onChange={(e) =>
-														field.onChange(
-															e.target.value,
-														)
-													}
-													rows={4}
-													data-testid="newWorkspaceModal-system_prompt-txt"
-												/>
-											</Field>
-										);
-									}}
+							</Field>
+							<Field>
+								<FieldLabel htmlFor={instructionId}>
+									Instructions
+								</FieldLabel>
+								<Textarea
+									id={instructionId}
+									placeholder="Instructons"
+									value={instructions}
+									onChange={(e) =>
+										setInstructions(e.target.value)
+									}
+									rows={4}
+									data-testid="newWorkspaceModal-system_prompt-txt"
 								/>
-								<Controller
-									name={"mcp"}
-									control={control}
-									rules={{}}
-									render={({ field }) => {
-										const selectedMCPIds =
-											field.value.map((mcp) => mcp.id) ||
-											[];
+							</Field>
 
-										return (
-											<Field>
-												<FieldLabel>
-													Use These Tools
-												</FieldLabel>
-												<div className="max-h-48 space-y-2 overflow-y-auto rounded-md border p-3">
-													{/* Individual tool options */}
-													{mcpArray.map((mcp) => (
-														<div
-															key={mcp.id}
-															className="flex items-center space-x-2"
-														>
-															<Checkbox
-																id={`tool-${mcp.id}`}
-																checked={selectedMCPIds.includes(
-																	mcp.id,
-																)}
-																onCheckedChange={(
-																	checked,
-																) => {
-																	if (
-																		checked
-																	) {
-																		field.onChange(
-																			[
-																				...field.value,
-																				mcp,
-																			],
-																		);
-																	} else {
-																		field.onChange(
-																			field.value.filter(
-																				(
-																					mcpInArr,
-																				) =>
-																					mcpInArr.id !==
-																					mcp.id,
-																			),
-																		);
-																	}
-																}}
-																disabled={
-																	isLoading
-																}
-															/>
-															<Label
-																htmlFor={`tool-${mcp.id}`}
-																className="cursor-pointer font-normal text-sm"
-															>
-																{mcp.name}
-															</Label>
-														</div>
-													))}
-												</div>
-											</Field>
-										);
+							<Field>
+								<FieldLabel>Use These MCPs</FieldLabel>
+								<Input
+									placeholder="Search"
+									value={searchWord}
+									onChange={(e) => {
+										setSearchWord(e.target.value);
 									}}
 								/>
-							</FieldGroup>
-						</FieldSet>
-					) : (
-						<FieldSet>
-							<FieldGroup>
-								<Field>
-									<FieldLabel>Name</FieldLabel>
-									<Input
-										disabled
-										value={workspaceInfo.name}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel>ID</FieldLabel>
-									<Input
-										disabled
-										value={workspaceInfo.workspace_id}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel>Description</FieldLabel>
-									<Input
-										disabled
-										value={workspaceInfo.description}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel>System prompt</FieldLabel>
-									<Textarea
-										disabled
-										value={workspaceInfo.system_prompt}
-										rows={4}
-									/>
-								</Field>
-								<Field>
-									<FieldLabel>Date Created</FieldLabel>
-									<Input
-										disabled
-										value={workspaceInfo.date_created}
-									/>
-								</Field>
-							</FieldGroup>
-						</FieldSet>
-					)}
+								<ScrollArea className="flex h-[300px] max-h-[250px] flex-col items-center justify-center overflow-auto">
+									{getMcps.status === "LOADING" ? (
+										<div className="flex h-full w-full items-center justify-center">
+											<Spinner />
+										</div>
+									) : (
+										<div className="grid h-full w-full grid-cols-2 gap-2">
+											{Object.values(mcpMap).map(
+												(mcp) => (
+													<Label
+														key={mcp.id}
+														className="flex w-full items-start gap-3 rounded-lg border p-3 hover:bg-accent/50 has-[[aria-checked=true]]:border-primary has-[[aria-checked=true]]:bg-secondary"
+													>
+														<Checkbox
+															checked={
+																!!selectedMCPMap[
+																	mcp.id
+																]
+															}
+															onCheckedChange={() =>
+																onMCPSelect(mcp)
+															}
+															className="data-[state=checked]:border-primary data-[state=checked]:bg-primary data-[state=checked]:text-white"
+														/>
+														<div className="grid gap-1.5 font-normal">
+															<p className="font-medium text-sm leading-none">
+																{mcp.name}
+															</p>
+															<p className="min-h-8 text-muted-foreground text-sm">
+																{
+																	mcp.description
+																}
+															</p>
+														</div>
+													</Label>
+												),
+											)}
+										</div>
+									)}
+								</ScrollArea>
+								{Object.keys(selectedMCPMap).length > 0 && (
+									<>
+										<FieldLabel>Selected Tools</FieldLabel>
+										<ScrollArea>
+											{Object.values(selectedMCPMap).map(
+												(mcp) => (
+													<Badge
+														key={mcp.id}
+														variant="secondary"
+														className="mr-2 text-sm"
+													>
+														{mcp.name}
+														<Button
+															className="ml-1"
+															type="button"
+															variant="ghost"
+															size="icon-sm"
+															onClick={() =>
+																onMCPSelect(mcp)
+															}
+														>
+															<XIcon />
+														</Button>
+													</Badge>
+												),
+											)}
+										</ScrollArea>
+									</>
+								)}
+							</Field>
+						</FieldGroup>
+					</FieldSet>
 					<DialogFooter>
 						<Button variant="ghost" onClick={() => onClose()}>
 							Cancel
 						</Button>
-						{isCreatingNew && (
-							<Button
-								type="submit"
-								disabled={isLoading || !isFormValid}
-								data-testid="newWorkspaceModal-create-btn"
-							>
-								Add
-							</Button>
-						)}
+						<Button
+							disabled={isLoading || !name || !instructions}
+							data-testid="newWorkspaceModal-create-btn"
+							onClick={() => {
+								onSubmit();
+							}}
+						>
+							{isCreatingNew ? "Add" : "Save"}
+						</Button>
 					</DialogFooter>
 				</form>
 			</DialogContent>

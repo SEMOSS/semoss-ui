@@ -93,8 +93,8 @@ interface FileExplorerProps {
 	) => void;
 	/** Triggered when the Edit MCP Icon is clicked */
 	onMCPEditClick?: (
-		event: React.MouseEvent<HTMLButtonElement>, 
-		path: string
+		event: React.MouseEvent<HTMLButtonElement>,
+		path: string,
 	) => void;
 }
 

@@ -20,7 +20,6 @@ function CodeContainer({
 	className,
 	...props
 }: React.ComponentProps<"pre">): JSX.Element {
-	console.log(props);
 	return (
 		<pre
 			className={cn(
