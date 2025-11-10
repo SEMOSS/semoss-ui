@@ -69,7 +69,6 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 						title: "",
 						_meta: { generated_on: "" },
 						inputSchema: {
-							title: "",
 							properties: {},
 							type: "object",
 							required: [],
