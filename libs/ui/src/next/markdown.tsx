@@ -49,7 +49,7 @@ function Markdown({
 			),
 			h5: ({ children, ...props }) => (
 				<h5
-					className="mt-4 scroll-m-20 font-semibold text-lg tracking-tight"
+					className="mt-4 scroll-m-20 font-medium text-lg tracking-tight"
 					{...props}
 				>
 					{children}
@@ -57,7 +57,7 @@ function Markdown({
 			),
 			h6: ({ children, ...props }) => (
 				<h6
-					className="mt-4 scroll-m-20 font-semibold text-base tracking-tight"
+					className="mt-4 scroll-m-20 font-medium text-base tracking-tight"
 					{...props}
 				>
 					{children}

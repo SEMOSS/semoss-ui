@@ -38,7 +38,7 @@ export interface Instructions {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
 
 	/** Id of the mcp */
 	id: string;
