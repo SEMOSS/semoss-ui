@@ -216,6 +216,7 @@ export const DATABASE_CONNECTION = {
 					section: "Database",
 					type: "select",
 					category: "Database",
+					required: true,
 					options: {
 						options: [
 							{
@@ -245,6 +246,7 @@ export const DATABASE_CONNECTION = {
 					},
 					type: "file-upload",
 					category: "File Upload",
+					required: true,
 					disabled: false,
 					rules: {
 						required: {
@@ -405,7 +407,7 @@ export const DATABASE_CONNECTION = {
 	Connections: [
 		{
 			name: "Aster",
-			disable: true,
+			disable: false,
 			icon: ASTER,
 			fields: [
 				{

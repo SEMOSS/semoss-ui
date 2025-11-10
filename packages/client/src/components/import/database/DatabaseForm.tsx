@@ -372,7 +372,7 @@ export const DatabaseForm = ({
 
 			notification.add({
 				color: "success",
-				message: "Success",
+				message: "Successfully Created Database",
 			});
 
 			navigate(`/engine/database/${output.database_id}`);
