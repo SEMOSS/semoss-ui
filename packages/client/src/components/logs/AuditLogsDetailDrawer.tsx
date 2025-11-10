@@ -16,6 +16,7 @@ import {
 	Typography,
 	useTheme,
 } from "@semoss/ui";
+import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 
 const DrawerContainer = styled(Box)(({ theme }) => ({
 	position: "relative",
@@ -268,14 +269,6 @@ const hasExpandableContent = (data: unknown): boolean => {
 	return false;
 };
 
-const TimeDateFormatter = (timeStamp: string | number) => {
-	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split(".")[0];
-	const date = formattedDate.split("T")[0];
-	const time = formattedDate.split("T")[1];
-	return { date, time };
-};
-
 export const AuditLogsDetailDrawer = (props) => {
 	const { logDetails, handleDrawerClose } = props;
 	const [width, setWidth] = useState(500);
@@ -331,7 +324,7 @@ export const AuditLogsDetailDrawer = (props) => {
 
 	const getPromptData = () => {
 		try {
-			return JSON.parse(logDetails.payload);
+			return JSON.parse(logDetails.request);
 		} catch {
 			return null;
 		}
@@ -409,7 +402,7 @@ export const AuditLogsDetailDrawer = (props) => {
 								}
 								return (
 									<ContentText variant="body2">
-										{logDetails.payload}
+										{logDetails.request}
 									</ContentText>
 								);
 							})()}
@@ -539,6 +532,21 @@ export const AuditLogsDetailDrawer = (props) => {
 							</SummaryLabel>
 							<SummaryValue variant="body2">
 								{logDetails.sessionId}
+							</SummaryValue>
+						</SummaryItem>
+						<SummaryItem>
+							<SummaryLabel variant="caption">
+								Log Timestamp
+							</SummaryLabel>
+							<SummaryValue variant="body2">
+								{
+									TimeDateFormatter(logDetails.logTimestamp)
+										.time
+								}{" "}
+								{
+									TimeDateFormatter(logDetails.logTimestamp)
+										.date
+								}
 							</SummaryValue>
 						</SummaryItem>
 					</SummaryGrid>

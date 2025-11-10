@@ -1,6 +1,4 @@
 import { expect, test } from "vitest";
-import "@testing-library/jest-dom";
-
 import { VegaVisualizationBlock } from "../../components/block-defaults/vega-visualization-block/VegaVisualizationBlock";
 import { render, screen } from "../utils/index";
 

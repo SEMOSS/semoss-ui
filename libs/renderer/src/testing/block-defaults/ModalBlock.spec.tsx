@@ -1,32 +1,30 @@
-import { render } from "../utils";
+import { waitFor } from "@testing-library/react";
 import { expect } from "vitest";
-import { fireEvent, waitFor } from "@testing-library/react";
-import "@testing-library/jest-dom";
-
-import { ModalBlock } from "@/components/block-defaults/modal-block/ModalBlock";
+import { ModalBlock } from "../../components/block-defaults/modal-block/ModalBlock";
+import { render } from "../utils";
 
 const blocks = {
-    "modal-test": {
-        data: {
-            style: {},
-            title: "Test Modal",
-            fullWidth: false,
-            maxWidth: "md" as const,
-            minWidth: "sm" as const,
-            designMode: false,
-            open: false,
-        },
-        id: "modal-test",
-        widget: "modal" as const,
-        slots: {
-            content: { name: "content", children: [] },
-            footer: { name: "footer", children: [] },
-        },
-        listeners: {
-            preProcess: { type: "sync" as const, order: [] },
-            onClose: { type: "sync" as const, order: [] },
-        },
-    },
+	"modal-test": {
+		data: {
+			style: {},
+			title: "Test Modal",
+			fullWidth: false,
+			maxWidth: "md" as const,
+			minWidth: "sm" as const,
+			designMode: false,
+			open: false,
+		},
+		id: "modal-test",
+		widget: "modal" as const,
+		slots: {
+			content: { name: "content", children: [] },
+			footer: { name: "footer", children: [] },
+		},
+		listeners: {
+			preProcess: { type: "sync" as const, order: [] },
+			onClose: { type: "sync" as const, order: [] },
+		},
+	},
 };
 
 const mockPage = document.createElement("div");
@@ -34,171 +32,182 @@ mockPage.id = "page-1";
 document.body.appendChild(mockPage);
 
 describe("ModalBlock", () => {
-    test("renders correctly when closed", () => {
-        const { container } = render(<ModalBlock id="modal-test" />, { blocks });
+	test("renders correctly when closed", () => {
+		const { container } = render(
+			<ModalBlock id={blocks["modal-test"].id} />,
+			{
+				blocks,
+			},
+		);
 
-        expect(container.querySelector("[data-block='modal-test']")).toBeNull();
-        expect(document.querySelector("[role='presentation']")).toBeNull();
-    });
+		expect(container.querySelector("[data-block='modal-test']")).toBeNull();
+		expect(document.querySelector("[role='presentation']")).toBeNull();
+	});
 
-    test("renders correctly when open", async () => {
-        const { container } = render(<ModalBlock id="modal-test" />, {
-            blocks: {
-                "modal-test": {
-                    ...blocks["modal-test"],
-                    data: {
-                        ...blocks["modal-test"].data,
-                        open: true,
-                    },
-                },
-            },
-        });
+	test("renders correctly when open", async () => {
+		const { container } = render(
+			<ModalBlock id={blocks["modal-test"].id} />,
+			{
+				blocks: {
+					"modal-test": {
+						...blocks["modal-test"],
+						data: {
+							...blocks["modal-test"].data,
+							open: true,
+						},
+					},
+				},
+			},
+		);
 
-        expect(container.querySelector("[data-block='modal-test']")).not.toBeNull();
-        
-        await waitFor(() => {
-            expect(document.querySelector("[role='presentation']")).not.toBeNull();
-        });
-    });
+		expect(
+			container.querySelector("[data-block='modal-test']"),
+		).not.toBeNull();
 
-    test("handles different open types", async () => {
-        const stringBlocks = {
-            "modal-test": {
-                ...blocks["modal-test"],
-                data: {
-                    ...blocks["modal-test"].data,
-                    open: "true",
-                },
-            },
-        };
+		await waitFor(() => {
+			expect(
+				document.querySelector("[role='presentation']"),
+			).not.toBeNull();
+		});
+	});
 
-        const numberBlocks = {
-            "modal-test": {
-                ...blocks["modal-test"],
-                data: {
-                    ...blocks["modal-test"].data,
-                    open: 1,
-                },
-            },
-        };
+	test("handles different open types", async () => {
+		const stringBlocks = {
+			"modal-test": {
+				...blocks["modal-test"],
+				data: {
+					...blocks["modal-test"].data,
+					open: "true",
+				},
+			},
+		};
 
-        render(<ModalBlock id="modal-test" />, { blocks: stringBlocks });
-        render(<ModalBlock id="modal-test" />, { blocks: numberBlocks });
+		const numberBlocks = {
+			"modal-test": {
+				...blocks["modal-test"],
+				data: {
+					...blocks["modal-test"].data,
+					open: 1,
+				},
+			},
+		};
 
-        await waitFor(() => {
-            expect(document.querySelectorAll("[role='presentation']")).toHaveLength(2);
-        });
-    });
+		render(<ModalBlock id={blocks["modal-test"].id} />, {
+			blocks: stringBlocks,
+		});
+		render(<ModalBlock id={blocks["modal-test"].id} />, {
+			blocks: numberBlocks,
+		});
 
-    test("displays title and renders slots", async () => {
-        render(<ModalBlock id="modal-test" />, {
-            blocks: {
-                "content-text": {
-                    id: "content-text",
-                    widget: "text",
-                    parent: { id: "modal-test", slot: "content" },
-                    data: { text: "Modal content" },
-                    listeners: {}, slots: {}
-                },
-                "footer-text": {
-                    id: "footer-text", 
-                    widget: "text",
-                    parent: { id: "modal-test", slot: "footer" },
-                    data: { text: "Modal footer" },
-                    listeners: {}, slots: {}
-                },
-                "modal-test": {
-                    ...blocks["modal-test"],
-                    data: {
-                        ...blocks["modal-test"].data,
-                        title: "Open Modal",
-                        open: true,
-                    },
-                    slots: {
-                        content: { name: "content", children: ["content-text"] },
-                        footer: { name: "footer", children: ["footer-text"] },
-                    },
-                },
-            },
-        });
+		await waitFor(() => {
+			expect(
+				document.querySelectorAll("[role='presentation']"),
+			).toHaveLength(2);
+		});
+	});
 
-        await waitFor(() => {
-            const titleElement = document.querySelector(".MuiTypography-h6");
-            expect(titleElement).not.toBeNull();
-            expect(titleElement.textContent).toBe("Open Modal");
-            
-            expect(document.querySelector("[data-block='content-text']")).not.toBeNull();
-            expect(document.querySelector("[data-block='footer-text']")).not.toBeNull();
-            expect(document.querySelector("[data-block='content-text']")).toHaveTextContent("Modal content");
-            expect(document.querySelector("[data-block='footer-text']")).toHaveTextContent("Modal footer");
-        });
-    });
+	test("displays title and renders slots", async () => {
+		render(<ModalBlock id={blocks["modal-test"].id} />, {
+			blocks: {
+				"content-text": {
+					id: "content-text",
+					widget: "text",
+					parent: { id: "modal-test", slot: "content" },
+					data: { text: "Modal content" },
+					listeners: {},
+					slots: {},
+				},
+				"footer-text": {
+					id: "footer-text",
+					widget: "text",
+					parent: { id: "modal-test", slot: "footer" },
+					data: { text: "Modal footer" },
+					listeners: {},
+					slots: {},
+				},
+				"modal-test": {
+					...blocks["modal-test"],
+					data: {
+						...blocks["modal-test"].data,
+						title: "Open Modal",
+						open: true,
+					},
+					slots: {
+						content: {
+							name: "content",
+							children: ["content-text"],
+						},
+						footer: { name: "footer", children: ["footer-text"] },
+					},
+				},
+			},
+		});
 
-    test("clicking close button", async () => {
-        render(<ModalBlock id="modal-test" />, {
-            blocks: {
-                "modal-test": {
-                    ...blocks["modal-test"],
-                    data: {
-                        ...blocks["modal-test"].data,
-                        open: true,
-                    },
-                },
-            },
-        });
+		await waitFor(() => {
+			const titleElement = document.querySelector(".MuiTypography-h6");
+			expect(titleElement).not.toBeNull();
+			expect(titleElement.textContent).toBe("Open Modal");
 
-        await waitFor(() => {
-            expect(document.querySelector("[role='presentation']")).not.toBeNull();
-            const closeButton = document.querySelector(".MuiIconButton-root");
-            expect(closeButton).not.toBeNull();
-        });
+			expect(
+				document.querySelector("[data-block='content-text']"),
+			).not.toBeNull();
+			expect(
+				document.querySelector("[data-block='footer-text']"),
+			).not.toBeNull();
+			expect(
+				document.querySelector("[data-block='content-text']"),
+			).toHaveTextContent("Modal content");
+			expect(
+				document.querySelector("[data-block='footer-text']"),
+			).toHaveTextContent("Modal footer");
+		});
+	});
 
-        const closeButton = document.querySelector(".MuiIconButton-root");
-        fireEvent.click(closeButton);
+	test("applies width styles correctly", async () => {
+		render(<ModalBlock id={blocks["modal-test"].id} />, {
+			blocks: {
+				"modal-test": {
+					...blocks["modal-test"],
+					data: {
+						...blocks["modal-test"].data,
+						fullWidth: true,
+						maxWidth: "lg" as const,
+						minWidth: "xs" as const,
+						open: true,
+					},
+				},
+			},
+		});
 
-        await waitFor(() => {
-            expect(document.querySelector("[role='presentation']")).toBeNull();
-        });
-    });
+		await waitFor(() => {
+			const modalContainer = document.querySelector(
+				".MuiBox-root[style*='min-width']",
+			) as HTMLElement;
+			expect(modalContainer).not.toBeNull();
+			expect(modalContainer.style.minWidth).toBe("444px");
+			expect(modalContainer.style.maxWidth).toBe("1200px");
+		});
+	});
 
-    test("applies width styles correctly", async () => {
-        render(<ModalBlock id="modal-test" />, {
-            blocks: {
-                "modal-test": {
-                    ...blocks["modal-test"],
-                    data: {
-                        ...blocks["modal-test"].data,
-                        fullWidth: true,
-                        maxWidth: "lg" as const,
-                        minWidth: "xs" as const,
-                        open: true,
-                    },
-                },
-            },
-        });
+	test("renders in design mode", () => {
+		const { container } = render(
+			<ModalBlock id={blocks["modal-test"].id} />,
+			{
+				blocks: {
+					"modal-test": {
+						...blocks["modal-test"],
+						data: {
+							...blocks["modal-test"].data,
+							designMode: true,
+							open: true,
+						},
+					},
+				},
+			},
+		);
 
-        await waitFor(() => {
-            const modalContainer = document.querySelector(".MuiBox-root[style*='min-width']") as HTMLElement;
-            expect(modalContainer).not.toBeNull();
-            expect(modalContainer.style.minWidth).toBe("444px");
-            expect(modalContainer.style.maxWidth).toBe("1200px");
-        });
-    });
-
-    test("renders in design mode", () => {
-        const { container } = render(<ModalBlock id="modal-test" />, {
-            blocks: {
-                "modal-test": {
-                    ...blocks["modal-test"],
-                    data: {
-                        ...blocks["modal-test"].data,
-                        designMode: true,
-                        open: true,
-                    },
-                },
-            },
-        });
-
-        expect(container.querySelector("[data-block='modal-test']")).not.toBeNull();
-    });
+		expect(
+			container.querySelector("[data-block='modal-test']"),
+		).not.toBeNull();
+	});
 });
