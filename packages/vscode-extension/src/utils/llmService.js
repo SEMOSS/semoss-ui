@@ -1,4 +1,5 @@
 const configManager = require("./configManager");
+const mcpService = require("./mcpService");
 
 /**
  * LLMService class to handle communication with configured LLM models
@@ -20,6 +21,8 @@ class LLMService {
 	async initialize() {
 		if (!this.initialized) {
 			await configManager.loadConfig();
+			// Initialize MCP servers
+			await mcpService.initialize();
 			this.initialized = true;
 		}
 	}
@@ -87,6 +90,25 @@ class LLMService {
 	async callLLMAPI(model, message) {
 		const { default: fetch } = await import("node-fetch");
 
+		// Ensure MCP service is initialized before getting tools
+		await this.initialize();
+
+		// Get available MCP tools
+		let availableTools = mcpService.getAllTools();
+
+		// If no tools found, try restarting MCP service (may have config changes)
+		if (availableTools.length === 0) {
+			try {
+				await mcpService.restart();
+				availableTools = mcpService.getAllTools();
+			} catch (error) {
+				console.error(
+					"LLM Service: Failed to restart MCP service:",
+					error,
+				);
+			}
+		}
+
 		// Prepare the request based on provider
 		let url, headers, body;
 
@@ -102,17 +124,74 @@ class LLMService {
 				Authorization: `Bearer ${model.apiKey}`,
 			};
 
-			body = JSON.stringify({
+			// Prepare messages with system context about available tools
+			const messages = [];
+
+			// Add system message about available MCP tools
+			if (availableTools.length > 0) {
+				const toolsByServer = availableTools.reduce((acc, tool) => {
+					if (!acc[tool.server]) acc[tool.server] = [];
+					acc[tool.server].push(
+						`  - ${tool.name}: ${tool.description}`,
+					);
+					return acc;
+				}, {});
+
+				const toolDescriptions = Object.entries(toolsByServer)
+					.map(([server, tools]) => `${server}:\n${tools.join("\n")}`)
+					.join("\n\n");
+
+				messages.push({
+					role: "system",
+					content: `You are an AI assistant with access to MCP (Model Context Protocol) tools that can provide real-time information.
+
+						Available tools grouped by server:
+						${toolDescriptions}
+
+						USAGE RULES:
+						- ONLY use a tool if it EXACTLY matches what the user is asking for
+						- If no tool exactly matches the user's request, provide a helpful generic response instead
+						- Do NOT use tools as approximations - only use them when they directly fulfill the user's request
+						- Be precise: if a user asks for "branches" but only "git_status" is available, don't use git_status
+
+						Examples:
+						- User asks "what's the git status" + git_status tool available → Use git_status tool
+						- User asks "list branches" + git_branch tool available → Use git_branch tool  
+						- User asks "list branches" but only git_status available → Give generic response about git branch commands
+						- User asks general question + no relevant tools → Give helpful generic response`,
+				});
+			}
+
+			messages.push({
+				role: "user",
+				content: message,
+			});
+
+			const requestBody = {
 				model: model.model,
-				messages: [
-					{
-						role: "user",
-						content: message,
-					},
-				],
+				messages: messages,
 				temperature: model.temperature || 0.7,
 				max_tokens: model.maxTokens || 4096,
-			});
+			};
+
+			// Enable function calling to let LLM decide whether to use available tools
+			if (availableTools.length > 0) {
+				requestBody.tools = availableTools.map((tool) => ({
+					type: "function",
+					function: {
+						name: tool.name,
+						description: tool.description,
+						parameters: tool.parameters || {
+							type: "object",
+							properties: {},
+							required: [],
+						},
+					},
+				}));
+				requestBody.tool_choice = "auto"; // Let LLM decide when to use tools
+			}
+
+			body = JSON.stringify(requestBody);
 		} else {
 			throw new Error(`Unsupported provider: ${model.provider}`);
 		}
@@ -178,8 +257,64 @@ class LLMService {
 				throw new Error("No response from LLM");
 			}
 
+			const choice = data.choices[0];
+			const message = choice.message;
+
+			// Check if LLM decided to use a tool (function calling)
+			if (message.tool_calls && message.tool_calls.length > 0) {
+				const toolCall = message.tool_calls[0];
+				const toolName = toolCall.function.name;
+				const toolArgs = JSON.parse(
+					toolCall.function.arguments || "{}",
+				);
+
+				// Find the tool in available tools
+				const selectedTool = availableTools.find(
+					(tool) => tool.name === toolName,
+				);
+				if (selectedTool) {
+					try {
+						// Execute the tool that LLM selected
+						const toolResult = await mcpService.executeTool(
+							selectedTool.server,
+							selectedTool.name,
+							toolArgs,
+						);
+
+						if (toolResult.success) {
+							return {
+								content: `I executed the ${selectedTool.name} tool. Here are the results:\n\n\`\`\`\n${toolResult.result}\n\`\`\``,
+								usage: data.usage,
+								toolUsed: selectedTool.name,
+								server: selectedTool.server,
+							};
+						} else {
+							return {
+								content: `I tried to execute ${selectedTool.name} but encountered an error: ${toolResult.error}`,
+								usage: data.usage,
+								toolUsed: selectedTool.name,
+								server: selectedTool.server,
+								error: true,
+							};
+						}
+					} catch (error) {
+						console.error(
+							"LLM-selected tool execution failed:",
+							error,
+						);
+						return {
+							content: `I tried to execute ${selectedTool.name} but encountered an error: ${error.message}`,
+							usage: data.usage,
+							error: true,
+						};
+					}
+				}
+			}
+
+			// If no tool was called, return the regular LLM response
+			const content = message.content || "";
 			return {
-				content: data.choices[0].message.content,
+				content: message.content,
 				usage: data.usage,
 			};
 		}

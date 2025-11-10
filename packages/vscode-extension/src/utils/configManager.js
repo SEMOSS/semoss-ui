@@ -37,8 +37,12 @@ class ConfigManager {
 			);
 		}
 		if (!extensionRoot) {
-			// __dirname -> <extRoot>/src/utils  => go up two levels
-			extensionRoot = path.resolve(__dirname, "../..");
+			// When built: __dirname -> <extRoot>/out => go up one level
+			// When dev: __dirname -> <extRoot>/src/utils => go up two levels
+			const isDevelopment = __dirname.includes("src");
+			extensionRoot = isDevelopment
+				? path.resolve(__dirname, "../..")
+				: path.resolve(__dirname, "..");
 		}
 		this.configPath = path.join(
 			extensionRoot,
@@ -108,6 +112,26 @@ class ConfigManager {
 			}
 		} catch (error) {
 			console.error("Error loading Semoss configuration:", error);
+			// Try to read the file content to diagnose the issue
+			if (fs.existsSync(this.configPath)) {
+				try {
+					const rawContent = fs.readFileSync(this.configPath, "utf8");
+					console.error(
+						"Raw config content (first 500 chars):",
+						rawContent.substring(0, 500),
+					);
+				} catch (readError) {
+					console.error(
+						"Could not read config file:",
+						readError.message,
+					);
+				}
+			}
+
+			// Don't lose user's configuration - return minimal working config instead of empty defaults
+			console.warn(
+				"Using minimal fallback config to preserve any existing setup",
+			);
 			return this.getDefaultConfig();
 		}
 	}

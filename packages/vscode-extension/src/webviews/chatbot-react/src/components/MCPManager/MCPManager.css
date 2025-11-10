@@ -693,3 +693,323 @@
 .servers-list::-webkit-scrollbar-thumb:hover {
   background: var(--vscode-scrollbarSlider-hoverBackground);
 }
+
+/* Server Actions and Templates */
+.server-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.add-server-button.secondary {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.add-server-button.secondary:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.server-templates {
+  margin: 16px 0;
+  padding: 16px;
+  background-color: var(--vscode-panel-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 6px;
+}
+
+.server-templates h4 {
+  margin: 0 0 12px 0;
+  color: var(--vscode-foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.template-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.template-card {
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-widget-border);
+  border-radius: 6px;
+  padding: 12px;
+  transition: border-color 0.2s ease;
+}
+
+.template-card:hover {
+  border-color: var(--vscode-focusBorder);
+}
+
+.template-card h5 {
+  margin: 0 0 6px 0;
+  color: var(--vscode-foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.template-card p {
+  margin: 0 0 8px 0;
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.template-details {
+  margin-bottom: 10px;
+}
+
+.template-details small {
+  color: var(--vscode-descriptionForeground);
+  font-size: 11px;
+  font-family: var(--vscode-editor-font-family);
+  background-color: var(--vscode-panel-background);
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+
+.template-add-button {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background-color 0.2s ease;
+  width: 100%;
+}
+
+.template-add-button:hover {
+  background-color: var(--vscode-button-hoverBackground);
+}
+
+.template-add-button:active {
+  background-color: var(--vscode-button-background);
+  transform: translateY(1px);
+}
+
+/* Enhanced Form Styles for Tools Configuration */
+
+.form-help {
+  color: var(--vscode-descriptionForeground);
+  font-size: 12px;
+  margin-bottom: 12px;
+  font-style: italic;
+}
+
+.tool-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 6px;
+  margin-bottom: 12px;
+  background-color: var(--vscode-input-background);
+}
+
+.tool-fields {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 1fr 2fr 2fr 100px;
+  gap: 12px;
+  align-items: end;
+}
+
+.tool-row .form-group {
+  margin-bottom: 0;
+}
+
+.tool-row .form-group label {
+  font-size: 11px;
+  margin-bottom: 4px;
+}
+
+.remove-tool-button {
+  background-color: var(--vscode-errorForeground);
+  color: var(--vscode-editor-background);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  margin-top: 20px;
+  height: fit-content;
+}
+
+.remove-tool-button:hover:not(:disabled) {
+  background-color: var(--vscode-errorForeground);
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.remove-tool-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.env-var-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.env-var-row input {
+  flex: 1;
+  background-color: var(--vscode-input-background);
+  color: var(--vscode-input-foreground);
+  border: 1px solid var(--vscode-input-border);
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.env-var-row input:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder);
+}
+
+.remove-button {
+  background-color: var(--vscode-errorForeground);
+  color: var(--vscode-editor-background);
+  border: none;
+  border-radius: 4px;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s ease;
+  min-width: 32px;
+}
+
+.remove-button:hover:not(:disabled) {
+  opacity: 0.8;
+}
+
+.remove-button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.add-button {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+  border: 1px solid var(--vscode-button-border);
+  border-radius: 4px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.2s ease;
+  margin-top: 8px;
+}
+
+.add-button:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.add-button:active {
+  transform: translateY(1px);
+}
+
+/* Custom Confirmation Dialog */
+.confirmation-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10001;
+}
+
+.confirmation-dialog {
+  background-color: var(--vscode-editor-background);
+  border: 1px solid var(--vscode-panel-border);
+  border-radius: 8px;
+  padding: 24px;
+  min-width: 300px;
+  max-width: 500px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.confirmation-dialog h3 {
+  margin: 0 0 12px 0;
+  color: var(--vscode-foreground);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.confirmation-dialog p {
+  margin: 0 0 20px 0;
+  color: var(--vscode-foreground);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.confirmation-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.cancel-button, .confirm-delete-button {
+  padding: 8px 16px;
+  border: 1px solid var(--vscode-button-border);
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cancel-button {
+  background-color: var(--vscode-button-secondaryBackground);
+  color: var(--vscode-button-secondaryForeground);
+}
+
+.cancel-button:hover {
+  background-color: var(--vscode-button-secondaryHoverBackground);
+}
+
+.confirm-delete-button {
+  background-color: var(--vscode-errorBackground);
+  color: var(--vscode-errorForeground);
+  border-color: var(--vscode-errorBorder);
+}
+
+.confirm-delete-button:hover {
+  background-color: var(--vscode-button-background);
+  color: var(--vscode-button-foreground);
+}
+
+/* Responsive adjustments for tools form */
+@media (max-width: 768px) {
+  .tool-fields {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .tool-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .remove-tool-button {
+    margin-top: 8px;
+    align-self: flex-end;
+  }
+
+  .confirmation-dialog {
+    margin: 0 20px;
+    min-width: auto;
+  }
+  
+  .confirmation-buttons {
+    flex-direction: column-reverse;
+  }
+}

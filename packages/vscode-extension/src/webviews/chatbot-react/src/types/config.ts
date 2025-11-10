@@ -16,6 +16,14 @@ export interface LLMModel {
 	customHeaders?: Record<string, string>;
 }
 
+export interface MCPToolConfig {
+	name: string;
+	command: string;
+	description?: string;
+	timeout?: number;
+	env?: Record<string, string>;
+}
+
 export interface MCPServer {
 	name: string;
 	command: string;
@@ -25,6 +33,7 @@ export interface MCPServer {
 	description?: string;
 	workingDirectory?: string;
 	timeout?: number;
+	tools?: MCPToolConfig[];
 }
 
 export interface ChatPreferences {

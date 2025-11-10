@@ -90,6 +90,14 @@ async function activate(context) {
 	initStatusBar(context);
 	await updateStatusBar(context);
 
+	// Initialize MCP service
+	try {
+		const mcpService = require("./src/utils/mcpService.js");
+		await mcpService.initialize();
+	} catch (error) {
+		console.error("Extension: Failed to initialize MCP service:", error);
+	}
+
 	// Register chatbot webview (keep provider reference for later messaging)
 	registerChatbotWebview(context);
 
@@ -645,6 +653,14 @@ async function activate(context) {
  * Extension deactivation hook. Currently no teardown needed because
  * VS Code disposables are managed via context.subscriptions.
  */
-function deactivate() {}
+function deactivate() {
+	// Cleanup MCP service
+	try {
+		const mcpService = require("./src/utils/mcpService.js");
+		mcpService.shutdown();
+	} catch (error) {
+		console.error("Error shutting down MCP service:", error);
+	}
+}
 
 module.exports = { activate, deactivate };

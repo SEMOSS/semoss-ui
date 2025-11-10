@@ -40,9 +40,26 @@ const ModelSelector = ({ onChange }) => {
 				}
 			}
 		};
+
+		// Listen for configuration updates from VS Code extension
+		const handleMessage = (event) => {
+			if (event.data.type === "configSaved" && event.data.success) {
+				// Reload models when configuration is successfully saved
+				load();
+			}
+		};
+
+		// Add event listener for messages from VS Code
+		if (typeof window !== "undefined") {
+			window.addEventListener("message", handleMessage);
+		}
+
 		load();
 		return () => {
 			mounted = false;
+			if (typeof window !== "undefined") {
+				window.removeEventListener("message", handleMessage);
+			}
 		};
 	}, []);
 

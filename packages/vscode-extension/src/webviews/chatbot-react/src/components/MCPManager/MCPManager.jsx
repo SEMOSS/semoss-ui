@@ -9,6 +9,118 @@ import "./MCPManager.css";
  * - Allows adding new server definitions
  * - Displays mock tools/resources (placeholder until live integration)
  */
+// Common MCP server templates with tools
+const MCP_SERVER_TEMPLATES = {
+	filesystem: {
+		name: "filesystem",
+		command: "npx",
+		args: ["@modelcontextprotocol/server-filesystem", "/workspace"],
+		description: "File system access for reading and writing files",
+		enabled: true,
+		tools: [
+			{
+				name: "read_file",
+				command: 'cat "{{file_path}}"',
+				description: "Read contents of a file",
+				timeout: 5000,
+			},
+			{
+				name: "list_directory",
+				command: 'ls -la "{{directory_path}}"',
+				description: "List directory contents with details",
+				timeout: 5000,
+			},
+		],
+	},
+	git: {
+		name: "git",
+		command: "npx",
+		args: ["@modelcontextprotocol/server-git"],
+		description: "Git repository operations",
+		enabled: true,
+		tools: [
+			{
+				name: "git_status",
+				command: "git status",
+				description:
+					"Get git repository status and working tree changes",
+				timeout: 5000,
+			},
+			{
+				name: "git_log",
+				command: "git log --oneline -10",
+				description: "Show recent commit history",
+				timeout: 5000,
+			},
+		],
+	},
+	docker: {
+		name: "docker",
+		command: "docker",
+		args: [],
+		description: "Docker container management",
+		enabled: true,
+		tools: [
+			{
+				name: "list_containers",
+				command: "docker ps -a",
+				description: "List all Docker containers",
+				timeout: 10000,
+			},
+			{
+				name: "container_logs",
+				command: "docker logs {{container_id}}",
+				description: "Get logs for a specific container",
+				timeout: 15000,
+			},
+		],
+	},
+	system: {
+		name: "system",
+		command: "powershell",
+		args: [],
+		description: "System information and monitoring",
+		enabled: true,
+		tools: [
+			{
+				name: "disk_usage",
+				command:
+					'Get-WmiObject -Class Win32_LogicalDisk | Select-Object DeviceID, @{Name="Size(GB)";Expression={[math]::Round($_.Size/1GB,2)}}, @{Name="FreeSpace(GB)";Expression={[math]::Round($_.FreeSpace/1GB,2)}} | Format-Table',
+				description: "Show disk usage for all drives",
+				timeout: 5000,
+			},
+			{
+				name: "running_processes",
+				command:
+					"Get-Process | Sort-Object CPU -Descending | Select-Object -First 10 Name, CPU, WorkingSet | Format-Table",
+				description: "Show top 10 processes by CPU usage",
+				timeout: 5000,
+			},
+		],
+	},
+	nodejs: {
+		name: "nodejs",
+		command: "npm",
+		args: [],
+		description: "Node.js project development tools",
+		enabled: true,
+		tools: [
+			{
+				name: "run_tests",
+				command: "npm test",
+				description: "Run the project test suite",
+				timeout: 30000,
+			},
+			{
+				name: "build_project",
+				command: "npm run build",
+				description: "Build the project for production",
+				timeout: 60000,
+			},
+		],
+	},
+};
+
 const MCPManager = ({ isOpen, onClose }) => {
 	// Server definitions persisted via configManager (mcpServers array)
 	const [servers, setServers] = useState([]);
@@ -17,6 +129,8 @@ const MCPManager = ({ isOpen, onClose }) => {
 	const [activeTab, setActiveTab] = useState("servers");
 	const [isAddingServer, setIsAddingServer] = useState(false);
 	const [editingServer, setEditingServer] = useState(null);
+	const [showTemplates, setShowTemplates] = useState(false);
+	const [deleteConfirmation, setDeleteConfirmation] = useState(null);
 
 	useEffect(() => {
 		const loadMCPData = async () => {
@@ -79,12 +193,25 @@ const MCPManager = ({ isOpen, onClose }) => {
 		]);
 	};
 
-	const handleDeleteServer = async (serverName) => {
-		if (window.confirm(`Delete MCP server "${serverName}"?`)) {
+	const handleDeleteServer = (serverName) => {
+		// Show custom confirmation dialog instead of window.confirm
+		setDeleteConfirmation(serverName);
+	};
+
+	const confirmDeleteServer = async (serverName) => {
+		try {
 			const updated = servers.filter((s) => s.name !== serverName);
 			setServers(updated);
 			await configManager.updateConfig("mcpServers", updated);
+			setDeleteConfirmation(null);
+		} catch (error) {
+			console.error("Error deleting server:", error);
+			setDeleteConfirmation(null);
 		}
+	};
+
+	const cancelDeleteServer = () => {
+		setDeleteConfirmation(null);
 	};
 
 	const handleToggleServer = async (serverName) => {
@@ -103,6 +230,23 @@ const MCPManager = ({ isOpen, onClose }) => {
 		await configManager.updateConfig("mcpServers", updated);
 		setIsAddingServer(false);
 		setEditingServer(null);
+	};
+
+	const handleAddFromTemplate = async (templateKey) => {
+		const template = MCP_SERVER_TEMPLATES[templateKey];
+		if (!template) return;
+
+		// Check if server with same name already exists
+		const exists = servers.find((s) => s.name === template.name);
+		if (exists) {
+			alert(`MCP server "${template.name}" already exists!`);
+			return;
+		}
+
+		const updated = [...servers, { ...template }];
+		setServers(updated);
+		await configManager.updateConfig("mcpServers", updated);
+		setShowTemplates(false);
 	};
 
 	const handleEditServer = (server) => {
@@ -164,6 +308,9 @@ const MCPManager = ({ isOpen, onClose }) => {
 								onEditServer={handleEditServer}
 								onDeleteServer={handleDeleteServer}
 								onToggleServer={handleToggleServer}
+								showTemplates={showTemplates}
+								setShowTemplates={setShowTemplates}
+								onAddFromTemplate={handleAddFromTemplate}
 							/>
 						)}
 
@@ -179,6 +326,37 @@ const MCPManager = ({ isOpen, onClose }) => {
 						)}
 					</div>
 				</div>
+
+				{/* Custom Delete Confirmation Dialog */}
+				{deleteConfirmation && (
+					<div className="confirmation-overlay">
+						<div className="confirmation-dialog">
+							<h3>Confirm Delete</h3>
+							<p>
+								Are you sure you want to delete MCP server "
+								{deleteConfirmation}"?
+							</p>
+							<div className="confirmation-buttons">
+								<button
+									type="button"
+									className="cancel-button"
+									onClick={cancelDeleteServer}
+								>
+									Cancel
+								</button>
+								<button
+									type="button"
+									className="confirm-delete-button"
+									onClick={() =>
+										confirmDeleteServer(deleteConfirmation)
+									}
+								>
+									Delete
+								</button>
+							</div>
+						</div>
+					</div>
+				)}
 			</div>
 		</div>
 	);
@@ -195,6 +373,9 @@ const ServersTab = ({
 	onEditServer,
 	onDeleteServer,
 	onToggleServer,
+	showTemplates,
+	setShowTemplates,
+	onAddFromTemplate,
 }) => {
 	if (isAddingServer) {
 		return (
@@ -213,17 +394,55 @@ const ServersTab = ({
 		<div className="servers-tab">
 			<div className="servers-header">
 				<h3>MCP Servers</h3>
-				<button
-					type="button"
-					className="add-server-button"
-					onClick={() => {
-						setIsAddingServer(true);
-						setEditingServer(null);
-					}}
-				>
-					+ Add Server
-				</button>
+				<div className="server-actions">
+					<button
+						type="button"
+						className="add-server-button secondary"
+						onClick={() => setShowTemplates(!showTemplates)}
+					>
+						📋 Add from Template
+					</button>
+					<button
+						type="button"
+						className="add-server-button"
+						onClick={() => {
+							setIsAddingServer(true);
+							setEditingServer(null);
+						}}
+					>
+						+ Add Custom Server
+					</button>
+				</div>
 			</div>
+
+			{showTemplates && (
+				<div className="server-templates">
+					<h4>Common MCP Server Templates</h4>
+					<div className="template-grid">
+						{Object.entries(MCP_SERVER_TEMPLATES).map(
+							([key, template]) => (
+								<div key={key} className="template-card">
+									<h5>{template.name}</h5>
+									<p>{template.description}</p>
+									<div className="template-details">
+										<small>
+											Command: {template.command}{" "}
+											{template.args.join(" ")}
+										</small>
+									</div>
+									<button
+										type="button"
+										className="template-add-button"
+										onClick={() => onAddFromTemplate(key)}
+									>
+										Add {template.name}
+									</button>
+								</div>
+							),
+						)}
+					</div>
+				</div>
+			)}
 
 			<div className="servers-list">
 				{servers.length === 0 ? (
@@ -291,7 +510,12 @@ const ServerCard = ({ server, onEdit, onDelete, onToggle }) => {
 					<button
 						type="button"
 						className="delete-button"
-						onClick={onDelete}
+						onClick={(e) => {
+							e.preventDefault();
+							e.stopPropagation();
+							console.log("Delete button clicked directly");
+							onDelete();
+						}}
 						title="Delete server"
 					>
 						🗑️
@@ -337,13 +561,68 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 			value,
 		})),
 	);
+	const [tools, setTools] = useState(
+		server?.tools || [
+			{ name: "", command: "", description: "", timeout: 5000 },
+		],
+	);
 	const [formError, setFormError] = useState("");
+
+	const addTool = () => {
+		setTools([
+			...tools,
+			{ name: "", command: "", description: "", timeout: 5000 },
+		]);
+	};
+
+	const removeTool = (index) => {
+		if (tools.length > 1) {
+			setTools(tools.filter((_, i) => i !== index));
+		}
+	};
+
+	const updateTool = (index, field, value) => {
+		const updatedTools = tools.map((tool, i) =>
+			i === index ? { ...tool, [field]: value } : tool,
+		);
+		setTools(updatedTools);
+	};
+
+	const addEnvVar = () => {
+		setEnvVars([...envVars, { key: "", value: "" }]);
+	};
+
+	const removeEnvVar = (index) => {
+		setEnvVars(envVars.filter((_, i) => i !== index));
+	};
+
+	const updateEnvVar = (index, field, value) => {
+		const updated = envVars.map((env, i) =>
+			i === index ? { ...env, [field]: value } : env,
+		);
+		setEnvVars(updated);
+	};
 
 	const handleSubmit = (e) => {
 		e.preventDefault();
 
 		if (!formData.name || !formData.command) {
 			setFormError("Please fill in all required fields.");
+			return;
+		}
+
+		// Validate tools
+		const validTools = tools
+			.filter((tool) => tool.name.trim() && tool.command.trim())
+			.map((tool) => ({
+				name: tool.name.trim(),
+				command: tool.command.trim(),
+				description: tool.description.trim() || `Execute ${tool.name}`,
+				timeout: parseInt(tool.timeout) || 5000,
+			}));
+
+		if (validTools.length === 0) {
+			setFormError("Please add at least one tool with name and command.");
 			return;
 		}
 
@@ -363,6 +642,7 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 			timeout: formData.timeout || undefined,
 			enabled: formData.enabled,
 			env: Object.keys(envObject).length > 0 ? envObject : undefined,
+			tools: validTools,
 		};
 
 		onSave(serverData);
@@ -438,6 +718,38 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 					</div>
 
 					<div className="form-group">
+						<label>Working Directory</label>
+						<input
+							type="text"
+							value={formData.workingDirectory}
+							onChange={(e) =>
+								setFormData((prev) => ({
+									...prev,
+									workingDirectory: e.target.value,
+								}))
+							}
+							placeholder="Optional: custom working directory"
+						/>
+					</div>
+
+					<div className="form-group">
+						<label>Timeout (ms)</label>
+						<input
+							type="number"
+							value={formData.timeout}
+							onChange={(e) =>
+								setFormData((prev) => ({
+									...prev,
+									timeout: parseInt(e.target.value) || 5000,
+								}))
+							}
+							placeholder="5000"
+							min="1000"
+							max="300000"
+						/>
+					</div>
+
+					<div className="form-group">
 						<label className="checkbox-label">
 							<input
 								type="checkbox"
@@ -452,6 +764,149 @@ const ServerForm = ({ server, onSave, onCancel }) => {
 							Enable this server
 						</label>
 					</div>
+				</div>
+
+				<div className="form-section">
+					<h4>Environment Variables</h4>
+					<p className="form-help">
+						Optional environment variables for this server
+					</p>
+
+					{envVars.map((envVar, index) => (
+						<div key={index} className="env-var-row">
+							<input
+								type="text"
+								placeholder="Variable name"
+								value={envVar.key}
+								onChange={(e) =>
+									updateEnvVar(index, "key", e.target.value)
+								}
+							/>
+							<input
+								type="text"
+								placeholder="Variable value"
+								value={envVar.value}
+								onChange={(e) =>
+									updateEnvVar(index, "value", e.target.value)
+								}
+							/>
+							<button
+								type="button"
+								onClick={() => removeEnvVar(index)}
+								className="remove-button"
+								disabled={envVars.length === 1}
+							>
+								🗑️
+							</button>
+						</div>
+					))}
+
+					<button
+						type="button"
+						onClick={addEnvVar}
+						className="add-button"
+					>
+						+ Add Environment Variable
+					</button>
+				</div>
+
+				<div className="form-section">
+					<h4>Tools Configuration *</h4>
+					<p className="form-help">
+						Define the tools/commands this server provides
+					</p>
+
+					{tools.map((tool, index) => (
+						<div key={index} className="tool-row">
+							<div className="tool-fields">
+								<div className="form-group">
+									<label>Tool Name *</label>
+									<input
+										type="text"
+										placeholder="e.g., git_status"
+										value={tool.name}
+										onChange={(e) =>
+											updateTool(
+												index,
+												"name",
+												e.target.value,
+											)
+										}
+										required
+									/>
+								</div>
+
+								<div className="form-group">
+									<label>Command *</label>
+									<input
+										type="text"
+										placeholder="e.g., git status"
+										value={tool.command}
+										onChange={(e) =>
+											updateTool(
+												index,
+												"command",
+												e.target.value,
+											)
+										}
+										required
+									/>
+								</div>
+
+								<div className="form-group">
+									<label>Description</label>
+									<input
+										type="text"
+										placeholder="What this tool does"
+										value={tool.description}
+										onChange={(e) =>
+											updateTool(
+												index,
+												"description",
+												e.target.value,
+											)
+										}
+									/>
+								</div>
+
+								<div className="form-group">
+									<label>Timeout (ms)</label>
+									<input
+										type="number"
+										value={tool.timeout}
+										onChange={(e) =>
+											updateTool(
+												index,
+												"timeout",
+												parseInt(e.target.value) ||
+													5000,
+											)
+										}
+										min="1000"
+										max="300000"
+									/>
+								</div>
+							</div>
+
+							<button
+								type="button"
+								onClick={() => removeTool(index)}
+								className="remove-tool-button"
+								disabled={tools.length === 1}
+								title="Remove this tool"
+							>
+								🗑️
+							</button>
+						</div>
+					))}
+
+					<button
+						type="button"
+						onClick={addTool}
+						className="add-button"
+					>
+						+ Add Tool
+					</button>
 				</div>
 
 				<div className="form-actions">

@@ -300,19 +300,7 @@ export class ConfigManager {
 	private getDefaultConfig(): SemossConfig {
 		return {
 			models: DEFAULT_MODELS,
-			mcpServers: [
-				{
-					name: "filesystem",
-					command: "npx",
-					args: [
-						"@modelcontextprotocol/server-filesystem",
-						"/workspace",
-					],
-					enabled: true,
-					description:
-						"Provides file system access for reading and writing files",
-				},
-			],
+			mcpServers: [],
 			preferences: DEFAULT_PREFERENCES,
 			shortcuts: {
 				openChat: "Ctrl+Shift+L",

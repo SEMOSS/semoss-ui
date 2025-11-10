@@ -574,6 +574,16 @@ class ChatbotWebviewProvider {
 
 			const success = await configManager.saveConfig(configObject);
 
+			// Restart MCP servers if config was saved successfully
+			if (success) {
+				try {
+					const mcpService = require("../../utils/mcpService.js");
+					await mcpService.restart();
+				} catch (mcpError) {
+					console.error("Failed to restart MCP servers:", mcpError);
+				}
+			}
+
 			webview.postMessage({
 				type: "configSaved",
 				success: success,

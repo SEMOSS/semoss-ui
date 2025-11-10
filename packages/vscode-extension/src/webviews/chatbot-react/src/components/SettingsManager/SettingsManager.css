@@ -152,9 +152,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--vscode-panel-border);
 }
 
 .config-editor-header h3 {
@@ -165,8 +164,13 @@
 }
 
 .config-actions {
-  display: flex;
-  gap: 12px;
+  margin-top: 10px;
+  margin-right: 0px;
+  overflow: hidden;
+}
+
+.save-button{
+  float:right;
 }
 
 .reset-button {

@@ -100,49 +100,14 @@ const ConfigurationEditor = () => {
 				setConfigContent(yamlConfig);
 			} catch (error) {
 				console.error("Failed to load configuration:", error);
-				// Fallback to empty config if loading fails
-				setConfigContent(`# Semoss Configuration File
-# This file controls various aspects of your Semoss AI assistant
-
-# LLM Models Configuration
-models: []
-
-# MCP (Model Context Protocol) Servers  
-mcpServers:
-  - name: "filesystem"
-    command: "npx"
-    args: ["@modelcontextprotocol/server-filesystem", "/workspace"]
-    description: "File system access for reading and writing files"
-    enabled: true
-
-# Preferences
-preferences:
-  chat:
-    defaultModel: ""
-    autoSave: true
-    persistHistory: true
-    maxHistoryLength: 1000
-    enableTypingIndicator: true
-  ui:
-    theme: "auto"
-    fontSize: 14
-    fontFamily: "Segoe UI"
-    showLineNumbers: true
-    wordWrap: true
-  code:
-    autoComplete: true
-    syntaxHighlighting: true
-    enableInlineChat: true
-    defaultLanguage: "javascript"
-
-# Shortcuts
-shortcuts:
-  openChat: "Ctrl+Shift+L"
-  clearChat: "Ctrl+K"
-  openSettings: "Ctrl+,"
-  toggleModel: "Ctrl+M"
-  executeCommand: "Enter"
-  multilineInput: "Shift+Enter"`);
+				// Fallback - request config from VS Code extension if local loading fails
+				console.warn(
+					"Local config loading failed, requesting from extension",
+				);
+				window.vscode?.postMessage({ type: "getConfig" });
+				// Temporary placeholder while waiting for extension response
+				setConfigContent(`# Loading configuration...
+# If this persists, check the VS Code extension logs for errors`);
 			} finally {
 				setIsLoading(false);
 			}
@@ -239,32 +204,6 @@ shortcuts:
 		<div className="config-editor">
 			<div className="config-editor-header">
 				<h3>YAML Configuration Editor</h3>
-				{status && (
-					<div
-						className={`config-status config-status-${status.type}`}
-						role="status"
-					>
-						{status.message}
-					</div>
-				)}
-				<div className="config-actions">
-					<button
-						type="button"
-						className="reset-button"
-						onClick={handleReset}
-						disabled={isSaving}
-					>
-						Reset to Defaults
-					</button>
-					<button
-						type="button"
-						className="save-button"
-						onClick={handleSave}
-						disabled={isSaving}
-					>
-						{isSaving ? "Saving..." : "Save Configuration"}
-					</button>
-				</div>
 			</div>
 
 			<div className="config-editor-content">
@@ -283,6 +222,24 @@ shortcuts:
 					<code>$OPENAI_API_KEY</code> for sensitive information.
 					Changes will be applied when you click Save.
 				</p>
+			</div>
+			<div className="config-actions">
+				{status && (
+					<div
+						className={`config-status config-status-${status.type}`}
+						role="status"
+					>
+						{status.message}
+					</div>
+				)}
+				<button
+					type="button"
+					className="save-button"
+					onClick={handleSave}
+					disabled={isSaving}
+				>
+					{isSaving ? "Saving..." : "Save Configuration"}
+				</button>
 			</div>
 		</div>
 	);

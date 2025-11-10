@@ -96,7 +96,7 @@ const ChatComposer = ({
 						type="button"
 						className="chat-icon-btn"
 						onClick={() => onToolsClick?.()}
-						title="Tools"
+						title="Semoss App Actions"
 						aria-label="Show tools"
 					>
 						<ToolsIcon />
