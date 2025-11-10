@@ -1,11 +1,11 @@
-import { screen } from "@testing-library/react";
+import { waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
 	type EchartVisualizationBlockDef,
 	VisualizationBlock,
 } from "../../components/block-defaults/echart-visualization-block";
 import { useBlock } from "../../hooks";
-import { render, renderHook } from "../utils";
+import { render, renderHook, screen } from "../utils";
 
 const mockLineChartBlocks = {
 	lineChart: {
@@ -36,7 +36,6 @@ const mockLineChartBlocks = {
 		listeners: {},
 		slots: {},
 	},
-
 	lineChartString: {
 		id: "lineChartString",
 		widget: "e-chart",
@@ -54,7 +53,6 @@ const mockLineChartBlocks = {
 		listeners: {},
 		slots: {},
 	},
-
 	lineChartNoOption: {
 		id: "lineChartNoOption",
 		widget: "e-chart",
@@ -68,7 +66,6 @@ const mockLineChartBlocks = {
 		listeners: {},
 		slots: {},
 	},
-
 	lineChartInvalidJson: {
 		id: "lineChartInvalidJson",
 		widget: "e-chart",
@@ -107,48 +104,64 @@ describe("LineChart Block Component", () => {
 			},
 		);
 
-		expect(result.current).toBeDefined();
-		expect(result.current.data.variation).toBe("echart-line-graph");
-	});
-
-	it("should render Line chart correctly", () => {
-		const { container } = render(<VisualizationBlock id="lineChart" />, {
-			blocks: mockLineChartBlocks,
+		await waitFor(() => {
+			expect(result).toBeDefined();
+			expect(result.current.data.variation).toBe("echart-line-graph");
 		});
-
-		const lineChart = container.querySelector("[data-block='lineChart']");
-		expect(lineChart).toBeInTheDocument();
 	});
 
-	it("should render Line chart with string option correctly", () => {
+	it("should render Line chart correctly", async () => {
 		const { container } = render(
-			<VisualizationBlock id="lineChartString" />,
+			<VisualizationBlock id={mockLineChartBlocks.lineChart.id} />,
 			{
 				blocks: mockLineChartBlocks,
 			},
 		);
 
-		const lineChart = container.querySelector(
-			"[data-block='lineChartString']",
-		);
-		expect(lineChart).toBeInTheDocument();
+		await waitFor(() => {
+			const lineChart = container.querySelector(
+				"[data-block='lineChart']",
+			);
+			expect(lineChart).toBeInTheDocument();
+		});
 	});
 
-	it("should show 'Add JSON' message when no option is provided", () => {
+	it("should render Line chart with string option correctly", async () => {
 		const { container } = render(
-			<VisualizationBlock id="lineChartNoOption" />,
+			<VisualizationBlock id={mockLineChartBlocks.lineChartString.id} />,
 			{
 				blocks: mockLineChartBlocks,
 			},
 		);
 
-		expect(
-			screen.getByText("Add JSON to render your visualization"),
-		).toBeInTheDocument();
-		const lineChart = container.querySelector(
-			"[data-block='lineChartNoOption']",
+		await waitFor(() => {
+			const lineChart = container.querySelector(
+				"[data-block='lineChartString']",
+			);
+			expect(lineChart).toBeInTheDocument();
+		});
+	});
+
+	it("should show 'Add JSON' message when no option is provided", async () => {
+		const { container } = render(
+			<VisualizationBlock
+				id={mockLineChartBlocks.lineChartNoOption.id}
+			/>,
+			{
+				blocks: mockLineChartBlocks,
+			},
 		);
-		expect(lineChart).toBeInTheDocument();
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("Add JSON to render your visualization"),
+			).toBeInTheDocument();
+
+			const lineChart = container.querySelector(
+				"[data-block='lineChartNoOption']",
+			);
+			expect(lineChart).toBeInTheDocument();
+		});
 	});
 
 	it("should have correct chart data structure", () => {
@@ -168,7 +181,7 @@ describe("LineChart Block Component", () => {
 		]);
 	});
 
-	it("should have correct chart configuration", () => {
+	it("should have correct chart configuration", async () => {
 		const { result } = renderHook(
 			() => useBlock<EchartVisualizationBlockDef>("lineChart"),
 			{
@@ -177,42 +190,58 @@ describe("LineChart Block Component", () => {
 			},
 		);
 
-		const option = result.current.data.option as Record<string, unknown>;
-		expect(option.tooltip).toEqual({ trigger: "axis" });
-		expect(option.legend).toEqual({ show: true });
-		expect((option._state as Record<string, unknown>).fields).toEqual({
-			xAxis: ["Month"],
-			yAxis: ["Sales"],
-			tooltip: ["Category"],
+		await waitFor(() => {
+			const option = result.current.data.option as Record<
+				string,
+				unknown
+			>;
+			expect(option.tooltip).toEqual({ trigger: "axis" });
+			expect(option.legend).toEqual({ show: true });
+			expect((option._state as Record<string, unknown>).fields).toEqual({
+				xAxis: ["Month"],
+				yAxis: ["Sales"],
+				tooltip: ["Category"],
+			});
 		});
 	});
 
-	it("should handle chart styling correctly", () => {
-		const { container } = render(<VisualizationBlock id="lineChart" />, {
-			blocks: mockLineChartBlocks,
-		});
-
-		const lineChart = container.querySelector("[data-block='lineChart']");
-		expect(lineChart).toHaveStyle({
-			width: "450px",
-			height: "350px",
-		});
-	});
-
-	it("should show error message for invalid JSON string", () => {
+	it("should handle chart styling correctly", async () => {
 		const { container } = render(
-			<VisualizationBlock id="lineChartInvalidJson" />,
+			<VisualizationBlock id={mockLineChartBlocks.lineChart.id} />,
 			{
 				blocks: mockLineChartBlocks,
 			},
 		);
 
-		expect(
-			screen.getByText("There was an issue parsing your JSON."),
-		).toBeInTheDocument();
-		const lineChart = container.querySelector(
-			"[data-block='lineChartInvalidJson']",
+		await waitFor(() => {
+			const lineChart = container.querySelector(
+				"[data-block='lineChart']",
+			);
+			expect(lineChart).toHaveStyle({
+				width: "450px",
+				height: "350px",
+			});
+		});
+	});
+
+	it("should show error message for invalid JSON string", async () => {
+		const { container } = render(
+			<VisualizationBlock
+				id={mockLineChartBlocks.lineChartInvalidJson.id}
+			/>,
+			{
+				blocks: mockLineChartBlocks,
+			},
 		);
-		expect(lineChart).toBeInTheDocument();
+
+		await waitFor(() => {
+			expect(
+				screen.getByText("There was an issue parsing your JSON."),
+			).toBeInTheDocument();
+			const lineChart = container.querySelector(
+				"[data-block='lineChartInvalidJson']",
+			);
+			expect(lineChart).toBeInTheDocument();
+		});
 	});
 });
