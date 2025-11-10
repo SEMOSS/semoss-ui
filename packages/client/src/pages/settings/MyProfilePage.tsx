@@ -276,10 +276,10 @@ export const MyProfilePage = () => {
 					message: "Error editing profile information",
 				});
 			}
-		} catch (e) {
+		} catch (_e) {
 			notification.add({
 				color: "error",
-				message: String(e),
+				message: "Error editing profile information",
 			});
 		}
 	};
@@ -561,7 +561,17 @@ export const MyProfilePage = () => {
 										variant="contained"
 										color="primary"
 										type="submit"
-										disabled={!isChanged}
+										disabled={
+											!isChanged ||
+											!(
+												(watchedName ?? "")
+													.toString()
+													.trim().length > 0 &&
+												(watchedEmail ?? "")
+													.toString()
+													.trim().length > 0
+											)
+										}
 										data-testid={"myProfilePage-save-btn"}
 									>
 										Save
