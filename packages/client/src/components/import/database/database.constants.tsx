@@ -407,7 +407,7 @@ export const DATABASE_CONNECTION = {
 	Connections: [
 		{
 			name: "Aster",
-			disable: false,
+			disable: true,
 			icon: ASTER,
 			fields: [
 				{
