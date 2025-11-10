@@ -1,5 +1,6 @@
 // src/test-setup.ts
 import { vi } from "vitest";
+import "@testing-library/jest-dom";
 
 // Mock vega packages to avoid ESM issues in tests
 vi.mock("vega-embed", () => ({
@@ -53,4 +54,5 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
 	transform: vi.fn(),
 	rect: vi.fn(),
 	clip: vi.fn(),
+	// biome-ignore lint/suspicious/noExplicitAny: <needed for testing>
 })) as any;
