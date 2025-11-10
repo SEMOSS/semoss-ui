@@ -127,7 +127,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 		if (updatedSelectedMCPMap[mcp.id]) {
 			delete updatedSelectedMCPMap[mcp.id];
 		} else {
-			updatedSelectedMCPMap[mcp.id] = mcpMap[mcp.id];
+			updatedSelectedMCPMap[mcp.id] = mcp;
 		}
 		setSelectedMCPMap(updatedSelectedMCPMap);
 	};
