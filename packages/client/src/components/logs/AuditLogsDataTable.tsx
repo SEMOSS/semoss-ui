@@ -2,38 +2,33 @@ import {
 	Cancel,
 	CheckCircle as CheckCircleIcon,
 	Clear as ClearIcon,
-	FilterList as FilterListIcon,
 	Search as SearchIcon,
 } from "@mui/icons-material";
-import React, { useMemo, useState } from "react";
+import type React from "react";
+import { useMemo, useState } from "react";
 import {
-	Badge,
 	Box,
-	Button,
-	Checkbox,
-	Chip,
 	Drawer,
 	IconButton,
 	InputAdornment,
-	List,
 	Paper,
-	Popover,
 	Stack,
 	styled,
 	Table,
 	TextField,
 	Typography,
+	useTheme,
 } from "@semoss/ui";
 import type { EventData } from "@/types";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 
-const Container = styled(Paper)({
+const Container = styled(Paper)(({ theme }) => ({
 	padding: 0,
-	backgroundColor: "#fff",
+	backgroundColor: theme.palette.common.white,
 	borderRadius: 8,
-	border: "1px solid #e0e0e0",
+	border: `1px solid ${theme.palette.divider}`,
 	marginTop: 16,
-});
+}));
 
 const Header = styled(Box)({
 	display: "flex",
@@ -42,90 +37,81 @@ const Header = styled(Box)({
 	padding: 16,
 });
 
-const StyledTitle = styled(Typography)({
+const StyledTitle = styled(Typography)(({ theme }) => ({
 	fontWeight: 600,
-	color: "#333",
+	color: theme.palette.text.primary,
 	fontSize: "18px",
-});
+}));
 
-const SearchSection = styled(Box)({
+const SearchSection = styled(Box)(({ theme }) => ({
 	padding: "16px",
-	borderBottom: "1px solid #e0e0e0",
-	backgroundColor: "#f8f9fa",
+	borderBottom: `1px solid ${theme.palette.divider}`,
 	display: "flex",
 	alignItems: "center",
 	gap: "16px",
-});
+}));
 
-const SearchField = styled(TextField)({
+const SearchField = styled(TextField)(({ theme }) => ({
 	minWidth: "400px",
-	flex: "1 1 400px",
 	"& .MuiOutlinedInput-root": {
-		backgroundColor: "#fff",
+		backgroundColor: theme.palette.common.white,
 		height: "40px",
 	},
-});
+}));
 
-const FilterChipsContainer = styled(Box)({
-	display: "flex",
-	gap: "8px",
-	alignItems: "center",
-	flexWrap: "wrap",
-});
-
-const ResultsInfo = styled(Box)({
+const ResultsInfo = styled(Box)(({ theme }) => ({
 	padding: "8px 16px",
-	backgroundColor: "#f0f4f8",
-	borderBottom: "1px solid #e0e0e0",
+	backgroundColor: theme.palette.primary.hover,
+	borderBottom: `1px solid ${theme.palette.divider}`,
 	display: "flex",
 	justifyContent: "space-between",
 	alignItems: "center",
-});
+}));
 
-const StyledTableContainer = styled(Table.Container)({
-	backgroundColor: "#fff",
+const StyledTableContainer = styled(Table.Container)(({ theme }) => ({
+	backgroundColor: theme.palette.common.white,
 	padding: "16px",
 	"& .MuiTable-root": {
 		borderCollapse: "separate",
 		borderSpacing: 0,
 	},
-});
+}));
 
-const StyledTableHead = styled(Table.Head)({
+const StyledTableHead = styled(Table.Head)(({ theme }) => ({
 	"& .MuiTableCell-head": {
-		backgroundColor: "#f5f9fe",
+		backgroundColor: theme.palette.primary.hover,
 		fontWeight: 600,
-		color: "#0471F0",
+		color: theme.palette.primary.main,
 		padding: "6px 16px",
-		borderBottom: "1px solid #e0e0e0",
+		borderBottom: `1px solid ${theme.palette.divider}`,
 		zIndex: 0,
 	},
-});
+}));
 
-const StyledTableRow = styled(Table.Row)({
+const StyledTableRow = styled(Table.Row)(({ theme }) => ({
 	cursor: "pointer",
 	transition: "background-color 0.15s ease",
 	"&:hover": {
-		backgroundColor: "#f8f9fa",
+		backgroundColor: theme.palette.primary.hover,
 	},
 	"& .MuiTableCell-root": {
-		borderBottom: "1px solid #f0f0f0",
+		borderBottom: `1px solid ${theme.palette.divider}`,
 		padding: "12px 16px",
 	},
-});
+}));
 
-const StyledTableCell = styled(Table.Cell)({
+const StyledTableCell = styled(Table.Cell)(({ theme }) => ({
 	padding: "12px 16px",
 	fontSize: "14px",
-	color: "#333",
+	color: theme.palette.text.primary,
 	verticalAlign: "middle",
 	width: "fit-content",
 	maxWidth: "fit-content",
-	"&:first-of-type, &:nth-of-type(2)": {
+	"&:nth-of-type(3), &:nth-of-type(4)": {
 		width: "15%",
 		maxWidth: "15%",
 	},
-});
+}));
 
 const HeaderCellContent = styled(Box)({
 	display: "flex",
@@ -135,510 +121,60 @@ const HeaderCellContent = styled(Box)({
 	gap: "8px",
 });
 
-const FilterPopover = styled(Popover)({
-	"& .MuiPaper-root": {
-		padding: 0,
-		boxShadow: "0 8px 24px rgba(0,0,0,0.15)",
-		borderRadius: "8px",
-		border: "1px solid #e0e0e0",
-		minWidth: "250px",
-	},
-});
-
-const FilterPopoverContent = styled(Box)({
-	maxHeight: "300px",
-	overflowY: "auto",
-});
-
-const FilterSection = styled(Box)({
-	padding: "0",
-});
-
-const FilterOptionsList = styled(List)({
-	padding: 0,
-	margin: 0,
-});
-
-const FilterListItem = styled(List.Item)({
-	padding: 0,
-	margin: 0,
-});
-
-const StyledListItemButton = styled(List.ItemButton)({
-	padding: "0px 16px",
-	borderRadius: 0,
-	margin: 0,
+const PaginationContainer = styled(Box)(({ theme }) => ({
 	display: "flex",
+	justifyContent: "flex-end",
 	alignItems: "center",
-	"&:hover": {
-		backgroundColor: "#f5f5f5",
-	},
-	"& .MuiListItemText-primary": {
-		fontSize: "14px",
-		color: "#333",
-		fontWeight: 400,
-	},
-});
-
-const SelectAllListItemButton = styled(List.ItemButton)({
-	padding: "0px 16px",
-	borderRadius: 0,
-	margin: 0,
-	display: "flex",
-	alignItems: "center",
-	"&:hover": {
-		backgroundColor: "#f5f5f5",
-	},
-	"& .MuiListItemText-primary": {
-		fontSize: "14px",
-		color: "#333",
-	},
-});
-
-const StyledCheckbox = styled(Checkbox)({
-	"& .MuiSvgIcon-root": {
-		fontSize: "20px",
-	},
-});
-
-const FilterActions = styled(Box)({
-	padding: "8px 16px",
-	borderTop: "1px solid #e0e0e0",
-	backgroundColor: "#fafafa",
-	display: "flex",
-	justifyContent: "space-between",
-	gap: "12px",
-});
-
-const FilterActionButton = styled(Button)({
-	flex: 1,
-	height: "24px",
-	fontSize: "14px",
-	fontWeight: 400,
-	textTransform: "none",
-});
-
-interface FilterState {
-	engineType: string[];
-	engineName: string[];
-	status: string[];
-	latencyRange: string[];
-	tokenRange: string[];
-}
-
-interface PopoverState {
-	anchorEl: HTMLElement | null;
-	column: string | null;
-}
+	borderTop: `1px solid ${theme.palette.divider}`,
+	backgroundColor: theme.palette.common.white,
+}));
 
 interface AuditLogsDataTableProps {
 	logs: EventData[];
+	totalCount?: number;
+	page: number;
+	rowsPerPage: number;
+	onPaginationChange: (page: number, rowsPerPage: number) => void;
 }
 
 const TimeDateFormatter = (timeStamp: string | number) => {
 	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split('.')[0];
-    const date = formattedDate.split("T")[0];
-    const time = formattedDate.split("T")[1];
-    return { date, time };
+	const formattedDate = tempDate.toISOString().split(".")[0];
+	const date = formattedDate.split("T")[0];
+	const time = formattedDate.split("T")[1];
+	return { date, time };
 };
 
 export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 	logs = [],
+	totalCount = 0,
+	page,
+	rowsPerPage,
+	onPaginationChange,
 }) => {
+	const theme = useTheme();
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
 	const [drawerOpen, setDrawerOpen] = useState(false);
-
 	const [searchQuery, setSearchQuery] = useState("");
-	const [appliedFilters, setAppliedFilters] = useState<FilterState>({
-		engineType: [],
-		engineName: [],
-		status: [],
-		latencyRange: [],
-		tokenRange: [],
-	});
-
-	const [tempFilters, setTempFilters] = useState<FilterState>({
-		engineType: [],
-		engineName: [],
-		status: [],
-		latencyRange: [],
-		tokenRange: [],
-	});
-
-	const [popoverState, setPopoverState] = useState<PopoverState>({
-		anchorEl: null,
-		column: null,
-	});
-
-	const filterOptions = useMemo(() => {
-		const engineType = [
-			...new Set(logs.map((log) => log.engineType)),
-		].filter(Boolean);
-		const engineName = [
-			...new Set(logs.map((log) => log.engineName)),
-		].filter(Boolean);
-		const status = [...new Set(logs.map((log) => log.status))].filter(
-			Boolean,
-		);
-
-		const generateDynamicLatencyRanges = () => {
-			const latencies = logs
-				.map((log) => Number(log.latency))
-				.filter((latency) => !Number.isNaN(latency) && latency > 0)
-				.sort((a, b) => a - b);
-
-			if (!latencies.length) {
-				return [
-					{ label: "Fast (≤ 5s)", value: "0-5000" },
-					{ label: "Medium (5-15s)", value: "5000-15000" },
-					{ label: "Slow (> 15s)", value: "15000-999999" },
-				];
-			}
-
-			const minLatency = latencies[0];
-			const maxLatency = latencies[latencies.length - 1];
-
-			if (minLatency === maxLatency) {
-				const latencyInSeconds = (minLatency / 1000).toFixed(1);
-				return [
-					{
-						label: `${latencyInSeconds}s`,
-						value: `${minLatency}-${minLatency}`,
-					},
-				];
-			}
-
-			const range = maxLatency - minLatency;
-			const bucketSize = Math.ceil(range / 3);
-
-			const bucket1End = minLatency + bucketSize;
-			const bucket2End = minLatency + bucketSize * 2;
-
-			return [
-				{
-					label: `Fast (≤ ${(bucket1End / 1000).toFixed(1)}s)`,
-					value: `${minLatency}-${bucket1End}`,
-				},
-				{
-					label: `Medium (${(bucket1End + 1) / 1000 < 1 ? `${Math.round(bucket1End + 1)}ms` : ((bucket1End + 1) / 1000).toFixed(1)}s - ${(bucket2End / 1000).toFixed(1)}s)`,
-					value: `${bucket1End + 1}-${bucket2End}`,
-				},
-				{
-					label: `Slow (> ${(bucket2End / 1000).toFixed(1)}s)`,
-					value: `${bucket2End + 1}-${maxLatency}`,
-				},
-			];
-		};
-
-		const generateDynamicTokenRanges = () => {
-			const tokens = logs
-				.map((log) => parseInt(log.tokens) || 0)
-				.filter((token) => token > 0)
-				.sort((a, b) => a - b);
-
-			if (!tokens.length) {
-				return [
-					{ label: "Short (< 10)", value: "0-10" },
-					{ label: "Medium (10-50)", value: "10-50" },
-					{ label: "Long (> 50)", value: "50-999999" },
-				];
-			}
-
-			const minTokens = tokens[0];
-			const maxTokens = tokens[tokens.length - 1];
-
-			if (minTokens === maxTokens) {
-				return [
-					{
-						label: `${minTokens} tokens`,
-						value: `${minTokens}-${minTokens}`,
-					},
-				];
-			}
-
-			const range = maxTokens - minTokens;
-			const bucketSize = Math.ceil(range / 3);
-
-			const bucket1End = minTokens + bucketSize;
-			const bucket2End = minTokens + bucketSize * 2;
-
-			return [
-				{
-					label: `Short (≤ ${bucket1End})`,
-					value: `${minTokens}-${bucket1End}`,
-				},
-				{
-					label: `Medium (${bucket1End + 1} - ${bucket2End})`,
-					value: `${bucket1End + 1}-${bucket2End}`,
-				},
-				{
-					label: `Long (> ${bucket2End})`,
-					value: `${bucket2End + 1}-${maxTokens}`,
-				},
-			];
-		};
-
-		return {
-			engineType,
-			engineName,
-			status,
-			latencyRange: generateDynamicLatencyRanges(),
-			tokenRange: generateDynamicTokenRanges(),
-		};
-	}, [logs]);
 
 	const filteredLogs = useMemo(() => {
-		let filtered = logs;
+		let filtered = [...logs];
 
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase().trim();
 			filtered = filtered.filter(
 				(log) =>
-					log.payload?.toLowerCase().includes(query) ||
-					log.response?.toLowerCase().includes(query) ||
-					log.engineName?.toLowerCase().includes(query),
-			);
-		}
-
-		if (appliedFilters.engineType.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.engineType.includes(log.engineType),
-			);
-		}
-
-		if (appliedFilters.status.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.status.includes(log.status),
-			);
-		}
-
-		if (appliedFilters.latencyRange.length > 0) {
-			filtered = filtered.filter((log) => {
-				const logLatency = Number(log.latency);
-				return appliedFilters.latencyRange.some((range) => {
-					const [min, max] = range.split("-").map(Number);
-					return logLatency >= min && logLatency <= max;
-				});
-			});
-		}
-
-		if (appliedFilters.tokenRange.length > 0) {
-			filtered = filtered.filter((log) => {
-				const logTokens = parseInt(log.tokens) || 0;
-				return appliedFilters.tokenRange.some((range) => {
-					const [min, max] = range.split("-").map(Number);
-					return logTokens >= min && logTokens <= max;
-				});
-			});
-		}
-
-		if (appliedFilters.engineName.length > 0) {
-			filtered = filtered.filter((log) =>
-				appliedFilters.engineName.includes(log.engineName),
+					log.engineName?.toLowerCase().includes(query) ||
+					log.engineType?.toLowerCase().includes(query) ||
+					log.userId?.toLowerCase().includes(query) ||
+					log.sessionId?.toLowerCase().includes(query) ||
+					log.latency?.toString().toLowerCase().includes(query) ||
+					log.tokens?.toString().toLowerCase().includes(query),
 			);
 		}
 
 		return filtered;
-	}, [logs, searchQuery, appliedFilters]);
-
-	const handleFilterClick = (
-		event: React.MouseEvent<unknown, MouseEvent>,
-		column: string,
-	) => {
-		event.stopPropagation();
-		setTempFilters({ ...appliedFilters });
-		setPopoverState({
-			anchorEl: event.currentTarget as HTMLElement,
-			column,
-		});
-	};
-
-	const handlePopoverClose = () => {
-		setPopoverState({
-			anchorEl: null,
-			column: null,
-		});
-		setTempFilters({ ...appliedFilters });
-	};
-
-	const handleApplyFilters = () => {
-		setAppliedFilters({ ...tempFilters });
-		handlePopoverClose();
-	};
-
-	const handleClearAllFilters = () => {
-		const clearedFilters = {
-			engineType: [],
-			engineName: [],
-			status: [],
-			latencyRange: [],
-			tokenRange: [],
-		};
-		setTempFilters(clearedFilters);
-	};
-
-	const handleMultiSelectFilter = (
-		filterType: keyof FilterState,
-		value: string,
-	) => {
-		setTempFilters((prev) => ({
-			...prev,
-			[filterType]: prev[filterType].includes(value)
-				? prev[filterType].filter((item) => item !== value)
-				: [...prev[filterType], value],
-		}));
-	};
-
-	const handleSelectAll = (
-		filterType: keyof FilterState,
-		allOptions: string[],
-	) => {
-		setTempFilters((prev) => ({
-			...prev,
-			[filterType]:
-				tempFilters[filterType].length === allOptions.length
-					? []
-					: [...allOptions],
-		}));
-	};
-
-	const clearFilters = () => {
-		setSearchQuery("");
-		setAppliedFilters({
-			engineType: [],
-			engineName: [],
-			status: [],
-			latencyRange: [],
-			tokenRange: [],
-		});
-		setTempFilters({
-			engineType: [],
-			engineName: [],
-			status: [],
-			latencyRange: [],
-			tokenRange: [],
-		});
-	};
-
-	const getActiveFiltersCount = (column?: string) => {
-		if (column) {
-			return appliedFilters[column].length;
-		}
-		return (
-			appliedFilters.engineType.length +
-			appliedFilters.engineName.length +
-			appliedFilters.latencyRange.length +
-			appliedFilters.tokenRange.length +
-			appliedFilters.status.length +
-			(searchQuery ? 1 : 0)
-		);
-	};
-
-	const renderFilterPopover = () => {
-		const { column } = popoverState;
-		if (!column) return null;
-
-		const renderFilterContent = () => {
-			const optionValues = filterOptions[column];
-			const allSelected =
-				tempFilters[column]?.length === optionValues?.length;
-			return (
-				<FilterOptionsList>
-					<FilterListItem>
-						<SelectAllListItemButton
-							onClick={() =>
-								handleSelectAll(
-									column as keyof FilterState,
-									optionValues.map((option) =>
-										typeof option === "object"
-											? option.value
-											: option,
-									),
-								)
-							}
-						>
-							<StyledCheckbox
-								checked={allSelected}
-								checkboxProps={{
-									indeterminate:
-										tempFilters[column]?.length > 0 &&
-										!allSelected,
-								}}
-							/>
-							<List.ItemText
-								primary="Select All"
-								primaryTypographyProps={{
-									fontSize: "14px",
-								}}
-							/>
-						</SelectAllListItemButton>
-					</FilterListItem>
-					{optionValues.map((optionValue) => {
-						const option =
-							typeof optionValue === "object"
-								? optionValue
-								: { value: optionValue, label: optionValue };
-
-						return (
-							<FilterListItem key={option.value}>
-								<StyledListItemButton
-									onClick={() =>
-										handleMultiSelectFilter(
-											column as keyof FilterState,
-											option.value,
-										)
-									}
-								>
-									<StyledCheckbox
-										checked={tempFilters[column].includes(
-											option.value,
-										)}
-									/>
-									<List.ItemText
-										primary={option.label}
-										primaryTypographyProps={{
-											fontSize: "14px",
-											fontWeight: tempFilters[
-												column
-											].includes(option.value)
-												? 500
-												: 400,
-										}}
-									/>
-								</StyledListItemButton>
-							</FilterListItem>
-						);
-					})}
-				</FilterOptionsList>
-			);
-		};
-
-		return (
-			<>
-				<FilterPopoverContent>
-					<FilterSection>{renderFilterContent()}</FilterSection>
-				</FilterPopoverContent>
-
-				<FilterActions>
-					<FilterActionButton
-						variant="text"
-						onClick={handleClearAllFilters}
-						color="inherit"
-					>
-						Clear All
-					</FilterActionButton>
-					<FilterActionButton
-						variant="contained"
-						onClick={handleApplyFilters}
-						color="primary"
-					>
-						Apply
-					</FilterActionButton>
-				</FilterActions>
-			</>
-		);
-	};
+	}, [logs, searchQuery]);
 
 	const handleRowClick = (event: EventData) => {
 		setSelectedEvent(event);
@@ -647,12 +183,33 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 
 	const handleDrawerClose = () => {
 		setDrawerOpen(false);
-		setSelectedEvent(null);
+		setTimeout(() => {
+			setSelectedEvent(null);
+		}, 300);
 	};
 
-	const ellipsed = (text: string | null) => {
-		return text?.length > 50 ? `${text.substring(0, 47)}...` : text;
+	const handleChangePage = (event: unknown, newPage: number) => {
+		if (onPaginationChange) {
+			onPaginationChange(newPage, rowsPerPage);
+		}
 	};
+
+	const handleChangeRowsPerPage = (
+		event: React.ChangeEvent<HTMLInputElement>,
+	) => {
+		const newRowsPerPage = parseInt(event.target.value, 10);
+		if (onPaginationChange) {
+			onPaginationChange(0, newRowsPerPage);
+		}
+	};
+
+	const ellipsed = (text: string | null, maxLength = 50) => {
+		return text?.length > maxLength
+			? `${text.substring(0, maxLength - 3)}...`
+			: text;
+	};
+
+	const displayedLogs = filteredLogs;
 
 	if (!logs || logs.length === 0) {
 		return (
@@ -678,9 +235,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					<StyledTitle variant="h6">
 						Prompt & Response Timeline
 					</StyledTitle>
-				</Header>
-
-				<SearchSection>
 					<SearchField
 						placeholder="Search prompts, responses..."
 						value={searchQuery}
@@ -688,7 +242,11 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						InputProps={{
 							startAdornment: (
 								<InputAdornment position="start">
-									<SearchIcon sx={{ color: "#666" }} />
+									<SearchIcon
+										sx={{
+											color: theme.palette.text.secondary,
+										}}
+									/>
 								</InputAdornment>
 							),
 							endAdornment: searchQuery && (
@@ -703,56 +261,7 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 							),
 						}}
 					/>
-					{getActiveFiltersCount() > 0 && (
-						<FilterChipsContainer>
-							{Object.entries(appliedFilters).map(
-								([key, values]) => (
-									<React.Fragment key={key}>
-										{values.length > 0 && (
-											<Chip
-												label={`${
-													key
-														.slice(0, 1)
-														?.toUpperCase() +
-													key.slice(1)
-												}: ${values.join(", ")}`}
-												size="small"
-												onDelete={() =>
-													setAppliedFilters(
-														(prev) => ({
-															...prev,
-															[key]: [],
-														}),
-													)
-												}
-												color="primary"
-												variant="outlined"
-											/>
-										)}
-									</React.Fragment>
-								),
-							)}
-							{searchQuery && (
-								<Chip
-									label={`Search: "${searchQuery}"`}
-									size="small"
-									onDelete={() => setSearchQuery("")}
-									color="primary"
-									variant="outlined"
-								/>
-							)}
-							<Button
-								variant="outlined"
-								size="small"
-								onClick={clearFilters}
-								startIcon={<ClearIcon />}
-							>
-								Clear All
-							</Button>
-						</FilterChipsContainer>
-					)}
-				</SearchSection>
-
+				</Header>
 				<StyledTableContainer>
 					<Table stickyHeader>
 						<StyledTableHead>
@@ -760,7 +269,21 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 								<Table.Cell>
 									<HeaderCellContent>
 										<Typography variant="subtitle2">
-											Prompt
+											User Id
+										</Typography>
+									</HeaderCellContent>
+								</Table.Cell>
+								<Table.Cell>
+									<HeaderCellContent>
+										<Typography variant="subtitle2">
+											Session Id
+										</Typography>
+									</HeaderCellContent>
+								</Table.Cell>
+								<Table.Cell>
+									<HeaderCellContent>
+										<Typography variant="subtitle2">
+											Request
 										</Typography>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -781,22 +304,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Engine Type
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"engineType",
-												)}
-											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"engineType",
-														)
-													}
-												/>
-											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -810,22 +317,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Engine Name
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"engineName",
-												)}
-											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"engineName",
-														)
-													}
-												/>
-											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -839,22 +330,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Latency
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"latencyRange",
-												)}
-											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"latencyRange",
-														)
-													}
-												/>
-											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -868,22 +343,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Tokens
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"tokenRange",
-												)}
-											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"tokenRange",
-														)
-													}
-												/>
-											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
@@ -904,35 +363,34 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 											<Typography variant="subtitle2">
 												Status
 											</Typography>
-											<Badge
-												color="primary"
-												badgeContent={getActiveFiltersCount(
-													"status",
-												)}
-											>
-												<FilterListIcon
-													fontSize="small"
-													onClick={(e) =>
-														handleFilterClick(
-															e,
-															"status",
-														)
-													}
-												/>
-											</Badge>
 										</Stack>
 									</HeaderCellContent>
 								</Table.Cell>
 							</Table.Row>
 						</StyledTableHead>
-
 						<Table.Body>
-							{filteredLogs?.map((event, index) => (
+							{displayedLogs?.map((event, index) => (
 								<StyledTableRow
 									key={`Log-${event.endTime}`}
 									data-testid={`log-row-${index}`}
 									onClick={() => handleRowClick(event)}
 								>
+									<StyledTableCell>
+										<Typography
+											variant="body2"
+											title={event.userId}
+										>
+											{ellipsed(event.userId, 23)}
+										</Typography>
+									</StyledTableCell>
+									<StyledTableCell>
+										<Typography
+											variant="body2"
+											title={event.sessionId}
+										>
+											{ellipsed(event.sessionId, 23)}
+										</Typography>
+									</StyledTableCell>
 									<StyledTableCell>
 										<Typography
 											variant="body2"
@@ -989,15 +447,23 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 						</Table.Body>
 					</Table>
 				</StyledTableContainer>
+
+				<PaginationContainer>
+					<Table.Pagination
+						// component="div"
+						count={totalCount}
+						page={page}
+						onPageChange={handleChangePage}
+						rowsPerPage={rowsPerPage}
+						onRowsPerPageChange={handleChangeRowsPerPage}
+						rowsPerPageOptions={[5, 10, 25, 50]}
+					/>
+				</PaginationContainer>
 			</Container>
 
 			<ResultsInfo>
-				<Typography variant="body2" color="#666">
-					Showing {filteredLogs.length} of {logs.length} results
-					{getActiveFiltersCount() > 0 &&
-						` (${getActiveFiltersCount()} filter${
-							getActiveFiltersCount() > 1 ? "s" : ""
-						} applied)`}
+				<Typography variant="body2" color="textSecondary">
+					Showing {displayedLogs.length} of {totalCount} results
 				</Typography>
 				{filteredLogs.length === 0 && logs.length > 0 && (
 					<Typography variant="body2" color="error">
@@ -1005,23 +471,6 @@ export const AuditLogsDataTable: React.FC<AuditLogsDataTableProps> = ({
 					</Typography>
 				)}
 			</ResultsInfo>
-
-			<FilterPopover
-				id="filter-popover"
-				open={Boolean(popoverState.anchorEl)}
-				anchorEl={popoverState.anchorEl}
-				onClose={handlePopoverClose}
-				anchorOrigin={{
-					vertical: "bottom",
-					horizontal: "left",
-				}}
-				transformOrigin={{
-					vertical: "top",
-					horizontal: "left",
-				}}
-			>
-				{renderFilterPopover()}
-			</FilterPopover>
 
 			<Drawer
 				anchor="right"
