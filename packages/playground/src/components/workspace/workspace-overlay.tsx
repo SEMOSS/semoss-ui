@@ -312,7 +312,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 							Cancel
 						</Button>
 						<Button
-							disabled={isLoading || !name || !instructions}
+							disabled={isLoading || !name}
 							data-testid="newWorkspaceModal-create-btn"
 							onClick={() => {
 								onSubmit();
