@@ -1,25 +1,20 @@
-import { ComputerIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	H4,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
-	Lead,
 	Muted,
 	ScrollArea,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { WorkspaceCard } from "@/components";
-import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
+import workspaceGraphic from "@/assets/img/workspace-graphic.png";
+import { WorkspaceCard, WorkspaceOverlay } from "@/components";
 import { useChat } from "@/hooks";
 import type { App } from "@/types";
 
@@ -83,30 +78,36 @@ export const WorkspacePage = observer(() => {
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden px-2">
-			<div className="mx-auto w-full max-w-2xl">
-				<H4 className="mt-16">Discover Workspaces</H4>
-				<div className="mt-4 flex flex-row">
-					<Lead className="flex-1 text-base">
-						Explore and build custom AI workspaces designed to meet
-						your unique needs and integrate seamlessly into your
-						processes.
-					</Lead>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<Button
-								onClick={() => {
-									setWorkspaceId(null);
-									setIsWorkspaceModalOpen(true);
-								}}
-							>
-								<ComputerIcon />
-								Build
-							</Button>
-						</TooltipTrigger>
-						<TooltipContent>Create a new workspace</TooltipContent>
-					</Tooltip>
+			<div className="mx-auto flex w-full max-w-3xl flex-col gap-12 px-4 pt-8 pb-4">
+				<div className="flex w-full rounded-lg bg-sky-100">
+					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
+						<div className="font-medium text-blue-700 text-xl leading-normal">
+							Welcome to Workspace Manager
+						</div>
+						<div className="font-normal text-base text-blue-700 leading-normal">
+							Explore custom AI workspaces designed to meet your
+							unique needs and integrate seamlessly into your
+							processes.
+						</div>
+						<Button
+							onClick={() => {
+								setWorkspaceId(null);
+								setIsWorkspaceModalOpen(true);
+							}}
+						>
+							Create a Workspace
+						</Button>
+					</div>
+					<div className="relative w-[351px] shrink-0 overflow-hidden rounded-r-lg">
+						<img
+							src={workspaceGraphic}
+							alt="Workspace illustration"
+							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full object-cover"
+						/>
+					</div>
 				</div>
-				<InputGroup className="mt-12">
+
+				<InputGroup>
 					<InputGroupInput
 						placeholder="Search Workspaces"
 						value={search}
@@ -116,15 +117,14 @@ export const WorkspacePage = observer(() => {
 						<SearchIcon />
 					</InputGroupAddon>
 					<InputGroupAddon align="inline-end">
-						{listWorkspaces.status === "LOADING" ? (
+						{isLoading ? (
 							<Spinner />
 						) : (
 							`${listWorkspaces.data.length} results`
 						)}
 					</InputGroupAddon>
 				</InputGroup>
-			</div>
-			<div className="mx-auto w-full max-w-5xl flex-1 pt-10">
+
 				<ScrollArea className="h-full w-full">
 					{isLoading ? (
 						<div className="flex items-center justify-center py-12">
