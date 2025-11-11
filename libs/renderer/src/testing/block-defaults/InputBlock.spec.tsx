@@ -1,6 +1,4 @@
 import { expect, test } from "vitest";
-import "@testing-library/jest-dom";
-
 import { InputBlock } from "../../components/block-defaults/input-block/InputBlock";
 import { render, screen } from "../utils/index";
 
@@ -100,18 +98,24 @@ const blocks = {
 
 describe("input block", () => {
 	test("renders correctly with mocked provider", async () => {
-		const { container } = render(<InputBlock id="string-input" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<InputBlock id={blocks["string-input"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("[data-block='string-input']");
 		expect(element).toBeInTheDocument();
 	});
 
 	test("renders correct label, type, and rows", async () => {
-		const { container } = render(<InputBlock id="string-input" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<InputBlock id={blocks["string-input"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("input");
 		const label = screen.getByLabelText("Example Input");
@@ -123,9 +127,12 @@ describe("input block", () => {
 	});
 
 	test("renders correct rows and value with multiline input", async () => {
-		const { container } = render(<InputBlock id="multiLine-input" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<InputBlock id={blocks["multiLine-input"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector(
 			"[data-block='multiLine-input']",
@@ -140,9 +147,12 @@ describe("input block", () => {
 	});
 
 	test("does not display multiline if input does not match row number", async () => {
-		const { container } = render(<InputBlock id="rowValue-input" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<InputBlock id={blocks["rowValue-input"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector(
 			"[data-block='rowValue-input']",
@@ -157,9 +167,12 @@ describe("input block", () => {
 	});
 
 	test("renders input with number type", async () => {
-		const { container } = render(<InputBlock id="number-input" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<InputBlock id={blocks["number-input"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const input = container.querySelector("[data-block='number-input']");
 
@@ -173,9 +186,12 @@ describe("input block", () => {
 	});
 
 	test("does not display input with mismatch value and type", async () => {
-		const { container } = render(<InputBlock id="valueType-input" />, {
-			blocks: blocks,
-		});
+		const { container } = render(
+			<InputBlock id={blocks["valueType-input"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
 
 		const element = container.querySelector("input");
 		const input = screen.getByRole("spinbutton");

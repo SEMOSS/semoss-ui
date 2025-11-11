@@ -1,0 +1,105 @@
+/* Chat composer container */
+.chat-composer {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 2px;
+}
+
+/* Wrapper (Copilot-like) */
+.chat-composer-textarea-wrapper {
+    position: relative;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 4px;
+    background: #2d2f31;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
+    transition: border-color .15s, box-shadow .15s, background .15s;
+}
+
+.chat-composer-textarea-wrapper:focus-within {
+    box-shadow: 0 0 0 1px #4a4d4f, 0 0 0 3px rgba(0, 0, 0, 0.35);
+    background: #313335;
+}
+
+.chat-composer-textarea {
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: #e0e0e0;
+    font-size: 13px;
+    line-height: 1.4;
+    max-height: 110px;
+}
+
+.chat-composer-placeholder {
+    position: absolute;
+    top: 6px;
+    left: 8px;
+    bottom: 6px;
+    font-size: 13px;
+    color: #888;
+    pointer-events: none;
+    user-select: none;
+    background: transparent;
+}
+
+.chat-composer-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    padding: 0 4px;
+}
+
+.chat-composer-toolbar select,
+.chat-composer-toolbar button {
+    background: #2d2f31;
+    color: #e0e0e0;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    padding: 3px 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07);
+    transition: background .15s;
+}
+
+.chat-composer-toolbar button {
+    cursor: pointer;
+}
+
+.chat-composer-toolbar button:hover:not(:disabled),
+.chat-composer-toolbar select:hover {
+    background: #36383a;
+}
+
+.chat-composer-toolbar button:active:not(:disabled),
+.chat-composer-toolbar select:active {
+    background: #404244;
+}
+
+.chat-composer-toolbar button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.chat-composer-send {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.chat-icon-btn {
+    padding: 2px 6px;
+    line-height: 1;
+}
+
+.chat-icon-btn svg {
+    width: 14px;
+    height: 14px;
+}

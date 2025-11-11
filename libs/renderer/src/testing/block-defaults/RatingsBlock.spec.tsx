@@ -1,6 +1,9 @@
-import { fireEvent } from "@testing-library/react";
-import { RatingsBlock } from "@/components/block-defaults/ratings-block";
-import { render, screen } from "../utils";
+import {
+	RatingsBlock,
+	type RatingsBlockDef,
+} from "../../components/block-defaults/ratings-block";
+import { useBlock } from "../../hooks";
+import { render, renderHook } from "../utils";
 
 const blocks = {
 	ratings: {
@@ -37,35 +40,37 @@ const blocks = {
 
 describe("ratings block", async () => {
 	it("should render ratings block", async () => {
-		// const { container } = await render(<RatingsBlock id="ratings"/>, {
-		//     blocks: blocks,
-		// });
-		// const element = container.querySelector("[data-block='ratings']");
-		// expect(element).toBeInTheDocument();
+		const { container } = await render(
+			<RatingsBlock id={blocks.ratings.id} />,
+			{
+				blocks: blocks,
+			},
+		);
+		const element = container.querySelector("[data-block='ratings']");
+		expect(element).toBeInTheDocument();
 	});
 
-	// it("should change rating when clicked", async () => {
-	//     const { container } = await render(<RatingsBlock id="ratings"/>, {
-	//         blocks: blocks,
-	//     });
+	it("should have value", async () => {
+		const { result } = renderHook(
+			() => useBlock<RatingsBlockDef>("ratings"),
+			{ blocks, renderEngineId: "ratings" },
+		);
 
-	//     const oneStar = screen.getByText("1 Star").parentElement;
-	//     const twoStar = screen.getByText("2 Stars").parentElement;
+		expect(result.current.data.value).toBe(3);
+	});
 
-	//     // second star should be filled before click, and empty after
-	//     expect(twoStar.querySelector(".MuiRating-iconFilled")).toBeInTheDocument();
-	//     fireEvent.click(oneStar);
-	//     expect(twoStar.querySelector(".MuiRating-iconEmpty")).toBeInTheDocument();
-	// });
-
-	// it("should render correct icon", async () => {
-	//     const { container } = await render(<RatingsBlock id="ratings-hearts"/>, {
-	//         blocks: blocks,
-	//     });
-
-	//     const heartIcon = container.querySelector("[data-testid='FavoriteIcon']");
-	//     expect(heartIcon).toBeInTheDocument();
-	//     const starIcon = container.querySelector("[data-testid='StarIcon']");
-	//     expect(starIcon).not.toBeInTheDocument();
-	// });
+	it("should render correct icon", async () => {
+		const { container } = await render(
+			<RatingsBlock id={blocks["ratings-hearts"].id} />,
+			{
+				blocks: blocks,
+			},
+		);
+		const heartIcon = container.querySelector(
+			"[data-testid='FavoriteIcon']",
+		);
+		expect(heartIcon).toBeInTheDocument();
+		const starIcon = container.querySelector("[data-testid='StarIcon']");
+		expect(starIcon).not.toBeInTheDocument();
+	});
 });
