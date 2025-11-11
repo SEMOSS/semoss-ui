@@ -215,6 +215,91 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		return (
 			<>
 				<div className="relative w-full">
+					<input
+						ref={fileRef}
+						type="file"
+						multiple={true}
+						hidden
+						onChange={(e) => {
+							// set the new files
+							const updated = Array.from(e.target.files);
+							setFiles((prev) => [...prev, ...updated]);
+						}}
+					/>
+					<div className="relative">
+						<Textarea
+							ref={inputRef}
+							placeholder="What do you want to do today?"
+							value={input}
+							disabled={isDisabled}
+							rows={minRows}
+							className={`w-full resize-none px-3 pt-3 pb-14 ${
+								isDragging
+									? "border-primary border-dashed"
+									: "hover:border-primary"
+							} rounded-md bg-background shadow-lg transition-colors`}
+							autoFocus={true}
+							style={{
+								minHeight: `${minRows * 3}rem`,
+								maxHeight: `${maxRows * 3}rem`,
+							}}
+							onChange={(e) => {
+								setInput(e.target.value);
+							}}
+							onDrop={(e) => {
+								e.preventDefault();
+
+								// set the new files
+								const updated = Array.from(
+									e.dataTransfer.files,
+								);
+								setFiles((prev) => [...prev, ...updated]);
+
+								// turn off dragging
+								setIsDragging(false);
+							}}
+							onDragOver={(e) => {
+								e.preventDefault();
+
+								// turn on dragging
+								setIsDragging(true);
+							}}
+							onDragLeave={(e) => {
+								e.preventDefault();
+
+								// turn off dragging
+								setIsDragging(false);
+							}}
+							onPaste={(e) => {
+								// Only handle file pasting if attachments are enabled
+								if (!ENABLE_ATTACHMENT) {
+									return;
+								}
+
+								// set the new files
+								const updated = Array.from(
+									e.clipboardData.files,
+								);
+
+								if (updated.length > 0) {
+									e.preventDefault();
+									setFiles((prev) => [...prev, ...updated]);
+								}
+							}}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									// allow new lines with shift
+									if (e.shiftKey) {
+										return;
+									}
+
+									// prompt the model
+									e.preventDefault();
+									promptModel(input);
+								}
+							}}
+						/>
+					</div>
 					<div className="absolute bottom-3 left-3 z-10 flex flex-row items-center">
 						{workspace}
 					</div>
@@ -300,91 +385,6 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 								})()}
 							</TooltipContent>
 						</Tooltip>
-					</div>
-					<input
-						ref={fileRef}
-						type="file"
-						multiple={true}
-						hidden
-						onChange={(e) => {
-							// set the new files
-							const updated = Array.from(e.target.files);
-							setFiles((prev) => [...prev, ...updated]);
-						}}
-					/>
-					<div className="relative">
-						<Textarea
-							ref={inputRef}
-							placeholder="What do you want to do today?"
-							value={input}
-							disabled={isDisabled}
-							rows={minRows}
-							className={`w-full resize-none px-3 pt-3 pb-14 ${
-								isDragging
-									? "border-primary border-dashed"
-									: "hover:border-primary"
-							} rounded-md bg-background shadow-lg transition-colors`}
-							autoFocus={true}
-							style={{
-								minHeight: `${minRows * 3}rem`,
-								maxHeight: `${maxRows * 3}rem`,
-							}}
-							onChange={(e) => {
-								setInput(e.target.value);
-							}}
-							onDrop={(e) => {
-								e.preventDefault();
-
-								// set the new files
-								const updated = Array.from(
-									e.dataTransfer.files,
-								);
-								setFiles((prev) => [...prev, ...updated]);
-
-								// turn off dragging
-								setIsDragging(false);
-							}}
-							onDragOver={(e) => {
-								e.preventDefault();
-
-								// turn on dragging
-								setIsDragging(true);
-							}}
-							onDragLeave={(e) => {
-								e.preventDefault();
-
-								// turn off dragging
-								setIsDragging(false);
-							}}
-							onPaste={(e) => {
-								// Only handle file pasting if attachments are enabled
-								if (!ENABLE_ATTACHMENT) {
-									return;
-								}
-
-								// set the new files
-								const updated = Array.from(
-									e.clipboardData.files,
-								);
-
-								if (updated.length > 0) {
-									e.preventDefault();
-									setFiles((prev) => [...prev, ...updated]);
-								}
-							}}
-							onKeyDown={(e) => {
-								if (e.key === "Enter") {
-									// allow new lines with shift
-									if (e.shiftKey) {
-										return;
-									}
-
-									// prompt the model
-									e.preventDefault();
-									promptModel(input);
-								}
-							}}
-						/>
 					</div>
 				</div>
 				{files.length > 0 ? (
