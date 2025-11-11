@@ -134,11 +134,11 @@ export const WorkspacePage = observer(() => {
 										name: w.project_name,
 										description: w.description,
 									}}
-									onCardClick={() => {
+									onEditClick={() => {
 										setWorkspaceId(w.project_id);
 										setIsWorkspaceModalOpen(true);
 									}}
-									onMenuClick={() =>
+									onDeleteClick={() =>
 										handleDeleteWorkspace(w.project_id)
 									}
 								/>
