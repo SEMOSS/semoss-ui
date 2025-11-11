@@ -10,20 +10,13 @@ import {
 	FieldSet,
 	Input,
 	ScrollArea,
-	Select,
-	SelectContent,
-	SelectGroup,
-	SelectItem,
-	SelectLabel,
-	SelectTrigger,
-	SelectValue,
 	Slider,
 	Textarea,
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from "@semoss/ui/next";
-import { ToolboxOverlay } from "@/components";
+import { EngineSelect, ToolboxOverlay } from "@/components";
 import { useChat } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { MCP, MCPConfig } from "@/types";
@@ -95,39 +88,26 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 							{ENABLE_MODEL_SELECT && (
 								<Field>
 									<FieldLabel>Model</FieldLabel>
-									<Select
+									<EngineSelect
 										value={chat.models.selected}
-										onValueChange={(value) => {
-											chat.setSelectedModel(value);
+										engineTypes={["MODEL"]}
+										metaFilters={[
+											{ tag: "text-generation" },
+										]}
+										onChange={(v) =>
+											chat.setSelectedModel(v)
+										}
+										popoverContentProps={{
+											align: "end",
 										}}
-									>
-										<SelectTrigger className="w-full">
-											<SelectValue placeholder="Select Model" />
-										</SelectTrigger>
-										<SelectContent>
-											<SelectGroup>
-												<SelectLabel>Model</SelectLabel>
-
-												{chat.models.options.map(
-													(m) => (
-														<SelectItem
-															key={m.app_id}
-															value={m.app_id}
-														>
-															{m.app_name}
-														</SelectItem>
-													),
-												)}
-											</SelectGroup>
-										</SelectContent>
-									</Select>
+									/>
 								</Field>
 							)}
 
 							<Field>
-								<FieldLabel>System Prompt</FieldLabel>
+								<FieldLabel>Instructions</FieldLabel>
 								<Textarea
-									placeholder="Update System Prompt"
+									placeholder="Update Instructions"
 									className="min-h-[220px] resize-none"
 									value={options.instructions}
 									onChange={(e) => {
@@ -154,24 +134,20 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 
 											<Tooltip>
 												<TooltipTrigger asChild>
-													<span>
-														<Button
-															variant="outline"
-															size="sm"
-															onClick={(
-																event,
-															) => {
-																event.preventDefault();
-																event.stopPropagation();
+													<Button
+														variant="outline"
+														size="sm"
+														onClick={(event) => {
+															event.preventDefault();
+															event.stopPropagation();
 
-																setIsToolsOpen(
-																	true,
-																);
-															}}
-														>
-															<PlusIcon />
-														</Button>
-													</span>
+															setIsToolsOpen(
+																true,
+															);
+														}}
+													>
+														<PlusIcon />
+													</Button>
 												</TooltipTrigger>
 												<TooltipContent>
 													Add Tools

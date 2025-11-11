@@ -1,9 +1,8 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { expect, vi } from "vitest";
+import { GridBlock } from "../../components/block-defaults/grid-block";
+import * as useFrameHook from "../../hooks/useFrame";
 import { render } from "../utils";
-import "@testing-library/jest-dom";
-import { GridBlock } from "@/components/block-defaults/grid-block";
-import * as useFrameHook from "@/hooks/useFrame";
 
 const blocks = {
 	grid: {
@@ -60,15 +59,17 @@ describe("grid block", () => {
 			filter: undefined,
 			unfilter: undefined,
 		});
-		const { container } = render(<GridBlock id="grid" />, {
+		const { container } = render(<GridBlock id={blocks.grid.id} />, {
 			blocks: blocks,
 		});
 
-		const element = container.querySelector("[data-block='grid']");
-		expect(element).toBeInTheDocument();
-		expect(screen.getByText("Grid block test")).toBeInTheDocument();
-		expect(screen.getByText("Grid block column 1")).toBeInTheDocument();
-		expect(screen.getByText("row 1")).toBeInTheDocument();
-		expect(screen.getByText("row 2")).toBeInTheDocument();
+		await waitFor(() => {
+			const element = container.querySelector("[data-block='grid']");
+			expect(element).toBeInTheDocument();
+			expect(screen.getByText("Grid block test")).toBeInTheDocument();
+			expect(screen.getByText("Grid block column 1")).toBeInTheDocument();
+			expect(screen.getByText("row 1")).toBeInTheDocument();
+			expect(screen.getByText("row 2")).toBeInTheDocument();
+		});
 	});
 });

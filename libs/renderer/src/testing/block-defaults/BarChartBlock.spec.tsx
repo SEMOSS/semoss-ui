@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
 	type EchartVisualizationBlockDef,
@@ -183,8 +183,10 @@ describe("BarChart Block Component", () => {
 			},
 		);
 
-		expect(result.current).toBeDefined();
-		expect(result.current.data.variation).toBe("echart-bar-graph");
+		await waitFor(() => {
+			expect(result.current).toBeDefined();
+			expect(result.current.data.variation).toBe("echart-bar-graph");
+		});
 	});
 
 	it("should render Bar chart correctly", () => {
