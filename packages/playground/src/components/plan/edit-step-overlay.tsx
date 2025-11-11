@@ -62,7 +62,7 @@ const getStepDetailsDefaults = (
 
 interface EditStepOverlayProps {
 	/** Mode of the overlay */
-	mode: "Add" | "Update";
+	mode: "New" | "Edit";
 
 	/** Current step if editing */
 	current?: PlanStep;
@@ -103,8 +103,7 @@ export const EditStepOverlay: React.FC<EditStepOverlayProps> = (props) => {
 		description: current.description,
 		type: current.type,
 		status: current.status,
-		// always reset the details to ensure compatibility
-		details: getStepDetailsDefaults(current.type),
+		details: current.details,
 	});
 
 	// track if the next button is disabled

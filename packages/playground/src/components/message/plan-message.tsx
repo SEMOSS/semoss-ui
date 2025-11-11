@@ -1,8 +1,10 @@
 import {
 	ChevronDownIcon,
+	HammerIcon,
 	LinkIcon,
 	ListEndIcon,
 	ListIndentIncreaseIcon,
+	PencilIcon,
 	TrashIcon,
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
@@ -13,6 +15,7 @@ import {
 	CollapsibleContent,
 	CollapsibleTrigger,
 	Muted,
+	Separator,
 	toast,
 } from "@semoss/ui/next";
 import { EditStepOverlay } from "@/components";
@@ -87,14 +90,14 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 							return (
 								<Collapsible
 									key={s.step_number}
-									// className="pb-4"
+									className="group"
 								>
 									<CollapsibleTrigger
-										className="group flex w-full overflow-hidden [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180"
+										className="flex w-full overflow-hidden [&[data-state=open]>*>svg[data-rotate=true]]:rotate-180"
 										asChild
 									>
 										<div className="flex flex-row items-start gap-1">
-											<div className="mt-2 flex flex-1 flex-row items-start gap-2.5 overflow-hidden">
+											<div className="mt-2 flex flex-1 flex-row items-start gap-4 overflow-hidden">
 												<div
 													className={`mt-0.5 flex size-4 shrink-0 flex-col items-center justify-center overflow-hidden rounded-full bg-primary text-primary-foreground text-xs`}
 												>
@@ -109,20 +112,34 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											</div>
 
 											{isLast && (
-												<Button
-													variant="ghost"
-													size="icon-sm"
-													className="invisible p-0 text-destructive group-hover:visible"
-													onClick={(e) => {
-														e.stopPropagation();
+												<div className="flex flex-row items-center">
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														className="invisible group-hover:visible"
+														onClick={(e) => {
+															e.stopPropagation();
 
-														removeStep(
-															s.step_number,
-														);
-													}}
-												>
-													<TrashIcon />
-												</Button>
+															setEditStep(s);
+														}}
+													>
+														<PencilIcon />
+													</Button>
+													<Button
+														variant="ghost"
+														size="icon-sm"
+														className="invisible text-destructive group-hover:visible"
+														onClick={(e) => {
+															e.stopPropagation();
+
+															removeStep(
+																s.step_number,
+															);
+														}}
+													>
+														<TrashIcon />
+													</Button>
+												</div>
 											)}
 											<ChevronDownIcon
 												className="mt-2 size-4"
@@ -130,8 +147,13 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 											/>
 										</div>
 									</CollapsibleTrigger>
-									<CollapsibleContent className="mt-2 mb-2 rounded-lg bg-sidebar-accent p-4">
-										<div>
+									<CollapsibleContent className="group flex flex-row py-2">
+										<Separator
+											orientation="vertical"
+											className="mr-6 ml-2 h-auto!"
+										/>
+
+										<div className="flex flex-1 flex-col gap-2.5 overflow-hidden">
 											<Muted className="block">
 												{s.details.rationaleForStep}
 											</Muted>
@@ -141,7 +163,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 												<div className="flex flex-row justify-center">
 													<Button
 														size="sm"
-														className="bg-warning"
+														variant="outline"
 														onClick={() => {
 															setEditStep(s);
 														}}
@@ -149,6 +171,19 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 														<LinkIcon />
 														Fix Step
 													</Button>
+												</div>
+											)}
+											{s.details.stepType ===
+												"tool_call" && (
+												<div className="flex flex-row justify-between">
+													<div className="flex max-w-1/2 flex-row items-center gap-1 rounded-4xl border border-border bg-sidebar-accent px-4 py-1.5">
+														<div className="rounded-sm border border-border bg-background p-1">
+															<HammerIcon className="size-4 text-muted-foreground" />
+														</div>
+														<div className="truncate text-sidebar-accent-foreground text-sm">
+															{s.details.title}
+														</div>
+													</div>
 												</div>
 											)}
 										</div>
@@ -183,7 +218,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 
 				{isAddStepOpen && (
 					<EditStepOverlay
-						mode="Add"
+						mode="New"
 						open={true}
 						onOpenChange={(isOpen) => {
 							if (!isOpen) {
@@ -201,7 +236,7 @@ export const PlanMessage: React.FC<PlanMessageProps> = observer(
 
 				{editStep && (
 					<EditStepOverlay
-						mode="Update"
+						mode="Edit"
 						current={editStep}
 						open={true}
 						onOpenChange={(isOpen) => {
