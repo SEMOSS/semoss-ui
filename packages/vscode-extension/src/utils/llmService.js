@@ -282,6 +282,96 @@ class LLMService {
 						);
 
 						if (toolResult.success) {
+							// Make a follow-up call to LLM to process and format the tool result
+							const followUpMessages = [
+								{
+									role: "system",
+									content: `You are an AI assistant that helps users by executing tools and interpreting the results. When a tool returns data, provide a natural, helpful response based on that data. Always present tool results as answers to the user's question.`,
+								},
+								{
+									role: "user",
+									content: message.content,
+								},
+								{
+									role: "assistant",
+									content: `I'll check that for you using the ${selectedTool.name} tool.`,
+									tool_calls: [
+										{
+											id: "tool_call_1",
+											type: "function",
+											function: {
+												name: selectedTool.name,
+												arguments:
+													JSON.stringify(toolArgs),
+											},
+										},
+									],
+								},
+								{
+									role: "tool",
+									tool_call_id: "tool_call_1",
+									content: toolResult.result,
+								},
+							];
+
+							const followUpBody = {
+								model: model.model,
+								messages: followUpMessages,
+								temperature: model.temperature || 0.7,
+								max_tokens: model.maxTokens || 4096,
+							};
+
+							try {
+								const followUpResponse = await fetch(url, {
+									method: "POST",
+									headers: headers,
+									body: JSON.stringify(followUpBody),
+									timeout: 30000,
+								});
+
+								if (followUpResponse.ok) {
+									const followUpData =
+										await followUpResponse.json();
+									if (
+										followUpData.choices &&
+										followUpData.choices.length > 0
+									) {
+										return {
+											content:
+												followUpData.choices[0].message
+													.content,
+											usage: {
+												prompt_tokens:
+													(data.usage
+														?.prompt_tokens || 0) +
+													(followUpData.usage
+														?.prompt_tokens || 0),
+												completion_tokens:
+													(data.usage
+														?.completion_tokens ||
+														0) +
+													(followUpData.usage
+														?.completion_tokens ||
+														0),
+												total_tokens:
+													(data.usage?.total_tokens ||
+														0) +
+													(followUpData.usage
+														?.total_tokens || 0),
+											},
+											toolUsed: selectedTool.name,
+											server: selectedTool.server,
+										};
+									}
+								}
+							} catch (error) {
+								console.error(
+									"Follow-up LLM call failed:",
+									error,
+								);
+							}
+
+							// Fallback to formatted raw output if follow-up fails
 							return {
 								content: `I executed the ${selectedTool.name} tool. Here are the results:\n\n\`\`\`\n${toolResult.result}\n\`\`\``,
 								usage: data.usage,
