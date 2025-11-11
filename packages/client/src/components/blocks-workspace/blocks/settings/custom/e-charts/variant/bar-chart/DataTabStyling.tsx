@@ -378,7 +378,7 @@ export const DataTabStyling = observer(
 					<Autocomplete
 						fullWidth
 						id={"Echart-Frame"}
-						key={`selected-frame-${data.frame.name || "0"}`} // Key to force remount on frame change
+						key={`selected-frame-${data.frame?.name || "0"}`} // Key to force remount on frame change
 						multiple={false}
 						disabled={getFrames.status !== "SUCCESS"}
 						value={data.frame?.name}
