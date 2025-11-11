@@ -17,7 +17,11 @@
 		"isolatedModules": true,
 		/* Lang and Env */
 		"paths": {
-			"@/*": ["./src/*"]
+			"@/*": ["./src/*"],
+			"@semoss/ui": ["../../libs/ui/src"],
+			"@semoss/ui/*": ["../../libs/ui/src/*"],
+			"@semoss/ui/next": ["../../libs/ui/src/next"],
+			"@semoss/ui/next/*": ["../../libs/ui/src/next/*"]
 		}
 	},
 	"include": ["src"],
