@@ -1,7 +1,6 @@
 import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
@@ -41,14 +40,7 @@ export const WorkspacePage = observer(() => {
 		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
 		{ data: [] },
 	);
-	const navigate = useNavigate();
 	const { chat } = useChat();
-
-	/**
-	 * CreateRoom
-	 */
-	const createRoom = (workspaceId: string) =>
-		navigate(`/new?workspaceId=${workspaceId}`);
 
 	/**
 	 * Delete Workspace
@@ -77,8 +69,8 @@ export const WorkspacePage = observer(() => {
 		isLoadingDelete;
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden px-2">
-			<div className="mx-auto flex w-full max-w-3xl flex-col gap-12 px-4 pt-8 pb-4">
+		<div className="flex h-full w-full flex-col px-2">
+			<div className="mx-auto flex w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-sky-100">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-blue-700 text-xl leading-normal">
@@ -94,11 +86,13 @@ export const WorkspacePage = observer(() => {
 								setWorkspaceId(null);
 								setIsWorkspaceModalOpen(true);
 							}}
+							className="w-auto"
 						>
 							Create a Workspace
 						</Button>
 					</div>
-					<div className="relative w-[351px] shrink-0 overflow-hidden rounded-r-lg">
+					{/* Image appears only on large screens and above */}
+					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
 						<img
 							src={workspaceGraphic}
 							alt="Workspace illustration"
@@ -131,7 +125,7 @@ export const WorkspacePage = observer(() => {
 							<Spinner />
 						</div>
 					) : listWorkspaces.data.length > 0 ? (
-						<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+						<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
 							{listWorkspaces.data.map((w) => (
 								<WorkspaceCard
 									key={w.project_id}
@@ -140,14 +134,11 @@ export const WorkspacePage = observer(() => {
 										name: w.project_name,
 										description: w.description,
 									}}
-									onPrimaryClick={() =>
-										createRoom(w.project_id)
-									}
-									onSecondaryClick={() => {
+									onCardClick={() => {
 										setWorkspaceId(w.project_id);
 										setIsWorkspaceModalOpen(true);
 									}}
-									onDeleteClick={() =>
+									onMenuClick={() =>
 										handleDeleteWorkspace(w.project_id)
 									}
 								/>
@@ -168,7 +159,7 @@ export const WorkspacePage = observer(() => {
 					onClose={(newWorkspaceId) => {
 						setIsWorkspaceModalOpen(false);
 						if (newWorkspaceId) {
-							createRoom(newWorkspaceId);
+							listWorkspaces.refresh();
 						}
 					}}
 				/>
