@@ -65,7 +65,7 @@ export const JobDetailsModel = (props: {
                         variant="outlined"
                         InputProps={{
                             endAdornment: (
-                                <OpenInFullIcon style={{ opacity: 0.7, color: "#888" }} />
+                                <OpenInFullIcon style={{ opacity: 0.7, color: "#888", marginBottom: "45px" }} />
                             ),
                         }}
                     />

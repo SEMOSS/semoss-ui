@@ -812,6 +812,7 @@ export function JobsPage() {
 						setRowSelectionModel={setRowSelectionModel}
 						getHistory={() => getHistory({ reload: true })}
 						showDeleteJobModal={(job: Job) => setJobToDelete(job)}
+						getFailedJobCount={getFailedJobCount}
 					/>
 				)}
 				{selectedTable === "History" && (

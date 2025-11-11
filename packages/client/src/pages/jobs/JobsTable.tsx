@@ -55,6 +55,7 @@ export const JobsTable = (props: {
 	setRowSelectionModel: (value: GridRowSelectionModel) => void;
 	getHistory: () => void;
 	showDeleteJobModal: (job: Job) => void;
+	getFailedJobCount: () => void;
 }) => {
 	const {
 		jobs,
@@ -63,6 +64,7 @@ export const JobsTable = (props: {
 		setRowSelectionModel,
 		getHistory,
 		showDeleteJobModal,
+		getFailedJobCount,
 	} = props;
 	const notification = useNotification();
 	const navigate = useNavigate();
@@ -82,18 +84,27 @@ export const JobsTable = (props: {
 			});
 		}
 		try {
+			await getFailedJobCount();
+		} catch {
+			notification.add({
+				color: "error",
+				message: "Could not retrieve failed job count.",
+			});
+		}
+		try {
 			await getHistory();
 		} catch {
 			notification.add({
 				color: "error",
 				message: "Could not retrieve job history.",
 			});
+		} finally {
+			setRunJobLoading(prev => {
+				const newSet = new Set(prev);
+				newSet.delete(job.id);
+				return newSet;
+			});
 		}
-		setRunJobLoading(prev => {
-			const newSet = new Set(prev);
-			newSet.delete(job.id);
-			return newSet;
-		});
 	};
 
 	const JobColumns: GridColDef[] = [
