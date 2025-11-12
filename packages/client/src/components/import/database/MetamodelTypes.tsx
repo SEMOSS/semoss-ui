@@ -23,7 +23,12 @@ export interface InputMeta {
 
 export interface ParsedResult {
 	positions: Record<string, { left: number; top: number }>;
-	relation: { relName: string; fromTable: string; toTable: string }[];
+	relation: {
+		relName: string;
+		fromTable: string;
+		toTable: string;
+		toCol?: string;
+	}[];
 	nodeProp: Record<string, string[]>;
 	dataTypes?: Record<string, string>;
 	additionalDataTypes?: Record<string, string>;
@@ -42,6 +47,7 @@ export interface Property {
 export interface MetaModelTypeProps {
 	parsedData?: ParsedResult[];
 	onImport?: (parsed: unknown) => void | Promise<void>;
+	onImportConnections?: (connections: unknown) => void | Promise<void>;
 	onCancel: () => void;
 }
 

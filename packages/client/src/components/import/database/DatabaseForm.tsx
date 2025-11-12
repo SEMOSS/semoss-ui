@@ -11,6 +11,7 @@ import {
 	FormControlLabel,
 	IconButton,
 	Menu,
+	Modal,
 	RadioGroup,
 	Select,
 	Stack,
@@ -23,7 +24,9 @@ import { uploadFile } from "@/api";
 import { useRootStore, useStepper } from "@/hooks";
 import DataSelection from "./DataSelection";
 import ExcelDataSelection from "./ExcelDataSelection";
+import { MetaModelConnections } from "./MetaModelConnections";
 import { MetaModelType } from "./MetaModelType";
+import TableViewSelector from "./TableViewModel";
 
 const StyledBox = styled(Box)({
 	marginBottom: "32px",
@@ -55,11 +58,17 @@ export interface ParsedResult {
 	dataTypes: Record<string, string>;
 	cleanHeaders: string[];
 	positions: Record<string, { left: number; top: number }>;
-	relation: { relName: string; fromTable: string; toTable: string }[];
+	relation: {
+		relName: string;
+		fromTable: string;
+		toTable: string;
+		toCol: string;
+	}[];
 	nodeProp: Record<string, string[]>;
 }
 
 export const DatabaseForm = ({
+	selectedTab,
 	title,
 	description,
 	fields,
@@ -67,7 +76,7 @@ export const DatabaseForm = ({
 	categoryDescription,
 }) => {
 	const [step, setStep] = useState<
-		"fileupload" | "table" | "metaModel" | "propFile"
+		"fileupload" | "table" | "metaModel" | "propFile" | "connections"
 	>("fileupload");
 	const [openAdvanced, setOpenAdvanced] = useState(false);
 	const [resolvedFields, setResolvedFields] = useState(fields);
@@ -76,6 +85,16 @@ export const DatabaseForm = ({
 	const [filePath, setFilePath] = useState<string>();
 	const [uploadedFile, setUploadedFile] = useState<File[]>([]);
 	const [formValues, setFormValues] = useState({});
+	type ConnectionValuesType = {
+		tables?: unknown[];
+		views?: unknown[];
+		[key: string]: unknown;
+	} | null;
+	const [connectionValues, setConnectionValues] =
+		useState<ConnectionValuesType>(null);
+	const [connectionViewModel, setConnectionViewModel] =
+		useState<boolean>(false);
+	const [formData, setFormData] = useState({});
 
 	const onFileUpload = (files: File | File[]) => {
 		const fileArray = Array.isArray(files) ? files : [files];
@@ -208,6 +227,31 @@ export const DatabaseForm = ({
 
 				setIsLoading(false);
 				return;
+			} else if (selectedTab === "Connections") {
+				setFormData(formData);
+				const pixel = `
+            ExternalJdbcTablesAndViews(conDetails=[${JSON.stringify(
+				formData,
+			)}]);
+           
+        `;
+				try {
+					const response = await monolithStore.runQuery(pixel);
+					const { output, operationType } = response.pixelReturn[0];
+					if (operationType.includes("ERROR")) {
+						notification.add({ color: "error", message: output });
+						return;
+					}
+					setConnectionViewModel(true);
+					setConnectionValues(
+						response?.pixelReturn?.[0]?.output || null,
+					);
+				} catch {
+					notification.add({
+						color: "error",
+						message: "Error from ExternalJdbcTablesAndViews",
+					});
+				}
 			} else {
 				pixelExpressions = uploadedFiles.map(
 					(file) =>
@@ -243,8 +287,7 @@ export const DatabaseForm = ({
 			setExcelFileName(fileNames);
 			setParsedData(parsedResults);
 			updateStepBasedOnMetaModel(formData.METAMODEL_TYPE);
-		} catch (error) {
-			console.error("Upload error:", error);
+		} catch {
 			notification.add({
 				color: "error",
 				message: "An error occurred during upload.",
@@ -338,8 +381,7 @@ export const DatabaseForm = ({
 			setIsLoading(false);
 
 			navigate(`/engine/database/${output.database_id}`);
-		} catch (err) {
-			console.error("submitMetamodelPixel error:", err);
+		} catch {
 			notification.add({
 				color: "error",
 				message: "An error occurred while submitting the metamodel.",
@@ -364,12 +406,11 @@ export const DatabaseForm = ({
 			}
 			notification.add({ color: "success", message: "Success" });
 			navigate(`/engine/database/${output.database_id}`);
-		} catch (error) {
+		} catch {
 			notification.add({
 				color: "error",
 				message: "An error occurred while processing the request.",
 			});
-			console.error("Error executing query:", error);
 		}
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
@@ -397,12 +438,11 @@ export const DatabaseForm = ({
 			});
 
 			navigate(`/engine/database/${output.database_id}`);
-		} catch (error) {
+		} catch {
 			notification.add({
 				color: "error",
 				message: "An error occurred while processing the request.",
 			});
-			console.error("Error executing query:", error);
 		} finally {
 			setIsLoading(false);
 		}
@@ -411,6 +451,44 @@ export const DatabaseForm = ({
 	const handleCancel = () => {
 		setStep("fileupload");
 		setUploadedFile(uploadedFile);
+	};
+
+	const submitConnections = async (
+		payload: ParsedResult | ParsedResult[],
+		formValues,
+	) => {
+		const newFormValues = Object.fromEntries(
+			Object.entries(formValues).filter(([key]) => key !== "NAME"),
+		);
+
+		const relation = Array.isArray(payload)
+			? payload[0].relation
+			: payload.relation;
+		const positions = Array.isArray(payload)
+			? payload[0].positions
+			: payload.positions;
+		setIsLoading(true);
+		const pixel = `databaseVar = RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(relation)},"tables":{"CUSTOMERS.CUSTOMER_ID":["CUSTOMER_ID","FIRST_NAME","LAST_NAME","EMAIL","CREATED_AT"],"DIABETES.DIABETES_UNIQUE_ROW_ID":["DIABETES_UNIQUE_ROW_ID","DRUG","AGE","BP_1D","BP_1S","BP_2D","BP_2S","CHOL","FRAME","GENDER","GLYHB","HDL","HEIGHT","HIP","ID","LOCATION","RATIO","STAB_GLU","TIME_PPN","WAIST","WEIGHT"],"ORDERS.ORDER_ID":["ORDER_ID","CUSTOMER_ID","ORDER_DATE","TOTAL_AMOUNT"],"ORDER_ITEMS.ORDER_ITEM_ID":["ORDER_ITEM_ID","ORDER_ID","PRODUCT_ID","QUANTITY","SUBTOTAL"],"PRODUCTS.PRODUCT_ID":["PRODUCT_ID","NAME","CATEGORY","PRICE"],"ORDER_SUMMARY.ORDER_ID":["ORDER_ID","CUSTOMER_NAME","ORDER_DATE","TOTAL_ITEMS","TOTAL_AMOUNT"]}}]);SaveOwlPositions(database=[databaseVar],positionMap=[${JSON.stringify(positions)}]);`;
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const { output, operationType } = response.pixelReturn[0];
+			if (operationType.includes("ERROR")) {
+				notification.add({ color: "error", message: output });
+				return;
+			}
+			notification.add({
+				color: "success",
+				message: "Successfully created database.",
+			});
+			navigate(`/engine/database/${output.database_id}`);
+		} catch {
+			notification.add({
+				color: "error",
+				message: "An error occurred while processing the request.",
+			});
+		} finally {
+			setIsLoading(false);
+		}
 	};
 
 	useEffect(() => {
@@ -752,6 +830,85 @@ export const DatabaseForm = ({
 		return error.message;
 	};
 
+	function transformStructure(dbObject) {
+		const result = {
+			headers: [],
+			dataTypes: {},
+			cleanHeaders: [],
+			relation: [],
+			nodeProp: {},
+			positions: {},
+		};
+
+		dbObject.tables.forEach((table, index) => {
+			// Extract clean column names and types
+			const columnMap = {};
+			table.columns.forEach((col, i) => {
+				columnMap[col] = table.type[i]?.toLowerCase() || "string";
+				result.dataTypes[col] =
+					table.type[i]?.toLowerCase() || "string";
+			});
+
+			// Add to nodeProp
+			result.nodeProp[table.table] = table.columns;
+
+			// Add headers
+			result.headers.push(...table.columns);
+		});
+
+		// Add relationships
+		if (dbObject.relationships && dbObject.relationships.length > 0) {
+			result.relation = dbObject.relationships.map((r) => ({
+				fromTable: r.fromTable,
+				fromCol: r.fromCol,
+				toTable: r.toTable,
+				toCol: r.toCol,
+			}));
+		}
+
+		// Remove duplicates
+		result.headers = [...new Set(result.headers)];
+		result.cleanHeaders = result.headers.map(
+			(h) => h.charAt(0).toUpperCase() + h.slice(1).toLowerCase(),
+		);
+
+		result.positions = dbObject.positions;
+		return result;
+	}
+
+	const filteredTables =
+		(connectionValues as { tables?: unknown[] } | null)?.tables ?? [];
+	const filteredViews = connectionValues?.views;
+	const handleApply = async (output) => {
+		setConnectionViewModel(false);
+		const filter = [...output.tables, ...output.views];
+		setIsLoading(true);
+		const pixel = `ExternalJdbcSchema(conDetails=[${JSON.stringify(
+			formData,
+		)}], filters=${JSON.stringify(filter)})`;
+
+		try {
+			const response = await monolithStore.runQuery(pixel);
+			const { output, operationType } = response.pixelReturn[0];
+			const parsedOutput = transformStructure(output);
+			setParsedData([parsedOutput]);
+			if (operationType.includes("ERROR")) {
+				notification.add({
+					color: "error",
+					message: output,
+				});
+				return;
+			}
+			setStep("connections");
+		} catch {
+			notification.add({
+				color: "error",
+				message: "An error occurred while processing the request.",
+			});
+		} finally {
+			setIsLoading(false);
+		}
+	};
 	return (
 		<>
 			{step === "fileupload" && (
@@ -855,11 +1012,7 @@ export const DatabaseForm = ({
 								data-testid="database-form-submit"
 								disabled={!formState.isValid}
 							>
-								{title === "Excel" ||
-								title === "CSV" ||
-								title === "TSV"
-									? "Next"
-									: "Create Database"}
+								Next
 							</StyledSubmitButton>
 						</StyledFlexEnd>
 					</StyledBox>
@@ -898,6 +1051,35 @@ export const DatabaseForm = ({
 				/>
 			)}
 			{step === "propFile" && <div>Prop file logic UI goes here</div>}
+			{step === "connections" && parsedData && parsedData.length > 0 && (
+				<MetaModelConnections
+					parsedData={parsedData}
+					onImport={(payload: ParsedResult | ParsedResult[]) =>
+						submitMetamodelPixel(payload, formValues)
+					}
+					onImportConnections={(
+						payload: ParsedResult | ParsedResult[],
+					) => submitConnections(payload, formValues)}
+					onCancel={handleCancel}
+				/>
+			)}
+			<Modal
+				open={connectionViewModel}
+				maxWidth="xl"
+				onClose={() => setConnectionViewModel(false)}
+				data-testid="model-zip-upload-modal"
+			>
+				<Modal.Content sx={{ width: "100%" }}>
+					{/* <StyledDropzoneField> */}
+
+					<TableViewSelector
+						tables={filteredTables}
+						views={filteredViews}
+						onApply={handleApply}
+						onClose={() => setConnectionViewModel(false)}
+					/>
+				</Modal.Content>
+			</Modal>
 		</>
 	);
 };

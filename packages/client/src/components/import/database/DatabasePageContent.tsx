@@ -37,7 +37,7 @@ const StyledSearchbarContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	alignItems: "flex-start",
-	gap: theme.spacing(3),
+	gap: theme.spacing(2),
 }));
 
 const StyledStack = styled("div")(({ theme }) => ({
@@ -219,7 +219,6 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	}, [DatabaseOptions]);
 
 	const DatabasesForTab = useMemo(() => {
-		if (tabLabels[selectedTab] === "All") return allDatabases;
 		return DatabaseOptions[tabLabels[selectedTab]] || [];
 	}, [selectedTab, tabLabels, DatabaseOptions, allDatabases]);
 
@@ -383,8 +382,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 			{selectedDatabase ? (
 				<div data-testid="database-form-wrapper">
 					<DatabaseForm
-						// @ts-expect-error TODO FIX
-						id={selectedDatabase.id}
+						selectedTab={tabLabels[selectedTab]}
 						title={selectedDatabase.name}
 						description={`Fill out ${selectedDatabase.name} details in order to add database to catalog`}
 						fields={selectedDatabase.fields}
@@ -421,12 +419,12 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								data-testid="search-box"
 							/>
 							<UploadButton
-								size="medium"
+								size="large"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
-								data-tesId={"database-upload-file-button"}
+								data-testid={"database-upload-file-button"}
 							>
-								<FileUploadOutlined fontSize="small" />
+								<FileUploadOutlined fontSize="medium" />
 							</UploadButton>
 						</StyledSearchbarContainer>
 
