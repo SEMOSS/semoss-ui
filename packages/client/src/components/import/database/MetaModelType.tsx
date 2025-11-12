@@ -21,9 +21,11 @@ import {
 	Checkbox,
 	Chip,
 	Divider,
+	FormControl,
 	IconButton,
 	List,
 	Menu,
+	Select,
 	Stack,
 	styled,
 	Table,
@@ -32,15 +34,32 @@ import {
 import { Metamodel } from "@/components/metamodel";
 import CreateConnection from "@/components/metamodel/CreateConnection";
 import { Section } from "@/components/ui";
-import {
-	type Edge,
-	type FlowData,
-	type FlowNode,
-	type MetaModelTypeProps,
-	type MetamodelNode,
-	type Property,
-	transformMetaToParsed,
+import type {
+	Edge,
+	FlowData,
+	FlowNode,
+	MetaModelTypeProps,
+	MetamodelNode,
+	Property,
 } from "./MetamodelTypes";
+import {
+	attachConnectionsToNodes,
+	createEdge,
+	createPayloadsFromFlowStates,
+	deepClone,
+	edgeExists,
+	findNodeByNameOrId,
+	generateEdgesFromParsed,
+	generateNodesFromParsed,
+	getAllColumnNamesFromNodes,
+	getDataSourceKey,
+	getDisplayName,
+	getInitialConnections,
+	makeEdgeIdFromNodeIds,
+	rebuildNodesFromParsed,
+	removeEdgesForNode,
+	transformMetaToParsed,
+} from "./MetamodelUtils";
 import { PortalModal } from "./portal";
 
 const StyledPage = styled("div")(() => ({
@@ -52,7 +71,7 @@ const StyledPage = styled("div")(() => ({
 const StyledMetamodelContainer = styled("section")<{
 	showFullScreenModal: boolean;
 }>(({ showFullScreenModal }) => ({
-	height: showFullScreenModal ? "calc(100vh - 150px)" : "calc(100vh - 360px)",
+	height: showFullScreenModal ? "calc(100vh - 150px)" : "calc(100vh - 340px)",
 	display: "flex",
 	alignItems: "center",
 	justifyContent: "center",
@@ -62,6 +81,7 @@ const StyledMetamodelContainer = styled("section")<{
 const StyledTableContainer = styled(Table.Container)(() => ({
 	height: "396px",
 }));
+
 const StyledOuterContainer = styled(Box)(() => ({
 	height: "100%",
 	width: "100%",
@@ -129,10 +149,39 @@ const StyledButton = styled(Button)(() => ({
 	minWidth: "auto",
 }));
 
+const OuterBox = styled(Box)(() => ({
+	display: "flex",
+	alignItems: "center",
+	justifyContent: "space-between",
+	gap: 2,
+}));
+
+const StyledFormControl = styled(FormControl)(() => ({
+	display: "flex",
+	alignItems: "center",
+	width: "100%",
+	mb: 2,
+}));
+
+const StyledStack = styled(Stack)(() => ({
+	display: "flex",
+	alignItems: "center",
+}));
+
+const SectionHeader = styled(Section.Header)(() => ({
+	marginBottom: 0,
+}));
+
 export const MetaModelType = observer(
 	({ parsedData, onImport, onCancel }: MetaModelTypeProps) => {
-		const parsed = parsedData?.[0];
-		const portalContentId = useId();
+		// State
+		const [selectedDataIndex, setSelectedDataIndex] = useState<number>(0);
+		const [flowStates, setFlowStates] = useState<Record<number, FlowData>>(
+			{},
+		);
+		const [selectedNodeIdsMap, setSelectedNodeIdsMap] = useState<
+			Record<number, string[]>
+		>({});
 		const [selectedNode, setSelectedNode] =
 			useState<React.ComponentProps<typeof Metamodel>["selectedNode"]>(
 				null,
@@ -142,63 +191,429 @@ export const MetaModelType = observer(
 		const [counter, setCounter] = useState(0);
 		const [openCreateConnectionModal, setopenCreateConnectionModal] =
 			useState(false);
-		const [flow, setFlow] = useState<FlowData>({
-			nodes: [],
-			edges: [],
-		});
-		const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
 		const [anchorNodesMenu, setAnchorNodesMenu] =
 			useState<HTMLElement | null>(null);
 		const [showFullScreenModal, setShowFullScreenModal] = useState(false);
+
+		// Refs
 		const portalHostRef = useRef<HTMLDivElement | null>(null);
 		const originalParentRef = useRef<HTMLElement | null>(null);
 		const originalNextSiblingRef = useRef<Node | null>(null);
+		const didInitRef = useRef<Record<number, boolean>>({});
 
+		// Derived Values
+		const parsed = parsedData?.[selectedDataIndex];
+		const portalContentId = useId();
+		const flow = flowStates[selectedDataIndex] || { nodes: [], edges: [] };
+		const selectedNodeIds = selectedNodeIdsMap[selectedDataIndex] || [];
+
+		// Memos
 		const nodes = useMemo(() => {
-			if (!parsed?.positions) return [];
-
-			return Object.keys(parsed.positions).map((nodeName) => {
-				const position = parsed.positions[nodeName];
-				const isIndexNode = nodeName.toLowerCase() === "index";
-
-				const extraProps = parsed.nodeProp?.[nodeName] ?? [];
-				const propertiesList = isIndexNode
-					? extraProps
-					: [nodeName, ...extraProps];
-
-				return {
-					id: nodeName,
-					type: "metamodel",
-					data: {
-						name: nodeName?.replace(/_/g, " "),
-						properties: propertiesList.map((prop, idx) => ({
-							id: `${nodeName}__${prop}`,
-							name: prop?.replace(/_/g, " "),
-							type:
-								parsed.dataTypes?.[prop] ??
-								parsed.additionalDataTypes?.[prop] ??
-								"",
-							isPrimary: idx === 0,
-						})),
-					},
-					position: {
-						x: position.left,
-						y: position.top,
-					},
-				};
-			});
+			return generateNodesFromParsed(parsed);
 		}, [parsed]);
 
 		const edges = useMemo(() => {
-			if (!parsed?.relation) return [];
-			return parsed.relation.map((rel) => ({
-				id: rel.relName,
-				type: "floating",
-				source: rel.fromTable,
-				target: rel.toTable,
-			}));
+			return generateEdgesFromParsed(parsed);
 		}, [parsed]);
 
+		const columnOptions = useMemo(() => {
+			return getAllColumnNamesFromNodes(nodes);
+		}, [nodes]);
+
+		const columnRows = useMemo(() => {
+			if (!selectedNode?.data?.properties?.length) return [];
+			return selectedNode.data.properties.slice(
+				columnPage * columnVisibleRows,
+				(columnPage + 1) * columnVisibleRows,
+			);
+		}, [selectedNode, columnPage, columnVisibleRows]);
+
+		const edgesForMetamodel = useMemo(() => {
+			const allEdges = flow?.edges ?? [];
+
+			if (!selectedNodeIds || selectedNodeIds.length === 0) {
+				return allEdges;
+			}
+
+			const selectedSet = new Set(selectedNodeIds);
+
+			return allEdges.filter(
+				(e) => selectedSet.has(e.source) || selectedSet.has(e.target),
+			);
+		}, [flow?.edges, selectedNodeIds]);
+
+		const createConnectionNodes = useMemo(() => {
+			const source = flow?.nodes ?? nodes;
+
+			return (source || []).map((n) => ({
+				id: n.id,
+				type: (n.type as string) || "metamodel",
+				data: {
+					name: n.data?.name ?? n.id,
+					properties: Array.isArray(n.data?.properties)
+						? n.data.properties.map((p) => ({
+								id: p.id,
+								name: p.name,
+								type: p.type ?? "",
+							}))
+						: [],
+				},
+				position: n.position
+					? { x: n.position.x, y: n.position.y }
+					: { x: 0.0, y: 0.0 },
+			})) as {
+				id: string;
+				type: string;
+				data: {
+					name: string;
+					properties: { id: string; name: string; type: string }[];
+				};
+				position: { x: number; y: number };
+			}[];
+		}, [flow, nodes]);
+
+		const description = selectedNode?.id || "";
+		const logicalNames =
+			selectedNode?.data?.properties?.map(
+				(p: { name: string }): string => p.name,
+			) || [];
+
+		// Utility Callbacks
+		const updateFlow = useCallback(
+			(updater: FlowData | ((prev: FlowData) => FlowData)) => {
+				setFlowStates((prev) => {
+					const currentFlow = prev[selectedDataIndex] || {
+						nodes: [],
+						edges: [],
+					};
+					const newFlow =
+						typeof updater === "function"
+							? updater(currentFlow)
+							: updater;
+					return {
+						...prev,
+						[selectedDataIndex]: newFlow,
+					};
+				});
+			},
+			[selectedDataIndex],
+		);
+
+		const updateSelectedNodeIds = useCallback(
+			(updater: string[] | ((prev: string[]) => string[])) => {
+				setSelectedNodeIdsMap((prev) => {
+					const current = prev[selectedDataIndex] || [];
+					const newIds =
+						typeof updater === "function"
+							? updater(current)
+							: updater;
+					return {
+						...prev,
+						[selectedDataIndex]: newIds,
+					};
+				});
+			},
+			[selectedDataIndex],
+		);
+
+		// Handlers
+		const handleNodesMenuOpen = useCallback(
+			(e: React.MouseEvent<HTMLElement>) =>
+				setAnchorNodesMenu(e.currentTarget),
+			[],
+		);
+
+		const handleNodesMenuClose = useCallback(
+			() => setAnchorNodesMenu(null),
+			[],
+		);
+
+		const handleSelectAll = useCallback(
+			(isChecked: boolean) => {
+				if (isChecked) {
+					updateSelectedNodeIds((nodes ?? []).map((n) => n.id));
+					const restored = attachConnectionsToNodes(
+						deepClone(nodes ?? []),
+						edges ?? [],
+					);
+					updateFlow({ nodes: restored, edges: edges ?? [] });
+				} else {
+					updateSelectedNodeIds([]);
+					updateFlow({ nodes: [], edges: [] });
+				}
+			},
+			[updateSelectedNodeIds, nodes, edges, updateFlow],
+		);
+
+		const handleToggleSelectNode = useCallback(
+			(nodeId: string) => {
+				const isSelected = selectedNodeIds.includes(nodeId);
+				const nextSelected = isSelected
+					? selectedNodeIds.filter((id) => id !== nodeId)
+					: [...selectedNodeIds, nodeId];
+
+				const initialMap = new Map((nodes ?? []).map((n) => [n.id, n]));
+				const prevNodes = Array.isArray(flow.nodes) ? flow.nodes : [];
+				const prevEdges = Array.isArray(flow.edges) ? flow.edges : [];
+
+				let newNodes: typeof prevNodes;
+				let newEdges: Edge[];
+
+				if (isSelected) {
+					newNodes = prevNodes.filter((n) => n.id !== nodeId);
+					newEdges = removeEdgesForNode(prevEdges, nodeId);
+				} else {
+					const exists = prevNodes.some((n) => n.id === nodeId);
+					if (!exists) {
+						const canonical = initialMap.get(nodeId);
+						const nodeToAdd = canonical
+							? deepClone(canonical)
+							: {
+									id: nodeId,
+									type: "metamodel",
+									data: { name: nodeId, properties: [] },
+									position: { x: 0, y: 0 },
+								};
+						newNodes = [...prevNodes, nodeToAdd];
+					} else {
+						newNodes = prevNodes;
+					}
+					newEdges = prevEdges;
+				}
+
+				const attachedNodes = attachConnectionsToNodes(
+					newNodes,
+					newEdges,
+				);
+				updateFlow({ nodes: attachedNodes, edges: newEdges });
+				updateSelectedNodeIds(nextSelected);
+			},
+			[
+				selectedNodeIds,
+				nodes,
+				flow.nodes,
+				flow.edges,
+				updateFlow,
+				updateSelectedNodeIds,
+			],
+		);
+
+		const handleClearAll = useCallback(() => {
+			updateSelectedNodeIds([]);
+
+			const newEdges: Edge[] = [];
+
+			const prevNodes: (MetamodelNode | FlowNode)[] = Array.isArray(
+				flow.nodes,
+			)
+				? flow.nodes
+				: [];
+
+			const attached = attachConnectionsToNodes(prevNodes, newEdges);
+
+			updateFlow((prev) => ({
+				...prev,
+				edges: newEdges,
+				nodes: attached,
+			}));
+
+			handleNodesMenuClose();
+		}, [
+			updateSelectedNodeIds,
+			flow.nodes,
+			updateFlow,
+			handleNodesMenuClose,
+		]);
+
+		const handleCreateConnection = useCallback(
+			({
+				parentTable,
+				childTable,
+			}: {
+				parentTable: string;
+				childTable: string;
+			}) => {
+				const sourceNode = findNodeByNameOrId(flow.nodes, parentTable);
+				const targetNode = findNodeByNameOrId(flow.nodes, childTable);
+
+				if (!sourceNode || !targetNode) {
+					console.warn("Source or target node not found");
+					return;
+				}
+
+				if (edgeExists(flow.edges, sourceNode.id, targetNode.id)) {
+					console.warn("Edge already exists");
+					return;
+				}
+
+				const newEdge = createEdge(sourceNode.id, targetNode.id);
+
+				updateFlow((prev) => ({
+					...prev,
+					edges: [...prev.edges, newEdge],
+				}));
+			},
+			[flow.nodes, flow.edges, updateFlow],
+		);
+
+		const handleEditConnection = useCallback(
+			(updated: {
+				id?: string;
+				parentTable: string;
+				childTable: string;
+			}) => {
+				const nodesMap = new Map(
+					flow.nodes.map((n) => [n.data?.name, n.id]),
+				);
+				const newSourceId =
+					nodesMap.get(updated.parentTable) ?? updated.parentTable;
+				const newTargetId =
+					nodesMap.get(updated.childTable) ?? updated.childTable;
+				const newId = makeEdgeIdFromNodeIds(newSourceId, newTargetId);
+				const providedId = updated.id ?? null;
+				const idxById = providedId
+					? flow.edges.findIndex((e) => e.id === providedId)
+					: -1;
+				let newEdges: Edge[] = [...flow.edges];
+
+				if (idxById !== -1) {
+					const existing = flow.edges[idxById];
+					newEdges[idxById] = {
+						...existing,
+						id: newId,
+						source: newSourceId,
+						target: newTargetId,
+					};
+				} else {
+					const idxByProps = newEdges.findIndex(
+						(e) =>
+							e.source === newSourceId &&
+							e.target === newTargetId,
+					);
+					if (idxByProps !== -1) {
+						const existing = newEdges[idxByProps];
+						newEdges[idxByProps] = {
+							...existing,
+							id: newId,
+							source: newSourceId,
+							target: newTargetId,
+						};
+					} else {
+						newEdges = [
+							...newEdges,
+							createEdge(newSourceId, newTargetId),
+						];
+					}
+				}
+
+				updateFlow((prev) => ({ ...prev, edges: newEdges }));
+			},
+			[flow.nodes, flow.edges, updateFlow],
+		);
+
+		const handleDeleteConnection = useCallback(
+			(id: string) => {
+				const newEdges = flow.edges.filter((e) => e.id !== id);
+
+				const attachedNodes = attachConnectionsToNodes(
+					flow.nodes,
+					newEdges,
+				);
+
+				updateFlow({ nodes: attachedNodes, edges: newEdges });
+			},
+			[flow.edges, flow.nodes, updateFlow],
+		);
+
+		const handleRefreshMetamodel = useCallback(() => {
+			try {
+				const originalParsed = parsedData?.[selectedDataIndex];
+
+				if (!originalParsed) {
+					console.warn(
+						"No original data found for dataSource:",
+						selectedDataIndex,
+					);
+					return;
+				}
+
+				const rebuiltNodes = rebuildNodesFromParsed(originalParsed);
+				const rebuiltEdges = generateEdgesFromParsed(originalParsed);
+
+				const nodesWithConnections = attachConnectionsToNodes(
+					rebuiltNodes,
+					rebuiltEdges,
+				);
+				const resetFlow = {
+					nodes: nodesWithConnections,
+					edges: rebuiltEdges,
+				};
+
+				setFlowStates((prev) => ({
+					...prev,
+					[selectedDataIndex]: resetFlow,
+				}));
+
+				updateFlow(resetFlow);
+				updateSelectedNodeIds(nodesWithConnections.map((n) => n.id));
+				setCounter((prev) => prev + 1);
+			} catch (err) {
+				console.warn("Refresh failed, keeping previous flow:", err);
+				setCounter((prev) => prev + 1);
+			}
+		}, [parsedData, selectedDataIndex, updateFlow, updateSelectedNodeIds]);
+
+		const handleMetaModelUpdate = useCallback(
+			(snapshot: MetamodelNode[]) => {
+				const nodesCopy = deepClone(snapshot);
+
+				updateFlow((prev) => {
+					const updated = {
+						...prev,
+						nodes: nodesCopy,
+					};
+
+					setFlowStates((prevStates) => ({
+						...prevStates,
+						[selectedDataIndex]: updated,
+					}));
+
+					return updated;
+				});
+			},
+			[selectedDataIndex, updateFlow],
+		);
+
+		const handleDataSourceChange = useCallback(
+			(newIndex: number) => {
+				setFlowStates((prev) => {
+					const savedState = {
+						...prev,
+						[selectedDataIndex]: {
+							nodes: flow.nodes || [],
+							edges: flow.edges || [],
+						},
+					};
+					return savedState;
+				});
+
+				setSelectedDataIndex(newIndex);
+				setSelectedNode(null);
+				setColumnPage(0);
+			},
+			[selectedDataIndex, flow.nodes, flow.edges],
+		);
+
+		const handleSave = useCallback(() => {
+			const payloads = createPayloadsFromFlowStates(
+				parsedData,
+				flowStates,
+				transformMetaToParsed,
+			);
+			onImport?.(payloads);
+		}, [parsedData, flowStates, onImport]);
+
+		// EFFECTS
 		useEffect(() => {
 			const host = portalHostRef.current;
 			if (!host) return;
@@ -241,7 +656,11 @@ export const MetaModelType = observer(
 				if (origParent && host) {
 					try {
 						origParent.appendChild(host);
-					} catch {}
+					} catch {
+						console.warn(
+							"Failed to restore host to original parent",
+						);
+					}
 				}
 			};
 		}, [showFullScreenModal, portalContentId]);
@@ -252,358 +671,40 @@ export const MetaModelType = observer(
 					nodes: nodes as FlowNode[],
 					edges: edges as Edge[],
 				};
-				setFlow(initial);
-			}
-		}, [nodes, edges]);
 
-		const didInitRef = useRef(false);
+				const existingState = flowStates[selectedDataIndex];
+
+				if (
+					existingState &&
+					(existingState.nodes?.length > 0 ||
+						existingState.edges?.length > 0)
+				) {
+					updateFlow(existingState);
+				} else {
+					updateFlow(initial);
+
+					setFlowStates((prev) => ({
+						...prev,
+						[selectedDataIndex]: initial,
+					}));
+				}
+			}
+		}, [nodes, edges, selectedDataIndex]);
+
 		useEffect(() => {
 			if (!flow?.nodes || flow.nodes.length === 0) return;
-			if (!didInitRef.current) {
-				setSelectedNodeIds(flow.nodes.map((n) => n.id));
-				didInitRef.current = true;
+
+			if (!didInitRef.current[selectedDataIndex]) {
+				updateSelectedNodeIds(flow.nodes.map((n) => n.id));
+				didInitRef.current[selectedDataIndex] = true;
 			}
-		}, [flow.nodes]);
+		}, [flow.nodes, selectedDataIndex, updateSelectedNodeIds]);
 
-		const columnRows = useMemo(() => {
-			if (!selectedNode?.data?.properties?.length) return [];
-			return selectedNode.data.properties.slice(
-				columnPage * columnVisibleRows,
-				(columnPage + 1) * columnVisibleRows,
-			);
-		}, [selectedNode, columnPage, columnVisibleRows]);
-
-		const description = selectedNode?.id || "";
-		const logicalNames =
-			selectedNode?.data?.properties?.map(
-				(p: { name: string }): string => p.name,
-			) || [];
-
-		const handleNodesMenuOpen = (e: React.MouseEvent<HTMLElement>) =>
-			setAnchorNodesMenu(e.currentTarget);
-		const handleNodesMenuClose = () => setAnchorNodesMenu(null);
-
-		const attachConnectionsToNodes = (
-			nodesInput: (MetamodelNode | FlowNode)[],
-			edgesInput: Edge[],
-		) => {
-			return (nodesInput ?? []).map((n) => {
-				const nodeId = n.id;
-				const nodeConnections = (edgesInput ?? []).filter(
-					(e) => e.source === nodeId || e.target === nodeId,
-				);
-				return {
-					...n,
-					connections: nodeConnections.map((e) => ({ ...e })),
-				} as MetamodelNode & { connections?: Edge[] };
-			});
-		};
-
-		const handleSelectAll = (isChecked: boolean) => {
-			if (isChecked) {
-				setSelectedNodeIds((nodes ?? []).map((n) => n.id));
-				const restored = attachConnectionsToNodes(
-					JSON.parse(JSON.stringify(nodes ?? [])),
-					edges ?? [],
-				);
-				setFlow({ nodes: restored, edges: edges ?? [] });
-			} else {
-				setSelectedNodeIds([]);
-				setFlow({ nodes: [], edges: [] });
-			}
-		};
-
-		const handleToggleSelectNode = (nodeId: string) => {
-			const isSelected = selectedNodeIds.includes(nodeId);
-			const nextSelected = isSelected
-				? selectedNodeIds.filter((id) => id !== nodeId)
-				: [...selectedNodeIds, nodeId];
-
-			const initialMap = new Map((nodes ?? []).map((n) => [n.id, n]));
-			const prevNodes = Array.isArray(flow.nodes) ? flow.nodes : [];
-			const prevEdges = Array.isArray(flow.edges) ? flow.edges : [];
-
-			let newNodes: typeof prevNodes;
-			let newEdges: Edge[];
-
-			if (isSelected) {
-				newNodes = prevNodes.filter((n) => n.id !== nodeId);
-				newEdges = prevEdges.filter(
-					(e) => e.source !== nodeId && e.target !== nodeId,
-				);
-			} else {
-				const exists = prevNodes.some((n) => n.id === nodeId);
-				if (!exists) {
-					const canonical = initialMap.get(nodeId);
-					const nodeToAdd = canonical
-						? JSON.parse(JSON.stringify(canonical))
-						: {
-								id: nodeId,
-								type: "metamodel",
-								data: { name: nodeId, properties: [] },
-								position: { x: 0, y: 0 },
-							};
-					newNodes = [...prevNodes, nodeToAdd];
-				} else {
-					newNodes = prevNodes;
-				}
-				newEdges = prevEdges;
-			}
-
-			const attachedNodes = attachConnectionsToNodes(newNodes, newEdges);
-			setFlow({ nodes: attachedNodes, edges: newEdges });
-			setSelectedNodeIds(nextSelected);
-		};
-
-		const handleClearAll = () => {
-			setSelectedNodeIds([]);
-
-			const newEdges: Edge[] = [];
-
-			const prevNodes: (MetamodelNode | FlowNode)[] = Array.isArray(
-				flow.nodes,
-			)
-				? flow.nodes
-				: [];
-
-			const attached = attachConnectionsToNodes(prevNodes, newEdges);
-
-			setFlow((prev) => ({
-				...prev,
-				edges: newEdges,
-				nodes: attached,
-			}));
-
-			handleNodesMenuClose();
-		};
-
-		const handleRefreshMetamodel = () => {
-			try {
-				const rebuiltNodes = (nodes ?? []).map((n) =>
-					JSON.parse(JSON.stringify(n)),
-				) as (MetamodelNode | FlowNode)[];
-
-				const rebuiltEdges = JSON.parse(
-					JSON.stringify(edges ?? []),
-				) as Edge[];
-
-				const nodesWithConnections = attachConnectionsToNodes(
-					rebuiltNodes,
-					rebuiltEdges,
-				);
-
-				setFlow({
-					nodes: nodesWithConnections,
-					edges: rebuiltEdges,
-				});
-
-				setSelectedNodeIds(nodesWithConnections.map((n) => n.id));
-
-				setCounter((prev) => prev + 1);
-			} catch (err) {
-				console.warn("Refresh failed, keeping previous flow:", err);
-				setCounter((prev) => prev + 1);
-			}
-		};
-
-		const makeEdgeIdFromNodeIds = useCallback(
-			(sourceId: string, targetId: string) =>
-				`${sourceId}_${targetId}`?.replace(/\s+/g, "_"),
-			[],
-		);
-
-		const getInitialConnections = () => {
-			return edgesForMetamodel.map((e) => {
-				const sourceNode = flow.nodes.find((n) => n.id === e.source);
-				const targetNode = flow.nodes.find((n) => n.id === e.target);
-				const parentTable = sourceNode?.data?.name ?? e.source;
-				const childTable = targetNode?.data?.name ?? e.target;
-				return {
-					id: e.id,
-					parentTable,
-					childTable,
-				};
-			});
-		};
-		const handleCreateConnection = ({
-			parentTable,
-			childTable,
-		}: {
-			parentTable: string;
-			childTable: string;
-		}) => {
-			const sourceNode = flow.nodes.find(
-				(n) => n.data?.name === parentTable || n.id === parentTable,
-			);
-			const targetNode = flow.nodes.find(
-				(n) => n.data?.name === childTable || n.id === childTable,
-			);
-			if (!sourceNode || !targetNode) {
-				console.warn("Source or target node not found");
-				return;
-			}
-			const newEdgeId = `${sourceNode.id}_${targetNode.id}`?.replace(
-				/\s+/g,
-				"_",
-			);
-			if (flow.edges.some((e) => e.id === newEdgeId)) {
-				console.warn("Edge already exists");
-				return;
-			}
-			const newEdge: Edge = {
-				id: newEdgeId,
-				source: sourceNode.id,
-				target: targetNode.id,
-				type: "floating",
-			};
-
-			setFlow((prev) => ({
-				...prev,
-				edges: [...prev.edges, newEdge],
-			}));
-		};
-
-		const handleEditConnection = (updated: {
-			id?: string;
-			parentTable: string;
-			childTable: string;
-		}) => {
-			const nodesMap = new Map(
-				flow.nodes.map((n) => [n.data?.name, n.id]),
-			);
-			const newSourceId =
-				nodesMap.get(updated.parentTable) ?? updated.parentTable;
-			const newTargetId =
-				nodesMap.get(updated.childTable) ?? updated.childTable;
-			const newId = makeEdgeIdFromNodeIds(newSourceId, newTargetId);
-			const providedId = updated.id ?? null;
-			const idxById = providedId
-				? flow.edges.findIndex((e) => e.id === providedId)
-				: -1;
-			let newEdges: Edge[] = [...flow.edges];
-
-			if (idxById !== -1) {
-				const existing = flow.edges[idxById];
-				newEdges[idxById] = {
-					...existing,
-					id: newId,
-					source: newSourceId,
-					target: newTargetId,
-				};
-			} else {
-				const idxByProps = newEdges.findIndex(
-					(e) => e.source === newSourceId && e.target === newTargetId,
-				);
-				if (idxByProps !== -1) {
-					const existing = newEdges[idxByProps];
-					newEdges[idxByProps] = {
-						...existing,
-						id: newId,
-						source: newSourceId,
-						target: newTargetId,
-					};
-				} else {
-					newEdges = [
-						...newEdges,
-						{
-							id: newId,
-							source: newSourceId,
-							target: newTargetId,
-							type: "floating",
-						},
-					];
-				}
-			}
-
-			setFlow((prev) => ({ ...prev, edges: newEdges }));
-		};
-
-		const handleDeleteConnection = (id: string) => {
-			const newEdges = flow.edges.filter((e) => e.id !== id);
-
-			const attachedNodes = attachConnectionsToNodes(
-				flow.nodes,
-				newEdges,
-			);
-
-			setFlow({ nodes: attachedNodes, edges: newEdges });
-		};
-
-		const edgesForMetamodel = useMemo(() => {
-			const allEdges = flow?.edges ?? [];
-
-			if (!selectedNodeIds || selectedNodeIds.length === 0) return [];
-
-			const selectedSet = new Set(selectedNodeIds);
-
-			return allEdges.filter(
-				(e) => selectedSet.has(e.source) || selectedSet.has(e.target),
-			);
-		}, [
-			JSON.stringify(flow?.edges ?? []),
-			JSON.stringify(selectedNodeIds ?? []),
-		]);
-
-		const handleMetaModelUpdate = (snapshot: MetamodelNode[]) => {
-			try {
-				const nodesCopy = JSON.parse(
-					JSON.stringify(snapshot),
-				) as MetamodelNode[];
-				setFlow((prev) => ({
-					...prev,
-					nodes: nodesCopy,
-				}));
-			} catch {
-				setFlow((prev) => ({
-					...prev,
-					nodes: snapshot,
-				}));
-			}
-		};
-		const handleSave = () => {
-			const payload = transformMetaToParsed(flow);
-
-			if (!payload || Object.keys(payload.nodeProp ?? {}).length === 0) {
-				console.warn("No metamodel data to save.");
-				return;
-			}
-			onImport?.(payload);
-		};
-		const createConnectionNodes = useMemo(() => {
-			const source = flow?.nodes ?? nodes;
-
-			return (source || []).map((n) => ({
-				id: n.id,
-				type: (n.type as string) || "metamodel",
-				data: {
-					name: n.data?.name ?? n.id,
-					properties: Array.isArray(n.data?.properties)
-						? n.data.properties.map((p) => ({
-								id: p.id,
-								name: p.name,
-								type: p.type ?? "",
-							}))
-						: [],
-				},
-				position: n.position
-					? { x: n.position.x, y: n.position.y }
-					: { x: 0.0, y: 0.0 },
-			})) as {
-				id: string;
-				type: string;
-				data: {
-					name: string;
-					properties: { id: string; name: string; type: string }[];
-				};
-				position: { x: number; y: number };
-			}[];
-		}, [flow, nodes]);
-
+		// RENDER
 		return (
 			<StyledOuterContainer>
 				<StyledHeader variant="h5">Define Metamodal</StyledHeader>
 				<StyledTypography variant="body2" fontWeight="regular">
-					{" "}
 					Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed
 					do eiusmod tempor incididunt ut labore et dolore magna
 					aliqua. Ut enim ad minim veniam, quis nostrud exercitation
@@ -615,139 +716,188 @@ export const MetaModelType = observer(
 					>
 						<StyledPage>
 							<Section>
-								<Section.Header
-									actions={
-										<Stack direction="row" spacing={1}>
-											{!showFullScreenModal && (
+								<OuterBox>
+									{parsedData && parsedData.length > 0 && (
+										<StyledFormControl>
+											<Select
+												fullWidth
+												value={selectedDataIndex}
+												onChange={(e) =>
+													handleDataSourceChange(
+														Number(e.target.value),
+													)
+												}
+												size="small"
+											>
+												{parsedData.map(
+													(data, index) => (
+														<Menu.Item
+															key={getDataSourceKey(
+																data,
+																index,
+															)}
+															value={index}
+														>
+															{getDisplayName(
+																data,
+															)}
+														</Menu.Item>
+													),
+												)}
+											</Select>
+										</StyledFormControl>
+									)}
+									<SectionHeader
+										actions={
+											<StyledStack
+												direction="row"
+												spacing={1}
+											>
+												{!showFullScreenModal && (
+													<IconButton
+														onClick={() =>
+															setShowFullScreenModal(
+																true,
+															)
+														}
+														data-testid="engineMetadata-refresh-btn"
+													>
+														<FitScreen />
+													</IconButton>
+												)}
+
 												<IconButton
+													onClick={
+														handleNodesMenuOpen
+													}
+													title="Select tables"
+												>
+													<TableRows />
+												</IconButton>
+
+												<Menu
+													anchorEl={anchorNodesMenu}
+													open={Boolean(
+														anchorNodesMenu,
+													)}
+													onClose={
+														handleNodesMenuClose
+													}
+												>
+													<StyledMenuContainer>
+														<StyledMenuHeader>
+															Tables
+														</StyledMenuHeader>
+
+														<StyledButton
+															size="small"
+															variant="text"
+															onClick={
+																handleClearAll
+															}
+														>
+															Clear
+														</StyledButton>
+													</StyledMenuContainer>
+
+													<Divider />
+													<StyledMenuItem>
+														<Checkbox
+															onChange={(
+																e: React.ChangeEvent<HTMLInputElement>,
+															) =>
+																handleSelectAll(
+																	e.target
+																		.checked,
+																)
+															}
+															checked={
+																Array.isArray(
+																	nodes,
+																) &&
+																nodes.length >
+																	0 &&
+																selectedNodeIds.length ===
+																	nodes.length
+															}
+														/>
+														<List.ItemText primary="Select All" />
+													</StyledMenuItem>
+
+													<StyledList>
+														{(nodes ?? []).map(
+															(n) => (
+																<StyledMenuItem
+																	key={n.id}
+																>
+																	<Checkbox
+																		onChange={() =>
+																			handleToggleSelectNode(
+																				n.id,
+																			)
+																		}
+																		checked={selectedNodeIds.includes(
+																			n.id,
+																		)}
+																	/>
+																	<List.ItemText
+																		primary={
+																			n
+																				.data
+																				.name
+																		}
+																	/>
+																</StyledMenuItem>
+															),
+														)}
+													</StyledList>
+												</Menu>
+
+												<StyledDivider />
+
+												<StyledIcon
+													data-testid={
+														"engineMetadata-refresh-btn"
+													}
+													onClick={
+														handleRefreshMetamodel
+													}
+												>
+													<Refresh />
+												</StyledIcon>
+												<Button
+													startIcon={<AcUnit />}
+													variant="outlined"
+													data-testid={
+														"engineMetadata-print-btn"
+													}
 													onClick={() =>
-														setShowFullScreenModal(
+														setopenCreateConnectionModal(
 															true,
 														)
 													}
-													data-testid="engineMetadata-refresh-btn"
 												>
-													<FitScreen />
-												</IconButton>
-											)}
-
-											<IconButton
-												onClick={handleNodesMenuOpen}
-												title="Select tables"
-											>
-												<TableRows />
-											</IconButton>
-
-											<Menu
-												anchorEl={anchorNodesMenu}
-												open={Boolean(anchorNodesMenu)}
-												onClose={handleNodesMenuClose}
-											>
-												<StyledMenuContainer>
-													<StyledMenuHeader>
-														Tables
-													</StyledMenuHeader>
-
-													<StyledButton
-														size="small"
-														variant="text"
-														onClick={handleClearAll}
-													>
-														Clear
-													</StyledButton>
-												</StyledMenuContainer>
-
-												<Divider />
-												<StyledMenuItem>
-													<Checkbox
-														onChange={(
-															e: React.ChangeEvent<HTMLInputElement>,
-														) =>
-															handleSelectAll(
-																e.target
-																	.checked,
-															)
-														}
-														checked={
-															Array.isArray(
-																nodes,
-															) &&
-															nodes.length > 0 &&
-															selectedNodeIds.length ===
-																nodes.length
-														}
-													/>
-													<List.ItemText primary="Select All" />
-												</StyledMenuItem>
-
-												<StyledList>
-													{(nodes ?? []).map((n) => (
-														<StyledMenuItem
-															key={n.id}
-														>
-															<Checkbox
-																onChange={() =>
-																	handleToggleSelectNode(
-																		n.id,
-																	)
-																}
-																checked={selectedNodeIds.includes(
-																	n.id,
-																)}
-															/>
-															<List.ItemText
-																primary={
-																	n.data.name
-																}
-															/>
-														</StyledMenuItem>
-													))}
-												</StyledList>
-											</Menu>
-
-											<StyledDivider />
-
-											<StyledIcon
-												data-testid={
-													"engineMetadata-refresh-btn"
-												}
-												onClick={handleRefreshMetamodel}
-											>
-												<Refresh />
-											</StyledIcon>
-											<Button
-												startIcon={<AcUnit />}
-												variant="outlined"
-												data-testid={
-													"engineMetadata-print-btn"
-												}
-												onClick={() =>
-													setopenCreateConnectionModal(
-														true,
-													)
-												}
-											>
-												Create Relationship
-											</Button>
-											<Button
-												variant="outlined"
-												onClick={handleSave}
-											>
-												Save
-											</Button>
-											{!showFullScreenModal && (
+													Create Relationship
+												</Button>
 												<Button
 													variant="outlined"
-													color="secondary"
-													onClick={onCancel}
+													onClick={handleSave}
 												>
-													Cancel
+													Save
 												</Button>
-											)}
-										</Stack>
-									}
-								></Section.Header>
-
+												{!showFullScreenModal && (
+													<Button
+														variant="outlined"
+														color="secondary"
+														onClick={onCancel}
+													>
+														Cancel
+													</Button>
+												)}
+											</StyledStack>
+										}
+									></SectionHeader>
+								</OuterBox>
 								<Stack spacing={2}>
 									<StyledMetamodelContainer
 										showFullScreenModal={
@@ -755,7 +905,7 @@ export const MetaModelType = observer(
 										}
 									>
 										<Metamodel
-											key={`metamodel-${counter}`}
+											key={`metamodel-${selectedDataIndex}-${counter}`}
 											nodes={flow.nodes}
 											edges={flow.edges}
 											selectedNode={selectedNode}
@@ -767,6 +917,9 @@ export const MetaModelType = observer(
 											onMetaModelUpdate={
 												handleMetaModelUpdate
 											}
+											dataSourceId={selectedDataIndex}
+											resetKey={counter}
+											columnOptions={columnOptions}
 										/>
 									</StyledMetamodelContainer>
 								</Stack>
@@ -903,7 +1056,10 @@ export const MetaModelType = observer(
 							onClose={() => setopenCreateConnectionModal(false)}
 							onCreateConnection={handleCreateConnection}
 							nodes={createConnectionNodes}
-							initialConnections={getInitialConnections()}
+							initialConnections={getInitialConnections(
+								edgesForMetamodel,
+								flow.nodes,
+							)}
 							onEditConnection={handleEditConnection}
 							onDeleteConnection={handleDeleteConnection}
 						/>

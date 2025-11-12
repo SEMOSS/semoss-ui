@@ -1,6 +1,6 @@
 import { Add, Close, Delete } from "@mui/icons-material";
 import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import {
 	Autocomplete,
 	Box,
@@ -122,6 +122,8 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	onClose,
 	initialName = "",
 	initialType = "",
+	initialDescription = "",
+	initialLogicalNames = [],
 	onSave,
 	types,
 	isEdit = true,
@@ -141,7 +143,9 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 
 	const [logicalNames, setLogicalNames] = useState<LogicalNameItem[]>([]);
 	const [newLogicalName, setNewLogicalName] = useState<string>("");
-	const [description, setDescription] = useState<string>("");
+	const [description, setDescription] = useState<string>(initialDescription);
+	const baseId = useId();
+	const idCounterRef = useRef(0);
 
 	const openPrevRef = useRef<boolean>(false);
 
@@ -149,13 +153,30 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 		if (open && !openPrevRef.current) {
 			setTypeVal(initialType ?? typesList[0]);
 			setSingleNameVal(initialName ?? "");
-			setLogicalNames([]);
-			setDescription("");
+
+			const initialItems = (initialLogicalNames || [])
+				.filter((name) => name && name.trim())
+				.map((name) => {
+					idCounterRef.current += 1;
+					return {
+						id: `${baseId}-${idCounterRef.current}`,
+						name: name.trim(),
+					};
+				});
+			setLogicalNames(initialItems);
+			setDescription(initialDescription || "");
 			setNewLogicalName("");
 			setActiveTab(0);
 		}
 		openPrevRef.current = open;
-	}, [open]);
+	}, [
+		open,
+		initialType,
+		initialName,
+		initialLogicalNames,
+		initialDescription,
+		typesList,
+	]);
 
 	const handleAddLogicalName = () => {
 		const trimmed = (newLogicalName || "").trim();
@@ -251,11 +272,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 		>
 			<ModalTitle>
 				{isEdit ? `Edit ${singleNameVal}` : "Add column"}
-				<StyledCloseIconButton
-					onClick={onClose}
-					aria-label="close"
-					size="small"
-				>
+				<StyledCloseIconButton onClick={onClose} size="small">
 					<Close fontSize="small" />
 				</StyledCloseIconButton>
 			</ModalTitle>
@@ -307,10 +324,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 									</StyledLabel>
 
 									<TableContainer>
-										<Table
-											size="small"
-											aria-label="logical names table"
-										>
+										<Table size="small">
 											<Table.Head>
 												<Table.Row>
 													<TableCell>Name</TableCell>
@@ -330,29 +344,27 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 														</StyledTableCell>
 													</Table.Row>
 												) : (
-													logicalNames.map(
-														(item, idx) => (
-															<Table.Row
-																key={item.id}
-															>
-																<Table.Cell>
-																	{item.name}
-																</Table.Cell>
-																<StyledButton>
-																	<IconButton
-																		size="small"
-																		onClick={() =>
-																			handleRemoveLogicalName(
-																				item.id,
-																			)
-																		}
-																	>
-																		<Delete fontSize="small" />
-																	</IconButton>
-																</StyledButton>
-															</Table.Row>
-														),
-													)
+													logicalNames.map((item) => (
+														<Table.Row
+															key={item.id}
+														>
+															<Table.Cell>
+																{item.name}
+															</Table.Cell>
+															<StyledButton>
+																<IconButton
+																	size="small"
+																	onClick={() =>
+																		handleRemoveLogicalName(
+																			item.id,
+																		)
+																	}
+																>
+																	<Delete fontSize="small" />
+																</IconButton>
+															</StyledButton>
+														</Table.Row>
+													))
 												)}
 											</Table.Body>
 										</Table>
@@ -361,27 +373,21 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 									<StyledInput>
 										<TextField
 											variant="outlined"
-											placeholder="Enter new logical name"
-											value={newLogicalName ?? ""}
+											placeholder="Add logical name"
+											value={newLogicalName}
 											onChange={(e) =>
 												setNewLogicalName(
 													e.target.value,
 												)
 											}
-											onKeyDown={(e) => {
-												if (e.key === "Enter") {
-													e.preventDefault();
-													handleAddLogicalName();
-												}
-											}}
 											fullWidth
 										/>
 										<IconButton
-											size="small"
+											color="primary"
 											onClick={handleAddLogicalName}
-											aria-label="add-logical-name"
+											disabled={!newLogicalName.trim()}
 										>
-											<Add fontSize="small" />
+											<Add />
 										</IconButton>
 									</StyledInput>
 								</FormControl>
@@ -399,13 +405,18 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 			)}
 
 			<ModalActions>
-				<Button onClick={onClose}>Cancel</Button>
-				<Button variant="contained" onClick={handleSave}>
+				<Button onClick={onClose} variant="outlined">
+					Cancel
+				</Button>
+				<Button
+					onClick={handleSave}
+					variant="contained"
+					color="primary"
+					disabled={!singleNameVal.trim()}
+				>
 					Save
 				</Button>
 			</ModalActions>
 		</Modal>
 	);
 };
-
-export default Editmetamodel;

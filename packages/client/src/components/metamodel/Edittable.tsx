@@ -14,7 +14,7 @@ import {
 	TextArea,
 	TextField,
 } from "@semoss/ui";
-import type { ColumnOption } from "./Metamodel";
+import type { ColumnOption } from "../import/database/MetamodelTypes";
 
 const StyledBox = styled(Box)(() => ({
 	p: 2,
@@ -117,7 +117,6 @@ const EditTable: React.FC<EditTableProps> = ({
 			...p,
 			isSelected: true,
 		}));
-
 		setAliasVal(node?.data?.name ?? "");
 		setDescriptionVal(node?.data?.description ?? "");
 
@@ -143,7 +142,6 @@ const EditTable: React.FC<EditTableProps> = ({
 				const match = available.find(
 					(c) => c.id === p.id || c.name === p.name,
 				);
-
 				return {
 					id: p.id,
 					name: match?.name ?? p.name,

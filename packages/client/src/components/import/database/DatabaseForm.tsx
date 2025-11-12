@@ -260,17 +260,12 @@ export const DatabaseForm = ({
 	const submitMetamodelPixel = async (
 		payload: ParsedResult | ParsedResult[],
 		formValuesLocal: Record<string, unknown>,
-	) => {
+	): Promise<void> => {
 		setIsLoading(true);
-
 		try {
-			// Normalize payload -> we use the first ParsedResult if an array is passed
-			const parsed =
-				Array.isArray(payload) && payload.length > 0
-					? payload[0]
-					: payload;
+			const payloads = Array.isArray(payload) ? payload : [payload];
 
-			if (!parsed) {
+			if (!payloads || payloads.length === 0) {
 				notification.add({
 					color: "error",
 					message: "Data is missing or invalid.",
@@ -279,53 +274,83 @@ export const DatabaseForm = ({
 				return;
 			}
 
-			// destructure the fields we need (safely)
-			const {
-				dataTypes = {},
-				additionalDataTypes = {},
-				relation = [],
-				nodeProp = {},
-				logicalNames = {},
-				description = {},
-			} = parsed as ParsedResult & {
-				additionalDataTypes?: Record<string, unknown>;
-				logicalNames?: Record<string, unknown>;
-				description?: Record<string, unknown>;
-			};
+			const pixelCommands: string[] = [];
 
-			const metamodel = [
-				{
-					relation,
-					nodeProp,
-				},
-			];
+			payloads.forEach((parsed, index) => {
+				if (!parsed || typeof parsed !== "object") {
+					return;
+				}
 
-			const logicalNamesMap = logicalNames ?? {};
-			const descriptionMap = description ?? {};
+				const {
+					dataTypes = {},
+					additionalDataTypes = {},
+					relation = [],
+					nodeProp = {},
+					descriptionMap: _descriptionMap = {},
+					logicalNamesMap: _logicalNamesMap = {},
+				} = parsed as ParsedResult & {
+					additionalDataTypes?: Record<string, unknown>;
+					descriptionMap?: Record<string, unknown>;
+					description?: Record<string, unknown>;
+					logicalNamesMap?: Record<string, unknown>;
+					logicalNames?: Record<string, unknown>;
+				};
 
-			const pixel = `
-      databaseVar = RdbmsCsvUpload(
-          database=["${formValuesLocal.DATABASE_NAME}"],
-          filePath=["${watchFile}"],
-          delimiter=["${formValuesLocal.DELIMITER}"],
+				const descriptionMap = _descriptionMap ?? {};
+				const logicalNamesMap = _logicalNamesMap ?? {};
+
+				const metamodel = [
+					{
+						relation,
+						nodeProp,
+					},
+				];
+
+				const filePath = Array.isArray(watchFile)
+					? watchFile[index]
+					: watchFile;
+
+				const databaseParam =
+					index === 0
+						? `["${String(formValuesLocal.DATABASE_NAME ?? "")}"]`
+						: `[databaseVar]`;
+
+				const existingParam = index === 0 ? `[false]` : `[true]`;
+
+				const assignmentPrefix = index === 0 ? `databaseVar = ` : ``;
+
+				const command = `${assignmentPrefix}RdbmsCsvUpload(
+          database=${databaseParam},
+          filePath=["${String(filePath ?? "")}"],
+          delimiter=["${String(formValuesLocal.DELIMITER ?? "")}"],
           metamodel=${JSON.stringify(metamodel)},
+          dataTypeMap=[${JSON.stringify(dataTypes)}],
           newHeaders=[${JSON.stringify(newHeaders)}],
           additionalDataTypes=[${JSON.stringify(additionalDataTypes)}],
-          dataTypeMap=[${JSON.stringify(dataTypes)}],
           descriptionMap=[${JSON.stringify(descriptionMap)}],
           logicalNamesMap=[${JSON.stringify(logicalNamesMap)}],
-          existing=[false]
-      );
-      ExtractDatabaseMeta(database=[databaseVar]);
-    `;
+          existing=${existingParam}
+        );`;
+
+				pixelCommands.push(command);
+			});
+
+			const pixel = `${pixelCommands.join("")}ExtractDatabaseMeta(database=[databaseVar]);`;
 
 			const response = await monolithStore.runQuery(pixel);
+			const pixelReturn = Array.isArray(response?.pixelReturn)
+				? response.pixelReturn[0]
+				: undefined;
+			const output = pixelReturn?.output;
+			const operationType = pixelReturn?.operationType ?? "";
 
-			const { output, operationType } = response.pixelReturn[0];
-			if (operationType.indexOf("ERROR") > -1) {
+			if (
+				typeof operationType === "string" &&
+				operationType.indexOf("ERROR") > -1
+			) {
 				notification.add({
 					color: "error",
-					message: output,
+					message: output ?? "An error occurred on the server.",
 				});
 				setIsLoading(false);
 				return;

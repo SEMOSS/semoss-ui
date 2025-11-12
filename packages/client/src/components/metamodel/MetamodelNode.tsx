@@ -183,6 +183,8 @@ type MetamodelNodeProps = NodeProps<
 			columnId: string;
 			name: string;
 			type: string;
+			description?: string;
+			logicalNames?: string[];
 		}) => void;
 		openEditTable?: (payload: {
 			nodeId: string;
@@ -198,6 +200,7 @@ type MetamodelNodeProps = NodeProps<
 			fkTarget?: string | { table: string; column: string } | null;
 			logicalNames?: string[];
 			description?: string;
+			label?: string;
 		}[];
 		isInteractive?: boolean;
 		setOpenDeleteConfirmationModal?: React.Dispatch<
@@ -220,12 +223,13 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 	const handleEditColumn = (e: React.MouseEvent, col) => {
 		e.stopPropagation();
 		e.preventDefault();
-
 		data?.openEditForColumn?.({
 			nodeId: id,
-			columnId: col.id,
-			name: col.name,
-			type: col.type || "",
+			columnId: col?.id,
+			name: col?.name,
+			type: col?.type,
+			description: col?.description,
+			logicalNames: col?.logicalNames,
 		});
 	};
 
@@ -269,7 +273,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 							}}
 							onMouseDown={(e) => e.stopPropagation()}
 							title="Edit table"
-							aria-label="edit-table"
 						>
 							<EditRounded fontSize="small" />
 						</IconButton>
@@ -325,7 +328,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 										size="small"
 										onMouseDown={(e) => e.stopPropagation()}
 										onClick={(e) => handleEditColumn(e, p)}
-										aria-label={`edit-${p.name}`}
 										title="Edit column"
 									>
 										<EditRounded fontSize="small" />
