@@ -42,7 +42,7 @@ const NameIDWrapper = styled("div")({
 	display: "inline-block",
 });
 
-const NameTableCell = styled(Table.Cell)({
+const _NameTableCell = styled(Table.Cell)({
 	width: "100%",
 	maxWidth: "1px",
 });
@@ -204,8 +204,7 @@ interface TeamMember {
 	publisher: boolean;
 	type: string;
 	username: string;
-};
-
+}
 
 export const TeamMembersTable = (props: MembersTableProps) => {
 	const { groupId } = props;
@@ -232,9 +231,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		useState([]);
 
 	const [teamMembers, setTeamMembers] = useState([]);
-	const [memberCount, setMemberCount] = useState(0);
+	const [memberCount, _setMemberCount] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(5);
-	const [allTeamMembers, setAllTeamMembers] = useState([]);
+	const [allTeamMembers, _setAllTeamMembers] = useState([]);
 	const [hasMembers, setHasMembers] = useState(false);
 
 	const [searchMemberInput, setSearchMemberInput] = useState<string>("");
@@ -300,7 +299,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 				getAdditionalUsersNonGroup();
 			}
 		}
-	}, [isScrollBottom]);
+	}, [isScrollBottom, canCollect, getAdditionalUsersNonGroup]);
 
 	useEffect(() => {
 		if (addMembersModal) {
@@ -500,14 +499,16 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			// ignore if there is no response
 			if (response) {
 				let requests = reset ? [] : nonCredentialedUsers;
-				const users = (response as unknown as TeamMember[]).map((val) => {
-					return {
-						...val,
-						color: colors[
-							Math.floor(Math.random() * colors.length)
-						],
-					};
-				});
+				const users = (response as unknown as TeamMember[]).map(
+					(val) => {
+						return {
+							...val,
+							color: colors[
+								Math.floor(Math.random() * colors.length)
+							],
+						};
+					},
+				);
 				requests = requests.concat(users);
 				setNonCredentialedUsers(requests);
 				setCanCollect(users.length === AUTOCOMPLETE_LIMIT);
@@ -560,23 +561,10 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			setTeamMembers(data);
 			setHasMembers(data?.length > 0);
 		});
-	}, [count, membersPage, searchFilter, rowsPerPage]);
-
-	const filterUsersTwo = useCallback(() => {
-		getTeamUsers(
-			groupId,
-			100,
-			0, // offset
-			searchFilter,
-		).then((data: unknown[]) => {
-				setMemberCount(data.length);
-				setAllTeamMembers(data);
-			});
-	}, [count, membersPage, searchFilter]);
+	}, [groupId, membersPage, searchFilter, rowsPerPage]);
 
 	const filter = () => {
 		filterUsers();
-		filterUsersTwo();
 	};
 
 	// const debouncedFilterTeams = debounced(filter, 400);
@@ -691,22 +679,23 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							<Table.Body>
 								{Array.isArray(teamMembers) &&
 								teamMembers.length > 0 ? (
-									teamMembers?.map((user, i) => {
+									teamMembers?.map((user) => {
 										let isSelected = false;
 
-									if (user) {
-										isSelected = selectedMembers.some(
-											(value) => {
-												return (
-													value.userid === user.userid
-												);
-											},
-										);
-									}
+										if (user) {
+											isSelected = selectedMembers.some(
+												(value) => {
+													return (
+														value.userid ===
+														user.userid
+													);
+												},
+											);
+										}
 
 										if (user) {
 											return (
-												<Table.Row key={user.name + i}>
+												<Table.Row key={user.name}>
 													<Table.Cell size="small">
 														<Stack
 															direction="row"
@@ -776,9 +765,9 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 														{user.dateadded}
 													</Table.Cell>
 
-												<DateTableCell size="small">
-													{user.dateadded}
-												</DateTableCell>
+													<DateTableCell size="small">
+														{user.dateadded}
+													</DateTableCell>
 
 													<Table.Cell size="small">
 														<IconButton
@@ -800,9 +789,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										} else {
 											return (
 												<Table.Row
-													key={
-														i + "No data available"
-													}
+													key={`${i}No data available`}
 												>
 													<Table.Cell size="small"></Table.Cell>
 													<Table.Cell size="small"></Table.Cell>
@@ -889,6 +876,38 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 							getOptionLabel={(option: unknown) => {
 								return `${(option as { name: string }).name}`;
 							}}
+							renderOption={(props, option: TeamMember) => (
+								<li
+									{...props}
+									style={{
+										display: "flex",
+										flexDirection: "column",
+										alignItems: "flex-start",
+										padding: "8px 16px",
+									}}
+								>
+									<Box sx={{ width: "100%" }}>
+										<Typography variant="body2">
+											{option.name}
+										</Typography>
+									</Box>
+									<Box sx={{ width: "100%" }}>
+										<Typography
+											variant="caption"
+											color="textSecondary"
+											sx={{ ml: 1 }}
+										>
+											User ID:{" "}
+											<Link
+												href={`mailto:${option.email}`}
+												underline="none"
+											>
+												{option.email}
+											</Link>
+										</Typography>
+									</Box>
+								</li>
+							)}
 							isOptionEqualToValue={(option, value) => {
 								return (
 									(option as { name: string }).name ===
