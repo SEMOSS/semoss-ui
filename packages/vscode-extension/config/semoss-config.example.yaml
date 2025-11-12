@@ -1,0 +1,127 @@
+# semoss-config.example.yaml
+# Copy this file to semoss-config.yaml (same folder) and adjust values.
+# The real semoss-config.yaml is gitignored to avoid committing secrets.
+
+name: semoss-agent
+version: 1.0.0
+
+# Example model entries. Add / remove as needed.
+models:
+  - name: openai-gpt4o
+    provider: openai
+    model: gpt-4o
+    enabled: true
+  - name: local-llama
+    provider: ollama
+    model: llama3:latest
+    enabled: false
+
+mcpServers: []
+
+preferences:
+  chat:
+    defaultModel: openai-gpt4o
+    autoSave: true
+    persistHistory: true
+    maxHistoryLength: 100
+    enableTypingIndicator: true
+  ui:
+    theme: auto
+    fontSize: 14
+    fontFamily: "SF Mono, Monaco, Cascadia Code, Roboto Mono, Consolas, Courier New, monospace"
+    showLineNumbers: true
+    wordWrap: true
+  code:
+    autoComplete: true
+    syntaxHighlighting: true
+    enableInlineChat: true
+    defaultLanguage: javascript
+
+shortcuts:
+  openChat: Ctrl+Shift+L
+  clearChat: Ctrl+K
+  openSettings: Ctrl+,
+  toggleModel: Ctrl+M
+  executeCommand: Enter
+  multilineInput: Shift+Enter
+
+customCommands: []
+
+integrations:
+  semoss:
+    enabled: true
+    endpoint: "https://your-semoss-url.example"
+    apiKey: "YOUR_API_KEY_HERE"
+  github:
+    enabled: false
+    token: ""
+  vscode:
+    enabled: true
+
+mcpServers:
+  - name: git
+    command: npx
+    args:
+      - '@modelcontextprotocol/server-git'
+    description: Local Git repository operations and version control
+    timeout: 5000
+    enabled: true
+    tools:
+      - name: git_status
+        command: git status
+        description: Get git repository status and working tree changes
+        timeout: 5000
+      - name: git_log
+        command: git log --oneline -10
+        description: Show recent commit history (last 10 commits)
+        timeout: 5000
+      - name: git_branch
+        command: git branch -a
+        description: List all local and remote branches
+        timeout: 5000
+      - name: git_diff
+        command: git diff
+        description: Show changes in working directory
+        timeout: 5000
+  - name: filesystem
+    command: node
+    args:
+      - '@modelcontextprotocol/server-filesystem'
+    description: File system operations for reading and writing files
+    timeout: 10000
+    enabled: false
+    tools:
+      - name: read_file
+        command: cat "{{file_path}}"
+        description: Read contents of a file
+        timeout: 5000
+      - name: list_directory
+        command: ls -la "{{directory_path}}"
+        description: List directory contents with details
+        timeout: 5000
+      - name: file_info
+        command: stat "{{file_path}}"
+        description: Get file information and metadata
+        timeout: 5000
+  - name: github
+    command: node
+    args:
+      - '@modelcontextprotocol/server-github'
+    description: GitHub API operations for repositories and issues
+    timeout: 15000
+    enabled: false
+    env:
+      GITHUB_TOKEN: "{{github_token}}"
+    tools:
+      - name: list_repos
+        command: gh repo list --limit 10
+        description: List GitHub repositories
+        timeout: 10000
+      - name: repo_info
+        command: gh repo view "{{repo_name}}"
+        description: Get detailed information about a repository
+        timeout: 10000
+      - name: list_issues
+        command: gh issue list --limit 10
+        description: List recent issues in the repository
+        timeout: 10000

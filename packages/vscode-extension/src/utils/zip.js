@@ -1,8 +1,8 @@
 const vscode = require("vscode");
-const fs = require("fs");
-const path = require("path");
+const fs = require("node:fs");
+const path = require("node:path");
 const archiver = require("archiver");
-const { promisify } = require("util");
+const { promisify } = require("node:util");
 
 // Constants
 const MAX_SEARCH_DEPTH = 5;
@@ -52,7 +52,7 @@ async function findFolderRecursive(
 					);
 					if (found) return found;
 				}
-			} catch (error) {}
+			} catch (_error) {}
 		}
 	} catch (error) {
 		console.error(`Error searching directory ${startPath}:`, error);
@@ -67,7 +67,7 @@ async function findFolderRecursive(
  * Automatically uses the current workspace folder as the base
  * @returns {Promise<string>} Path to the created zip file
  */
-async function zipProject(baseFolder) {
+async function zipProject(baseFolder, progressCallback) {
 	return vscode.window.withProgress(
 		{
 			location: vscode.ProgressLocation.Notification,
@@ -80,6 +80,7 @@ async function zipProject(baseFolder) {
 					increment: 0,
 					message: "Determining project folder...",
 				});
+				progressCallback?.("Determining project folder...");
 
 				// Determine the base folder path
 				let folderPath = baseFolder;
@@ -98,6 +99,7 @@ async function zipProject(baseFolder) {
 					increment: 20,
 					message: "Finding portals folder...",
 				});
+				progressCallback?.("Searching for portals folder...");
 				const portalsFolder = await findFolderRecursive(
 					folderPath,
 					"portals",
@@ -114,12 +116,14 @@ async function zipProject(baseFolder) {
 						increment: 20,
 						message: `Found portals in ${zipFolderName}`,
 					});
+					progressCallback?.(`Found portals in ${zipFolderName}`);
 				} else {
 					// Fallback to assets folder if it exists
 					progress.report({
 						increment: 20,
 						message: "Looking for assets folder...",
 					});
+					progressCallback?.("Looking for assets folder...");
 					const assetsFolder = path.join(folderPath, "assets");
 
 					const assetsExists = await fsExists(assetsFolder);
@@ -132,6 +136,7 @@ async function zipProject(baseFolder) {
 								increment: 0,
 								message: "Using assets folder",
 							});
+							progressCallback?.("Using assets folder");
 						} else {
 							throw new Error(
 								"Assets exists but is not a directory.",
@@ -151,6 +156,7 @@ async function zipProject(baseFolder) {
 					increment: 20,
 					message: `Creating ${zipFileName}...`,
 				});
+				progressCallback?.(`Creating ${zipFileName}...`);
 
 				// Create zip file
 				await new Promise((resolve, reject) => {
@@ -190,6 +196,7 @@ async function zipProject(baseFolder) {
 							increment: 40,
 							message: "Zip completed!",
 						});
+						progressCallback?.("Zip completed!");
 						resolve(outputFilePath);
 					});
 
@@ -204,9 +211,13 @@ async function zipProject(baseFolder) {
 				vscode.window.showInformationMessage(
 					`${zipFolderName} folder zipped as ${zipFileName} successfully!`,
 				);
+				progressCallback?.(
+					`${zipFolderName} folder zipped as ${zipFileName} successfully!`,
+				);
 				return outputFilePath;
 			} catch (error) {
 				vscode.window.showErrorMessage(`Zip error: ${error.message}`);
+				progressCallback?.(`Zip error: ${error.message}`);
 				throw error;
 			}
 		},
