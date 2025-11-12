@@ -1,0 +1,16 @@
+# Semoss VS Code extension ignore rules
+# Local runtime configuration (contains secrets / user-specific prefs)
+config/semoss-config.yaml
+
+# Keep the example template committed
+!config/semoss-config.example.yaml
+
+# Node / build artifacts
+node_modules/
+dist/
+*.log
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/*.log
