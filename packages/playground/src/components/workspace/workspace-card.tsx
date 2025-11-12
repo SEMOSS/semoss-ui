@@ -46,7 +46,7 @@ export const WorkspaceCard = ({
 		<Card className="gap-0 p-0">
 			<CardContent className="flex flex-col gap-4 p-6">
 				<div className="flex justify-between">
-					<div className="h-10 w-10">🌴</div>
+					<div className="text-4xl">🌴</div>
 					<DropdownMenu>
 						<DropdownMenuTrigger asChild>
 							<Button variant="ghost">
