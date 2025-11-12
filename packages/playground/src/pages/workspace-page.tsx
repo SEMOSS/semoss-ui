@@ -69,8 +69,8 @@ export const WorkspacePage = observer(() => {
 		isLoadingDelete;
 
 	return (
-		<div className="flex h-full w-full flex-col px-2">
-			<div className="mx-auto flex w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
+		<div className="flex w-full flex-col px-2">
+			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-sky-100">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
 						<div className="font-medium text-blue-700 text-xl leading-normal">
@@ -101,7 +101,7 @@ export const WorkspacePage = observer(() => {
 					</div>
 				</div>
 
-				<div className="flex flex-col gap-4">
+				<div className="flex flex-col gap-4 overflow-auto">
 					<InputGroup>
 						<InputGroupInput
 							placeholder="Search Workspaces"
@@ -120,13 +120,13 @@ export const WorkspacePage = observer(() => {
 						</InputGroupAddon>
 					</InputGroup>
 
-					<ScrollArea className="h-screen w-full">
+					<ScrollArea className="flex-1 overflow-auto">
 						{isLoading ? (
 							<div className="flex items-center justify-center py-12">
 								<Spinner />
 							</div>
 						) : listWorkspaces.data.length > 0 ? (
-							<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
 								{listWorkspaces.data.map((w) => (
 									<WorkspaceCard
 										key={w.project_id}
