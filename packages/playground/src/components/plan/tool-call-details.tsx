@@ -70,7 +70,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 					}}
 				>
 					<SelectTrigger id={toolboxId}>
-						<SelectValue placeholder="Select Toolbox" />
+						<SelectValue placeholder="Select MCP" />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>
@@ -104,7 +104,7 @@ export const ToolCallDetails: React.FC<ToolCallDetailsProps> = (props) => {
 					}}
 				>
 					<SelectTrigger id={toolId}>
-						<SelectValue placeholder="Tool" />
+						<SelectValue placeholder="Select Tool" />
 					</SelectTrigger>
 					<SelectContent>
 						<SelectGroup>

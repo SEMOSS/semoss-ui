@@ -1,8 +1,7 @@
 import { makeAutoObservable, runInAction } from "mobx";
 import { type Insight, runPixel, upload } from "@semoss/sdk/react";
-import { engineProjectToMCP } from "@/components";
 import { MODEL_KEY } from "@/constants";
-import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
+import type { Engine, MCPConfig, Workspace } from "@/types";
 import type { RoomStore } from "../room";
 
 const DEFAUlT_MODEL_ID = import.meta.env.VITE_DEFAUlT_MODEL_ID || "";
@@ -14,11 +13,6 @@ interface ChatStoreInterface {
 	 *  Track if the chat is initialized
 	 */
 	isInitialized: boolean;
-
-	/**
-	 *  Track if the chat is loading
-	 */
-	isLoading: boolean;
 
 	/**
 	 * List of the models available
@@ -47,7 +41,6 @@ export class ChatStore {
 	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
-		isLoading: false,
 		models: {
 			selected: null,
 		},
@@ -147,9 +140,14 @@ export class ChatStore {
 
 		let pixel = ``;
 
+		// set the options
+		pixel += `UpdateRoomOptions(roomId=${JSON.stringify(roomId)}, roomOptions=[${JSON.stringify(
+			options,
+		)}]);`;
+
 		// run the first message
 		if (mode === "chat") {
-			pixel = `AskPlayground(
+			pixel += `AskPlayground(
 engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
@@ -161,7 +159,7 @@ paramValues=[${JSON.stringify({
 			})}]
 );`;
 		} else if (mode === "planning") {
-			pixel = `AskCOTRoom(
+			pixel += `AskCOTRoom(
 engine=["${modelId}"],
 roomId=["${roomId}"],
 command=["<encode>${prompt}</encode>"],
@@ -240,59 +238,17 @@ paramValues=[${JSON.stringify({
 	};
 
 	/**
-	 * Get available MCPs from the backend
-	 */
-	// Record<type, Record<id, MCP>>
-	getMcpMap = async (
-		filterWord?: string,
-	): Promise<Record<string, Record<string, MCP>>> => {
-		try {
-			const { pixelReturn } = await this._actions.run<(Engine | App)[][]>(
-				`MyEngineProject (metaKeys = ["tag", "description"], metaFilters=[{"tag":["MCP"]}], type=["PROJECT", "STORAGE", "DATABASE", "FUNCTION"]${filterWord ? `, filterWord=${JSON.stringify(filterWord)}` : ""})`,
-			);
-
-			if (
-				!pixelReturn ||
-				pixelReturn.length === 0 ||
-				!pixelReturn[0].output
-			) {
-				throw new Error();
-			}
-
-			const toolBoxes = pixelReturn[0].output.map(engineProjectToMCP);
-
-			return toolBoxes.reduce(
-				(acc, tool) => {
-					if (!acc[tool.type]) {
-						acc[tool.type] = {};
-					}
-					acc[tool.type][tool.id] = tool;
-					return acc;
-				},
-				{} as Record<string, Record<string, MCP>>,
-			);
-		} catch {
-			throw new Error("Failed to fetch MCPs");
-		}
-	};
-
-	/**
 	 * Add a new workspace
 	 */
 	addWorkspace = async (
 		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
 	): Promise<string> => {
 		try {
-			const esc = (v: string) =>
-				String(v).replace(/\\/g, "\\\\").replace(/'/g, "\\'");
-			const name = esc(data.name ?? "");
-			const desc = esc(data.description ?? "");
-			const prompt = esc(data.system_prompt ?? "");
 			const mcp = data.mcp.map(
 				({ name, id, type }): MCPConfig => ({ name, id, type }),
 			);
 
-			const pixel = `AddWorkspace(name=['${name}'], description=['${desc}'], systemPrompt=['${prompt}'], mcp=${JSON.stringify(mcp)})`;
+			const pixel = `AddWorkspace(name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
 			const { pixelReturn } = await this._actions.run<[string]>(pixel);
 
 			// throw errors
@@ -301,6 +257,32 @@ paramValues=[${JSON.stringify({
 			}
 
 			return pixelReturn[0].output;
+		} catch (e) {
+			throw e instanceof Error ? e : new Error(String(e));
+		}
+	};
+
+	/**
+	 * Edit a workspace
+	 */
+	editWorkspace = async (
+		workspaceId: string,
+		data: Pick<Workspace, "name" | "system_prompt" | "description" | "mcp">,
+	): Promise<string> => {
+		try {
+			const mcp = data.mcp.map(
+				({ name, id, type }): MCPConfig => ({ name, id, type }),
+			);
+
+			const pixel = `EditWorkspace(workspaceId=${JSON.stringify(workspaceId)},name=${JSON.stringify(data.name)}, description=${JSON.stringify(data.description)}, systemPrompt=${JSON.stringify(data.system_prompt)}, mcp=${JSON.stringify(mcp)})`;
+			const { pixelReturn } = await this._actions.run<[string]>(pixel);
+
+			// throw errors
+			if (this._error || !pixelReturn[0].output) {
+				throw new Error(this._error.message);
+			}
+
+			return workspaceId;
 		} catch (e) {
 			throw e instanceof Error ? e : new Error(String(e));
 		}

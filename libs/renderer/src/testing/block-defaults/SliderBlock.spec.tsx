@@ -1,8 +1,6 @@
 import { expect } from "vitest";
-import "@testing-library/jest-dom";
-
-import { SliderBlock } from "@/components/block-defaults/slider-block/SliderBlock";
-import { fireEvent, render, screen } from "../utils";
+import { SliderBlock } from "../../components/block-defaults/slider-block/SliderBlock";
+import { render, screen } from "../utils";
 
 const blocks = {
 	slider: {
@@ -59,7 +57,7 @@ const blocks = {
 
 describe("slider block", () => {
 	it("renders correctly with mocked provider", async () => {
-		const { container } = render(<SliderBlock id="slider" />, {
+		const { container } = render(<SliderBlock id={blocks.slider.id} />, {
 			blocks: blocks,
 		});
 
@@ -72,7 +70,7 @@ describe("slider block", () => {
 	});
 
 	it("renders discrete correctly with mocked provider", async () => {
-		const { container } = render(<SliderBlock id="slider2" />, {
+		const { container } = render(<SliderBlock id={blocks.slider2.id} />, {
 			blocks: blocks,
 		});
 
