@@ -30,8 +30,10 @@ export const FrameOperation = observer((props: FrameOperationProps) => {
 	const { output } = props;
 	const { state } = useBlocks();
 	let cellDetail = null;
-	const queryDetail = state.getQuery(props.cellData.queryId.toString());
-	cellDetail = queryDetail.getCell(props.cellData.cellId.toString());
+	if (props?.cellData) {
+		const queryDetail = state.getQuery(props.cellData.queryId.toString());
+		cellDetail = queryDetail.getCell(props.cellData.cellId.toString());
+	}
 
 	const addLimit = cellDetail?.parameters?.dataLimit
 		? (Number(cellDetail.parameters.dataLimit) ?? -1)
