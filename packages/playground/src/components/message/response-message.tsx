@@ -16,7 +16,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { InputMessageStore, type ResponseMessageStore } from "@/stores";
+import {
+	InputMessageStore,
+	type ResponseMessageStore,
+	RootMessageStore,
+} from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
 // Styled components replaced with Tailwind classes inline
@@ -146,6 +150,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
+									disabled={
+										inputMessage.parent instanceof
+										RootMessageStore
+									}
 									variant="ghost"
 									size="icon"
 									onClick={() => {
