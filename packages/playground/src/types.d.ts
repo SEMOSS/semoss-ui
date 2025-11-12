@@ -1,7 +1,26 @@
+export interface Theme {
+	/** Name of the app */
+	name: string;
+
+	/** Description of the app */
+	description: string;
+
+	/** Styles of the app */
+	styles: {
+		backgroundColor: string;
+		primaryColor: string;
+	};
+
+	/** Images throughout app */
+	images: {
+		logo: string;
+	};
+}
+
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "STORAGE" | "DATABASE" | "FUNCTION";
+	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION";
 	description?: string;
 }
 
@@ -10,6 +29,7 @@ export interface App {
 	project_name: string;
 	description?: string;
 	project_date_created: string;
+	project_type: string;
 }
 
 export interface Workspace {
@@ -37,7 +57,7 @@ export interface Instructions {
 
 export interface MCP {
 	/** Type of the mcp */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
 
 	/** Id of the mcp */
 	id: string;
@@ -88,11 +108,15 @@ interface AbstractPixelMessage {
 interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	inputUIPrompt: string;
-	files: {
+	modelId: string;
+	imageInfos: {
 		fileName: string;
 		fileLocation: string;
+		base64Data?: string;
+		fileFormat?: "png";
+		mimeType?: string;
+		imageType?: "FILE";
 	}[];
-	modelId: string;
 	paramMap: {
 		max_new_tokens: number;
 		temperature: number;

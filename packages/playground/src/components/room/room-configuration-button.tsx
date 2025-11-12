@@ -30,38 +30,34 @@ export const RoomConfigurationButton = observer(
 		return (
 			<Tooltip>
 				<TooltipTrigger asChild>
-					<span>
-						<Button
-							size="sm"
-							className={`${isActive ? "text-primary" : ""}`}
-							variant={"ghost"}
-							type="button"
-							aria-label="Open Configuration Menu"
-							disabled={room.isLoading}
-							onClick={() => {
-								if (
-									room.isSidebarNodeSelected(
-										ROOM_CONFIGURATION_ID,
-									)
-								) {
-									room.removeSidebarNode(
-										ROOM_CONFIGURATION_ID,
-									);
-								} else {
-									// this will select if there or open if not
-									room.addSidebarNode(ROOM_CONFIGURATION_ID, {
-										type: "tab",
-										name: "Configuration",
-										component: "room-configuration",
-										config: {},
-										enableClose: true,
-									});
-								}
-							}}
-						>
-							<Settings2Icon />
-						</Button>
-					</span>
+					<Button
+						size="sm"
+						className={`${isActive ? "text-primary" : ""}`}
+						variant={"ghost"}
+						type="button"
+						aria-label="Open Configuration Menu"
+						disabled={room.isLoading}
+						onClick={() => {
+							if (
+								room.isSidebarNodeSelected(
+									ROOM_CONFIGURATION_ID,
+								)
+							) {
+								room.removeSidebarNode(ROOM_CONFIGURATION_ID);
+							} else {
+								// this will select if there or open if not
+								room.addSidebarNode(ROOM_CONFIGURATION_ID, {
+									type: "tab",
+									name: "Configuration",
+									component: "room-configuration",
+									config: {},
+									enableClose: true,
+								});
+							}
+						}}
+					>
+						<Settings2Icon />
+					</Button>
 				</TooltipTrigger>
 				<TooltipContent>Open Configuration Menu</TooltipContent>
 			</Tooltip>

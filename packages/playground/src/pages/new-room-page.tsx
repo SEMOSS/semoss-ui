@@ -11,17 +11,19 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
 import background from "@/assets/img/background.png";
-import { RoomInput, RoomOptions, RoomWorkspace } from "@/components";
+import {
+	RoomInput,
+	RoomOptions,
+	RoomWorkspace,
+	workspaceToApp,
+} from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
-import type { Workspace } from "@/types";
-
-const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
-	? import.meta.env.VITE_APP_DESCRIPTION
-	: "";
+import type { App, Workspace } from "@/types";
 
 /**
  * The page to create a new room
@@ -29,15 +31,14 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
  * @component
  */
 export const NewRoomPage = observer(() => {
-	/**
-	 * Library Hooks
-	 */
+	const { root } = useRoot();
+
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
 	const [mode, setMode] = useState<{
 		type: "chat" | "plan" | "workspace";
-		workspace: Workspace | null;
+		workspace: App | null;
 	}>({
 		type: "chat",
 		workspace: null,
@@ -68,56 +69,47 @@ export const NewRoomPage = observer(() => {
 	/**
 	 * Functions
 	 */
-
 	/**
-	 * Ask the model
+	 * Create a new room and ask the model
 	 *
-	 * @param - input
+	 * @param prompt The prompt to ask
+	 * @param files The files to upload
 	 */
-	const askMessage = async (prompt: string, files: File[]) => {
+	const createRoom = async (prompt: string, files: File[]) => {
 		// ignore if loading
 		if (isLoading) {
 			return;
 		}
 
-		// turn the loading screen
-		setIsLoading(true);
+		try {
+			// turn the loading screen
+			setIsLoading(true);
 
-		if (mode.type === "workspace" && mode.workspace) {
-			options.workspace = {
-				workspace_id: mode.workspace.workspace_id,
-			};
+			// create a new room
+			const roomId = await chat.createRoom(
+				prompt,
+				files,
+				mode.type === "plan" ? "planning" : "chat",
+				chat.models.selected.app_id,
+				mode.type === "workspace" && mode.workspace
+					? {
+							...options,
+							workspace: {
+								workspace_id: mode.workspace.project_id,
+							},
+						}
+					: options,
+			);
+
+			// go to the new room
+			navigate(`/room/${roomId}`);
+		} catch (error) {
+			toast.error(
+				`An error occurred while creating the room. Error: ${error.message}`,
+			);
+		} finally {
+			setIsLoading(false);
 		}
-
-		// create a new room
-		const room = await chat.createRoom(
-			prompt,
-			mode.type === "plan" ? "planning" : "chat",
-			chat.models.selected,
-			mode.type === "workspace" && mode.workspace
-				? {
-						...options,
-						workspace: {
-							workspace_id: mode.workspace.workspace_id,
-						},
-					}
-				: options,
-		);
-
-		// update the options
-		await room.updateRoomOptions(options);
-
-		// ask the room
-		await room.askMessage(prompt, files);
-
-		// mark the room as initialized
-		room.setInitialized();
-
-		// turn the loading screen off
-		setIsLoading(false);
-
-		// go to the new room
-		navigate(`/room/${room.roomId}`);
 	};
 
 	/**
@@ -132,7 +124,7 @@ export const NewRoomPage = observer(() => {
 		if (getWorkspace.data) {
 			setMode({
 				type: "workspace",
-				workspace: getWorkspace.data,
+				workspace: workspaceToApp(getWorkspace.data),
 			});
 		}
 	}, [getWorkspace.status, getWorkspace.data]);
@@ -152,7 +144,7 @@ export const NewRoomPage = observer(() => {
 								Welcome
 							</div>
 							<div className="text-center text-muted-foreground text-sm leading-normal">
-								{APP_DESCRIPTION}
+								{root.theme.description}
 							</div>
 						</div>
 
@@ -174,20 +166,18 @@ export const NewRoomPage = observer(() => {
 							configuration={
 								<Tooltip>
 									<TooltipTrigger asChild>
-										<span>
-											<Button
-												aria-label="Open Configuration Menu"
-												className={`${isMenuOpen ? "text-primary" : ""}`}
-												disabled={isLoading}
-												variant="ghost"
-												size="icon-sm"
-												onClick={() => {
-													setIsMenuOpen(!isMenuOpen);
-												}}
-											>
-												<Settings2Icon />
-											</Button>
-										</span>
+										<Button
+											aria-label="Open Configuration Menu"
+											className={`${isMenuOpen ? "text-primary" : ""}`}
+											disabled={isLoading}
+											variant="ghost"
+											size="icon-sm"
+											onClick={() => {
+												setIsMenuOpen(!isMenuOpen);
+											}}
+										>
+											<Settings2Icon />
+										</Button>
 									</TooltipTrigger>
 									<TooltipContent>
 										Open Configuration Menu
@@ -195,7 +185,7 @@ export const NewRoomPage = observer(() => {
 								</Tooltip>
 							}
 							onPrompt={async (prompt, files) => {
-								await askMessage(prompt, files);
+								await createRoom(prompt, files);
 
 								return true;
 							}}
