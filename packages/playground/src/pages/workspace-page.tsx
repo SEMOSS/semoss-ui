@@ -101,55 +101,57 @@ export const WorkspacePage = observer(() => {
 					</div>
 				</div>
 
-				<InputGroup>
-					<InputGroupInput
-						placeholder="Search Workspaces"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-					/>
-					<InputGroupAddon>
-						<SearchIcon />
-					</InputGroupAddon>
-					<InputGroupAddon align="inline-end">
-						{isLoading ? (
-							<Spinner />
-						) : (
-							`${listWorkspaces.data.length} results`
-						)}
-					</InputGroupAddon>
-				</InputGroup>
+				<div className="flex flex-col gap-4">
+					<InputGroup>
+						<InputGroupInput
+							placeholder="Search Workspaces"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+						/>
+						<InputGroupAddon>
+							<SearchIcon />
+						</InputGroupAddon>
+						<InputGroupAddon align="inline-end">
+							{isLoading ? (
+								<Spinner />
+							) : (
+								`${listWorkspaces.data.length} results`
+							)}
+						</InputGroupAddon>
+					</InputGroup>
 
-				<ScrollArea className="h-full w-full">
-					{isLoading ? (
-						<div className="flex items-center justify-center py-12">
-							<Spinner />
-						</div>
-					) : listWorkspaces.data.length > 0 ? (
-						<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
-							{listWorkspaces.data.map((w) => (
-								<WorkspaceCard
-									key={w.project_id}
-									workspace={{
-										workspace_id: w.project_id,
-										name: w.project_name,
-										description: w.description,
-									}}
-									onEditClick={() => {
-										setWorkspaceId(w.project_id);
-										setIsWorkspaceModalOpen(true);
-									}}
-									onDeleteClick={() =>
-										handleDeleteWorkspace(w.project_id)
-									}
-								/>
-							))}
-						</div>
-					) : (
-						<div className="flex items-center justify-center py-12">
-							<Muted>No results found</Muted>
-						</div>
-					)}
-				</ScrollArea>
+					<ScrollArea className="h-screen w-full">
+						{isLoading ? (
+							<div className="flex items-center justify-center py-12">
+								<Spinner />
+							</div>
+						) : listWorkspaces.data.length > 0 ? (
+							<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+								{listWorkspaces.data.map((w) => (
+									<WorkspaceCard
+										key={w.project_id}
+										workspace={{
+											workspace_id: w.project_id,
+											name: w.project_name,
+											description: w.description,
+										}}
+										onEditClick={() => {
+											setWorkspaceId(w.project_id);
+											setIsWorkspaceModalOpen(true);
+										}}
+										onDeleteClick={() =>
+											handleDeleteWorkspace(w.project_id)
+										}
+									/>
+								))}
+							</div>
+						) : (
+							<div className="flex items-center justify-center py-12">
+								<Muted>No results found</Muted>
+							</div>
+						)}
+					</ScrollArea>
+				</div>
 			</div>
 
 			{isWorkspaceModalOpen && (
