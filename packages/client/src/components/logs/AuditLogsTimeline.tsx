@@ -13,6 +13,7 @@ import {
 	styled,
 	Typography,
 } from "@semoss/ui";
+import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
 import type { EventData } from "@/types";
 
 // Type definitions
@@ -152,14 +153,6 @@ const ZoomIconButton = styled(IconButton)<{ position: "left" | "right" }>(
 interface AuditLogsTimelineProps {
 	logs: EventData[];
 }
-
-const TimeDateFormatter = (timeStamp: string | number) => {
-	const tempDate = new Date(timeStamp);
-	const formattedDate = tempDate.toISOString().split('.')[0];
-    const date = formattedDate.split("T")[0];
-    const time = formattedDate.split("T")[1];
-    return { date, time };
-};
 
 export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 	logs,
@@ -381,7 +374,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     margin-bottom: 4px; 
                     text-transform: uppercase; 
                     letter-spacing: 0.5px;
-                  ">Prompt</div>
+                  ">Request</div>
                   <div style="
                     font-size: 12px; 
                     line-height: 1.4; 
@@ -394,7 +387,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
                     display: flex;
                     align-items: center;
                     overflow: hidden;
-                  ">${truncateText(eventData.payload)}</div>
+                  ">${truncateText(eventData.request)}</div>
                 </div>
                 
                 <div style="margin-bottom: 8px;">
@@ -550,7 +543,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 					},
 				},
 				legend: {
-					data: ["Prompt", "Response"],
+					data: ["Request", "Response"],
 					bottom: 0,
 					left: 15,
 					itemGap: 30,
@@ -565,7 +558,7 @@ export const AuditLogsTimeline: React.FC<AuditLogsTimelineProps> = ({
 				},
 				series: [
 					{
-						name: "Prompt",
+						name: "Request",
 						type: "custom",
 						data: eventData,
 						clip: true,
