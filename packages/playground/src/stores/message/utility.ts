@@ -16,8 +16,8 @@ export const createMessageStore = (
 	// set data based on type
 	if (pixelMessage.type === "INPUT_TEXT") {
 		return new InputMessageStore(room, pixelMessage);
-	} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
-		return new ResponseMessageStore(room, pixelMessage);
+	} else if (pixelMessage.type === "INPUT_MEDIA") {
+		return new InputMessageStore(room, pixelMessage);
 	} else if (pixelMessage.type === "RESPONSE_TEXT") {
 		if (pixelMessage.ornaments.PLAYGROUND_MESSAGE_TYPE === "COT") {
 			return new PlanMessageStore(room, pixelMessage);
