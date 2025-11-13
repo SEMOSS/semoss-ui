@@ -193,7 +193,11 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 		const trimmed = (newLogicalName || "").trim();
 		if (!trimmed) return;
 
-		if (logicalNames.some((item) => item.name === trimmed)) {
+		if (
+			logicalNames.some(
+				(item) => item.name.toLowerCase() === trimmed.toLowerCase(),
+			)
+		) {
 			setLogicalNameError("Logical name already exists");
 			return;
 		}
