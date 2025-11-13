@@ -16,7 +16,11 @@ import {
 	TooltipTrigger,
 	toast,
 } from "@semoss/ui/next";
-import { InputMessageStore, type ResponseMessageStore } from "@/stores";
+import {
+	InputMessageStore,
+	type ResponseMessageStore,
+	RootMessageStore,
+} from "@/stores";
 import { ResponseMessageTool } from "./response-message-tool";
 
 // Styled components replaced with Tailwind classes inline
@@ -80,7 +84,9 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 			<div className="group mb-0 flex w-full flex-col gap-2 overflow-hidden">
 				<div className="group flex flex-row items-center gap-2">
 					<MessageCircleIcon className="size-4" />
-					<span className="mr-0.5 font-medium text-base">Ask</span>
+					<span className="mr-0.5 font-medium text-base">
+						{message.model.name}
+					</span>
 				</div>
 				{message.text ? <Markdown>{message.text}</Markdown> : null}
 				{message.tools.map((t) => (
@@ -146,6 +152,10 @@ export const ResponseMessage: React.FC<ResponseMessageProps> = observer(
 						<Tooltip>
 							<TooltipTrigger asChild>
 								<Button
+									disabled={
+										inputMessage.parent instanceof
+										RootMessageStore
+									}
 									variant="ghost"
 									size="icon"
 									onClick={() => {
