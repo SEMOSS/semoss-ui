@@ -24,6 +24,8 @@ export const createMessageStore = (
 		}
 
 		return new ResponseMessageStore(room, pixelMessage);
+	} else if (pixelMessage.type === "INPUT_TOOL_EXEC") {
+		return new ResponseMessageStore(room, pixelMessage);
 	} else if (pixelMessage.type === "RESPONSE_TOOL") {
 		return new ResponseMessageStore(room, pixelMessage);
 	}
