@@ -1,8 +1,8 @@
 import { observer } from "mobx-react-lite";
 import { Navigate, useLocation } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
+import { LoginForm } from "@semoss/shared";
 import loginBackground from "@/assets/img/login-background.svg";
-import { LoginForm } from "@/components";
 import { AppLogo } from "@/components/app-logo";
 
 /**
