@@ -231,7 +231,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		useState([]);
 
 	const [teamMembers, setTeamMembers] = useState([]);
-	const [memberCount, _setMemberCount] = useState(0);
+	const [memberCount, setMemberCount] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(5);
 	const [allTeamMembers, _setAllTeamMembers] = useState([]);
 	const [hasMembers, setHasMembers] = useState(false);
@@ -560,6 +560,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		).then((data: unknown[]) => {
 			setTeamMembers(data);
 			setHasMembers(data?.length > 0);
+			setMemberCount(data.length);
 		});
 	}, [groupId, membersPage, searchFilter, rowsPerPage]);
 
