@@ -2,7 +2,7 @@ import { ComputerIcon, SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	H4,
@@ -17,6 +17,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components";
 import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";

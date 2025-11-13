@@ -1,6 +1,6 @@
 import { CheckIcon, ChevronsUpDownIcon } from "lucide-react";
 import { useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	Command,
@@ -13,6 +13,7 @@ import {
 	PopoverContent,
 	PopoverTrigger,
 	Spinner,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
 
