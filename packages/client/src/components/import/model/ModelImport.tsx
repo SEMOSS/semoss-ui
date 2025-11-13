@@ -34,7 +34,7 @@ const StyledSearchbarContainer = styled("div")(({ theme }) => ({
 	display: "flex",
 	width: "100%",
 	alignItems: "flex-start",
-	gap: theme.spacing(3),
+	gap: theme.spacing(2),
 	marginTop: theme.spacing(3),
 }));
 
@@ -194,12 +194,13 @@ export const ModelImport: React.FC = () => {
 								data-tesId={"model-search-bar"}
 							/>
 							<UploadButton
-								size="medium"
+								sx={{ lineHeight: 0.75 }}
+								size="large"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
 								data-tesId={"model-upload-file-button"}
 							>
-								<FileUploadOutlined fontSize="small" />
+								<FileUploadOutlined fontSize="medium" />
 							</UploadButton>
 						</StyledSearchbarContainer>
 
