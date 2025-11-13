@@ -495,7 +495,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	};
 
 	return (
-		<form onSubmit={handleSubmit(onSubmit)} style={{ marginTop: "16px" }}>
+		<form
+			onSubmit={handleSubmit(onSubmit)}
+			style={{ marginTop: "16px", marginBottom: "16px" }}
+		>
 			{Object.keys(grouped).map((category) => (
 				<Box
 					key={category}
