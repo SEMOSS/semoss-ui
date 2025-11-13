@@ -153,6 +153,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	const [logicalNames, setLogicalNames] = useState<LogicalNameItem[]>([]);
 	const [newLogicalName, setNewLogicalName] = useState<string>("");
 	const [description, setDescription] = useState<string>(initialDescription);
+	const [logicalNameError, setLogicalNameError] = useState<string>("");
 	const baseId = useId();
 	const idCounterRef = useRef(0);
 
@@ -176,6 +177,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 			setDescription(initialDescription || "");
 			setNewLogicalName("");
 			setActiveTab(0);
+			setLogicalNameError("");
 		}
 		openPrevRef.current = open;
 	}, [
@@ -192,7 +194,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 		if (!trimmed) return;
 
 		if (logicalNames.some((item) => item.name === trimmed)) {
-			setNewLogicalName("");
+			setLogicalNameError("Logical name already exists");
 			return;
 		}
 
@@ -203,10 +205,12 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 
 		setLogicalNames((prev) => [...prev, { id, name: trimmed }]);
 		setNewLogicalName("");
+		setLogicalNameError("");
 	};
 
 	const handleRemoveLogicalName = (id: string) => {
 		setLogicalNames((prev) => prev.filter((it) => it.id !== id));
+		setLogicalNameError("");
 	};
 
 	const handleSave = () => {
@@ -388,11 +392,13 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 											variant="outlined"
 											placeholder="Add logical name"
 											value={newLogicalName}
-											onChange={(e) =>
+											onChange={(e) => {
 												setNewLogicalName(
 													e.target.value,
-												)
-											}
+												);
+												if (logicalNameError)
+													setLogicalNameError("");
+											}}
 											fullWidth
 										/>
 										<IconButton
@@ -404,6 +410,19 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 											<Add />
 										</IconButton>
 									</StyledInput>
+
+									{logicalNameError && (
+										<Typography
+											variant="caption"
+											color="error"
+											sx={{
+												display: "block",
+												marginTop: 1,
+											}}
+										>
+											{logicalNameError}
+										</Typography>
+									)}
 								</FormControl>
 							</StyledBox>
 						)}

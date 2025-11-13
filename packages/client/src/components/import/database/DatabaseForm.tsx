@@ -10,6 +10,7 @@ import {
 	FileDropzone,
 	FormControlLabel,
 	IconButton,
+	LoadingScreen,
 	Menu,
 	RadioGroup,
 	Select,
@@ -20,7 +21,7 @@ import {
 	useNotification,
 } from "@semoss/ui";
 import { uploadFile } from "@/api";
-import { useRootStore, useStepper } from "@/hooks";
+import { useRootStore } from "@/hooks";
 import DataSelection from "./DataSelection";
 import ExcelDataSelection from "./ExcelDataSelection";
 import { MetaModelType } from "./MetaModelType";
@@ -111,12 +112,10 @@ export const DatabaseForm = ({
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
 	const navigate = useNavigate();
-	const { setIsLoading } = useStepper();
-
 	const defaultFields = resolvedFields;
 	const advancedFields = advanced;
 	const categoryDescriptions = categoryDescription;
-
+	const [loading, setLoading] = useState(false);
 	const databaseType = watch("DATABASE_TYPE");
 
 	useEffect(() => {
@@ -159,7 +158,7 @@ export const DatabaseForm = ({
 	}, {});
 
 	const onFormSubmit = async (formData) => {
-		setIsLoading(true);
+		setLoading(true);
 		setFormValues(formData);
 
 		try {
@@ -206,7 +205,7 @@ export const DatabaseForm = ({
 					message: "Prop File is not implemented.",
 				});
 
-				setIsLoading(false);
+				setLoading(false);
 				return;
 			} else {
 				pixelExpressions = uploadedFiles.map(
@@ -250,7 +249,7 @@ export const DatabaseForm = ({
 				message: "An error occurred during upload.",
 			});
 		} finally {
-			setIsLoading(false);
+			setLoading(false);
 		}
 	};
 
@@ -261,7 +260,7 @@ export const DatabaseForm = ({
 		payload: ParsedResult | ParsedResult[],
 		formValuesLocal: Record<string, unknown>,
 	): Promise<void> => {
-		setIsLoading(true);
+		setLoading(true);
 		try {
 			const payloads = Array.isArray(payload) ? payload : [payload];
 
@@ -270,7 +269,7 @@ export const DatabaseForm = ({
 					color: "error",
 					message: "Data is missing or invalid.",
 				});
-				setIsLoading(false);
+				setLoading(false);
 				return;
 			}
 
@@ -352,7 +351,7 @@ export const DatabaseForm = ({
 					color: "error",
 					message: output ?? "An error occurred on the server.",
 				});
-				setIsLoading(false);
+				setLoading(false);
 				return;
 			}
 
@@ -360,7 +359,7 @@ export const DatabaseForm = ({
 				color: "success",
 				message: "success",
 			});
-			setIsLoading(false);
+			setLoading(false);
 
 			navigate(`/engine/database/${output.database_id}`);
 		} catch (err) {
@@ -369,7 +368,7 @@ export const DatabaseForm = ({
 				color: "error",
 				message: "An error occurred while submitting the metamodel.",
 			});
-			setIsLoading(false);
+			setLoading(false);
 		}
 	};
 
@@ -398,7 +397,7 @@ export const DatabaseForm = ({
 		}
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
-		setIsLoading(true);
+		setLoading(true);
 		const pixel = payloadObject
 			.map((pixel) => {
 				return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
@@ -429,7 +428,7 @@ export const DatabaseForm = ({
 			});
 			console.error("Error executing query:", error);
 		} finally {
-			setIsLoading(false);
+			setLoading(false);
 		}
 	};
 
@@ -776,7 +775,9 @@ export const DatabaseForm = ({
 		}
 		return error.message;
 	};
-
+	if (loading) {
+		return <LoadingScreen.Trigger description="Loading..." />;
+	}
 	return (
 		<>
 			{step === "fileupload" && (
