@@ -69,7 +69,8 @@ export const VegaGenerationSettings = observer(
 		const [prompt, setPrompt] = useState("");
 		const [responseLoading, setResponseLoading] = useState<boolean>(false);
 		const [frames, setFrames] = useState<string[]>([]);
-		const [selectedFrame, setSelectedFrame] = useState<string>("");
+		const [selectedFrame, setSelectedFrame] = useState([]);
+
 		async function handleFrame() {
 			const getFrames = await state.runSideEffect("GetFrames();");
 			const list = getFrames.pixelReturn[0].output as string[];
@@ -77,8 +78,10 @@ export const VegaGenerationSettings = observer(
 				setFrames((prev) => [...list]);
 			}
 		}
+
 		const myDbs =
 			usePixel<{ app_id: string; app_name: string }[]>(`GetFrames();`);
+
 		useEffect(() => {
 			if (myDbs.status !== "SUCCESS") {
 				return;
@@ -86,46 +89,104 @@ export const VegaGenerationSettings = observer(
 			handleFrame();
 		}, [myDbs.status]);
 
+		const frameDataQuery = async () => {
+			try {
+				const pixel = `META | Frame("${selectedFrame}") | QueryAll()| Limit(1000) | CollectAll()`;
+				const result = await runPixel(pixel, workspace.insightId);
+				const { output, operationType } = result.pixelReturn[0];
+
+				if (operationType[0] !== "ERROR") {
+					if (output) {
+						const outputArray = (output as any).data.values.map(
+							(value) => {
+								const row: any = {};
+								value.forEach((val, index) => {
+									row[(output as any).data.headers[index]] =
+										val;
+								});
+								return row;
+							},
+						);
+						return outputArray;
+					}
+				} else {
+					notification.add({
+						color: "error",
+						message: "Error fetching frame data.",
+					});
+				}
+			} catch (e) {
+				console.error(e);
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			}
+		};
+
 		const generateAIResponse = async () => {
 			try {
-				setResponseLoading(true);
+				const pixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", frame="${selectedFrame}", insightName="${workspace.insightId}")`;
+				const result = await runPixel(pixel, workspace.insightId);
+				const { output, operationType } = result.pixelReturn[0];
 
-				const pixel = `FrameToGraph ( model = "${selectedModel}", userInput = "<encode>${prompt}</encode>", frame= "${selectedFrame}", insightName="${workspace.insightId}")`;
-				const res = await runPixel(pixel, workspace.insightId);
-				const { output } = res.pixelReturn[0];
+				if (operationType[0] !== "ERROR") {
+					if (output) {
+						let cleanedOutput = (output as string).replace(
+							/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
+							"",
+						);
+						const firstBraceIndex = cleanedOutput.indexOf("{");
+						const lastBraceIndex = cleanedOutput.lastIndexOf("}");
+						if (
+							firstBraceIndex !== -1 &&
+							lastBraceIndex !== -1 &&
+							firstBraceIndex < lastBraceIndex
+						) {
+							cleanedOutput = cleanedOutput.substring(
+								firstBraceIndex,
+								lastBraceIndex + 1,
+							);
+						}
+						try {
+							return JSON.parse(cleanedOutput);
+						} catch {
+							return cleanedOutput;
+						}
+					}
+				} else {
+					notification.add({
+						color: "error",
+						message: "Missing model or frame selection.",
+					});
+				}
+			} catch (e) {
+				console.error(e);
+				notification.add({
+					color: "error",
+					message: e.message,
+				});
+			}
+		};
 
-				console.log("user prompt:", prompt);
-				console.log("selected model:", selectedModel);
-				console.log("selected frame:", selectedFrame);
-				if (output) {
-					let cleanedOutput = (output as string).replace(
-						/["']?\$schema["']?\s*:\s*["'][^"']*["'],?\s*/g,
-						"",
-					);
-					const firstBraceIndex = cleanedOutput.indexOf("{");
-					const lastBraceIndex = cleanedOutput.lastIndexOf("}");
+		const handleGenerate = async () => {
+			setResponseLoading(true);
+			try {
+				const frameData = await frameDataQuery();
+				const vegaResponse = await generateAIResponse();
+
+				if (frameData && vegaResponse) {
 					if (
-						firstBraceIndex !== -1 &&
-						lastBraceIndex !== -1 &&
-						firstBraceIndex < lastBraceIndex
+						vegaResponse.data &&
+						Array.isArray(vegaResponse.data) &&
+						vegaResponse.data.length > 0
 					) {
-						cleanedOutput = cleanedOutput.substring(
-							firstBraceIndex,
-							lastBraceIndex + 1,
-						);
+						vegaResponse.data[0].values = frameData || [];
 					}
-					try {
-						const specJson = JSON.parse(cleanedOutput);
-						setData(
-							path,
-							specJson as PathValue<D["data"], typeof path>,
-						);
-					} catch {
-						setData(
-							path,
-							cleanedOutput as PathValue<D["data"], typeof path>,
-						);
-					}
+					setData(
+						path,
+						vegaResponse as PathValue<D["data"], typeof path>,
+					);
 				}
 			} catch (e) {
 				console.error(e);
@@ -144,8 +205,8 @@ export const VegaGenerationSettings = observer(
 					options={frames}
 					size="small"
 					label={"Select Frame"}
-					onChange={(val) => {
-						setSelectedFrame(val as unknown as string);
+					onChange={(val, e) => {
+						setSelectedFrame(e);
 					}}
 				/>
 				<TextField
@@ -169,7 +230,7 @@ export const VegaGenerationSettings = observer(
 					loading={responseLoading}
 					variant="outlined"
 					endIcon={<AutoAwesome />}
-					onClick={generateAIResponse} // call QueryAll() at the same time. Store into a variable just to have. Then bind the data from this QueryAll into the values section of the vega template
+					onClick={handleGenerate} // call QueryAll() at the same time. Store into a variable just to have. Then bind the data from this QueryAll into the values section of the vega template
 				>
 					Generate with AI
 				</Button>
