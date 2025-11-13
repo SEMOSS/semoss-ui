@@ -65,6 +65,7 @@ const StyledLetTabImage = styled("img")(() => ({
 	display: "block",
 	margin: "auto",
 	transition: "all 0.2s ease",
+	maxWidth: "none",
 }));
 
 const StyledHeaderLogo = styled(Link)(({ theme }) => ({

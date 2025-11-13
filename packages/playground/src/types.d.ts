@@ -1,7 +1,26 @@
+export interface Theme {
+	/** Name of the app */
+	name: string;
+
+	/** Description of the app */
+	description: string;
+
+	/** Styles of the app */
+	styles: {
+		backgroundColor: string;
+		primaryColor: string;
+	};
+
+	/** Images throughout app */
+	images: {
+		logo: string;
+	};
+}
+
 export interface Engine {
 	app_id: string;
 	app_name: string;
-	app_type: "STORAGE" | "DATABASE" | "FUNCTION";
+	app_type: "MODEL" | "STORAGE" | "DATABASE" | "FUNCTION";
 	description?: string;
 }
 
@@ -10,16 +29,16 @@ export interface App {
 	project_name: string;
 	description?: string;
 	project_date_created: string;
+	project_type: string;
 }
 
-// TODO: define properly
 export interface Workspace {
 	workspace_id: string;
 	name: string;
 	date_created: string; // ISO string
 	description: string;
 	system_prompt: string;
-	tools: Pick<Toolbox, "id" | "type">[];
+	mcp: MCPConfig[];
 }
 
 /**
@@ -36,22 +55,24 @@ export interface Instructions {
 	context: string;
 }
 
-export interface Toolbox {
-	/** Type of the tool */
-	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION";
+export interface MCP {
+	/** Type of the mcp */
+	type: "PROJECT" | "STORAGE" | "DATABASE" | "FUNCTION" | "MODEL";
 
-	/** Id of the tool */
+	/** Id of the mcp */
 	id: string;
 
-	/** Name of the tool */
+	/** Name of the mcp */
 	name: string;
 
-	/** Description of the tool */
+	/** Description of the mcp */
 	description: string;
 
-	/** Tags of the tool */
+	/** Tags of the mcp */
 	tags: string[];
 }
+
+export type MCPConfig = Pick<MCP, "type" | "id" | "name">;
 
 /**
  * Item from the prompt library
@@ -72,11 +93,12 @@ export interface Prompt {
  */
 export type PixelMessage =
 	| InputTextPixelMessage
+	| InputMediaPixelMessage
 	| InputToolExecPixelMessage
 	| ResponseTextPixelMessage
 	| ResponseToolPixelMessage;
 
-interface AbstractPixelMessage {
+export interface AbstractPixelMessage {
 	type: string;
 	messageId: string;
 	parentMessageId?: string;
@@ -84,34 +106,64 @@ interface AbstractPixelMessage {
 	dateCreated: string;
 }
 
-interface InputTextPixelMessage extends AbstractPixelMessage {
+export interface InputTextPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TEXT";
 	inputUIPrompt: string;
-	files: {
+	modelId: string;
+	imageInfos: {
 		fileName: string;
 		fileLocation: string;
+		base64Data?: string;
+		fileFormat?: "png";
+		mimeType?: string;
+		imageType?: "FILE";
 	}[];
-	modelId: string;
 	paramMap: {
 		max_new_tokens: number;
 		temperature: number;
 	};
 }
 
-interface InputToolExecPixelMessage extends AbstractPixelMessage {
+export interface InputMediaPixelMessage extends AbstractPixelMessage {
+	type: "INPUT_MEDIA";
+	inputUIPrompt: string;
+	modelId: string;
+	imageInfos: {
+		fileName: string;
+		fileLocation: string;
+		base64Data?: string;
+		fileFormat?: "png";
+		mimeType?: string;
+		imageType?: "FILE";
+	}[];
+	paramMap: {
+		max_new_tokens: number;
+		temperature: number;
+	};
+}
+
+export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	type: "INPUT_TOOL_EXEC";
 	visible: false;
 	tool_call_id: string;
 	tool_name: string;
-}
-
-interface ResponseTextPixelMessage extends AbstractPixelMessage {
-	type: "RESPONSE_TEXT";
-	content: string;
+	modelId: string;
 	ornaments: {
-		PLAYGROUND_MESSAGE_TYPE?: "COT";
+		modelName?: string;
 	};
 }
+
+export interface ResponseTextPixelMessage extends AbstractPixelMessage {
+	type: "RESPONSE_TEXT";
+	content: string;
+	modelId: string;
+	ornaments: {
+		PLAYGROUND_MESSAGE_TYPE?: "COT";
+		modelName?: string;
+	};
+}
+
+export type McpExecution = "auto" | "ask" | "disabled";
 
 interface ResponseToolPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TOOL";
@@ -124,6 +176,7 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 			map: {
 				SMSS_PROJECT_NAME: string;
 				SMSS_PROJECT_ID: string;
+				SMSS_MCP_EXECUTION: McpExecution;
 			};
 		};
 
@@ -137,6 +190,10 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
 	}[];
+	modelId: string;
+	ornaments: {
+		modelName?: string;
+	};
 }
 
 /**
@@ -188,14 +245,6 @@ export interface PlanStep {
 				missing_capability: string;
 				rationaleForStep: string;
 		  };
-}
-
-export interface MCP {
-	_meta: {
-		SMSS_PROJECT_NAME: string;
-		SMSS_PROJECT_ID: string;
-	};
-	tools: MCPTool[];
 }
 
 export interface MCPTool {

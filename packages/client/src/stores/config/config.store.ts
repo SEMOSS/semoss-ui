@@ -1,7 +1,10 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
 import { Env, logout, runPixel } from "@semoss/sdk/react";
-import { getUserProjectPermission as getUserProjectLevelPermission, registerUser } from "@/api";
+import {
+	getUserProjectPermission as getUserProjectLevelPermission,
+	registerUser,
+} from "@/api";
 import type { AppMetadata } from "@/components/app";
 import { THEME } from "@/constants";
 import {
@@ -249,6 +252,7 @@ export class ConfigStore {
 	get theme(): {
 		name: string;
 		logo: string;
+		landingPageName: string;
 		isLogoUrl: boolean;
 		cookiePolicyBannerReact: string;
 		cookiePolicyOrderReact: string[];
@@ -266,6 +270,7 @@ export class ConfigStore {
 		const defaultTheme = {
 			name: THEME.name,
 			logo: THEME.logo,
+			landingPageName: THEME.name,
 			isLogoUrl: false,
 			cookiePolicyBannerReact: "",
 			cookiePolicyOrderReact: [],
@@ -287,7 +292,8 @@ export class ConfigStore {
 				(this._store.config.theme as { THEME_MAP: string })?.THEME_MAP
 			) {
 				customTheme = JSON.parse(
-					(this._store.config.theme as { THEME_MAP: string }).THEME_MAP as string,
+					(this._store.config.theme as { THEME_MAP: string })
+						.THEME_MAP as string,
 				);
 			}
 		} catch {}
@@ -822,7 +828,9 @@ export class ConfigStore {
 			const res = await runPixel("META|HelpJson();");
 
 			runInAction(() => {
-				const generalReactorList = (res.pixelReturn[0].output as { General: string[] })?.General;
+				const generalReactorList = (
+					res.pixelReturn[0].output as { General: string[] }
+				)?.General;
 				this._generalReactors = generalReactorList;
 			});
 		} catch {

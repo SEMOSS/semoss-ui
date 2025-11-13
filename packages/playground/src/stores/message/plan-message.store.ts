@@ -29,6 +29,20 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 */
 	executionIdx: number = 0;
 
+	/**
+	 * Model information associated with the message
+	 */
+	model: {
+		/** Id of the model */
+		id: string;
+
+		/** Name of the model */
+		name: string;
+	} = {
+		id: "",
+		name: "",
+	};
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponseTextPixelMessage,
@@ -40,6 +54,12 @@ export class PlanMessageStore extends AbstractMessageStore {
 		} catch {
 			console.error("ERROR Parsing Plan");
 		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
 
 		makeObservable(this, {
 			plan: observable,
@@ -117,7 +137,7 @@ engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${context ? `context=["<encode>${context}</encode>"],` : `context=[],`}
-${inputMessage.files.length ? `image=${JSON.stringify(inputMessage.files.map((file) => file.fileLocation))},` : "image=[],"}
+${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
 ${this.id ? `parentMessageId=["${this.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,

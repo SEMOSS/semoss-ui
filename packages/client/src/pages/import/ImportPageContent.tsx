@@ -299,7 +299,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 						);
 					}
 				}}
-				data-testId={formatToDataTestId(
+				data-testid={formatToDataTestId(
 					`importPageContent-connect-to-${model.name}-img`,
 				)}
 			>
@@ -716,7 +716,7 @@ export const ImportPageContent: React.FC<ImportPageContentProps> = ({
 				</Typography>
 				<Typography
 					variant="body1"
-					color={isModelPage ? "secondary" : "inherit"}
+					color={isModelPage ? "inherit" : "secondary"}
 				>
 					{steps.length && steps[steps.length - 1].description}
 				</Typography>

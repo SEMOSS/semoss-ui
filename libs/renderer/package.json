@@ -57,9 +57,10 @@
         "typescript": "~5.5.2",
         "vega": "^6.1.2",
         "vega-lite": "^6.2.0",
-        "vitest": "^3.2.4",
-        "@vitest/coverage-v8": "^3.2.4",
-        "@vitejs/plugin-react": "^4.6.0"
+        "vitest": "^4.0.0",
+        "@vitest/coverage-v8": "^4.0.0",
+        "@vitejs/plugin-react": "^4.6.0",
+        "@vitest/browser-playwright": "^4.0.0"
     },
     "peerDependencies": {
         "@emotion/react": "11.11.1",
