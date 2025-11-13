@@ -698,19 +698,15 @@ export class RoomStore {
 				return;
 			}
 
-			// save the response with the tool
-			await message.saveToolExecution(
-				tool,
-				toolResponse,
-				this.mode === "executing",
-			);
-
-			// verify if it is correct if executing
-			this.plan?.verifyToolStepExecution(
-				tool._meta.map.SMSS_PROJECT_ID,
-				tool.name,
-			);
-		} catch {
+			if (this.mode === "executing") {
+				// save the tool execution
+				await this.plan?.saveToolExecution(message, tool, toolResponse);
+			} else {
+				// save the response with the tool
+				await message.saveToolExecution(tool, toolResponse);
+			}
+		} catch (e) {
+			console.error(e);
 			this.plan?.failStepExecution();
 		}
 	};

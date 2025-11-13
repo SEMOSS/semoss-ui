@@ -1,12 +1,15 @@
 import { makeObservable, observable, runInAction } from "mobx";
 import type {
+	InputToolExecPixelMessage,
 	PixelMessage,
 	Plan,
 	PlanStep,
 	ResponseTextPixelMessage,
+	ResponseToolPixelMessage,
 } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
 import { InputMessageStore } from "./input-message.store";
+import type { ResponseMessageStore } from "./response-message.store";
 import { createMessageStore } from "./utility";
 
 /**
@@ -176,7 +179,7 @@ paramValues=[${JSON.stringify({
 			]
 		>(
 			`
-ConfirmCOT(
+COTConfirmation(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
@@ -312,7 +315,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				},
 			]
 		>(
-			`GetCOTToolResponse(
+			`COTToolPrediction(
                 engine=["${room.modelId}"],
                 roomId=["${room.roomId}"],
                 stepNumber=["${step.step_number}"],
@@ -321,8 +324,6 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 		);
 
 		const { output } = response.pixelReturn[0];
-
-		console.error("TODO: Refactor to search by messageId");
 
 		// Get the input from COT
 		const inputMessage = createMessageStore(room, output.inputMessage);
@@ -350,7 +351,7 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 		const room = this.room;
 
 		// create the input message
-		const inputMessage = new InputMessageStore(this, {
+		const inputMessage = new InputMessageStore(room, {
 			messageId: "TEMP",
 			type: "INPUT_TEXT",
 			visible: true,
@@ -419,7 +420,11 @@ paramValues=[${JSON.stringify({
 	 * @param toolName - name of the tool
 	 * @param toolId - id of the app
 	 */
-	verifyToolStepExecution = (appId: string, toolName: string) => {
+	saveToolExecution = async (
+		message: ResponseMessageStore,
+		tool: ResponseMessageStore["tools"][number],
+		toolResponse: string,
+	) => {
 		const step = this.step;
 		if (!step) {
 			return;
@@ -430,11 +435,52 @@ paramValues=[${JSON.stringify({
 		}
 
 		if (
-			step.details._meta.map.SMSS_PROJECT_ID !== appId ||
-			step.details.tool_name !== toolName
+			step.details._meta.map.SMSS_PROJECT_ID !==
+				tool._meta.map.SMSS_PROJECT_ID ||
+			step.details.tool_name !== tool.name
 		) {
 			return;
 		}
+
+		const room = this.room;
+
+		// save the response
+		runInAction(() => {
+			tool.response = toolResponse;
+		});
+
+		// wait for the pixel to run
+		const response = await room.runRoomPixel<
+			[
+				{
+					toolExecution: InputToolExecPixelMessage;
+					toolResponse: ResponseToolPixelMessage;
+				},
+			]
+		>(
+			`AddCOTToolExecution(
+engine=["${room.modelId}"],
+roomId = ["${room.roomId}"],
+toolId = ["${tool.id}"],
+toolName=["${tool.name}"],
+toolPredictedArguments=["<encode>${JSON.stringify(tool.parameters)}</encode>"],
+toolExecutionResponse=["<encode>${toolResponse}</encode>"],
+paramValues=[${JSON.stringify({})}],
+${message.id ? `parentMessageId=["${message.id}"]` : ""}
+);`,
+		);
+
+		const { output } = response.pixelReturn[0];
+
+		const toolExecution = createMessageStore(room, output.toolExecution);
+		message.addChild(toolExecution);
+
+		// create the response and link to the message
+		const toolResponseMessage = createMessageStore(
+			room,
+			output.toolResponse,
+		);
+		toolExecution.addChild(toolResponseMessage);
 
 		// TODO: check success criteria
 
