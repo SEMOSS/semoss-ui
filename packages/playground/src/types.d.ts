@@ -147,13 +147,19 @@ export interface InputToolExecPixelMessage extends AbstractPixelMessage {
 	visible: false;
 	tool_call_id: string;
 	tool_name: string;
+	modelId: string;
+	ornaments: {
+		modelName?: string;
+	};
 }
 
 export interface ResponseTextPixelMessage extends AbstractPixelMessage {
 	type: "RESPONSE_TEXT";
 	content: string;
+	modelId: string;
 	ornaments: {
 		PLAYGROUND_MESSAGE_TYPE?: "COT";
+		modelName?: string;
 	};
 }
 
@@ -184,6 +190,10 @@ interface ResponseToolPixelMessage extends AbstractPixelMessage {
 		/** THIS IS NOT USED IF THERE IS AN INPUT_TOOL_EXEC WITH THE SAME TOOL ID */
 		arguments: Record<string, unknown>;
 	}[];
+	modelId: string;
+	ornaments: {
+		modelName?: string;
+	};
 }
 
 /**
