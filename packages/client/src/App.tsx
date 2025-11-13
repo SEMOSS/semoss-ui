@@ -1,6 +1,7 @@
 import axios, { isAxiosError } from "axios";
 import { useEffect } from "react";
 import { CSRF, Env } from "@semoss/sdk/react";
+import { ThemeProvider, Toaster } from "@semoss/ui/next";
 import { RootStoreContext } from "@/contexts";
 import { RootStore } from "@/stores";
 import { AppWrapper } from "./AppWrapper";
@@ -158,7 +159,10 @@ export const App = () => {
 
 	return (
 		<RootStoreContext.Provider value={_store}>
-			<AppWrapper />
+			<ThemeProvider defaultTheme="light">
+				<AppWrapper />
+				<Toaster />
+			</ThemeProvider>
 		</RootStoreContext.Provider>
 	);
 };

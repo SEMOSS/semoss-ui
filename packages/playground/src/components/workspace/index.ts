@@ -1,2 +1,2 @@
-export * from "./WorkspaceCard";
-export * from "./WorkspaceModal";
+export * from "./workspace-card";
+export * from "./workspace-overlay";
