@@ -1,7 +1,7 @@
 import { XIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -21,6 +21,7 @@ import {
 	Label,
 	ScrollArea,
 	Spinner,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
 import { engineProjectToMCP } from "./utility";
