@@ -13,8 +13,9 @@ import {
 	Tabs,
 	TextArea,
 	TextField,
+	Typography,
 } from "@semoss/ui";
-import type { ColumnOption } from "./Metamodel";
+import type { ColumnOption } from "../import/database/MetamodelTypes";
 
 const StyledBox = styled(Box)(() => ({
 	p: 2,
@@ -23,7 +24,32 @@ const StyledBox = styled(Box)(() => ({
 const StyledTabs = styled(Box)(() => ({
 	borderBottom: 1,
 	borderColor: "divider",
-	margin: "24px",
+	marginLeft: "24px",
+}));
+
+const StyledTab = styled(Tab)(() => ({
+	padding: "12px 16px",
+}));
+
+const StyledCloseIconButton = styled(IconButton)({
+	position: "absolute",
+	right: "8px",
+	top: "15px",
+});
+const ModalTitle = styled(Modal.Title)({ padding: "8px 24px" });
+const ModalContent = styled(Modal.Content)({ padding: "18px 24px" });
+const ModalActions = styled(Modal.Actions)({ padding: "8px 18px" });
+
+const StyledLabel = styled(Typography)(() => ({
+	marginBottom: 2,
+	display: "block",
+	fontSize: 13,
+}));
+
+const StyledContainer = styled(Box)(() => ({
+	display: "flex",
+	flexDirection: "column",
+	gap: 2,
 }));
 
 interface NodeShape {
@@ -61,14 +87,6 @@ interface EditTableProps {
 		alias?: string;
 	}) => void;
 }
-
-const ModalTitle = styled(Modal.Title)({ m: 0, p: 1 });
-const StyledCloseIconButton = styled(IconButton)({
-	position: "absolute",
-	right: "8px",
-	top: "15px",
-});
-const ModalActions = styled(Modal.Actions)({ p: 2 });
 
 function TabPanel({
 	children,
@@ -117,7 +135,6 @@ const EditTable: React.FC<EditTableProps> = ({
 			...p,
 			isSelected: true,
 		}));
-
 		setAliasVal(node?.data?.name ?? "");
 		setDescriptionVal(node?.data?.description ?? "");
 
@@ -143,7 +160,6 @@ const EditTable: React.FC<EditTableProps> = ({
 				const match = available.find(
 					(c) => c.id === p.id || c.name === p.name,
 				);
-
 				return {
 					id: p.id,
 					name: match?.name ?? p.name,
@@ -251,6 +267,7 @@ const EditTable: React.FC<EditTableProps> = ({
 					onClick={onClose}
 					aria-label="close"
 					size="small"
+					data-testid="edit-table-close-modal"
 				>
 					<Close fontSize="small" />
 				</StyledCloseIconButton>
@@ -262,30 +279,16 @@ const EditTable: React.FC<EditTableProps> = ({
 					onChange={(_e, v) => setTabIndex(v)}
 					aria-label="edit-table-tabs"
 				>
-					<Tab label="Edit Columns" />
-					<Tab label="Settings" />
+					<StyledTab label="Edit Columns" />
+					<StyledTab label="Settings" />
 				</Tabs>
 			</StyledTabs>
 
-			<Modal.Content>
+			<ModalContent>
 				<TabPanel value={tabIndex} index={0}>
-					<div
-						style={{
-							display: "flex",
-							flexDirection: "column",
-							gap: 16,
-						}}
-					>
+					<StyledContainer>
 						<FormControl fullWidth>
-							<span
-								style={{
-									marginBottom: 6,
-									display: "block",
-									fontSize: 13,
-								}}
-							>
-								Table
-							</span>
+							<StyledLabel variant="subtitle1">Table</StyledLabel>
 							<TextField
 								fullWidth
 								variant="outlined"
@@ -295,15 +298,9 @@ const EditTable: React.FC<EditTableProps> = ({
 						</FormControl>
 
 						<FormControl fullWidth>
-							<span
-								style={{
-									marginBottom: 6,
-									display: "block",
-									fontSize: 13,
-								}}
-							>
+							<StyledLabel variant="subtitle1">
 								Add or Remove Columns
-							</span>
+							</StyledLabel>
 
 							<Autocomplete
 								options={safeOptions}
@@ -326,20 +323,14 @@ const EditTable: React.FC<EditTableProps> = ({
 								)}
 							/>
 						</FormControl>
-					</div>
+					</StyledContainer>
 				</TabPanel>
 
 				<TabPanel value={tabIndex} index={1}>
 					<FormControl fullWidth>
-						<span
-							style={{
-								fontSize: 13,
-								marginBottom: 6,
-								display: "block",
-							}}
-						>
+						<StyledLabel variant="subtitle1">
 							Table Alias
-						</span>
+						</StyledLabel>
 						<TextField
 							variant="outlined"
 							fullWidth
@@ -350,15 +341,9 @@ const EditTable: React.FC<EditTableProps> = ({
 					</FormControl>
 
 					<FormControl fullWidth>
-						<span
-							style={{
-								fontSize: 13,
-								marginBottom: 6,
-								display: "block",
-							}}
-						>
+						<StyledLabel variant="subtitle1">
 							Description
-						</span>
+						</StyledLabel>
 						<TextArea
 							variant="outlined"
 							fullWidth
@@ -369,11 +354,17 @@ const EditTable: React.FC<EditTableProps> = ({
 						/>
 					</FormControl>
 				</TabPanel>
-			</Modal.Content>
+			</ModalContent>
 
 			<ModalActions>
-				<Button onClick={onClose}>Cancel</Button>
-				<Button variant="contained" onClick={handleSave}>
+				<Button onClick={onClose} data-testid="edit-table-cancel">
+					Cancel
+				</Button>
+				<Button
+					variant="contained"
+					onClick={handleSave}
+					data-testid="edit-table-save"
+				>
 					Save
 				</Button>
 			</ModalActions>

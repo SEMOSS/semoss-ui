@@ -177,12 +177,14 @@ const StyledDiv = styled(Box)({
 type MetamodelNodeProps = NodeProps<
 	Node<{
 		name: string;
-		isAction?: boolean;
+		isEditable?: boolean;
 		openEditForColumn?: (payload: {
 			nodeId: string;
 			columnId: string;
 			name: string;
 			type: string;
+			description?: string;
+			logicalNames?: string[];
 		}) => void;
 		openEditTable?: (payload: {
 			nodeId: string;
@@ -198,6 +200,7 @@ type MetamodelNodeProps = NodeProps<
 			fkTarget?: string | { table: string; column: string } | null;
 			logicalNames?: string[];
 			description?: string;
+			label?: string;
 		}[];
 		isInteractive?: boolean;
 		setOpenDeleteConfirmationModal?: React.Dispatch<
@@ -220,12 +223,13 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 	const handleEditColumn = (e: React.MouseEvent, col) => {
 		e.stopPropagation();
 		e.preventDefault();
-
 		data?.openEditForColumn?.({
 			nodeId: id,
-			columnId: col.id,
-			name: col.name,
-			type: col.type || "",
+			columnId: col?.id,
+			name: col?.name,
+			type: col?.type,
+			description: col?.description,
+			logicalNames: col?.logicalNames,
 		});
 	};
 
@@ -249,7 +253,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 					</StyledTitleCell>
 				</StyledHeader>
 
-				{data.isAction && (
+				{data.isEditable && (
 					<StyledDiv>
 						<IconButton
 							size="small"
@@ -269,7 +273,6 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 							}}
 							onMouseDown={(e) => e.stopPropagation()}
 							title="Edit table"
-							aria-label="edit-table"
 						>
 							<EditRounded fontSize="small" />
 						</IconButton>
@@ -288,7 +291,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 							onClick={(e) => e.stopPropagation()}
 						>
 							<StyledKeyIconContainer>
-								{data.isAction &&
+								{data.isEditable &&
 									(p.isPrimary ? (
 										<StyledPrimaryKeyIcon />
 									) : p.isForeign ? (
@@ -319,13 +322,12 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 								</StyledTypeFont>
 							</StyledColumnTypeCell>
 
-							{data.isAction && (
+							{data.isEditable && (
 								<StyledBox>
 									<IconButton
 										size="small"
 										onMouseDown={(e) => e.stopPropagation()}
 										onClick={(e) => handleEditColumn(e, p)}
-										aria-label={`edit-${p.name}`}
 										title="Edit column"
 									>
 										<EditRounded fontSize="small" />

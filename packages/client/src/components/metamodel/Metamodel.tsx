@@ -11,11 +11,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "@xyflow/react/dist/style.css";
 import { Button } from "@semoss/ui";
 import { MetamodelContext } from "@/contexts";
-import type { Property } from "../import/database/MetamodelTypes";
-import Editmetamodel from "./Editmetamodel";
+import type { ColumnOption, Property } from "../import/database/MetamodelTypes";
+import {
+	createPropertiesFromNames,
+	edgeIdsEqual,
+	nodeIdsEqual,
+	updateColumnProperties,
+} from "../import/database/MetamodelUtils";
+import { Editmetamodel } from "./Editmetamodel";
 import EditTable from "./Edittable";
 import { FloatingEdge } from "./FloatingEdge";
 import { MetamodelNode } from "./MetamodelNode";
+
+// TYPES & CONSTANTS
 
 const edgeTypes = {
 	floating: FloatingEdge,
@@ -24,7 +32,6 @@ const edgeTypes = {
 const nodeTypes = {
 	metamodel: MetamodelNode,
 };
-
 export type MetamodelNodeType = Node<
 	React.ComponentProps<typeof MetamodelNode>["data"]
 >;
@@ -32,22 +39,18 @@ export type MetamodelNodeType = Node<
 interface MetamodelProps {
 	nodes?: MetamodelNodeType[];
 	edges?: Edge[];
-
 	selectedNode?: MetamodelNodeType | null;
 	onSelectNode?: (selected: MetamodelNodeType | null) => void;
-
 	callback?: (data) => void;
-
 	isInteractive?: boolean;
-
-	isAction?: boolean;
-
+	isEditable?: boolean;
 	onMetaModelUpdate?: (snapshot: MetamodelNodeType[]) => void;
+	dataSourceId?: number | string;
+	resetKey?: number;
+	columnOptions?: ColumnOption[];
 }
-export interface ColumnOption {
-	id: string;
-	name: string;
-}
+
+// COMPONENT
 
 export const Metamodel = (props: MetamodelProps) => {
 	const {
@@ -57,9 +60,14 @@ export const Metamodel = (props: MetamodelProps) => {
 		edges = [],
 		callback,
 		isInteractive,
-		isAction = false,
+		isEditable = false,
 		onMetaModelUpdate,
+		dataSourceId,
+		resetKey,
+		columnOptions,
 	} = props;
+
+	// STATE
 
 	const [data, setData] = useState<{
 		nodes: MetamodelNodeType[];
@@ -79,11 +87,6 @@ export const Metamodel = (props: MetamodelProps) => {
 		logicalNames?: string[];
 	} | null>(null);
 
-	const closeEditModal = useCallback(() => {
-		setOpenEditColumnModal(false);
-		setColumnToEdit(null);
-	}, []);
-
 	const [openEditTableModal, setOpenEditTableModal] = useState(false);
 	const [tableToEdit, setTableToEdit] = useState<null | {
 		nodeId: string;
@@ -93,7 +96,17 @@ export const Metamodel = (props: MetamodelProps) => {
 		ColumnOption[]
 	>([]);
 
-	const isInitialMount = useRef(true);
+	// REFS
+
+	const isInitialMount = useRef<Record<string | number, boolean>>({});
+	const resetKeyRef = useRef<number | null>(null);
+	const currentDataSourceRef = useRef<string | number | null>(null);
+	const lastPropsRef = useRef<{ nodes: MetamodelNodeType[]; edges: Edge[] }>({
+		nodes: [],
+		edges: [],
+	});
+
+	// MODAL HANDLERS
 
 	const openEditForColumn = useCallback(
 		(payload: {
@@ -110,9 +123,9 @@ export const Metamodel = (props: MetamodelProps) => {
 		[],
 	);
 
-	const closeEditTableModal = useCallback(() => {
-		setOpenEditTableModal(false);
-		setTableToEdit(null);
+	const closeEditModal = useCallback(() => {
+		setOpenEditColumnModal(false);
+		setColumnToEdit(null);
 	}, []);
 
 	const openEditTable = useCallback(
@@ -123,163 +136,41 @@ export const Metamodel = (props: MetamodelProps) => {
 		[],
 	);
 
-	const getAllColumnNamesFromNodes = useCallback(
-		(nodes: MetamodelNodeType[]): ColumnOption[] => {
-			const result: ColumnOption[] = [];
-			const seen = new Set<string>();
+	const closeEditTableModal = useCallback(() => {
+		setOpenEditTableModal(false);
+		setTableToEdit(null);
+	}, []);
 
-			if (!Array.isArray(nodes)) return result;
+	// MEMOIZED VALUES
 
-			for (const n of nodes) {
-				const props = n?.data?.properties || [];
-
-				for (const p of props) {
-					const id = p?.id;
-					const name = p?.name;
-					if (!name && !id) continue;
-
-					const key = id ?? name;
-
-					if (!seen.has(key)) {
-						seen.add(key);
-						result.push({ id, name });
-					}
-				}
-			}
-
-			return result;
-		},
-		[],
+	const injectIsAction = useCallback(
+		(incomingNodes: MetamodelNodeType[]): MetamodelNodeType[] =>
+			incomingNodes.map((n) => ({
+				...n,
+				data: {
+					name: n.data?.name || "",
+					properties: n.data?.properties || [],
+					...(n.data || {}),
+					isEditable: !!isEditable,
+					openEditForColumn: openEditForColumn,
+					openEditTable: openEditTable,
+				},
+			})),
+		[isEditable],
 	);
 
-	const applyReplaceColumnsForNode = useCallback(
-		(
-			nodeId: string,
-			payload: {
-				names: string[];
-				type?: string;
-				description?: string;
-				alias?: string;
-			},
-		) => {
-			if (!nodeId) return;
-
-			const names = Array.isArray(payload.names)
-				? payload.names.map((s) => (s || "").trim()).filter(Boolean)
-				: [];
-			const chosenType = payload.type ?? "varchar";
-			const { description, alias } = payload;
-
-			setData((prev) => {
-				const node = prev.nodes.find((n) => n.id === nodeId);
-				if (!node) return prev;
-
-				const existingProps = node.data?.properties || [];
-
-				const newProps = names.map((nm) => {
-					const existing = existingProps.find((p) => p.name === nm);
-					if (existing) return existing;
-
-					const matchedAvailable =
-						Array.isArray(availableColumnNames) &&
-						availableColumnNames.find(
-							(c) => c.name === nm || c.id === nm,
-						);
-
-					let newId =
-						matchedAvailable?.id ??
-						`${nodeId}.${nm.replace(/\s+/g, "_")}`;
-
-					if (existingProps.some((p) => p.id === newId)) {
-						newId = `${newId}_${Date.now()}`;
-					}
-
-					return { id: newId, name: nm, type: chosenType };
-				});
-
-				const updatedNodeData = {
-					properties: newProps,
-					description: description !== undefined ? description : "",
-					name: alias !== undefined ? alias : node.data?.name,
-				};
-
-				const newNodes = prev.nodes.map((n) =>
-					n.id === nodeId
-						? {
-								...n,
-								data: {
-									...n.data,
-									...updatedNodeData,
-								},
-							}
-						: n,
-				);
-
-				// Call callbacks synchronously within the state update
-				if (callback) {
-					callback({ nodes: newNodes, edges: prev.edges });
-				}
-
-				if (onMetaModelUpdate) {
-					try {
-						onMetaModelUpdate(JSON.parse(JSON.stringify(newNodes)));
-					} catch {
-						onMetaModelUpdate(newNodes);
-					}
-				}
-
-				return { ...prev, nodes: newNodes };
-			});
-
-			// Update flowNodes separately, outside of setData
-			setFlowNodes((cur) => {
-				if (!Array.isArray(cur)) return cur;
-
-				return cur.map((n) => {
-					if (n.id !== nodeId) return n;
-
-					const updatedNodeData = {
-						properties: names.map((nm) => {
-							const existing = n.data?.properties?.find(
-								(p) => p.name === nm,
-							);
-							if (existing) return existing;
-
-							const matchedAvailable =
-								Array.isArray(availableColumnNames) &&
-								availableColumnNames.find(
-									(c) => c.name === nm || c.id === nm,
-								);
-
-							let newId =
-								matchedAvailable?.id ??
-								`${nodeId}.${nm.replace(/\s+/g, "_")}`;
-
-							if (
-								n.data?.properties?.some((p) => p.id === newId)
-							) {
-								newId = `${newId}_${Date.now()}`;
-							}
-
-							return { id: newId, name: nm, type: chosenType };
-						}),
-						description:
-							description !== undefined ? description : "",
-						name: alias !== undefined ? alias : n.data?.name,
-					};
-
-					return {
-						...n,
-						data: {
-							...n.data,
-							...updatedNodeData,
-						},
-					};
-				});
-			});
-		},
-		[availableColumnNames, callback, onMetaModelUpdate],
+	const initialFlowNodes = useMemo<MetamodelNodeType[]>(
+		() => (isEditable ? injectIsAction(nodes) : nodes),
+		[isEditable, nodes, injectIsAction],
 	);
+
+	// CUSTOM HOOKS
+
+	const [flowNodes, setFlowNodes, onFlowNodesChange] =
+		useNodesState(initialFlowNodes);
+	const [flowEdges, setFlowEdges, onFlowEdgesChange] = useEdgesState(edges);
+
+	// DATA MUTATION HANDLERS
 
 	const applyColumnEdit = useCallback(
 		(payload: {
@@ -291,71 +182,6 @@ export const Metamodel = (props: MetamodelProps) => {
 			if (!columnToEdit) return;
 
 			const { nodeId, columnId } = columnToEdit;
-			const newName = (payload.name ?? "").trim();
-			const newType = payload.type ?? undefined;
-			const newDescription = payload.description;
-			const newLogicalNames = Array.isArray(payload.logicalNames)
-				? payload.logicalNames
-				: undefined;
-
-			const updateProperties = (oldProps: Property[]) => {
-				let targetIdx = oldProps.findIndex((p) => p.id === columnId);
-				if (targetIdx === -1) {
-					targetIdx = oldProps.findIndex((p) => p.name === columnId);
-				}
-				if (targetIdx === -1) return null;
-
-				const targetProp = oldProps[targetIdx];
-				const oldName = targetProp.name;
-
-				const nameUnchanged = !newName || newName === oldName;
-				const typeUnchanged =
-					newType === undefined || newType === targetProp.type;
-				const descUnchanged =
-					newDescription === undefined ||
-					newDescription === targetProp.description;
-				const logicalNamesUnchanged =
-					newLogicalNames === undefined ||
-					JSON.stringify(newLogicalNames) ===
-						JSON.stringify(targetProp.logicalNames || []);
-
-				if (
-					nameUnchanged &&
-					typeUnchanged &&
-					descUnchanged &&
-					logicalNamesUnchanged
-				) {
-					return null;
-				}
-
-				const updatedProps = oldProps.map((p, idx) =>
-					idx === targetIdx
-						? {
-								...p,
-								name: newName || p.name,
-								type: newType ?? p.type,
-								description:
-									newDescription !== undefined
-										? newDescription
-										: p.description,
-								logicalNames:
-									newLogicalNames !== undefined
-										? newLogicalNames
-										: p.logicalNames,
-							}
-						: p,
-				);
-
-				const dupIdx = updatedProps.findIndex(
-					(p, idx) =>
-						idx !== targetIdx &&
-						p.name === updatedProps[targetIdx].name,
-				);
-
-				return dupIdx !== -1
-					? updatedProps.filter((_, idx) => idx !== dupIdx)
-					: updatedProps;
-			};
 
 			setData((prev) => {
 				const node = prev.nodes.find((n) => n.id === nodeId);
@@ -368,7 +194,11 @@ export const Metamodel = (props: MetamodelProps) => {
 					? node.data.properties
 					: [];
 
-				const updatedProps = updateProperties(oldProps);
+				const updatedProps = updateColumnProperties(
+					oldProps,
+					columnId,
+					payload,
+				);
 				if (!updatedProps) {
 					closeEditModal();
 					return prev;
@@ -397,7 +227,6 @@ export const Metamodel = (props: MetamodelProps) => {
 						onMetaModelUpdate(newNodes);
 					}
 				}
-
 				closeEditModal();
 				return { ...prev, nodes: newNodes };
 			});
@@ -414,7 +243,11 @@ export const Metamodel = (props: MetamodelProps) => {
 						? n.data.properties
 						: [];
 
-					const updatedProps = updateProperties(oldProps);
+					const updatedProps = updateColumnProperties(
+						oldProps,
+						columnId,
+						payload,
+					);
 					if (!updatedProps) return n;
 
 					return {
@@ -429,134 +262,108 @@ export const Metamodel = (props: MetamodelProps) => {
 		},
 		[columnToEdit, callback, closeEditModal, onMetaModelUpdate],
 	);
-	const injectIsAction = useCallback(
-		(incomingNodes: MetamodelNodeType[]): MetamodelNodeType[] =>
-			incomingNodes.map((n) => ({
-				...n,
-				data: {
-					name: n.data?.name || "",
-					properties: n.data?.properties || [],
-					...(n.data || {}),
-					isAction: !!isAction,
-					openEditForColumn: openEditForColumn,
-					openEditTable: openEditTable,
-				},
-			})),
-		[isAction, openEditForColumn, openEditTable],
-	);
 
-	const nodeIdsEqual = useCallback(
-		(a: MetamodelNodeType[] = [], b: MetamodelNodeType[] = []) => {
-			if (!Array.isArray(a) || !Array.isArray(b)) return false;
-			if (a.length !== b.length) return false;
-			for (let i = 0; i < a.length; i++)
-				if (a[i].id !== b[i].id) return false;
-			return true;
+	const applyReplaceColumnsForNode = useCallback(
+		(
+			nodeId: string,
+			payload: {
+				names: string[];
+				type?: string;
+				description?: string;
+				alias?: string;
+			},
+		) => {
+			if (!nodeId) return;
+
+			const names = Array.isArray(payload.names)
+				? payload.names.map((s) => (s || "").trim()).filter(Boolean)
+				: [];
+			const chosenType = payload.type ?? "varchar";
+			const { description, alias } = payload;
+
+			setData((prev) => {
+				const node = prev.nodes.find((n) => n.id === nodeId);
+				if (!node) return prev;
+
+				const existingProps = node.data?.properties || [];
+
+				const newProps = createPropertiesFromNames(
+					nodeId,
+					names,
+					existingProps,
+					availableColumnNames,
+					chosenType,
+				);
+
+				const updatedNodeData = {
+					properties: newProps,
+					description: description !== null ? description : "",
+					name: alias !== null ? alias : node.data?.name,
+				};
+
+				const newNodes = prev.nodes.map((n) =>
+					n.id === nodeId
+						? {
+								...n,
+								data: {
+									...n.data,
+									...updatedNodeData,
+								},
+							}
+						: n,
+				);
+
+				if (callback) {
+					callback({ nodes: newNodes, edges: prev.edges });
+				}
+
+				if (onMetaModelUpdate) {
+					try {
+						onMetaModelUpdate(JSON.parse(JSON.stringify(newNodes)));
+					} catch {
+						onMetaModelUpdate(newNodes);
+					}
+				}
+
+				return { ...prev, nodes: newNodes };
+			});
+
+			setFlowNodes((cur) => {
+				if (!Array.isArray(cur)) return cur;
+
+				return cur.map((n) => {
+					if (n.id !== nodeId) return n;
+
+					const existingProps = n.data?.properties || [];
+
+					const newProps = createPropertiesFromNames(
+						nodeId,
+						names,
+						existingProps,
+						availableColumnNames,
+						chosenType,
+					);
+
+					const updatedNodeData = {
+						properties: newProps,
+						description: description !== null ? description : "",
+						name: alias !== null ? alias : n.data?.name,
+					};
+
+					return {
+						...n,
+						data: {
+							...n.data,
+							...updatedNodeData,
+						},
+					};
+				});
+			});
 		},
-		[],
+		[availableColumnNames, callback, onMetaModelUpdate],
 	);
 
-	const edgeIdsEqual = useCallback((a: Edge[] = [], b: Edge[] = []) => {
-		if (!Array.isArray(a) || !Array.isArray(b)) return false;
-		if (a.length !== b.length) return false;
-		for (let i = 0; i < a.length; i++)
-			if (
-				(a[i].id || `${a[i].source}_${a[i].target}`) !==
-				(b[i].id || `${b[i].source}_${b[i].target}`)
-			)
-				return false;
-		return true;
-	}, []);
-
-	const initialFlowNodes = useMemo<MetamodelNodeType[]>(
-		() => (isAction ? injectIsAction(nodes) : nodes),
-		[isAction, nodes, injectIsAction],
-	);
-
-	const [flowNodes, setFlowNodes, onFlowNodesChange] =
-		useNodesState(initialFlowNodes);
-	const [flowEdges, setFlowEdges, onFlowEdgesChange] = useEdgesState(edges);
-
-	useEffect(() => {
-		const computed = isAction ? injectIsAction(nodes || []) : nodes || [];
-
-		if (!nodeIdsEqual(flowNodes, computed)) {
-			setFlowNodes(computed);
-		}
-
-		if (!edgeIdsEqual(flowEdges, edges || [])) {
-			setFlowEdges(edges || []);
-		}
-	}, [
-		nodes,
-		edges,
-		isAction,
-		injectIsAction,
-		nodeIdsEqual,
-		edgeIdsEqual,
-		flowNodes,
-		flowEdges,
-		setFlowNodes,
-		setFlowEdges,
-	]);
-
-	useEffect(() => {
-		if (!isAction) return;
-
-		const incoming = (nodes || []).map((n) => ({
-			...n,
-		}));
-
-		setData({ nodes: incoming, edges: edges || [] });
-		if (!edgeIdsEqual(flowEdges, edges || [])) {
-			setFlowEdges(edges || []);
-		}
-	}, [nodes, edges, isAction, edgeIdsEqual, flowEdges, setFlowEdges]);
-
-	useEffect(() => {
-		const columnNames = getAllColumnNamesFromNodes(nodes || []);
-		setAvailableColumnNames(columnNames);
-
-		if (isInitialMount.current) {
-			const nodeCopy = Array.isArray(nodes)
-				? JSON.parse(JSON.stringify(nodes))
-				: [];
-			const edgesCopy = Array.isArray(edges)
-				? JSON.parse(JSON.stringify(edges))
-				: [];
-
-			setData({ nodes: nodeCopy, edges: edgesCopy });
-
-			if (onMetaModelUpdate) {
-				onMetaModelUpdate(nodeCopy);
-			}
-
-			isInitialMount.current = false;
-		} else if (isAction) {
-			if (!edgeIdsEqual(data.edges, edges || [])) {
-				setData((prev) => ({
-					...prev,
-					edges: edges || [],
-				}));
-			}
-
-			if (!edgeIdsEqual(flowEdges, edges || [])) {
-				setFlowEdges(edges || []);
-			}
-		}
-	}, [
-		nodes,
-		edges,
-		isAction,
-		getAllColumnNamesFromNodes,
-		onMetaModelUpdate,
-		edgeIdsEqual,
-		flowEdges,
-		setFlowEdges,
-		data.edges,
-	]);
-
-	const updateData = useCallback((nodeData, action) => {
+	const updateData = useCallback((nodeData, action: string) => {
 		setData((prev) => {
 			const temp = { ...prev };
 
@@ -599,6 +406,8 @@ export const Metamodel = (props: MetamodelProps) => {
 			return prev;
 		});
 	}, []);
+
+	// ACTION HANDLERS
 
 	const onSubmit = useCallback(() => {
 		const payloadObj = {
@@ -662,6 +471,136 @@ export const Metamodel = (props: MetamodelProps) => {
 		},
 		[nodes, onSelectNode],
 	);
+
+	useEffect(() => {
+		if (
+			resetKeyRef.current !== undefined &&
+			resetKeyRef.current !== resetKey
+		) {
+			const sourceKey = String(dataSourceId ?? "default");
+			isInitialMount.current[sourceKey] = false;
+		}
+		resetKeyRef.current = resetKey;
+	}, [resetKey, dataSourceId]);
+
+	useEffect(() => {
+		if (!isEditable) {
+			setData({ nodes: nodes || [], edges: edges || [] });
+			setFlowNodes(nodes || []);
+			setFlowEdges(edges || []);
+			return;
+		}
+
+		const sourceKey =
+			dataSourceId !== undefined ? String(dataSourceId) : "default";
+
+		const dataSourceChanged =
+			currentDataSourceRef.current !== undefined &&
+			currentDataSourceRef.current !== sourceKey;
+
+		const nodesStr = JSON.stringify(
+			nodes?.map((n) => ({
+				id: n.id,
+				dataLen: n.data?.properties?.length,
+			})),
+		);
+		const edgesStr = JSON.stringify(
+			edges?.map((e) => ({
+				id: e.id,
+				source: e.source,
+				target: e.target,
+			})),
+		);
+		const lastNodesStr = JSON.stringify(
+			lastPropsRef.current.nodes?.map((n) => ({
+				id: n.id,
+				dataLen: n.data?.properties?.length,
+			})),
+		);
+		const lastEdgesStr = JSON.stringify(
+			lastPropsRef.current.edges?.map((e) => ({
+				id: e.id,
+				source: e.source,
+				target: e.target,
+			})),
+		);
+
+		const propsChanged =
+			nodesStr !== lastNodesStr || edgesStr !== lastEdgesStr;
+
+		if (dataSourceChanged) {
+			currentDataSourceRef.current = sourceKey;
+			isInitialMount.current[sourceKey] = false;
+		} else {
+			currentDataSourceRef.current = sourceKey;
+		}
+
+		if (
+			!isInitialMount.current[sourceKey] ||
+			(dataSourceChanged && propsChanged)
+		) {
+			const nodeCopy =
+				Array.isArray(nodes) && nodes.length > 0
+					? JSON.parse(JSON.stringify(nodes))
+					: [];
+			const edgesCopy =
+				Array.isArray(edges) && edges.length > 0
+					? JSON.parse(JSON.stringify(edges))
+					: [];
+
+			const processedNodes = injectIsAction(nodeCopy);
+
+			setData({ nodes: processedNodes, edges: edgesCopy });
+			setFlowNodes(processedNodes);
+			setFlowEdges(edgesCopy);
+
+			lastPropsRef.current = { nodes: nodeCopy, edges: edgesCopy };
+
+			if (onMetaModelUpdate && processedNodes.length > 0) {
+				onMetaModelUpdate(processedNodes);
+			}
+
+			isInitialMount.current[sourceKey] = true;
+		} else if (propsChanged) {
+			const computed = injectIsAction(nodes || []);
+			if (!nodeIdsEqual(flowNodes, computed)) {
+				setFlowNodes(computed);
+				setData((prev) => ({
+					...prev,
+					nodes: computed,
+				}));
+			}
+
+			if (!edgeIdsEqual(data.edges, edges || [])) {
+				setData((prev) => ({
+					...prev,
+					edges: edges || [],
+				}));
+				setFlowEdges(edges || []);
+			}
+
+			lastPropsRef.current = { nodes: nodes || [], edges: edges || [] };
+		}
+	}, [
+		nodes,
+		edges,
+		isEditable,
+		dataSourceId,
+		injectIsAction,
+		nodeIdsEqual,
+		edgeIdsEqual,
+		onMetaModelUpdate,
+		data.edges,
+	]);
+
+	useEffect(() => {
+		if (isEditable) {
+			setAvailableColumnNames(columnOptions || []);
+		} else {
+			setAvailableColumnNames([]);
+		}
+	}, [columnOptions, isEditable]);
+
 	return (
 		<MetamodelContext.Provider
 			value={{
@@ -676,6 +615,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				edges={flowEdges}
 				nodeTypes={nodeTypes}
 				edgeTypes={edgeTypes}
+				fitView={true}
 				onNodesChange={onFlowNodesChange}
 				onEdgesChange={onFlowEdgesChange}
 				defaultViewport={{ x: 70, y: 50, zoom: 1 }}
@@ -689,6 +629,7 @@ export const Metamodel = (props: MetamodelProps) => {
 					onClick={() => {
 						onSubmit();
 					}}
+					data-testid="metamodel-apply-btn"
 				>
 					Apply
 				</Button>

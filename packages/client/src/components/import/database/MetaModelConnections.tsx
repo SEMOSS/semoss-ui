@@ -26,15 +26,19 @@ import {
 import { Metamodel } from "@/components/metamodel";
 import CreateConnection from "@/components/metamodel/CreateConnection";
 import { Section } from "@/components/ui";
-import {
-	type Edge,
-	type FlowData,
-	type FlowNode,
-	type MetaModelTypeProps,
-	type MetamodelNode,
-	type Property,
-	transformMetaToParsed,
+import type {
+	Edge,
+	FlowData,
+	FlowNode,
+	MetaModelTypeProps,
+	MetamodelNode,
+	ParsedResult,
+	Property,
 } from "./MetamodelTypes";
+import {
+	createPayloadsFromFlowStates,
+	transformMetaToParsed,
+} from "./MetamodelUtils";
 import { PortalModal } from "./portal";
 
 const StyledPage = styled("div")(() => ({
@@ -518,10 +522,22 @@ export const MetaModelConnections = observer(
 			}
 		};
 
-		const handleImportConnections = () => {
-			const payload = transformMetaToParsed(flow);
-			onImportConnections?.(payload);
-		};
+		const handleImportConnections = useCallback(() => {
+			const updatedParsedData: ParsedResult[] = [parsedData[0]];
+			updatedParsedData[0] = {
+				...parsedData[0],
+				relation: parsedData[0].relation.map((r) => ({
+					...r,
+					relName: `${r.fromCol}.${r.toCol}`,
+				})),
+			};
+			const payloads = createPayloadsFromFlowStates(
+				updatedParsedData,
+				flow,
+				transformMetaToParsed,
+			);
+			onImportConnections?.(payloads);
+		}, [parsedData, flow, onImportConnections]);
 
 		const createConnectionNodes = useMemo(() => {
 			const source = flow?.nodes ?? nodes;
@@ -672,7 +688,7 @@ export const MetaModelConnections = observer(
 												setSelectedNode(n)
 											}
 											isInteractive={true}
-											isAction={true}
+											isEditable={true}
 											onMetaModelUpdate={
 												handleMetaModelUpdate
 											}

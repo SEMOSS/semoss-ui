@@ -35,6 +35,7 @@ const StyledBox = styled(Box)(({ theme }) => ({
 const PreviewIcon = styled(Preview)(({ theme }) => ({
 	color: theme.palette.primary.main,
 	fontSize: 18,
+	marginRight: "4px",
 }));
 
 const StyledTypography = styled(Typography)(({ theme }) => ({
@@ -43,13 +44,17 @@ const StyledTypography = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledList = styled(Box)(() => ({
-	mt: 2,
+	marginBottom: "8px",
+	marginLeft: "16px",
+	marginRight: "16px",
+	height: "110px",
+	overflow: "auto",
 }));
 
 const StyledInnerList = styled(Box)(() => ({
 	display: "flex",
 	alignItems: "center",
-	mb: 1,
+	marginBottom: "4px",
 }));
 
 const StyledTypographyLeft = styled(Typography)(() => ({
@@ -109,13 +114,15 @@ const StyledCloseIconButton = styled(IconButton)(() => ({
 	right: "8px",
 	top: "15px",
 }));
-const ModalActions = styled(Modal.Actions)(() => ({ p: 2 }));
+const ModalActions = styled(Modal.Actions)(() => ({
+	padding: "0px 18px 18px 0px",
+}));
 
 const StyledContent = styled(Box)(() => ({
 	display: "flex",
 	flexDirection: "column",
 	gap: 16,
-	padding: "0 16px 16px 16px",
+	paddingBottom: "8px",
 }));
 
 const StyledLabel = styled(Typography)(() => ({
@@ -301,6 +308,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 					onClick={onClose}
 					aria-label="close"
 					size="small"
+					data-testid="close-btn"
 				>
 					<Close fontSize="small" />
 				</StyledCloseIconButton>
@@ -383,6 +391,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 											size="small"
 											onClick={() => handleStartEdit(c)}
 											aria-label="edit-connection"
+											data-testid="edit-connection"
 										>
 											<Edit fontSize="small" />
 										</IconButton>
@@ -390,6 +399,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 											size="small"
 											onClick={() => handleDelete(c)}
 											aria-label="delete-connection"
+											data-testid="delete-connection"
 										>
 											<Delete fontSize="small" />
 										</IconButton>
@@ -407,6 +417,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 					variant="outlined"
 					onClick={handleAdd}
 					disabled={!isFormValid || error !== ""}
+					data-testid="add-connection"
 				>
 					{editingId ? "Update" : "Add"}
 				</Button>
@@ -416,6 +427,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 						onClose();
 					}}
 					disabled={connections.length === 0 || error !== ""}
+					data-testid="save-connection"
 				>
 					Save
 				</Button>
