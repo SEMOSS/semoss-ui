@@ -167,8 +167,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "openAIModel",
 							category: "General",
 						},
 						{
@@ -190,7 +191,7 @@ export const IMPORTABLE_MODELS = {
 							type: "text",
 							required: false,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}', contextWindow=${CONTEXT_WINDOW})",
 							category: "Settings",
 						},
 						{
@@ -205,6 +206,14 @@ export const IMPORTABLE_MODELS = {
 							label: "Max Input Tokens",
 							type: "number",
 							required: false,
+							category: "Settings",
+						},
+						{
+							key: "CONTEXT_WINDOW",
+							label: "Context Window",
+							type: "number",
+							required: true,
+							default: 2048,
 							category: "Settings",
 						},
 						{
@@ -223,13 +232,6 @@ export const IMPORTABLE_MODELS = {
 							options: ["true", "false"],
 							required: true,
 							default: "true",
-							category: "Settings",
-						},
-						{
-							key: "CONTEXT_WINDOW",
-							label: "Context Window",
-							type: "number",
-							required: false,
 							category: "Settings",
 						},
 					],
@@ -388,8 +390,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "azureOpenAIModel",
 							category: "General",
 						},
 						{
@@ -622,6 +625,23 @@ export const IMPORTABLE_MODELS = {
 							default: "true",
 							category: "Settings",
 						},
+						{
+							key: "VAR_NAME",
+							label: "Variable Name",
+							type: "hidden",
+							required: true,
+							value: "awsBedrockModel",
+							category: "General",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.BedrockClient(modelId = '${MODEL}', secret_key = '${AWS_SECRET_KEY}', access_key = '${AWS_ACCESS_KEY}', region='${AWS_REGION}')",
+							category: "Settings",
+						},
 					],
 					advanced: [],
 				},
@@ -687,8 +707,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "awsBedrockModel",
 							category: "General",
 						},
 						{
@@ -792,8 +813,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "googleVertexAIModel",
 							category: "General",
 						},
 						{
@@ -964,8 +986,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "nvidiaNimModel",
 							category: "General",
 						},
 						{
@@ -1133,8 +1156,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "compatabileOpenAIModel",
 							category: "General",
 						},
 						{
@@ -1182,6 +1206,15 @@ export const IMPORTABLE_MODELS = {
 							label: "Context Window",
 							type: "number",
 							required: false,
+							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: false,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', deployment_type = '${DEPLOYMENT_TYPE}')",
 							category: "Settings",
 						},
 					],
@@ -1284,8 +1317,9 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "VAR_NAME",
 							label: "Variable Name",
-							type: "text",
+							type: "hidden",
 							required: true,
+							value: "embeddedModel",
 							category: "General",
 						},
 						{

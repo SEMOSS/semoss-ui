@@ -125,9 +125,22 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	}, [fields, advanced, reset, name]);
 
 	const onSubmit = (data: Record<string, unknown>) => {
+		let initScript = data.INIT_MODEL_ENGINE as string;
+		
+		// Replace placeholders in the INIT_MODEL_ENGINE script with actual values
+		initScript = initScript.replace(/\$\{([^}]+)\}/g, (match, key: string) => {
+			return data[key] as string
+		});
+		// debugger;
+
 		const pixel = `CreateModelEngine(model=["${
 			data.NAME
-		}"],modelDetails=[${JSON.stringify(data)}])`;
+		}"],modelDetails=[${JSON.stringify({
+			...data,
+			// INIT_MODEL_ENGINE: initScript,
+		})}])`;
+
+		// debugger;
 		monolithStore.runQuery(pixel).then(async (response) => {
 			const output = response.pixelReturn[0].output,
 				operationType = response.pixelReturn[0].operationType;
