@@ -197,7 +197,7 @@ export const RoomWorkspace: React.FC<RoomWorkspaceProps> = observer(
 											{(listWorkspaces.status ===
 												"LOADING" ||
 												search !== debouncedSearch) && (
-												<div className="flex w-full flex-row items-center">
+												<div className="flex items-center justify-center py-4">
 													<Spinner />
 												</div>
 											)}

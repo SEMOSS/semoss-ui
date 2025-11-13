@@ -162,7 +162,9 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 								<FieldLabel>Available Tools</FieldLabel>
 								<ScrollArea className="flex h-[300px] max-h-[250px] flex-col items-center justify-center overflow-auto">
 									{getApps.status === "LOADING" && (
-										<Spinner />
+										<div className="flex items-center justify-center py-4">
+											<Spinner />
+										</div>
 									)}
 									{getApps.status === "SUCCESS" && (
 										<div className="grid h-full w-full grid-cols-2 gap-2">

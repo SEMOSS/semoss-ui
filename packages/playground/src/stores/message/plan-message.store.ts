@@ -6,7 +6,7 @@ import type {
 	ResponseTextPixelMessage,
 } from "@/types";
 import { AbstractMessageStore } from "./abstract-message.store";
-import type { InputMessageStore } from "./input-message.store";
+import { InputMessageStore } from "./input-message.store";
 import { createMessageStore } from "./utility";
 
 /**
@@ -278,6 +278,9 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 				runInAction(() => {
 					step.status = "completed";
 				});
+
+				// go to the next one
+				this.executeNextStep();
 			}
 		} catch (error) {
 			// Mark step as failed
@@ -344,8 +347,53 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 			throw new Error("Invalid step type for LLM reasoning");
 		}
 
-		// Execute the reasoning as a regular message
-		await this.room.askMessage(step.details.prompt, []);
+		const room = this.room;
+
+		// create the input message
+		const inputMessage = new InputMessageStore(this, {
+			messageId: "TEMP",
+			type: "INPUT_TEXT",
+			visible: true,
+			inputUIPrompt: step.details.prompt,
+			imageInfos: [],
+			modelId: room.modelId,
+			paramMap: {
+				max_new_tokens: room.options.tokenLength,
+				temperature: room.options.temperature,
+			},
+			dateCreated: "",
+		});
+
+		// add the message
+		room.tail.addChild(inputMessage);
+
+		// wait for the pixel to run
+		const response = await room.runRoomPixel<
+			[
+				{
+					inputMessage: PixelMessage;
+					responseMessage: PixelMessage;
+				},
+			]
+		>(`AskCOTRoom(
+engine=["${room.modelId}"],
+roomId=["${room.roomId}"],
+command=["<encode>${inputMessage.text}</encode>"],
+${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
+paramValues=[${JSON.stringify({
+			max_new_tokens: room.options.tokenLength,
+			temperature: room.options.temperature,
+		})}]
+);`);
+
+		const { output } = response.pixelReturn[0];
+
+		// Add the response
+		const responseMessage = createMessageStore(
+			room,
+			output.responseMessage,
+		);
+		inputMessage.addChild(responseMessage);
 
 		return true;
 	};
