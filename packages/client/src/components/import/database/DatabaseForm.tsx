@@ -340,7 +340,7 @@ export const DatabaseForm = ({
 			const response = await monolithStore.runQuery(pixel);
 			const pixelReturn = Array.isArray(response?.pixelReturn)
 				? response.pixelReturn[0]
-				: undefined;
+				: null;
 			const output = pixelReturn?.output;
 			const operationType = pixelReturn?.operationType ?? "";
 
@@ -445,7 +445,7 @@ export const DatabaseForm = ({
 
 			fieldsToWatch.forEach((name: keyof typeof watch) => {
 				const val = watch(name);
-				if (watchedFieldRef.current[name] !== undefined && val) {
+				if (watchedFieldRef.current[name] !== null && val) {
 					pixel = pixel?.replaceAll(`<${name}>`, val);
 					optionsPixel = optionsPixel?.replaceAll(`<${name}>`, val);
 				}

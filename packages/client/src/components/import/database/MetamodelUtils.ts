@@ -13,10 +13,6 @@ import type {
 } from "./MetamodelTypes";
 
 /**
- * Utility functions for Metamodel component
- */
-
-/**
  * Attaches connection information to nodes based on edges
  * @param nodesInput - Array of nodes (MetamodelNode or FlowNode)
  * @param edgesInput - Array of edges connecting the nodes

@@ -43,7 +43,7 @@ interface MetamodelProps {
 	onSelectNode?: (selected: MetamodelNodeType | null) => void;
 	callback?: (data) => void;
 	isInteractive?: boolean;
-	isAction?: boolean;
+	isEditable?: boolean;
 	onMetaModelUpdate?: (snapshot: MetamodelNodeType[]) => void;
 	dataSourceId?: number | string;
 	resetKey?: number;
@@ -60,7 +60,7 @@ export const Metamodel = (props: MetamodelProps) => {
 		edges = [],
 		callback,
 		isInteractive,
-		isAction = false,
+		isEditable = false,
 		onMetaModelUpdate,
 		dataSourceId,
 		resetKey,
@@ -151,17 +151,17 @@ export const Metamodel = (props: MetamodelProps) => {
 					name: n.data?.name || "",
 					properties: n.data?.properties || [],
 					...(n.data || {}),
-					isAction: !!isAction,
+					isEditable: !!isEditable,
 					openEditForColumn: openEditForColumn,
 					openEditTable: openEditTable,
 				},
 			})),
-		[isAction],
+		[isEditable],
 	);
 
 	const initialFlowNodes = useMemo<MetamodelNodeType[]>(
-		() => (isAction ? injectIsAction(nodes) : nodes),
-		[isAction, nodes, injectIsAction],
+		() => (isEditable ? injectIsAction(nodes) : nodes),
+		[isEditable, nodes, injectIsAction],
 	);
 
 	// CUSTOM HOOKS
@@ -484,7 +484,7 @@ export const Metamodel = (props: MetamodelProps) => {
 	}, [resetKey, dataSourceId]);
 
 	useEffect(() => {
-		if (!isAction) {
+		if (!isEditable) {
 			setData({ nodes: nodes || [], edges: edges || [] });
 			setFlowNodes(nodes || []);
 			setFlowEdges(edges || []);
@@ -584,7 +584,7 @@ export const Metamodel = (props: MetamodelProps) => {
 	}, [
 		nodes,
 		edges,
-		isAction,
+		isEditable,
 		dataSourceId,
 		injectIsAction,
 		nodeIdsEqual,
@@ -594,12 +594,12 @@ export const Metamodel = (props: MetamodelProps) => {
 	]);
 
 	useEffect(() => {
-		if (isAction) {
+		if (isEditable) {
 			setAvailableColumnNames(columnOptions || []);
 		} else {
 			setAvailableColumnNames([]);
 		}
-	}, [columnOptions, isAction]);
+	}, [columnOptions, isEditable]);
 
 	return (
 		<MetamodelContext.Provider
@@ -629,6 +629,7 @@ export const Metamodel = (props: MetamodelProps) => {
 					onClick={() => {
 						onSubmit();
 					}}
+					data-testid="metamodel-apply-btn"
 				>
 					Apply
 				</Button>

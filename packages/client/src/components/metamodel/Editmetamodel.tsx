@@ -34,17 +34,16 @@ interface EditMetamodelProps {
 	initialLogicalNames?: string[];
 }
 
-const ModalTitle = styled(Modal.Title)({
-	margin: 0,
-	padding: "16px",
-});
+const StyledTab = styled(Tab)(() => ({
+	padding: "12px 16px",
+}));
+const ModalTitle = styled(Modal.Title)({ padding: "8px 24px" });
+const ModalContent = styled(Modal.Content)({ padding: "18px 24px" });
+const ModalActions = styled(Modal.Actions)({ padding: "8px 18px" });
 const StyledCloseIconButton = styled(IconButton)({
 	position: "absolute",
 	right: "8px",
 	top: "15px",
-});
-const ModalActions = styled(Modal.Actions)({
-	padding: "16px",
 });
 const StyledContainer = styled(Box)(() => ({
 	display: "flex",
@@ -62,7 +61,7 @@ const StyledLabel = styled(Typography)(() => ({
 const StyledTabsBox = styled(Box)(() => ({
 	borderBottom: "8px",
 	borderColor: "divider",
-	margin: "24px",
+	margin: "0px 24px",
 }));
 
 const StyledBox = styled(Box)(() => ({
@@ -80,17 +79,26 @@ const StyledDescriptionBox = styled(Box)(() => ({
 const TableContainer = styled(Table.Container)(() => ({
 	border: 1,
 	borderColor: "divider",
+	maxHeight: "200px",
+	overflow: "auto",
+	marginBottom: "8px",
 }));
 
-const TableCell = styled(Table.Cell)(() => ({
+const TableHeader = styled(Table.Head)(({ theme }) => ({
+	backgroundColor: theme.palette.primary.hover,
+}));
+const TableHeaderCell = styled(Table.Cell)(({ theme }) => ({
+	padding: "10px",
 	fontWeight: 600,
-	borderRight: 1,
-	borderColor: "divider",
+	color: theme.palette.primary.main,
+	backgroundColor: theme.palette.primary.hover,
 }));
 
-const TableActions = styled(Table.Cell)(() => ({
+const TableActions = styled(Table.Cell)(({ theme }) => ({
 	fontWeight: 600,
 	width: 80,
+	color: theme.palette.primary.main,
+	backgroundColor: theme.palette.primary.hover,
 }));
 
 const StyledTableCell = styled(Table.Cell)(() => ({
@@ -109,14 +117,6 @@ const StyledInput = styled(Box)(() => ({
 	marginTop: 8,
 }));
 
-const StyledTab = styled(Box)(() => ({
-	padding: "16px",
-	display: "flex",
-	justifyContent: "center",
-	alignItems: "center",
-	minHeight: 120,
-}));
-
 export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	open,
 	onClose,
@@ -129,7 +129,16 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	isEdit = true,
 }) => {
 	const typesList = useMemo(
-		() => types ?? ["int", "float", "double", "varchar", "boolean", "date"],
+		() =>
+			types ?? [
+				"int",
+				"string",
+				"float",
+				"double",
+				"varchar",
+				"boolean",
+				"date",
+			],
 		[types],
 	);
 	type LogicalNameItem = { id: string; name: string };
@@ -267,7 +276,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 			open={open}
 			onClose={onClose}
 			fullWidth
-			maxWidth="md"
+			maxWidth="sm"
 			scroll="paper"
 		>
 			<ModalTitle>
@@ -287,15 +296,19 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 							}
 							indicatorColor="primary"
 							textColor="primary"
-							variant="fullWidth"
+							variant="scrollable"
 						>
-							<Tab label="Edit" value={0} />
-							<Tab label="Description" value={1} />
-							<Tab label="Logical Names" value={2} />
-							<Tab label="Sample Instances" value={3} disabled />
+							<StyledTab label="Edit" value={0} />
+							<StyledTab label="Description" value={1} />
+							<StyledTab label="Logical Names" value={2} />
+							<StyledTab
+								label="Sample Instances"
+								value={3}
+								disabled
+							/>
 						</Tabs>
 					</StyledTabsBox>
-					<Modal.Content>
+					<ModalContent>
 						{activeTab === 0 && EditForm}
 						{activeTab === 1 && (
 							<StyledDescriptionBox>
@@ -319,20 +332,18 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 						{activeTab === 2 && (
 							<StyledBox>
 								<FormControl fullWidth>
-									<StyledLabel variant={"subtitle1"}>
-										Current Logical Name(s):
-									</StyledLabel>
-
 									<TableContainer>
-										<Table size="small">
-											<Table.Head>
+										<Table size="small" stickyHeader>
+											<TableHeader>
 												<Table.Row>
-													<TableCell>Name</TableCell>
+													<TableHeaderCell>
+														Name
+													</TableHeaderCell>
 													<TableActions>
 														Action
 													</TableActions>
 												</Table.Row>
-											</Table.Head>
+											</TableHeader>
 											<Table.Body>
 												{logicalNames.length === 0 ? (
 													<Table.Row>
@@ -347,6 +358,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 													logicalNames.map((item) => (
 														<Table.Row
 															key={item.id}
+															data-testid={`engineMetadata-logicalname-${item.id}-btn`}
 														>
 															<Table.Cell>
 																{item.name}
@@ -359,6 +371,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 																			item.id,
 																		)
 																	}
+																	data-testid={`engineMetadata-logicalname-${item.id}-remove`}
 																>
 																	<Delete fontSize="small" />
 																</IconButton>
@@ -386,6 +399,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 											color="primary"
 											onClick={handleAddLogicalName}
 											disabled={!newLogicalName.trim()}
+											data-testid="engineMetadata-logicalname-add"
 										>
 											<Add />
 										</IconButton>
@@ -394,18 +408,20 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 							</StyledBox>
 						)}
 						{activeTab === 3 && (
-							<StyledTab>
-								Sample Instances feature comes here!
-							</StyledTab>
+							<Box>Sample Instances feature comes here!</Box>
 						)}
-					</Modal.Content>
+					</ModalContent>
 				</>
 			) : (
 				<Modal.Content>{EditForm}</Modal.Content>
 			)}
 
 			<ModalActions>
-				<Button onClick={onClose} variant="outlined">
+				<Button
+					onClick={onClose}
+					variant="outlined"
+					data-testid="engineMetadata-cancel-btn"
+				>
 					Cancel
 				</Button>
 				<Button
@@ -413,6 +429,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 					variant="contained"
 					color="primary"
 					disabled={!singleNameVal.trim()}
+					data-testid="engineMetadata-save-btn"
 				>
 					Save
 				</Button>

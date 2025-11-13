@@ -177,7 +177,7 @@ const StyledDiv = styled(Box)({
 type MetamodelNodeProps = NodeProps<
 	Node<{
 		name: string;
-		isAction?: boolean;
+		isEditable?: boolean;
 		openEditForColumn?: (payload: {
 			nodeId: string;
 			columnId: string;
@@ -253,7 +253,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 					</StyledTitleCell>
 				</StyledHeader>
 
-				{data.isAction && (
+				{data.isEditable && (
 					<StyledDiv>
 						<IconButton
 							size="small"
@@ -291,7 +291,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 							onClick={(e) => e.stopPropagation()}
 						>
 							<StyledKeyIconContainer>
-								{data.isAction &&
+								{data.isEditable &&
 									(p.isPrimary ? (
 										<StyledPrimaryKeyIcon />
 									) : p.isForeign ? (
@@ -322,7 +322,7 @@ const _MetamodelNode = (props: MetamodelNodeProps) => {
 								</StyledTypeFont>
 							</StyledColumnTypeCell>
 
-							{data.isAction && (
+							{data.isEditable && (
 								<StyledBox>
 									<IconButton
 										size="small"

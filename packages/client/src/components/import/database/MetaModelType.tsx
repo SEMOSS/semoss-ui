@@ -95,7 +95,7 @@ const StyledInnerContainer = styled(Box)<{
 	width: "100%",
 	backgroundColor: theme.palette.background.paper,
 	border: "1px solid white",
-	borderRadius: 2,
+	borderRadius: "16px",
 	transition: "all 220ms ease",
 	overflow: "visible",
 	margin: "16px 0",
@@ -105,16 +105,6 @@ const StyledInnerContainer = styled(Box)<{
 const StyledMenuItem = styled(Menu.Item)(() => ({
 	display: "flex",
 	alignItems: "center",
-	gap: 1,
-}));
-
-const StyledIcon = styled(IconButton)(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.disabled}`,
-	borderRadius: "12px",
-}));
-
-const StyledDivider = styled(Divider)(({ theme }) => ({
-	border: `1px solid ${theme.palette.secondary.border}`,
 }));
 
 const StyledList = styled(Box)(() => ({
@@ -137,16 +127,13 @@ const StyledMenuContainer = styled(Box)(() => ({
 	alignItems: "center",
 	justifyContent: "space-between",
 	padding: "8px 16px",
+	width: "360px",
 }));
 
 const StyledMenuHeader = styled(Box)(() => ({
 	display: "flex",
 	alignItems: "center",
-}));
-
-const StyledButton = styled(Button)(() => ({
-	textTransform: "none",
-	minWidth: "auto",
+	fontSize: "14px",
 }));
 
 const OuterBox = styled(Box)(() => ({
@@ -166,6 +153,10 @@ const StyledFormControl = styled(FormControl)(() => ({
 const StyledStack = styled(Stack)(() => ({
 	display: "flex",
 	alignItems: "center",
+}));
+
+const StyledIconButton = styled(IconButton)(() => ({
+	padding: 0,
 }));
 
 const SectionHeader = styled(Section.Header)(() => ({
@@ -278,7 +269,8 @@ export const MetaModelType = observer(
 				(p: { name: string }): string => p.name,
 			) || [];
 
-		// Utility Callbacks
+		// Callbacks
+
 		const updateFlow = useCallback(
 			(updater: FlowData | ((prev: FlowData) => FlowData)) => {
 				setFlowStates((prev) => {
@@ -398,33 +390,6 @@ export const MetaModelType = observer(
 			],
 		);
 
-		const handleClearAll = useCallback(() => {
-			updateSelectedNodeIds([]);
-
-			const newEdges: Edge[] = [];
-
-			const prevNodes: (MetamodelNode | FlowNode)[] = Array.isArray(
-				flow.nodes,
-			)
-				? flow.nodes
-				: [];
-
-			const attached = attachConnectionsToNodes(prevNodes, newEdges);
-
-			updateFlow((prev) => ({
-				...prev,
-				edges: newEdges,
-				nodes: attached,
-			}));
-
-			handleNodesMenuClose();
-		}, [
-			updateSelectedNodeIds,
-			flow.nodes,
-			updateFlow,
-			handleNodesMenuClose,
-		]);
-
 		const handleCreateConnection = useCallback(
 			({
 				parentTable,
@@ -437,12 +402,10 @@ export const MetaModelType = observer(
 				const targetNode = findNodeByNameOrId(flow.nodes, childTable);
 
 				if (!sourceNode || !targetNode) {
-					console.warn("Source or target node not found");
 					return;
 				}
 
 				if (edgeExists(flow.edges, sourceNode.id, targetNode.id)) {
-					console.warn("Edge already exists");
 					return;
 				}
 
@@ -530,10 +493,6 @@ export const MetaModelType = observer(
 				const originalParsed = parsedData?.[selectedDataIndex];
 
 				if (!originalParsed) {
-					console.warn(
-						"No original data found for dataSource:",
-						selectedDataIndex,
-					);
 					return;
 				}
 
@@ -737,6 +696,7 @@ export const MetaModelType = observer(
 																index,
 															)}
 															value={index}
+															data-testid={`engineMetadata-datasource-${index}-btn`}
 														>
 															{getDisplayName(
 																data,
@@ -751,29 +711,31 @@ export const MetaModelType = observer(
 										actions={
 											<StyledStack
 												direction="row"
-												spacing={1}
+												spacing={2}
 											>
 												{!showFullScreenModal && (
-													<IconButton
+													<StyledIconButton
 														onClick={() =>
 															setShowFullScreenModal(
 																true,
 															)
 														}
-														data-testid="engineMetadata-refresh-btn"
+														data-testid="engineMetadata-fullscreen-btn"
+														title="Full Screen"
 													>
 														<FitScreen />
-													</IconButton>
+													</StyledIconButton>
 												)}
 
-												<IconButton
+												<StyledIconButton
 													onClick={
 														handleNodesMenuOpen
 													}
 													title="Select tables"
+													data-testid="engineMetadata-tablelist-btn"
 												>
 													<TableRows />
-												</IconButton>
+												</StyledIconButton>
 
 												<Menu
 													anchorEl={anchorNodesMenu}
@@ -788,16 +750,6 @@ export const MetaModelType = observer(
 														<StyledMenuHeader>
 															Tables
 														</StyledMenuHeader>
-
-														<StyledButton
-															size="small"
-															variant="text"
-															onClick={
-																handleClearAll
-															}
-														>
-															Clear
-														</StyledButton>
 													</StyledMenuContainer>
 
 													<Divider />
@@ -820,6 +772,19 @@ export const MetaModelType = observer(
 																selectedNodeIds.length ===
 																	nodes.length
 															}
+															checkboxProps={{
+																size: "small",
+																indeterminate:
+																	Array.isArray(
+																		nodes,
+																	) &&
+																	nodes.length >
+																		0 &&
+																	selectedNodeIds.length >
+																		0 &&
+																	selectedNodeIds.length <
+																		nodes.length,
+															}}
 														/>
 														<List.ItemText primary="Select All" />
 													</StyledMenuItem>
@@ -829,6 +794,7 @@ export const MetaModelType = observer(
 															(n) => (
 																<StyledMenuItem
 																	key={n.id}
+																	data-testid={`engineMetadata-table-${n.id}-btn`}
 																>
 																	<Checkbox
 																		onChange={() =>
@@ -839,6 +805,9 @@ export const MetaModelType = observer(
 																		checked={selectedNodeIds.includes(
 																			n.id,
 																		)}
+																		checkboxProps={{
+																			size: "small",
+																		}}
 																	/>
 																	<List.ItemText
 																		primary={
@@ -853,23 +822,22 @@ export const MetaModelType = observer(
 													</StyledList>
 												</Menu>
 
-												<StyledDivider />
-
-												<StyledIcon
+												<StyledIconButton
 													data-testid={
 														"engineMetadata-refresh-btn"
 													}
+													title="Reset"
 													onClick={
 														handleRefreshMetamodel
 													}
 												>
 													<Refresh />
-												</StyledIcon>
+												</StyledIconButton>
 												<Button
 													startIcon={<AcUnit />}
 													variant="outlined"
 													data-testid={
-														"engineMetadata-print-btn"
+														"engineMetadata-createrelationship-btn"
 													}
 													onClick={() =>
 														setopenCreateConnectionModal(
@@ -882,6 +850,9 @@ export const MetaModelType = observer(
 												<Button
 													variant="outlined"
 													onClick={handleSave}
+													data-testid={
+														"engineMetadata-save-btn"
+													}
 												>
 													Save
 												</Button>
@@ -890,6 +861,9 @@ export const MetaModelType = observer(
 														variant="outlined"
 														color="secondary"
 														onClick={onCancel}
+														data-testid={
+															"engineMetadata-cancel-btn"
+														}
 													>
 														Cancel
 													</Button>
@@ -913,7 +887,7 @@ export const MetaModelType = observer(
 												setSelectedNode(n)
 											}
 											isInteractive={true}
-											isAction={true}
+											isEditable={true}
 											onMetaModelUpdate={
 												handleMetaModelUpdate
 											}
@@ -951,6 +925,7 @@ export const MetaModelType = observer(
 													label={logicalName}
 													color="primary"
 													size="small"
+													data-testid={`logicalName-${logicalName}`}
 												/>
 											))}
 										</Stack>
