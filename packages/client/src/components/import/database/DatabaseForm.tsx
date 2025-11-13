@@ -485,15 +485,24 @@ export const DatabaseForm = ({
 		const newFormValues = Object.fromEntries(
 			Object.entries(formValues).filter(([key]) => key !== "NAME"),
 		);
-
+		const { DATABASE_DESCRIPTION: description } = formValues;
+		const meta = { description };
 		const relation = Array.isArray(payload)
 			? payload[0].relation
 			: payload.relation;
 		const positions = Array.isArray(payload)
 			? payload[0].positions
 			: payload.positions;
+		const tables = Object.entries(payload[0]?.nodeProp).reduce(
+			(acc, [key, value]) => {
+				const firstKey = value[0];
+				acc[`${key}.${firstKey}`] = value;
+				return acc;
+			},
+			{},
+		);
 		setIsLoading(true);
-		const pixel = `databaseVar = RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(relation)},"tables":{"CUSTOMERS.CUSTOMER_ID":["CUSTOMER_ID","FIRST_NAME","LAST_NAME","EMAIL","CREATED_AT"],"DIABETES.DIABETES_UNIQUE_ROW_ID":["DIABETES_UNIQUE_ROW_ID","DRUG","AGE","BP_1D","BP_1S","BP_2D","BP_2S","CHOL","FRAME","GENDER","GLYHB","HDL","HEIGHT","HIP","ID","LOCATION","RATIO","STAB_GLU","TIME_PPN","WAIST","WEIGHT"],"ORDERS.ORDER_ID":["ORDER_ID","CUSTOMER_ID","ORDER_DATE","TOTAL_AMOUNT"],"ORDER_ITEMS.ORDER_ITEM_ID":["ORDER_ITEM_ID","ORDER_ID","PRODUCT_ID","QUANTITY","SUBTOTAL"],"PRODUCTS.PRODUCT_ID":["PRODUCT_ID","NAME","CATEGORY","PRICE"],"ORDER_SUMMARY.ORDER_ID":["ORDER_ID","CUSTOMER_NAME","ORDER_DATE","TOTAL_ITEMS","TOTAL_AMOUNT"]}}]);SaveOwlPositions(database=[databaseVar],positionMap=[${JSON.stringify(positions)}]);`;
+		const pixel = `databaseVar = RdbmsExternalUpload(conDetails=[${JSON.stringify(newFormValues)}],database=["${formValues.NAME}"], metamodel=[{"relationships":${JSON.stringify(relation)},"tables":${JSON.stringify(tables)}}]);SetDatabaseMetadata(database=[databaseVar],meta=[${JSON.stringify(meta)}]);SaveOwlPositions(database=[databaseVar],positionMap=[${JSON.stringify(positions)}]);`;
 		try {
 			const response = await monolithStore.runQuery(pixel);
 			const { output, operationType } = response.pixelReturn[0];

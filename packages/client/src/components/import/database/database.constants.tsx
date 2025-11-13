@@ -2175,7 +2175,7 @@ export const DATABASE_CONNECTION = {
 				{
 					key: "port",
 					label: "Port",
-					value: "1000",
+					value: "",
 					type: "number",
 					disabled: false,
 					rules: { min: 0 },
@@ -2187,7 +2187,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					type: "text",
 					disabled: false,
-					required: false,
+					required: true,
 					category: "Settings",
 				},
 				{
@@ -2223,7 +2223,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					type: "text",
 					disabled: false,
-					required: false,
+					required: true,
 					category: "Settings",
 				},
 			],

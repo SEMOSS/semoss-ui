@@ -22,11 +22,18 @@ const TableViewSelector = ({ tables = [], views = [], onApply, onClose }) => {
 	const filteredViews = views.filter((v) =>
 		v.toLowerCase().includes(viewSearch.toLowerCase()),
 	);
+	const isApplyDisabled =
+		selectedTables.length === 0 && selectedViews.length === 0;
 
 	// When tables/views data changes (or search changes), keep only valid selections
 	useEffect(() => {
-		setSelectedTables((prev) => prev.filter((t) => tables.includes(t)));
-		setSelectedViews((prev) => prev.filter((v) => views.includes(v)));
+		// If there are no current selections, select all by default
+		setSelectedTables((prev) =>
+			prev.length === 0 ? tables : prev.filter((t) => tables.includes(t)),
+		);
+		setSelectedViews((prev) =>
+			prev.length === 0 ? views : prev.filter((v) => views.includes(v)),
+		);
 	}, [tables, views]);
 
 	const handleSelectAll = (type: "tables" | "views", checked: boolean) => {
@@ -110,10 +117,6 @@ const TableViewSelector = ({ tables = [], views = [], onApply, onClose }) => {
 										selectedTables.length ===
 											filteredTables.length
 									}
-									//   indeterminate={
-									//     selectedTables.length > 0 &&
-									//     selectedTables.length < filteredTables.length
-									//   }
 									onChange={(
 										e: ChangeEvent<HTMLInputElement>,
 									) =>
@@ -232,6 +235,7 @@ const TableViewSelector = ({ tables = [], views = [], onApply, onClose }) => {
 				<Button
 					size="small"
 					variant="contained"
+					disabled={isApplyDisabled}
 					onClick={handleApply}
 					data-testid="model-upload-submit-button"
 				>

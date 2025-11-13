@@ -419,6 +419,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 								data-testid="search-box"
 							/>
 							<UploadButton
+								sx={{ lineHeight: 0.75 }}
 								size="large"
 								variant="outlined"
 								onClick={() => handleFileUpload(true)}
