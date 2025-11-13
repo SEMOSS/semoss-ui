@@ -242,6 +242,7 @@ const StyledTerminalWrapper = styled("div")<{ darkThemeStyle: string }>(
 			zIndex: 2,
 			position: "relative",
 		},
+		height: "100%",
 	}),
 );
 

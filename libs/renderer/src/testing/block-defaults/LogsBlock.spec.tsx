@@ -1,9 +1,7 @@
 import { expect } from "vitest";
+import { LogsBlock } from "../../components/block-defaults/logs-block/LogsBlock";
+import type { QueryStateConfig } from "../../store";
 import { render, screen } from "../utils";
-import "@testing-library/jest-dom";
-
-import { LogsBlock } from "@/components/block-defaults/logs-block/LogsBlock";
-import type { QueryStateConfig } from "@/store";
 
 const blocks = {
 	logs: {
@@ -44,12 +42,11 @@ const queries: Record<string, QueryStateConfig> = {
 
 describe("logs block", () => {
 	it("renders correctly with mocked provider and no query", async () => {
-		const { container } = render(<LogsBlock id="logs" />, {
+		const { container } = render(<LogsBlock id={blocks.logs.id} />, {
 			blocks: blocks,
 		});
 
 		const element = container.querySelector("[data-block='logs']");
-		console.log({ element });
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");
@@ -57,13 +54,12 @@ describe("logs block", () => {
 	});
 
 	it("renders correctly with mocked provider and query", async () => {
-		const { container } = render(<LogsBlock id="logs" />, {
+		const { container } = render(<LogsBlock id={blocks.logs.id} />, {
 			blocks: blocks,
 			queryConfig: queries,
 		});
 
 		const element = container.querySelector("[data-block='logs']");
-		console.log({ element });
 
 		expect(element).toBeInTheDocument();
 		expect(element.tagName).equal("DIV", "element is type div");

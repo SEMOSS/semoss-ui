@@ -16,10 +16,13 @@ import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
+	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import { WorkspaceCard } from "@/components";
 import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
-import type { Workspace } from "@/types";
+import { useChat } from "@/hooks";
+import type { App } from "@/types";
 
 /**
  * Renders the Discover Page, allowing users to discover and create workspaces
@@ -28,27 +31,56 @@ import type { Workspace } from "@/types";
  */
 export const WorkspacePage = observer(() => {
 	/**
-	 * Library Hooks
-	 */
-	const listWorkspaces = usePixel<{
-		workspaces: Workspace[];
-	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
-
-	const navigate = useNavigate();
-
-	/**
 	 * State
 	 */
 	const [search, setSearch] = useState("");
 	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
 		useState<boolean>(false);
-	const [workspaceInfo, setWorkspaceInfo] = useState<Workspace | null>(null);
+	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+	const [isLoadingDelete, setIsLoadingDelete] = useState<boolean>(false);
+
+	/**
+	 * Library Hooks
+	 */
+	const debouncedSearch = useDebouncedValue(search);
+	const listWorkspaces = usePixel<App[]>(
+		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
+		{ data: [] },
+	);
+	const navigate = useNavigate();
+	const { chat } = useChat();
 
 	/**
 	 * CreateRoom
 	 */
 	const createRoom = (workspaceId: string) =>
 		navigate(`/new?workspaceId=${workspaceId}`);
+
+	/**
+	 * Delete Workspace
+	 */
+	const handleDeleteWorkspace = async (workspaceId: string) => {
+		setIsLoadingDelete(true);
+		try {
+			await chat.deleteWorkspace(workspaceId);
+			listWorkspaces.refresh();
+		} catch (e) {
+			toast.error(
+				e instanceof Error ? e.message : "Failed to delete workspace",
+			);
+			setIsLoadingDelete(false);
+			return;
+		}
+		setIsLoadingDelete(false);
+	};
+
+	/**
+	 * Constants
+	 */
+	const isLoading =
+		listWorkspaces.status !== "SUCCESS" ||
+		search !== debouncedSearch ||
+		isLoadingDelete;
 
 	return (
 		<div className="flex h-full w-full flex-col overflow-hidden px-2">
@@ -62,17 +94,15 @@ export const WorkspacePage = observer(() => {
 					</Lead>
 					<Tooltip>
 						<TooltipTrigger asChild>
-							<span>
-								<Button
-									onClick={() => {
-										setWorkspaceInfo(null);
-										setIsWorkspaceModalOpen(true);
-									}}
-								>
-									<ComputerIcon />
-									Build
-								</Button>
-							</span>
+							<Button
+								onClick={() => {
+									setWorkspaceId(null);
+									setIsWorkspaceModalOpen(true);
+								}}
+							>
+								<ComputerIcon />
+								Build
+							</Button>
 						</TooltipTrigger>
 						<TooltipContent>Create a new workspace</TooltipContent>
 					</Tooltip>
@@ -90,51 +120,52 @@ export const WorkspacePage = observer(() => {
 						{listWorkspaces.status === "LOADING" ? (
 							<Spinner />
 						) : (
-							`${listWorkspaces.data.workspaces.length} results`
+							`${listWorkspaces.data.length} results`
 						)}
 					</InputGroupAddon>
 				</InputGroup>
 			</div>
 			<div className="mx-auto w-full max-w-5xl flex-1 pt-10">
 				<ScrollArea className="h-full w-full">
-					{listWorkspaces.status === "LOADING" && (
+					{isLoading ? (
 						<div className="flex items-center justify-center py-12">
 							<Spinner />
 						</div>
+					) : listWorkspaces.data.length > 0 ? (
+						<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
+							{listWorkspaces.data.map((w) => (
+								<WorkspaceCard
+									key={w.project_id}
+									workspace={{
+										workspace_id: w.project_id,
+										name: w.project_name,
+										description: w.description,
+									}}
+									onPrimaryClick={() =>
+										createRoom(w.project_id)
+									}
+									onSecondaryClick={() => {
+										setWorkspaceId(w.project_id);
+										setIsWorkspaceModalOpen(true);
+									}}
+									onDeleteClick={() =>
+										handleDeleteWorkspace(w.project_id)
+									}
+								/>
+							))}
+						</div>
+					) : (
+						<div className="flex items-center justify-center py-12">
+							<Muted>No results found</Muted>
+						</div>
 					)}
-
-					{listWorkspaces.status === "SUCCESS" &&
-						listWorkspaces.data.workspaces.length > 0 && (
-							<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-								{listWorkspaces.data.workspaces.map((w) => (
-									<WorkspaceCard
-										key={w.workspace_id}
-										workspace={w}
-										onPrimaryClick={() =>
-											createRoom(w.workspace_id)
-										}
-										onSecondaryClick={() => {
-											setWorkspaceInfo(w);
-											setIsWorkspaceModalOpen(true);
-										}}
-									/>
-								))}
-							</div>
-						)}
-
-					{listWorkspaces.status === "SUCCESS" &&
-						listWorkspaces.data.workspaces.length === 0 && (
-							<div className="flex items-center justify-center py-12">
-								<Muted>No results found</Muted>
-							</div>
-						)}
 				</ScrollArea>
 			</div>
 
 			{isWorkspaceModalOpen && (
 				<WorkspaceOverlay
 					open={isWorkspaceModalOpen}
-					workspaceInfo={workspaceInfo}
+					workspaceId={workspaceId}
 					onClose={(newWorkspaceId) => {
 						setIsWorkspaceModalOpen(false);
 						if (newWorkspaceId) {
