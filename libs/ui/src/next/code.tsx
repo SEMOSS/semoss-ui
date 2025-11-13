@@ -38,6 +38,8 @@ interface CodeProps extends Omit<React.ComponentProps<"code">, "children"> {
 
 	/** Content to render as code */
 	language?:
+		| "text"
+		| "txt"
 		| "jsx"
 		| "tsx"
 		| "javascript"

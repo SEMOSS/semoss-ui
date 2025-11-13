@@ -17,11 +17,12 @@ import {
 } from "@semoss/ui/next";
 import type { Engine } from "@/types";
 
-/** TODO: Move to @semoss/shared */
-
 interface EngineSelectProps {
-	/** Id of the engine to select */
-	value: Engine | null;
+	/** Name of the selected engine */
+	name: string;
+
+	/** Id of the selected engine */
+	value: string;
 
 	/** Update options on change */
 	onChange: (value: Engine | null) => void;
@@ -39,6 +40,7 @@ interface EngineSelectProps {
 }
 
 export const EngineSelect = ({
+	name,
 	value,
 	onChange,
 	engineTypes,
@@ -71,9 +73,7 @@ export const EngineSelect = ({
 					aria-expanded={open}
 					className="w-full justify-between overflow-hidden"
 				>
-					<span className="truncate">
-						{value ? value.app_name : "Select"}
-					</span>
+					<span className="truncate">{name || "Select"}</span>
 					<ChevronsUpDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
 				</Button>
 			</PopoverTrigger>
@@ -105,7 +105,7 @@ export const EngineSelect = ({
 									}}
 								>
 									<CheckIcon
-										className={`mr-2 size-4 ${value?.app_id === engine.app_id ? "opacity-100" : "opacity-0"}`}
+										className={`mr-2 size-4 ${value === engine.app_id ? "opacity-100" : "opacity-0"}`}
 									/>
 									<div className="flex flex-1 flex-col truncate">
 										<span>{engine.app_name}</span>
