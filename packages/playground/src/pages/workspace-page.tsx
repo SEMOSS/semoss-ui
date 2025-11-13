@@ -74,10 +74,10 @@ export const WorkspacePage = observer(() => {
 			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
 				<div className="flex w-full rounded-lg bg-sky-100">
 					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
-						<div className="font-medium text-blue-700 text-xl leading-normal">
+						<div className="font-medium text-primary text-xl leading-normal">
 							Welcome to Workspace Manager
 						</div>
-						<div className="font-normal text-base text-blue-700 leading-normal">
+						<div className="font-normal text-base text-primary leading-normal">
 							Explore custom AI workspaces designed to meet your
 							unique needs and integrate seamlessly into your
 							processes.
