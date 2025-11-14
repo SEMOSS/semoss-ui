@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 import {
+	Autocomplete,
 	Box,
 	Button,
 	Checkbox,
@@ -86,6 +87,9 @@ export const DatabaseForm = ({
 	const [filePath, setFilePath] = useState<string>();
 	const [uploadedFile, setUploadedFile] = useState<File[]>([]);
 	const [formValues, setFormValues] = useState({});
+	const [isValidDatabaseName, setIsValidDatabaseName] =
+		useState<boolean>(false);
+	const [dropzoneKey, setDropzoneKey] = useState(Date.now());
 	type ConnectionValuesType = {
 		tables?: unknown[];
 		views?: unknown[];
@@ -117,15 +121,23 @@ export const DatabaseForm = ({
 		}
 	};
 
-	const { control, handleSubmit, watch, setValue, setFocus, formState } =
-		useForm({
-			mode: "onChange",
-			reValidateMode: "onChange",
-			defaultValues: fields.reduce((acc, f) => {
-				acc[f.key] = f.value || "";
-				return acc;
-			}, {}),
-		});
+	const {
+		control,
+		handleSubmit,
+		watch,
+		setValue,
+		setFocus,
+		formState,
+		setError,
+		clearErrors,
+	} = useForm({
+		mode: "onChange",
+		reValidateMode: "onChange",
+		defaultValues: fields.reduce((acc, f) => {
+			acc[f.key] = f.value || "";
+			return acc;
+		}, {}),
+	});
 
 	const watchedFieldRef = useRef({});
 	const { monolithStore, configStore } = useRootStore();
@@ -175,6 +187,31 @@ export const DatabaseForm = ({
 		acc[f.category].push(f);
 		return acc;
 	}, {});
+
+	const handleFieldValidation = async (
+		e,
+		val,
+		field,
+		validateFormField,
+		setError,
+		clearErrors,
+	) => {
+		field.onChange(e);
+		const value = e.target.value;
+		if (val.rules?.custom) {
+			const isValid = await validateFormField(val, value);
+			if (!isValid) {
+				setError(val.key, {
+					type: "manual",
+					message:
+						val.rules?.custom?.message ||
+						"Database name already exists.",
+				});
+			} else {
+				clearErrors(val.key);
+			}
+		}
+	};
 
 	const onFormSubmit = async (formData) => {
 		setLoading(true);
@@ -378,8 +415,12 @@ export const DatabaseForm = ({
 
 				pixelCommands.push(command);
 			});
+			const meta = {
+				description: formValuesLocal.DATABASE_DESCRIPTION,
+				tag: formValuesLocal.DATABASE_TAG,
+			};
 
-			const pixel = `${pixelCommands.join("")}ExtractDatabaseMeta(database=[databaseVar]);`;
+			const pixel = `${pixelCommands.join("")}ExtractDatabaseMeta(database=[databaseVar]);SetDatabaseMetadata(database=[${JSON.stringify(formValuesLocal.DATABASE_NAME)}], meta=[${JSON.stringify(meta)}]);`;
 
 			const response = await monolithStore.runQuery(pixel);
 			const pixelReturn = Array.isArray(response?.pixelReturn)
@@ -396,15 +437,13 @@ export const DatabaseForm = ({
 					color: "error",
 					message: output ?? "An error occurred on the server.",
 				});
-				setLoading(false);
 				return;
 			}
 
 			notification.add({
 				color: "success",
-				message: "success",
+				message: "Successfully created database",
 			});
-			setLoading(false);
 
 			navigate(`/engine/database/${output.database_id}`);
 		} catch {
@@ -412,17 +451,23 @@ export const DatabaseForm = ({
 				color: "error",
 				message: "An error occurred while submitting the metamodel.",
 			});
+		} finally {
 			setLoading(false);
 		}
 	};
 
 	const submitExcelTablePixel = async (payloadArray, formValues) => {
-		const pixelStatements = payloadArray
+		setLoading(true);
+		let pixelStatements = payloadArray
 			.map((payloadObject) => {
 				return `RdbmsUploadExcelData(database=["${formValues.DATABASE_NAME}"],filePath=${JSON.stringify(payloadObject.filePath)},dataTypeMap=[${JSON.stringify(payloadObject.dataTypeMap)}],newHeaders=[${JSON.stringify(payloadObject.newHeaders)}],additionalDataTypes=[${JSON.stringify(payloadObject.additionalDataTypes)}],descriptionMap=[${JSON.stringify(payloadObject.descriptionMap)}],logicalNamesMap=[${JSON.stringify(payloadObject.logicalNamesMap)}],existing=[${payloadObject.existing}],tables=[${JSON.stringify(payloadObject.tables)}]);`;
 			})
 			.join("");
-
+		const meta = {
+			description: formValues.DATABASE_DESCRIPTION,
+			tag: formValues.DATABASE_TAG,
+		};
+		pixelStatements += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 		try {
 			const response = await monolithStore.runQuery(pixelStatements);
 			const { output, operationType } = response.pixelReturn[0];
@@ -430,22 +475,32 @@ export const DatabaseForm = ({
 				notification.add({ color: "error", message: output });
 				return;
 			}
-			notification.add({ color: "success", message: "Success" });
+			notification.add({
+				color: "success",
+				message: "Successfully created database",
+			});
 			navigate(`/engine/database/${output.database_id}`);
 		} catch {
 			notification.add({
 				color: "error",
 				message: "An error occurred while processing the request.",
 			});
+		} finally {
+			setLoading(false);
 		}
 	};
 	const submitTablePixel = async (payloadObject, formValues) => {
 		setLoading(true);
-		const pixel = payloadObject
+		let pixel = payloadObject
 			.map((pixel) => {
 				return `RdbmsUploadTableData(database=["${formValues.DATABASE_NAME}"],filePath=["${pixel.filePath}"],delimiter=["${formValues.DELIMITER}"],dataTypeMap=[${JSON.stringify(pixel.dataTypeMap)}],newHeaders=[${JSON.stringify(pixel.newHeaders)}],additionalDataTypes=[${JSON.stringify(pixel.additionalDataTypes)}],descriptionMap=[${JSON.stringify(pixel.descriptionMap)}],logicalNamesMap=[${JSON.stringify(pixel.logicalNamesMap)}],existing=[${JSON.stringify(pixel.existing)}],table=[${JSON.stringify(pixel.table)}]);`;
 			})
 			.join("");
+		const meta = {
+			description: formValues.DATABASE_DESCRIPTION,
+			tag: formValues.DATABASE_TAG,
+		};
+		pixel += `SetDatabaseMetadata(database=["${formValues.DATABASE_NAME}"],meta=[${JSON.stringify(meta)}])`;
 
 		try {
 			const response = await monolithStore.runQuery(pixel);
@@ -460,7 +515,7 @@ export const DatabaseForm = ({
 
 			notification.add({
 				color: "success",
-				message: "Success",
+				message: "Successfully created database",
 			});
 
 			navigate(`/engine/database/${output.database_id}`);
@@ -609,7 +664,7 @@ export const DatabaseForm = ({
 		if (!field.rules?.custom?.value) return true;
 		const pixelToExecute = field.rules.custom.value.replace(
 			"[VALUE]",
-			userInput,
+			userInput.trim(),
 		);
 
 		const response = await monolithStore.runQuery(pixelToExecute);
@@ -623,8 +678,10 @@ export const DatabaseForm = ({
 
 		if (output.exists) {
 			setFocus(field.key);
+			setIsValidDatabaseName(true);
 			return false;
 		}
+		setIsValidDatabaseName(false);
 
 		return true;
 	};
@@ -655,10 +712,6 @@ export const DatabaseForm = ({
 			rules={{
 				required: val?.required,
 				pattern: val.rules?.pattern,
-				validate: val.rules?.custom && {
-					checkField: async (fieldVal) =>
-						validateFormField(val, fieldVal),
-				},
 			}}
 			render={({ field, fieldState: { error } }) => {
 				switch (val.type) {
@@ -676,6 +729,16 @@ export const DatabaseForm = ({
 								error={!!error}
 								helperText={getHelperText(error, val)}
 								data-testid={`database-form-input-${val.key}`}
+								onChange={(e) =>
+									handleFieldValidation(
+										e,
+										val,
+										field,
+										validateFormField,
+										setError,
+										clearErrors,
+									)
+								}
 							/>
 						);
 
@@ -779,12 +842,14 @@ export const DatabaseForm = ({
 							<>
 								<FileDropzone
 									multiple
+									key={dropzoneKey}
 									value={field.value || []}
 									disabled={val.disabled}
 									extensions={val.options?.extensions || []}
 									onChange={(files) => {
 										field.onChange(files);
 										onFileUpload(files);
+										setDropzoneKey(Date.now()); // Reset dropzone
 									}}
 									data-testid={`database-form-input-${val.key}`}
 								/>
@@ -849,6 +914,42 @@ export const DatabaseForm = ({
 									</Typography>
 								)}
 							</>
+						);
+					case "tags":
+						return (
+							<Autocomplete
+								multiple
+								freeSolo
+								options={val.options?.options || []}
+								value={field.value || []}
+								onChange={(_, newValue) =>
+									field.onChange(newValue)
+								}
+								renderInput={(params) => (
+									<TextField
+										{...params}
+										fullWidth
+										label={val.label}
+										placeholder='Press "Enter" to add tag'
+										variant="outlined"
+										required={val?.required}
+										// @ts-expect-error TODO FIX
+										error={!!error}
+										helperText={getHelperText(error, val)}
+										disabled={val.disabled}
+										sx={{
+											display: val.hidden
+												? "none"
+												: "block",
+										}}
+										inputProps={{
+											...params.inputProps,
+											required: false,
+										}}
+									/>
+								)}
+								data-testid={`database-form-input-${val.key}`}
+							/>
 						);
 
 					default:
@@ -1047,7 +1148,7 @@ export const DatabaseForm = ({
 								type="submit"
 								variant="contained"
 								data-testid="database-form-submit"
-								disabled={!formState.isValid}
+								disabled={!formState.isValid || isValidDatabaseName}
 							>
 								Next
 							</StyledSubmitButton>
@@ -1108,7 +1209,6 @@ export const DatabaseForm = ({
 			>
 				<Modal.Content sx={{ width: "100%" }}>
 					{/* <StyledDropzoneField> */}
-
 					<TableViewSelector
 						tables={filteredTables}
 						views={filteredViews}

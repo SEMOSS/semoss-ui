@@ -50,6 +50,18 @@ export const DATABASE_CONNECTION = {
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+                        pattern: {
+                            value: /^[\w\-\s]+$/,
+                            message:
+                                "Catalog names can only contain alphanumeric characters and dashes.",
+                        },
+                        custom: {
+                            value: 'CheckEngineName ( "[VALUE]") ;',
+                            message:
+                                "This Catalog name has already been used, please try another.",
+                        },
+                    },
 				},
 				{
 					key: "DATABASE_DESCRIPTION",
@@ -67,7 +79,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "general",
 					category: "General",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: true,
 				},
@@ -172,6 +184,18 @@ export const DATABASE_CONNECTION = {
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+                        pattern: {
+                            value: /^[\w\-\s]+$/,
+                            message:
+                                "Catalog names can only contain alphanumeric characters and dashes.",
+                        },
+                        custom: {
+                            value: 'CheckEngineName ( "[VALUE]") ;',
+                            message:
+                                "This Catalog name has already been used, please try another.",
+                        },
+                    },
 				},
 				{
 					key: "DATABASE_DESCRIPTION",
@@ -189,7 +213,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "general",
 					category: "General",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: true,
 				},
@@ -225,6 +249,7 @@ export const DATABASE_CONNECTION = {
 						],
 					},
 					disabled: false,
+					required: true,
 					rules: {
 						conditionalOptions: [
 							{
@@ -246,6 +271,7 @@ export const DATABASE_CONNECTION = {
 					type: "file-upload",
 					category: "File Upload",
 					disabled: false,
+					required: true,
 					rules: {
 						required: {
 							value: true,
@@ -269,6 +295,18 @@ export const DATABASE_CONNECTION = {
 					type: "text",
 					disabled: false,
 					required: true,
+					rules: {
+                        pattern: {
+                            value: /^[\w\-\s]+$/,
+                            message:
+                                "Catalog names can only contain alphanumeric characters and dashes.",
+                        },
+                        custom: {
+                            value: 'CheckEngineName ( "[VALUE]") ;',
+                            message:
+                                "This Catalog name has already been used, please try another.",
+                        },
+                    },
 				},
 				{
 					key: "DATABASE_DESCRIPTION",
@@ -286,7 +324,7 @@ export const DATABASE_CONNECTION = {
 					value: "",
 					section: "general",
 					category: "General",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: true,
 				},
