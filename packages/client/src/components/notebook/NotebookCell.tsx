@@ -37,11 +37,13 @@ import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
+import { findDependentElements, getDependentBlocks, getDependentCells, getDependentQueries, getDependentVariables } from "@/utility/dependencyScanner";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { AddVariableModal } from "./AddVariableModal";
 import { NotebookAddCell } from "./NotebookAddCell";
 import { NotebookCellConsole } from "./NotebookCellConsole";
 import { Operation } from "./operations";
+import { DependentBlocksModal } from "./DependentBlocksModal";
 
 const StyledStack = styled(Stack)(({ theme }) => ({
 	paddingBottom: theme.spacing(2),
@@ -294,6 +296,8 @@ export const NotebookCell = observer(
 		const [localCellPlayNumber, setLocalCellPlayNumber] = useState(null);
 
 		const [variableModal, setVariableModal] = useState(false);
+		const [dependentBlocksModal, setDependentBlocksModal] = useState(false);
+		const [dependentBlocks, setDependentBlocks] = useState([]);
 
 		const cardContentRef = useRef(null);
 		const cardActionsRef = useRef(null);
@@ -391,23 +395,34 @@ export const NotebookCell = observer(
 				console.error(e);
 			}
 		};
-
-		const deleteCell = () => {
+		const deleteCell = async() => {
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
+				console.log("Passed args >>", state, queryId, cell);
+				console.log(`
+					ALL >> ${JSON.stringify(findDependentElements(state, queryId, cellId))}\n
+					BLOCKS >> ${getDependentBlocks(state, queryId, cellId)}\n
+					QUERIES >> ${getDependentQueries(state, queryId, cellId)}\n
+					CELLS >> ${getDependentCells(state, queryId, cellId)}\n
+					VARIABLES >> ${getDependentVariables(state, queryId, cellId)}
+				`);
+				const dependentBlocks = await getDependentBlocks(state, queryId, cellId);
+				if(dependentBlocks.length > 0) {
+					setDependentBlocksModal(true);
+					setDependentBlocks(dependentBlocks);
+				}
+				// state.dispatch({
+				// 	message: ActionMessages.DELETE_CELL,
+				// 	payload: {
+				// 		queryId: cell.query.id,
+				// 		cellId: cell.id,
+				// 	},
+				// });
 
-				state.dispatch({
-					message: ActionMessages.DELETE_CELL,
-					payload: {
-						queryId: cell.query.id,
-						cellId: cell.id,
-					},
-				});
-
-				notebook.selectCell(
-					queryId,
-					query.list[Math.max(currentCellIndex - 1, 0)],
-				);
+				// notebook.selectCell(
+				// 	queryId,
+				// 	query.list[Math.max(currentCellIndex - 1, 0)],
+				// );
 			} catch (e) {
 				console.error(e);
 			}
@@ -630,6 +645,27 @@ export const NotebookCell = observer(
 				});
 			}
 		};
+
+		const handleDelete = () => {
+			console.log('Deleting without replacement');
+		};
+
+		const handleReplace = (replacements: { [blockId: string]: string }) => {
+			console.log('Replacing with:', replacements);
+		};
+
+		const replacementOptions = useMemo(() => {
+			return [
+				{
+					label: "Notebook",
+					options: Object.keys(state.queries)
+				},
+				{
+					label: "Cells",
+					options: ['123-1', '123-2', '123-3', '123-4', '123-5', '123-6', '123-7']
+				}
+			]
+		}, [state.queries]);
 
 		return (
 			<StyledStack
@@ -1137,6 +1173,17 @@ export const NotebookCell = observer(
 					onClose={() => {
 						setVariableModal(false);
 					}}
+				/>
+
+				<DependentBlocksModal
+					open={dependentBlocksModal}
+					onClose={() => {
+						setDependentBlocksModal(false);
+					}}
+					onDelete={handleDelete}
+                	onReplace={handleReplace}
+					dependents={dependentBlocks}
+					replacementOptions={replacementOptions}
 				/>
 			</StyledStack>
 		);
