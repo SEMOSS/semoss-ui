@@ -9,6 +9,7 @@ import {
 	FileDropzone,
 	Grid,
 	Link,
+	LoadingScreen,
 	Modal,
 	Search,
 	Stack,
@@ -194,6 +195,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 	const navigate = useNavigate();
 	const { monolithStore, configStore } = useRootStore();
 	const notification = useNotification();
+	const [loading, setLoading] = useState(false);
 	const [search, setSearch] = useState("");
 	const [selectedTab, setSelectedTab] = useState(0);
 	const [selectedDatabase, setSelectedDatabase] = useState<database | null>(
@@ -222,8 +224,12 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 		return DatabaseOptions[tabLabels[selectedTab]] || [];
 	}, [selectedTab, tabLabels, DatabaseOptions, allDatabases]);
 
+	if (loading) {
+		return <LoadingScreen.Trigger description="Loading..." />;
+	}
+
 	const onSubmit = async (data) => {
-		//setFormLoading(true);
+		setLoading(true);
 		try {
 			const uploadedFiles = await uploadFile(
 				[data],
@@ -235,6 +241,7 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 					color: "error",
 					message: "Upload failed or returned invalid response.",
 				});
+				setFiledata(null);
 				return;
 			}
 			const pixelExpressions = uploadedFiles.map(
@@ -243,7 +250,12 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 			);
 			for (const pixelString of pixelExpressions) {
 				const response = await monolithStore.runQuery(pixelString);
-				const output = response?.pixelReturn?.[0]?.output;
+				const { output, operationType } = response.pixelReturn[0];
+				if (operationType.includes("ERROR")) {
+					notification.add({ color: "error", message: output });
+					setFiledata(null);
+					return;
+				}
 				navigate(`/engine/database/${output.database_id}`);
 			}
 		} catch {
@@ -251,9 +263,10 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 				color: "error",
 				message: "Upload failed or returned invalid response.",
 			});
-			return;
+			setFiledata(null);
+		} finally {
+			setLoading(false);
 		}
-		return;
 	};
 
 	const renderBreadcrumbs = () => (
