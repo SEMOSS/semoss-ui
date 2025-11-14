@@ -384,7 +384,10 @@ export class RoomStore {
 
 			// This is done as seperate loops because of INPUT_TOOL_EXEC
 			for (const pixelMessage of messageOutput) {
-				if (pixelMessage.type === "INPUT_TEXT") {
+				if (
+					pixelMessage.type === "INPUT_TEXT" ||
+					pixelMessage.type === "INPUT_MEDIA"
+				) {
 					activeModelId = pixelMessage.modelId;
 				}
 

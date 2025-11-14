@@ -8,7 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router-dom";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -29,6 +29,7 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
+	useDebouncedValue,
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
@@ -218,7 +219,7 @@ export const GlobalNav = observer(() => {
 							{getRooms.status === "SUCCESS" &&
 								(!getRooms.data ||
 									getRooms.data.length === 0) && (
-									<div className="px-2 py-4 text-center text-muted-foreground text-sm">
+									<div className="px-2 py-4 text-center text-muted-foreground text-xs">
 										No rooms found
 									</div>
 								)}
