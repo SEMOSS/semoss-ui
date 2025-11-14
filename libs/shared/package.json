@@ -6,9 +6,12 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@semoss/sdk": "workspace:*",
+    "@semoss/ui": "workspace:*",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "flexlayout-react": "^0.8.1"
+    "flexlayout-react": "^0.8.1",
+    "lucide-react": "^0.545.0"
   },
   "devDependencies": {
     "@types/react": "18.3.1",
