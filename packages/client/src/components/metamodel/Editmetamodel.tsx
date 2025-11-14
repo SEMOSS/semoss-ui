@@ -32,6 +32,7 @@ interface EditMetamodelProps {
 	isEdit?: boolean;
 	initialDescription?: string;
 	initialLogicalNames?: string[];
+	existingColumnNames?: string[];
 }
 
 const StyledTab = styled(Tab)(() => ({
@@ -124,6 +125,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	initialType = "",
 	initialDescription = "",
 	initialLogicalNames = [],
+	existingColumnNames = [],
 	onSave,
 	types,
 	isEdit = true,
@@ -154,6 +156,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 	const [newLogicalName, setNewLogicalName] = useState<string>("");
 	const [description, setDescription] = useState<string>(initialDescription);
 	const [logicalNameError, setLogicalNameError] = useState<string>("");
+	const [columnNameError, setColumnNameError] = useState<string>("");
 	const baseId = useId();
 	const idCounterRef = useRef(0);
 
@@ -178,6 +181,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 			setNewLogicalName("");
 			setActiveTab(0);
 			setLogicalNameError("");
+			setColumnNameError("");
 		}
 		openPrevRef.current = open;
 	}, [
@@ -217,10 +221,41 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 		setLogicalNameError("");
 	};
 
+	const handleColumnNameChange = (value: string) => {
+		setSingleNameVal(value);
+
+		const trimmedValue = value.trim();
+		if (!trimmedValue) {
+			setColumnNameError("");
+			return;
+		}
+
+		const isDuplicate = existingColumnNames.some(
+			(existingName) => existingName === trimmedValue.toLowerCase(),
+		);
+
+		if (isDuplicate) {
+			setColumnNameError("The same name already exists");
+		} else {
+			setColumnNameError("");
+		}
+	};
+
 	const handleSave = () => {
 		const type = (typeVal ?? "").trim() || typesList[0];
 		const name = (singleNameVal ?? "").trim();
+
 		if (!name) return;
+
+		// Check for duplicate before saving
+		const isDuplicate = existingColumnNames.some(
+			(existingName) => existingName === name.toLowerCase(),
+		);
+
+		if (isDuplicate) {
+			setColumnNameError("The same name already exists");
+			return;
+		}
 
 		const namesOnly: string[] = logicalNames.map((item) =>
 			typeof item === "string" ? item : item.name,
@@ -251,9 +286,22 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 					variant="outlined"
 					placeholder={"Edit column name"}
 					value={singleNameVal}
-					onChange={(e) => setSingleNameVal(e.target.value)}
+					onChange={(e) => handleColumnNameChange(e.target.value)}
 					fullWidth
+					//error={!!columnNameError}
 				/>
+				{columnNameError && (
+					<Typography
+						variant="caption"
+						color="error"
+						sx={{
+							display: "block",
+							marginTop: 1,
+						}}
+					>
+						{columnNameError}
+					</Typography>
+				)}
 			</FormControl>
 
 			<FormControl fullWidth>
@@ -288,7 +336,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 			scroll="paper"
 		>
 			<ModalTitle>
-				{isEdit ? `Edit ${singleNameVal}` : "Add column"}
+				{isEdit ? `Edit ${initialName}` : "Add column"}
 				<StyledCloseIconButton onClick={onClose} size="small">
 					<Close fontSize="small" />
 				</StyledCloseIconButton>
@@ -451,7 +499,7 @@ export const Editmetamodel: React.FC<EditMetamodelProps> = ({
 					onClick={handleSave}
 					variant="contained"
 					color="primary"
-					disabled={!singleNameVal.trim()}
+					disabled={!singleNameVal.trim() || !!columnNameError}
 					data-testid="engineMetadata-save-btn"
 				>
 					Save

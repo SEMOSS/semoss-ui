@@ -87,6 +87,15 @@ export const Metamodel = (props: MetamodelProps) => {
 		logicalNames?: string[];
 	} | null>(null);
 
+	const existingColumnNames = useMemo(() => {
+		if (!columnToEdit) return [];
+		const node = data.nodes.find((n) => n.id === columnToEdit.nodeId);
+		if (!node) return [];
+		return (node.data?.properties || [])
+			.filter((prop) => prop.id !== columnToEdit.columnId)
+			.map((prop) => prop.name.toLowerCase());
+	}, [columnToEdit, data.nodes]);
+
 	const [openEditTableModal, setOpenEditTableModal] = useState(false);
 	const [tableToEdit, setTableToEdit] = useState<null | {
 		nodeId: string;
@@ -643,6 +652,7 @@ export const Metamodel = (props: MetamodelProps) => {
 				initialType={columnToEdit?.type ?? ""}
 				initialDescription={columnToEdit?.description ?? ""}
 				initialLogicalNames={columnToEdit?.logicalNames ?? []}
+				existingColumnNames={existingColumnNames}
 				onSave={(p) =>
 					applyColumnEdit(
 						p as {

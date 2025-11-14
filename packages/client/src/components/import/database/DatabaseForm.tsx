@@ -427,15 +427,18 @@ export const DatabaseForm = ({
 				? response.pixelReturn[0]
 				: null;
 			const output = pixelReturn?.output;
-			const operationType = pixelReturn?.operationType ?? "";
 
-			if (
-				typeof operationType === "string" &&
-				operationType.indexOf("ERROR") > -1
-			) {
-				notification.add({
-					color: "error",
-					message: output ?? "An error occurred on the server.",
+			const hasError = response.pixelReturn.some((res) =>
+				res.operationType.includes("ERROR"),
+			);
+			if (hasError) {
+				response.pixelReturn.forEach((res) => {
+					if (res.operationType.includes("ERROR")) {
+						notification.add({
+							color: "error",
+							message: res.output,
+						});
+					}
 				});
 				return;
 			}
