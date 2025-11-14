@@ -413,6 +413,14 @@ export class RoomStore {
 				}
 			}
 
+			// If there are only two messages, then it's possible this is a new room
+			// with a tool execution pending. Start the tool execution in that case.
+			if (Object.keys(messages).length === 2) {
+				(
+					root.children[0]?.children?.[0] as ResponseMessageStore
+				)?.startToolExecution();
+			}
+
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 			if (!newOptions.workspace?.workspace_id) {
