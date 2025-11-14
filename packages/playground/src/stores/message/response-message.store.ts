@@ -68,6 +68,20 @@ export class ResponseMessageStore extends AbstractMessageStore {
 		comment: string;
 	} | null = null;
 
+	/**
+	 * Model information associated with the message
+	 */
+	model: {
+		/** Id of the model */
+		id: string;
+
+		/** Name of the model */
+		name: string;
+	} = {
+		id: "",
+		name: "",
+	};
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message:
@@ -96,6 +110,12 @@ export class ResponseMessageStore extends AbstractMessageStore {
 				response: "",
 			}));
 		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
 
 		makeObservable(this, {
 			text: observable,
