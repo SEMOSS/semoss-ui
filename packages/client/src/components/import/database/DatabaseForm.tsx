@@ -549,10 +549,16 @@ export const DatabaseForm = ({
 		formValues,
 	) => {
 		const newFormValues = Object.fromEntries(
-			Object.entries(formValues).filter(([key]) => key !== "NAME"),
+			Object.entries(formValues).filter(
+				([key]) =>
+					key !== "NAME" &&
+					key !== "DATABASE_DESCRIPTION" &&
+					key !== "DATABASE_TAGS",
+			),
 		);
-		const { DATABASE_DESCRIPTION: description } = formValues;
-		const meta = { description };
+		const { DATABASE_DESCRIPTION: description, DATABASE_TAGS: tag } =
+			formValues;
+		const meta = { description, tag };
 		const relation = Array.isArray(payload)
 			? payload[0].relation
 			: payload.relation;
@@ -1158,7 +1164,9 @@ export const DatabaseForm = ({
 								type="submit"
 								variant="contained"
 								data-testid="database-form-submit"
-								disabled={!formState.isValid || isValidDatabaseName}
+								disabled={
+									!formState.isValid || isValidDatabaseName
+								}
 							>
 								Next
 							</StyledSubmitButton>

@@ -51,17 +51,17 @@ export const DATABASE_CONNECTION = {
 					disabled: false,
 					required: true,
 					rules: {
-                        pattern: {
-                            value: /^[\w\-\s]+$/,
-                            message:
-                                "Catalog names can only contain alphanumeric characters and dashes.",
-                        },
-                        custom: {
-                            value: 'CheckEngineName ( "[VALUE]") ;',
-                            message:
-                                "This Catalog name has already been used, please try another.",
-                        },
-                    },
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 				},
 				{
 					key: "DATABASE_DESCRIPTION",
@@ -185,17 +185,17 @@ export const DATABASE_CONNECTION = {
 					disabled: false,
 					required: true,
 					rules: {
-                        pattern: {
-                            value: /^[\w\-\s]+$/,
-                            message:
-                                "Catalog names can only contain alphanumeric characters and dashes.",
-                        },
-                        custom: {
-                            value: 'CheckEngineName ( "[VALUE]") ;',
-                            message:
-                                "This Catalog name has already been used, please try another.",
-                        },
-                    },
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 				},
 				{
 					key: "DATABASE_DESCRIPTION",
@@ -296,17 +296,17 @@ export const DATABASE_CONNECTION = {
 					disabled: false,
 					required: true,
 					rules: {
-                        pattern: {
-                            value: /^[\w\-\s]+$/,
-                            message:
-                                "Catalog names can only contain alphanumeric characters and dashes.",
-                        },
-                        custom: {
-                            value: 'CheckEngineName ( "[VALUE]") ;',
-                            message:
-                                "This Catalog name has already been used, please try another.",
-                        },
-                    },
+						pattern: {
+							value: /^[\w\-\s]+$/,
+							message:
+								"Catalog names can only contain alphanumeric characters and dashes.",
+						},
+						custom: {
+							value: 'CheckEngineName ( "[VALUE]") ;',
+							message:
+								"This Catalog name has already been used, please try another.",
+						},
+					},
 				},
 				{
 					key: "DATABASE_DESCRIPTION",
@@ -490,7 +490,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -612,7 +612,7 @@ export const DATABASE_CONNECTION = {
 			icon: ATHENA,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "ATHENA",
 					type: "text",
@@ -655,7 +655,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -775,7 +775,7 @@ export const DATABASE_CONNECTION = {
 			icon: BIGQUERY,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "BIG_QUERY",
 					type: "text",
@@ -818,7 +818,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -912,7 +912,7 @@ export const DATABASE_CONNECTION = {
 			icon: CASSANDRA,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "CASSANDRA",
 					type: "text",
@@ -955,7 +955,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -1074,7 +1074,7 @@ export const DATABASE_CONNECTION = {
 			icon: CLICKHOUSE,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "CLICKHOUSE",
 					type: "text",
@@ -1117,7 +1117,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -1244,7 +1244,7 @@ export const DATABASE_CONNECTION = {
 			icon: DATABRICKS,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "DATABRICKS",
 					type: "text",
@@ -1287,7 +1287,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -1423,7 +1423,7 @@ export const DATABASE_CONNECTION = {
 			icon: DATASTAX,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "DATASTAX",
 					type: "text",
@@ -1466,7 +1466,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -1524,7 +1524,7 @@ export const DATABASE_CONNECTION = {
 			icon: DB2,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "DB2",
 					type: "text",
@@ -1567,7 +1567,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -1679,200 +1679,13 @@ export const DATABASE_CONNECTION = {
 				},
 			],
 		},
-
 		{
 			name: "Derby",
 			disable: false,
 			icon: DERBY,
 			fields: [
 				{
-					fieldName: "RDBMS_TYPE",
-					label: "Driver Name",
-					defaultValue: "DERBY",
-					options: {
-						component: "text-field",
-					},
-					disabled: true,
-					rules: { required: true },
-					hidden: true,
-				},
-				{
-					fieldName: "NAME",
-					label: "Catalog Name",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: {
-						required: true,
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					fieldName: "DATABASE_DESCRIPTION",
-					label: "Database Description",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "DATABASE_TAGS",
-					label: "Tags",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "hostname",
-					label: "Host Name",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: true },
-				},
-				{
-					fieldName: "port",
-					label: "Port",
-					defaultValue: "1527",
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					rules: { required: false, min: 0 },
-				},
-				{
-					fieldName: "schema",
-					label: "Schema",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "USERNAME",
-					label: "Username",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "PASSWORD",
-					label: "Password",
-					defaultValue: "",
-					options: {
-						component: "password",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "additional",
-					label: "Additional Parameters",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "CONNECTION_URL",
-					label: "JDBC Url",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-
-				{
-					fieldName: "FETCH_SIZE",
-					label: "Fetch Size",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "CONNECTION_TIMEOUT",
-					label: "Connection Timeout",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "USE_CONNECTION_POOLING",
-					label: "Use Connection Pooling",
-					defaultValue: false,
-					rules: { required: false },
-					options: {
-						component: "checkbox",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "POOL_MIN_SIZE",
-					label: "Pool Min Size",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "POOL_MAX_SIZE",
-					label: "Pool Max Size",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-			],
-		},
-		{
-			name: "Derby",
-			disable: false,
-			icon: DERBY,
-			fields: [
-				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "DERBY",
 					type: "text",
@@ -1915,7 +1728,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -2034,7 +1847,7 @@ export const DATABASE_CONNECTION = {
 			icon: ELASTIC_SEARCH,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "ELASTIC_SEARCH",
 					type: "text",
@@ -2077,7 +1890,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -2196,7 +2009,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -2308,200 +2121,13 @@ export const DATABASE_CONNECTION = {
 				},
 			],
 		},
-
 		{
 			name: "Hive",
 			disable: false,
 			icon: HIVE,
 			fields: [
 				{
-					fieldName: "RDBMS_TYPE",
-					label: "Driver Name",
-					defaultValue: "HIVE",
-					options: {
-						component: "text-field",
-					},
-					disabled: true,
-					rules: { required: true },
-					hidden: true,
-				},
-				{
-					fieldName: "NAME",
-					label: "Catalog Name",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: {
-						required: true,
-						pattern: {
-							value: /^[\w\-\s]+$/,
-							message:
-								"Catalog names can only contain alphanumeric characters and dashes.",
-						},
-						custom: {
-							value: 'CheckEngineName ( "[VALUE]") ;',
-							message:
-								"This Catalog name has already been used, please try another.",
-						},
-					},
-				},
-				{
-					fieldName: "DATABASE_DESCRIPTION",
-					label: "Database Description",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "DATABASE_TAGS",
-					label: "Tags",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "hostname",
-					label: "Host Name",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: true },
-				},
-				{
-					fieldName: "port",
-					label: "Port",
-					defaultValue: "1000",
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					rules: { required: false, min: 0 },
-				},
-				{
-					fieldName: "schema",
-					label: "Schema",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "USERNAME",
-					label: "Username",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "PASSWORD",
-					label: "Password",
-					defaultValue: "",
-					options: {
-						component: "password",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "additional",
-					label: "Additional Parameters",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-				{
-					fieldName: "CONNECTION_URL",
-					label: "JDBC Url",
-					defaultValue: "",
-					options: {
-						component: "text-field",
-					},
-					disabled: false,
-					rules: { required: false },
-				},
-
-				{
-					fieldName: "FETCH_SIZE",
-					label: "Fetch Size",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "CONNECTION_TIMEOUT",
-					label: "Connection Timeout",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "USE_CONNECTION_POOLING",
-					label: "Use Connection Pooling",
-					defaultValue: false,
-					rules: { required: false },
-					options: {
-						component: "checkbox",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "POOL_MIN_SIZE",
-					label: "Pool Min Size",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-				{
-					fieldName: "POOL_MAX_SIZE",
-					label: "Pool Max Size",
-					defaultValue: "",
-					rules: { required: false, min: 0 },
-					options: {
-						component: "number",
-					},
-					disabled: false,
-					advanced: true,
-				},
-			],
-		},
-		{
-			name: "Hive",
-			disable: false,
-			icon: HIVE,
-			fields: [
-				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "HIVE",
 					type: "text",
@@ -2544,7 +2170,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -2656,14 +2282,13 @@ export const DATABASE_CONNECTION = {
 				},
 			],
 		},
-
 		{
 			name: "Impala",
 			disable: false,
 			icon: IMPALA,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "IMPALA",
 					type: "text",
@@ -2706,7 +2331,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -2824,7 +2449,7 @@ export const DATABASE_CONNECTION = {
 			icon: MARIA_DB,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "MARIA_DB",
 					type: "text",
@@ -2867,7 +2492,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -2985,7 +2610,7 @@ export const DATABASE_CONNECTION = {
 			icon: MYSQL,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "MYSQL",
 					type: "text",
@@ -3028,7 +2653,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -3146,7 +2771,7 @@ export const DATABASE_CONNECTION = {
 			icon: OPEN_SEARCH,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "OPEN_SEARCH",
 					type: "text",
@@ -3189,7 +2814,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -3265,7 +2890,7 @@ export const DATABASE_CONNECTION = {
 			icon: ORACLE,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "ORACLE",
 					type: "text",
@@ -3308,7 +2933,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -3426,7 +3051,7 @@ export const DATABASE_CONNECTION = {
 			icon: PHOENIX,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "PHOENIX",
 					type: "text",
@@ -3469,7 +3094,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -3587,7 +3212,7 @@ export const DATABASE_CONNECTION = {
 			icon: POSTGRES,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "POSTGRES",
 					type: "text",
@@ -3630,7 +3255,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -3757,7 +3382,7 @@ export const DATABASE_CONNECTION = {
 			icon: REDSHIFT,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "REDSHIFT",
 					type: "text",
@@ -3800,7 +3425,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -3927,7 +3552,7 @@ export const DATABASE_CONNECTION = {
 			icon: SAP_HANA,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "SAP_HANA",
 					type: "text",
@@ -3970,7 +3595,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -4088,7 +3713,7 @@ export const DATABASE_CONNECTION = {
 			icon: SEMOSS,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "SEMOSS",
 					type: "text",
@@ -4131,7 +3756,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -4285,7 +3910,7 @@ export const DATABASE_CONNECTION = {
 			icon: SNOWFLAKE,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "SNOWFLAKE",
 					type: "text",
@@ -4328,7 +3953,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -4474,7 +4099,7 @@ export const DATABASE_CONNECTION = {
 			icon: SQL_SERVER,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "SQL_SERVER",
 					type: "text",
@@ -4517,7 +4142,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -4645,7 +4270,7 @@ export const DATABASE_CONNECTION = {
 			icon: SQLITE,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "SQLITE",
 					type: "text",
@@ -4688,7 +4313,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -4797,7 +4422,7 @@ export const DATABASE_CONNECTION = {
 			icon: TERADATA,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "TERADATA",
 					type: "text",
@@ -4840,7 +4465,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -4949,7 +4574,7 @@ export const DATABASE_CONNECTION = {
 			icon: TIBCO,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "TIBCO",
 					type: "text",
@@ -4992,7 +4617,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",
@@ -5111,7 +4736,7 @@ export const DATABASE_CONNECTION = {
 			icon: TRINO,
 			fields: [
 				{
-					key: "RDBMS_TYPE",
+					key: "dbDriver",
 					label: "Driver Name",
 					value: "TRINO",
 					type: "text",
@@ -5154,7 +4779,7 @@ export const DATABASE_CONNECTION = {
 					key: "DATABASE_TAGS",
 					label: "Tags",
 					value: "",
-					type: "text",
+					type: "tags",
 					disabled: false,
 					required: false,
 					category: "General",

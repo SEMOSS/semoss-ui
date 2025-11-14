@@ -47,7 +47,7 @@ const StyledList = styled(Box)(() => ({
 	marginBottom: "8px",
 	marginLeft: "16px",
 	marginRight: "16px",
-	height: "110px",
+	maxHeight: "110px",
 	overflow: "auto",
 }));
 
@@ -153,6 +153,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 	const [editingId, setEditingId] = useState<string | null>(null);
 
 	const [error, setError] = useState<string>("");
+	const [save, setSave] = useState(true);
 
 	const makeId = (c: Conn) =>
 		`${c.parentTable}_${c.childTable}`.replace(/\s+/g, "_");
@@ -180,6 +181,10 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 			setChildTable("");
 		}
 	}, [nodes, parentTable, childTable, tableOptions]);
+
+	useEffect(() => {
+		setSave(true);
+	}, [open]);
 
 	const sanitizeForForm = (c: Conn) => {
 		const sanitized: Conn = { ...c };
@@ -273,6 +278,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 		setParentTable("");
 		setChildTable("");
 		setError("");
+		setSave(false);
 	};
 
 	const handleDelete = (conn: Conn) => {
@@ -426,7 +432,7 @@ export const CreateConnection: React.FC<ConnectionProps> = ({
 					onClick={() => {
 						onClose();
 					}}
-					disabled={connections.length === 0 || error !== ""}
+					disabled={error !== "" || save}
 					data-testid="save-connection"
 				>
 					Save
