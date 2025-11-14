@@ -37,13 +37,19 @@ import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
-import { findDependentElements, getDependentBlocks, getDependentCells, getDependentQueries, getDependentVariables } from "@/utility/dependencyScanner";
+import {
+	findDependentElements,
+	getDependentBlocks,
+	getDependentCells,
+	getDependentQueries,
+	getDependentVariables,
+} from "@/utility/dependencyScanner";
 import DuplicateIcon from "../../assets/img/Duplicate.svg";
 import { AddVariableModal } from "./AddVariableModal";
+import { DependentBlocksModal } from "./DependentBlocksModal";
 import { NotebookAddCell } from "./NotebookAddCell";
 import { NotebookCellConsole } from "./NotebookCellConsole";
 import { Operation } from "./operations";
-import { DependentBlocksModal } from "./DependentBlocksModal";
 
 const StyledStack = styled(Stack)(({ theme }) => ({
 	paddingBottom: theme.spacing(2),
@@ -395,7 +401,7 @@ export const NotebookCell = observer(
 				console.error(e);
 			}
 		};
-		const deleteCell = async() => {
+		const deleteCell = async () => {
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
 				console.log("Passed args >>", state, queryId, cell);
@@ -406,8 +412,12 @@ export const NotebookCell = observer(
 					CELLS >> ${getDependentCells(state, queryId, cellId)}\n
 					VARIABLES >> ${getDependentVariables(state, queryId, cellId)}
 				`);
-				const dependentBlocks = await getDependentBlocks(state, queryId, cellId);
-				if(dependentBlocks.length > 0) {
+				const dependentBlocks = await getDependentBlocks(
+					state,
+					queryId,
+					cellId,
+				);
+				if (dependentBlocks.length > 0) {
 					setDependentBlocksModal(true);
 					setDependentBlocks(dependentBlocks);
 				}
@@ -647,24 +657,32 @@ export const NotebookCell = observer(
 		};
 
 		const handleDelete = () => {
-			console.log('Deleting without replacement');
+			console.log("Deleting without replacement");
 		};
 
 		const handleReplace = (replacements: { [blockId: string]: string }) => {
-			console.log('Replacing with:', replacements);
+			console.log("Replacing with:", replacements);
 		};
 
 		const replacementOptions = useMemo(() => {
 			return [
 				{
 					label: "Notebook",
-					options: Object.keys(state.queries)
+					options: Object.keys(state.queries),
 				},
 				{
 					label: "Cells",
-					options: ['123-1', '123-2', '123-3', '123-4', '123-5', '123-6', '123-7']
-				}
-			]
+					options: [
+						"123-1",
+						"123-2",
+						"123-3",
+						"123-4",
+						"123-5",
+						"123-6",
+						"123-7",
+					],
+				},
+			];
 		}, [state.queries]);
 
 		return (
@@ -1181,7 +1199,7 @@ export const NotebookCell = observer(
 						setDependentBlocksModal(false);
 					}}
 					onDelete={handleDelete}
-                	onReplace={handleReplace}
+					onReplace={handleReplace}
 					dependents={dependentBlocks}
 					replacementOptions={replacementOptions}
 				/>
