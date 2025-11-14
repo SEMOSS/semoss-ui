@@ -29,6 +29,20 @@ export class PlanMessageStore extends AbstractMessageStore {
 	 */
 	executionIdx: number = 0;
 
+	/**
+	 * Model information associated with the message
+	 */
+	model: {
+		/** Id of the model */
+		id: string;
+
+		/** Name of the model */
+		name: string;
+	} = {
+		id: "",
+		name: "",
+	};
+
 	constructor(
 		room: AbstractMessageStore["room"],
 		message: ResponseTextPixelMessage,
@@ -40,6 +54,12 @@ export class PlanMessageStore extends AbstractMessageStore {
 		} catch {
 			console.error("ERROR Parsing Plan");
 		}
+
+		// set the model
+		this.model = {
+			id: message.modelId,
+			name: message.ornaments?.modelName || "AI",
+		};
 
 		makeObservable(this, {
 			plan: observable,
