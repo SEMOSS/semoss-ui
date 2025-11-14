@@ -80,8 +80,6 @@ export const RoomOptions = observer((props: RoomOptionsProps) => {
 		setIsToolsOpen(false);
 	};
 
-	console.log("ROOM OPTIONS RENDER", JSON.stringify(options));
-
 	return (
 		<ScrollArea className="h-full w-full">
 			<form className="px-2 py-4">
