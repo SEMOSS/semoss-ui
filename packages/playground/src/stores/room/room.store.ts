@@ -413,14 +413,6 @@ export class RoomStore {
 				}
 			}
 
-			// If there are only two messages, then it's possible this is a new room
-			// with a tool execution pending. Start the tool execution in that case.
-			if (Object.keys(messages).length === 2) {
-				(
-					root.children[0]?.children?.[0] as ResponseMessageStore
-				)?.startToolExecution();
-			}
-
 			// options
 			const newOptions = { ...optionsOutput.OPTIONS };
 			if (!newOptions.workspace?.workspace_id) {
@@ -440,6 +432,11 @@ export class RoomStore {
 				// mark as initialized
 				this._store.isInitialized = true;
 			});
+
+			// If the last message is a response and it has tool executions, start them (happens for new rooms and page reloads)
+			if (this.tail.type === "RESPONSE") {
+				this.tail.startToolExecution();
+			}
 		} catch (e) {
 			console.error(e);
 			throw new Error(e.message || "Error initializing room");
