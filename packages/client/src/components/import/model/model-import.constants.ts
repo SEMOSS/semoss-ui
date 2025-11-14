@@ -34,6 +34,7 @@ export interface FieldDefinition {
 	disabled?: boolean;
 	default?: string | number | boolean;
 	rules?: FieldRules;
+	helperText?: string
 }
 
 export interface ModelTypeDefinition {
@@ -145,6 +146,7 @@ export const IMPORTABLE_MODELS = {
 							label: "Model Type",
 							type: "select",
 							options: ["Open_AI"],
+							disabled: true,
 							required: true,
 							default: "Open_AI",
 							category: "General",
@@ -155,6 +157,7 @@ export const IMPORTABLE_MODELS = {
 							type: "password",
 							required: true,
 							category: "Credentials",
+							helperText: "https://platform.openai.com/api-keys"
 						},
 						{
 							key: "MODEL",
@@ -184,15 +187,6 @@ export const IMPORTABLE_MODELS = {
 							required: true,
 							default: "chat-completion",
 							category: "General",
-						},
-						{
-							key: "INIT_MODEL_ENGINE",
-							label: "Init Script",
-							type: "text",
-							required: false,
-							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}', contextWindow=${CONTEXT_WINDOW})",
-							category: "Settings",
 						},
 						{
 							key: "MAX_TOKENS",
@@ -232,6 +226,16 @@ export const IMPORTABLE_MODELS = {
 							options: ["true", "false"],
 							required: true,
 							default: "true",
+							category: "Settings",
+						},
+						{
+							key: "INIT_MODEL_ENGINE",
+							label: "Init Script",
+							type: "text",
+							required: false,
+							disabled: true,
+							default:
+								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}', contextWindow=${CONTEXT_WINDOW})",
 							category: "Settings",
 						},
 					],
@@ -275,7 +279,7 @@ export const IMPORTABLE_MODELS = {
 						},
 						{
 							key: "OPEN_AI_KEY",
-							label: "Azure Open AI API Key",
+							label: "OpenAI API Key",
 							type: "password",
 							required: true,
 							category: "Credentials",
@@ -285,6 +289,7 @@ export const IMPORTABLE_MODELS = {
 							label: "Variable Name",
 							type: "text",
 							required: true,
+							value: "openAIEmbedderModel",
 							category: "General",
 						},
 						{
@@ -292,8 +297,9 @@ export const IMPORTABLE_MODELS = {
 							label: "Init Script",
 							type: "text",
 							required: true,
+							disabled: true,
 							default:
-								"import genai_client;${VAR_NAME} = genai_client.OpenAiClient(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}', chat_type = '${CHAT_TYPE}')",
+								"from genai_client import OpenAiEmbedder;${VAR_NAME} = OpenAiEmbedder(model_name = '${MODEL}', api_key = '${OPEN_AI_KEY}')",
 							category: "Settings",
 						},
 						{
@@ -1434,21 +1440,71 @@ export const IMPORTABLE_MODELS = {
 	],
 };
 
-// TODO: Move to backend and fetch via API
-// TODO: Can we pull icon from an image url
+// https://platform.openai.com/docs/models
+// https://console.cloud.google.com/vertex-ai/model-garden
+// https://aws.amazon.com/bedrock/model-choice/
+// https://build.nvidia.com/models
 export const MODEL_VERSIONS = {
 	OpenAI: [
 		{
-			name: "gpt-3.5",
-			display: "GPT 3.5",
+			name: "gpt-5",
+			display: "GPT-5",
 			icon: "/src/assets/img/OPEN_AI.png",
-			embedding: false,
+			description: "Previous intelligent reasoning model for coding and agentic tasks with configurable reasoning effort."
+		},
+		{
+			name: "gpt-5.1",
+			display: "GPT-5.1",
+			icon: "/src/assets/img/OPEN_AI.png",
+			description: "The best model for coding and agentic tasks with configurable reasoning effort."
+		},
+		{
+			name: "gpt-5-mini",
+			display: "GPT-5 Mini",
+			icon: "/src/assets/img/OPEN_AI.png",
+		},
+		{
+			name: "gpt-5-nano",
+			display: "GPT-5 nano",
+			icon: "/src/assets/img/OPEN_AI.png",
 		},
 		{
 			name: "gpt-4",
 			display: "GPT 4",
 			icon: "/src/assets/img/OPEN_AI.png",
-			embedding: false,
+		},
+		{
+			name: "gpt-3.5-Turbo",
+			display: "GPT 3.5 Turbo",
+			icon: "/src/assets/img/OPEN_AI.png",
+		},
+		{
+			name: "gpt-4o",
+			display: "GPT-4o",
+			icon: "/src/assets/img/OPEN_AI.png",
+			description: "Fast, intelligent, flexible GPT model"
+		},
+		{
+			name: "dall-e-3",
+			display: "DALL E 3",
+			icon: "/src/assets/img/OPEN_AI.png",
+		},
+		{
+			name: "dall-e-2",
+			display: "DALL E 2",
+			icon: "/src/assets/img/OPEN_AI.png",
+		},
+		{
+			name: "gpt-audio",
+			display: "gpt-audio",
+			icon: "/src/assets/img/OPEN_AI.png",
+			audio: true
+		},
+		{
+			name: "gpt-image-1",
+			display: "GPT Image 1",
+			icon: "/src/assets/img/OPEN_AI.png",
+			image: true
 		},
 		{
 			name: "text-davinci",
@@ -1457,10 +1513,16 @@ export const MODEL_VERSIONS = {
 			embedding: true,
 		},
 		{
-			name: "dall-e",
-			display: "DALL·E",
+			name: "text-embedding-3-large",
+			display: "text-embedding-3-large",
 			icon: "/src/assets/img/OPEN_AI.png",
-			embedding: false,
+			embedding: true,
+		},
+		{
+			name: "text-embedding-3-small",
+			display: "text-embedding-3-large",
+			icon: "/src/assets/img/OPEN_AI.png",
+			embedding: true,
 		},
 	],
 	"Azure OpenAI": [
@@ -1479,34 +1541,121 @@ export const MODEL_VERSIONS = {
 	],
 	"AWS Bedrock": [
 		{
+			name: "anthropic.claude-3-opus-20240229-v1:0",
+			display: "Claude 3 Opus",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+		{
+			name: "anthropic.claude-3-sonnet-20240229-v1:0",
+			display: "Claude 3 Sonnet",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+		{
+			name: "anthropic.claude-3-haiku-20240307-v1:0",
+			display: "Claude 3 Haiku",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+		{
+			name: "anthropic.claude-v2",
+			display: "Claude 2.0",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+
+		
+		{
+			name: "ai21.j2-ultra-v1",
+			display: "Jurassic-2 Ultra",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+		{
+			name: "ai21.j2-mid-v1",
+			display: "Jurassic-2 Mid",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+
+		{
+			name: "amazon.titan-text-express-v1",
+			display: "Titan Text G1 Express",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+		{
+			name: "amazon.titan-text-lite-v1",
+			display: "Titan Text Lite",
+			icon: "/src/assets/img/CLAUDE_AI.png",
+			embedding: false,
+		},
+		{
 			name: "amazon.titan-embed-text-v1",
-			display: "Claude",
+			display: "Titan Embeddings (text)",
 			icon: "/src/assets/img/CLAUDE_AI.png",
 			embedding: true,
 		},
 	],
 	"Google Vertex AI": [
 		{
-			name: "palm-bison",
-			display: "Palm Bison",
+			name: "gemini-2.5-pro",
+			display: "Gemini 2.5 Pro",
 			icon: "/src/assets/img/VERTEX_AI.png",
 			embedding: false,
 		},
 		{
-			name: "palm-chat-bison",
-			display: "Palm Chat Bison",
+			name: "gemini-pro",
+			display: "Gemini Pro",
 			icon: "/src/assets/img/VERTEX_AI.png",
 			embedding: false,
 		},
 		{
-			name: "palm-code-bison",
-			display: "Palm Code Bison",
+			name: "gemini-ultra",
+			display: "Gemini Ultra",
 			icon: "/src/assets/img/VERTEX_AI.png",
 			embedding: false,
 		},
 		{
-			name: "gemini",
-			display: "Gemini",
+			name: "gemma-2b",
+			display: "Gemma 2b",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+		},
+		{
+			name: "llama-2-7b",
+			display: "Llama 2-7b",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+		},
+		{
+			name: "llama-2-70b",
+			display: "Llama 2-70b",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+		},
+		{
+			name: "text-bison",
+			display: "PaLM 2 Bison",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+		},
+		{
+			name: "text-bison-32k",
+			display: "PaLM 2 Bison (32k)",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+		},
+		{
+			name: "code-bison",
+			display: "Code Generation Bison",
+			icon: "/src/assets/img/VERTEX_AI.png",
+			embedding: false,
+		},
+		{
+			name: "mistral-7b",
+			display: "Mistral",
 			icon: "/src/assets/img/VERTEX_AI.png",
 			embedding: false,
 		},

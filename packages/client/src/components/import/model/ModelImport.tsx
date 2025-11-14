@@ -85,7 +85,7 @@ const StyledTypographyDescription = styled(Typography)(({ theme }) => ({
 }));
 
 const StyledModelGrid = styled(Grid)(({ theme }) => ({
-	marginTop: theme.spacing(3),
+	marginTop: theme.spacing(1),
 }));
 
 const StyledTabs = styled(Tabs)(({ theme }) => ({
@@ -238,29 +238,9 @@ export const ModelImport: React.FC = () => {
 									<StyledModelGrid
 										container
 										columns={6}
-										columnSpacing={2}
+										columnSpacing={1}
 										rowSpacing={2}
 									>
-										{models.map((model) => (
-											<Grid
-												key={model.name}
-												item
-												lg={1}
-												md={1}
-												xs={1}
-												xl={1}
-												sm={1}
-											>
-												<ModelTileCard
-													model={model}
-													onModelSelect={(m) => {
-														setSelectedModel(
-															m.display,
-														);
-													}}
-												/>
-											</Grid>
-										))}
 										<Grid
 											key={""}
 											item
@@ -283,6 +263,26 @@ export const ModelImport: React.FC = () => {
 												}}
 											/>
 										</Grid>
+										{models.map((model) => (
+											<Grid
+												key={model.name}
+												item
+												lg={1}
+												md={1}
+												xs={1}
+												xl={1}
+												sm={1}
+											>
+												<ModelTileCard
+													model={model}
+													onModelSelect={(m) => {
+														setSelectedModel(
+															m.display,
+														);
+													}}
+												/>
+											</Grid>
+										))}
 									</StyledModelGrid>
 								</Box>
 							</Stack>

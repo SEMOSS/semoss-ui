@@ -125,20 +125,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 	}, [fields, advanced, reset, name]);
 
 	const onSubmit = (data: Record<string, unknown>) => {
-		let initScript = data.INIT_MODEL_ENGINE as string;
 		
-		// Replace placeholders in the INIT_MODEL_ENGINE script with actual values
-		initScript = initScript.replace(/\$\{([^}]+)\}/g, (match, key: string) => {
-			return data[key] as string
-		});
-		// debugger;
-
 		const pixel = `CreateModelEngine(model=["${
 			data.NAME
-		}"],modelDetails=[${JSON.stringify({
-			...data,
-			// INIT_MODEL_ENGINE: initScript,
-		})}])`;
+		}"],modelDetails=[${JSON.stringify(data)}])`;
 
 		// debugger;
 		monolithStore.runQuery(pixel).then(async (response) => {
@@ -312,6 +302,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									disabled={f.disabled || isLockedModel}
 									helperText={
 										errors?.[f.label]?.message.toString() ||
+										f.helperText || 
 										""
 									}
 									data-testId={formatToDataTestId(
@@ -391,6 +382,10 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
+									helperText={
+										f.helperText || 
+										""
+									}
 									disabled={f.disabled || isLockedModel}
 									data-testId={formatToDataTestId(
 										`model-importForm-${f.label}-password`,

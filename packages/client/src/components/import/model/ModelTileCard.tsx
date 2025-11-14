@@ -73,7 +73,7 @@ const StyledTypographyText = styled(Typography)(() => ({
 	color: "#212121",
 }));
 
-const EmbeddingTile = styled(Typography)(() => ({
+const ModelTypeTile = styled(Typography)(() => ({
 	display: "flex",
 	alignItems: "center",
 	padding: "0 10px",
@@ -96,8 +96,11 @@ interface Model {
 	name: string;
 	display: string;
 	icon: string;
-	embedding: boolean;
 	disable?: boolean;
+	description: string;
+	embedding: boolean;
+	audio: boolean;
+	image: boolean;
 }
 
 interface ModelTileCardProps {
@@ -152,24 +155,51 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 						</StyledTypographyText>
 					</Stack>
 				) : (
-					<StyledCardImage isModel={true} src={model.icon} />
+					<Stack direction="row" width={"100%"} spacing={1}>
+						<StyledCardImage isModel={true} src={model.icon} />
+						{model.embedding && (
+							<ModelTypeTile
+								variant="body1"
+								data-testId={formatToDataTestId(
+									`importPageContent-${model.name}-embeddings-tag`,
+								)}
+							>
+								Embeddings
+							</ModelTypeTile>
+						)}
+
+						{model.image && (
+							<ModelTypeTile
+								variant="body1"
+								data-testId={formatToDataTestId(
+									`importPageContent-${model.name}-image-tag`,
+								)}
+							>
+								Image
+							</ModelTypeTile>
+						)}
+						{model.audio && (
+							<ModelTypeTile
+								variant="body1"
+								data-testId={formatToDataTestId(
+									`importPageContent-${model.name}-audio-tag`,
+								)}
+							>
+								Audio
+							</ModelTypeTile>
+						)}
+					</Stack>
 				)}
 
 				<TitleRow>
 					<StyledCardModelText ref={textRef}>
+						
 						{model.display || model.name}
 					</StyledCardModelText>
-					{!model.disable && model.embedding ? (
-						<EmbeddingTile
-							variant="body1"
-							data-testId={formatToDataTestId(
-								`importPageContent-${model.name}-embeddings-tag`,
-							)}
-						>
-							Embeddings
-						</EmbeddingTile>
-					) : null}
 				</TitleRow>
+				<Typography variant="caption">
+					{model.description}
+				</Typography>
 			</StyledInnerBox>
 		</StyledFormTypeModelBox>
 	);
