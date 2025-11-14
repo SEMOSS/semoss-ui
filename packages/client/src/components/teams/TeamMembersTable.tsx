@@ -233,7 +233,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 	const [teamMembers, setTeamMembers] = useState([]);
 	const [memberCount, setMemberCount] = useState(0);
 	const [rowsPerPage, setRowsPerPage] = useState(5);
-	const [allTeamMembers, _setAllTeamMembers] = useState([]);
+	const [allTeamMembers, setAllTeamMembers] = useState([]);
 	const [hasMembers, setHasMembers] = useState(false);
 
 	const [searchMemberInput, setSearchMemberInput] = useState<string>("");
@@ -560,12 +560,24 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 		).then((data: unknown[]) => {
 			setTeamMembers(data);
 			setHasMembers(data?.length > 0);
+		});
+	}, [groupId, membersPage, searchFilter, rowsPerPage]);
+
+	const filterUsersTwo = useCallback(() => {
+		getTeamUsers(
+			groupId,
+			100,
+			0, // offset
+			searchFilter,
+		).then((data: unknown[]) => {
 			setMemberCount(data.length);
+			setAllTeamMembers(data);
 		});
 	}, [groupId, membersPage, searchFilter, rowsPerPage]);
 
 	const filter = () => {
 		filterUsers();
+		filterUsersTwo();
 	};
 
 	// const debouncedFilterTeams = debounced(filter, 400);
@@ -887,25 +899,95 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 										padding: "8px 16px",
 									}}
 								>
-									<Box sx={{ width: "100%" }}>
-										<Typography variant="body2">
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											width: "100%",
+											gap: "8px",
+										}}
+									>
+										<Avatar sx={{ width: 32, height: 32 }}>
+											{option.name
+												? option.name
+														.split(" ")
+														.map((n) => n[0])
+														.join("")
+														.toUpperCase()
+												: option.id[0].toUpperCase()}
+										</Avatar>
+										<Typography variant="body1">
 											{option.name}
 										</Typography>
 									</Box>
-									<Box sx={{ width: "100%" }}>
-										<Typography
-											variant="caption"
-											color="textSecondary"
-											sx={{ ml: 1 }}
+									<Box
+										sx={{
+											display: "flex",
+											alignItems: "center",
+											gap: "16px",
+											whiteSpace: "nowrap",
+											fontSize: "14px",
+											width: "100%",
+											marginLeft: "40px",
+										}}
+									>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
 										>
 											User ID:{" "}
-											<Link
-												href={`mailto:${option.email}`}
-												underline="none"
-											>
-												{option.email}
-											</Link>
-										</Typography>
+										</span>
+										<span
+											title={option.id}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.id}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Email:{" "}
+										</span>
+										<span
+											title={option.email}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "220px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.email}
+										</span>
+										<span
+											style={{ color: "rgba(0,0,0,0.7)" }}
+										>
+											Type:{" "}
+										</span>
+										<span
+											title={option.type}
+											style={{
+												color: "#000",
+												fontWeight: 500,
+												width: "180px",
+												overflow: "hidden",
+												textOverflow: "ellipsis",
+												display: "inline-block",
+												verticalAlign: "bottom",
+											}}
+										>
+											{option.type}
+										</span>
 									</Box>
 								</li>
 							)}
@@ -929,6 +1011,11 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											},
 										),
 									),
+								style: {
+									paddingLeft: "16px",
+									paddingRight: "30px",
+									paddingBottom: "16px",
+								},
 							}}
 							onInputChange={(_event, newValue) => {
 								setSearchMemberInput(newValue);
@@ -956,6 +1043,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 											idx % 2 !== 0
 												? "rgba(0, 0, 0, .03)"
 												: "",
+										paddingBottom: "16px",
 									}}
 								>
 									<Box
