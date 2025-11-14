@@ -233,6 +233,15 @@ export const monolithLogout = async (): Promise<boolean> => {
 	return true;
 };
 
+export const monolithLogoutProvider = async (
+	provider: string,
+): Promise<boolean> => {
+	await get(`${Env.MODULE}/api/auth/logout/${provider}`).catch((err) => {
+		throw Error(err);
+	});
+	return true;
+};
+
 export const monolithOauth = async (provider: string): Promise<boolean> => {
 	// check if the user is logged in
 	const response = await get<{

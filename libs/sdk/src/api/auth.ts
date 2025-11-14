@@ -110,3 +110,12 @@ export const logout = async (): Promise<boolean> => {
 	CSRF.token = "";
 	return true;
 };
+
+export const logoutProvider = async (provider: string): Promise<boolean> => {
+	// we need to disableRedirect because fetch.ts doesn't allow a 302
+	// and even if we bypass the 302 for logout then it requires the payload
+	// to always be valid json
+	await get(`${Env.MODULE}/api/auth/logout/${provider}`);
+	CSRF.token = "";
+	return true;
+};

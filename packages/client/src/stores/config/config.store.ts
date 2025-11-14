@@ -1,6 +1,6 @@
 import { makeAutoObservable, runInAction } from "mobx";
 // TODO: Pull from sdk
-import { Env, logout, runPixel } from "@semoss/sdk/react";
+import { Env, logout, logoutProvider, runPixel } from "@semoss/sdk/react";
 import {
 	getUserProjectPermission as getUserProjectLevelPermission,
 	registerUser,
@@ -757,6 +757,10 @@ export class ConfigStore {
 			console.error(error);
 			throw error;
 		}
+	}
+
+	async logoutProvider(provider: string) {
+		await logoutProvider(provider);
 	}
 
 	/**
