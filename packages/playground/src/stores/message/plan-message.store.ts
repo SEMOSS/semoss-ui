@@ -376,11 +376,12 @@ cotPlan=["<encode>${JSON.stringify(this.plan)}</encode>"]
 					responseMessage: PixelMessage;
 				},
 			]
-		>(`AskCOTRoom(
+		>(`AddCOTLLMReasoning(
 engine=["${room.modelId}"],
 roomId=["${room.roomId}"],
 command=["<encode>${inputMessage.text}</encode>"],
 ${inputMessage.imageInfos.length ? `image=${JSON.stringify(inputMessage.imageInfos.map((info) => info.fileLocation))},` : "image=[],"}
+${room.tail ? `parentMessageId=["${room.tail.id}"],` : ""}
 paramValues=[${JSON.stringify({
 			max_new_tokens: room.options.tokenLength,
 			temperature: room.options.temperature,
