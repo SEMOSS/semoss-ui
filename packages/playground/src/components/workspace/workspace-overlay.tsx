@@ -1,6 +1,6 @@
 import { XIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -20,10 +20,11 @@ import {
 	Spinner,
 	Textarea,
 	toast,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import { engineProjectToMCP } from "@/components";
 import { useChat } from "@/hooks";
-import type { App, Engine, MCP, Workspace } from "@/types";
+import type { App, Engine, MCP, MCPConfig, Workspace } from "@/types";
 
 export interface WorkspaceOverlayProps {
 	/** Track if the overlay is open */
@@ -54,9 +55,9 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 	const [name, setName] = useState<string>("");
 	const [description, setDescription] = useState<string>("");
 	const [instructions, setInstructions] = useState<string>("");
-	const [selectedMCPMap, setSelectedMCPMap] = useState<Record<string, MCP>>(
-		{},
-	);
+	const [selectedMCPMap, setSelectedMCPMap] = useState<
+		Record<string, MCPConfig>
+	>({});
 
 	const [isLoadingSubmit, setIsLoadingSubmit] = useState<boolean>(false);
 	const [searchWord, setSearchWord] = useState<string>("");
@@ -83,11 +84,26 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 			return;
 		}
 
-		setName("");
-		setDescription("");
-		setInstructions("");
-		setSelectedMCPMap({});
-	}, [open]);
+		if (workspaceId && getWorkspace.data) {
+			setName(getWorkspace.data.name);
+			setDescription(getWorkspace.data.description || "");
+			setInstructions(getWorkspace.data.system_prompt || "");
+			const initialMCPMap = getWorkspace.data.mcp.reduce(
+				(acc, val) => {
+					acc[val.id] = val;
+					return acc;
+				},
+				{} as Record<string, MCPConfig>,
+			);
+			setSelectedMCPMap(initialMCPMap);
+			return;
+		} else {
+			setName("");
+			setDescription("");
+			setInstructions("");
+			setSelectedMCPMap({});
+		}
+	}, [open, workspaceId, getWorkspace.data]);
 
 	/**
 	 * Constants
@@ -107,7 +123,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 		isLoadingSubmit ||
 		(workspaceId && getWorkspace.status !== "SUCCESS");
 
-	const onMCPSelect = (mcp: MCP) => {
+	const onMCPSelect = (mcp: MCPConfig) => {
 		const updatedSelectedMCPMap = { ...selectedMCPMap };
 		if (updatedSelectedMCPMap[mcp.id]) {
 			delete updatedSelectedMCPMap[mcp.id];
@@ -297,7 +313,7 @@ export const WorkspaceOverlay: React.FC<WorkspaceOverlayProps> = ({
 							Cancel
 						</Button>
 						<Button
-							disabled={isLoading || !name || !instructions}
+							disabled={isLoading || !name}
 							data-testid="newWorkspaceModal-create-btn"
 							onClick={() => {
 								onSubmit();
