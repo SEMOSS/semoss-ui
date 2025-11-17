@@ -149,7 +149,7 @@ export const JobsTable = (props: {
 						params.value === "INACTIVE"
 					)
 				) {
-					time = dayjs(params.value).format("MM/DD/YYYY h:MM A");
+					time = dayjs(params.value).format("MM/DD/YYYY h:mm A");
 				}
 				return <>{time}</>;
 			},

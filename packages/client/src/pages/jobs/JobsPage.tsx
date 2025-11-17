@@ -538,6 +538,14 @@ export function JobsPage() {
 	}, []);
 
 	useEffect(() => {
+		const interval = setInterval(() => {
+			getExecutingJobs();
+		}, 30000);
+
+		return () => clearInterval(interval);
+	}, []);
+
+	useEffect(() => {
 		debouncedGetHistory();
 	}, [historySearchBuffer, debouncedGetHistory]);
 
