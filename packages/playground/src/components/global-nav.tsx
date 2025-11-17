@@ -218,7 +218,7 @@ export const GlobalNav = observer(() => {
 							{getRooms.status === "SUCCESS" &&
 								(!getRooms.data ||
 									getRooms.data.length === 0) && (
-									<div className="px-2 py-4 text-center text-muted-foreground text-sm">
+									<div className="px-2 py-4 text-center text-muted-foreground text-xs">
 										No rooms found
 									</div>
 								)}

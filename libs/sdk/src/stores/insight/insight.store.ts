@@ -40,6 +40,13 @@ interface InsightStoreInterface {
 				name: string;
 				isOauth: boolean;
 			}[];
+			/**
+			 * Theme of the app
+			 */
+			theme: {
+				playground: Record<string, unknown>;
+				[key: string]: unknown;
+			};
 			[key: string]: unknown;
 		};
 	} | null;
@@ -287,6 +294,9 @@ export class InsightStore {
 				config: {
 					logins: {},
 					availableProviders: [],
+					theme: {
+						playground: {},
+					},
 				},
 			};
 

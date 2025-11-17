@@ -15,11 +15,6 @@ interface ChatStoreInterface {
 	isInitialized: boolean;
 
 	/**
-	 *  Track if the chat is loading
-	 */
-	isLoading: boolean;
-
-	/**
 	 * List of the models available
 	 */
 	models: {
@@ -46,7 +41,6 @@ export class ChatStore {
 	private _error: Insight["error"];
 	private _store: ChatStoreInterface = {
 		isInitialized: false,
-		isLoading: false,
 		models: {
 			selected: null,
 		},
