@@ -941,9 +941,15 @@ export const DatabaseForm = ({
 								freeSolo
 								options={val.options?.options || []}
 								value={field.value || []}
-								onChange={(_, newValue) =>
-									field.onChange(newValue)
-								}
+								onChange={(_, newValue) => {
+									// Filter out empty or whitespace-only tags
+									const filteredValue = newValue.filter(
+										(tag) =>
+											typeof tag === "string" &&
+											tag.trim() !== "",
+									);
+									field.onChange(filteredValue);
+								}}
 								renderInput={(params) => (
 									<TextField
 										{...params}
