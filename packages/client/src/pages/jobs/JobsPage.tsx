@@ -17,8 +17,10 @@ import { DeleteJobModal } from "./DeleteJobModal";
 import { JobBuilderModal } from "./JobBuilderModal";
 import { JobCard } from "./JobCard";
 import { JobHistory } from "./JobHistory";
+import { JobsExecutingTable } from "./JobsExecutingTable";
 import { JobsTable } from "./JobsTable";
 import type {
+	ExecutingJob,
 	HistoryJob,
 	HistoryPaginationProps,
 	Job,
@@ -37,7 +39,7 @@ export function JobsPage() {
 	const { monolithStore } = useRootStore();
 	const notification = useNotification();
 
-	const tabs = ["All", "Active", "Inactive"];
+	const tabs = ["All", "Active", "Inactive", "Executing"];
 
 	const [searchValue, setSearchValue] = useState("");
 	const [selectedTab, setSelectedTab] = useState(tabs[0]);
@@ -66,6 +68,10 @@ export function JobsPage() {
 	const [historyRowsPerPage, setHistoryRowsPerPage] = useState<number>(5);
 	const [historyCount, setHistoryCount] = useState<number>(-1);
 	const { adminMode } = useSettings();
+
+	const [executingJobs, setExecutingJobs] = useState<ExecutingJob[]>([]);
+	const [executingJobsLoading, setExecutingJobsLoading] =
+		useState<boolean>(false);
 
 	const getJobs = () => {
 		setJobsLoading(true);
@@ -497,11 +503,38 @@ export function JobsPage() {
 		getHistory({ search: historySearchBuffer });
 	}, 400);
 
+	const getExecutingJobs = async () => {
+		setExecutingJobsLoading(true);
+
+		const pixel = "META|GetExecutingJobs()";
+		monolithStore
+			.runQuery<[ExecutingJob[]]>(pixel)
+			.then((response) => {
+				const type = response.pixelReturn[0].operationType[0];
+
+				if (type.indexOf("ERROR") > -1) {
+					notification.add({
+						color: "error",
+						message:
+							"Something went wrong. Executing jobs could not be retrieved.",
+					});
+				} else {
+					const pixelJobs: ExecutingJob[] =
+						response.pixelReturn[0].output;
+					setExecutingJobs(pixelJobs);
+				}
+			})
+			.finally(() => {
+				setExecutingJobsLoading(false);
+			});
+	};
+
 	useEffect(() => {
 		// initial render
 		getJobs();
 		getHistory({ reload: true });
 		getFailedJobCount();
+		getExecutingJobs();
 	}, []);
 
 	useEffect(() => {
@@ -563,6 +596,7 @@ export function JobsPage() {
 					<Tabs.Item value="All" label="All" />
 					<Tabs.Item value="Active" label="Active" />
 					<Tabs.Item value="Inactive" label="Inactive" />
+					<Tabs.Item value="Executing" label="Executing" />
 				</Tabs>
 				<Stack direction="row" spacing={2}>
 					<Search
@@ -642,15 +676,25 @@ export function JobsPage() {
 					)}
 				</Stack>
 			</Stack>
-			<JobsTable
-				jobs={filteredJobs}
-				jobsLoading={jobsLoading}
-				rowSelectionModel={rowSelectionModel}
-				setRowSelectionModel={setRowSelectionModel}
-				getHistory={() => getHistory({ reload: true })}
-				setInitialBuilderState={setInitialBuilderState}
-				showDeleteJobModal={(job: Job) => setJobToDelete(job)}
-			/>
+			{selectedTab !== tabs[3] ? (
+				<JobsTable
+					jobs={filteredJobs}
+					jobsLoading={jobsLoading}
+					rowSelectionModel={rowSelectionModel}
+					setRowSelectionModel={setRowSelectionModel}
+					getHistory={() => {
+						getExecutingJobs();
+						getHistory({ reload: true });
+					}}
+					setInitialBuilderState={setInitialBuilderState}
+					showDeleteJobModal={(job: Job) => setJobToDelete(job)}
+				/>
+			) : (
+				<JobsExecutingTable
+					jobs={executingJobs}
+					jobsLoading={executingJobsLoading}
+				/>
+			)}
 			<JobHistory
 				history={history}
 				historyLoading={historyLoading}

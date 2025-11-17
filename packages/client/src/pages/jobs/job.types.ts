@@ -131,6 +131,12 @@ export interface HistoryJob {
 	schedulerOutput: string;
 }
 
+export interface ExecutingJob {
+	jobName: string;
+	jobGroup: string;
+	execStart: string;
+}
+
 export interface HistoryPaginationProps {
 	page?: number;
 	rowsPerPage?: number;
