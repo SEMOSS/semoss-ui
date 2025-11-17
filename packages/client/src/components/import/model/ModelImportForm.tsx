@@ -295,6 +295,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 							return (
 								<TextField
 									label={f.label}
+									size="small"
 									variant="outlined"
 									required={f.required}
 									value={field.value ?? ""}
@@ -364,6 +365,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 								<TextField
 									label={f.label}
 									variant="outlined"
+									size="small"
 									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
@@ -379,6 +381,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									label={f.label}
 									variant="outlined"
 									type="password"
+									size="small"
 									required={f.required}
 									value={field.value ?? ""}
 									onChange={(v) => field.onChange(v)}
@@ -398,6 +401,7 @@ export const ModelImportForm = (props: ModelImportFormProps) => {
 									label={f.label}
 									variant="outlined"
 									type="number"
+									size="small"
 									required={f.required}
 									value={String(field.value ?? "")}
 									onChange={(v) => {

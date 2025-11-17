@@ -271,10 +271,8 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL",
 							label: "Model",
-							type: "select",
-							options: ["text-embedding-ada-002"],
+							type: "text",
 							required: true,
-							default: "text-embedding-ada-002",
 							category: "General",
 						},
 						{
@@ -682,10 +680,8 @@ export const IMPORTABLE_MODELS = {
 						{
 							key: "MODEL",
 							label: "Model",
-							type: "select",
-							options: ["text-embedding-ada-002"],
+							type: "text",
 							required: true,
-							default: "text-embedding-ada-002",
 							category: "General",
 						},
 						{
@@ -1498,13 +1494,15 @@ export const MODEL_VERSIONS = {
 			name: "gpt-audio",
 			display: "gpt-audio",
 			icon: "/src/assets/img/OPEN_AI.png",
-			audio: true
+			audio: true,
+			disable: true,
 		},
 		{
 			name: "gpt-image-1",
 			display: "GPT Image 1",
 			icon: "/src/assets/img/OPEN_AI.png",
-			image: true
+			image: true,
+			disable: true,
 		},
 		{
 			name: "text-davinci",

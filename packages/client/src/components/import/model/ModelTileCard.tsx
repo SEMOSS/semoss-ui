@@ -92,15 +92,19 @@ const TitleRow = styled("div")(({ theme }) => ({
 	gap: theme.spacing(1),
 }));
 
+const StyledCardContentSpan = styled("span")(() => ({
+	display: "block",
+	}));
+
 interface Model {
 	name: string;
 	display: string;
 	icon: string;
 	disable?: boolean;
-	description: string;
+	description?: string;
 	embedding: boolean;
-	audio: boolean;
-	image: boolean;
+	audio?: boolean;
+	image?: boolean;
 }
 
 interface ModelTileCardProps {
@@ -220,7 +224,7 @@ export const ModelTileCard: React.FC<ModelTileCardProps> = ({
 				},
 			}}
 		>
-			<span style={{ display: "block" }}>{cardContent}</span>
+			<StyledCardContentSpan>{cardContent}</StyledCardContentSpan>
 		</Tooltip>
 	) : (
 		cardContent

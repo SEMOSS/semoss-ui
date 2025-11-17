@@ -305,7 +305,7 @@ export const ModelImport: React.FC = () => {
 					const providerModels =
 						MODEL_VERSIONS[selectedProvider] || [];
 					const modelMeta = providerModels.find(
-						(m) => m.name === selectedModel,
+						(m) => m.display === selectedModel,
 					);
 
 					// Default to 'llm' if not found
