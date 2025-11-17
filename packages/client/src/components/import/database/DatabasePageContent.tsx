@@ -244,6 +244,10 @@ export const DatabasePageContent: React.FC<{ name: string }> = ({ name }) => {
 			for (const pixelString of pixelExpressions) {
 				const response = await monolithStore.runQuery(pixelString);
 				const output = response?.pixelReturn?.[0]?.output;
+				notification.add({
+					color:"success",
+					message: "Successfully Created Database"
+				})
 				navigate(`/engine/database/${output.database_id}`);
 			}
 		} catch {

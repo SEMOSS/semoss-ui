@@ -281,6 +281,7 @@ export const EngineHeader: React.FC = () => {
 						{active.metadata.tag &&
 							(active.metadata.tag as string[]).map((tag, i) => {
 								if (i < 2) {
+									if(tag === "") return null
 									return (
 										<Chip
 											key={tag}
