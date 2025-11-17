@@ -16,7 +16,11 @@ import {
 } from "@mui/icons-material";
 import { observer } from "mobx-react-lite";
 import { createElement, useEffect, useMemo, useRef, useState } from "react";
-import { ActionMessages, useBlocks } from "@semoss/renderer";
+import {
+	ActionMessages,
+	type SerializedState,
+	useBlocks,
+} from "@semoss/renderer";
 import { runPixel } from "@semoss/sdk";
 import {
 	ButtonGroup,
@@ -37,6 +41,12 @@ import { useWorkspace } from "@/hooks";
 import { MCP_NOTEBOOK_NAME } from "@/pages/app/app.constants";
 // TODO: MOVE TO SDK or a seperate lib specifically for utilities @semoss/utility
 import { copyTextToClipboard } from "@/utility";
+import {
+	replaceDependentReferences,
+	replaceInBlocks,
+	replaceInQueries,
+	replaceInVariables,
+} from "@/utility/dependencyReplacer";
 import {
 	findDependentElements,
 	getDependentBlocks,
@@ -401,17 +411,34 @@ export const NotebookCell = observer(
 				console.error(e);
 			}
 		};
-		const deleteCell = async () => {
+		const dispatchDeleteCell = async () => {
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
-				console.log("Passed args >>", state, queryId, cell);
-				console.log(`
-					ALL >> ${JSON.stringify(findDependentElements(state, queryId, cellId))}\n
-					BLOCKS >> ${getDependentBlocks(state, queryId, cellId)}\n
-					QUERIES >> ${getDependentQueries(state, queryId, cellId)}\n
-					CELLS >> ${getDependentCells(state, queryId, cellId)}\n
-					VARIABLES >> ${getDependentVariables(state, queryId, cellId)}
-				`);
+				state.dispatch({
+					message: ActionMessages.DELETE_CELL,
+					payload: {
+						queryId: cell.query.id,
+						cellId: cell.id,
+					},
+				});
+				notebook.selectCell(
+					queryId,
+					query.list[Math.max(currentCellIndex - 1, 0)],
+				);
+			} catch (e) {
+				console.error(e);
+			}
+		};
+		const deleteCell = async () => {
+			try {
+				// console.log("Passed args >>", state, queryId, cell);
+				// console.log(`
+				// 	ALL >> ${JSON.stringify(findDependentElements(state, queryId, cellId))}\n
+				// 	BLOCKS >> ${getDependentBlocks(state, queryId, cellId)}\n
+				// 	QUERIES >> ${getDependentQueries(state, queryId, cellId)}\n
+				// 	CELLS >> ${getDependentCells(state, queryId, cellId)}\n
+				// 	VARIABLES >> ${getDependentVariables(state, queryId, cellId)}
+				// `);
 				const dependentBlocks = await getDependentBlocks(
 					state,
 					queryId,
@@ -420,19 +447,9 @@ export const NotebookCell = observer(
 				if (dependentBlocks.length > 0) {
 					setDependentBlocksModal(true);
 					setDependentBlocks(dependentBlocks);
+				} else {
+					dispatchDeleteCell();
 				}
-				// state.dispatch({
-				// 	message: ActionMessages.DELETE_CELL,
-				// 	payload: {
-				// 		queryId: cell.query.id,
-				// 		cellId: cell.id,
-				// 	},
-				// });
-
-				// notebook.selectCell(
-				// 	queryId,
-				// 	query.list[Math.max(currentCellIndex - 1, 0)],
-				// );
 			} catch (e) {
 				console.error(e);
 			}
@@ -660,11 +677,59 @@ export const NotebookCell = observer(
 			console.log("Deleting without replacement");
 		};
 
-		const handleReplace = (replacements: { [blockId: string]: string }) => {
-			console.log("Replacing with:", replacements);
+		const handleReplace = async (replacements: {
+			[blockId: string]: string;
+		}) => {
+			// console.log("Replacements >> ", replacements);
+			// console.log(
+			// 	"Replacing with:",
+			// 	replaceDependentReferences(state, replacements, {
+			// 		queryId,
+			// 		cellId,
+			// 	}),
+			// 	replaceInBlocks(state, replacements, {
+			// 		queryId,
+			// 		cellId,
+			// 	}),
+			// 	replaceInQueries(state, replacements, {
+			// 		queryId,
+			// 		cellId,
+			// 	}),
+			// 	replaceInVariables(state, replacements, {
+			// 		queryId,
+			// 		cellId,
+			// 	})
+			// );
+			const updatedStateJson = await replaceInBlocks(
+				state,
+				replacements,
+				{
+					queryId,
+					cellId,
+				},
+			);
+
+			const s = JSON.parse(
+				JSON.stringify(updatedStateJson),
+			) as SerializedState;
+			await state.dispatch({
+				message: ActionMessages.SET_STATE,
+				payload: {
+					state: s,
+				},
+			});
+			await dispatchDeleteCell();
 		};
 
 		const replacementOptions = useMemo(() => {
+			if (!state.queries) return [];
+			const allCellsList = [];
+			Object.keys(state.queries).forEach((queryId) => {
+				state.queries[queryId].list.forEach((cellId) => {
+					if (cellId === cell.id) return;
+					allCellsList.push(`${queryId}--${cellId}`);
+				});
+			});
 			return [
 				{
 					label: "Notebook",
@@ -672,18 +737,10 @@ export const NotebookCell = observer(
 				},
 				{
 					label: "Cells",
-					options: [
-						"123-1",
-						"123-2",
-						"123-3",
-						"123-4",
-						"123-5",
-						"123-6",
-						"123-7",
-					],
+					options: allCellsList,
 				},
 			];
-		}, [state.queries]);
+		}, [state.queries, dependentBlocksModal===true]);
 
 		return (
 			<StyledStack

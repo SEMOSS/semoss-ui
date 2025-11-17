@@ -1,5 +1,5 @@
-import { AlertTriangle, ChevronDown, ChevronUp, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
+import { useId, useMemo, useState } from "react";
 import { useBlocks } from "@semoss/renderer";
 import {
 	Badge,
@@ -46,8 +46,8 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 		replacementOptions = [],
 	} = props;
 	const { state } = useBlocks();
-	const [replaceOption, setReplaceOption] = useState<string>("replaceAll");
-	const [selectedReplacement, setSelectedReplacement] = useState<string>("");
+	const [replaceOption, setReplaceOption] = useState("replaceAll");
+	const [selectedReplacement, setSelectedReplacement] = useState("");
 	const [isUsageExpanded, setIsUsageExpanded] = useState(true);
 	const [expandedCategories, setExpandedCategories] = useState<{
 		[key: string]: boolean;
@@ -56,16 +56,24 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 		[blockId: string]: string;
 	}>({});
 
-	// Derive dependent blocks from dependents using state.getBlock
-	const dependentBlocks = useMemo(() => {
-		return dependents.map((blockId) => {
-			const block = state.getBlock(blockId);
-			return {
-				blockType: block?.widget || "Unknown",
-				blockId: block?.id || blockId,
-			};
-		});
-	}, [dependents, state]);
+	// Unique IDs
+	const radioGroupId = useId();
+	const replaceAllId = `${radioGroupId}-replaceAll`;
+	const replaceIndividualId = `${radioGroupId}-replaceIndividual`;
+	const selectAllId = `${radioGroupId}-selectAll`;
+
+	// Extract blocks for table use
+	const dependentBlocks = useMemo(
+		() =>
+			dependents.map((blockId) => {
+				const block = state.getBlock(blockId);
+				return {
+					blockType: block?.widget || "Unknown",
+					blockId: block?.id || blockId,
+				};
+			}),
+		[dependents, state],
+	);
 
 	const handleReplaceAll = () => {
 		if (selectedReplacement) {
@@ -156,12 +164,12 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 								className="mt-2 flex flex-wrap gap-2"
 								data-testid="delete-cell-modal-usage-list"
 							>
-								{dependents.map((usage, index) => (
+								{dependents.map((usage) => (
 									<Badge
-										key={index}
+										key={usage}
 										variant="outline"
 										className="border-gray-300 bg-white font-normal text-gray-700 text-xs hover:bg-white"
-										data-testid={`delete-cell-modal-usage-${index}`}
+										data-testid={`delete-cell-modal-usage-${usage}`}
 									>
 										{usage}
 									</Badge>
@@ -179,15 +187,16 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 							value={replaceOption}
 							onValueChange={setReplaceOption}
 							className="flex items-center gap-6"
+							id={radioGroupId}
 						>
 							<div className="flex items-center space-x-2">
 								<RadioGroupItem
 									value="replaceAll"
-									id="replaceAll"
+									id={replaceAllId}
 									data-testid="delete-cell-modal-replace-all"
 								/>
 								<Label
-									htmlFor="replaceAll"
+									htmlFor={replaceAllId}
 									className="cursor-pointer font-normal text-gray-900 text-sm"
 								>
 									Replace all
@@ -196,11 +205,11 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 							<div className="flex items-center space-x-2">
 								<RadioGroupItem
 									value="replaceIndividual"
-									id="replaceIndividual"
+									id={replaceIndividualId}
 									data-testid="delete-cell-modal-replace-individual"
 								/>
 								<Label
-									htmlFor="replaceIndividual"
+									htmlFor={replaceIndividualId}
 									className="cursor-pointer font-normal text-gray-900 text-sm"
 								>
 									Replace individual
@@ -209,28 +218,29 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 						</RadioGroup>
 					</div>
 
-					{/* Replace All - Single Dropdown with Replace Button */}
+					{/* Replace All - "Replace With" dropdown is full width */}
 					{replaceOption === "replaceAll" && (
 						<div className="mt-4 space-y-3">
 							<Label
-								htmlFor="replacement"
+								htmlFor={selectAllId}
 								className="block font-normal text-gray-700 text-sm"
 							>
 								Replace With
 							</Label>
-							<div className="rounded-md border border-gray-300 bg-white">
+							<div className="w-full rounded-md border border-gray-300 bg-white">
 								<Select
 									value={selectedReplacement}
 									onValueChange={setSelectedReplacement}
 								>
 									<SelectTrigger
-										id="replacement"
-										className="w-full border-0 focus:ring-0"
+										id={selectAllId}
+										className="w-full min-w-0 border-0 focus:ring-0"
 										data-testid="delete-cell-modal-replacement-select"
 									>
 										<SelectValue placeholder="Select" />
 									</SelectTrigger>
-									<SelectContent className="max-h-[300px]">
+									{/* Ensure the content panel also fills min width */}
+									<SelectContent className="max-h-[300px] w-full min-w-full">
 										{replacementOptions.length === 0 ? (
 											<SelectItem value="none" disabled>
 												No options available
@@ -241,7 +251,7 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 													<div key={category.label}>
 														<Collapsible
 															open={
-																expandedCategories[
+																!!expandedCategories[
 																	category
 																		.label
 																]
@@ -309,11 +319,16 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 						</div>
 					)}
 
-					{/* Replace Individual - Table with Multiple Dropdowns */}
+					{/* Replace Individual - Table w/ Replace With column using flex for full width, non-shrinking */}
 					{replaceOption === "replaceIndividual" && (
 						<div className="mt-4 space-y-3">
 							<div className="overflow-hidden rounded-md border border-gray-200">
-								<table className="w-full">
+								<table className="w-full table-fixed">
+									<colgroup>
+										<col style={{ width: "30%" }} />
+										<col style={{ width: "30%" }} />
+										<col style={{ width: "40%" }} />
+									</colgroup>
 									<thead className="border-gray-200 border-b bg-gray-50">
 										<tr>
 											<th className="px-4 py-3 text-left font-medium text-gray-700 text-sm">
@@ -328,113 +343,123 @@ export const DependentBlocksModal = (props: DependentBlocksModalProps) => {
 										</tr>
 									</thead>
 									<tbody className="divide-y divide-gray-200 bg-white">
-										{dependentBlocks.map((block, index) => (
-											<tr key={block.blockId}>
-												<td className="px-4 py-3 text-gray-900 text-sm">
-													{block.blockType}
-												</td>
-												<td className="px-4 py-3 text-gray-900 text-sm">
-													{block.blockId}
-												</td>
-												<td className="px-4 py-3">
-													<Select
-														value={
-															individualReplacements[
-																block.blockId
-															] || ""
-														}
-														onValueChange={(
-															value,
-														) =>
-															updateIndividualReplacement(
-																block.blockId,
-																value,
-															)
-														}
-													>
-														<SelectTrigger
-															className="w-full border-gray-300"
-															data-testid={`delete-cell-modal-replacement-${index}`}
-														>
-															<SelectValue placeholder="Select" />
-														</SelectTrigger>
-														<SelectContent className="max-h-[300px]">
-															{replacementOptions.length ===
-															0 ? (
-																<SelectItem
-																	value="none"
-																	disabled
+										{dependentBlocks.map((block) => {
+											const selectId = `${radioGroupId}-select-${block.blockId}`;
+											return (
+												<tr key={block.blockId}>
+													<td className="px-4 py-3 text-gray-900 text-sm">
+														{block.blockType}
+													</td>
+													<td className="px-4 py-3 text-gray-900 text-sm">
+														{block.blockId}
+													</td>
+													<td className="px-4 py-3">
+														<div className="flex w-full">
+															<Select
+																value={
+																	individualReplacements[
+																		block
+																			.blockId
+																	] || ""
+																}
+																onValueChange={(
+																	value,
+																) =>
+																	updateIndividualReplacement(
+																		block.blockId,
+																		value,
+																	)
+																}
+															>
+																<SelectTrigger
+																	id={
+																		selectId
+																	}
+																	className="w-full min-w-0 border-gray-300"
+																	data-testid={`delete-cell-modal-replacement-${block.blockId}`}
 																>
-																	No options
-																	available
-																</SelectItem>
-															) : (
-																replacementOptions.map(
-																	(
-																		category,
-																	) => (
-																		<div
-																			key={
-																				category.label
-																			}
+																	<SelectValue placeholder="Select" />
+																</SelectTrigger>
+																<SelectContent className="max-h-[300px] w-full min-w-full">
+																	{replacementOptions.length ===
+																	0 ? (
+																		<SelectItem
+																			value="none"
+																			disabled
 																		>
-																			<Collapsible
-																				open={
-																					expandedCategories[
-																						`${category.label}-${index}`
-																					]
-																				}
-																				onOpenChange={() =>
-																					toggleCategory(
-																						`${category.label}-${index}`,
-																					)
-																				}
-																			>
-																				<CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-sm hover:bg-gray-100">
-																					<span className="font-medium text-gray-900">
-																						{
-																							category.label
+																			No
+																			options
+																			available
+																		</SelectItem>
+																	) : (
+																		replacementOptions.map(
+																			(
+																				category,
+																			) => (
+																				<div
+																					key={
+																						category.label
+																					}
+																				>
+																					<Collapsible
+																						open={
+																							!!expandedCategories[
+																								`${category.label}-${block.blockId}`
+																							]
 																						}
-																					</span>
-																					{expandedCategories[
-																						`${category.label}-${index}`
-																					] ? (
-																						<ChevronDown className="h-4 w-4 text-gray-500" />
-																					) : (
-																						<ChevronDown className="-rotate-90 h-4 w-4 text-gray-500" />
-																					)}
-																				</CollapsibleTrigger>
-																				<CollapsibleContent className="pl-4">
-																					{category.options.map(
-																						(
-																							option,
-																						) => (
-																							<SelectItem
-																								key={
-																									option
-																								}
-																								value={
-																									option
-																								}
-																								className="text-gray-700 text-sm"
-																							>
+																						onOpenChange={() =>
+																							toggleCategory(
+																								`${category.label}-${block.blockId}`,
+																							)
+																						}
+																					>
+																						<CollapsibleTrigger className="flex w-full cursor-pointer items-center justify-between px-2 py-1.5 text-sm hover:bg-gray-100">
+																							<span className="font-medium text-gray-900">
 																								{
-																									option
+																									category.label
 																								}
-																							</SelectItem>
-																						),
-																					)}
-																				</CollapsibleContent>
-																			</Collapsible>
-																		</div>
-																	),
-																)
-															)}
-														</SelectContent>
-													</Select>
-												</td>
-											</tr>
-										))}
+																							</span>
+																							{expandedCategories[
+																								`${category.label}-${block.blockId}`
+																							] ? (
+																								<ChevronDown className="h-4 w-4 text-gray-500" />
+																							) : (
+																								<ChevronDown className="-rotate-90 h-4 w-4 text-gray-500" />
+																							)}
+																						</CollapsibleTrigger>
+																						<CollapsibleContent className="pl-4">
+																							{category.options.map(
+																								(
+																									option,
+																								) => (
+																									<SelectItem
+																										key={
+																											option
+																										}
+																										value={
+																											option
+																										}
+																										className="text-gray-700 text-sm"
+																									>
+																										{
+																											option
+																										}
+																									</SelectItem>
+																								),
+																							)}
+																						</CollapsibleContent>
+																					</Collapsible>
+																				</div>
+																			),
+																		)
+																	)}
+																</SelectContent>
+															</Select>
+														</div>
+													</td>
+												</tr>
+											);
+										})}
 									</tbody>
 								</table>
 							</div>
