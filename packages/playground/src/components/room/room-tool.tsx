@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Env, usePixel } from "@semoss/sdk/react";
 import type { FlexLayout } from "@semoss/shared";
 import { Skeleton } from "@semoss/ui/next";
-import { ResponseMessageStore, type RoomStore } from "@/stores";
+import type { RoomStore } from "@/stores";
 import type { MCPTool, Tool } from "@/types";
 import { DynamicForm } from "../tools/tools-default-view";
 
@@ -72,6 +72,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 							properties: {},
 							type: "object",
 							required: [],
+							title: "",
 						},
 					},
 				],
@@ -88,7 +89,7 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 
 	// Populate selected tool
 	useEffect(() => {
-		if (getToolInfo.status === "SUCCESS") {
+		if (getToolInfo.status === "SUCCESS" && config?.tool?.name) {
 			setSelectedTool(
 				getToolInfo.data.tools.find((a) => {
 					const underscoreIndex = config.tool.name.indexOf("_");
@@ -121,48 +122,47 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 			},
 			"*",
 		);
-
-		// turn the loading screen off
-		setIsLoading(false);
-	};
-
-	const handleSubmit = async (data) => {
-		setFormData(data);
-		const response = await room.runRoomPixel<[string]>(
-			`RunMCPTool(project = [ "${config.app}" ], function=[ "${
-				config.tool.name
-			}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
-		);
-		const { output } = response.pixelReturn[0];
-
-		const message = room.getMessage(config.tool.message);
-		if (!message || message instanceof ResponseMessageStore !== true) {
-			return;
-		}
-		room.processTool(message.id, config.tool.id, config.tool.name, output);
 	};
 
 	useEffect(() => {
 		const checkPortal = async () => {
-			// ignore if no tool
-			if (!config || !config.app || getAppInfo.status !== "SUCCESS") {
-				return setUrl("");
+			console.log({ config });
+			// Finish loading
+			if (
+				getAppInfo.status === "INITIAL" ||
+				getAppInfo.status === "LOADING"
+			) {
+				return;
 			}
+			setFormData(toJS(config?.tool?.parameters || {}));
+
+			// Ignore if no tool
+			if (!config || !config.app || getAppInfo.status === "ERROR") {
+				setUrl("");
+				setIsLoading(false);
+				return;
+			}
+
+			setIsLoading(true);
 
 			// Low code app
 			if (getAppInfo.data.project_type === "BLOCKS") {
-				return setUrl(`${PLATFORM_URL}/#/s/${config.app}/`);
+				setUrl(`${PLATFORM_URL}/#/s/${config.app}/`);
+				setIsLoading(false);
+				return;
 			}
 
+			// Check if portals exists
 			let foundApp = false;
 			try {
 				const response = await fetch(
 					`${Env.MODULE}/public_home/${config.app}/portals/`,
-					{ method: "GET" },
+					{ method: "HEAD" },
 				);
+				const text = await response.text();
 				//FixMe: Always returns a 200 so currently checking against default text returned
 				foundApp =
-					(await response.text()) !==
+					text !==
 					"Publish is not enabled on this project or there was an error publishing this project";
 			} catch (_e) {}
 
@@ -172,28 +172,21 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 					? `${Env.MODULE}/public_home/${config.app}/portals/`
 					: null,
 			);
+			setIsLoading(false);
 		};
 		checkPortal();
 	}, [config, config?.app, getAppInfo.status, getAppInfo.data]);
-
-	useEffect(() => {
-		if (!config || !config.app || getAppInfo.status !== "SUCCESS") {
-			return;
-		}
-
-		setFormData(toJS(config?.tool?.parameters || {}));
-	}, [config, config?.app, getAppInfo.status]);
 
 	if (!config) {
 		return <div>No Tool</div>;
 	}
 
+	console.log({ isLoading, url, selectedTool });
+
 	return (
 		<div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden">
-			{!selectedTool?.name && !url && isLoading && (
-				<Skeleton className="h-full w-full" />
-			)}
-			{!!url && (
+			{isLoading && <Skeleton className="h-full w-full" />}
+			{!!url && !isLoading && (
 				<iframe
 					className="h-full w-full border-none"
 					title="Tool"
@@ -202,12 +195,12 @@ export const RoomTool: React.FC<RoomToolProps> = observer(({ node, room }) => {
 					onLoad={() => handleOnLoad()}
 				/>
 			)}
-			{!url && selectedTool?.name && (
+			{!url && !isLoading && selectedTool?.name && (
 				<DynamicForm
 					tool={selectedTool}
 					formData={formData}
-					handleSubmission={handleSubmit}
-					onFormDataChange={setFormData}
+					room={room}
+					config={config}
 				/>
 			)}
 		</div>

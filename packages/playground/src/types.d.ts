@@ -253,6 +253,7 @@ export interface MCPTool {
 		properties?: { [key: string]: object };
 		required?: string[];
 		type: "object";
+		title: string;
 	};
 	name: string;
 	outputSchema?: {
