@@ -1,7 +1,18 @@
-import { AuditLogPage } from "@semoss/auditlog";
-import { NavbarHeader, NavbarLeft } from "@/components/shared";
-import { useRootStore } from "@/hooks";
-
+export interface EventData {
+	startTime: string;
+	endTime: string;
+	logTimestamp: string;
+	request: string;
+	response: string;
+	tokens: string | null;
+	latency: number;
+	status: string | null;
+	engineName: string;
+	engineType: string;
+	userId: string;
+	sessionId: string;
+	spanId: string;
+}
 export const TimeDateFormatter = (
 	timeStamp: string | number | null | undefined,
 ) => {
@@ -40,21 +51,4 @@ export const TimeDateFormatter = (
 		// Handle date creation errors
 		return { date: "", time: "" };
 	}
-};
-
-export const AuditLogsDashboard = ({ catalogName }) => {
-	const { configStore, monolithStore } = useRootStore();
-	return (
-		<>
-			{catalogName === "Apps" && (
-				<NavbarLeft>
-					<NavbarHeader />
-				</NavbarLeft>
-			)}
-			<AuditLogPage
-				catalogName={catalogName}
-				rootStore={{ configStore, monolithStore }}
-			/>
-		</>
-	);
 };

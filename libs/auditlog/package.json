@@ -1,0 +1,53 @@
+{
+  "name": "@semoss/auditlog",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "./dist/index.mjs",
+  "types": "./dist/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/types/index.d.ts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -w -c"
+  },
+  "devDependencies": {
+    "rollup": "4.44.2",
+    "rollup-plugin-delete": "3.0.1",
+    "@rollup/plugin-commonjs": "28.0.6",
+    "@rollup/plugin-image": "^3.0.3",
+    "@rollup/plugin-json": "^6.1.0",
+    "@rollup/plugin-node-resolve": "16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "12.1.4",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.2.0",
+    "@types/jest": "^29.5.14",
+    "@types/react": "18.3.1",
+    "@types/react-dom": "18.3.0",
+    "dompurify": "^2.3.10",
+    "echarts": "^5.5.1",
+    "echarts-for-react": "^3.0.2",
+    "vitest": "^4.0.0",
+    "@vitest/coverage-v8": "^4.0.0",
+    "@vitejs/plugin-react": "^4.6.0",
+    "@vitest/browser-playwright": "^4.0.0"
+  },
+ "peerDependencies": {
+        "@emotion/react": "11.11.1",
+        "@emotion/styled": "11.11.0",
+        "@mui/icons-material": "6.0.0",
+        "@mui/material": "6.0.0",
+        "@semoss/sdk": "workspace:*",
+        "@semoss/ui": "workspace:*",
+        "mobx": "6.3.7",
+        "mobx-react-lite": "^3.4.0",
+        "react": "18.3.1",
+        "react-dom": "18.3.1",
+        "react-router-dom": "^6.3.0",
+        "echarts": "^5.6.0"
+    }
+}

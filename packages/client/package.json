@@ -23,6 +23,7 @@
         "@semoss/sdk": "workspace:*",
         "@semoss/ui": "workspace:*",
         "@semoss/shared": "workspace:*",
+        "@semoss/auditlog": "workspace:*",
         "@tailwindcss/vite": "^4.1.14",
         "@textea/json-viewer": "^4.0.0",
         "@vitest/ui": "^1.3.1",

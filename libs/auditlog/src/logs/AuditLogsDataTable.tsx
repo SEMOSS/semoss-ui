@@ -25,8 +25,8 @@ import {
 	Typography,
 	useTheme,
 } from "@semoss/ui";
-import { TimeDateFormatter } from "@/pages/AuditLogsDashboard";
-import type { EventData } from "@/types";
+import type { EventData } from "../utility/common";
+import { TimeDateFormatter } from "../utility/common";
 import { AuditLogsDetailDrawer } from "./AuditLogsDetailDrawer";
 
 // Styled Components
