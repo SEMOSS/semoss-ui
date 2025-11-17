@@ -5,12 +5,31 @@ import {
 	ADD_APP_FORM_FIELD_NAME,
 } from "./save-app.constants";
 
-export const AppDetailsStep = (props: { control: Control<any, any> }) => {
+export const AppDetailsStep = (props: { control: Control<any, any>; showNameField?: boolean; }) => {
+	const { control, showNameField = false } = props;
 	return (
 		<>
+			{showNameField && (
+                <Controller
+                    name={ADD_APP_FORM_FIELD_NAME}
+                    control={control}
+                    rules={{ required: true }}
+                    render={({ field }) => {
+                        return (
+                            <TextField
+                                label="Name"
+                                variant="outlined"
+                                value={field.value ? field.value : ""}
+                                onChange={(value) => field.onChange(value)}
+                            />
+                        );
+                    }}
+                />
+            )}
+
 			<Controller
 				name={ADD_APP_FORM_FIELD_DESCRIPTION}
-				control={props.control}
+				control={control}
 				rules={{ required: true }}
 				render={({ field }) => {
 					return (
