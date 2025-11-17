@@ -8,7 +8,7 @@ import {
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
 import { Link, matchPath, useLocation, useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -29,7 +29,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	useDebouncedValue,
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";

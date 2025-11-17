@@ -1,11 +1,15 @@
 /** biome-ignore-all lint/suspicious/noExplicitAny: unknown values for json */
+
+import { Loader2 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import type React from "react";
+import { useState } from "react";
 import {
 	Badge,
 	Button,
 	Card,
 	CardContent,
+	CardDescription,
 	CardHeader,
 	CardTitle,
 	Checkbox,
@@ -18,6 +22,7 @@ import {
 	SelectValue,
 	Textarea,
 } from "@semoss/ui/next";
+import { ResponseMessageStore, type RoomStore } from "@/stores";
 
 export interface MCPTool {
 	name: string;
@@ -47,27 +52,51 @@ export interface MCPTool {
 interface DynamicFormProps {
 	tool: MCPTool;
 	formData: Record<string, any>;
-	onFormDataChange: (data: Record<string, unknown>) => void;
-	handleSubmission: (data: Record<string, unknown>) => void;
+	room: RoomStore;
+	config: {
+		app: string;
+		tool: {
+			message: string;
+			id: string;
+			name: string;
+			parameters: Record<string, unknown>;
+		};
+	};
 }
 
 export const DynamicForm = observer(
-	({
-		tool,
-		formData,
-		onFormDataChange,
-		handleSubmission,
-	}: DynamicFormProps) => {
-		const properties = tool.inputSchema?.properties || {};
-		const required = tool.inputSchema?.required || [];
+	({ tool, formData, config, room }: DynamicFormProps) => {
+		const properties = tool?.inputSchema?.properties || {};
+		const required = tool?.inputSchema?.required || [];
+		const name = tool?.name || "";
+		const description = tool?.description || "";
+		const [data, setData] = useState<Record<string, unknown>>(
+			formData || {},
+		);
+		const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
 		const handleChange = (field: string, value: unknown) => {
-			onFormDataChange({ ...formData, [field]: value });
+			setData((prev) => ({ ...prev, [field]: value }));
 		};
 
-		const handleSubmit = (e: React.FormEvent) => {
+		// Tool Execution
+		const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 			e.preventDefault();
-			handleSubmission(formData);
+			setData(data);
+			setIsSubmitting(true);
+			const response = await room.runRoomPixel<[string]>(
+				`RunMCPTool(project = [ "${config.app}" ], function=[ "${
+					tool.name
+				}" ], paramValues=[ ${JSON.stringify(data)} ]);`,
+			);
+			const { output } = response.pixelReturn[0];
+
+			const message = room.getMessage(config.tool.message);
+			if (!message || message instanceof ResponseMessageStore !== true) {
+				return;
+			}
+			room.processTool(message.id, config.tool.id, tool.name, output);
+			setIsSubmitting(true);
 		};
 
 		const capitalizeWords = (str: string) => {
@@ -79,7 +108,7 @@ export const DynamicForm = observer(
 
 		const renderField = (fieldName: string, fieldSchema: any) => {
 			const isRequired = required.includes(fieldName);
-			const value = formData[fieldName] ?? "";
+			const value = data[fieldName] ?? "";
 			const displayName = capitalizeWords(fieldName); // Capitalize fieldName
 
 			switch (fieldSchema.type) {
@@ -108,12 +137,12 @@ export const DynamicForm = observer(
 									</Badge>
 								</div>
 								<Select
-									value={value}
+									value={value as string}
 									onValueChange={(value) =>
 										handleChange(fieldName, value)
 									}
 								>
-									<SelectTrigger>
+									<SelectTrigger className="w-full">
 										<SelectValue
 											placeholder={`Select ${displayName}`}
 										/>
@@ -164,7 +193,7 @@ export const DynamicForm = observer(
 								</div>
 								<Textarea
 									id={fieldName}
-									value={value}
+									value={value as string}
 									onChange={(e) =>
 										handleChange(fieldName, e.target.value)
 									}
@@ -198,7 +227,7 @@ export const DynamicForm = observer(
 							</div>
 							<Input
 								id={fieldName}
-								value={value}
+								value={value as string}
 								onChange={(e) =>
 									handleChange(fieldName, e.target.value)
 								}
@@ -234,7 +263,7 @@ export const DynamicForm = observer(
 							<Input
 								id={fieldName}
 								type="number"
-								value={value}
+								value={value as number}
 								onChange={(e) =>
 									handleChange(
 										fieldName,
@@ -262,7 +291,7 @@ export const DynamicForm = observer(
 						>
 							<Checkbox
 								id={fieldName}
-								checked={value || false}
+								checked={(value as boolean) || false}
 								onCheckedChange={(checked) =>
 									handleChange(fieldName, checked)
 								}
@@ -317,9 +346,9 @@ export const DynamicForm = observer(
 							<Textarea
 								id={fieldName}
 								value={
-									Array.isArray(value)
+									(Array.isArray(value)
 										? value.join(", ")
-										: value
+										: value) as string
 								}
 								onChange={(e) =>
 									handleChange(
@@ -360,7 +389,7 @@ export const DynamicForm = observer(
 							</div>
 							<Input
 								id={fieldName}
-								value={value}
+								value={value as string}
 								onChange={(e) =>
 									handleChange(fieldName, e.target.value)
 								}
@@ -376,13 +405,14 @@ export const DynamicForm = observer(
 			<div className="flex h-full w-full flex-col items-center justify-center overflow-hidden">
 				<Card className="h-full w-full">
 					<CardHeader>
-						<CardTitle className="font-semibold text-xl">
-							{tool.description && (
-								<p className="text-muted-foreground text-sm">
-									{tool.description}
-								</p>
-							)}
+						<CardTitle className="font-semibold text-2xl">
+							{capitalizeWords(name)}
 						</CardTitle>
+						{!!description && (
+							<CardDescription className="mt-2">
+								{description}
+							</CardDescription>
+						)}
 					</CardHeader>
 					<CardContent>
 						<form onSubmit={handleSubmit} className="space-y-6">
@@ -393,7 +423,14 @@ export const DynamicForm = observer(
 								)}
 							</div>
 							<Button type="submit" className="w-full" size="lg">
-								Execute
+								{isSubmitting ? (
+									<>
+										<Loader2 className="animate-spin" />
+										Executing...
+									</>
+								) : (
+									"Execute Tool"
+								)}
 							</Button>
 						</form>
 					</CardContent>
