@@ -145,6 +145,7 @@ const DATABASE_OPTIONS = [
 	"scheduler",
 	"themes",
 	"UserTrackingDatabase",
+	"Notification",
 ];
 
 interface TypeDbQuery {

@@ -20,7 +20,7 @@ export interface NotificationRecord {
 	notification_createdby?: string | null;
 	notification_createddate?: string;
 	notification_source?: string;
-	user_name?: string;
+	recipient_user_name?: string;
 	user_existingrole?: Role | null;
 	user_newrole?: Role;
 	catalog_id?: string;

@@ -122,54 +122,49 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 		const notificationListId = useId();
 
 		/**
-				 * Fetch notifications from the backend.
-				 *
-				 * @param limit - The number of notifications to fetch.
-				 * @param offset - The offset to start fetching from.
-				 * @returns A promise that resolves to the fetched notifications.
-				 */
-				const fetchNotifications = async (
-					limit: number,
-					offset: number,
-				) => {
-					try {
-						// Construct the pixel command
-						const pixel = `GetNotifications(limit = "${limit}", offset = "${offset}")`;
+		 * Fetch notifications from the backend.
+		 *
+		 * @param limit - The number of notifications to fetch.
+		 * @param offset - The offset to start fetching from.
+		 * @returns A promise that resolves to the fetched notifications.
+		 */
+		const fetchNotifications = async (limit: number, offset: number) => {
+			try {
+				// Construct the pixel command
+				const pixel = `FetchNotification(limit = "${limit}", offset = "${offset}")`;
 
-						// Run the pixel command
-						const res = await runPixel(pixel);
+				// Run the pixel command
+				const res = await runPixel(pixel);
 
-						const first = res?.pixelReturn?.[0];
+				const first = res?.pixelReturn?.[0];
 
-						if (!first) {
-							throw new Error("No pixel return from server");
-						}
+				if (!first) {
+					throw new Error("No pixel return from server");
+				}
 
-						// Check for operationType error
-						if (
-							Array.isArray(first.operationType) &&
-							first.operationType.includes("ERROR")
-						) {
-							const outputMsg =
-								typeof first.output === "string"
-									? first.output
-									: JSON.stringify(first.output);
-							throw new Error(outputMsg);
-						}
+				// Check for operationType error
+				if (
+					Array.isArray(first.operationType) &&
+					first.operationType.includes("ERROR")
+				) {
+					const outputMsg =
+						typeof first.output === "string"
+							? first.output
+							: JSON.stringify(first.output);
+					throw new Error(outputMsg);
+				}
 
-						// Extract the output as notifications
-						const notifications =
-							first.output as NotificationRecord[];
-						return notifications;
-					} catch (e) {
-						notification.add({
-							color: "error",
-							message:
-								e?.message ?? "Failed to fetch notifications",
-						});
-						return []; // return empty list so caller doesn’t break
-					}
-				};
+				// Extract the output as notifications
+				const notifications = first.output as NotificationRecord[];
+				return notifications;
+			} catch (e) {
+				notification.add({
+					color: "error",
+					message: e?.message ?? "Failed to fetch notifications",
+				});
+				return []; // return empty list so caller doesn’t break
+			}
+		};
 
 		useEffect(() => {
 			const listEl = document.getElementById(notificationListId);
@@ -290,7 +285,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 							: n,
 					),
 				);
-				const UpdateReadNotificationsPixel = `UpdateReadNotifications ( notificationId = "${id}" )`;
+				const UpdateReadNotificationsPixel = `MarkNotificationRead ( notificationId = "${id}" )`;
 				await runPixel(UpdateReadNotificationsPixel);
 			} catch (e) {
 				console.error("UpdateReadNotifications failed:", e);
@@ -313,8 +308,8 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 				// If an id is provided, delete only the notification with that id.
 				// Otherwise, delete all notifications.
 				const DeleteNotificationsPixel = id
-					? `DeleteNotifications(notificationId = "${id}")`
-					: "DeleteNotifications()";
+					? `DeleteNotification(notificationId = "${id}")`
+					: "DeleteNotification()";
 				// Run the pixel to delete the notifications.
 				await runPixel(DeleteNotificationsPixel);
 				setNotifications((prev) =>
@@ -352,7 +347,7 @@ export const NotificationDrawer: React.FC<NotificationDrawerProps> = observer(
 			) {
 				return null;
 			}
-			if (n.user_name === loggedInUser) return null;
+			if (n.recipient_user_name === loggedInUser) return null;
 
 			let appPath: string;
 			switch (n.notification_source) {
