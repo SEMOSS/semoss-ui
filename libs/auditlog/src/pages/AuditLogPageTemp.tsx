@@ -90,7 +90,7 @@ export const AuditLogPage = ({ catalogName, rootStore }) => {
 				contentElement.style.maxWidth = "";
 			}
 		};
-	}, [catalogName, fetchLogs, rowsPerPage, page]);
+	}, [catalogName, rowsPerPage, page]);
 
 	return (
 		<Stack gap={2}>
