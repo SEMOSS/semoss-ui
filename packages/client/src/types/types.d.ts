@@ -90,13 +90,15 @@ export type PathValue<
 export interface EventData {
 	startTime: string;
 	endTime: string;
-	payload: string;
+	logTimestamp: string;
+	request: string;
 	response: string;
 	tokens: string | null;
 	latency: number;
 	status: string | null;
 	engineName: string;
 	engineType: string;
-	empty?: boolean;
-    mapType?: string;
+	userId: string;
+	sessionId: string;
+	spanId:string
 }
