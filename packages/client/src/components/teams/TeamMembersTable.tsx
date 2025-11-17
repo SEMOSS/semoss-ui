@@ -573,7 +573,7 @@ export const TeamMembersTable = (props: MembersTableProps) => {
 			setMemberCount(data.length);
 			setAllTeamMembers(data);
 		});
-	}, [groupId, membersPage, searchFilter, rowsPerPage]);
+	}, [groupId, membersPage, searchFilter]);
 
 	const filter = () => {
 		filterUsers();
