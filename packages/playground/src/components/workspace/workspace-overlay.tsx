@@ -1,6 +1,6 @@
 import { XIcon } from "lucide-react";
 import { useEffect, useId, useState } from "react";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -20,7 +20,6 @@ import {
 	Spinner,
 	Textarea,
 	toast,
-	useDebouncedValue,
 } from "@semoss/ui/next";
 import { engineProjectToMCP } from "@/components";
 import { useChat } from "@/hooks";
