@@ -28,7 +28,6 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const [popoverAnchorEle, setPopoverAnchorEl] = useState<HTMLElement | null>(
 		null,
 	);
-
 	const [loggedInProviders, setLoggedInProviders] = useState<Set<string>>(
 		() => {
 			try {
@@ -71,11 +70,9 @@ export const LogoutPopover: React.FC<LogoutPopoverProps> = (props) => {
 	const notification = useNotification();
 
 	const allowedLogins = Object.keys(
-		configStore.store.config.loginsAllowed,
+		configStore.store.config.connectionsAllowed,
 	).filter(
-		(key) =>
-			configStore.store.config.loginsAllowed[key] === true &&
-			key !== "native",
+		(key) => configStore.store.config.connectionsAllowed[key] === true,
 	);
 
 	// track if the popover is open
