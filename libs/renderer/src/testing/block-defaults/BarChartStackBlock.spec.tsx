@@ -1,4 +1,4 @@
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
 	type EchartVisualizationBlockDef,
@@ -315,22 +315,25 @@ describe("BarChartStack Block Component", () => {
 			},
 		);
 
-		expect(result.current).toBeDefined();
-		expect(result.current.data.variation).toBe("echart-stack-chart");
+		await waitFor(() => {
+			expect(result.current).toBeDefined();
+			expect(result.current.data.variation).toBe("echart-stack-chart");
+		});
 	});
 
-	it("should render Stack chart correctly", () => {
+	it("should render Stack chart correctly", async () => {
 		const { container } = render(
 			<VisualizationBlock id={blockIds.barChartStack} />,
 			{
 				blocks: mockBarChartStackBlocks,
 			},
 		);
-
-		const stackChart = container.querySelector(
-			`[data-block='${blockIds.barChartStack}']`,
-		);
-		expect(stackChart).toBeInTheDocument();
+		await waitFor(() => {
+			const stackChart = container.querySelector(
+				`[data-block='${blockIds.barChartStack}']`,
+			);
+			expect(stackChart).toBeInTheDocument();
+		});
 	});
 
 	// TODO: Fix this test - StackChart component has a bug where string JSON options

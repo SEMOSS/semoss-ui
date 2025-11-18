@@ -1,7 +1,7 @@
 import { XIcon } from "lucide-react";
 import type React from "react";
 import { useEffect, useState } from "react";
-import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
+import { usePixel } from "@semoss/sdk/react";
 import {
 	Badge,
 	Button,
@@ -21,9 +21,10 @@ import {
 	Label,
 	ScrollArea,
 	Spinner,
+	useDebouncedValue,
 } from "@semoss/ui/next";
 import type { App, Engine, MCP, MCPConfig } from "@/types";
-import { engineProjectToToolbox } from "./utility";
+import { engineProjectToMCP } from "./utility";
 
 const PLATFORM_URL = import.meta.env.VITE_PLATFORM_URL
 	? import.meta.env.VITE_PLATFORM_URL
@@ -82,7 +83,7 @@ export const ToolboxOverlay: React.FC<ToolboxOverlayProps> = (props) => {
 			data: [],
 		},
 	);
-	const availableMCPs = getApps.data.map(engineProjectToToolbox);
+	const availableMCPs = getApps.data.map(engineProjectToMCP);
 
 	/**
 	 * Track if the MCP is selected

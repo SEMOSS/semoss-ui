@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import { useInsight } from "@semoss/sdk/react";
 import { SidebarInset, SidebarProvider } from "@semoss/ui/next";
-import { GlobalSidebar } from "@/components/global-sidebar";
+import { GlobalNav } from "@/components/global-nav";
 import { GlobalTrigger } from "@/components/global-trigger";
 import { ChatContext } from "@/contexts";
 import { useCacheState } from "@/hooks";
@@ -43,7 +43,7 @@ export const MainLayout = () => {
 					} as React.CSSProperties
 				}
 			>
-				<GlobalSidebar />
+				<GlobalNav />
 				<SidebarInset>
 					<GlobalTrigger />
 					<Outlet />

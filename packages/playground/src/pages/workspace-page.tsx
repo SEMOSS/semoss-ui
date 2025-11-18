@@ -1,25 +1,21 @@
-import { ComputerIcon, SearchIcon } from "lucide-react";
+import { SearchIcon } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
-	H4,
 	InputGroup,
 	InputGroupAddon,
 	InputGroupInput,
-	Lead,
 	Muted,
 	ScrollArea,
 	Spinner,
-	Tooltip,
-	TooltipContent,
-	TooltipTrigger,
+	toast,
 } from "@semoss/ui/next";
-import { WorkspaceCard } from "@/components";
-import { WorkspaceOverlay } from "@/components/workspace/workspace-overlay";
-import type { Workspace } from "@/types";
+import workspaceGraphic from "@/assets/img/workspace-graphic.png";
+import { WorkspaceCard, WorkspaceOverlay } from "@/components";
+import { useChat } from "@/hooks";
+import type { App } from "@/types";
 
 /**
  * Renders the Discover Page, allowing users to discover and create workspaces
@@ -28,117 +24,144 @@ import type { Workspace } from "@/types";
  */
 export const WorkspacePage = observer(() => {
 	/**
-	 * Library Hooks
-	 */
-	const listWorkspaces = usePixel<{
-		workspaces: Workspace[];
-	}>(`ListWorkspaces();`, { data: { workspaces: [] } });
-
-	const navigate = useNavigate();
-
-	/**
 	 * State
 	 */
 	const [search, setSearch] = useState("");
 	const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] =
 		useState<boolean>(false);
-	const [workspaceInfo, setWorkspaceInfo] = useState<Workspace | null>(null);
+	const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+	const [isLoadingDelete, setIsLoadingDelete] = useState<boolean>(false);
 
 	/**
-	 * CreateRoom
+	 * Library Hooks
 	 */
-	const createRoom = (workspaceId: string) =>
-		navigate(`/new?workspaceId=${workspaceId}`);
+	const debouncedSearch = useDebouncedValue(search);
+	const listWorkspaces = usePixel<App[]>(
+		`MyProjects ( type = "WORKSPACE" , filterWord = "${debouncedSearch}", limit = 10 ) ;`,
+		{ data: [] },
+	);
+	const { chat } = useChat();
+
+	/**
+	 * Delete Workspace
+	 */
+	const handleDeleteWorkspace = async (workspaceId: string) => {
+		setIsLoadingDelete(true);
+		try {
+			await chat.deleteWorkspace(workspaceId);
+			listWorkspaces.refresh();
+		} catch (e) {
+			toast.error(
+				e instanceof Error ? e.message : "Failed to delete workspace",
+			);
+			setIsLoadingDelete(false);
+			return;
+		}
+		setIsLoadingDelete(false);
+	};
+
+	/**
+	 * Constants
+	 */
+	const isLoading =
+		listWorkspaces.status !== "SUCCESS" ||
+		search !== debouncedSearch ||
+		isLoadingDelete;
 
 	return (
-		<div className="flex h-full w-full flex-col overflow-hidden px-2">
-			<div className="mx-auto w-full max-w-2xl">
-				<H4 className="mt-16">Discover Workspaces</H4>
-				<div className="mt-4 flex flex-row">
-					<Lead className="flex-1 text-base">
-						Explore and build custom AI workspaces designed to meet
-						your unique needs and integrate seamlessly into your
-						processes.
-					</Lead>
-					<Tooltip>
-						<TooltipTrigger asChild>
-							<span>
-								<Button
-									onClick={() => {
-										setWorkspaceInfo(null);
-										setIsWorkspaceModalOpen(true);
-									}}
-								>
-									<ComputerIcon />
-									Build
-								</Button>
-							</span>
-						</TooltipTrigger>
-						<TooltipContent>Create a new workspace</TooltipContent>
-					</Tooltip>
-				</div>
-				<InputGroup className="mt-12">
-					<InputGroupInput
-						placeholder="Search Workspaces"
-						value={search}
-						onChange={(e) => setSearch(e.target.value)}
-					/>
-					<InputGroupAddon>
-						<SearchIcon />
-					</InputGroupAddon>
-					<InputGroupAddon align="inline-end">
-						{listWorkspaces.status === "LOADING" ? (
-							<Spinner />
-						) : (
-							`${listWorkspaces.data.workspaces.length} results`
-						)}
-					</InputGroupAddon>
-				</InputGroup>
-			</div>
-			<div className="mx-auto w-full max-w-5xl flex-1 pt-10">
-				<ScrollArea className="h-full w-full">
-					{listWorkspaces.status === "LOADING" && (
-						<div className="flex items-center justify-center py-12">
-							<Spinner />
+		<div className="flex w-full flex-col px-2">
+			<div className="mx-auto flex h-screen w-full max-w-[950px] flex-col gap-12 px-4 pt-8 pb-4">
+				<div className="flex w-full rounded-lg bg-sky-100">
+					<div className="flex flex-1 flex-col gap-4 p-6 font-sans">
+						<div className="font-medium text-primary text-xl leading-normal">
+							Welcome to Workspace Manager
 						</div>
-					)}
+						<div className="font-normal text-base text-primary leading-normal">
+							Explore custom AI workspaces designed to meet your
+							unique needs and integrate seamlessly into your
+							processes.
+						</div>
+						<Button
+							onClick={() => {
+								setWorkspaceId(null);
+								setIsWorkspaceModalOpen(true);
+							}}
+							className="w-auto"
+						>
+							Create a Workspace
+						</Button>
+					</div>
+					{/* Image appears only on large screens and above */}
+					<div className="relative hidden w-[351px] overflow-hidden rounded-r-lg lg:block">
+						<img
+							src={workspaceGraphic}
+							alt="Workspace illustration"
+							className="-translate-y-1/2 absolute top-1/2 left-0 h-[351px] w-full object-cover"
+						/>
+					</div>
+				</div>
 
-					{listWorkspaces.status === "SUCCESS" &&
-						listWorkspaces.data.workspaces.length > 0 && (
-							<div className="grid grid-cols-1 gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-								{listWorkspaces.data.workspaces.map((w) => (
+				<div className="flex flex-col gap-4 overflow-auto">
+					<InputGroup>
+						<InputGroupInput
+							placeholder="Search Workspaces"
+							value={search}
+							onChange={(e) => setSearch(e.target.value)}
+						/>
+						<InputGroupAddon>
+							<SearchIcon />
+						</InputGroupAddon>
+						<InputGroupAddon align="inline-end">
+							{isLoading ? (
+								<Spinner />
+							) : (
+								`${listWorkspaces.data.length} results`
+							)}
+						</InputGroupAddon>
+					</InputGroup>
+
+					<ScrollArea className="flex-1 overflow-auto">
+						{isLoading ? (
+							<div className="flex items-center justify-center py-12">
+								<Spinner />
+							</div>
+						) : listWorkspaces.data.length > 0 ? (
+							<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:gap-x-8">
+								{listWorkspaces.data.map((w) => (
 									<WorkspaceCard
-										key={w.workspace_id}
-										workspace={w}
-										onPrimaryClick={() =>
-											createRoom(w.workspace_id)
-										}
-										onSecondaryClick={() => {
-											setWorkspaceInfo(w);
+										key={w.project_id}
+										workspace={{
+											workspace_id: w.project_id,
+											name: w.project_name,
+											description: w.description,
+										}}
+										onEditClick={() => {
+											setWorkspaceId(w.project_id);
 											setIsWorkspaceModalOpen(true);
 										}}
+										onDeleteClick={() =>
+											handleDeleteWorkspace(w.project_id)
+										}
 									/>
 								))}
 							</div>
-						)}
-
-					{listWorkspaces.status === "SUCCESS" &&
-						listWorkspaces.data.workspaces.length === 0 && (
+						) : (
 							<div className="flex items-center justify-center py-12">
 								<Muted>No results found</Muted>
 							</div>
 						)}
-				</ScrollArea>
+					</ScrollArea>
+				</div>
 			</div>
 
 			{isWorkspaceModalOpen && (
 				<WorkspaceOverlay
 					open={isWorkspaceModalOpen}
-					workspaceInfo={workspaceInfo}
+					workspaceId={workspaceId}
 					onClose={(newWorkspaceId) => {
 						setIsWorkspaceModalOpen(false);
 						if (newWorkspaceId) {
-							createRoom(newWorkspaceId);
+							listWorkspaces.refresh();
 						}
 					}}
 				/>
