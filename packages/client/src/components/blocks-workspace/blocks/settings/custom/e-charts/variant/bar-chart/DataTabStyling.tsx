@@ -255,12 +255,11 @@ export const DataTabStyling = observer(
 					value = parsedValue[chart[index].label]?.pixelname;
 				} else if (data.variation === "echart-gantt-chart") {
 					value =
-						parsedValue["customSettings"]?.["columnDetails"]?.[
+						parsedValue?.customSettings?.columnDetails?.[
 							chart[index].label
 						]?.name;
 				} else {
-					value =
-						parsedValue["_state"]?.["fields"]?.[chart[index].label];
+					value = parsedValue?._state?.fields?.[chart[index].label];
 				}
 				value = value ? (Array.isArray(value) ? value : [value]) : [];
 				const selectorsList = [];
@@ -378,7 +377,7 @@ export const DataTabStyling = observer(
 					<Autocomplete
 						fullWidth
 						id={"Echart-Frame"}
-						key={`selected-frame-${data.frame.name || "0"}`} // Key to force remount on frame change}
+						key={`selected-frame-${data.frame?.name || "0"}`} // Key to force remount on frame change
 						multiple={false}
 						disabled={getFrames.status !== "SUCCESS"}
 						value={data.frame?.name}
@@ -547,23 +546,14 @@ export const DataTabStyling = observer(
 											col: string,
 										) => {
 											if (!item.aggregate) return col;
-											if (
-												columns["dataType"][
-													colIndex
-												] === "NUMBER"
-											)
+											const dataType =
+												columns["dataType"]?.[colIndex];
+											if (!dataType) return col;
+											if (dataType === "NUMBER")
 												return `Average of ${col}`;
-											if (
-												columns["dataType"][
-													colIndex
-												] === "STRING"
-											)
+											if (dataType === "STRING")
 												return `Count of ${col}`;
-											return (
-												columns["dataType"][colIndex] +
-												" of " +
-												col
-											);
+											return dataType + " of " + col;
 										};
 										return (
 											<div
@@ -589,15 +579,30 @@ export const DataTabStyling = observer(
 												id={refId}
 											>
 												<span>
-													{aggregatedColumnName(column).length > 20 ? (
-                                                        <Tooltip title={aggregatedColumnName(column)}>
-                                                            <span style={{ cursor: "pointer" }}>
-                                                                {aggregatedColumnName(column).slice(0, 12) + "..."}
-                                                            </span>
-                                                        </Tooltip>
-                                                    ) : (
-                                                        aggregatedColumnName(column)
-                                                    )}
+													{aggregatedColumnName(
+														column,
+													).length > 20 ? (
+														<Tooltip
+															title={aggregatedColumnName(
+																column,
+															)}
+														>
+															<span
+																style={{
+																	cursor: "pointer",
+																}}
+															>
+																{aggregatedColumnName(
+																	column,
+																).slice(0, 12) +
+																	"..."}
+															</span>
+														</Tooltip>
+													) : (
+														aggregatedColumnName(
+															column,
+														)
+													)}
 												</span>
 												<div>
 													{item.aggregate && (
@@ -634,22 +639,24 @@ export const DataTabStyling = observer(
 																};
 															updatedColumns[
 																key
-															].values = updatedColumns[
-																key
-															]?.values.filter(
-																(_, i) =>
-																	i !==
-																	colIndex,
-															);
+															].values =
+																updatedColumns[
+																	key
+																]?.values.filter(
+																	(_, i) =>
+																		i !==
+																		colIndex,
+																);
 															updatedColumns[
 																key
-															].dataType = updatedColumns[
-																key
-															]?.dataType.filter(
-																(_, i) =>
-																	i !==
-																	colIndex,
-															);
+															].dataType =
+																updatedColumns[
+																	key
+																]?.dataType.filter(
+																	(_, i) =>
+																		i !==
+																		colIndex,
+																);
 															if (
 																updatedColumns[
 																	key

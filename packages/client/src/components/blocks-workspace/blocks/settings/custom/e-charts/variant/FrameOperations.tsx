@@ -140,7 +140,6 @@ export const FrameOperations = observer(
 		// track the ref to debounce the input
 		const timeoutRef = useRef<ReturnType<typeof setTimeout>>(null);
 		const [filteredColumns, setFilteredColumns] = useState([]);
-		const [temp, setTemp] = useState(true);
 		// using frameheaders hook to get the header details for the selected frame
 		const frameHeaders = useFrameHeaders(data.frame?.name);
 		// fetch custom details about headers like alias, header, etc and assign to the variable for using it whenever required
@@ -165,10 +164,6 @@ export const FrameOperations = observer(
 				setFilteredColumns(columnsSelector);
 			}
 		}, [columnsSelector]);
-		//to be removed in the later part, when chart's data section is working fine
-		useEffect(() => {
-			console.log("what is this");
-		}, [storedColumns]);
 
 		useEffect(() => {
 			setDroppedColumns({});
@@ -193,12 +188,14 @@ export const FrameOperations = observer(
 						name: [],
 						pixelname: [],
 						pixelvalue: [],
+						pixeldataType: [],
 					},
 					["yAxis"]: {
 						...parsedValue["yAxis"],
 						name: [],
 						pixelname: [],
 						pixelvalue: [],
+						pixeldataType: [],
 					},
 				};
 			} else if (data.variation === "echart-pie-chart") {
@@ -323,11 +320,14 @@ export const FrameOperations = observer(
 				) {
 					const dataTypeList = {};
 					["xAxis", "yAxis"].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption[item].pixelname.includes(col.name),
-							)
-							.map((col) => col.dataType);
+						const pixelDataType = parsedOption[item].pixeldataType;
+						if (Array.isArray(pixelDataType)) {
+							dataTypeList[item] = pixelDataType.flat();
+						} else if (pixelDataType) {
+							dataTypeList[item] = [pixelDataType];
+						} else {
+							dataTypeList[item] = [];
+						}
 					});
 					const tempStoredColumns = chart.map((item) => {
 						return {
@@ -386,38 +386,30 @@ export const FrameOperations = observer(
 				) {
 					const dataTypeList = {};
 					["Label", "Value"].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
-							)
-							.map((col) => col.dataType);
+						const dataTypeKey =
+							item === "Label"
+								? "labelDataType"
+								: "valueDataType";
+						const pixelDataType =
+							parsedOption["_state"]["fields"][dataTypeKey];
+						if (Array.isArray(pixelDataType)) {
+							dataTypeList[item] = pixelDataType.flat();
+						} else if (pixelDataType) {
+							dataTypeList[item] = [pixelDataType];
+						} else {
+							dataTypeList[item] = [];
+						}
 					});
 					const tempStoredColumns = chart.map((item) => {
 						return {
 							name: item.name,
 							label: item.label,
-							values: parsedOption["_state"]["fields"][
-								item.label
-							].filter(
-								(field) =>
-									field && Object.hasOwn(field, "name"),
-							).length
-								? parsedOption["_state"]["fields"][
-										item.label
-									]?.map((item) => item?.name || "")
-								: [],
-							selectors: parsedOption["_state"]["fields"][
-								item.label
-							].filter(
-								(field) =>
-									field && Object.hasOwn(field, "selector"),
-							).length
-								? parsedOption["_state"]["fields"][
-										item.label
-									]?.map((item) => item?.selector || "")
-								: [],
+							values:
+								parsedOption["_state"]["fields"][item.label] ||
+								[],
+							selectors:
+								parsedOption["_state"]["fields"][item.label] ||
+								[],
 							dataType: dataTypeList[item.label],
 						};
 					});
@@ -434,40 +426,26 @@ export const FrameOperations = observer(
 					Object.hasOwn(parsedOption["_state"]["fields"], "xAxis") &&
 					Object.hasOwn(parsedOption["_state"]["fields"], "yAxis")
 				) {
-					["xAxis", "yAxis", "tooltip"].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
-							)
-							.map((col) => col.dataType);
+					["xAxis", "yAxis"].forEach((item) => {
+						const pixelDataType = parsedOption[item].dataType;
+						if (Array.isArray(pixelDataType)) {
+							dataTypeList[item] = pixelDataType.flat();
+						} else if (pixelDataType) {
+							dataTypeList[item] = [pixelDataType];
+						} else {
+							dataTypeList[item] = [];
+						}
 					});
 					const tempStoredColumns = chart.map((item) => {
 						return {
 							name: item.name,
 							label: item.label,
-							values: parsedOption["_state"]["fields"][
-								item.label
-							].some(
-								(valItem) =>
-									valItem && Object.hasOwn(valItem, "name"),
-							)
-								? parsedOption["_state"]["fields"][
-										item.label
-									].map((val) => val.name)
-								: [],
-							selectors: parsedOption["_state"]["fields"][
-								item.label
-							].some(
-								(valItem) =>
-									valItem &&
-									Object.hasOwn(valItem, "selector"),
-							)
-								? parsedOption["_state"]["fields"][
-										item.label
-									].map((selector) => selector.selector)
-								: [],
+							values:
+								parsedOption["_state"]["fields"][item.label] ||
+								[],
+							selectors:
+								parsedOption["_state"]["fields"][item.label] ||
+								[],
 							dataType: dataTypeList[item.label],
 						};
 					});
@@ -494,13 +472,16 @@ export const FrameOperations = observer(
 						"color",
 						"tooltip",
 					].forEach((item) => {
-						dataTypeList[item] = columnsSelector
-							.filter(
-								(col) =>
-									parsedJson["_state"]["fields"][item] ===
-									col.name,
-							)
-							.map((col) => col.dataType);
+						const dataTypeKey = `${item}DataType`;
+						dataTypeList[item] =
+							parsedJson["_state"]["fields"][dataTypeKey] ||
+							columnsSelector
+								.filter((col) =>
+									parsedJson["_state"]["fields"][
+										item
+									]?.includes(col.name),
+								)
+								.map((col) => col.dataType);
 						selectorList.push(
 							columnsSelector.find(
 								(col) =>
@@ -562,18 +543,21 @@ export const FrameOperations = observer(
 							dataTypeList[item] = [];
 							return;
 						}
-						dataTypeList[item] = columnsSelector
-							.filter((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
-							)
-							.map((col) => col.dataType);
+						const dataTypeKey = `${item}DataType`;
+						dataTypeList[item] =
+							parsedOption["_state"]["fields"][dataTypeKey] ||
+							columnsSelector
+								.filter((col) =>
+									parsedOption["_state"]["fields"][
+										item
+									]?.includes(col.name),
+								)
+								.map((col) => col.dataType);
 						selectorList.push(
 							columnsSelector.find((col) =>
-								parsedOption["_state"]["fields"][item].includes(
-									col.name,
-								),
+								parsedOption["_state"]["fields"][
+									item
+								]?.includes(col.name),
 							)?.selector || "",
 						);
 					});
@@ -597,7 +581,6 @@ export const FrameOperations = observer(
 				if (
 					Object.hasOwn(parsedJson, "_state") &&
 					Object.hasOwn(parsedJson["_state"], "fields") &&
-					Object.hasOwn(parsedJson["_state"]["fields"], "label") &&
 					Object.hasOwn(parsedJson["_state"]["fields"], "XAxis") &&
 					Object.hasOwn(parsedJson["_state"]["fields"], "YAxis")
 				) {
@@ -605,19 +588,21 @@ export const FrameOperations = observer(
 					const selectorList = [];
 					["XAxis", "YAxis", "category", "tooltip"].forEach(
 						(item) => {
+							const dataTypeKey = `${item}DataType`;
 							dataTypeList[item] =
+								parsedJson["_state"]["fields"][dataTypeKey] ||
 								columnsSelector
 									.filter((col) =>
 										parsedJson["_state"]["fields"][
 											item
-										].includes(col.name),
+										]?.includes(col.name),
 									)
-									.map((col) => col.dataType) || [];
+									.map((col) => col.dataType);
 							selectorList.push(
 								columnsSelector.find((col) =>
 									parsedJson["_state"]["fields"][
 										item
-									].includes(col.name),
+									]?.includes(col.name),
 								)?.selector || "",
 							);
 						},
@@ -735,7 +720,7 @@ export const FrameOperations = observer(
 								.filter((col) =>
 									parsedOption["_state"]["fields"][
 										item
-									].includes(col.name),
+									]?.includes(col.name),
 								)
 								.map((col) => col.dataType);
 						}
@@ -771,7 +756,6 @@ export const FrameOperations = observer(
 		}, [computedValue]);
 		// get the dropped columns data for the chart is selected or block is changed
 		function getDraggedColumns(tempStoredColumns, chart) {
-			console.log(chart);
 			const droppedColumnsList = { ...droppedColumns };
 
 			tempStoredColumns.forEach((item, index) => {
@@ -793,7 +777,6 @@ export const FrameOperations = observer(
 				(item) => item?.values && item?.values.length > 0,
 			);
 			if (hasValues) {
-				// console.log("selected column to set with ", columnsValue);
 				setSelectedColumn(columnsValue);
 				handleStoreData(columnsValue);
 			}
@@ -834,6 +817,7 @@ export const FrameOperations = observer(
 							["name"]: firstColumn?.values || "",
 							["selector"]: firstColumn.selectors,
 							["width"]: undefined,
+							["dataType"]: firstColumn.dataType || "",
 						},
 					];
 					fieldsData = {
@@ -853,6 +837,7 @@ export const FrameOperations = observer(
 							["name"]: secondColumn.values[index] || "",
 							["selector"]: secondColumn.selectors[index],
 							["width"]: undefined,
+							["dataType"]: secondColumn.dataType || "",
 						});
 					});
 					fieldsData = {
@@ -877,7 +862,7 @@ export const FrameOperations = observer(
 				) {
 					const seriesIndex =
 						tempVal["series"].findIndex((item) =>
-							BAR_CHART_DATA.JSONVALUE.includes(item.type),
+							BAR_CHART_DATA.JSONVALUE?.includes(item.type),
 						) || 0;
 					let columnsmerged = [];
 					if (columns[firstColumn?.label]?.length) {
@@ -889,6 +874,8 @@ export const FrameOperations = observer(
 								columns[firstColumn?.label][0]?.name || [],
 							["pixelvalue"]:
 								columns[firstColumn?.label][0]?.selector || [],
+							["pixeldataType"]:
+								columns[firstColumn?.label][0]?.dataType || [],
 						};
 					} else {
 						tempVal["xAxis"] = {
@@ -896,6 +883,7 @@ export const FrameOperations = observer(
 							["name"]: [],
 							["pixelname"]: [],
 							["pixelvalue"]: [],
+							["pixeldataType"]: [],
 						};
 					}
 
@@ -908,13 +896,15 @@ export const FrameOperations = observer(
 						},
 					];
 					const pixelName = [],
-						pixelValue = [];
+						pixelValue = [],
+						pixeldataType = [];
 					const axisName = [];
 					columns[secondColumn?.label].forEach(
 						(columItem, columIndex) => {
 							pixelName.push(columItem?.name);
 							axisName.push(columItem?.name);
 							pixelValue.push(columItem?.selector);
+							pixeldataType.push(columItem?.dataType);
 							columnsmerged.push({
 								name: columItem?.name,
 								selector: columItem?.selector,
@@ -927,6 +917,7 @@ export const FrameOperations = observer(
 							["name"]: axisName || pixelName[0],
 							["pixelname"]: pixelName,
 							["pixelvalue"]: pixelValue,
+							["pixeldataType"]: pixeldataType,
 						};
 					} else {
 						tempVal = {
@@ -936,10 +927,14 @@ export const FrameOperations = observer(
 								["name"]: "",
 								["pixelname"]: [],
 								["pixelvalue"]: [],
+								["pixeldataType"]: [],
 							},
 						};
 					}
-					tempVal["series"] = tempVal['series'].filter((_, index) => index <= (columns[secondColumn?.label]?.length-1));
+					tempVal["series"] = tempVal["series"].filter(
+						(_, index) =>
+							index <= columns[secondColumn?.label]?.length - 1,
+					);
 					for (
 						let i = 0;
 						i < columns[secondColumn?.label]?.length;
@@ -978,7 +973,9 @@ export const FrameOperations = observer(
 				tempValue["_state"]["fields"] = {
 					...tempValue["_state"]["fields"],
 					Value: secondColumn?.values || [],
+					valueDataType: secondColumn?.dataType || [],
 					Label: firstColumn?.values || [],
+					labelDataType: firstColumn?.dataType || [],
 				};
 
 				// set the value
@@ -1064,7 +1061,8 @@ export const FrameOperations = observer(
 
 					tempValue["xAxis"]["name"] = firstColumn?.values || [];
 					tempValue["xAxis"]["pixelName"] = firstColumn?.values || [];
-					tempValue["xAxis"]["flipAxisName"] = firstColumn?.values || [];
+					tempValue["xAxis"]["flipAxisName"] =
+						firstColumn?.values || [];
 					tempValue["xAxis"]["axisName"] = firstColumn?.values || [];
 				}
 				if (secondColumn?.values) {
@@ -1080,8 +1078,10 @@ export const FrameOperations = observer(
 					};
 
 					tempValue["yAxis"]["name"] = secondColumn?.values || [];
-					tempValue["yAxis"]["pixelName"] = secondColumn?.values || [];
-					tempValue["yAxis"]["flipAxisName"] = secondColumn?.values || [];
+					tempValue["yAxis"]["pixelName"] =
+						secondColumn?.values || [];
+					tempValue["yAxis"]["flipAxisName"] =
+						secondColumn?.values || [];
 					tempValue["yAxis"]["axisName"] = secondColumn?.values || [];
 				}
 				if (columnsDrop[2]?.values.length > 0) {
@@ -1095,7 +1095,7 @@ export const FrameOperations = observer(
 						category: columnsDrop[2]?.values,
 						categoryDataType: columnsDrop[2]?.dataType,
 					};
-				} else{
+				} else {
 					tempValue["_state"]["fields"] = {
 						...tempValue["_state"]["fields"],
 						category: [],
@@ -1113,7 +1113,7 @@ export const FrameOperations = observer(
 						tooltip: columnsDrop[3]?.values,
 						tooltipDataType: columnsDrop[3]?.dataType,
 					};
-				} else{
+				} else {
 					tempValue["_state"]["fields"] = {
 						...tempValue["_state"]["fields"],
 						tooltip: [],
@@ -1132,10 +1132,12 @@ export const FrameOperations = observer(
 				tempValue["xAxis"] = {
 					...tempValue["xAxis"],
 					name: firstColumn?.values,
+					dataType: firstColumn?.dataType,
 				};
 				tempValue["yAxis"] = {
 					...tempValue["yAxis"],
 					name: secondColumn?.values,
+					dataType: secondColumn?.dataType,
 				};
 
 				tempValue["_state"] = {};
@@ -1144,7 +1146,9 @@ export const FrameOperations = observer(
 				tempValue["_state"]["fields"] = {
 					...tempValue["_state"]["fields"],
 					xAxis: firstColumn?.values,
+					xAxisDataType: firstColumn?.dataType,
 					yAxis: secondColumn?.values,
+					yAxisDataType: secondColumn?.dataType,
 					tooltip: columnsDrop[2]?.values
 						? columnsDrop[2]?.values
 						: [],
@@ -1156,6 +1160,7 @@ export const FrameOperations = observer(
 						seriesListToAdd[i] = {
 							...tempSeries[i],
 							name: secondColumn.values[i],
+							dataType: secondColumn.dataType[i],
 							type: "line",
 							data: tempSeries[i]?.data ?? [],
 							lineStyle: {
@@ -1333,7 +1338,6 @@ export const FrameOperations = observer(
 						}
 					}
 				}
-				// console.log('columnsValue', columnsValue, columnsDrop);
 				if (firstColumn?.values) {
 					columnsToSet.push(firstColumn?.values);
 					columnsObject["task"] = firstColumn?.values;
@@ -1543,10 +1547,9 @@ export const FrameOperations = observer(
 					columnsObj,
 					columnsToSet,
 				);
-				console.log(tooltip, columnsToSet, "tooltipIndexToSetTest");
 				const tooltipIndexToSet = tooltip.reduce((acc, item) => {
 					columnsToSet.forEach((colSetItem, colSetIndex) => {
-						if (colSetItem.includes(item)) {
+						if (colSetItem?.includes(item)) {
 							acc = [...acc, colSetIndex];
 						}
 					});

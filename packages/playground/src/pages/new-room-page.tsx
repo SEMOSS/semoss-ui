@@ -21,13 +21,9 @@ import {
 	workspaceToApp,
 } from "@/components";
 import { TEMPERATURE, TOKEN_LENGTH } from "@/constants";
-import { useChat } from "@/hooks";
+import { useChat, useRoot } from "@/hooks";
 import type { RoomStore } from "@/stores";
 import type { App, Workspace } from "@/types";
-
-const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
-	? import.meta.env.VITE_APP_DESCRIPTION
-	: "";
 
 /**
  * The page to create a new room
@@ -35,9 +31,8 @@ const APP_DESCRIPTION = import.meta.env.VITE_APP_DESCRIPTION
  * @component
  */
 export const NewRoomPage = observer(() => {
-	/**
-	 * Library Hooks
-	 */
+	const { root } = useRoot();
+
 	const { chat } = useChat();
 	const navigate = useNavigate();
 	const [searchParams] = useSearchParams();
@@ -149,7 +144,7 @@ export const NewRoomPage = observer(() => {
 								Welcome
 							</div>
 							<div className="text-center text-muted-foreground text-sm leading-normal">
-								{APP_DESCRIPTION}
+								{root.theme.description}
 							</div>
 						</div>
 
