@@ -44,6 +44,9 @@ interface RoomInputProps {
 
 	/** Callback triggered to process the prompt. Throw an error if necessary */
 	onPrompt: (prompt: string, files: File[]) => Promise<boolean>;
+
+	/** Optionally clear the input when the user asks a question */
+	clearInputOnPrompt?: boolean;
 }
 
 export const RoomInput: React.FC<RoomInputProps> = observer(
@@ -55,6 +58,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		workspace = null,
 		configuration = null,
 		onPrompt = () => null,
+		clearInputOnPrompt = false,
 	}) => {
 		const [input, setInput] = useState("");
 		const isEmpty = input.trim().length === 0;
@@ -145,24 +149,38 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 		 *
 		 * @param - input
 		 */
-		const promptModel = async (input: string) => {
+		const promptModel = async () => {
+			let success = false;
+			// store old options
+			const userInput = input;
+			const userFiles = files;
 			try {
 				// ignore if loading
 				if (isDisabled || isLoading) {
 					return;
 				}
 
-				// ask the room
-				const success = await onPrompt(input, files);
+				// clear out the input components
+				if (clearInputOnPrompt) {
+					setInput("");
+					setFiles([]);
+				}
+				success = await onPrompt(userInput, userFiles);
+				if (!success) {
+					throw new Error(`Error processing chat`);
+				}
+			} catch (e) {
+				toast.error(e.message);
+			} finally {
 				if (success) {
 					// clear the input + files
 					setInput("");
 					setFiles([]);
 				} else {
-					throw new Error(`Error processing chat`);
+					// restore to original
+					setInput(userInput);
+					setFiles(userFiles);
 				}
-			} catch (e) {
-				toast.error(e.message);
 			}
 		};
 
@@ -295,7 +313,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 
 									// prompt the model
 									e.preventDefault();
-									promptModel(input);
+									promptModel();
 								}
 							}}
 						/>
@@ -366,7 +384,7 @@ export const RoomInput: React.FC<RoomInputProps> = observer(
 										isDisabled || isLoading || isEmpty
 									}
 									onClick={() => {
-										promptModel(input);
+										promptModel();
 									}}
 								>
 									{isLoading ? <Spinner /> : <SendIcon />}

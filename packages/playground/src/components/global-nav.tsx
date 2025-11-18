@@ -7,8 +7,14 @@ import {
 } from "lucide-react";
 import { observer } from "mobx-react-lite";
 import { useEffect, useState } from "react";
-import { Link, matchPath, useLocation, useParams } from "react-router-dom";
-import { usePixel } from "@semoss/sdk/react";
+import {
+	Link,
+	matchPath,
+	useLocation,
+	useNavigate,
+	useParams,
+} from "react-router-dom";
+import { useDebouncedValue, usePixel } from "@semoss/sdk/react";
 import {
 	Button,
 	InputGroup,
@@ -29,7 +35,6 @@ import {
 	TooltipContent,
 	TooltipTrigger,
 	toast,
-	useDebouncedValue,
 	useSidebar,
 } from "@semoss/ui/next";
 import { useChat } from "@/hooks";
@@ -38,17 +43,25 @@ import { NavUser } from "./nav-user";
 
 const ENABLE_WORKSPACE = import.meta.env.VITE_ENABLE_WORKSPACE === "true";
 
+/**
+ * Renders a sidebar allowing users to navigate between pages
+ *
+ * @component
+ */
 export const GlobalNav = observer(() => {
-	const { chat } = useChat();
-	const { setOpen } = useSidebar();
-
-	const { pathname } = useLocation();
-	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
-
+	/**
+	 * State
+	 */
 	const [search, setSearch] = useState("");
 
+	/**
+	 * Library hooks
+	 */
+	const { chat } = useChat();
+	const { setOpen } = useSidebar();
+	const { pathname } = useLocation();
+	const { roomId: activeRoomId } = useParams<{ roomId: string }>();
 	const debouncedSearch = useDebouncedValue(search);
-
 	const getRooms = usePixel<
 		{
 			ROOM_ID: string;
@@ -57,9 +70,14 @@ export const GlobalNav = observer(() => {
 			WORKSPACE_ID?: string;
 		}[]
 	>(
-		`GetUserConversationRooms ( ${search ? `search = "<encode>${debouncedSearch}</encode>"` : ""}, limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
+		`GetUserConversationRooms ( ${debouncedSearch ? `search = "<encode>${debouncedSearch}</encode>, "` : ""}limit = 25 , offset = 0 , sort = [ "DESC" ] ) ;`,
 	);
+	const navigate = useNavigate();
 
+	/**
+	 * Effects
+	 */
+	// biome-ignore lint/correctness/useExhaustiveDependencies: chat.keys.roomCounter triggers refresh
 	useEffect(() => {
 		getRooms.refresh();
 	}, [getRooms.refresh, chat.keys.roomCounter]);
@@ -196,6 +214,14 @@ export const GlobalNav = observer(() => {
 																toast.success(
 																	"Room deleted successfully",
 																);
+																if (
+																	activeRoomId ===
+																	roomId
+																) {
+																	navigate(
+																		"/",
+																	);
+																}
 
 																// Refetch rooms after deletion
 																getRooms.refresh();
