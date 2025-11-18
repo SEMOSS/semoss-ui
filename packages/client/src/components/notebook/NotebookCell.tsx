@@ -326,6 +326,18 @@ export const NotebookCell = observer(
 
 		const variableName = state.getAlias(queryId, cellId);
 
+		const replacementCellOptions = useMemo(() => {
+			if (!state.queries) return [];
+			const allCellsList = [];
+			Object.keys(state.queries).forEach((queryId) => {
+				state.queries[queryId].list.forEach((cellId) => {
+					if (cellId === cell.id && queryId === cell.query.id) return;
+					allCellsList.push(`${queryId}--${cellId}`);
+				});
+			});
+			return allCellsList;
+		}, [state.queries, dependentBlocksModal===true]);
+
 		useEffect(() => {
 			if (cardContentRef.current) {
 				const cardContentHeight = cardContentRef.current.offsetHeight; // Consider offsetHeight for borders
@@ -411,6 +423,41 @@ export const NotebookCell = observer(
 				console.error(e);
 			}
 		};
+
+		const handleReplaceCells = async (replacements: {
+			[blockId: string]: string;
+		}) => {
+			try{
+				workspace.setLoading(true);
+				const updatedStateJson = await replaceInBlocks(
+					state,
+					replacements,
+					{
+						queryId,
+						cellId,
+					},
+				);
+				const s = JSON.parse(
+					JSON.stringify(updatedStateJson),
+				) as SerializedState;
+				await state.dispatch({
+					message: ActionMessages.SET_STATE,
+					payload: {
+						state: s,
+					},
+				});
+				await dispatchDeleteCell();
+				notification.add({
+					color: "success",
+					message: "Successfully replaced cells",
+				})
+				workspace.setLoading(false);
+			} catch (e) {
+				console.error(e);
+				workspace.setLoading(false);
+			}
+		};
+
 		const dispatchDeleteCell = async () => {
 			try {
 				const currentCellIndex = query.list.indexOf(cell.id);
@@ -664,49 +711,6 @@ export const NotebookCell = observer(
 				});
 			}
 		};
-
-
-		const handleReplace = async (replacements: {
-			[blockId: string]: string;
-		}) => {
-			try{
-				workspace.setLoading(true);
-				const updatedStateJson = await replaceInBlocks(
-					state,
-					replacements,
-					{
-						queryId,
-						cellId,
-					},
-				);
-				const s = JSON.parse(
-					JSON.stringify(updatedStateJson),
-				) as SerializedState;
-				await state.dispatch({
-					message: ActionMessages.SET_STATE,
-					payload: {
-						state: s,
-					},
-				});
-				await dispatchDeleteCell();
-				workspace.setLoading(false);
-			} catch (e) {
-				console.error(e);
-				workspace.setLoading(false);
-			}
-		};
-
-		const replacementOptions = useMemo(() => {
-			if (!state.queries) return [];
-			const allCellsList = [];
-			Object.keys(state.queries).forEach((queryId) => {
-				state.queries[queryId].list.forEach((cellId) => {
-					if (cellId === cell.id && queryId === cell.query.id) return;
-					allCellsList.push(`${queryId}--${cellId}`);
-				});
-			});
-			return allCellsList;
-		}, [state.queries, dependentBlocksModal===true]);
 
 		return (
 			<StyledStack
@@ -1222,9 +1226,9 @@ export const NotebookCell = observer(
 						setDependentBlocksModal(false);
 					}}
 					onDelete={() => dispatchDeleteCell()}
-					onReplace={handleReplace}
+					onReplace={handleReplaceCells}
 					dependents={dependentBlocks}
-					replacementOptions={replacementOptions}
+					replacementOptions={replacementCellOptions}
 				/>
 			</StyledStack>
 		);
