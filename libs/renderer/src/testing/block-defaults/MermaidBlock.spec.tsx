@@ -85,7 +85,7 @@ describe("Mermaid block", () => {
 		// 		blocks: blocks,
 		// 	},
 		// );
-		// console.log("test here")
+		// console.log("testing here")
 		// const element = container.querySelector("[data-block='invalidHeader']");
 		// expect(element).toBeInTheDocument();
 		// const mermaidElement = screen.queryByText(/graph TD;/);

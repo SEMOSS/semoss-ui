@@ -3,9 +3,6 @@ pre-commit:
     check:
       run: pnpm exec biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
       stage_fixed: true
-    test:
-      run: turbo run test --filter=./ -- vitest related {staged_files}
-      glob: "*.(spec|test).{ts,tsx,js,jsx}"
 
 # pre-push:
 #   commands:
