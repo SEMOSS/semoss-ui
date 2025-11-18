@@ -253,6 +253,7 @@ export const RoomPage = observer(() => {
 
 									return true;
 								}}
+								clearInputOnPrompt
 							/>
 						</div>
 					</ResizablePanel>
